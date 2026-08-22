@@ -1604,3 +1604,66 @@ def test_every_colorado_admission_names_its_dam():
         assert capacity["nid_id"], abbrev
         assert capacity["capacity_basis"] in {
             "normal_storage", "max_storage", "nid_storage"}, abbrev
+
+
+# --- the monthly normal window (ADR-082) ---------------------------------
+
+def monthly_fixture(last_month: str) -> pd.Series:
+    """A daily series whose value is the year it was read in.
+
+    Every month's readings are flat, so each month's resampled mean is its
+    own calendar year -- which makes a median of month-means a median of
+    years, and any change of population visible as an exact number.
+    """
+    days = pd.date_range("2019-01-01", last_month, freq="D")
+    return pd.Series(days.year.astype(float), index=days, name="storage_af")
+
+
+def test_monthly_history_anchors_the_normal_window_once():
+    """Twelve months spanning a year end draw on one baseline.
+
+    The window September 2025 through August 2026 must read every month's
+    normal over 2015... no -- here 2019 through 2024: the years strictly
+    before the window's own anchor. Cutting each month by its own year
+    instead let the 2026 months borrow 2025 -- one extra, recent year --
+    and drew two baselines joined at 1 January.
+    """
+    rows = R.monthly_history(monthly_fixture("2026-08-31"))
+    assert len(rows) == 12
+    assert rows[0]["month"] == "2025-09"
+    assert rows[-1]["month"] == "2026-08"
+    # One population behind every normal: median(2019..2024) = 2021.5.
+    assert all(row["normal_af"] == 2021.5 for row in rows)
+    # And the structure the brief asks for: every row reports the same
+    # number of years behind its median.
+    assert {row["normal_years"] for row in rows} == {6}
+
+
+def test_monthly_history_inside_one_year_is_unchanged():
+    """A window inside a single calendar year anchors at that year."""
+    rows = R.monthly_history(monthly_fixture("2025-12-31"))
+    assert [row["month"] for row in rows][-10:] == [
+        "2025-03", "2025-04", "2025-05", "2025-06", "2025-07",
+        "2025-08", "2025-09", "2025-10", "2025-11", "2025-12"]
+    # Anchor 2025: normals come from 2019 through 2024 only.
+    assert all(row["normal_af"] == 2021.5 for row in rows)
+    assert all(row["normal_years"] == 6 for row in rows)
+
+
+def test_monthly_history_counts_the_years_behind_each_normal():
+    """A median never appears without the number of years behind it."""
+    # A record beginning in April 2019: its first January is 2020. The
+    # window December 2020 through ... anchors where it starts, so the
+    # January and June rows end up with different years behind them.
+    days = pd.date_range("2019-04-01", "2021-01-31", freq="D")
+    series = pd.Series(days.year.astype(float), index=days, name="storage_af")
+    rows = R.monthly_history(series)
+    january = next(row for row in rows if row["month"] == "2021-01")
+    june = next(row for row in rows if row["month"] == "2020-12")
+    # Window February..January anchors at Feb 2020; a January normal has no
+    # earlier January behind it.
+    assert january["normal_years"] == 0
+    assert january["normal_af"] is None
+    # A December normal draws on December 2019 alone.
+    assert june["normal_years"] == 1
+    assert june["normal_af"] == 2019.0

@@ -40,6 +40,12 @@ export interface DetailMonth {
   /** Share of the reservoir's own size basis, the same denominator the map uses. */
   percent: number | null;
   normalAf: number | null;
+  /**
+   * The years behind `normalAf` (ADR-082). Null when the payload predates
+   * the count; every month of one chart reports the same number, because
+   * they draw on one anchored population.
+   */
+  normalYears: number | null;
   /** Difference from the normal value, as a percentage of it. */
   changeFromNormal: number | null;
   color: string;
@@ -188,6 +194,19 @@ export function capacityBasisName(basis: string | null): string | null {
  * payload written before they did still answers with the percentage alone
  * rather than losing the row.
  */
+/**
+ * The fewest prior years a printed percentile can be trusted to mean.
+ *
+ * With n prior years, `mean(population < current) × 100` can take only n+1
+ * distinct values, 100/n apart -- with four prior years that is 0, 25, 50,
+ * 75 and 100, yet the figure prints as "0.0%", which reads as a measurement.
+ * Ten prior years puts the steps ten points apart, coarse but honest; below
+ * it the row prints the ordinal only, which carries its own sample size.
+ * The payload's `seasonal_percentile` is untouched: it is correct
+ * arithmetic and part of the public data API. This is a presentation rule.
+ */
+export const MINIMUM_YEARS_FOR_PERCENTILE = 10;
+
 export function rankWithYears(
   percentile: number | null, years: number,
   rank: number | null = null, rankOf: number | null = null
@@ -195,7 +214,13 @@ export function rankWithYears(
   const share = formatPercent(percentile);
   if (percentile === null) return share;
   if (rank !== null && rankOf !== null && rankOf > 1) {
-    return `${ordinal(rank)}-lowest of ${rankOf}, ${share}`;
+    // The ordinal leads either way; the percentage joins it only when the
+    // sample is big enough for its steps to mean something.
+    const priorYears = rankOf - 1;
+    if (priorYears >= MINIMUM_YEARS_FOR_PERCENTILE) {
+      return `${ordinal(rank)}-lowest of ${rankOf}, ${share}`;
+    }
+    return `${ordinal(rank)}-lowest of ${rankOf}`;
   }
   if (!Number.isFinite(years) || years <= 0) return share;
   const rounded = Math.floor(years);
@@ -270,6 +295,7 @@ export function monthlyDetail(
       storageAf: storage,
       percent,
       normalAf: normal,
+      normalYears: typeof entry.normal_years === "number" ? entry.normal_years : null,
       changeFromNormal: storage !== null && normal ? ((storage - normal) / normal) * 100 : null,
       color: storageColor(percent)
     };

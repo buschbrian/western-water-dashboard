@@ -12,6 +12,14 @@ export interface MonthlyRecord {
   /** The recent baseline's normal for this calendar month. */
   normal_af: NullableNumber;
   /**
+   * How many years stand behind `normal_af` (ADR-082).
+   *
+   * Optional because payloads written before the anchored window carry no
+   * count. All twelve months of one chart share one population, so the
+   * twelve counts agree; a month with none publishes 0 beside a null normal.
+   */
+  normal_years?: number;
+  /**
    * The 1991-2020 normal for this calendar month.
    *
    * Optional because payloads written before the selectable baseline remain

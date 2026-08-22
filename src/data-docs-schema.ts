@@ -243,6 +243,9 @@ export const RESERVOIR_GROUPS: readonly ApiFieldGroup[] = [
     f("end_af", "acre-feet", "Last usable storage reading in the month."),
     f("days", "readings", "Number of readings in the monthly summary."),
     f("normal_af", "acre-feet", "Middle earlier-year value for the month."),
+    f("normal_years", "years",
+      "Number of earlier years behind that middle value. Every month of one "
+      + "chart names the same count, because they share one window.", true),
     f("climate_normal_af", "acre-feet",
       "Middle value for the month across the standard climate period.", true)
   ]},

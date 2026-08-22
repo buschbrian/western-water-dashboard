@@ -413,10 +413,21 @@ describe("what the panel says about its own basis", () => {
  * A reader has no way to know that from "18.2%" alone.
  */
 describe("how the history rank reads", () => {
-  it("leads with the position and keeps the percentage", () => {
+  it("leads with the position and keeps the percentage when the sample supports it", () => {
     expect(rankWithYears(18.2, 11, 3, 12)).toBe("3rd-lowest of 12, 18.2%");
     expect(rankWithYears(0, 10, 1, 11)).toBe("1st-lowest of 11, 0.0%");
     expect(rankWithYears(100, 10, 11, 11)).toBe("11th-lowest of 11, 100.0%");
+  });
+
+  it("prints the position alone when the percentile could not mean much", () => {
+    /* With four prior years a percentile can only ever read 0, 25, 50, 75
+     * or 100 -- "0.0%" reads as a measurement of nothing. Ten prior years
+     * is the floor for printing one. */
+    expect(rankWithYears(0, 4, 1, 5)).toBe("1st-lowest of 5");
+    expect(rankWithYears(25, 8, 2, 9)).toBe("2nd-lowest of 9");
+    expect(rankWithYears(100, 9, 10, 10)).toBe("10th-lowest of 10");
+    // Exactly on the threshold keeps it: ten steps of ten points.
+    expect(rankWithYears(18.2, 10, 3, 11)).toBe("3rd-lowest of 11, 18.2%");
   });
 
   it("spells the awkward ordinals correctly", () => {

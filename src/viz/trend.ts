@@ -193,8 +193,17 @@ export function renderTrendTable(months: readonly DetailMonth[]): HTMLElement | 
   scroller.append(table);
   const note = document.createElement("p");
   note.className = "trend-note";
-  note.textContent = "Normal is the middle value for the same month in earlier years. " +
-    "The earliest years have no earlier values to compare with.";
+  /* The years behind the normal travel with it (ADR-082). All twelve rows
+   * of one chart draw on one anchored population, so when the payload
+   * carries the count it is said once, beside what it counts. */
+  const counts = months.map((month) => month.normalYears);
+  const uniform = counts.length > 0
+    && counts.every((count) => count === counts[0]);
+  note.textContent = "Normal is the middle value for the same month in earlier years. "
+    + (uniform && typeof counts[0] === "number"
+      ? `Each figure comes from the ${counts[0]} `
+        + `year${counts[0] === 1 ? "" : "s"} before ${months[0]!.key.slice(0, 4)}.`
+      : "The earliest years have no earlier values to compare with.");
   wrapper.append(scroller, note);
   return wrapper;
 }

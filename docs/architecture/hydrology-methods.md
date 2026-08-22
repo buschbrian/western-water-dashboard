@@ -140,6 +140,18 @@ a stricter floor still: at least half the area's sites reporting.
 The payload's `method.version` names the estimator behind these figures; two
 files written under different versions are not one series.
 
+## The monthly normal window
+
+**One chart, one baseline** (ADR-082). The recent monthly normal on the
+twelve-month line is computed over calendar years strictly before the
+*window's* earliest month, not before each month's own year. Cutting per
+month let the window's later calendar year borrow one extra, recent year and
+drew two baselines joined at 1 January. Each row publishes `normal_years`,
+the count behind its median — every row of a chart names the same number,
+because they share one population. The committed 1991–2020 normals are
+untouched: they were built over a closed period by
+`tools/build_normal_baselines.py` and have no seam to remove.
+
 ## Change intervals
 
 **A change names the reading it is a change from.** "30-day change" is the date

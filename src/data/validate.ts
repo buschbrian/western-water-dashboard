@@ -60,6 +60,8 @@ function isMonthlyRecord(value: unknown): value is MonthlyRecord {
     hasNullableNumber(value.max_af) &&
     hasNullableNumber(value.end_af) &&
     hasNullableNumber(value.normal_af) &&
+    (value.normal_years === undefined ||
+      (hasNumber(value.normal_years) && value.normal_years >= 0)) &&
     (value.climate_normal_af === undefined ||
       hasNullableNumber(value.climate_normal_af));
 }
