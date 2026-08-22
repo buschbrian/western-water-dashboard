@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "method_version": "storage-normal-annual-3",
-  "generated_at": "2026-08-22T19:11:17+00:00",
+  "generated_at": "2026-08-22T21:50:47+00:00",
   "start_date": "2015-01-01",
   "normal_period": {
     "start_year": 2015,
@@ -28,10 +28,10 @@
   ],
   "default_baseline": "climate",
   "climate_normals": {
-    "built": "2026-08-21",
+    "built": "2026-08-22",
     "file": "normals.json",
     "method_version": "storage-normal-annual-3",
-    "available_count": 320,
+    "available_count": 327,
     "minimum_years": 10
   },
   "coverage": {
@@ -45,7 +45,7 @@
         "daily_count": 7,
         "monthly_count": 1,
         "current_count": 8,
-        "climate_baseline_count": 6,
+        "climate_baseline_count": 8,
         "status": "not machine readable",
         "known_additional_source": "Salt River Project daily water report",
         "known_additional_source_url": "https://streamflow.watershedconnection.com/dwr",
@@ -123,7 +123,7 @@
         "daily_count": 5,
         "monthly_count": 2,
         "current_count": 7,
-        "climate_baseline_count": 6,
+        "climate_baseline_count": 7,
         "status": "none found",
         "known_additional_source": null,
         "known_additional_source_url": null,
@@ -162,7 +162,7 @@
         "daily_count": 19,
         "monthly_count": 3,
         "current_count": 15,
-        "climate_baseline_count": 17,
+        "climate_baseline_count": 21,
         "status": "none found",
         "known_additional_source": null,
         "known_additional_source_url": null,
@@ -233,44 +233,8 @@
   "stale_count": 21,
   "capacity_count": 382,
   "withdraw_after_days": 60,
-  "withdrawn_count": 5,
-  "withdrawn": [
-    {
-      "name": "Lower Willow Creek Reservoir",
-      "as_of": "2016-09-30",
-      "days_stale": 3613,
-      "source_label": "USDA NRCS AWDB",
-      "reason": "no reading inside the publication window"
-    },
-    {
-      "name": "Lower Jocko Lake",
-      "as_of": "2017-09-30",
-      "days_stale": 3248,
-      "source_label": "USDA NRCS AWDB",
-      "reason": "no reading inside the publication window"
-    },
-    {
-      "name": "Montpelier Reservoir",
-      "as_of": "2025-04-30",
-      "days_stale": 479,
-      "source_label": "USDA NRCS AWDB",
-      "reason": "no reading inside the publication window"
-    },
-    {
-      "name": "Whitney",
-      "as_of": "2025-11-30",
-      "days_stale": 265,
-      "source_label": "USDA NRCS AWDB",
-      "reason": "no reading inside the publication window"
-    },
-    {
-      "name": "Elkhead Reservoir",
-      "as_of": "2026-05-31",
-      "days_stale": 83,
-      "source_label": "USDA NRCS AWDB",
-      "reason": "no reading inside the publication window"
-    }
-  ],
+  "withdrawn_count": 0,
+  "withdrawn": [],
   "watersheds": {
     "source": "USGS Watershed Boundary Dataset",
     "level": 6,
@@ -16754,8 +16718,14 @@
           "covers_full_period": true,
           "first_obs": "2015-01-01"
         },
-        "climate": null,
-        "default": "recent"
+        "climate": {
+          "normal_af": 195100.0,
+          "pct_of_normal": 100.5,
+          "sample_years": 30,
+          "covers_full_period": true,
+          "first_obs": "1991-01-01"
+        },
+        "default": "climate"
       },
       "change_7d_af": -2000.0,
       "change_7d_pct": -1.0,
@@ -16781,7 +16751,7 @@
           "end_af": 136600.0,
           "days": 31,
           "normal_af": 168003.23,
-          "climate_normal_af": null
+          "climate_normal_af": 177429.03
         },
         {
           "month": "2025-09",
@@ -16791,7 +16761,7 @@
           "end_af": 114800.0,
           "days": 30,
           "normal_af": 145861.67,
-          "climate_normal_af": null
+          "climate_normal_af": 154351.67
         },
         {
           "month": "2025-10",
@@ -16801,7 +16771,7 @@
           "end_af": 94110.0,
           "days": 31,
           "normal_af": 135261.29,
-          "climate_normal_af": null
+          "climate_normal_af": 128920.97
         },
         {
           "month": "2025-11",
@@ -16811,7 +16781,7 @@
           "end_af": 132100.0,
           "days": 30,
           "normal_af": 143011.67,
-          "climate_normal_af": null
+          "climate_normal_af": 141481.67
         },
         {
           "month": "2025-12",
@@ -16821,7 +16791,7 @@
           "end_af": 185500.0,
           "days": 31,
           "normal_af": 146025.81,
-          "climate_normal_af": null
+          "climate_normal_af": 156924.19
         },
         {
           "month": "2026-01",
@@ -16831,7 +16801,7 @@
           "end_af": 159900.0,
           "days": 31,
           "normal_af": 178577.42,
-          "climate_normal_af": null
+          "climate_normal_af": 168154.84
         },
         {
           "month": "2026-02",
@@ -16841,7 +16811,7 @@
           "end_af": 159800.0,
           "days": 1,
           "normal_af": 180162.07,
-          "climate_normal_af": null
+          "climate_normal_af": 172619.64
         },
         {
           "month": "2026-03",
@@ -16851,7 +16821,7 @@
           "end_af": null,
           "days": 0,
           "normal_af": 178474.19,
-          "climate_normal_af": null
+          "climate_normal_af": 169564.52
         },
         {
           "month": "2026-04",
@@ -16861,7 +16831,7 @@
           "end_af": null,
           "days": 0,
           "normal_af": 181133.33,
-          "climate_normal_af": null
+          "climate_normal_af": 181791.67
         },
         {
           "month": "2026-05",
@@ -16871,7 +16841,7 @@
           "end_af": 201200.0,
           "days": 12,
           "normal_af": 188709.68,
-          "climate_normal_af": null
+          "climate_normal_af": 188783.87
         },
         {
           "month": "2026-06",
@@ -16881,7 +16851,7 @@
           "end_af": 200800.0,
           "days": 30,
           "normal_af": 196163.33,
-          "climate_normal_af": null
+          "climate_normal_af": 202201.67
         },
         {
           "month": "2026-07",
@@ -16891,7 +16861,7 @@
           "end_af": 196100.0,
           "days": 16,
           "normal_af": 176116.13,
-          "climate_normal_af": null
+          "climate_normal_af": 195616.13
         }
       ],
       "first_obs": "2015-01-01",
@@ -19821,8 +19791,14 @@
           "covers_full_period": true,
           "first_obs": "2015-01-01"
         },
-        "climate": null,
-        "default": "recent"
+        "climate": {
+          "normal_af": 132250.0,
+          "pct_of_normal": 101.9,
+          "sample_years": 30,
+          "covers_full_period": true,
+          "first_obs": "1991-01-01"
+        },
+        "default": "climate"
       },
       "change_7d_af": 1800.0,
       "change_7d_pct": 1.4,
@@ -19848,7 +19824,7 @@
           "end_af": 71120.0,
           "days": 30,
           "normal_af": 113531.67,
-          "climate_normal_af": null
+          "climate_normal_af": 138351.67
         },
         {
           "month": "2025-10",
@@ -19858,7 +19834,7 @@
           "end_af": 101300.0,
           "days": 31,
           "normal_af": 121188.71,
-          "climate_normal_af": null
+          "climate_normal_af": 130851.61
         },
         {
           "month": "2025-11",
@@ -19868,7 +19844,7 @@
           "end_af": 144500.0,
           "days": 30,
           "normal_af": 100985.33,
-          "climate_normal_af": null
+          "climate_normal_af": 101767.67
         },
         {
           "month": "2025-12",
@@ -19878,7 +19854,7 @@
           "end_af": 133500.0,
           "days": 31,
           "normal_af": 90939.35,
-          "climate_normal_af": null
+          "climate_normal_af": 98176.77
         },
         {
           "month": "2026-01",
@@ -19888,7 +19864,7 @@
           "end_af": 147800.0,
           "days": 31,
           "normal_af": 96818.71,
-          "climate_normal_af": null
+          "climate_normal_af": 101106.13
         },
         {
           "month": "2026-02",
@@ -19898,7 +19874,7 @@
           "end_af": 126300.0,
           "days": 28,
           "normal_af": 94140.71,
-          "climate_normal_af": null
+          "climate_normal_af": 107328.76
         },
         {
           "month": "2026-03",
@@ -19908,7 +19884,7 @@
           "end_af": 119200.0,
           "days": 31,
           "normal_af": 93382.26,
-          "climate_normal_af": null
+          "climate_normal_af": 131758.06
         },
         {
           "month": "2026-04",
@@ -19918,7 +19894,7 @@
           "end_af": 120500.0,
           "days": 30,
           "normal_af": 115113.33,
-          "climate_normal_af": null
+          "climate_normal_af": 146530.0
         },
         {
           "month": "2026-05",
@@ -19928,7 +19904,7 @@
           "end_af": 116800.0,
           "days": 31,
           "normal_af": 108767.74,
-          "climate_normal_af": null
+          "climate_normal_af": 146458.06
         },
         {
           "month": "2026-06",
@@ -19938,7 +19914,7 @@
           "end_af": 124200.0,
           "days": 30,
           "normal_af": 118133.33,
-          "climate_normal_af": null
+          "climate_normal_af": 143618.33
         },
         {
           "month": "2026-07",
@@ -19948,7 +19924,7 @@
           "end_af": 133800.0,
           "days": 31,
           "normal_af": 118145.16,
-          "climate_normal_af": null
+          "climate_normal_af": 132925.81
         },
         {
           "month": "2026-08",
@@ -19958,7 +19934,7 @@
           "end_af": 134800.0,
           "days": 21,
           "normal_af": 117609.68,
-          "climate_normal_af": null
+          "climate_normal_af": 131866.13
         }
       ],
       "first_obs": "2015-01-01",
@@ -23715,8 +23691,14 @@
           "covers_full_period": true,
           "first_obs": "2015-01-01"
         },
-        "climate": null,
-        "default": "recent"
+        "climate": {
+          "normal_af": 3770.0,
+          "pct_of_normal": 842.7,
+          "sample_years": 30,
+          "covers_full_period": true,
+          "first_obs": "1991-01-01"
+        },
+        "default": "climate"
       },
       "change_7d_af": -1860.0,
       "change_7d_pct": -5.5,
@@ -23742,7 +23724,7 @@
           "end_af": 61760.0,
           "days": 30,
           "normal_af": 12038.1,
-          "climate_normal_af": null
+          "climate_normal_af": 3637.41
         },
         {
           "month": "2025-10",
@@ -23752,7 +23734,7 @@
           "end_af": 56670.0,
           "days": 31,
           "normal_af": 11439.52,
-          "climate_normal_af": null
+          "climate_normal_af": 3488.54
         },
         {
           "month": "2025-11",
@@ -23762,7 +23744,7 @@
           "end_af": 63420.0,
           "days": 30,
           "normal_af": 7744.8,
-          "climate_normal_af": null
+          "climate_normal_af": 7291.28
         },
         {
           "month": "2025-12",
@@ -23772,7 +23754,7 @@
           "end_af": 73210.0,
           "days": 31,
           "normal_af": 9906.87,
-          "climate_normal_af": null
+          "climate_normal_af": 8359.65
         },
         {
           "month": "2026-01",
@@ -23782,7 +23764,7 @@
           "end_af": 57100.0,
           "days": 31,
           "normal_af": 39341.94,
-          "climate_normal_af": null
+          "climate_normal_af": 15031.83
         },
         {
           "month": "2026-02",
@@ -23792,7 +23774,7 @@
           "end_af": 74330.0,
           "days": 28,
           "normal_af": 51783.21,
-          "climate_normal_af": null
+          "climate_normal_af": 33468.39
         },
         {
           "month": "2026-03",
@@ -23802,7 +23784,7 @@
           "end_af": 61590.0,
           "days": 31,
           "normal_af": 65917.74,
-          "climate_normal_af": null
+          "climate_normal_af": 58576.77
         },
         {
           "month": "2026-04",
@@ -23812,7 +23794,7 @@
           "end_af": 58760.0,
           "days": 30,
           "normal_af": 67368.67,
-          "climate_normal_af": null
+          "climate_normal_af": 43220.17
         },
         {
           "month": "2026-05",
@@ -23822,7 +23804,7 @@
           "end_af": 57000.0,
           "days": 31,
           "normal_af": 44982.58,
-          "climate_normal_af": null
+          "climate_normal_af": 32027.95
         },
         {
           "month": "2026-06",
@@ -23832,7 +23814,7 @@
           "end_af": 42670.0,
           "days": 30,
           "normal_af": 23585.33,
-          "climate_normal_af": null
+          "climate_normal_af": 19594.03
         },
         {
           "month": "2026-07",
@@ -23842,7 +23824,7 @@
           "end_af": 34690.0,
           "days": 31,
           "normal_af": 7825.87,
-          "climate_normal_af": null
+          "climate_normal_af": 7591.29
         },
         {
           "month": "2026-08",
@@ -23852,7 +23834,7 @@
           "end_af": 31770.0,
           "days": 21,
           "normal_af": 12327.39,
-          "climate_normal_af": null
+          "climate_normal_af": 5323.41
         }
       ],
       "first_obs": "2015-01-01",
@@ -26572,8 +26554,14 @@
           "covers_full_period": true,
           "first_obs": "2015-01-01"
         },
-        "climate": null,
-        "default": "recent"
+        "climate": {
+          "normal_af": 28.45,
+          "pct_of_normal": 85.1,
+          "sample_years": 30,
+          "covers_full_period": true,
+          "first_obs": "1991-01-01"
+        },
+        "default": "climate"
       },
       "change_7d_af": 1.36,
       "change_7d_pct": 6.0,
@@ -26599,7 +26587,7 @@
           "end_af": 22.1,
           "days": 30,
           "normal_af": 12.52,
-          "climate_normal_af": null
+          "climate_normal_af": 34.69
         },
         {
           "month": "2025-10",
@@ -26609,7 +26597,7 @@
           "end_af": 23.86,
           "days": 29,
           "normal_af": 19.12,
-          "climate_normal_af": null
+          "climate_normal_af": 42.4
         },
         {
           "month": "2025-11",
@@ -26619,7 +26607,7 @@
           "end_af": 5.0,
           "days": 27,
           "normal_af": 66.0,
-          "climate_normal_af": null
+          "climate_normal_af": 83.44
         },
         {
           "month": "2025-12",
@@ -26629,7 +26617,7 @@
           "end_af": 19470.0,
           "days": 31,
           "normal_af": 236.87,
-          "climate_normal_af": null
+          "climate_normal_af": 399.13
         },
         {
           "month": "2026-01",
@@ -26639,7 +26627,7 @@
           "end_af": 5.0,
           "days": 31,
           "normal_af": 178.57,
-          "climate_normal_af": null
+          "climate_normal_af": 205.05
         },
         {
           "month": "2026-02",
@@ -26649,7 +26637,7 @@
           "end_af": 4.46,
           "days": 12,
           "normal_af": 606.38,
-          "climate_normal_af": null
+          "climate_normal_af": 280.0
         },
         {
           "month": "2026-03",
@@ -26659,7 +26647,7 @@
           "end_af": null,
           "days": 0,
           "normal_af": 33.94,
-          "climate_normal_af": null
+          "climate_normal_af": 91.13
         },
         {
           "month": "2026-04",
@@ -26669,7 +26657,7 @@
           "end_af": 29.85,
           "days": 27,
           "normal_af": 46.41,
-          "climate_normal_af": null
+          "climate_normal_af": 61.37
         },
         {
           "month": "2026-05",
@@ -26679,7 +26667,7 @@
           "end_af": 37.22,
           "days": 31,
           "normal_af": 65.86,
-          "climate_normal_af": null
+          "climate_normal_af": 95.99
         },
         {
           "month": "2026-06",
@@ -26689,7 +26677,7 @@
           "end_af": 3.02,
           "days": 30,
           "normal_af": 44.24,
-          "climate_normal_af": null
+          "climate_normal_af": 101.19
         },
         {
           "month": "2026-07",
@@ -26699,7 +26687,7 @@
           "end_af": 24.44,
           "days": 31,
           "normal_af": 18.25,
-          "climate_normal_af": null
+          "climate_normal_af": 68.06
         },
         {
           "month": "2026-08",
@@ -26709,7 +26697,7 @@
           "end_af": 24.2,
           "days": 22,
           "normal_af": 24.62,
-          "climate_normal_af": null
+          "climate_normal_af": 33.25
         }
       ],
       "first_obs": "2015-01-01",
@@ -32918,7 +32906,13 @@
           "covers_full_period": true,
           "first_obs": "2015-10-01"
         },
-        "climate": null,
+        "climate": {
+          "normal_af": 43670.0,
+          "pct_of_normal": 62.8,
+          "sample_years": 5,
+          "covers_full_period": false,
+          "first_obs": "2015-10-01"
+        },
         "default": "recent"
       },
       "change_7d_af": -1840.0,
@@ -32945,7 +32939,7 @@
           "end_af": 19140.0,
           "days": 30,
           "normal_af": 41634.67,
-          "climate_normal_af": null
+          "climate_normal_af": 30944.33
         },
         {
           "month": "2025-10",
@@ -32955,7 +32949,7 @@
           "end_af": 25720.0,
           "days": 31,
           "normal_af": 35760.36,
-          "climate_normal_af": null
+          "climate_normal_af": 31829.88
         },
         {
           "month": "2025-11",
@@ -32965,7 +32959,7 @@
           "end_af": 40710.0,
           "days": 30,
           "normal_af": 40261.5,
-          "climate_normal_af": null
+          "climate_normal_af": 40293.0
         },
         {
           "month": "2025-12",
@@ -32975,7 +32969,7 @@
           "end_af": 42650.0,
           "days": 31,
           "normal_af": 40692.42,
-          "climate_normal_af": null
+          "climate_normal_af": 40623.23
         },
         {
           "month": "2026-01",
@@ -32985,7 +32979,7 @@
           "end_af": 44210.0,
           "days": 31,
           "normal_af": 41629.84,
-          "climate_normal_af": null
+          "climate_normal_af": 41061.61
         },
         {
           "month": "2026-02",
@@ -32995,7 +32989,7 @@
           "end_af": 43870.0,
           "days": 28,
           "normal_af": 41122.1,
-          "climate_normal_af": null
+          "climate_normal_af": 41091.79
         },
         {
           "month": "2026-03",
@@ -33005,7 +32999,7 @@
           "end_af": 48720.0,
           "days": 31,
           "normal_af": 42960.77,
-          "climate_normal_af": null
+          "climate_normal_af": 42589.29
         },
         {
           "month": "2026-04",
@@ -33015,7 +33009,7 @@
           "end_af": 53890.0,
           "days": 30,
           "normal_af": 54091.95,
-          "climate_normal_af": null
+          "climate_normal_af": 51494.0
         },
         {
           "month": "2026-05",
@@ -33025,7 +33019,7 @@
           "end_af": 49830.0,
           "days": 31,
           "normal_af": 61893.39,
-          "climate_normal_af": null
+          "climate_normal_af": 60488.71
         },
         {
           "month": "2026-06",
@@ -33035,7 +33029,7 @@
           "end_af": 42010.0,
           "days": 30,
           "normal_af": 64256.67,
-          "climate_normal_af": null
+          "climate_normal_af": 63444.67
         },
         {
           "month": "2026-07",
@@ -33045,7 +33039,7 @@
           "end_af": 32980.0,
           "days": 31,
           "normal_af": 58781.29,
-          "climate_normal_af": null
+          "climate_normal_af": 55862.26
         },
         {
           "month": "2026-08",
@@ -33055,7 +33049,7 @@
           "end_af": 27430.0,
           "days": 21,
           "normal_af": 50960.81,
-          "climate_normal_af": null
+          "climate_normal_af": 45362.58
         }
       ],
       "first_obs": "2015-10-01",
@@ -41698,8 +41692,14 @@
           "covers_full_period": true,
           "first_obs": "2015-01-01"
         },
-        "climate": null,
-        "default": "recent"
+        "climate": {
+          "normal_af": 45685.0,
+          "pct_of_normal": 93.1,
+          "sample_years": 16,
+          "covers_full_period": false,
+          "first_obs": "2004-10-01"
+        },
+        "default": "climate"
       },
       "change_7d_af": 470.0,
       "change_7d_pct": 1.1,
@@ -41725,7 +41725,7 @@
           "end_af": 42870.0,
           "days": 30,
           "normal_af": 45005.0,
-          "climate_normal_af": null
+          "climate_normal_af": 44947.0
         },
         {
           "month": "2025-10",
@@ -41735,7 +41735,7 @@
           "end_af": 41360.0,
           "days": 31,
           "normal_af": 43383.23,
-          "climate_normal_af": null
+          "climate_normal_af": 43334.19
         },
         {
           "month": "2025-11",
@@ -41745,7 +41745,7 @@
           "end_af": 37860.0,
           "days": 30,
           "normal_af": 39237.67,
-          "climate_normal_af": null
+          "climate_normal_af": 38974.0
         },
         {
           "month": "2025-12",
@@ -41755,7 +41755,7 @@
           "end_af": 37670.0,
           "days": 31,
           "normal_af": 37817.74,
-          "climate_normal_af": null
+          "climate_normal_af": 33678.71
         },
         {
           "month": "2026-01",
@@ -41765,7 +41765,7 @@
           "end_af": 37340.0,
           "days": 31,
           "normal_af": 35627.42,
-          "climate_normal_af": null
+          "climate_normal_af": 27838.06
         },
         {
           "month": "2026-02",
@@ -41775,7 +41775,7 @@
           "end_af": 39980.0,
           "days": 28,
           "normal_af": 35402.86,
-          "climate_normal_af": null
+          "climate_normal_af": 25977.18
         },
         {
           "month": "2026-03",
@@ -41785,7 +41785,7 @@
           "end_af": 45650.0,
           "days": 31,
           "normal_af": 41471.61,
-          "climate_normal_af": null
+          "climate_normal_af": 32005.97
         },
         {
           "month": "2026-04",
@@ -41795,7 +41795,7 @@
           "end_af": 46380.0,
           "days": 30,
           "normal_af": 44189.33,
-          "climate_normal_af": null
+          "climate_normal_af": 42442.0
         },
         {
           "month": "2026-05",
@@ -41805,7 +41805,7 @@
           "end_af": 46180.0,
           "days": 31,
           "normal_af": 45808.39,
-          "climate_normal_af": null
+          "climate_normal_af": 45538.39
         },
         {
           "month": "2026-06",
@@ -41815,7 +41815,7 @@
           "end_af": 44940.0,
           "days": 30,
           "normal_af": 45777.0,
-          "climate_normal_af": null
+          "climate_normal_af": 45727.83
         },
         {
           "month": "2026-07",
@@ -41825,7 +41825,7 @@
           "end_af": 42350.0,
           "days": 31,
           "normal_af": 45557.42,
-          "climate_normal_af": null
+          "climate_normal_af": 45590.32
         },
         {
           "month": "2026-08",
@@ -41835,7 +41835,7 @@
           "end_af": 42550.0,
           "days": 21,
           "normal_af": 45777.1,
-          "climate_normal_af": null
+          "climate_normal_af": 45632.74
         }
       ],
       "first_obs": "2015-01-01",
@@ -66703,8 +66703,14 @@
           "covers_full_period": true,
           "first_obs": "2015-01-01"
         },
-        "climate": null,
-        "default": "recent"
+        "climate": {
+          "normal_af": 4999.0,
+          "pct_of_normal": 112.5,
+          "sample_years": 25,
+          "covers_full_period": false,
+          "first_obs": "1995-04-27"
+        },
+        "default": "climate"
       },
       "change_7d_af": 104.0,
       "change_7d_pct": 1.9,
@@ -66730,7 +66736,7 @@
           "end_af": 5226.0,
           "days": 30,
           "normal_af": 4782.9,
-          "climate_normal_af": null
+          "climate_normal_af": 4154.07
         },
         {
           "month": "2025-10",
@@ -66740,7 +66746,7 @@
           "end_af": 5681.0,
           "days": 31,
           "normal_af": 5027.08,
-          "climate_normal_af": null
+          "climate_normal_af": 3211.94
         },
         {
           "month": "2025-11",
@@ -66750,7 +66756,7 @@
           "end_af": 5915.0,
           "days": 30,
           "normal_af": 6227.05,
-          "climate_normal_af": null
+          "climate_normal_af": 4007.42
         },
         {
           "month": "2025-12",
@@ -66760,7 +66766,7 @@
           "end_af": 4837.0,
           "days": 31,
           "normal_af": 6857.06,
-          "climate_normal_af": null
+          "climate_normal_af": 4328.35
         },
         {
           "month": "2026-01",
@@ -66770,7 +66776,7 @@
           "end_af": 6473.0,
           "days": 31,
           "normal_af": 6570.68,
-          "climate_normal_af": null
+          "climate_normal_af": 4895.9
         },
         {
           "month": "2026-02",
@@ -66780,7 +66786,7 @@
           "end_af": 7683.0,
           "days": 28,
           "normal_af": 7952.5,
-          "climate_normal_af": null
+          "climate_normal_af": 5371.55
         },
         {
           "month": "2026-03",
@@ -66790,7 +66796,7 @@
           "end_af": 10600.0,
           "days": 31,
           "normal_af": 8315.29,
-          "climate_normal_af": null
+          "climate_normal_af": 6208.06
         },
         {
           "month": "2026-04",
@@ -66800,7 +66806,7 @@
           "end_af": 9549.0,
           "days": 30,
           "normal_af": 7874.27,
-          "climate_normal_af": null
+          "climate_normal_af": 6930.17
         },
         {
           "month": "2026-05",
@@ -66810,7 +66816,7 @@
           "end_af": 10210.0,
           "days": 31,
           "normal_af": 7154.61,
-          "climate_normal_af": null
+          "climate_normal_af": 7235.32
         },
         {
           "month": "2026-06",
@@ -66820,7 +66826,7 @@
           "end_af": 8800.0,
           "days": 30,
           "normal_af": 7929.2,
-          "climate_normal_af": null
+          "climate_normal_af": 7873.0
         },
         {
           "month": "2026-07",
@@ -66830,7 +66836,7 @@
           "end_af": 6716.0,
           "days": 31,
           "normal_af": 7196.03,
-          "climate_normal_af": null
+          "climate_normal_af": 7196.03
         },
         {
           "month": "2026-08",
@@ -66840,7 +66846,7 @@
           "end_af": 5625.0,
           "days": 21,
           "normal_af": 5682.32,
-          "climate_normal_af": null
+          "climate_normal_af": 5262.1
         }
       ],
       "first_obs": "2015-01-01",

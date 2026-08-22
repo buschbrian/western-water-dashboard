@@ -191,6 +191,13 @@
       "note": "Reviewed Colorado admissions, plus the withheld block naming every candidate kept out and the finding behind it. Keyed by the provider's telemetry abbrev."
     },
     {
+      "path": "admitted_usgs_reservoirs.json",
+      "class": "reviewed-by-hand",
+      "writer": null,
+      "staged_by_refresh": false,
+      "note": "Reviewed U.S. Geological Survey admissions (ADR-080)."
+    },
+    {
       "path": "huc6.geojson",
       "class": "frozen",
       "writer": null,

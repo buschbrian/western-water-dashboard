@@ -121,7 +121,8 @@ KNOWN_ASSIGNMENTS = {
     "Strawberry": "140600",           # Lower Green, not Jordan: it drains east
     "Meeks Cabin": "140401",          # in Wyoming, and still ours
     "Dillon Reservoir": "140100",     # Colorado Headwaters
-    "Elkhead Reservoir": "140500",    # White-Yampa
+    "High Savery Reservoir": "140500",  # White-Yampa; Elkhead retired from
+    # the roster 2026-08-22 (issue #24), so this basin keeps a checked name
     "Narraguinnep Reservoir": "140802",  # Lower San Juan
     "Shasta Lake": "180201",        # Lower Sacramento, at its upstream edge
     "Lake Cachuma": "180600",       # Central California Coastal
