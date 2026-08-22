@@ -46,6 +46,20 @@ an equal-area projection -- which is what Albers would supply -- would change
 nothing a reader could see. The first thing to reach for if the published
 precision ever tightens past 0.1 is a finer step, not a projection.
 
+WHAT THE ERROR BUDGET DOES NOT COVER: THE INPUT GEOMETRY ON THE OTHER SIDE.
+Both measured terms compare one computation of this engine against another
+over *the same simplified polygons*. The Drought Monitor classes and the land
+mask are both fetched at roughly 100 m resolution, and the grid step is about
+185 m of latitude -- the same order -- so a finer step than 0.002 samples a
+geometry whose own tolerance is coarser than the sampling. Because
+`tools/measure_drought_convergence.py` varies only the step while holding the
+polygons fixed, it cannot see this term at all; no measurement here bounds it.
+The practical consequence is narrow but worth stating: **a step finer than
+0.002 degrees buys nothing until the geometry tolerance is measured too**, so
+do not spend seventy more seconds a morning chasing it. ADR-037 already moved
+the drainage boundaries to about 56 m so they sit below the grid; the monitor's
+classes and the mask are the inputs this note is about.
+
 WHY THE STEP IS 0.002 AND NOT 0.01. It was 0.01, whose sampling error was
 measured at 0.069 -- above the 0.05 that moves a published tenth. That figure
 was a single worst case; measured over every share this engine publishes,

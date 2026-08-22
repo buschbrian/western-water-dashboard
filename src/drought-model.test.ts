@@ -92,15 +92,27 @@ describe("the storage join", () => {
   it("combines storage over combined full level per drainage area", () => {
     const contexts = storageByArea([
       { huc6: "160201", current_storage_af: 30, capacity_af: 100, record_max_af: 90 },
-      { huc6: "160201", current_storage_af: 20, capacity_af: null, record_max_af: 100 },
+      { huc6: "160201", current_storage_af: 20, capacity_af: 50, record_max_af: 60 },
       { huc6: "140100", current_storage_af: 5, capacity_af: 10, record_max_af: 8 },
       { huc6: null, current_storage_af: 999, capacity_af: 999, record_max_af: 999 }
     ]);
-    // 50 of 200: the second reservoir falls back to its recorded maximum.
-    expect(contexts.get("160201")).toEqual({ percent: 25, reservoirCount: 2 });
+    // 50 of 150: both reservoirs contribute their own full level.
+    expect(contexts.get("160201")?.percent).toBeCloseTo(100 / 3, 9);
+    expect(contexts.get("160201")?.reservoirCount).toBe(2);
     expect(contexts.get("140100")).toEqual({ percent: 50, reservoirCount: 1 });
     expect(contexts.has("null")).toBe(false);
     expect(contexts.size).toBe(2);
+  });
+
+  it("skips a reservoir with no capacity from the ratio and the count alike", () => {
+    /* The old fallback summed its highest observed storage into a basin
+     * denominator beside true capacities -- the error family ADR-046
+     * prevents -- and let it never read below its own record. */
+    const contexts = storageByArea([
+      { huc6: "160201", current_storage_af: 30, capacity_af: 100, record_max_af: 90 },
+      { huc6: "160201", current_storage_af: 40, capacity_af: null, record_max_af: 55 }
+    ]);
+    expect(contexts.get("160201")).toEqual({ percent: 30, reservoirCount: 1 });
   });
 });
 

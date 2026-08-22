@@ -143,6 +143,15 @@ export function storageByArea(
   const groups = new Map<string, { storage: number; capacity: number; count: number }>();
   for (const reservoir of reservoirs) {
     if (!reservoir.huc6) continue;
+    /* No capacity, no participation -- not a fall back to the highest
+     * observed storage. A record maximum is a ceiling the water has been
+     * seen at, not a figure it was designed against; summed into a basin
+     * denominator beside true capacities it would be the exact family of
+     * error ADR-046 prevents, and the reservoir could then never read below
+     * its own record. Skipped from the count as well, so the count and the
+     * ratio describe one set of reservoirs. */
+    const capacity = reservoir.capacity_af;
+    if (capacity === null || !Number.isFinite(capacity) || capacity <= 0) continue;
     /* Regrouping by a shorter code is exact rather than approximate:
      * hydrologic codes are fixed-width and nest by construction, so a basin's
      * first four digits *are* its subregion and every reservoir lands in
@@ -151,7 +160,7 @@ export function storageByArea(
     const key = reservoir.huc6.slice(0, level);
     const group = groups.get(key) ?? { storage: 0, capacity: 0, count: 0 };
     group.storage += reservoir.current_storage_af;
-    group.capacity += reservoir.capacity_af ?? reservoir.record_max_af;
+    group.capacity += capacity;
     group.count += 1;
     groups.set(key, group);
   }

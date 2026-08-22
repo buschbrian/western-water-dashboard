@@ -273,10 +273,13 @@ export function methodsMarkup(search: string): string {
           combined full level was read on time. And it gives the range of dates the
           readings span.
           <br /><strong>The full levels added up do not all mean the same thing.</strong>
-          They are the three kinds described above. So the combined figure is storage
-          against the full levels this site can trace. It is not storage against one single
-          definition of full. Each page that shows one can say how that total divides
-          between the three.</dd>
+          They are the kinds described above, plus the figure a water service publishes
+          beside its readings where it publishes one. Which kind stands behind each
+          reservoir is recorded in the published data, in the field named
+          &quot;capacity_basis&quot;. So the combined figure is storage against the full
+          levels this site can trace. It is not storage against one single definition of
+          full. Each page that shows one can say how that total divides between the
+          kinds.</dd>
         <dt>Late data</dt>
         <dd>A reading is late when it is older than the schedule its provider publishes on.
         That is more than two days for daily readings, and more than 45 days for
