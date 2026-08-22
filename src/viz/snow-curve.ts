@@ -37,6 +37,28 @@ function dayNumber(date: string): number {
   return Date.parse(`${date}T00:00:00Z`) / 86_400_000;
 }
 
+/** Candidate gridline steps, small to large. */
+const AXIS_STEPS = [25, 50, 100, 250, 500] as const;
+
+/**
+ * The axis top and the gridline step for a curve's largest value.
+ *
+ * The top keeps the old rule -- at least 150, so "just under normal" cannot
+ * fill the frame and read as a good year; a genuinely big year extends it.
+ * The step is new: a fixed 50 let one autumn point set 29 labels of scale
+ * over a winter that peaked at 69%, squeezing the range a reader came for
+ * into a tenth of the plot. Picking the step from this ladder keeps the
+ * gridline count near eight whatever the range does.
+ */
+export function snowAxisScale(maxPercent: number): { top: number; step: number } {
+  const raw = maxPercent * 1.08;
+  for (const step of AXIS_STEPS) {
+    const top = Math.max(150, Math.ceil(raw / step) * step);
+    if (top / step <= 8) return { top, step };
+  }
+  return { top: Math.max(150, Math.ceil(raw / 500) * 500), step: 500 };
+}
+
 /**
  * Returns null when no day meets the reporting floor, so the caller can say
  * so in words rather than render axes around nothing.
@@ -52,9 +74,10 @@ export function renderSnowCurve(
   const plotWidth = WIDTH - PAD_LEFT - PAD_RIGHT;
   const plotHeight = HEIGHT - PAD_TOP - PAD_BOTTOM;
   /* The axis always reaches 150 so "just under normal" cannot fill the
-   * frame and read as a good year; a genuinely big year extends it. */
-  const top = Math.max(150, Math.ceil(
-    Math.max(...drawable.map((point) => point.percent as number)) * 1.08 / 50) * 50);
+   * frame and read as a good year; a genuinely big year extends it, with a
+   * step that keeps the label count bounded (`snowAxisScale`). */
+  const maxPercent = Math.max(...drawable.map((point) => point.percent as number));
+  const { top, step } = snowAxisScale(maxPercent);
   const x = (date: string): number =>
     PAD_LEFT + ((dayNumber(date) - first) / span) * plotWidth;
   const y = (value: number): number =>
@@ -68,7 +91,7 @@ export function renderSnowCurve(
     "aria-label": ariaLabel
   });
 
-  for (let level = 0; level <= top; level += 50) {
+  for (let level = 0; level <= top; level += step) {
     const at = y(level);
     svg.append(element("line", {
       class: level === 100 ? "snow-normal-line" : "snow-grid",

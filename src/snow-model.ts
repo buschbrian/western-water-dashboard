@@ -216,29 +216,34 @@ export function payloadForSites(
   };
 }
 
-/** One mean per date over a set of sites: the rule `build_rollups` uses in
- * `refresh_snowpack.py`, and the one `regionCurve` already reimplements for
- * the whole region. A test holds all three together. */
+/** One mean per date over a set of sites: the ratio-of-sums rule
+ * `build_rollups` uses in `refresh_snowpack.py`, and the one `regionCurve`
+ * already reimplements for the whole region. A test holds all three
+ * together. A day's percentage divides summed water by summed normals once,
+ * never averages the sites' own ratios -- a site with a 0.1-inch normal must
+ * not outvote a site with a 40-inch one. */
 function seriesOverSites(
   sites: readonly SnowSite[], floor: number
 ): SnowRollupDay[] {
-  const byDate = new Map<string, number[]>();
+  const byDate = new Map<string, { value: number; normal: number; count: number }>();
   for (const site of sites) {
     for (const [date, value, median] of site.series) {
-      const percent = percentOfNormal(value, median);
-      if (percent === null) continue;
+      if (value === null || median === null) continue;
       const bucket = byDate.get(date);
-      if (bucket) bucket.push(percent);
-      else byDate.set(date, [percent]);
+      if (bucket) {
+        bucket.value += value; bucket.normal += median; bucket.count += 1;
+      } else {
+        byDate.set(date, { value, normal: median, count: 1 });
+      }
     }
   }
   return [...byDate.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, percents]) => ({
+    .map(([date, totals]) => ({
       date,
-      reporting_site_count: percents.length,
-      mean_percent_of_normal_median: percents.length >= floor
-        ? roundTenth(percents.reduce((sum, value) => sum + value, 0) / percents.length)
+      reporting_site_count: totals.count,
+      mean_percent_of_normal_median: totals.count >= floor && totals.normal > 0
+        ? roundTenth(totals.value / totals.normal * 100)
         : null
     }));
 }
@@ -365,30 +370,37 @@ function meanNormalsByDate(
 
 /**
  * The whole region as one curve, computed from every site with the same
- * mean-of-site-percents rule and the same reporting floor the per-area
- * rollups publish.
+ * ratio-of-sums rule and the same reporting floor the per-area rollups
+ * publish: summed water over summed normals, divided once.
+ *
+ * `mean(v) / mean(m)` is identically `sum(v) / sum(m)`, so the percent the
+ * curve draws is now consistent with the `normalInches` and `meanInches`
+ * pair it carries -- before, a day could show 0.17 inches against a
+ * 0.02-inch normal while publishing 150%.
  */
 export function regionCurve(payload: SnowpackPayload): CurvePoint[] {
   const floor = payload.rollups.reduce(
     (highest, rollup) => Math.max(highest, rollup.minimum_reporting_sites), 2);
-  const byDate = new Map<string, number[]>();
+  const byDate = new Map<string, { value: number; normal: number; count: number }>();
   for (const site of payload.sites) {
     for (const [date, value, median] of site.series) {
-      const percent = percentOfNormal(value, median);
-      if (percent === null) continue;
+      if (value === null || median === null) continue;
       const bucket = byDate.get(date);
-      if (bucket) bucket.push(percent);
-      else byDate.set(date, [percent]);
+      if (bucket) {
+        bucket.value += value; bucket.normal += median; bucket.count += 1;
+      } else {
+        byDate.set(date, { value, normal: median, count: 1 });
+      }
     }
   }
   const normals = meanNormalsByDate(payload.sites);
   return [...byDate.entries()]
     .sort(([a], [b]) => a.localeCompare(b))
-    .map(([date, percents]) => ({
+    .map(([date, totals]) => ({
       date,
-      reportingSites: percents.length,
-      percent: percents.length >= floor
-        ? roundTenth(percents.reduce((sum, value) => sum + value, 0) / percents.length)
+      reportingSites: totals.count,
+      percent: totals.count >= floor && totals.normal > 0
+        ? roundTenth(totals.value / totals.normal * 100)
         : null,
       normalInches: normals.get(date)?.normal ?? null,
       meanInches: normals.get(date)?.depth ?? null
@@ -474,15 +486,42 @@ export function percentIsMeaningful(point: CurvePoint): boolean {
     || normal >= MEANINGFUL_NORMAL_INCHES;
 }
 
+/**
+ * The curve's points with every denominator-weak percentage removed.
+ *
+ * A ratio needs a denominator worth dividing by, and in October there is not
+ * one: a handful of high stations divide small readings by small normals and
+ * produce a 1,283% of normal that describes almost nothing. That point is
+ * never shown as text anywhere -- a curve is a shape, not a number a reader
+ * weighs against a note -- and it acts only by silently rescaling the axis,
+ * so it belongs to the drawing, not to the headlines.
+ *
+ * This is where the floor lives now (a null, which `renderSnowCurve` draws
+ * as a line break): not nulled in the payload, which publishes honest raw
+ * data through data.html, and not only at the headline, which let the curve
+ * rescale itself around values the headline refused. Leave
+ * `newestHeadline`, `monthReadings` and the KPI path on the unfiltered
+ * points -- they already apply their own, stricter floor.
+ *
+ * A point with no published normal passes unchanged: curves built before the
+ * normal travelled with them are judged on the reporting floor alone,
+ * exactly as they were.
+ */
+export function curveForDrawing(points: readonly CurvePoint[]): CurvePoint[] {
+  return points.map((point) =>
+    percentIsMeaningful(point) ? point : { ...point, percent: null });
+}
+
 /*
- * The KPI floor. The published curve only needs two reporting sites for a
- * fair *daily mean*, but a single number promoted to a headline needs more:
- * in mid-October a handful of high stations divide small readings by small
- * normals and produce a "115% of normal" that describes almost nothing, and
- * in June the last two unmelted stations produce a 0% that describes even
- * less. A headline reading requires at least half the sites in view, and
- * the note beside it says so. The curve itself keeps the pipeline's floor --
- * this is a presentation rule, not a data rule.
+ * The KPI floor. The published curve needs two reporting sites for a fair
+ * *daily mean* plus a meaningful normal for a drawable point, but a single
+ * number promoted to a headline needs more: in mid-October a handful of high
+ * stations divide small readings by small normals and produce a "115% of
+ * normal" that describes almost nothing, and in June the last two unmelted
+ * stations produce a 0% that describes even less. A headline reading requires
+ * at least half the sites in view, and the note beside it says so. The curve
+ * applies its own denominator floor through `curveForDrawing`; this floor is
+ * about how many stations stand behind the one number a reader weighs.
  */
 export function headlineFloor(siteCount: number, publishedFloor: number): number {
   return Math.max(publishedFloor, Math.ceil(siteCount / 2));

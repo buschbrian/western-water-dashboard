@@ -114,6 +114,32 @@ returns. Every published drought coverage file states its `method.version` too,
 and a test holds both levels to it — the HUC-4 file is written with
 `--no-history` and so never passes `merge_history`'s gate.
 
+## The basin percentage for snow
+
+**Summed water over summed normals, once** (ADR-080). A drainage area's
+percent of normal is the sites' snow water added together, divided by the
+normals added together over the same site-days — the rule NRCS uses for a
+basin figure, and the same rule `storageByArea` states for reservoir storage:
+"a sum of acre-feet in both cases, not an average of percentages." The mean
+of each site's own ratio, which is what the rollups did before, let a site
+with a 0.1-inch median outvote a site with a 40-inch one: 19.8% of published
+basin-days differed from the ratio of sums by more than ten points. A
+site-day contributes when it has both a reading and a median; a site with
+real snow where none is normal belongs in the numerator. The per-site
+percentage stays a per-site statistic and keeps its own zero-normal guard.
+
+**A ratio needs a denominator worth dividing by, and October does not have
+one.** Where the summed normal behind a day's mean is under an inch
+(`MEANINGFUL_NORMAL_INCHES`), the percentage still computes and still
+publishes — it is honest raw data — but `curveForDrawing` refuses it a place
+on the drawn curve, because a point that never appears as text acts only by
+rescaling the axis. Before this floor reached the curve, one autumn day set
+the Yakima axis to 1,400% over a winter that peaked at 68.9%. Headlines hold
+a stricter floor still: at least half the area's sites reporting.
+
+The payload's `method.version` names the estimator behind these figures; two
+files written under different versions are not one series.
+
 ## Change intervals
 
 **A change names the reading it is a change from.** "30-day change" is the date

@@ -266,6 +266,8 @@ export const RESERVOIR_GROUPS: readonly ApiFieldGroup[] = [
 export const SNOW_GROUPS: readonly ApiFieldGroup[] = [
   { id: "snow-header", title: "File header", path: "root", fields: [
     f("schema_version", "version number", "Version of this JSON structure."),
+    f("method", "object",
+      "How the derived figures in this file were calculated.", true),
     f("generated_at", "date and time", "Time the file was generated."),
     f("as_of", "date", "Newest date requested from the provider."),
     f("water_year", "year", "Water year represented by the series."),
@@ -287,6 +289,22 @@ export const SNOW_GROUPS: readonly ApiFieldGroup[] = [
     f("rollups", "array", "Daily drainage-area summaries."),
     f("sites", "array", "Site details and daily series.")
   ]},
+  { id: "snow-method", title: "Calculation method", path: "method", fields: [
+    f("version", "identifier",
+      "Version of the calculation behind the derived figures. Two files "
+      + "measured under different versions are not one series, whatever "
+      + "their fields are called."),
+    f("estimator", "text",
+      "How the drainage-area percentage is formed. The sites' snow water "
+      + "is added up, the normals are added up over the same sites, and "
+      + "the one division happens once -- site percentages are never "
+      + "averaged."),
+    f("minimum_reporting_sites", "sites",
+      "Sites that must report on a day before its percentage is published."),
+    f("normal_period", "years",
+      "First and last year of the standard period behind the medians, as "
+      + "\"first-last\".")
+  ]},
   { id: "snow-period", title: "Climate comparison period", path: "normal_period", fields: [
     f("start_year", "year", "First year in the standard comparison period."),
     f("end_year", "year", "Last year in the standard comparison period.")
@@ -301,7 +319,10 @@ export const SNOW_GROUPS: readonly ApiFieldGroup[] = [
   { id: "snow-rollup-series", title: "Drainage-area daily entry", path: "rollups[].series[]", fields: [
     f("date", "date", "Observation date."),
     f("reporting_site_count", "sites", "Sites contributing to the date."),
-    f("mean_percent_of_normal_median", "percent", "Average of site percentages against their standard normal values.")
+    f("mean_percent_of_normal_median", "percent",
+      "Summed snow water divided by summed normals over the sites reporting "
+      + "that date, once. Site percentages are never averaged, so a site with "
+      + "a small normal cannot outvote a site with a large one.")
   ]},
   { id: "snow-site", title: "Monitoring-site record", path: "sites[]", fields: [
     f("station", "identifier", "Provider station identifier."),

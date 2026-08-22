@@ -32,6 +32,13 @@ RETRIES = 3
 LATE_AFTER_DAYS = 2
 MIN_ROLLUP_SITES = 2
 
+#: Names the estimator behind every derived snow figure, so an archive
+#: consumer comparing two weeks can tell they were measured differently.
+#: Not a schema version: a field can keep its name, type and units while the
+#: estimator under it changes. Bumped when the rollup rule changes, never
+#: when a field's shape does.
+SNOW_METHOD_VERSION = "snow-2026-08-22-ratio-of-sums"
+
 #: The share of stations that may go quiet before the refresh refuses the day.
 #:
 #: Two percent, which is four stations of 217 and about thirty-four of the
@@ -211,25 +218,39 @@ def normalize_site(site: dict, record: dict, as_of: date) -> dict:
 
 
 def build_rollups(sites: list[dict], huc_names: dict[str, str]) -> list[dict]:
-    grouped = defaultdict(lambda: defaultdict(list))
+    # Ratio of sums, never a mean of ratios. A basin percentage divides the
+    # water that is there by the water that is normally there, once -- the
+    # same rule `storageByArea` states for reservoirs ("a sum of acre-feet in
+    # both cases, not an average of percentages"). Averaging each site's own
+    # ratio let a site with a 0.1-inch median outvote a site with a 40-inch
+    # one: measured on the committed payload, 2,005 of 10,131 basin-days that
+    # clear the reporting floor differed from the ratio of sums by more than
+    # 10 points, and published values reached 1,187% of normal.
+    totals = defaultdict(lambda: defaultdict(lambda: {"value": 0.0, "normal": 0.0, "sites": 0}))
     sites_per_huc = defaultdict(int)
     for site in sites:
         sites_per_huc[site["huc6"]] += 1
         for row in site["series"]:
-            percent = row["percent_of_normal_median"]
-            if percent is not None:
-                grouped[site["huc6"]][row["date"]].append(percent)
+            value = row["value_inches"]
+            median = row["normal_median_inches"]
+            if value is None or median is None:
+                continue
+            bucket = totals[site["huc6"]][row["date"]]
+            bucket["value"] += value
+            bucket["normal"] += median
+            bucket["sites"] += 1
 
     rollups = []
     for huc6 in sorted(huc_names):
         daily = []
-        for day, values in sorted(grouped[huc6].items()):
+        for day, day_totals in sorted(totals[huc6].items()):
             daily.append({
                 "date": day,
-                "reporting_site_count": len(values),
+                "reporting_site_count": day_totals["sites"],
                 "mean_percent_of_normal_median": (
-                    round(sum(values) / len(values), 1)
-                    if len(values) >= MIN_ROLLUP_SITES else None
+                    round(day_totals["value"] / day_totals["normal"] * 100, 1)
+                    if day_totals["sites"] >= MIN_ROLLUP_SITES
+                    and day_totals["normal"] > 0 else None
                 ),
             })
         rollups.append({
@@ -301,11 +322,25 @@ def build_payload(inventory: dict, records: list[dict], as_of: date,
         compact_sites.append(compact)
     timestamp = generated_at or datetime.now(timezone.utc)
     return {
-        "schema_version": 2,
+        "schema_version": 3,
         "generated_at": timestamp.replace(microsecond=0).isoformat().replace("+00:00", "Z"),
         "as_of": as_of.isoformat(),
         "water_year": water_year_start(as_of).year + 1,
         "normal_period": inventory["normal_period"],
+        # Which estimator produced every derived figure in this file. The
+        # reservoir payload carries `method_version` and the drought coverage
+        # file carries `method.version`; this file carried neither while its
+        # rollup rule was changing, which left no way for an archive consumer
+        # to know two weeks were measured differently. Same shape as the
+        # drought coverage file's block.
+        "method": {
+            "version": SNOW_METHOD_VERSION,
+            "estimator": "ratio of summed water to summed medians",
+            "minimum_reporting_sites": MIN_ROLLUP_SITES,
+            "normal_period": (
+                f"{inventory['normal_period']['start_year']}-"
+                f"{inventory['normal_period']['end_year']}"),
+        },
         "units": "inches",
         "site_series_fields": ["series_days", "series_values", "series_normals"],
         "series_dates": series_dates,

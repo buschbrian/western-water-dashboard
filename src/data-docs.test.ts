@@ -60,6 +60,11 @@ describe("public API field documentation", () => {
   it("covers every current snow field", () => {
     const data = read("snowpack.json");
     expectFields(SNOW_GROUPS, "snow-header", data);
+    /* The estimator block arrives with the pipeline, so an older committed
+     * payload has none. Documented either way; checked when present. */
+    if (data.method) {
+      expectFields(SNOW_GROUPS, "snow-method", data.method);
+    }
     expectFields(SNOW_GROUPS, "snow-period", data.normal_period);
     expectFields(SNOW_GROUPS, "snow-rollup", data.rollups[0]);
     expectFields(SNOW_GROUPS, "snow-rollup-series", data.rollups[0].series[0]);

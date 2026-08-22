@@ -6,6 +6,7 @@ import type { SnowpackPayload } from "./types";
 import {
   basinChoices,
   basinCurve,
+  curveForDrawing,
   defaultMapDay,
   headlineFloor,
   mapDayValues,
@@ -68,21 +69,23 @@ describe("the payload regrouped into subregions", () => {
   it("recomputes each mean from its sites, not from the basin means", () => {
     /* The published rollups are means over unequal numbers of stations, so a
      * mean of them is a different number with no name. This is the same check
-     * the region curve gets, one level down. */
+     * the region curve gets, one level down. Ratio of sums, like the
+     * pipeline: summed water over summed normals, once. */
     const rollup = coarse.rollups.find((entry) => entry.series.length > 0)!;
     const members = payload.sites.filter(
       (site) => site.huc6.startsWith(rollup.huc6));
     const day = rollup.series.find(
       (entry) => entry.mean_percent_of_normal_median !== null)!;
-    const percents = members
+    const rows = members
       .map((site) => site.series.find(([date]) => date === day.date))
       .filter((row): row is [string, number | null, number | null] => row !== undefined)
-      .map(([, value, median]) => percentOfNormal(value, median))
-      .filter((percent): percent is number => percent !== null);
+      .filter(([, value, median]) => value !== null && median !== null);
 
-    expect(day.reporting_site_count).toBe(percents.length);
-    expect(day.mean_percent_of_normal_median).toBeCloseTo(
-      percents.reduce((sum, value) => sum + value, 0) / percents.length, 1);
+    expect(day.reporting_site_count).toBe(rows.length);
+    const water = rows.reduce((sum, [, value]) => sum + (value as number), 0);
+    const normal = rows.reduce((sum, [, , median]) => sum + (median as number), 0);
+    expect(normal).toBeGreaterThan(0);
+    expect(day.mean_percent_of_normal_median).toBeCloseTo(water / normal * 100, 1);
   });
 
   it("names the areas from the payload's own roster", () => {
@@ -171,14 +174,14 @@ describe("the payload narrowed to one state's sites", () => {
     const members = payload.sites.filter(
       (site) => site.huc6 === rollup.huc6 && site.state === state);
     const meanOn = (date: string): number | null => {
-      const percents = members
+      const rows = members
         .map((site) => site.series.find(([day]) => day === date))
         .filter((row): row is [string, number | null, number | null] => row !== undefined)
-        .map(([, value, median]) => percentOfNormal(value, median))
-        .filter((percent): percent is number => percent !== null);
-      return percents.length
-        ? percents.reduce((sum, value) => sum + value, 0) / percents.length
-        : null;
+        .filter(([, value, median]) => value !== null && median !== null);
+      if (rows.length === 0) return null;
+      const water = rows.reduce((sum, [, value]) => sum + (value as number), 0);
+      const normal = rows.reduce((sum, [, , median]) => sum + (median as number), 0);
+      return normal > 0 ? water / normal * 100 : null;
     };
 
     /* Every day agrees with a mean taken over this state's sites alone. */
@@ -347,21 +350,23 @@ describe("the curves", () => {
   it("computes percents exactly as the pipeline's rollups do", () => {
     const rollup = payload.rollups.find((entry) => entry.site_count >= 2)!;
     const sites = payload.sites.filter((site) => site.huc6 === rollup.huc6);
-    const byDate = new Map<string, number[]>();
+    const byDate = new Map<string, { value: number; normal: number; count: number }>();
     for (const site of sites) {
       for (const [date, value, median] of site.series) {
-        const percent = percentOfNormal(value, median);
-        if (percent === null) continue;
-        byDate.set(date, [...(byDate.get(date) ?? []), percent]);
+        if (value === null || median === null) continue;
+        const bucket = byDate.get(date) ?? { value: 0, normal: 0, count: 0 };
+        bucket.value += value;
+        bucket.normal += median;
+        bucket.count += 1;
+        byDate.set(date, bucket);
       }
     }
     for (const day of rollup.series) {
-      const percents = byDate.get(day.date) ?? [];
-      expect(percents.length).toBe(day.reporting_site_count);
-      const mean = percents.length >= rollup.minimum_reporting_sites
-        ? Math.round(
-          (percents.reduce((sum, value) => sum + value, 0) / percents.length) * 10
-        ) / 10
+      const totals = byDate.get(day.date);
+      expect(totals?.count ?? 0).toBe(day.reporting_site_count);
+      const mean = totals && totals.count >= rollup.minimum_reporting_sites
+        && totals.normal > 0
+        ? Math.round(totals.value / totals.normal * 1000) / 10
         : null;
       if (mean === null || day.mean_percent_of_normal_median === null) {
         expect(mean).toBe(day.mean_percent_of_normal_median);
@@ -857,9 +862,9 @@ describe("the denominator floor", () => {
     expect(newestReading(curve)?.date).toBe("2026-10-27");
   });
 
-  /* The curve keeps drawing the ratio either way: a hole cut in October and
-   * again at melt-out would hide the shape of the season, which is what the
-   * curve is for.
+  /* The model keeps the ratio either way -- the payload is honest raw data.
+   * The *drawing* applies the floor through `curveForDrawing`, because a
+   * point that never appears as text acts only by rescaling the axis.
    *
    * Synthetic sites, not today's payload: on the first mornings of a water
    * year the committed file holds only days whose normals are all zero, so
@@ -880,6 +885,22 @@ describe("the denominator floor", () => {
     expect(day.normalInches).not.toBeNull();
     expect(day.normalInches!).toBeLessThan(MEANINGFUL_NORMAL_INCHES);
     expect(day.percent).not.toBeNull();
+  });
+
+  it("nulls a thin denominator for the drawing and leaves the rest alone", () => {
+    const good: CurvePoint = {
+      date: "2026-03-07", percent: 61, reportingSites: 200, normalInches: 8.4
+    };
+    const thin: CurvePoint = {
+      date: "2026-10-27", percent: 266, reportingSites: 147, normalInches: 0.24
+    };
+    const drawn = curveForDrawing([good, thin]);
+    expect(drawn[0]).toBe(good);
+    expect(drawn[1]!.percent).toBeNull();
+    /* The other fields travel with the point, so a reader can still see
+     * what the day held even where the ratio is not drawn. */
+    expect(drawn[1]!.meanInches ?? drawn[1]!.normalInches).toBe(thin.normalInches);
+    expect(drawn[1]!.reportingSites).toBe(147);
   });
 
   /* The normal and the percentage must describe one set of stations: a site

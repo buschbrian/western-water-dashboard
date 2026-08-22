@@ -138,6 +138,21 @@ export function validateSnowpackPayload(value: unknown): SnowpackPayload {
   if (value.units !== "inches") {
     throw new Error("snowpack.json does not declare inches");
   }
+  /* The estimator block, when the payload carries one (files written before
+   * it did are still read -- readiness fields are added, never removed).
+   * When present it must be whole: a version a reader cannot compare, or
+   * rules missing from beside it, would be worse than no block at all. */
+  if (value.method !== undefined) {
+    const method = value.method;
+    if (!isObject(method) ||
+        typeof method.version !== "string" || method.version.length === 0 ||
+        typeof method.estimator !== "string" || method.estimator.length === 0 ||
+        !hasNumber(method.minimum_reporting_sites) ||
+        typeof method.normal_period !== "string" ||
+        method.normal_period.length === 0) {
+      throw new Error("snowpack.json carries a malformed method block");
+    }
+  }
   const fields = value.site_series_fields;
   if (!Array.isArray(fields) || fields.length !== 3 ||
       fields[0] !== "series_days" || fields[1] !== "series_values" ||

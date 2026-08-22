@@ -271,12 +271,27 @@ export interface Region {
   name: string;
 }
 
+/** Which estimator produced a snow payload's derived figures, written by
+ * `refresh_snowpack.py`. Same shape as the drought coverage file's block:
+ * an archive consumer comparing two weeks can tell whether they were
+ * measured the same way. */
+export interface SnowMethod {
+  version: string;
+  /** How the rollup percentage is formed, in words. */
+  estimator: string;
+  minimum_reporting_sites: number;
+  /** The normal period behind the medians, as "start-end". */
+  normal_period: string;
+}
+
 export interface SnowpackPayload {
   schema_version: number;
   generated_at: string;
   as_of: string;
   water_year: number;
   normal_period: NormalPeriod;
+  /** Absent in a payload written before the estimator carried a version. */
+  method?: SnowMethod;
   units: "inches";
   site_series_fields: [string, string, string];
   source: string;

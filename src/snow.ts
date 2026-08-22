@@ -40,6 +40,7 @@ import {
   areaCanReport,
   basinChoices,
   basinCurve,
+  curveForDrawing,
   defaultMapDay,
   headlineFloor,
   mapDayValues,
@@ -784,13 +785,17 @@ function renderSnow(
         `measurement sites · A day's mean needs at least ` +
         `${rollup.minimum_reporting_sites} sites with a value`;
 
-      const chart = renderSnowCurve(points,
+      /* The drawing gets the denominator floor (`curveForDrawing`): a point
+       * whose normal is too small to divide by is a hole in the line, not
+       * an axis-rescaling outlier. The reading below stays on the raw
+       * points, which hold their own, stricter headline floor. */
+      const chart = renderSnowCurve(curveForDrawing(points),
         `Mean snow water for ${rollup.huc6_name} as a percent of normal, ` +
         `day by day for the season ${seasonLabel(payload)}. The dashed line ` +
         `marks normal. The table below lists the value on the first day of ` +
         `each month.`);
       lastBasinCurvePoints = chart
-        ? points.filter((point) => point.percent !== null).length : 0;
+        ? curveForDrawing(points).filter((point) => point.percent !== null).length : 0;
 
       /* The same floor the page's headlines hold to: at least half the
        * area's sites, so October's first flurries cannot headline the
@@ -935,14 +940,17 @@ function renderSnow(
     setKpi("sites", String(rows.length));
     setKpi("late", String(rows.filter((row) => row.late).length));
 
-    const chart = renderSnowCurve(curve,
+    /* The drawing gets the denominator floor (`curveForDrawing`); the
+     * headlines and the month table above stay on the raw curve. */
+    const chart = renderSnowCurve(curveForDrawing(curve),
       `Mean snow water for ${chosenLabel} as a percent of normal, day by day ` +
       `for the season ${seasonLabel(payload)}. The dashed line marks normal. ` +
       `The table below lists the value on the first day of each month.`);
     let curvePoints = 0;
     if (chart) {
       curveHost.replaceChildren(chart);
-      curvePoints = curve.filter((point) => point.percent !== null).length;
+      curvePoints = curveForDrawing(curve)
+        .filter((point) => point.percent !== null).length;
     } else {
       const empty = document.createElement("p");
       empty.className = "chart-empty";
