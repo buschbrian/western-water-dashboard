@@ -22,3 +22,7 @@ screenshots/
 # it, so without this they get committed as embedded repositories and their
 # test files get collected by vitest as if they were ours.
 .claude/worktrees/
+
+# The planning brief for the review branch: a scratch document, not a
+# repository artifact.
+BUILD-BRIEF.md
