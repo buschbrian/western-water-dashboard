@@ -24,7 +24,23 @@ import type {
 import { STORAGE_CLASSES } from "./viz/classes";
 import { chartTooltip } from "./viz/chart-tooltip";
 import { hexToRgb } from "./viz/color";
-import { formatAcreFeet, formatPercent } from "./viz/format";
+import { drainageLabel, formatAcreFeet, formatPercent } from "./viz/format";
+
+/**
+ * What a bar is called on the axis, which is not what it *is*.
+ *
+ * `record.label` stays the identity: `onSelect` emits it, and the drainage
+ * filter finds its choice by matching it exactly, so a parenthetical stuck
+ * to it would clear the filter instead of setting it. Selection never reads
+ * this -- it maps object id to record -- so the two can differ safely, and
+ * everything the chart keys on the *drawn* category must use this one:
+ * the graphic attribute, the renderer's value, the custom sort and the
+ * tooltip's lookup. Records with no states, which is every chart but the
+ * drainage one, get their bare label back unchanged.
+ */
+function displayLabel(record: OverviewChartRecord): string {
+  return drainageLabel(record.label, record.labelStates);
+}
 
 export interface BarChartOptions {
   measure?: ChartMeasure;
@@ -210,7 +226,7 @@ function chartLayer(records: readonly OverviewChartRecord[]): FeatureLayer {
     geometry: new Point({ longitude: -111, latitude: 39 }),
     attributes: {
       ObjectID: record.id,
-      label: record.label,
+      label: displayLabel(record),
       percent: record.percent,
       storage_af: record.storageAf,
       capacity_af: record.capacityAf,
@@ -236,7 +252,7 @@ function chartLayer(records: readonly OverviewChartRecord[]): FeatureLayer {
       type: "unique-value",
       field: "label",
       uniqueValueInfos: records.map((record) => ({
-        value: record.label,
+        value: displayLabel(record),
         symbol: {
           type: "simple-marker",
           style: "circle",
@@ -376,7 +392,7 @@ async function mountChart(
 function barTooltipFormatter(
   records: readonly OverviewChartRecord[], measure: ChartMeasure
 ): TooltipFormatter {
-  const byLabel = new Map(records.map((record) => [record.label, record.detail]));
+  const byLabel = new Map(records.map((record) => [displayLabel(record), record.detail]));
   return ((props: {
     statValue?: number;
     xValue?: Date | number | string;
@@ -473,7 +489,10 @@ function normalTooltipFormatter(points: readonly NormalPoint[]): TooltipFormatte
     const stored = point?.storageAf
       ?? (typeof dataContext?.storage_af === "number" ? dataContext.storage_af : null);
     const rows = [
-      { label: "Drainage area", value: point?.watershed ?? "Not reported" },
+      { label: "Drainage area",
+        value: point
+          ? drainageLabel(point.watershed, point.watershedStates)
+          : "Not reported" },
       { label: "Usual storage for this date", value: `${formatAcreFeet(x)} acre-feet` },
       { label: "Stored now", value: `${formatAcreFeet(stored)} acre-feet` },
       { label: "Percent of the usual storage", value: formatPercent(y) }
@@ -538,7 +557,7 @@ export async function renderArcgisBarChart(
    * the bar value silently changed Capacity, Storage and Name back into
    * Percent full. Custom sort makes the chart preserve that chosen order. */
   model.setSortOrder(SerialChartDataSortingKinds.customSort,
-    records.map((record) => record.label));
+    records.map(displayLabel));
   model.setAxisTitleText(options.categoryTitle ?? "Name", 0);
   model.setAxisValueFormat(0, {
     type: WebChartTypes.CategoryAxisFormat,

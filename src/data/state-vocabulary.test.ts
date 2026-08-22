@@ -1,13 +1,14 @@
 import { describe, expect, it } from "vitest";
 import { readDrainageGeoJson, readPayload, readSnowpack } from "./payload-fixture";
 import {
+  US_STATE_CODES,
   areaReachesState,
   isUsStateCode,
   offeredStates,
   parseStateList,
   stateName,
-  US_STATE_CODES,
-  type StatesBearing
+  type StatesBearing,
+  usStatesOnly
 } from "./state-vocabulary";
 
 describe("the explicit US state vocabulary", () => {
@@ -144,5 +145,16 @@ describe("the states offered to a reader", () => {
 
   it("returns nothing when no source is given", () => {
     expect(offeredStates({})).toEqual([]);
+  });
+});
+
+describe("usStatesOnly", () => {
+  it("keeps the states and drops the countries", () => {
+    expect(usStatesOnly(["CA", "CN", "ID", "MX", "MT"])).toEqual(["CA", "ID", "MT"]);
+  });
+
+  it("survives an absent list", () => {
+    expect(usStatesOnly(undefined)).toEqual([]);
+    expect(usStatesOnly(null)).toEqual([]);
   });
 });
