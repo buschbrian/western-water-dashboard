@@ -372,6 +372,7 @@ body {
 .spread-grid { stroke: var(--app-border); stroke-width: 1; }
 .spread-axis { font-size: 10px; fill: var(--app-muted); }
 .spread-name { font-size: 10.5px; fill: var(--app-text); }
+.spread-count { font-size: 9.5px; fill: var(--app-muted); }
 .spread-whisker { stroke: var(--app-muted); stroke-width: 1.4; opacity: .75; }
 .spread-cap { stroke: var(--app-muted); stroke-width: 1.4; opacity: .75; }
 /* The same surface-coloured hairline every other mark on this site wears, so

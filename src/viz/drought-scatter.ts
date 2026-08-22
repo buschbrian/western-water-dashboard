@@ -36,7 +36,16 @@ const PAD_TOP = 14;
 const PAD_BOTTOM = 42;
 
 /** Both axes are percentages and both run the whole way, so the chart never
- * flatters a bad year by cropping to the data it happens to have. */
+ * flatters a bad year by cropping to the data it happens to have.
+ *
+ * The clamp on the vertical axis is **latent, not checked-and-impossible**:
+ * storage percent full can exceed 100 (a surcharge keeps its own pool,
+ * ADR-072), and a basin combining several of those could in principle pass
+ * 100 too. The highest combined figure published today is Lower Colorado at
+ * 96.4% and no basin exceeds 100, so no mark is clamped now — but if one
+ * ever is, it will sit silently on the ceiling exactly as the spread chart's
+ * flat caps did before they grew chevrons. Check before trusting the top
+ * edge. */
 const AXIS_MAX = 100;
 
 const POINT_RADIUS = 6;

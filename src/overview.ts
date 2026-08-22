@@ -352,7 +352,7 @@ async function renderOverview(
     <div class="overview-chart-grid">
       <section class="overview-card overview-card-wide" aria-labelledby="capacity-heading">
         <div class="card-heading">
-          <div><h2 id="capacity-heading">Largest reservoirs</h2><p>Click a bar to narrow everything below to that reservoir. Your choice appears in the search box above, and clearing it brings the rest back.</p></div>
+          <div><h2 id="capacity-heading">Largest reservoirs</h2><p>Click a bar to narrow everything below to that reservoir. Your choice appears in the search box above, and clearing it brings the rest back. A reservoir can hold more than its full level when water is held above the usual pool. A bar can then run past 100%.</p></div>
           <span class="sdk-badge">Bar chart</span>
         </div>
         <div id="capacity-chart" class="chart-host" aria-busy="true"></div>
@@ -387,7 +387,7 @@ async function renderOverview(
           aria-label="What the lines across the histogram mean"></ul>
       </section>
       <section class="overview-card overview-card-wide" aria-labelledby="spread-heading">
-        <div class="card-heading"><div><h2 id="spread-heading">Spread within each drainage area</h2><p>Each row is one drainage area, driest first. The box holds the middle half of its reservoirs and the line inside it is the middle value. The whiskers reach the rest, and every dot beyond them is one reservoir worth opening on the map. The box takes its colour from that area's middle value, in the same colours as the map circles. An area at 60% can be forty reservoirs near 60, or half full and half empty. Areas with fewer than three reservoirs are left out, because a box drawn over two of them is just the two values again.</p></div><span class="sdk-badge">Box plot</span></div>
+        <div class="card-heading"><div><h2 id="spread-heading">Spread within each drainage area</h2><p>Each row is one drainage area, driest first. The box holds the middle half of its reservoirs and the line inside it is the middle value. The whiskers reach the rest, and every dot beyond them is one reservoir worth opening on the map. The figure at the right of each row is how many reservoirs the row holds. A box drawn over three of them carries less weight than one drawn over forty. The box takes its colour from that area's middle value, in the same colours as the map circles. An area at 60% can be forty reservoirs near 60, or half full and half empty. Areas with fewer than three reservoirs are left out, because a box drawn over two of them is just the two values again. A reservoir can hold more than its full level when water is held above the usual pool. A whisker or a mark pressed against the right edge can then stand for a value past 100%.</p></div><span class="sdk-badge">Box plot</span></div>
         <div id="spread-chart" class="chart-host" aria-busy="true"></div>
         <div class="chart-legend" data-legend></div>
       </section>

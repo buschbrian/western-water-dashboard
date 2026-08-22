@@ -560,7 +560,23 @@ export async function renderArcgisBarChart(
      * drainage area at 6% drew a bar that filled the plot -- the length said
      * "full" while the label beside it said 6. */
     model.setMinBound(PERCENT_AXIS.min, VALUE_AXIS);
-    model.setMaxBound(PERCENT_AXIS.max, VALUE_AXIS);
+    /* A reservoir operating a surcharge keeps its own pool and publishes
+     * just above 100 (ADR-072), and the SDK clips any bar past the max
+     * bound at the bound: measured in the rendered SVG, five such bars all
+     * ended on exactly the same pixel column while their own data labels
+     * read 104.0 and 100.2. Give the axis a fixed headroom only when a
+     * record in view is actually above its pool, rounded up to the next
+     * ten, so an ordinary page still runs 0 to 100 and a surcharge page
+     * stretches once, visibly, rather than clipping quietly. The failure
+     * the 0-100 rule exists for was an axis shrinking to flatter a small
+     * number; this only ever grows past 100, which is the surcharge saying
+     * something true. */
+    const highestPercent = Math.max(0, ...records.map((record) => record.percent));
+    model.setMaxBound(
+      highestPercent > PERCENT_AXIS.max
+        ? Math.ceil(highestPercent / 10) * 10
+        : PERCENT_AXIS.max,
+      VALUE_AXIS);
   }
 
   /* Colour every bar by its storage class, from the same table the map is

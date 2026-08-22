@@ -49,12 +49,19 @@ const PAD_BOTTOM = 38;
 /* The measured lane the drought page's ranked charts use, for the longest
  * drainage-area name this data carries. */
 const PAD_LEFT = 162;
-const PAD_RIGHT = 18;
+/* Wide enough for the right-aligned sample count beside each row, which is
+ * the one number a reader needs to weigh a box on a chart whose subject is
+ * its outliers: a three-reservoir box and a forty-reservoir box are drawn
+ * identically, and the count is the difference. */
+const PAD_RIGHT = 40;
 const BOX_HEIGHT = 13;
 const OUTLIER_RADIUS = 3;
 
 /** Percent full runs 0 to 100 whatever is on the chart, so a box's width
- * means the same thing on every render and between one filter and the next. */
+ * means the same thing on every render and between one filter and the next.
+ * A reservoir operating a surcharge above its conservation pool keeps it and
+ * publishes just above 100 (ADR-072); over-range marks are drawn as
+ * over-range below rather than given axis headroom. */
 const AXIS_MAX = 100;
 
 function element<K extends keyof SVGElementTagNameMap>(
@@ -124,16 +131,33 @@ export function renderSpread(
      * ignored, so every row would share one description. */
     const group = element("g", { class: "spread-row" });
 
-    /* The whisker first, so the box and the caps draw over its ends. */
+    /* The whisker first, so the box and the caps draw over its ends. An
+     * over-range high keeps its whisker at the axis edge and gets a chevron
+     * instead of a flat cap: a flat cap on the axis maximum is
+     * indistinguishable from one ending at 100.0, and three of the five
+     * surcharges published today sit in one such row. */
     group.append(element("line", {
       x1: x(box.low), x2: x(box.high), y1: y, y2: y, class: "spread-whisker"
     }));
-    for (const at of [box.low, box.high]) {
+    if (box.high > AXIS_MAX) {
+      const edge = x(AXIS_MAX);
+      const cap = BOX_HEIGHT / 3;
+      group.append(element("polyline", {
+        points: `${edge},${y - cap} ${edge + 6},${y} ${edge},${y + cap}`,
+        class: "spread-cap spread-cap-over",
+        fill: "none"
+      }));
+    } else {
       group.append(element("line", {
-        x1: x(at), x2: x(at), y1: y - BOX_HEIGHT / 3, y2: y + BOX_HEIGHT / 3,
+        x1: x(box.high), x2: x(box.high),
+        y1: y - BOX_HEIGHT / 3, y2: y + BOX_HEIGHT / 3,
         class: "spread-cap"
       }));
     }
+    group.append(element("line", {
+      x1: x(box.low), x2: x(box.low), y1: y - BOX_HEIGHT / 3,
+      y2: y + BOX_HEIGHT / 3, class: "spread-cap"
+    }));
 
     group.append(element("rect", {
       x: x(box.p25), y: y - BOX_HEIGHT / 2,
@@ -151,9 +175,22 @@ export function renderSpread(
     }));
 
     for (const outlier of box.outliers) {
-      const dot = element("circle", {
-        cx: x(outlier.value), cy: y, r: OUTLIER_RADIUS, class: "spread-outlier"
-      });
+      const over = outlier.value > AXIS_MAX;
+      /* An over-range outlier reads as clipped: a triangle at the axis edge
+       * rather than a circle identical to an in-range one. The `<title>`
+       * carries the true figure either way. */
+      const dot = over
+        ? element("polygon", {
+            points: [
+              `${x(AXIS_MAX) + OUTLIER_RADIUS},${y - OUTLIER_RADIUS}`,
+              `${x(AXIS_MAX) + OUTLIER_RADIUS},${y + OUTLIER_RADIUS}`,
+              `${x(AXIS_MAX) - OUTLIER_RADIUS * 0.6},${y}`
+            ].join(" "),
+            class: "spread-outlier"
+          })
+        : element("circle", {
+            cx: x(outlier.value), cy: y, r: OUTLIER_RADIUS, class: "spread-outlier"
+          });
       /* Its own name, because an outlier is a reservoir a reader is meant to
          go and look at rather than a stray mark. */
       const dotTitle = element("title", {});
@@ -161,6 +198,16 @@ export function renderSpread(
       dot.append(dotTitle);
       group.append(dot);
     }
+
+    /* The sample count in its own margin, right-aligned: the count is what a
+     * reader weighs an outlier chart against, and putting it inside the name
+     * would overflow the lane on long names. What it is is said in the
+     * page's copy beside the chart. */
+    const countLabel = element("text", {
+      x: WIDTH - 4, y: y + 3.5, class: "spread-count", "text-anchor": "end"
+    });
+    countLabel.textContent = String(box.count);
+    group.append(countLabel);
 
     const name = element("text", {
       x: PAD_LEFT - 10, y: y + 4, class: "spread-name", "text-anchor": "end"
