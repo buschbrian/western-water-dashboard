@@ -81,9 +81,9 @@ ADR-041.**
   [ADR-058](ADR-058-assign-the-county-from-the-water-not-the-dam.md),
   [ADR-059](ADR-059-not-measured-is-not-no-drought.md),
   [ADR-060](ADR-060-three-questions-about-a-state.md),
-  [ADR-080](ADR-080-divide-snows-summed-water-by-summed-normals-once.md),
-  [ADR-081](ADR-081-publish-a-drought-severity-and-coverage-index.md),
-  [ADR-082](ADR-082-anchor-the-monthly-normal-window-once-per-chart.md)
+  [ADR-081](ADR-081-divide-snows-summed-water-by-summed-normals-once.md),
+  [ADR-082](ADR-082-publish-a-drought-severity-and-coverage-index.md),
+  [ADR-083](ADR-083-anchor-the-monthly-normal-window-once-per-chart.md)
 - Current architecture: [`docs/architecture/hydrology-methods.md`](../architecture/hydrology-methods.md)
 
 ### Visible language, accessibility and naming
@@ -125,7 +125,8 @@ ADR-008, then ADR-032 and ADR-061.**
 ### Credentials and third-party services
 **Start with ADR-004.**
 
-- Current: [ADR-004](ADR-004-no-api-key-and-refuse-credential-challenges.md)
+- Current: [ADR-004](ADR-004-no-api-key-and-refuse-credential-challenges.md),
+  [ADR-080](ADR-080-build-the-usgs-provider-against-the-keyless-legacy-service-now.md)
 
 ## Every record, in order
 
@@ -210,9 +211,10 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-077](ADR-077-publish-what-drains-to-a-reservoir-as-an-upstream-set.md) | Publish what drains to a reservoir as an unordered upstream set | Accepted; precomputed against NLDI, keyed per ADR-066, geometry never published |
 | [ADR-078](ADR-078-every-water-this-site-measures-is-a-reservoir.md) | Every water this site measures is a reservoir | Accepted; type follows roster membership, no per-record field, natural lakes keep their names |
 | [ADR-079](ADR-079-rename-through-a-former-name-table-and-publish-the-operator.md) | Rename through a former-name table, and publish the operator | Accepted; 26 provider names normalized, old spellings resolve forever, operator searchable |
-| [ADR-080](ADR-080-divide-snows-summed-water-by-summed-normals-once.md) | Divide snow's summed water by summed normals, once, and floor the curve's denominator at the drawing | Accepted; supersedes the snow rollups' mean of ratios, adds a method version to `snowpack.json` |
-| [ADR-081](ADR-081-publish-a-drought-severity-and-coverage-index.md) | Publish a Drought Severity and Coverage Index over measured land | Accepted; derived client-side from published shares, thinly measured areas marked never dropped |
-| [ADR-082](ADR-082-anchor-the-monthly-normal-window-once-per-chart.md) | Anchor the monthly normal window once per chart, not once per month | Accepted; narrows ADR-041's per-month rule for the live twelve-month line, no version bump |
+| [ADR-080](ADR-080-build-the-usgs-provider-against-the-keyless-legacy-service-now.md) | Build the USGS provider against the keyless legacy service now | Accepted; 2027 migration recorded as named debt with a date |
+| [ADR-081](ADR-081-divide-snows-summed-water-by-summed-normals-once.md) | Divide snow's summed water by summed normals, once, and floor the curve's denominator at the drawing | Accepted; supersedes the snow rollups' mean of ratios, adds a method version to `snowpack.json` |
+| [ADR-082](ADR-082-publish-a-drought-severity-and-coverage-index.md) | Publish a Drought Severity and Coverage Index over measured land | Accepted; derived client-side from published shares, thinly measured areas marked never dropped |
+| [ADR-083](ADR-083-anchor-the-monthly-normal-window-once-per-chart.md) | Anchor the monthly normal window once per chart, not once per month | Accepted; narrows ADR-041's per-month rule for the live twelve-month line, no version bump |
 
 ## Relationship to the historical journal
 

@@ -1,4 +1,4 @@
-# ADR-082: Anchor the monthly normal window once per chart
+# ADR-083: Anchor the monthly normal window once per chart
 
 - Status: Accepted
 - Date: 2026-08-22

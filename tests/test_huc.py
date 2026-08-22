@@ -64,6 +64,7 @@ EXPECTED_UNITS = {
     "150200": "Little Colorado",
     "150301": "Lower Colorado",
     "150501": "Middle Gila",
+    "150602": "Verde",
     "160101": "Upper Bear",
     "160102": "Lower Bear",
     "160201": "Weber",
@@ -88,6 +89,7 @@ EXPECTED_UNITS = {
     "170703": "Deschutes",
     "170800": "Lower Columbia",
     "170900": "Willamette",
+    "171001": "Washington Coastal",
     "171003": "Southern Oregon Coastal",
     "171100": "Puget Sound",
     "180101": "Northern California Coastal",
@@ -119,7 +121,8 @@ KNOWN_ASSIGNMENTS = {
     "Strawberry": "140600",           # Lower Green, not Jordan: it drains east
     "Meeks Cabin": "140401",          # in Wyoming, and still ours
     "Dillon Reservoir": "140100",     # Colorado Headwaters
-    "Elkhead Reservoir": "140500",    # White-Yampa
+    "High Savery Reservoir": "140500",  # White-Yampa; Elkhead retired from
+    # the roster 2026-08-22 (issue #24), so this basin keeps a checked name
     "Narraguinnep Reservoir": "140802",  # Lower San Juan
     "Shasta Lake": "180201",        # Lower Sacramento, at its upstream edge
     "Lake Cachuma": "180600",       # Central California Coastal

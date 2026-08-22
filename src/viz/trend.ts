@@ -193,7 +193,7 @@ export function renderTrendTable(months: readonly DetailMonth[]): HTMLElement | 
   scroller.append(table);
   const note = document.createElement("p");
   note.className = "trend-note";
-  /* The years behind the normal travel with it (ADR-082). All twelve rows
+  /* The years behind the normal travel with it (ADR-083). All twelve rows
    * of one chart draw on one anchored population, so when the payload
    * carries the count it is said once, beside what it counts. */
   const counts = months.map((month) => month.normalYears);

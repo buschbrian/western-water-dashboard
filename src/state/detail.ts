@@ -41,7 +41,7 @@ export interface DetailMonth {
   percent: number | null;
   normalAf: number | null;
   /**
-   * The years behind `normalAf` (ADR-082). Null when the payload predates
+   * The years behind `normalAf` (ADR-083). Null when the payload predates
    * the count; every month of one chart reports the same number, because
    * they draw on one anchored population.
    */
@@ -81,7 +81,8 @@ const PROVIDER_NAMES: Record<SourceKey, string> = {
   rise: "Bureau of Reclamation",
   awdb: "Natural Resources Conservation Service",
   cdec: "California Department of Water Resources",
-  cdss: "Colorado Division of Water Resources"
+  cdss: "Colorado Division of Water Resources",
+  usgs: "U.S. Geological Survey"
 };
 
 export function providerName(reservoir: Reservoir): string {

@@ -63,7 +63,7 @@ export function isWellMeasured(unit: DroughtUnit): boolean {
 
 /**
  * The Drought Severity and Coverage Index: the sum of the cumulative D0-D4
- * shares, running 0 to 500 (ADR-081).
+ * shares, running 0 to 500 (ADR-082).
  *
  * This is the National Drought Monitor's own published summary statistic,
  * derived here from fields the payload already carries -- no pipeline change.

@@ -1,4 +1,4 @@
-# ADR-081: Publish a Drought Severity and Coverage Index over measured land
+# ADR-082: Publish a Drought Severity and Coverage Index over measured land
 
 - Status: Accepted
 - Date: 2026-08-22

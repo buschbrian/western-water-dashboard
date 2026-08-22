@@ -42,7 +42,7 @@ def monthly_history(series: pd.Series, months: int = 12,
     dashboard's 12-month chart readable as "above or below normal" rather
     than just "up or down".
 
-    The window is anchored once, not per month (ADR-082): the anchor year is
+    The window is anchored once, not per month (ADR-083): the anchor year is
     the earliest month in the returned window, and every month's normal draws
     on calendar years strictly before it. Cutting each month by its own year
     instead drew one baseline for the window's first calendar year and a

@@ -116,7 +116,7 @@ and a test holds both levels to it — the HUC-4 file is written with
 
 ## The basin percentage for snow
 
-**Summed water over summed normals, once** (ADR-080). A drainage area's
+**Summed water over summed normals, once** (ADR-081). A drainage area's
 percent of normal is the sites' snow water added together, divided by the
 normals added together over the same site-days — the rule NRCS uses for a
 basin figure, and the same rule `storageByArea` states for reservoir storage:
@@ -142,7 +142,7 @@ files written under different versions are not one series.
 
 ## The monthly normal window
 
-**One chart, one baseline** (ADR-082). The recent monthly normal on the
+**One chart, one baseline** (ADR-083). The recent monthly normal on the
 twelve-month line is computed over calendar years strictly before the
 *window's* earliest month, not before each month's own year. Cutting per
 month let the window's later calendar year borrow one extra, recent year and

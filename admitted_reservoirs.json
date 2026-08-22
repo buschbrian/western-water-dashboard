@@ -4,6 +4,37 @@
   "capacity_source_layer": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
   "reviewed": "2026-08-19",
   "selection": "Capacity-admissible storage stations, reviewed against the National Inventory of Dams, admitted to fill drainage areas that previously had no tracked reservoir",
+  "retired": {
+    "reviewed": "2026-08-22",
+    "note": "Withdrawn under ADR-056 for a quiet feed and then removed from the roster: every provider this project asks was checked on 2026-08-22 and none holds a reading newer than the one the withdrawal names, so there is no source to come back. Each entry records the last reading and what the other providers answered. Issue #24.",
+    "stations": {
+      "12330800:MT:BOR": {
+        "name": "Lower Willow Creek Reservoir",
+        "last_reading": "2016-09-30",
+        "finding": "AWDB monthly RESC ends 2016-09; the USGS gage carries no series in 2025-2026; RISE holds the location but its storage item answers only null rows."
+      },
+      "12380500:MT:BOR": {
+        "name": "Lower Jocko Lake",
+        "last_reading": "2017-09-30",
+        "finding": "AWDB monthly RESC ends 2017-09; the USGS gage carries no series in 2025-2026; RISE has no location for it."
+      },
+      "10069500:ID:BOR": {
+        "name": "Montpelier Reservoir",
+        "last_reading": "2025-04-30",
+        "finding": "AWDB monthly RESC ends 2025-04; the USGS gage carries no series in 2025-2026; RISE holds only an AgriMet weather station at Montpelier, no storage."
+      },
+      "09UTWTNY:UT:BOR": {
+        "name": "Whitney",
+        "last_reading": "2025-11-30",
+        "finding": "AWDB monthly RESC ends 2025-11 with no daily RESC at all; RISE has no location for it; the station triplet carries no USGS site number."
+      },
+      "09246300:CO:BOR": {
+        "name": "Elkhead Reservoir",
+        "last_reading": "2026-05-31",
+        "finding": "A staged discontinuation, not an outage: AWDB daily RESC ends 2025-10 and monthly RESC eight months later. CDSS telemetry has no station for it; RISE has no location; the USGS gage carries no series in 2025-2026."
+      }
+    }
+  },
   "reservoirs": {
     "09009020:CO:BOR": {
       "name": "Dillon Reservoir",
@@ -222,28 +253,6 @@
         "dam_lon": -106.41531,
         "dam_lat": 40.11307,
         "match_distance_km": 0.042,
-        "match_confirmed_by": "position"
-      }
-    },
-    "09246300:CO:BOR": {
-      "name": "Elkhead Reservoir",
-      "station_triplet": "09246300:CO:BOR",
-      "lat": 40.5583,
-      "lon": -107.3873,
-      "cadence": "monthly",
-      "huc6": "140500",
-      "huc6_name": "White-Yampa",
-      "capacity": {
-        "capacity_af": 24778.0,
-        "capacity_basis": "normal_storage",
-        "normal_storage_af": 24778.0,
-        "max_storage_af": 37190.0,
-        "nid_storage_af": 37190.0,
-        "nid_id": "CO00976",
-        "nid_dam_name": "Elkhead Creek",
-        "dam_lon": -107.38363,
-        "dam_lat": 40.5578,
-        "match_distance_km": 0.315,
         "match_confirmed_by": "position"
       }
     },
@@ -888,50 +897,6 @@
         "match_confirmed_by": "position"
       }
     },
-    "09UTWTNY:UT:BOR": {
-      "name": "Whitney",
-      "station_triplet": "09UTWTNY:UT:BOR",
-      "lat": 40.83827,
-      "lon": -110.92887,
-      "cadence": "monthly",
-      "huc6": "160101",
-      "huc6_name": "Upper Bear",
-      "capacity": {
-        "capacity_af": 4700.0,
-        "capacity_basis": "normal_storage",
-        "normal_storage_af": 4700.0,
-        "max_storage_af": 5820.0,
-        "nid_storage_af": 5820.0,
-        "nid_id": "UT00324",
-        "nid_dam_name": "Whitney",
-        "dam_lon": -110.92741,
-        "dam_lat": 40.84019,
-        "match_distance_km": 0.247,
-        "match_confirmed_by": "name and position"
-      }
-    },
-    "10069500:ID:BOR": {
-      "name": "Montpelier Reservoir",
-      "station_triplet": "10069500:ID:BOR",
-      "lat": 42.34947,
-      "lon": -111.17599,
-      "cadence": "monthly",
-      "huc6": "160102",
-      "huc6_name": "Lower Bear",
-      "capacity": {
-        "capacity_af": 4050.0,
-        "capacity_basis": "normal_storage",
-        "normal_storage_af": 4050.0,
-        "max_storage_af": null,
-        "nid_storage_af": 4050.0,
-        "nid_id": "ID00062",
-        "nid_dam_name": "Montpelier Creek",
-        "dam_lon": -111.17521,
-        "dam_lat": 42.34911,
-        "match_distance_km": 0.076,
-        "match_confirmed_by": "position"
-      }
-    },
     "09UTDMAD:UT:BOR": {
       "name": "DMAD",
       "station_triplet": "09UTDMAD:UT:BOR",
@@ -1349,50 +1314,6 @@
         "dam_lon": -114.23551,
         "dam_lat": 46.06501,
         "match_distance_km": 0.111,
-        "match_confirmed_by": "name and position"
-      }
-    },
-    "12380500:MT:BOR": {
-      "name": "Lower Jocko Lake",
-      "station_triplet": "12380500:MT:BOR",
-      "lat": 47.20234,
-      "lon": -113.7606,
-      "cadence": "monthly",
-      "huc6": "170102",
-      "huc6_name": "Pend Oreille",
-      "capacity": {
-        "capacity_af": 6566.0,
-        "capacity_basis": "normal_storage",
-        "normal_storage_af": 6566.0,
-        "max_storage_af": 9981.0,
-        "nid_storage_af": 8869.0,
-        "nid_id": "MT00602",
-        "nid_dam_name": "Jocko",
-        "dam_lon": -113.76081,
-        "dam_lat": 47.20281,
-        "match_distance_km": 0.054,
-        "match_confirmed_by": "position"
-      }
-    },
-    "12330800:MT:BOR": {
-      "name": "Lower Willow Creek Reservoir",
-      "station_triplet": "12330800:MT:BOR",
-      "lat": 46.55936,
-      "lon": -113.3151,
-      "cadence": "monthly",
-      "huc6": "170102",
-      "huc6_name": "Pend Oreille",
-      "capacity": {
-        "capacity_af": 4930.0,
-        "capacity_basis": "normal_storage",
-        "normal_storage_af": 4930.0,
-        "max_storage_af": 6230.0,
-        "nid_storage_af": 6230.0,
-        "nid_id": "MT01155",
-        "nid_dam_name": "Lower Willow Creek Dam",
-        "dam_lon": -113.31401,
-        "dam_lat": 46.55921,
-        "match_distance_km": 0.085,
         "match_confirmed_by": "name and position"
       }
     },

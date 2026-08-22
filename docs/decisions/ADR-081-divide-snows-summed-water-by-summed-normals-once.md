@@ -1,4 +1,4 @@
-# ADR-080: Divide snow's summed water by summed normals, once
+# ADR-081: Divide snow's summed water by summed normals, once
 
 - Status: Accepted
 - Date: 2026-08-22

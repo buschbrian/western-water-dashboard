@@ -328,9 +328,14 @@ def test_awdb_inventory_has_traceable_capacity_and_cadence():
     # admitted, minus Lake Mead -- a tool bug, already published -- Lemon
     # Reservoir CO -- D10, self-contradicting source record -- Eden WY and
     # Fruitland Reservoir CO -- both excluded dam matches -- minus Elkhead
-    # Reservoir, already on the roster and not a new admission).
-    assert len(R.ADMITTED_RESERVOIRS) == 148
-    assert len(R.AWDB_RESERVOIRS) == 173
+    # Reservoir, already on the roster and not a new admission) - 5 retired
+    # 2026-08-22 (issue #24): Lower Willow Creek Reservoir, Lower Jocko Lake,
+    # Montpelier Reservoir, Whitney and Elkhead Reservoir -- each withdrawn
+    # for a quiet feed, and every provider checked held nothing newer. The
+    # findings are recorded in the `retired` block of
+    # admitted_reservoirs.json.
+    assert len(R.ADMITTED_RESERVOIRS) == 143
+    assert len(R.AWDB_RESERVOIRS) == 168
     assert len(R.ADMITTED_RISE_RESERVOIRS) == 25
     assert len(R.RESERVOIRS) == 55
     # R3's first source: 137 the rules admitted, plus five a person admitted
@@ -351,9 +356,12 @@ def test_awdb_inventory_has_traceable_capacity_and_cadence():
     # until the drawn scope reaches the Missouri basin.
     assert len(R.ADMITTED_CDSS_RESERVOIRS) == 10
     assert len(R.CDSS_RESERVOIRS) == 10
-    assert len(R.ALL_RESERVOIR_IDS) == 380
+    # Seven more with the U.S. Geological Survey's admission (ADR-080):
+    # Horseshoe, Bartlett, Weber, Wynoochee, Alder, Mud Mountain, Lake Tapps.
+    # 387 minus the five retired 2026-08-22 (issue #24), see above.
+    assert len(R.ALL_RESERVOIR_IDS) == 382
     assert not (set(R.RESERVOIRS) & set(R.AWDB_RESERVOIRS))
-    # Four providers, four disjoint sets of station ids. An id in two of
+    # Five providers, five disjoint sets of station ids. An id in two of
     # them is one reservoir fetched twice and summed twice (ADR-069).
     assert not (set(R.CDEC_RESERVOIRS)
                 & (set(R.RESERVOIRS) | set(R.AWDB_RESERVOIRS)))
@@ -1606,7 +1614,7 @@ def test_every_colorado_admission_names_its_dam():
             "normal_storage", "max_storage", "nid_storage"}, abbrev
 
 
-# --- the monthly normal window (ADR-082) ---------------------------------
+# --- the monthly normal window (ADR-083) ---------------------------------
 
 def monthly_fixture(last_month: str) -> pd.Series:
     """A daily series whose value is the year it was read in.

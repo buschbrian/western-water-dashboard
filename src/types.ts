@@ -1,5 +1,5 @@
 export type DataFrequency = "daily" | "monthly";
-export type SourceKey = "rise" | "awdb" | "cdec" | "cdss";
+export type SourceKey = "rise" | "awdb" | "cdec" | "cdss" | "usgs";
 export type NullableNumber = number | null;
 
 export interface MonthlyRecord {
@@ -12,7 +12,7 @@ export interface MonthlyRecord {
   /** The recent baseline's normal for this calendar month. */
   normal_af: NullableNumber;
   /**
-   * How many years stand behind `normal_af` (ADR-082).
+   * How many years stand behind `normal_af` (ADR-083).
    *
    * Optional because payloads written before the anchored window carry no
    * count. All twelve months of one chart share one population, so the
