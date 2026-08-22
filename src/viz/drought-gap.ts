@@ -37,6 +37,7 @@
  * colour from CSS so both themes stay readable.
  */
 import type { StorageGap } from "../drought-model";
+import { WELL_MEASURED_PERCENT } from "../drought-model";
 import { storageColor } from "./classes";
 
 const SVG = "http://www.w3.org/2000/svg";
@@ -134,10 +135,17 @@ export function renderDroughtGap(
      * description between them. */
     const group = element("g", { class: "drought-gap-row" });
 
+    const thin = row.measuredPercent !== null
+      && row.measuredPercent < WELL_MEASURED_PERCENT;
+
     const name = element("text", {
       x: PAD_LEFT - 10, y: y + 4, class: "drought-gap-name", "text-anchor": "end"
     });
-    name.textContent = row.name;
+    /* An asterisk marks a partly measured area; the sentence under the chart
+     * on the page says what it means. Text rather than a colour or a shape,
+     * so the mark survives a screen reader and a grey-scale print. Short
+     * enough that the longest name plus the mark still fits its lane. */
+    name.textContent = thin ? `${row.name} *` : row.name;
 
     /* The line first, so both dots draw over its ends. */
     group.append(element("line", {
@@ -158,12 +166,17 @@ export function renderDroughtGap(
 
     /* Every row is also a sentence, because a chart a screen reader cannot
      * read is a chart half the point of this page is missing. Both figures
-     * and never their difference -- see the note at the top of this file. */
+     * and never their difference -- see the note at the top of this file.
+     * The worst class is named in words because the dot's colour is
+     * otherwise its only cue. */
     const title = element("title", {});
     title.textContent =
       `${row.name}: ${row.dryPercent.toFixed(1)}% of land ${options.drynessLabel}, ` +
       `reservoirs ${row.storagePercent.toFixed(1)}% full ` +
-      `across ${row.reservoirCount} ${row.reservoirCount === 1 ? "reservoir" : "reservoirs"}.`;
+      `across ${row.reservoirCount} ${row.reservoirCount === 1 ? "reservoir" : "reservoirs"}` +
+      (row.worst ? `, worst class ${row.worst.label} (${row.worst.code})` : "") +
+      (thin ? `. Measured over ${row.measuredPercent!.toFixed(1)}% of the area` : "") +
+      ".";
     /* The description first inside the group, which is where assistive
      * technology looks for it. */
     group.prepend(title);

@@ -81,7 +81,8 @@ ADR-041.**
   [ADR-058](ADR-058-assign-the-county-from-the-water-not-the-dam.md),
   [ADR-059](ADR-059-not-measured-is-not-no-drought.md),
   [ADR-060](ADR-060-three-questions-about-a-state.md),
-  [ADR-080](ADR-080-divide-snows-summed-water-by-summed-normals-once.md)
+  [ADR-080](ADR-080-divide-snows-summed-water-by-summed-normals-once.md),
+  [ADR-081](ADR-081-publish-a-drought-severity-and-coverage-index.md)
 - Current architecture: [`docs/architecture/hydrology-methods.md`](../architecture/hydrology-methods.md)
 
 ### Visible language, accessibility and naming
@@ -209,6 +210,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-078](ADR-078-every-water-this-site-measures-is-a-reservoir.md) | Every water this site measures is a reservoir | Accepted; type follows roster membership, no per-record field, natural lakes keep their names |
 | [ADR-079](ADR-079-rename-through-a-former-name-table-and-publish-the-operator.md) | Rename through a former-name table, and publish the operator | Accepted; 26 provider names normalized, old spellings resolve forever, operator searchable |
 | [ADR-080](ADR-080-divide-snows-summed-water-by-summed-normals-once.md) | Divide snow's summed water by summed normals, once, and floor the curve's denominator at the drawing | Accepted; supersedes the snow rollups' mean of ratios, adds a method version to `snowpack.json` |
+| [ADR-081](ADR-081-publish-a-drought-severity-and-coverage-index.md) | Publish a Drought Severity and Coverage Index over measured land | Accepted; derived client-side from published shares, thinly measured areas marked never dropped |
 
 ## Relationship to the historical journal
 

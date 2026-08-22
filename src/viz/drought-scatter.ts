@@ -25,6 +25,7 @@
  * for the corners live on the page beside the chart, not in the picture.
  */
 import type { StorageAgainstDrought } from "../drought-model";
+import { WELL_MEASURED_PERCENT } from "../drought-model";
 
 const SVG = "http://www.w3.org/2000/svg";
 
@@ -156,22 +157,36 @@ export function renderDroughtScatter(
 
   for (const point of ordered) {
     const emphasised = point.huc6 === options.highlight;
+    /* A thinly measured area draws as a hollow point: same place, same
+     * colour, but visibly not the same kind of measurement. Marking only --
+     * the point is never dropped (ADR-059's rule, extended to the partial
+     * case). */
+    const thin = point.measuredPercent !== null
+      && point.measuredPercent < WELL_MEASURED_PERCENT;
     const group = element("g", { class: "drought-scatter-point" });
-    group.append(element("circle", {
-      cx: x(point.dryPercent),
-      cy: y(point.storagePercent),
-      r: emphasised ? POINT_RADIUS + 3 : POINT_RADIUS,
-      fill: point.worst ? point.worst.color : NO_CLASS_COLOR,
-      class: emphasised ? "is-chosen" : ""
-    }));
+    const mark = thin
+      ? { cx: x(point.dryPercent), cy: y(point.storagePercent),
+          r: emphasised ? POINT_RADIUS + 3 : POINT_RADIUS,
+          fill: "none",
+          stroke: point.worst ? point.worst.color : NO_CLASS_COLOR,
+          "stroke-width": 2,
+          class: emphasised ? "is-chosen" : "" }
+      : { cx: x(point.dryPercent), cy: y(point.storagePercent),
+          r: emphasised ? POINT_RADIUS + 3 : POINT_RADIUS,
+          fill: point.worst ? point.worst.color : NO_CLASS_COLOR,
+          class: emphasised ? "is-chosen" : "" };
+    group.append(element("circle", mark));
     /* Every point carries its own name for a screen reader and a native
      * tooltip: fourteen labels drawn on the chart would overlap, and the
-     * table under it already lists all of them in full. */
+     * table under it already lists all of them in full. The worst class is
+     * named in words because the fill alone is the only cue otherwise. */
     const title = element("title", {});
     title.textContent = `${point.name}: ${point.storagePercent.toFixed(1)}% full ` +
       `across ${point.reservoirCount} ` +
       `${point.reservoirCount === 1 ? "reservoir" : "reservoirs"}, ` +
-      `${point.dryPercent.toFixed(1)}% of land in ${options.drynessLabel} or worse`;
+      `${point.dryPercent.toFixed(1)}% of land in ${options.drynessLabel} or worse` +
+      (point.worst ? `, worst class ${point.worst.label} (${point.worst.code})` : "") +
+      (thin ? `. Measured over ${point.measuredPercent!.toFixed(1)}% of the area` : "");
     group.append(title);
     svg.append(group);
   }

@@ -36,6 +36,50 @@ export function isMeasured(unit: DroughtUnit): unit is DroughtUnit &
     && unit.percent_of_area_at_least !== undefined;
 }
 
+/**
+ * The share of an area's land below which its figures are marked as thin.
+ *
+ * **Marking only.** This predicate must never be used to exclude an area
+ * from a count, a filter or a ranking: the class shares are shares of
+ * *measured* land, a well-defined quantity for any non-zero measured area,
+ * and dropping areas would change published counts. What it may do is put a
+ * reader in a position to see the denominator -- a card stating "100% in
+ * drought" over 1.3% of the area's land is true in every word and wrong as
+ * a whole, which is the same failure ADR-059 removed at the zero end.
+ *
+ * Whether the line belongs at 90 rather than 95 is a judgement about when a
+ * border-crossing area's figure starts reading as a finding; the five
+ * thinnest published today sit between 1.3% and 48.2%, far below either.
+ */
+export const WELL_MEASURED_PERCENT = 90;
+
+/** Whether the monitor measures enough of this area for its shares to be
+ * read without a caveat. Always true for an unmeasured-area question asked
+ * of a partly measured area -- see the comment above. */
+export function isWellMeasured(unit: DroughtUnit): boolean {
+  const measured = unit.measured?.percent_of_area;
+  return measured === undefined || measured >= WELL_MEASURED_PERCENT;
+}
+
+/**
+ * The Drought Severity and Coverage Index: the sum of the cumulative D0-D4
+ * shares, running 0 to 500 (ADR-081).
+ *
+ * This is the National Drought Monitor's own published summary statistic,
+ * derived here from fields the payload already carries -- no pipeline change.
+ * Because those shares divide by measured land, the index is a measure over
+ * measured land too, and every surface that prints it owes the reader the
+ * same coverage disclosure the class cards give.
+ *
+ * Null for an unmeasured area: no denominator, no index.
+ */
+export function droughtSeverityIndex(unit: DroughtUnit): number | null {
+  if (!isMeasured(unit)) return null;
+  const atLeast = unit.percent_of_area_at_least;
+  const sum = atLeast.d0 + atLeast.d1 + atLeast.d2 + atLeast.d3 + atLeast.d4;
+  return Math.round(sum * 10) / 10;
+}
+
 /** The worst class with any land in it, or null when the area is clear. */
 export function worstClass(unit: DroughtUnit): DroughtClass | null {
   for (let index = DROUGHT_CLASSES.length - 1; index >= 0; index -= 1) {
@@ -153,9 +197,10 @@ export function coverageSegments(unit: DroughtUnit): CoverageSegment[] {
 /* ------------------------------------------------------------------ */
 
 /** How the reader has asked for the areas to be ordered. */
-export type DroughtSort = "severity" | "storage" | "name";
+export type DroughtSort = "severity" | "index" | "storage" | "name";
 
-export const DROUGHT_SORTS: readonly DroughtSort[] = ["severity", "storage", "name"];
+export const DROUGHT_SORTS: readonly DroughtSort[] =
+  ["severity", "index", "storage", "name"];
 
 export function isDroughtSort(value: string): value is DroughtSort {
   return (DROUGHT_SORTS as readonly string[]).includes(value);
@@ -196,10 +241,14 @@ export function unitsAtOrWorse(
  * The areas in the order the reader asked for.
  *
  * Severity is the default and is the existing `bySeverity` order, unchanged.
- * Storage orders by how full the reservoirs in each area are, emptiest first,
- * because the question that ordering answers is "where is the water running
- * out" -- and an area with no reservoir reading sorts last rather than as
- * zero, since "no reading" is not "empty".
+ * The severity index orders by `droughtSeverityIndex`, highest first -- one
+ * continuous number instead of a class ladder, so it can separate two areas
+ * the worst-class comparison ties. Storage orders by how full the reservoirs
+ * in each area are, emptiest first, because the question that ordering
+ * answers is "where is the water running out" -- and an area with no
+ * reservoir reading sorts last rather than as zero, since "no reading" is not
+ * "empty". An unmeasured area has no index and sorts last for the same
+ * reason.
  */
 export function orderUnits(
   units: readonly DroughtUnit[],
@@ -210,6 +259,11 @@ export function orderUnits(
   const rows = [...units];
   if (sort === "name") {
     return rows.sort((a, b) => a.huc6_name.localeCompare(b.huc6_name));
+  }
+  if (sort === "index") {
+    return rows.sort((a, b) =>
+      (droughtSeverityIndex(b) ?? -1) - (droughtSeverityIndex(a) ?? -1)
+      || a.huc6_name.localeCompare(b.huc6_name));
   }
   return rows.sort((a, b) => {
     const left = storage?.get(a.huc6)?.percent ?? null;
@@ -283,6 +337,12 @@ export interface StorageAgainstDrought {
   reservoirCount: number;
   /** The most severe class with land in it, for the point's colour. */
   worst: DroughtClass | null;
+  /**
+   * The share of the area's land the monitor measures, or null when it
+   * measures all of it. Carried so a chart can mark a thin denominator;
+   * never used to drop the point.
+   */
+  measuredPercent: number | null;
 }
 
 /**
@@ -312,7 +372,8 @@ export function storageAgainstDrought(
       dryPercent: shareAtOrWorse(unit, DRYNESS_CLASS),
       storagePercent: context.percent,
       reservoirCount: context.reservoirCount,
-      worst: worstClass(unit)
+      worst: worstClass(unit),
+      measuredPercent: unit.measured?.percent_of_area ?? null
     });
   }
   return points;

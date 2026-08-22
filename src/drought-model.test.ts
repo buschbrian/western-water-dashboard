@@ -9,7 +9,10 @@ import {
   droughtChanges,
   coverageSegments,
   daysOld,
+  droughtSeverityIndex,
   isLateRelease,
+  isWellMeasured,
+  WELL_MEASURED_PERCENT,
   DRYNESS_CLASS,
   orderUnits,
   regionWorst,
@@ -274,11 +277,11 @@ describe("how the areas are divided by severity", () => {
 describe("ranking dry land against banked water", () => {
   const points = [
     { huc6: "A", name: "Cushioned", dryPercent: 20, storagePercent: 90,
-      reservoirCount: 3, worst: null },
+      reservoirCount: 3, worst: null, measuredPercent: null },
     { huc6: "B", name: "Squeezed", dryPercent: 95, storagePercent: 15,
-      reservoirCount: 2, worst: null },
+      reservoirCount: 2, worst: null, measuredPercent: null },
     { huc6: "C", name: "Level", dryPercent: 50, storagePercent: 50,
-      reservoirCount: 1, worst: null }
+      reservoirCount: 1, worst: null, measuredPercent: null }
   ];
 
   it("puts the areas with the least water against the most dry land first", () => {
@@ -300,9 +303,9 @@ describe("ranking dry land against banked water", () => {
   it("settles an exact tie by name rather than by input order", () => {
     const tied = [
       { huc6: "Z", name: "Zebra", dryPercent: 40, storagePercent: 40,
-        reservoirCount: 1, worst: null },
+        reservoirCount: 1, worst: null, measuredPercent: null },
       { huc6: "A", name: "Antelope", dryPercent: 10, storagePercent: 10,
-        reservoirCount: 1, worst: null }
+        reservoirCount: 1, worst: null, measuredPercent: null }
     ];
     expect(byStorageGap(tied).map((row) => row.name)).toEqual(["Antelope", "Zebra"]);
   });
@@ -437,5 +440,90 @@ describe("what changed since last week", () => {
     const changes = droughtChanges(
       [unit("140100", "Colorado Headwaters", 60)], before([["140100", 40]]));
     expect(changesByArea(changes).get("140100")?.points).toBe(20);
+  });
+});
+
+describe("the drought severity index", () => {
+  it("sums the cumulative shares once, running 0 to 500", () => {
+    // Constructed fixtures, never today's numbers: 10 + 20 + 30 + 40 + 50.
+    const measured = unit("140100", "Colorado Headwaters",
+      [0, 0, 0, 0, 0, 0]);
+    measured.percent_of_area_at_least = { d0: 150, d1: 120, d2: 90, d3: 50, d4: 10 };
+    expect(droughtSeverityIndex(measured)).toBe(420);
+  });
+
+  it("reads zero for a clear area and keeps one decimal", () => {
+    const clear = unit("160201", "Weber", [100, 0, 0, 0, 0, 0]);
+    expect(droughtSeverityIndex(clear)).toBe(0);
+    // Cumulative shares of 100, 100, 100, 15.1 and 0 sum to 315.1 -- the
+    // index weighs a class once per rung of the ladder it sits on.
+    const thin = unit("140300", "Upper Colorado-Dolores", [0, 0, 0, 84.9, 15.1, 0]);
+    expect(droughtSeverityIndex(thin)).toBe(315.1);
+  });
+
+  it("answers null for an unmeasured area", () => {
+    const unmeasured: DroughtUnit = {
+      huc6: "170102",
+      huc6_name: "No United States land",
+      measured: { percent_of_area: 0, basis: "no United States land" }
+    };
+    expect(droughtSeverityIndex(unmeasured)).toBeNull();
+  });
+
+  it("agrees with the payload's own at-least fields", () => {
+    // Against the committed coverage's own fields, never its week.
+    const payload = readDroughtCoverage();
+    for (const entry of payload.units) {
+      const index = droughtSeverityIndex(entry);
+      if (index === null || !entry.percent_of_area_at_least) continue;
+      const atLeast = entry.percent_of_area_at_least;
+      const sum = atLeast.d0 + atLeast.d1 + atLeast.d2 + atLeast.d3 + atLeast.d4;
+      expect(index).toBeCloseTo(sum, 1);
+      expect(index).toBeGreaterThanOrEqual(0);
+      expect(index).toBeLessThanOrEqual(500);
+    }
+  });
+});
+
+describe("the well-measured mark", () => {
+  it("marks a partly measured area without touching a fully measured one", () => {
+    const partial = unit("140100", "Rio De La Concepcion", [100, 0, 0, 0, 0, 0]);
+    partial.measured = { percent_of_area: 1.3, basis: "land the monitor maps" };
+    expect(isWellMeasured(partial)).toBe(false);
+
+    const full = unit("160201", "Weber", [100, 0, 0, 0, 0, 0]);
+    expect(isWellMeasured(full)).toBe(true);
+  });
+
+  it("treats the absence of a measured block as whole coverage", () => {
+    expect(isWellMeasured(unit("160201", "Weber", [100, 0, 0, 0, 0, 0]))).toBe(true);
+  });
+
+  it("keeps an area at the threshold on the well-measured side", () => {
+    const edge = unit("140300", "Upper Colorado-Dolores", [100, 0, 0, 0, 0, 0]);
+    edge.measured = { percent_of_area: WELL_MEASURED_PERCENT, basis: "land the monitor maps" };
+    expect(isWellMeasured(edge)).toBe(true);
+  });
+});
+
+describe("ordering by severity index", () => {
+  it("orders by the index where the worst-class ladder ties", () => {
+    // Two areas both worsted at D2: the class order ties them; the index
+    // separates them because one has more of its land in that class.
+    const wide = unit("140300", "Wide", [0, 0, 60, 30, 0, 0]);
+    const narrow = unit("160102", "Narrow", [0, 0, 5, 5, 0, 0]);
+    const ordered = orderUnits([narrow, wide], null, "index");
+    expect(ordered[0]!.huc6).toBe("140300");
+  });
+
+  it("sends an unmeasured area last, after every measured one", () => {
+    const unmeasured: DroughtUnit = {
+      huc6: "170102",
+      huc6_name: "No United States land",
+      measured: { percent_of_area: 0, basis: "no United States land" }
+    };
+    const clear = unit("160201", "Weber", [100, 0, 0, 0, 0, 0]);
+    const ordered = orderUnits([unmeasured, clear], null, "index");
+    expect(ordered.map((entry) => entry.huc6)).toEqual(["160201", "170102"]);
   });
 });

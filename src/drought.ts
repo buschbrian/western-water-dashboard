@@ -43,7 +43,9 @@ import {
   daysOld,
   DRYNESS_CLASS,
   isLateRelease,
+  droughtSeverityIndex,
   isMeasured,
+  isWellMeasured,
   byChange,
   byStorageGap,
   changeCounts,
@@ -285,6 +287,10 @@ function renderDrought(
   const late = isLateRelease(payload.release_date, today);
   const worst = regionWorst(scopedUnits);
   const extremeAreas = areasAtOrWorse(scopedUnits, "d3");
+  /* Marking, not filtering: how many areas in view are measured over only
+   * part of their land, so the tile that counts them can say what its own
+   * denominator is doing. */
+  const thinlyMeasured = scopedUnits.filter((unit) => !isWellMeasured(unit)).length;
 
   const dryness = DROUGHT_CLASSES.find((entry) => entry.key === DRYNESS_CLASS)!;
 
@@ -312,6 +318,7 @@ function renderDrought(
         </select></label>
         <label>Order by<select id="drought-sort">
           <option value="severity">Most severe first</option>
+          <option value="index">Highest severity index first</option>
           <option value="storage">Emptiest reservoirs first</option>
           <option value="name">Drainage area name</option>
         </select></label>
@@ -320,7 +327,7 @@ function renderDrought(
     <p id="drought-status" class="filter-status" role="status"></p>
     <section class="overview-kpis" aria-label="Drought summary">
       <article class="overview-kpi overview-kpi-primary"><span>Worst conditions</span><strong>${worst ? worst.label : "None"}</strong><small>${worst ? `The most severe class with land in it (${worst.code})` : "No drainage area has land in a drought class"}</small></article>
-      <article class="overview-kpi"><span>Areas in extreme drought or worse</span><strong>${extremeAreas} of ${scopedUnits.length}</strong><small>Any land at the extreme (D3) or exceptional (D4) class</small></article>
+      <article class="overview-kpi"><span>Areas in extreme drought or worse</span><strong>${extremeAreas} of ${scopedUnits.length}</strong><small>Any land at the extreme (D3) or exceptional (D4) class${thinlyMeasured > 0 ? `. ${thinlyMeasured} of these areas are measured over only part of their land` : ""}</small></article>
       <article class="overview-kpi"><span>Map week</span><strong>${formatDate(payload.map_date)}</strong><small>Published ${formatDate(payload.release_date)}</small></article>
       <article class="overview-kpi"><span>Map age</span><strong${late ? ' class="late-badge"' : ""}>${age} ${age === 1 ? "day" : "days"}</strong><small>${late ? "Late data: a new weekly map has been missed" : "A new map is published each Thursday"}</small></article>
     </section>
@@ -341,13 +348,13 @@ function renderDrought(
     </section>
     <section class="overview-card" aria-labelledby="drought-join-heading">
       <div class="card-heading">
-        <div><h2 id="drought-join-heading">Dry land against banked water</h2><p>Each drainage area is one point. How much of its land is in ${dryness.label.toLowerCase()} (${dryness.code}) or worse goes across the bottom. How full its reservoirs are goes up the side. The colour is the most severe class with land in it. The two do not have to agree, and where they disagree is the point. An area far to the right and high up draws on water banked in better years. One far to the right and low has neither the rain nor the savings. Read this as a description of how the two line up. It is not a test of one against the other. The Drought Monitor already weighs water supply conditions. And a reservoir is placed here by the area holding its dam, not by the land that fills it.</p></div>
+        <div><h2 id="drought-join-heading">Dry land against banked water</h2><p>Each drainage area is one point. How much of its land is in ${dryness.label.toLowerCase()} (${dryness.code}) or worse goes across the bottom. How full its reservoirs are goes up the side. The colour is the most severe class with land in it. The two do not have to agree, and where they disagree is the point. An area far to the right and high up draws on water banked in better years. One far to the right and low has neither the rain nor the savings. Read this as a description of how the two line up. It is not a test of one against the other. The Drought Monitor already weighs water supply conditions. And a reservoir is placed here by the area holding its dam, not by the land that fills it. A hollow point is measured over only part of its area.</p></div>
       </div>
       <div id="drought-scatter-host" class="drought-scatter-host"></div>
     </section>
     <section class="overview-card" aria-labelledby="drought-gap-heading">
       <div class="card-heading">
-        <div><h2 id="drought-gap-heading">The same comparison, in order</h2><p>One row for each drainage area that has a reservoir reading. Both dots in a row sit on the same 0 to 100 scale, each one at its own value. Which dot is on the left therefore changes from row to row. The dot in the class colours is the share of land in ${dryness.label.toLowerCase()} (${dryness.code}) or worse. The dot in the storage colours is how full that area's reservoirs are. The line between them is the distance, and it is only a distance. The two shares divide by different things, one by land and one by reservoir capacity, so the site never states their difference as a number. The rows are ordered by that distance. The areas where the water dot sits furthest to the left of the dry dot lead the list. That is dry ground with little banked to draw on.</p></div>
+        <div><h2 id="drought-gap-heading">The same comparison, in order</h2><p>One row for each drainage area that has a reservoir reading. Both dots in a row sit on the same 0 to 100 scale, each one at its own value. Which dot is on the left therefore changes from row to row. The dot in the class colours is the share of land in ${dryness.label.toLowerCase()} (${dryness.code}) or worse. The dot in the storage colours is how full that area's reservoirs are. The line between them is the distance, and it is only a distance. The two shares divide by different things, one by land and one by reservoir capacity, so the site never states their difference as a number. The rows are ordered by that distance. The areas where the water dot sits furthest to the left of the dry dot lead the list. That is dry ground with little banked to draw on. A name marked with an asterisk is measured over only part of its area.</p></div>
       </div>
       <div id="drought-gap-host" class="drought-gap-host"></div>
     </section>
@@ -359,7 +366,7 @@ function renderDrought(
       <p class="drought-chart-note" id="drought-change-note"></p>
     </section>
     <section class="overview-card table-card" aria-labelledby="drought-areas-heading">
-      <div class="card-heading"><div><h2 id="drought-areas-heading">Each drainage area</h2><p>The bar is the share of the area's land in each class, in the same colours as the map above. The figure beside the name is the combined reservoir storage in that area, as a percent of the combined full level.</p></div></div>
+      <div class="card-heading"><div><h2 id="drought-areas-heading">Each drainage area</h2><p>The bar is the share of the area's land in each class, in the same colours as the map above. The figure beside the name is the combined reservoir storage in that area, as a percent of the combined full level. The severity index adds up the shares at each class or worse, so it runs from 0 to 500. Shares and index are shares of the land the monitor measures.</p></div></div>
       <div class="drought-rows"></div>
       <details class="snow-month-details"><summary>Exact values for every class</summary>
         <div class="table-scroll" tabindex="0" role="region" aria-label="Drought class table, scrolls sideways"><table class="overview-table"><thead><tr><th>Drainage area</th><th>No drought</th><th>D0</th><th>D1</th><th>D2</th><th>D3</th><th>D4</th><th>Extreme or worse</th><th>Change since last week</th></tr></thead><tbody id="drought-table-rows"></tbody></table></div>
@@ -472,6 +479,12 @@ function renderDrought(
       const bar = document.createElement("div");
       bar.className = "drought-bar";
       const segments = coverageSegments(unit);
+      /* A partly measured area's shares divide by its measured land, so the
+       * segment wording says which land -- the same disclosure the sentence
+       * below makes. */
+      const partlyMeasured = unit.measured !== undefined
+        && unit.measured.percent_of_area < 100;
+      const landWords = partlyMeasured ? "of the measured land" : "of the land";
       bar.setAttribute("role", "img");
       bar.setAttribute("aria-label",
         `${unit.huc6_name}: ` + segments.map((segment) =>
@@ -482,7 +495,7 @@ function renderDrought(
         piece.className = "drought-segment" + (segment.color ? "" : " drought-segment-none");
         piece.style.flexGrow = String(segment.percent);
         if (segment.color) piece.style.background = segment.color;
-        piece.title = `${segment.label}: ${formatPercent(segment.percent)} of the land`;
+        piece.title = `${segment.label}: ${formatPercent(segment.percent)} ${landWords}`;
         bar.append(piece);
       }
 
@@ -491,7 +504,9 @@ function renderDrought(
       const rowWorst = worstClass(unit);
       /* Three sentences for three facts: some drought, none measured as in
        * drought, and not measured at all -- the last is never the second
-       * (ADR-059). */
+       * (ADR-059). A fourth covers the case between them: measured over only
+       * part of the area, so every share here divides by that part (and so
+       * does the severity index beside it). */
       reading.textContent = !isMeasured(unit)
         ? "The drought monitor does not measure land in this area."
         : rowWorst
@@ -499,6 +514,18 @@ function renderDrought(
             `drought class or abnormally dry. Worst class: ${rowWorst.label} ` +
             `(${rowWorst.code}), covering ${formatPercent(unit.percent_of_area[rowWorst.key])}.`
           : "No land in this area is in a drought class this week.";
+      if (isMeasured(unit)) {
+        const sentences: string[] = [];
+        if (unit.measured !== undefined && unit.measured.percent_of_area < 100) {
+          sentences.push(`The figures cover ` +
+            `${formatPercent(unit.measured.percent_of_area)} of the area.`);
+        }
+        const index = droughtSeverityIndex(unit);
+        if (index !== null) {
+          sentences.push(`Drought severity index ${index.toFixed(1)} of 500.`);
+        }
+        reading.textContent += ` ${sentences.join(" ")}`;
+      }
 
       const links = document.createElement("p");
       links.className = "drought-row-links";
