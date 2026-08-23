@@ -98,6 +98,26 @@ export function parseStateList(states: string): string[] {
     .filter((code) => code.length > 0);
 }
 
+/**
+ * The United States members of a drainage area's state list, for a label.
+ *
+ * The Watershed Boundary Dataset tags an area with every state *and country*
+ * its water reaches, so `CN` and `MX` arrive beside the state codes -- 37 of
+ * the published reservoirs carry one. Two of them are the reason this exists:
+ * the Pacific Northwest region reads `CA, CN, ...`, setting California beside
+ * Canada in two letters that a reader cannot tell apart, and this dashboard
+ * publishes no Canadian or Mexican measurement to explain either one.
+ *
+ * Display only. `connected_states` keeps the foreign tags, because what a
+ * drainage area reaches is a fact about the drainage and ADR-060 published it
+ * as one. This drops them from what is shown, not from what is known.
+ */
+export function usStatesOnly(
+  codes: readonly string[] | null | undefined
+): string[] {
+  return (codes ?? []).filter(isUsStateCode);
+}
+
 /** The shape `areaReachesState` needs -- structural, like `HucMember` in
  * `data/huc.ts`, so a `DrainageArea` from `data/boundaries.ts` or a raw
  * GeoJSON feature's properties both satisfy it without a cast. */

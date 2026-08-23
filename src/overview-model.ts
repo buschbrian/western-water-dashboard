@@ -12,7 +12,7 @@ import {
   type ReservoirInclusion,
   type ReservoirGeography
 } from "./data/rollup";
-import { stateName } from "./data/state-vocabulary";
+import { stateName, usStatesOnly } from "./data/state-vocabulary";
 import { capacityBasisName, changeLabel, formatChange, rankWithYears } from "./state/detail";
 import { formatAcreFeet } from "./viz/format";
 import { STALE_COLOR, storageClass } from "./viz/classes";
@@ -117,6 +117,18 @@ export function openingScopeSummary(
 export interface OverviewChartRecord {
   id: number;
   label: string;
+  /**
+   * The states a drainage area's water reaches, beside its name and never
+   * inside it. A name carrying its own parenthetical cannot be sorted,
+   * searched or matched against the roster without stripping it off again,
+   * which is the fault the former-name table exists to undo (ADR-079). The
+   * view composes the two; the model keeps them apart.
+   *
+   * Set only on records that answer for a drainage area. A reservoir's row
+   * has a county and a state of its own to name and does not want its
+   * basin's list.
+   */
+  labelStates?: readonly string[];
   percent: number;
   storageAf: number;
   capacityAf: number;
@@ -665,6 +677,10 @@ export interface ValuePoint {
   label: string;
   value: number;
   group: string;
+  /** The states the group's drainage area reaches, beside the group's name
+   * and never inside it -- `group` is the key these points are bucketed by,
+   * so it has to stay the bare name. */
+  groupStates?: readonly string[];
 }
 
 export function percentFullValues(reservoirs: readonly Reservoir[]): ValuePoint[] {
@@ -682,7 +698,8 @@ export function percentFullValues(reservoirs: readonly Reservoir[]): ValuePoint[
       id: index + 1,
       label: entry.reservoir.name,
       value: Number(entry.percent.toFixed(1)),
-      group: entry.reservoir.huc6_name ?? "Not assigned"
+      group: entry.reservoir.huc6_name ?? "Not assigned",
+      groupStates: usStatesOnly(entry.reservoir.connected_states)
     }));
 }
 
@@ -690,6 +707,8 @@ export function percentFullValues(reservoirs: readonly Reservoir[]): ValuePoint[
  * beside them. */
 export interface SpreadBox {
   group: string;
+  /** The group's states, carried from its members for the axis label. */
+  groupStates?: readonly string[];
   /** The whiskers: the furthest values still inside 1.5 times the middle
    * half, which is Tukey's rule and the one the SDK's box plot used. */
   low: number;
@@ -746,6 +765,9 @@ export function spreadBoxes(
     const inside = numbers.filter((value) => value >= lowFence && value <= highFence);
     boxes.push({
       group,
+      /* Every member shares the group's drainage area, so the first that
+       * answers carries the whole group's list. */
+      groupStates: members.find((point) => point.groupStates?.length)?.groupStates ?? [],
       low: inside.length > 0 ? inside[0]! : p25,
       high: inside.length > 0 ? inside[inside.length - 1]! : p75,
       p25,
@@ -890,6 +912,9 @@ export interface NormalPoint {
   id: number;
   label: string;
   watershed: string;
+  /** The drainage area's states, beside its name for the same reason as
+   * `OverviewChartRecord.labelStates`. */
+  watershedStates?: readonly string[];
   storageAf: number;
   normalAf: number;
   /** Above 100 is wetter than usual for the date, below is drier. */
@@ -916,6 +941,7 @@ export function normalComparison(reservoirs: readonly Reservoir[]): NormalPoint[
       id: index + 1,
       label: reservoir.name,
       watershed: reservoir.huc6_name ?? "Not assigned",
+      watershedStates: usStatesOnly(reservoir.connected_states),
       storageAf: reservoir.current_storage_af,
       normalAf: reservoir.seasonal_normal_af ?? 0,
       percentOfNormal: Number((reservoir.pct_of_seasonal_normal
@@ -936,6 +962,13 @@ export function watershedRecords(reservoirs: readonly Reservoir[]): OverviewChar
     groups.set(label, [...(groups.get(label) ?? []), reservoir]);
   }
   return [...groups].map(([label, group], index) => {
+    /* Every reservoir in this group shares the group's drainage area, so
+     * they all carry the same `connected_states`; the first that answers is
+     * the area's own list. Read from the group rather than published again,
+     * because a second copy of a fact is a second thing to go stale. */
+    const labelStates = usStatesOnly(
+      group.find((reservoir) => reservoir.connected_states?.length)
+        ?.connected_states);
     /* One group out of an already-scoped set. `asScoped` is the assertion
      * that says so, and `rollupOfScoped` cannot narrow it again -- a
      * hand-written option object here once dropped Lake Mead's storage out
@@ -945,6 +978,7 @@ export function watershedRecords(reservoirs: readonly Reservoir[]): OverviewChar
     return {
       id: index + 1,
       label,
+      labelStates,
       percent,
       storageAf: rollup.storageAf,
       capacityAf: rollup.capacityAf,

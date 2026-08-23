@@ -36,6 +36,7 @@
  */
 import type { SpreadBox } from "../overview-model";
 import { storageColor } from "./classes";
+import { drainageLabel } from "./format";
 
 const SVG = "http://www.w3.org/2000/svg";
 
@@ -212,14 +213,14 @@ export function renderSpread(
     const name = element("text", {
       x: PAD_LEFT - 10, y: y + 4, class: "spread-name", "text-anchor": "end"
     });
-    name.textContent = box.group;
+    name.textContent = drainageLabel(box.group, box.groupStates);
 
     const title = element("title", {});
     const outlierWords = box.outliers.length === 0 ? ""
       : ` ${box.outliers.length} outside the whiskers: `
         + `${box.outliers.map((entry) => entry.label).join(", ")}.`;
     title.textContent =
-      `${box.group}: middle value ${box.median.toFixed(1)}% full `
+      `${drainageLabel(box.group, box.groupStates)}: middle value ${box.median.toFixed(1)}% full `
       + `across ${box.count} ${box.count === 1 ? "reservoir" : "reservoirs"}. `
       + `Middle half ${box.p25.toFixed(1)}% to ${box.p75.toFixed(1)}%. `
       + `Range ${box.low.toFixed(1)}% to ${box.high.toFixed(1)}%.${outlierWords}`;

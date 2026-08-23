@@ -13,3 +13,19 @@ export function formatDate(value: string): string {
     year: "numeric", month: "short", day: "numeric", timeZone: "UTC"
   });
 }
+
+/**
+ * A drainage area's name with the states its water reaches after it.
+ *
+ * The model keeps the name and the states apart on purpose; this is the one
+ * place they are put together, so a name never reaches a sort, a search or a
+ * roster match with a parenthetical stuck to it. An area with no states left
+ * after the foreign tags go -- nine of the subbasins hold no United States
+ * ground at all -- reads as its bare name rather than as an empty bracket.
+ */
+export function drainageLabel(
+  name: string,
+  states?: readonly string[]
+): string {
+  return states?.length ? `${name} (${states.join(", ")})` : name;
+}

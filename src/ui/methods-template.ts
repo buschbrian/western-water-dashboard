@@ -99,6 +99,21 @@ export function methodsMarkup(search: string): string {
           the agency's public water and climate service. Read the source at
           <a href="https://wcc.sc.egov.usda.gov/awdbRestApi/swagger-ui.html"
             target="_blank" rel="noreferrer">the water and climate data service</a>.</dd>
+        <dt>California Department of Water Resources</dt>
+        <dd>Daily and month-end storage for the California reservoirs, through the
+          state's Data Exchange Center. Read the source at
+          <a href="https://cdec.water.ca.gov/" target="_blank"
+            rel="noreferrer">cdec.water.ca.gov</a>.</dd>
+        <dt>Colorado Division of Water Resources</dt>
+        <dd>Daily storage for the western Colorado reservoirs, through the state's
+          telemetry service. Read the source at
+          <a href="https://dwr.state.co.us/Rest/GET/api/v2/" target="_blank"
+            rel="noreferrer">dwr.state.co.us</a>.</dd>
+        <dt>U.S. Geological Survey</dt>
+        <dd>Daily reservoir storage for its published sites, through the agency's
+          daily-values service. Read the source at
+          <a href="https://waterservices.usgs.gov/" target="_blank"
+            rel="noreferrer">waterservices.usgs.gov</a>.</dd>
         <dt>Full level for Bureau of Reclamation sites</dt>
         <dd>The U.S. Army Corps of Engineers National Inventory of Dams. The repository holds these figures rather than requesting them each morning. A
         full level is a property of the dam and does not change daily. Read the source at

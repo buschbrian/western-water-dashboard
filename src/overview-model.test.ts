@@ -19,7 +19,8 @@ import {
   monthlyTrend,
   percentFullValues,
   overviewScope,
-  watershedOptions
+  watershedOptions,
+  watershedRecords
 } from "./overview-model";
 import { isLakeMead, isLakePowell, WIDEST_SCOPE } from "./data/rollup";
 
@@ -642,5 +643,41 @@ describe("the spread within each drainage area", () => {
       point(9, "Broken", "Area", Number.NaN)
     ];
     expect(spreadBoxes(values)[0]?.count).toBe(4);
+  });
+});
+
+describe("a drainage area's states, beside its name", () => {
+  const inArea = (states: string[]) => [
+    reservoir({ huc6_name: "Kootenai", connected_states: states,
+                current_storage_af: 100, capacity_af: 200 })
+  ];
+
+  it("carries the states as their own field", () => {
+    const [record] = watershedRecords(inArea(["ID", "MT"]));
+    expect(record!.labelStates).toEqual(["ID", "MT"]);
+  });
+
+  it("leaves the label the bare name, which is the filter's identity", () => {
+    /* `onSelect` emits `label` and the drainage filter finds its choice by
+     * matching it exactly. A name that carried its own parenthetical would
+     * clear the filter instead of setting it, so this is the invariant that
+     * keeps the states in a separate field rather than in the string. */
+    const [record] = watershedRecords(inArea(["ID", "MT"]));
+    expect(record!.label).toBe("Kootenai");
+  });
+
+  it("drops the Canadian and Mexican tags", () => {
+    /* The Watershed Boundary Dataset tags an area with every state and
+     * country its water reaches. Kootenai really does reach Canada; this
+     * dashboard publishes no Canadian measurement to explain it. */
+    const [record] = watershedRecords(inArea(["CN", "ID", "MT"]));
+    expect(record!.labelStates).toEqual(["ID", "MT"]);
+  });
+
+  it("leaves an area with no United States ground without states", () => {
+    /* Nine HUC-8 subbasins hold none. They keep their name and take no
+     * empty bracket after it. */
+    const [record] = watershedRecords(inArea(["CN"]));
+    expect(record!.labelStates).toEqual([]);
   });
 });
