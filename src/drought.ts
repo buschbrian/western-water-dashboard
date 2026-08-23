@@ -297,6 +297,17 @@ function renderDrought(
 
   content.innerHTML = `
     ${scopeSentence ? `<p id="drought-scope-summary" class="filter-status">${scopeSentence}</p>` : ""}
+    <!-- The map's own controls, above the filter bar and of a different
+         kind: these change what is drawn over the subject, not which
+         subject is drawn, so they are neither a scope nor a filter and do
+         not share a row -- or a shared link -- with either. Declared here
+         rather than appended once the map resolves, so the order a reader
+         meets is the order the page was written in; hidden until the map
+         starts, because a toggle with nothing behind it is furniture. -->
+    <section class="map-controls" id="drought-map-controls" aria-label="What the map shows" hidden>
+      <label class="filterbar-toggle" for="drought-show-reservoirs">Show reservoirs<input id="drought-show-reservoirs" type="checkbox" /></label>
+      <div class="control-slot" data-slot="map-mode"></div>
+    </section>
     <section class="dashboard-filterbar mobile-filterbar" aria-labelledby="drought-filter-heading">
       <div class="filterbar-head">
         <div class="filterbar-title"><p class="eyebrow">Land conditions</p><h2 id="drought-filter-heading">Narrow the drainage areas</h2></div>
@@ -309,21 +320,23 @@ function renderDrought(
            divided, then the filters that are not places at all. The first
            three slots are filled once the roster and the reference export
            resolve; see the control-slot rule in app.css for why these are
-           slots and not appends. -->
+           slots and not appends. Every control here is one family --
+           Calcite selects at one scale -- and the map's own toggles are
+           not in this bar at all; they live in .map-controls above. -->
       <div id="drought-filter-controls" class="filterbar-controls">
         <div class="control-slot" data-slot="where"></div>
         <div class="control-slot" data-slot="area"></div>
         <div class="control-slot" data-slot="level"></div>
-        <label>Show areas with<select id="drought-worse">
-          <option value="">Any conditions</option>
-          ${DROUGHT_CLASSES.map((entry) => `<option value="${entry.key}">${entry.label} (${entry.code}) or worse</option>`).join("")}
-        </select></label>
-        <label>Order by<select id="drought-sort">
-          <option value="severity">Most severe first</option>
-          <option value="index">Highest severity index first</option>
-          <option value="storage">Emptiest reservoirs first</option>
-          <option value="name">Drainage area name</option>
-        </select></label>
+        <calcite-label>Show areas with<calcite-select id="drought-worse" scale="l">
+          <calcite-option value="">Any conditions</calcite-option>
+          ${DROUGHT_CLASSES.map((entry) => `<calcite-option value="${entry.key}">${entry.label} (${entry.code}) or worse</calcite-option>`).join("")}
+        </calcite-select></calcite-label>
+        <calcite-label>Order by<calcite-select id="drought-sort" scale="l">
+          <calcite-option value="severity">Most severe first</calcite-option>
+          <calcite-option value="index">Highest severity index first</calcite-option>
+          <calcite-option value="storage">Emptiest reservoirs first</calcite-option>
+          <calcite-option value="name">Drainage area name</calcite-option>
+        </calcite-select></calcite-label>
       </div>
     </section>
     <p id="drought-status" class="filter-status" role="status"></p>
@@ -383,8 +396,11 @@ function renderDrought(
   const wanted = droughtStateFromSearch(window.location.search);
   let state: DroughtUrlState = { ...wanted };
 
-  const worseSelect = content.querySelector<HTMLSelectElement>("#drought-worse");
-  const sortSelect = content.querySelector<HTMLSelectElement>("#drought-sort");
+  /* Calcite selects, like every other control in this bar: one family,
+   * one height, one focus ring. `.value` reads and assigns the same way;
+   * only the change event carries the component's own name. */
+  const worseSelect = content.querySelector<HTMLElement & { value: string }>("#drought-worse");
+  const sortSelect = content.querySelector<HTMLElement & { value: string }>("#drought-sort");
   const statusLine = content.querySelector<HTMLElement>("#drought-status");
   const resetButton = content.querySelector<HTMLElement>("#drought-reset");
   const filterbar = content.querySelector<HTMLElement>(".mobile-filterbar");
@@ -861,10 +877,10 @@ function renderDrought(
     }
   }
 
-  worseSelect?.addEventListener("change", () => {
+  worseSelect?.addEventListener("calciteSelectChange", () => {
     update({ worse: worseSelect.value === "" ? null : worseSelect.value });
   });
-  sortSelect?.addEventListener("change", () => {
+  sortSelect?.addEventListener("calciteSelectChange", () => {
     update({ sort: sortSelect.value as DroughtSort });
   });
   resetButton?.addEventListener("click", () => {
@@ -884,6 +900,10 @@ function renderDrought(
     if (!mapHost) return;
     const failed = (): void => {
       mapHost.setAttribute("aria-busy", "false");
+      /* The declared map controls stay hidden -- a toggle for a map that
+       * did not start is furniture with nothing behind it. */
+      content.querySelector<HTMLElement>("#drought-map-controls")
+        ?.setAttribute("hidden", "");
       mapHost.replaceChildren(mapStatusNote(
         "The map could not start. The bars and table carry the same shares."));
       /* The key still describes the bars below, so it is kept even when
@@ -1003,28 +1023,27 @@ function renderDrought(
        * not belong in a shared link beside `?state=` and `?area=`. */
       const reservoirLayer = mapElement.map?.findLayerById(
         RESERVOIR_REFERENCE_LAYER_ID);
-      /* A native checkbox, like the native selects it sits beside in this
-       * bar. A Calcite switch was tried first and axe-core refused it: the
-       * component's real control lives in a shadow root, so neither a
-       * wrapping `<label>` nor the component's own `label` attribute gave it
-       * an accessible name. The bar is already native, so this is the
-       * consistent answer as well as the working one. */
-      const reservoirToggle = document.createElement("label");
-      reservoirToggle.className = "filterbar-toggle";
-      const reservoirSwitch = document.createElement("input");
-      reservoirSwitch.type = "checkbox";
-      reservoirSwitch.id = "drought-show-reservoirs";
-      reservoirSwitch.checked = false;
-      reservoirSwitch.addEventListener("change", () => {
-        const shown = reservoirSwitch.checked;
-        if (reservoirLayer) reservoirLayer.visible = shown;
-        window.__droughtReady = {
-          ...(window.__droughtReady ?? {}), mapReservoirsShown: shown
-        } as NonNullable<typeof window.__droughtReady>;
-      });
-      reservoirToggle.htmlFor = reservoirSwitch.id;
-      reservoirToggle.append("Show reservoirs", reservoirSwitch);
-      content.querySelector(".filterbar-controls")?.append(reservoirToggle);
+      /* The toggles are declared markup in `.map-controls` above the bar,
+       * hidden until the map starts; this only wires them. A Calcite switch
+       * was tried for the checkbox and axe-core refused it: the component's
+       * real control lives in a shadow root, so neither a wrapping `<label>`
+       * nor the component's own `label` attribute gave it an accessible
+       * name. Native is the working answer, and inside its own group the
+       * two controls are one family with each other. */
+      const mapControls = content.querySelector<HTMLElement>("#drought-map-controls");
+      /* The group was written hidden: until now, toggling would have been
+       * promising a layer that does not exist. */
+      mapControls?.removeAttribute("hidden");
+      const reservoirSwitch = content.querySelector<HTMLInputElement>("#drought-show-reservoirs");
+      if (reservoirSwitch) {
+        reservoirSwitch.addEventListener("change", () => {
+          const shown = reservoirSwitch.checked;
+          if (reservoirLayer) reservoirLayer.visible = shown;
+          window.__droughtReady = {
+            ...(window.__droughtReady ?? {}), mapReservoirsShown: shown
+          } as NonNullable<typeof window.__droughtReady>;
+        });
+      }
 
       /* What the map draws, offered only when there is a second week to draw
        * it from. A control that switches to a blank surface is worse than an
@@ -1066,7 +1085,10 @@ function renderDrought(
           } as NonNullable<typeof window.__droughtReady>;
         });
         modeField.append("Map shows", modeSelect);
-        content.querySelector(".filterbar-controls")?.append(modeField);
+        /* Into the declared slot beside the reservoir toggle, not appended
+         * to the filter bar: these two answer what is drawn over the
+         * subject, and that question has its own row. */
+        if (mapControls) placeInSlot(mapControls, "map-mode", modeField);
       }
 
       window.__droughtReady = {

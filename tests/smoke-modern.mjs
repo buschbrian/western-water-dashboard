@@ -4338,6 +4338,94 @@ for (const failure of [
   }
 }
 
+/*
+ * One control family to a filter bar, and the map's own controls in their
+ * own group. The place menus are Calcite; a native `<select>` beside them
+ * differs in height, focus ring and open behaviour and reads as a
+ * different kind of control. And the drought map's toggles change what is
+ * drawn over the subject -- not a scope, not in a shared link -- so they
+ * belong above the bar, declared, not appended onto its end after the map
+ * resolves.
+ */
+{
+  console.log("\n=== Filter bar families");
+  for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
+    const context = await newPageContext(browser, viewport);
+    const tab = await context.newPage();
+    const errors = [];
+    tab.on("pageerror", (err) => errors.push(`uncaught: ${err.message}`));
+    const label = `Filter bar families (${viewport.name})`;
+    try {
+      for (const page of [
+        { name: "Snowpack", url: `${URL}snow.html`, signal: "__snowReady" },
+        { name: "Drought", url: `${URL}drought.html`, signal: "__droughtReady" }
+      ]) {
+        await tab.goto(page.url, { waitUntil: "domcontentloaded", timeout: 60000 });
+        await tab.waitForFunction((key) => window[key] !== undefined,
+          page.signal, { timeout: 120000 });
+        const state = await tab.evaluate(() => {
+          const bar = document.querySelector(".dashboard-filterbar");
+          const selects = bar ? [...bar.querySelectorAll("select")] : [];
+          const calciteSelects = bar
+            ? [...bar.querySelectorAll("calcite-select")] : [];
+          return {
+            nativeSelects: selects.length,
+            calciteSelects: calciteSelects.length,
+            scales: [...new Set(calciteSelects.map((select) =>
+              select.getAttribute("scale")))],
+            /* The drought map's group: present, ahead of the bar, holding
+             * its own controls rather than lending them to the filters. */
+            mapGroup: Boolean(document.querySelector(".map-controls")),
+            mapGroupBeforeBar: (() => {
+              const group = document.querySelector(".map-controls");
+              const bar = document.querySelector(".dashboard-filterbar");
+              return Boolean(group && bar && Boolean(
+                group.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING));
+            })(),
+            toggleInGroup: Boolean(document.querySelector(
+              ".map-controls #drought-show-reservoirs")),
+            toggleInBar: Boolean(document.querySelector(
+              ".dashboard-filterbar .filterbar-toggle")),
+            modeInGroup: Boolean(document.querySelector(
+              ".map-controls #drought-map-mode")),
+            modeInBar: Boolean(document.querySelector(
+              ".dashboard-filterbar #drought-map-mode"))
+          };
+        });
+        console.log(`  ${label} ${page.name}:`, JSON.stringify(state));
+        check(state.nativeSelects === 0,
+          `${label} ${page.name}: ${state.nativeSelects} native select(s) `
+          + "still sit in the filter bar beside the Calcite place menus");
+        check(state.calciteSelects > 0,
+          `${label} ${page.name}: no Calcite selects found in the bar`);
+        check(state.scales.every((scale) => scale === state.scales[0]),
+          `${label} ${page.name}: the bar's Calcite selects mix scales `
+          + `${JSON.stringify(state.scales)}`);
+        if (page.name === "Drought") {
+          check(state.mapGroup && state.mapGroupBeforeBar,
+            `${label} ${page.name}: the map controls are not their own group `
+            + "ahead of the filter bar");
+          check(state.toggleInGroup && !state.toggleInBar,
+            `${label} ${page.name}: the reservoir toggle sits in the filter `
+            + "bar instead of the map's own group");
+          if (state.modeInGroup || state.modeInBar) {
+            check(state.modeInGroup && !state.modeInBar,
+              `${label} ${page.name}: the map-mode select landed in the `
+              + "filter bar instead of the map's own group");
+          }
+        }
+      }
+    } catch (error) {
+      failures.push(`${label}: ${error.message}`);
+    } finally {
+      if (errors.length) {
+        for (const message of errors) failures.push(`${label}: ${message}`);
+      }
+      await context.close();
+    }
+  }
+}
+
 await browser.close();
 server.close();
 

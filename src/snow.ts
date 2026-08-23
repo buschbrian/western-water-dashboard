@@ -285,12 +285,14 @@ function renderSnow(
         <div class="control-slot" data-slot="where"></div>
         <div class="control-slot" data-slot="area"></div>
         <div class="control-slot" data-slot="level"></div>
-        <label>Elevation<select id="snow-elev">${ELEVATION_BANDS.map((band) => `<option value="${band}">${elevationBandLabel(band)}</option>`).join("")}</select></label>
-        <label>Reporting<select id="snow-reporting">
-          <option value="all">Every site</option>
-          <option value="reporting">Sending values</option>
-          <option value="late">Late data only</option>
-        </select></label>
+        <!-- One control family to the bar: Calcite selects at one scale,
+             like the place menus and the area-size control beside them. -->
+        <calcite-label>Elevation<calcite-select id="snow-elev" scale="l">${ELEVATION_BANDS.map((band) => `<calcite-option value="${band}">${elevationBandLabel(band)}</calcite-option>`).join("")}</calcite-select></calcite-label>
+        <calcite-label>Reporting<calcite-select id="snow-reporting" scale="l">
+          <calcite-option value="all">Every site</calcite-option>
+          <calcite-option value="reporting">Sending values</calcite-option>
+          <calcite-option value="late">Late data only</calcite-option>
+        </calcite-select></calcite-label>
       </div>
       <div id="snow-filter-actions" class="filterbar-head-actions"><calcite-button id="snow-reset" class="reset-button" appearance="outline" scale="s" kind="neutral">Show every site</calcite-button></div>
     </section>
@@ -364,8 +366,11 @@ function renderSnow(
   const monthRows = document.querySelector<HTMLTableSectionElement>("#snow-month-rows");
   const siteRowsBody = document.querySelector<HTMLTableSectionElement>("#snow-site-rows");
   const querybox = document.querySelector<HTMLInputElement>("#snow-query");
-  const elevSelect = document.querySelector<HTMLSelectElement>("#snow-elev");
-  const statusSelect = document.querySelector<HTMLSelectElement>("#snow-reporting");
+  /* Calcite selects, like every other control in this bar. `.value` reads
+   * and assigns the same way; only the change event carries the
+   * component's own name. */
+  const elevSelect = document.querySelector<HTMLElement & { value: string }>("#snow-elev");
+  const statusSelect = document.querySelector<HTMLElement & { value: string }>("#snow-reporting");
   const resetButton = document.querySelector<HTMLElement>("#snow-reset");
   const filterbar = document.querySelector<HTMLElement>("#snow-content .mobile-filterbar");
   const filterToggle = document.querySelector<HTMLButtonElement>("#snow-filter-toggle");
@@ -1035,10 +1040,10 @@ function renderSnow(
   }
 
   querybox?.addEventListener("input", () => applyFilter({ query: querybox.value }));
-  elevSelect?.addEventListener("change", () => {
+  elevSelect?.addEventListener("calciteSelectChange", () => {
     if (isElevationBand(elevSelect.value)) applyFilter({ band: elevSelect.value });
   });
-  statusSelect?.addEventListener("change", () => {
+  statusSelect?.addEventListener("calciteSelectChange", () => {
     if (isSiteStatus(statusSelect.value)) applyFilter({ status: statusSelect.value });
   });
   resetButton?.addEventListener("click", () => {
