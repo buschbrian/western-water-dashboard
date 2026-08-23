@@ -28,6 +28,7 @@ import {
   type ReservoirGeography, type RollupCoverage, type StatewideRollup
 } from "./data/rollup";
 import { classIndexOf } from "./state/filters";
+import { offeredStates } from "./data/state-vocabulary";
 import {
   overviewStateFromSearch,
   writeOverviewUrl,
@@ -56,6 +57,7 @@ import {
   openingScopeSummary,
   overviewScope,
   percentFullValues,
+  placeAxesAfterPick,
   spreadBoxes,
   countyOptions,
   stateOptions,
@@ -69,6 +71,9 @@ import {
   type OverviewCadence,
   type OverviewSort
 } from "./overview-model";
+import { createWhereMenu } from "./ui/where-control";
+import { placeInSlot } from "./ui/dom";
+import type { CountyChoice } from "./ui/where-control-model";
 import type {
   BaselineChoice, BaselineId, DroughtCoveragePayload, Reservoir, SnowpackPayload
 } from "./types";
@@ -250,7 +255,6 @@ async function renderOverview(
    * `update()` rebuilds the subregion and drainage-area options from, for
    * the same reason -- a control that answers "where can a reader go" must
    * not follow ADR-011's other dimension, which is what is in the total. */
-  const countyChoices = countyOptions(allReservoirs);
   const stateChoices = stateOptions(allReservoirs);
   const widestScope = overviewScope(allReservoirs, WIDEST_SCOPE);
   content.innerHTML = `
@@ -312,14 +316,12 @@ async function renderOverview(
            over a reporting schedule to get from one place to a smaller
            one. -->
       <div id="overview-filter-controls" class="filterbar-controls">
-        <!-- One menu for both place axes (ADR-084): states as rows,
-             counties grouped beneath their state's heading. A two-letter
-             value is a state pick and a five-digit value is a FIPS, so one
-             select holds both and each pick announces its own kind by
-             shape. The county field is offered only when the payload
-             carries counties; hidden rather than absent so the markup, and
-             the tests that read it, stay one shape. -->
-        <label id="place-field" hidden>Where<select id="place-filter"><option value="all">All states</option></select></label>
+        <!-- One menu for both place axes (ADR-084), built by the shared
+             createWhereMenu from the published roster and this payload's
+             county assignments -- states as rows, counties grouped beneath
+             their state's name. Arrives after first paint like every
+             control here; see the control-slot rule in app.css. -->
+        <div class="control-slot" data-slot="place"></div>
         <label>Subregion<select id="subregion-filter"><option value="all">All subregions</option></select></label>
         <label>Drainage area<select id="watershed-filter"><option value="all">All drainage areas</option></select></label>
         <label>Reporting<select id="cadence-filter"><option value="all">All reporting</option><option value="daily">Daily</option><option value="monthly">Monthly</option><option value="late">Late or unavailable</option></select></label>
@@ -551,47 +553,72 @@ async function renderOverview(
     element.value = options.some((choice) => choice.code === wanted) ? wanted : "all";
   }
 
-  const place = document.querySelector<HTMLSelectElement>("#place-filter");
-  const placeField = document.querySelector<HTMLElement>("#place-field");
   const subregion = document.querySelector<HTMLSelectElement>("#subregion-filter");
-  /* The county control is offered only when the payload carries counties.
-   * The assignment ships with a morning's refresh, so the published payload
-   * has none until then -- and a filter whose every choice narrows to nothing
-   * is worse than no filter. The field is hidden rather than absent so the
-   * markup, and the tests that read it, stay one shape. */
-  if (placeField) placeField.hidden = stateChoices.length === 0;
-  /* The Where menu (ADR-084): one select for both place axes. States are
-   * top-level rows; counties arrive already grouped under their state's
-   * code (`countyOptions` sorts them contiguously), so they render as
-   * `<optgroup>` headings by the same run-detection every other grouped
-   * list here uses. A two-letter value names a state and a five-digit
-   * value names a FIPS, so one flat value space holds both kinds of pick.
+  /* The two place axes, held here rather than read back out of the menu
+   * (ADR-084: "The two axes stay two"). The merged Where menu *shows* the
+   * finer of whatever is held -- a county over its state -- but a county
+   * row writes `?county=` and leaves `?state=` alone, because state is the
+   * axis that survives the navigation to another page. Deriving state from
+   * the menu's visible value silently dropped it on every county pick;
+   * that is what these two variables exist to not do again.
    *
-   * The menu always offers every county, not just the chosen state's:
-   * grouped under headings, the menu shows which state a county belongs to
-   * itself, which was the reason the old separate list narrowed by state
-   * (ADR-076). The fallback rule is unchanged -- an offered-but-dead value
-   * below reads back as "all". */
-  if (place) fillOptions(place, [
-    ...stateChoices.map((choice) => ({ code: choice.code, label: choice.label })),
-    ...countyChoices.map((choice) => ({
-      code: choice.code,
-      label: choice.label.endsWith("County") ? choice.label : `${choice.label} County`,
-      group: choice.group
-    }))
-  ], "All states");
-
-  /* What the merged Where menu's current value means to the two axes it
-   * holds. A two-letter value is a state pick, a five-digit value is a
-   * FIPS, and "all" is neither -- one menu, one "nowhere". */
-  const placeState = (): string => {
-    const value = place?.value ?? "all";
-    return value.length === 2 ? value : "all";
+   * `countyStateOf` is what "a county the new state does hold" means,
+   * built from the same choices list that builds the menu's headings, so
+   * the keep-or-clear rule cannot drift from what a reader sees grouped in
+   * front of them (the ADR-076 fallback rule, carried into one menu). */
+  let chosenState = "all";
+  let chosenCounty = "all";
+  const countyChoices = countyOptions(allReservoirs);
+  const countyStateOf = new Map(countyChoices
+    .filter((choice) => choice.group !== undefined)
+    .map((choice) => [choice.code, choice.group!]));
+  const counties: CountyChoice[] = countyChoices.map((choice) => ({
+    fips: choice.code,
+    name: choice.label,
+    /* A county whose record carries no state cannot be placed under a
+     * heading; it stays out of the menu rather than wearing one that names
+     * nothing -- the same rule the model applies to unplaceable drainage
+     * rows. */
+    state: choice.group ?? ""
+  })).filter((choice) => choice.state !== "");
+  const placeMenuHost = document.querySelector<HTMLElement>(
+    "#overview-filter-controls");
+  const reflectPlace = (): void => {
+    placeMenu?.set({ state: chosenState, area: null },
+      chosenCounty === "all" ? null : chosenCounty);
   };
-  const placeCounty = (): string => {
-    const value = place?.value ?? "all";
-    return /^\d{5}$/.test(value) ? value : "all";
+  const applyPlacePick = (pick: { kind: "state" | "county"; value: string }): void => {
+    const next = placeAxesAfterPick(
+      { state: chosenState, county: chosenCounty }, pick, countyStateOf);
+    chosenState = next.state;
+    chosenCounty = next.county;
+    reflectPlace();
+    void update();
   };
+  /* Built from the published roster (`openingRosters`) and this payload's
+   * county assignments, by the same builder the three map pages use -- one
+   * implementation of one menu, headings carrying full state names like
+   * the top-level rows they sit beneath. */
+  /* This page skips the reference export when the address bar names no
+   * place, so the menu's states come from this payload's waterbodies --
+   * `offeredStates` maps them to published names, which is what makes a
+   * county's heading read the same way as the rows above it. */
+  const placeStates = offeredStates({
+    reservoirStates: allReservoirs.map((reservoir) =>
+      reservoir.waterbody_states?.length
+        ? reservoir.waterbody_states
+        : (reservoir.state ? [reservoir.state] : []))
+  });
+  const placeMenu = placeMenuHost
+    ? createWhereMenu(openingRosters, { state: chosenState, area: null },
+      (pick) => applyPlacePick(pick),
+      { counties, scale: "l", states: placeStates })
+    : null;
+  if (placeMenu && placeMenuHost) {
+    placeInSlot(placeMenuHost, "place", placeMenu.element);
+  }
+  const placeState = (): string => chosenState;
+  const placeCounty = (): string => chosenCounty;
   /* The subregion list starts at its widest; the first update() narrows it
    * to the chosen state. It must exist before the URL restore below, so a
    * link's subregion has an option to land on. */
@@ -637,7 +664,7 @@ async function renderOverview(
   const chartMeasure = document.querySelector<HTMLSelectElement>("#chart-measure");
   const chartRank = document.querySelector<HTMLSelectElement>("#chart-rank");
   const exportButton = document.querySelector<HTMLElement>("#download-overview-csv");
-  if (!tbody || !search || !place || !subregion || !watershed
+  if (!tbody || !search || !subregion || !watershed
       || !cadence || !sort || !reset || !status
       || !capacityHost || !watershedHost || !trendHost || !normalHost
       || !distributionHost || !spreadHost
@@ -926,7 +953,10 @@ async function renderOverview(
       lakeMeadExcluded: !visible.some(isLakeMead)
     };
   };
-  for (const control of [search, place, subregion, watershed, cadence, sort,
+  /* The Where menu is deliberately absent: its own pick handler calls
+   * `update`, because a pick also has to move the two held axes before any
+   * read of them means anything. */
+  for (const control of [search, subregion, watershed, cadence, sort,
     lakePowell, lakeMead, geography, chartLimit, chartMeasure, chartRank]) {
     const event = control instanceof HTMLSelectElement
       || (control instanceof HTMLInputElement && control.type === "checkbox")
@@ -943,7 +973,9 @@ async function renderOverview(
   reset.addEventListener("click", () => {
     search.value = "";
     watershed.value = "all";
-    place.value = "all";
+    chosenState = "all";
+    chosenCounty = "all";
+    reflectPlace();
     subregion.value = "all";
     cadence.value = "all";
     sort.value = "capacity";
@@ -974,14 +1006,14 @@ async function renderOverview(
     ? wanted.drainageArea : "all";
   /* A county in the link that this payload does not carry falls back to all,
    * the same way a drainage area does. A shared link outliving the roster it
-   * was made from should show everything rather than nothing. The merged
-   * menu holds both axes, so the county wins the visible value when a link
-   * named one and the state otherwise -- the finer of the two is what the
-   * reader asked about. */
-  place.value = countyChoices.some((choice) => choice.code === wanted.county)
-    ? wanted.county
-    : stateChoices.some((choice) => choice.code === wanted.state)
-      ? wanted.state : "all";
+   * was made from should show everything rather than nothing. Both axes are
+   * restored -- the link carries two parameters and the page honours two --
+   * and the menu shows whichever is finer. */
+  chosenCounty = countyChoices.some((choice) => choice.code === wanted.county)
+    ? wanted.county : "all";
+  chosenState = stateChoices.some((choice) => choice.code === wanted.state)
+    ? wanted.state : "all";
+  reflectPlace();
   /* State first, then subregion: the update below repopulates the subregion
    * list from the chosen state, and a selection that survives that narrowing
    * is kept while one that does not falls back to "all". */

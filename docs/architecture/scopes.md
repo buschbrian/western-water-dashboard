@@ -168,7 +168,9 @@ one control.
 Snow's rows are gated by what its payload can draw: a row at the drawn tier is
 offered only when it has a publishable figure, a coarser row only when some
 publishable choice sits beneath it, and nothing finer than the drawn tier is
-offered. That is ADR-071's empty-page repair carried forward per row.
+offered (ADR-085: a row can be gated honestly only against figures the payload
+publishes, and those exist per drawn level). That is ADR-071's empty-page
+repair carried forward per row.
 Drought and storage offer the full published roster. On storage every drainage
 pick is the in-page dimming filter at any width (codes nest, so a subregion row
 prefix-filters), written to `?drainage=` through the same `writeUrl` as every

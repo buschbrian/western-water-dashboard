@@ -65,7 +65,8 @@ The four different scopes, the hydrologic level, and what a link carries.
   [ADR-073](ADR-073-draw-the-regions-too-and-read-them-from-their-own-publisher.md),
   [ADR-074](ADR-074-compare-the-week-with-the-one-before-it.md),
   [ADR-076](ADR-076-nest-the-place-menus-and-let-the-heading-carry-the-state.md),
-  [ADR-084](ADR-084-two-place-menus-to-a-page.md)
+  [ADR-084](ADR-084-two-place-menus-to-a-page.md),
+  [ADR-085](ADR-085-gate-snows-drainage-rows-to-the-drawn-tier.md)
 - Boundary sourcing: [ADR-024](ADR-024-use-full-resolution-watersheds-for-snow-sites.md),
   [ADR-034](ADR-034-hosted-boundary-layers-with-a-deadline.md),
   [ADR-037](ADR-037-refetch-the-boundaries-at-the-resolution-the-source-stops-adding.md)
@@ -217,6 +218,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-082](ADR-082-publish-a-drought-severity-and-coverage-index.md) | Publish a Drought Severity and Coverage Index over measured land | Accepted; derived client-side from published shares, thinly measured areas marked never dropped |
 | [ADR-083](ADR-083-anchor-the-monthly-normal-window-once-per-chart.md) | Anchor the monthly normal window once per chart, not once per month | Accepted; narrows ADR-041's per-month rule for the live twelve-month line, no version bump |
 | [ADR-084](ADR-084-two-place-menus-to-a-page.md) | Two place menus to a page: Where (state, county) and Drainage area (across levels) | Accepted; supersedes ADR-071's picker truce, extends ADR-076's nesting to both menus |
+| [ADR-085](ADR-085-gate-snows-drainage-rows-to-the-drawn-tier.md) | Gate snow's drainage rows to the drawn tier and coarser | Accepted; narrows ADR-084's snow clause, payload reason stated |
 
 ## Relationship to the historical journal
 

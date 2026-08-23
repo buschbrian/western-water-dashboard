@@ -2004,7 +2004,16 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
         expectedReservoirs, { timeout: 60000 });
 
       // Picking a state narrows the table and writes the address, on its own.
-      await tab.selectOption("#place-filter", filterState.code);
+  /* The merged Where menu is a Calcite component now, so driving it is
+   * set-value-plus-event rather than Playwright's native-select helper. */
+  const pickPlace = async (value) => {
+    await tab.evaluate((chosen) => {
+      const select = document.querySelector(".where-menu calcite-select");
+      select.value = chosen;
+      select.dispatchEvent(new CustomEvent("calciteSelectChange", { bubbles: true }));
+    }, value);
+  };
+      await pickPlace(filterState.code);
       await tab.waitForFunction((expected) => window.__overviewReady?.visible === expected,
         filterState.count, { timeout: 60000 });
       check((await tab.evaluate(() => window.location.search))
@@ -2035,7 +2044,7 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
       await tab.waitForFunction(() => window.__overviewReady?.visible === 0,
         null, { timeout: 60000 });
       const kept = await tab.evaluate(() => ({
-        state: document.querySelector("#place-filter")?.value,
+        state: document.querySelector(".where-menu calcite-select")?.value,
         subregion: document.querySelector("#subregion-filter")?.value
       }));
       check(kept.state === filterState.code && kept.subregion === filterSubregion.code,
@@ -2055,7 +2064,7 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
           window.__overviewReady?.charts === expected, CHART_HOSTS.length,
         { timeout: 120000 });
         const restored = await geoRecipient.evaluate(() => ({
-          state: document.querySelector("#place-filter")?.value,
+          state: document.querySelector(".where-menu calcite-select")?.value,
           subregion: document.querySelector("#subregion-filter")?.value,
           rows: document.querySelectorAll("#reservoir-rows tr").length
         }));
@@ -2076,9 +2085,11 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
         expectedReservoirs, { timeout: 60000 });
       if (filterCounty) {
         check(await tab.evaluate(() =>
-          document.querySelector("#place-field")?.hidden) === false,
-        `${label}: the payload carries counties and the place menu is hidden`);
-        await tab.selectOption("#place-filter", filterCounty.code);
+          [...document.querySelectorAll(".where-menu calcite-option")]
+            .some((option) => option.getAttribute("value") === undefined
+              ? false : /^\d{5}$/.test(option.getAttribute("value") ?? ""))),
+        `${label}: the payload carries counties and the Where menu has none`);
+        await pickPlace(filterCounty.code);
         await tab.waitForFunction((expected) => window.__overviewReady?.visible === expected,
           filterCounty.count, { timeout: 60000 });
         await tab.locator("#reset-filters").click();
@@ -3698,6 +3709,44 @@ for (const failure of [
     `the bar kept its first-paint links after the map was narrowed: ` +
     narrowedBar.navHrefs.join(", "));
 
+  /* The panel renders twice -- desktop and phone sheet -- so two Drainage
+   * menus exist, and they are two views of one filter state, not two
+   * filters (ADR-084; the same invariant shell.ts states for every control
+   * it keeps in step). A pick in one must appear in the other, and "Show
+   * every reservoir" must leave neither naming an area the page is not
+   * filtered to. Readiness carries the answer both menus have to agree
+   * with. */
+  await tab.waitForFunction((expected) =>
+    window.__dashboardReady?.areaFilter === expected, narrowedBar.area,
+    { timeout: 60000 });
+  const pickedSync = await tab.evaluate(() => ({
+    menus: [...document.querySelectorAll(".drainage-menu calcite-select")]
+      .map((select) => select.value),
+    areaFilter: window.__dashboardReady?.areaFilter ?? null
+  }));
+  check(pickedSync.menus.length >= 2 && new Set(pickedSync.menus).size === 1
+    && pickedSync.menus[0] === pickedSync.areaFilter,
+    `after picking ${narrowedBar.area}, the panels' drainage menus show ` +
+    `${JSON.stringify(pickedSync.menus)} against areaFilter ` +
+    `${pickedSync.areaFilter} -- two answers to one question`);
+  /* Programmatic click: this context runs with the first-visit splash
+   * unseeded (unlike `newPageContext`), and its modal backdrop intercepts
+   * pointer events a real click would need. */
+  await tab.locator('#start-panel [data-filter="reset"]')
+    .evaluate((button) => button.click());
+  await tab.waitForFunction(() =>
+    window.__dashboardReady?.areaFilter === null, { timeout: 60000 });
+  const resetSync = await tab.evaluate(() => ({
+    menus: [...document.querySelectorAll(".drainage-menu calcite-select")]
+      .map((select) => select.value),
+    areaFilter: window.__dashboardReady?.areaFilter ?? null,
+    search: window.location.search
+  }));
+  check(resetSync.menus.every((value) => value === "all"),
+    `reset left the drainage menus at ${JSON.stringify(resetSync.menus)} ` +
+    `while areaFilter is ${resetSync.areaFilter} -- a menu naming an area ` +
+    "the page no longer filters to");
+
   for (const message of errors) failures.push(`Area size: ${message}`);
   await context.close();
 }
@@ -4035,25 +4084,46 @@ for (const failure of [
       await tab.waitForFunction(() => window.__overviewReady !== undefined,
         null, { timeout: 120000 });
       const readNesting = () => tab.evaluate(() => {
-        const groupsOf = (selector) => [...document.querySelectorAll(
+        const nativeGroups = (selector) => [...document.querySelectorAll(
           `${selector} optgroup`)].map((group) => ({
             label: group.label,
             options: group.querySelectorAll("option").length
           }));
+        const calciteGroups = (rootSelector) => {
+          const root = document.querySelector(rootSelector);
+          return root ? [...root.querySelectorAll("calcite-option-group")]
+            .map((group) => ({
+              label: group.getAttribute("label"),
+              options: group.querySelectorAll("calcite-option").length
+            })) : [];
+        };
         const looseCodes = (selector, test) => [...document.querySelectorAll(
           `${selector} > option`)]
           .map((option) => option.value)
           .filter((value) => value !== "all" && test(value)).length;
+        const looseCalcite = (rootSelector, test) => {
+          const root = document.querySelector(rootSelector);
+          if (!root) return -1;
+          return [...root.querySelectorAll(":scope > * > calcite-option")]
+            .map((option) => option.getAttribute("value") ?? "")
+            .filter((value) => value !== "all" && test(value)).length;
+        };
         return {
-          placeGroups: groupsOf("#place-filter"),
-          /* A two-letter value is a state row and sits at the top level on
-           * purpose; a five-digit FIPS outside any grouping would be a
-           * county the hierarchy forgot to place. */
-          countyLoose: looseCodes("#place-filter", (v) => /^\d{5}$/.test(v)),
-          stateLoose: looseCodes("#place-filter", (v) => /^[A-Z]{2}$/.test(v)),
-          countyCount: [...document.querySelectorAll("#place-filter option")]
-            .filter((option) => /^\d{5}$/.test(option.value)).length,
-          watershedGroups: groupsOf("#watershed-filter"),
+          /* The merged Where menu is Calcite here, like on every page:
+           * one implementation of one menu (ADR-084). */
+          placeGroups: calciteGroups(".where-menu"),
+          /* A five-digit FIPS outside any grouping would be a county the
+           * hierarchy forgot to place; state rows sit at the top level on
+           * purpose. */
+          countyLoose: looseCalcite(".where-menu", (v) => /^\d{5}$/.test(v)),
+          countyCount: (() => {
+            const root = document.querySelector(".where-menu");
+            if (!root) return 0;
+            return [...root.querySelectorAll("calcite-option")]
+              .filter((option) => /^\d{5}$/.test(option.getAttribute("value") ?? ""))
+              .length;
+          })(),
+          watershedGroups: nativeGroups("#watershed-filter"),
           watershedLoose: looseCodes("#watershed-filter", () => true),
           viewport: document.documentElement.clientWidth,
           scroll: document.documentElement.scrollWidth
@@ -4067,18 +4137,21 @@ for (const failure of [
       }));
       check(before.scroll <= before.viewport + 1,
         `${label}: the page scrolls sideways with grouped selects`);
-      /* Every county under exactly one state heading, none loose: the
-       * hierarchy is stated, not implied. */
+      /* Every county under exactly one named-state heading, none loose: the
+       * hierarchy is stated, not implied -- and the heading carries the same
+       * name the top-level rows use, so one menu never names one state two
+       * ways (AGENTS.md invariant 8). */
       check(before.placeGroups.length > 0 || before.countyCount === 0,
-        `${label}: the place menu has no state groupings`);
+        `${label}: the Where menu has no state groupings`);
       check(before.countyLoose === 0,
         `${label}: ${before.countyLoose} county options sit outside any state grouping`);
-      check(before.stateLoose >= 0 && before.placeGroups.reduce(
-        (sum, group) => sum + group.options, 0) === before.countyCount,
+      check(before.placeGroups.reduce((sum, group) => sum + group.options, 0)
+        === before.countyCount,
         `${label}: county groupings do not hold every county option`);
       for (const group of before.placeGroups) {
-        check(/^[A-Z]{2}$/.test(group.label),
-          `${label}: a county grouping is labelled "${group.label}", not a state code`);
+        check(/^[A-Z]/.test(group.label) && !/^\d+$/.test(group.label),
+          `${label}: a county grouping is labelled "${group.label}", `
+          + "not a published state name");
       }
       for (const group of before.watershedGroups) {
         check(!/^\d+$/.test(group.label),
@@ -4092,26 +4165,82 @@ for (const failure of [
          * list could not show which state a county belonged to; grouped
          * under headings, the menu shows that itself, so the list holding
          * steady *is* the requirement now (ADR-084). */
-        const chosen = before.placeGroups[0].label;
+        const chosenCode = await tab.evaluate(() => {
+          const root = document.querySelector(".where-menu");
+          if (!root) return null;
+          const heading = root.querySelector("calcite-option-group")
+            ?.getAttribute("label");
+          if (!heading) return null;
+          const row = [...root.querySelectorAll(":scope > * > calcite-option")]
+            .find((option) =>
+              option.textContent?.trim() === heading.trim()
+              && /^[A-Z]{2}$/.test(option.getAttribute("value") ?? ""));
+          return row?.getAttribute("value") ?? null;
+        });
+        if (chosenCode) {
+          await tab.locator("#overview-filter-toggle")
+            .click({ timeout: 5000 }).catch(() => {});
+          await tab.evaluate((code) => {
+            const select = document.querySelector(".where-menu calcite-select");
+            select.value = code;
+            select.dispatchEvent(new CustomEvent("calciteSelectChange",
+              { bubbles: true }));
+          }, chosenCode);
+          await tab.waitForFunction((code) =>
+            window.location.search.includes(`state=${code}`),
+          chosenCode, { timeout: 60000 });
+          const after = await readNesting();
+          check(after.countyLoose === 0,
+            `${label}: after choosing ${chosenCode}, county options sit `
+            + "outside a grouping");
+          const beforeTotal = before.placeGroups.reduce(
+            (sum, group) => sum + group.options, 0);
+          const afterTotal = after.placeGroups.reduce(
+            (sum, group) => sum + group.options, 0);
+          check(afterTotal === beforeTotal,
+            `${label}: choosing ${chosenCode} changed the counties on offer `
+            + `(${beforeTotal} -> ${afterTotal}); the grouped menu offers them all`);
+          check(after.scroll <= after.viewport + 1,
+            `${label}: the page scrolls sideways after the state choice`);
+        }
+      }
+
+      /* A county pick leaves ?state= alone (ADR-084: "The two axes stay
+       * two"). state is portable across the navigation and county is not,
+       * so dropping it silently strips a reader's scope the moment they
+       * click through to another page. */
+      const utahCounty = payload.reservoirs.find((reservoir) =>
+        reservoir.state === "UT" && typeof reservoir.county_fips === "string")
+        ?.county_fips;
+      if (utahCounty) {
+        await tab.goto(`${URL}overview.html?state=UT`,
+          { waitUntil: "domcontentloaded", timeout: 60000 });
+        await tab.waitForFunction(() => window.__overviewReady !== undefined,
+          null, { timeout: 120000 });
         await tab.locator("#overview-filter-toggle")
           .click({ timeout: 5000 }).catch(() => {});
-        await tab.selectOption("#place-filter", chosen);
-        await tab.waitForFunction((code) =>
-          window.__overviewReady !== undefined
-          && window.location.search.includes(`state=${code}`),
-        chosen, { timeout: 60000 });
-        const after = await readNesting();
-        check(after.countyLoose === 0,
-          `${label}: after choosing ${chosen}, county options sit outside a grouping`);
-        const beforeTotal = before.placeGroups.reduce(
-          (sum, group) => sum + group.options, 0);
-        const afterTotal = after.placeGroups.reduce(
-          (sum, group) => sum + group.options, 0);
-        check(afterTotal === beforeTotal,
-          `${label}: choosing ${chosen} changed the counties on offer `
-          + `(${beforeTotal} -> ${afterTotal}); the grouped menu offers them all`);
-        check(after.scroll <= after.viewport + 1,
-          `${label}: the page scrolls sideways after the state choice`);
+        await tab.evaluate((value) => {
+          const select = document.querySelector("#place-filter")
+            ?? document.querySelector(".where-menu calcite-select");
+          select.value = value;
+          select.dispatchEvent(select.tagName === "SELECT"
+            ? new Event("change", { bubbles: true })
+            : new CustomEvent("calciteSelectChange", { bubbles: true }));
+        }, utahCounty);
+        await tab.waitForFunction(() =>
+          window.location.search.includes("county="), { timeout: 60000 });
+        const pickedCounty = await tab.evaluate(() => window.location.search);
+        check(pickedCounty.includes("state=UT") && pickedCounty.includes(`county=${utahCounty}`),
+          `picking county ${utahCounty} under ?state=UT produced ` +
+          `"${pickedCounty}" -- the state axis did not survive`);
+        // And the combined link round-trips unchanged.
+        await tab.goto(`${URL}overview.html?state=UT&county=${utahCounty}`,
+          { waitUntil: "domcontentloaded", timeout: 60000 });
+        await tab.waitForFunction(() => window.__overviewReady !== undefined,
+          null, { timeout: 120000 });
+        const roundTrip = await tab.evaluate(() => window.location.search);
+        check(roundTrip.includes("state=UT") && roundTrip.includes(`county=${utahCounty}`),
+          `the link ?state=UT&county=${utahCounty} came back as "${roundTrip}"`);
       }
 
       // The Drainage menu, on the drought page, which spans every level.

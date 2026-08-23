@@ -23,7 +23,7 @@
  */
 import { resolveOpeningScope, type OpeningRosters, type OpeningSelection } from "../data/opening-scope";
 import type { DrainageArea } from "../data/boundaries";
-import { offeredStates } from "../data/state-vocabulary";
+import { offeredStates, type StateOption } from "../data/state-vocabulary";
 
 /**
  * The three prefix widths the drainage hierarchy narrows between, named
@@ -152,12 +152,20 @@ export function whereMenuView(
   rosters: OpeningRosters,
   selection: OpeningSelection,
   counties: readonly CountyChoice[] = [],
-  selectedCounty: string | null = null
+  selectedCounty: string | null = null,
+  offered?: readonly StateOption[]
 ): WhereAxis {
   const scope = resolveOpeningScope(selection, rosters);
   const stateValue = scope.selection.state;
 
-  const stateOptions = offeredStates({ drainageAreaStates: rosters.areas.map((area) => area.states) });
+  /* The offered states come from the roster's own `states` column unless the
+   * host brings its own answer. Overview does: it skips the reference export
+   * entirely when the address bar names no place (the one fetch that page
+   * otherwise has no reason to make), so its states come from the payload's
+   * waterbodies -- the same fact at a different source, and a source that is
+   * already in hand there. A host without its own list takes the default and
+   * never knows the difference. */
+  const stateOptions = offered ?? offeredStates({ drainageAreaStates: rosters.areas.map((area) => area.states) });
   const stateLabels = new Map(stateOptions.map((option) => [option.code, option.label]));
 
   const options: WhereOption[] = [{ value: ALL_VALUE, label: "All states" }];

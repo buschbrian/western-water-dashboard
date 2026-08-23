@@ -4,6 +4,7 @@ import type { OpeningRosters, OpeningSelection } from "./data/opening-scope";
 import {
   spreadBoxes,
   countyOptions,
+  placeAxesAfterPick,
   distributionKeyLines,
   distributionStats,
   geographicChoices,
@@ -484,34 +485,6 @@ describe("the geographic controls against the scope controls", () => {
     expect(codes(geographicChoices(widest,
       { state: "all", subregion: all[0]! }, names).subregions)).toEqual(all);
   });
-
-  /* The county list narrows by the chosen state, exactly as the subregion
-   * list does -- it was left out of that narrowing once and offered 157
-   * counties across 11 states whatever the reader had picked above it. */
-  it("narrows the county list to what the chosen state leaves", () => {
-    const all = codes(
-      geographicChoices(widest, openControls, names).counties);
-    expect(all.length).toBeGreaterThan(1);
-    /* The state comes off a published record rather than off the FIPS:
-     * a FIPS prefix is a numeric code, not the postal abbreviation the
-     * control offers. */
-    const state = payload.reservoirs
-      .find((item) => item.county_fips && item.state)!.state!;
-    const narrowed = geographicChoices(widest,
-      { state, subregion: "all" }, names).counties;
-    expect(narrowed.length).toBeGreaterThan(0);
-    expect(narrowed.length).toBeLessThan(all.length);
-  });
-
-  /* A county cuts across drainage areas: holding the reader's county while
-   * they move between subregions is a choice still on offer. */
-  it("does not narrow the county list when only a subregion is chosen", () => {
-    const everySubregion = codes(
-      geographicChoices(widest, openControls, names).subregions);
-    const withSubregion = codes(geographicChoices(widest,
-      { state: "all", subregion: everySubregion[0]! }, names).counties);
-    expect(withSubregion.length).toBeGreaterThan(0);
-  });
 });
 
 /*
@@ -679,5 +652,52 @@ describe("a drainage area's states, beside its name", () => {
      * empty bracket after it. */
     const [record] = watershedRecords(inArea(["CN"]));
     expect(record!.labelStates).toEqual([]);
+  });
+});
+
+/*
+ * The merged Where menu's two-axes rule (ADR-084): the control is one, the
+ * axes are two. A county pick writes `?county=` and leaves `?state=` alone
+ * -- state is what survives the navigation to another page -- a state pick
+ * keeps only a county it actually holds, and "All states" is one menu's
+ * single nowhere. Pure, so the URL contract holds without a browser.
+ */
+describe("placeAxesAfterPick", () => {
+  const countyStateOf = new Map([
+    ["49043", "UT"],
+    ["08037", "CO"]
+  ]);
+
+  it("keeps the held state when a county is picked", () => {
+    expect(placeAxesAfterPick({ state: "UT", county: "all" },
+      { kind: "county", value: "49043" }, countyStateOf))
+      .toEqual({ state: "UT", county: "49043" });
+    // Including a state the reader never explicitly chose -- absence is
+    // "all", and picking a county must not start writing a state in.
+    expect(placeAxesAfterPick({ state: "all", county: "all" },
+      { kind: "county", value: "08037" }, countyStateOf))
+      .toEqual({ state: "all", county: "08037" });
+  });
+
+  it("keeps a county across a state re-pick that still holds it", () => {
+    expect(placeAxesAfterPick({ state: "UT", county: "49043" },
+      { kind: "state", value: "UT" }, countyStateOf))
+      .toEqual({ state: "UT", county: "49043" });
+  });
+
+  it("clears a county the newly chosen state does not hold", () => {
+    expect(placeAxesAfterPick({ state: "UT", county: "49043" },
+      { kind: "state", value: "CO" }, countyStateOf))
+      .toEqual({ state: "CO", county: "all" });
+    // And one no choice in the map knows about goes with any move.
+    expect(placeAxesAfterPick({ state: "all", county: "99999" },
+      { kind: "state", value: "UT" }, new Map()))
+      .toEqual({ state: "UT", county: "all" });
+  });
+
+  it("reads 'All states' as the one nowhere the merged menu has", () => {
+    expect(placeAxesAfterPick({ state: "UT", county: "49043" },
+      { kind: "state", value: "all" }, countyStateOf))
+      .toEqual({ state: "all", county: "all" });
   });
 });

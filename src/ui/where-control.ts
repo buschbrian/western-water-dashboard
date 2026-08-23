@@ -29,6 +29,7 @@ import "@esri/calcite-components/components/calcite-option";
 import "@esri/calcite-components/components/calcite-option-group";
 import "@esri/calcite-components/components/calcite-select";
 import type { OpeningRosters, OpeningSelection } from "../data/opening-scope";
+import type { StateOption } from "../data/state-vocabulary";
 import {
   drainageMenuView,
   nextSelectionForDrainageRow,
@@ -71,19 +72,31 @@ export interface WhereMenuOptions {
    * `null` (the default) marks the state itself.
    */
   selectedCounty?: string | null;
+  /**
+   * The offered states, when the host derives them from its own payload
+   * rather than from the rosters. Overview passes these because it skips
+   * the reference export when no link asks for a place -- with neither its
+   * own list nor the rosters, there would be nothing to offer. Omitted, the
+   * states come from the rosters' `states` column as everywhere else.
+   */
+  states?: readonly StateOption[];
 }
 
 export interface WhereMenu {
   element: HTMLElement;
+  /**
+   * Reflect a selection (and optionally a held county) the page adopted
+   * from somewhere else -- a link read after construction, or its own axes
+   * changing under a pick. Marks the matching rows, or the "All states"
+   * sentinel when nothing is held; a value with no matching option behind
+   * it is never shown.
+   *
+   * Like `DrainageMenu.set`, this only re-renders options: programmatic
+   * repopulation fires no change event, so the caller that originated a
+   * pick does not re-enter its own handler.
+   */
+  set(selection: OpeningSelection, selectedCounty?: string | null): void;
 }
-
-/* No `set()`, deliberately, and unlike `createLevelControl` which has one.
- *
- * Every host builds these menus from a selection that is already final: the
- * pages widen for a deep link before constructing them, and nothing
- * reassigns the scope afterwards. A method to push a later selection in
- * would never be called, and an unreachable method is not insurance -- it
- * is untested code that reads as a supported path. */
 
 export function createWhereMenu(
   rosters: OpeningRosters,
@@ -91,11 +104,19 @@ export function createWhereMenu(
   onPick: (pick: WherePick) => void,
   options: WhereMenuOptions = {}
 ): WhereMenu | null {
-  const view = whereMenuView(
-    rosters, current, options.counties ?? [], options.selectedCounty ?? null);
+  /* Held in the closure so `set` can re-render around later state: a page
+   * that starts from a link's county, or clears its axes on reset, asks the
+   * same menu to show what it now holds. */
+  let selection = current;
+  let counties = options.counties ?? [];
+  let selectedCounty = options.selectedCounty ?? null;
+  const states = options.states;
+
+  const view = (): ReturnType<typeof whereMenuView> =>
+    whereMenuView(rosters, selection, counties, selectedCounty, states);
   /* Nothing offered beyond the sentinel means no choice exists: an
    * unpublished or unreachable reference export degrades to exactly this. */
-  if (view.options.length <= 1) return null;
+  if (view().options.length <= 1) return null;
 
   const scale = options.scale ?? "m";
   const wrapper = document.createElement("div");
@@ -109,7 +130,11 @@ export function createWhereMenu(
    * visible label is already read out, and hearing "Where" twice teaches
    * nothing the second time. */
   select.setAttribute("label", "Which state or county to show");
-  fillSelect(select, view.options, view.value);
+  const render = (): void => {
+    const next = view();
+    fillSelect(select, next.options, next.value);
+  };
+  render();
   select.addEventListener("calciteSelectChange", () => {
     const value = (select as unknown as { value: string }).value;
     const kind: WherePick["kind"] = /^\d{5}$/.test(value) ? "county" : "state";
@@ -118,7 +143,14 @@ export function createWhereMenu(
   label.append(select);
   wrapper.append(label);
 
-  return { element: wrapper };
+  return {
+    element: wrapper,
+    set(next: OpeningSelection, county?: string | null): void {
+      selection = next;
+      if (county !== undefined) selectedCounty = county;
+      render();
+    }
+  };
 }
 
 export interface DrainageMenuOptions {

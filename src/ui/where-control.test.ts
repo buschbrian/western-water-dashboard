@@ -272,3 +272,38 @@ describe("nextSelectionForState", () => {
     expect(next.state).toBe("all");
   });
 });
+
+describe("whereMenuView: a host that brings its own states", () => {
+  /* Overview skips the reference export when no link names a place, so its
+   * rosters arrive empty and its payload carries the offered states instead.
+   * The override must replace the roster-derived list entirely -- including
+   * which counties can be grouped, since a county whose state the host did
+   * not offer has no honest heading. */
+  it("uses the given list and ignores the empty rosters", () => {
+    const view = whereMenuView(
+      { regions: [], subregions: [], areas: [] },
+      { state: "UT", area: null },
+      [{ fips: "49043", name: "Summit", state: "UT" }],
+      null,
+      [{ code: "UT", label: "Utah" }]
+    );
+    expect(values(view.options)).toEqual([ALL_VALUE, "UT", "49043"]);
+    expect(view.options[1]!.label).toBe("Utah");
+    expect(view.options[2]!.group).toBe("Utah");
+    expect(view.value).toBe("UT");
+  });
+
+  it("drops counties under states the host did not offer", () => {
+    const view = whereMenuView(
+      { regions: [], subregions: [], areas: [] },
+      { state: "all", area: null },
+      [
+        { fips: "49043", name: "Summit", state: "UT" },
+        { fips: "08037", name: "Summit", state: "CO" }
+      ],
+      null,
+      [{ code: "UT", label: "Utah" }]
+    );
+    expect(values(view.options)).toEqual([ALL_VALUE, "UT", "49043"]);
+  });
+});

@@ -704,12 +704,21 @@ function wireFilters(map: MapController): void {
       !shown.some((reservoir) => reservoirLabel(reservoir, inScope) === label));
     setFilterState(
       { storage: String(filterState.storageClass ?? "all"),
-        reporting: filterState.reporting,
-        drainage: filterState.drainageArea ?? "all" },
+        reporting: filterState.reporting },
       openingPlaceSummary() +
         describeFilter(filterState, shown.length, inScope.length, drainageAreaName()),
       isFiltered(filterState)
     );
+    /* The Drainage menus are views of `filterState`, not holders of it --
+     * there is no `[data-filter="drainage"]` select left to re-sync. Every
+     * path that changes the filter runs through here (a pick, the reset
+     * button, a scope change), so this is where both panels' copies are
+     * brought back to one answer; without it a reset leaves the menu naming
+     * an area nothing is filtered to, and a pick in one panel never reaches
+     * the other. `set` only re-renders options -- programmatic repopulation
+     * fires no change event -- so the menu that caused this run does not
+     * re-enter its own handler. */
+    for (const menu of drainageMenus) menu.set(drainageMenuSelection());
     filterStatus.filtered = isFiltered(filterState);
     filterStatus.shown = shown.length;
     filterStatus.drainageArea = filterState.drainageArea;

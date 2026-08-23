@@ -620,7 +620,7 @@ export function setMonthState(index: number, months: readonly string[], caption:
 
 /** Puts every copy of the controls, the summary and the reset at one state. */
 export function setFilterState(
-  values: { storage: string; reporting: string; drainage: string },
+  values: { storage: string; reporting: string },
   summary: string,
   filtered: boolean
 ): void {
@@ -628,8 +628,6 @@ export function setFilterState(
     .forEach((select) => { select.value = values.storage; });
   document.querySelectorAll<CalciteSelect>('[data-filter="reporting"]')
     .forEach((select) => { select.value = values.reporting; });
-  document.querySelectorAll<CalciteSelect>('[data-filter="drainage"]')
-    .forEach((select) => { select.value = values.drainage; });
   document.querySelectorAll<HTMLElement>('[data-filter="summary"]')
     .forEach((element) => { element.textContent = summary; });
   document.querySelectorAll<HTMLElement>('[data-filter="reset"]')

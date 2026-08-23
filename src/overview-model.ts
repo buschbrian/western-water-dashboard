@@ -400,7 +400,7 @@ export function geographicChoices(
   roster: readonly Reservoir[],
   chosen: { state: string; subregion: string },
   names: ReadonlyMap<string, string>
-): { subregions: FilterOption[]; drainageAreas: FilterOption[]; counties: FilterOption[] } {
+): { subregions: FilterOption[]; drainageAreas: FilterOption[] } {
   const byState = roster.filter((item) => reservoirInState(item, chosen.state));
   /* Read from `byState`, not from the subregion list just built: a subregion
    * the reader still holds after a state change is kept by the control, and
@@ -410,12 +410,39 @@ export function geographicChoices(
     chosen.subregion === "all" || subregionOf(item) === chosen.subregion);
   return {
     subregions: subregionOptions(byState, names),
-    drainageAreas: watershedOptions(bySubregion, 6, names),
-    /* Narrowed by the state alone, not by the subregion: a county cuts
-     * across drainage areas, so holding the reader's county while they move
-     * between subregions is a choice still on offer, not a stale one. */
-    counties: countyOptions(byState)
+    drainageAreas: watershedOptions(bySubregion, 6, names)
+    /* Counties are deliberately absent: the merged Where menu offers every
+     * county under its state heading at all times (ADR-084), so there is
+     * nothing left to narrow or rebuild here. */
   };
+}
+
+/**
+ * The two place axes after one pick in the merged Where menu.
+ *
+ * The axes stay two even though the control is one (ADR-084): a county row
+ * writes `?county=` and leaves `?state=` alone -- state is what survives
+ * the navigation to another page, and a reader who narrowed to a county
+ * must not lose their scope for it. A state row replaces the state and
+ * keeps a county only when the new state is the one that county sits in;
+ * "All states" is one menu's single "nowhere" and clears both. The mapping
+ * from FIPS to its state code comes from the same choices list that built
+ * the menu, so what counts as "same state" cannot drift from what the
+ * headings show.
+ *
+ * Pure so the URL contract (`?state=`, `?county=`) has a test that does not
+ * need a browser to hold it.
+ */
+export function placeAxesAfterPick(
+  current: { state: string; county: string },
+  pick: { kind: "state" | "county"; value: string },
+  countyStateOf: ReadonlyMap<string, string>
+): { state: string; county: string } {
+  if (pick.kind === "county") return { state: current.state, county: pick.value };
+  if (pick.value === "all") return { state: "all", county: "all" };
+  const keepCounty = current.county !== "all"
+    && countyStateOf.get(current.county) === pick.value;
+  return { state: pick.value, county: keepCounty ? current.county : "all" };
 }
 
 /** The subregion names a payload publishes, for `watershedOptions` to label
