@@ -306,15 +306,22 @@ async function renderOverview(
       <div id="overview-filter-search" class="filterbar-search">
         <label>Find a reservoir<input id="reservoir-search" type="search" placeholder="Name, drainage area or county" autocomplete="off" /></label>
       </div>
-      <!-- Coarsest first, then finest: state, subregion, drainage area,
-           county. The two that are not places come last, because a reader
-           narrowing by geography should not have to step over a reporting
-           schedule to get from one place to a smaller one. -->
+      <!-- Coarsest first, then finest: where (state, with counties beneath),
+           subregion, drainage area. The two that are not places come last,
+           because a reader narrowing by geography should not have to step
+           over a reporting schedule to get from one place to a smaller
+           one. -->
       <div id="overview-filter-controls" class="filterbar-controls">
-        <label>State<select id="state-filter"><option value="all">All states</option></select></label>
+        <!-- One menu for both place axes (ADR-084): states as rows,
+             counties grouped beneath their state's heading. A two-letter
+             value is a state pick and a five-digit value is a FIPS, so one
+             select holds both and each pick announces its own kind by
+             shape. The county field is offered only when the payload
+             carries counties; hidden rather than absent so the markup, and
+             the tests that read it, stay one shape. -->
+        <label id="place-field" hidden>Where<select id="place-filter"><option value="all">All states</option></select></label>
         <label>Subregion<select id="subregion-filter"><option value="all">All subregions</option></select></label>
         <label>Drainage area<select id="watershed-filter"><option value="all">All drainage areas</option></select></label>
-        <label id="county-field" hidden>County<select id="county-filter"><option value="all">All counties</option></select></label>
         <label>Reporting<select id="cadence-filter"><option value="all">All reporting</option><option value="daily">Daily</option><option value="monthly">Monthly</option><option value="late">Late or unavailable</option></select></label>
         <label>Reservoirs<select id="geography-filter"><option value="connected">Every reservoir</option><option value="utah">Utah waterbodies only</option></select></label>
       </div>
@@ -544,28 +551,47 @@ async function renderOverview(
     element.value = options.some((choice) => choice.code === wanted) ? wanted : "all";
   }
 
-  const state = document.querySelector<HTMLSelectElement>("#state-filter");
+  const place = document.querySelector<HTMLSelectElement>("#place-filter");
+  const placeField = document.querySelector<HTMLElement>("#place-field");
   const subregion = document.querySelector<HTMLSelectElement>("#subregion-filter");
-  const county = document.querySelector<HTMLSelectElement>("#county-filter");
-  const countyField = document.querySelector<HTMLElement>("#county-field");
   /* The county control is offered only when the payload carries counties.
    * The assignment ships with a morning's refresh, so the published payload
    * has none until then -- and a filter whose every choice narrows to nothing
    * is worse than no filter. The field is hidden rather than absent so the
    * markup, and the tests that read it, stay one shape. */
-  if (county) fillOptions(county, countyChoices, "All counties");
-  if (countyField) countyField.hidden = countyChoices.length === 0;
-  /* The state list is built once from the widest scope: it is the coarsest
-   * control, so nothing above it can narrow it. The county list starts wide
-   * for the same reason the subregion one does -- the URL restore below and
-   * the first update() need something to restore into -- and narrows to the
-   * chosen state from then on, inside update(). */
-  for (const choice of stateChoices) {
-    const option = document.createElement("option");
-    option.value = choice.code;
-    option.textContent = choice.label;
-    state?.append(option);
-  }
+  if (placeField) placeField.hidden = stateChoices.length === 0;
+  /* The Where menu (ADR-084): one select for both place axes. States are
+   * top-level rows; counties arrive already grouped under their state's
+   * code (`countyOptions` sorts them contiguously), so they render as
+   * `<optgroup>` headings by the same run-detection every other grouped
+   * list here uses. A two-letter value names a state and a five-digit
+   * value names a FIPS, so one flat value space holds both kinds of pick.
+   *
+   * The menu always offers every county, not just the chosen state's:
+   * grouped under headings, the menu shows which state a county belongs to
+   * itself, which was the reason the old separate list narrowed by state
+   * (ADR-076). The fallback rule is unchanged -- an offered-but-dead value
+   * below reads back as "all". */
+  if (place) fillOptions(place, [
+    ...stateChoices.map((choice) => ({ code: choice.code, label: choice.label })),
+    ...countyChoices.map((choice) => ({
+      code: choice.code,
+      label: choice.label.endsWith("County") ? choice.label : `${choice.label} County`,
+      group: choice.group
+    }))
+  ], "All states");
+
+  /* What the merged Where menu's current value means to the two axes it
+   * holds. A two-letter value is a state pick, a five-digit value is a
+   * FIPS, and "all" is neither -- one menu, one "nowhere". */
+  const placeState = (): string => {
+    const value = place?.value ?? "all";
+    return value.length === 2 ? value : "all";
+  };
+  const placeCounty = (): string => {
+    const value = place?.value ?? "all";
+    return /^\d{5}$/.test(value) ? value : "all";
+  };
   /* The subregion list starts at its widest; the first update() narrows it
    * to the chosen state. It must exist before the URL restore below, so a
    * link's subregion has an option to land on. */
@@ -611,7 +637,7 @@ async function renderOverview(
   const chartMeasure = document.querySelector<HTMLSelectElement>("#chart-measure");
   const chartRank = document.querySelector<HTMLSelectElement>("#chart-rank");
   const exportButton = document.querySelector<HTMLElement>("#download-overview-csv");
-  if (!tbody || !search || !state || !subregion || !watershed || !county
+  if (!tbody || !search || !place || !subregion || !watershed
       || !cadence || !sort || !reset || !status
       || !capacityHost || !watershedHost || !trendHost || !normalHost
       || !distributionHost || !spreadHost
@@ -680,9 +706,9 @@ async function renderOverview(
   const currentUrlState = (): OverviewUrlState => ({
     query: search.value,
     drainageArea: watershed.value,
-    state: state.value,
+    state: placeState(),
     subregion: subregion.value,
-    county: county.value,
+    county: placeCounty(),
     reporting: cadence.value as OverviewCadence,
     geography: geography.value as ReservoirGeography,
     lakePowell: lakePowell.checked ? "include" : "exclude",
@@ -727,24 +753,21 @@ async function renderOverview(
      * shape under the very switch it is supposed to be steady beneath.
      * `stateChoices` is built once from the whole roster for the same
      * reason, and `countyChoices` starts from it so the restore below has
-     * something to land on; subregion, drainage area and county are rebuilt
-     * because the controls above them narrow them. */
+     * something to land on; subregion and drainage area are rebuilt
+     * because the controls above them narrow them. The Where menu is not:
+     * its counties stay grouped under every state's heading, which is what
+     * replaced the old narrowing-by-state (ADR-084). */
     const choices = geographicChoices(widestScope.filter(inOpeningArea),
-      { state: state.value, subregion: subregion.value }, subregionNames);
+      { state: placeState(), subregion: subregion.value }, subregionNames);
     fillOptions(subregion, choices.subregions, "All subregions");
     fillOptions(watershed, choices.drainageAreas, "All drainage areas");
-    /* The county list narrows by the state the same way the subregion list
-     * does, so picking California leaves that state's counties rather than
-     * all 157 across 11 states. A county the new state does not hold falls
-     * back to "all" in `fillOptions`, the same rule as the other two. */
-    fillOptions(county, choices.counties, "All counties");
 
     const matching = filterOverview(scoped, {
       query: search.value,
-      state: state.value,
+      state: placeState(),
       huc4: subregion.value,
       huc6: watershed.value,
-      county: county.value,
+      county: placeCounty(),
       cadence: cadence.value as OverviewCadence
     });
     /* The strip narrows what is below it, but the strip itself keeps showing
@@ -903,7 +926,7 @@ async function renderOverview(
       lakeMeadExcluded: !visible.some(isLakeMead)
     };
   };
-  for (const control of [search, state, subregion, watershed, county, cadence, sort,
+  for (const control of [search, place, subregion, watershed, cadence, sort,
     lakePowell, lakeMead, geography, chartLimit, chartMeasure, chartRank]) {
     const event = control instanceof HTMLSelectElement
       || (control instanceof HTMLInputElement && control.type === "checkbox")
@@ -920,9 +943,8 @@ async function renderOverview(
   reset.addEventListener("click", () => {
     search.value = "";
     watershed.value = "all";
-    state.value = "all";
+    place.value = "all";
     subregion.value = "all";
-    county.value = "all";
     cadence.value = "all";
     sort.value = "capacity";
     /* Both large reservoirs back in, matching what the page opens on.
@@ -952,14 +974,17 @@ async function renderOverview(
     ? wanted.drainageArea : "all";
   /* A county in the link that this payload does not carry falls back to all,
    * the same way a drainage area does. A shared link outliving the roster it
-   * was made from should show everything rather than nothing. */
-  county.value = countyChoices.some((choice) => choice.code === wanted.county)
-    ? wanted.county : "all";
+   * was made from should show everything rather than nothing. The merged
+   * menu holds both axes, so the county wins the visible value when a link
+   * named one and the state otherwise -- the finer of the two is what the
+   * reader asked about. */
+  place.value = countyChoices.some((choice) => choice.code === wanted.county)
+    ? wanted.county
+    : stateChoices.some((choice) => choice.code === wanted.state)
+      ? wanted.state : "all";
   /* State first, then subregion: the update below repopulates the subregion
    * list from the chosen state, and a selection that survives that narrowing
    * is kept while one that does not falls back to "all". */
-  state.value = stateChoices.some((choice) => choice.code === wanted.state)
-    ? wanted.state : "all";
   subregion.value = subregionChoices.some((choice) => choice.code === wanted.subregion)
     ? wanted.subregion : "all";
   /* A subregion-width `?area=` link (four digits) has no parameter of its

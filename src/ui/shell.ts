@@ -408,7 +408,7 @@ export interface FilterOption { value: string; label: string }
  * reader who filters on a phone, rotates, and finds the desktop panel
  * showing something else is looking at two answers to one question.
  */
-export type FilterKind = "storage" | "reporting" | "drainage";
+export type FilterKind = "storage" | "reporting";
 
 function fillFilter(kind: FilterKind, options: readonly FilterOption[]): void {
   document.querySelectorAll<CalciteSelect>(`[data-filter="${kind}"]`).forEach((select) => {
@@ -419,7 +419,7 @@ function fillFilter(kind: FilterKind, options: readonly FilterOption[]): void {
       element.textContent = option.label;
       return element;
     }));
-    // Keeps a choice that still exists. Refilling is how the drainage areas
+    // Keeps a choice that still exists. Refilling is how the controls
     // follow a scope change, and a reader who has chosen one should not lose
     // it because the list around it was rebuilt.
     if (options.some((option) => option.value === chosen)) select.value = chosen;
@@ -429,7 +429,6 @@ function fillFilter(kind: FilterKind, options: readonly FilterOption[]): void {
 export function setFilterControls(
   storage: readonly FilterOption[],
   reporting: readonly FilterOption[],
-  drainage: readonly FilterOption[],
   onChange: (kind: FilterKind, value: string) => void,
   onReset: () => void
 ): void {
@@ -441,19 +440,9 @@ export function setFilterControls(
   };
   wire("storage", storage);
   wire("reporting", reporting);
-  wire("drainage", drainage);
   document.querySelectorAll<HTMLElement>('[data-filter="reset"]').forEach((button) => {
     button.addEventListener("click", onReset);
   });
-}
-
-/**
- * The drainage-area choices, after the scope has changed which areas the map
- * has. The listener is registered once by `setFilterControls`; this only
- * replaces the options under it, so the control keeps working.
- */
-export function setDrainageAreaOptions(options: readonly FilterOption[]): void {
-  fillFilter("drainage", options);
 }
 
 /**

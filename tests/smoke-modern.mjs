@@ -162,21 +162,6 @@ const sharedSubregion = [...new Set(inScope
   })
   .find((candidate) => candidate.basins > 1 && candidate.count < inScope.length);
 
-/* And the same at two digits, which is the width slice 6's state and region
- * control will produce. Region names are published nowhere, so the label is
- * the code -- said in words, because a bare "14" beside a list of names is
- * not a choice a reader can read. */
-const sharedRegion = [...new Set(inScope
-  .map((reservoir) => reservoir.huc6)
-  .filter((code) => typeof code === "string")
-  .map((code) => code.slice(0, 2)))].sort()
-  .map((code) => ({
-    code,
-    count: inScope.filter((reservoir) => reservoir.huc6?.startsWith(code)).length,
-    label: `Region ${code}`
-  }))
-  .find((candidate) => candidate.count > 0 && candidate.count < inScope.length);
-
 /* The drawn scope's areas, found through the reference export rather than by
  * file name: which file holds the drawn geography moved once already
  * (ADR-063), and a count read from the roster scope's file would have gone on
@@ -189,6 +174,24 @@ if (!drawnScope) {
   throw new Error(
     `reference.json names ${referenceWatersheds.default_scope} and does not publish it`);
 }
+
+/* And the same at two digits. The region roster is published in the
+ * reference export (`west-huc2` carries names), and the Drainage menu reads
+ * its labels from there -- so the expected label comes from the export too,
+ * not from a table here. A code with no published name falls back to the
+ * code itself, which is what `parseDrainageUnits` does. */
+const regionNames = new Map((referenceWatersheds.scopes["west-huc2"]?.units ?? [])
+  .map((unit) => [unit.huc2 ?? unit.huc6?.slice(0, 2), unit.name]));
+const sharedRegion = [...new Set(inScope
+  .map((reservoir) => reservoir.huc6)
+  .filter((code) => typeof code === "string")
+  .map((code) => code.slice(0, 2)))].sort()
+  .map((code) => ({
+    code,
+    count: inScope.filter((reservoir) => reservoir.huc6?.startsWith(code)).length,
+    label: regionNames.get(code) ?? code
+  }))
+  .find((candidate) => candidate.count > 0 && candidate.count < inScope.length);
 const expectedAreas = JSON.parse(
   await readFile(path.join(REPO_ROOT, drawnScope.source_file), "utf8")).features.length;
 /* The drainage areas the drought view can put a storage figure beside: the
@@ -2001,7 +2004,7 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
         expectedReservoirs, { timeout: 60000 });
 
       // Picking a state narrows the table and writes the address, on its own.
-      await tab.selectOption("#state-filter", filterState.code);
+      await tab.selectOption("#place-filter", filterState.code);
       await tab.waitForFunction((expected) => window.__overviewReady?.visible === expected,
         filterState.count, { timeout: 60000 });
       check((await tab.evaluate(() => window.location.search))
@@ -2032,7 +2035,7 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
       await tab.waitForFunction(() => window.__overviewReady?.visible === 0,
         null, { timeout: 60000 });
       const kept = await tab.evaluate(() => ({
-        state: document.querySelector("#state-filter")?.value,
+        state: document.querySelector("#place-filter")?.value,
         subregion: document.querySelector("#subregion-filter")?.value
       }));
       check(kept.state === filterState.code && kept.subregion === filterSubregion.code,
@@ -2052,7 +2055,7 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
           window.__overviewReady?.charts === expected, CHART_HOSTS.length,
         { timeout: 120000 });
         const restored = await geoRecipient.evaluate(() => ({
-          state: document.querySelector("#state-filter")?.value,
+          state: document.querySelector("#place-filter")?.value,
           subregion: document.querySelector("#subregion-filter")?.value,
           rows: document.querySelectorAll("#reservoir-rows tr").length
         }));
@@ -2073,9 +2076,9 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
         expectedReservoirs, { timeout: 60000 });
       if (filterCounty) {
         check(await tab.evaluate(() =>
-          document.querySelector("#county-field")?.hidden) === false,
-        `${label}: the payload carries counties and the county control is hidden`);
-        await tab.selectOption("#county-filter", filterCounty.code);
+          document.querySelector("#place-field")?.hidden) === false,
+        `${label}: the payload carries counties and the place menu is hidden`);
+        await tab.selectOption("#place-filter", filterCounty.code);
         await tab.waitForFunction((expected) => window.__overviewReady?.visible === expected,
           filterCounty.count, { timeout: 60000 });
         await tab.locator("#reset-filters").click();
@@ -2496,7 +2499,7 @@ for (const viewport of VIEWPORTS) {
     const linked = await tab.evaluate(() => ({
       ready: window.__snowReady,
       tableRows: document.querySelectorAll("#snow-site-rows tr").length,
-      areaControl: document.querySelector("#snow-area")?.value
+      areaControl: document.querySelector(".drainage-menu calcite-select")?.value
     }));
     console.log("  ready:", JSON.stringify(linked.ready));
     check(linked.ready?.area === "140100" && linked.areaControl === "140100",
@@ -2509,7 +2512,11 @@ for (const viewport of VIEWPORTS) {
     const snowFiltersOpened = await exerciseMobileFilterDisclosure(
       tab, check, label, "snow", viewport);
 
-    await tab.selectOption("#snow-area", "all");
+    await tab.evaluate(() => {
+      const select = document.querySelector(".drainage-menu calcite-select");
+      select.value = "all";
+      select.dispatchEvent(new CustomEvent("calciteSelectChange", { bubbles: true }));
+    });
     await tab.waitForFunction(
       () => window.__snowReady && window.__snowReady.area === null, { timeout: 10000 });
     const state = await tab.evaluate(() => ({
@@ -3174,7 +3181,7 @@ for (const viewport of VIEWPORTS) {
     await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
     const narrowed = await tab.evaluate(() => ({
       ready: window.__dashboardReady,
-      control: document.querySelector('#start-panel [data-filter="drainage"]')?.value,
+      control: document.querySelector('#start-panel .drainage-menu calcite-select')?.value,
       storage: document.querySelector('#start-panel [data-filter="storage"]')?.value,
       summary: document.querySelector('#start-panel [data-filter="summary"]')?.textContent ?? "",
       listShown: document.querySelectorAll(
@@ -3235,11 +3242,11 @@ for (const viewport of VIEWPORTS) {
     await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
     const bySubregion = await tab.evaluate(() => ({
       ready: window.__dashboardReady,
-      control: document.querySelector('#start-panel [data-filter="drainage"]')?.value,
-      /* Every choice the control offers, so the coarse one can be shown to be
+      control: document.querySelector('#start-panel .drainage-menu calcite-select')?.value,
+      /* Every choice the menu offers, so the coarse one can be shown to be
        * on it exactly once and under a name no basin also answers to. */
       options: [...document.querySelectorAll(
-        '#start-panel [data-filter="drainage"] calcite-option')]
+        '#start-panel .drainage-menu calcite-option')]
         .map((option) => ({ value: option.getAttribute("value"), label: option.textContent })),
       summary: document.querySelector('#start-panel [data-filter="summary"]')?.textContent ?? "",
       listShown: document.querySelectorAll(
@@ -3369,12 +3376,17 @@ for (const viewport of VIEWPORTS) {
     await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
     const byRegion = await tab.evaluate(() => ({
       ready: window.__dashboardReady,
-      control: document.querySelector('#start-panel [data-filter="drainage"]')?.value,
-      chosenLabel: document.querySelector(
-        '#start-panel [data-filter="drainage"] calcite-option[selected]')?.textContent
-        ?? null,
+      control: document.querySelector('#start-panel .drainage-menu calcite-select')?.value,
       summary: document.querySelector('#start-panel [data-filter="summary"]')?.textContent ?? ""
     }));
+    /* The row the reader's code names, by value: the menu marks the choice
+     * through the select's own value, and the label is what a reader sees
+     * against it. Read in a second pass because the expected code lives on
+     * the Node side of the evaluate boundary. */
+    byRegion.chosenLabel = [...(await tab.evaluate(() =>
+      [...document.querySelectorAll('#start-panel .drainage-menu calcite-option')]
+        .map((option) => [option.getAttribute("value"), option.textContent])))]
+      .find(([value]) => value === sharedRegion?.code)?.[1] ?? null;
     check(byRegion.ready.areaFilter === sharedRegion?.code,
       `${label}: a two-digit ?area= was not applied (${byRegion.ready.areaFilter})`);
     check(byRegion.ready.shown === sharedRegion?.count,
@@ -3664,10 +3676,10 @@ for (const failure of [
    * parameter `drainage=`; the bar must carry it under the one name every
    * page reads. */
   await tab.waitForFunction(() => document.querySelector(
-    '#start-panel [data-filter="drainage"] calcite-option[value]:not([value="all"])')
+    '#start-panel .drainage-menu calcite-option[value]:not([value="all"])')
     !== null, { timeout: 60000 });
   const narrowedBar = await tab.evaluate(() => {
-    const select = document.querySelector('#start-panel [data-filter="drainage"]');
+    const select = document.querySelector('#start-panel .drainage-menu calcite-select');
     const area = [...select.querySelectorAll("calcite-option")]
       .map((option) => option.value).find((value) => value && value !== "all");
     select.value = area;
@@ -3712,39 +3724,31 @@ for (const failure of [
     "Where control: no state narrows the default scope without emptying it");
 
   /*
-   * `axes` is how far down the drill-down each host builds (ADR-071). A page
-   * that already owns a drainage-area control stops this one above it, so
-   * the two never carry one label between them:
-   *
-   * - storage stops at subregion -- `[data-filter="drainage"]` sits in the
-   *   same panel and `?area=` is the legacy spelling of the `?drainage=`
-   *   that control writes, so the axis would have been that filter twice;
-   * - snow stops at subregion too, at the default level 6, because
-   *   `#snow-area` carries the basins -- and only those with a publishable
-   *   figure, which the published roster's list is not;
-   * - drought keeps all four: it owns no drainage-area control of its own.
+   * The two place menus every map page builds (ADR-084): Where -- states,
+   * counties beneath where a surface has county material -- and one
+   * Drainage-area menu spanning region, subregion and basin. What differs
+   * per host is only whether the menus exist at all, so the cases assert
+   * presence once each and one value apiece; the deeper behaviour (gating,
+   * level-forcing picks, the clearing rule) is held by the per-page
+   * coverage above and the model's own unit tests.
    */
   const cases = [
     {
       label: "Storage map", url: `${URL}?state=${storageState?.code}`,
       signal: "__dashboardReady", drawn: "drainageAreas",
-      axes: ["state", "region", "subregion"]
+      where: true, drainage: true
     },
     {
       label: "Snowpack", url: `${URL}snow.html?state=${storageState?.code}`,
       signal: "__snowReady", drawn: "mapBasins",
-      axes: ["state", "region", "subregion"]
+      where: true, drainage: true
     },
     {
       label: "Drought", url: `${URL}drought.html?state=${storageState?.code}`,
       signal: "__droughtReady", drawn: "mapOutlines",
-      axes: ["state", "region", "subregion", "area"]
+      where: true, drainage: true
     }
   ];
-  const AXIS_LABELS = {
-    state: "Which state to show", region: "Which region to show",
-    subregion: "Which subregion to show", area: "Which drainage area to show"
-  };
 
   // Every width the rest of this suite tests at (CLAUDE.md: "no page may
   // scroll sideways" at 1280, 390 or 360), because the where control adds
@@ -3778,21 +3782,23 @@ for (const failure of [
         [scenario.signal, scenario.drawn], { timeout: 90000 });
       await tab.waitForFunction(
         () => document.querySelector(
-          '.where-control calcite-select[label="Which state to show"]') !== null,
+          '.where-menu calcite-select[label="Which state or county to show"]') !== null
+          && document.querySelector(
+          '.drainage-menu calcite-select[label="Which drainage area to show"]') !== null,
         { timeout: 90000 });
-      const state = await tab.evaluate((axisLabels) => ({
+      const state = await tab.evaluate(() => ({
         stateValues: [...document.querySelectorAll(
-          '.where-control calcite-select[label="Which state to show"]')]
+          '.where-menu calcite-select[label="Which state or county to show"]')]
           .map((select) => select.value),
-        axisSelects: Object.fromEntries(Object.entries(axisLabels).map(([axis, name]) =>
-          [axis, document.querySelectorAll(
-            `.where-control calcite-select[label="${name}"]`).length])),
-        /* Every visible control label in each group this control joins, so
-         * two controls answering one question under one word fail here
+        drainageValues: [...document.querySelectorAll(
+          '.drainage-menu calcite-select[label="Which drainage area to show"]')]
+          .map((select) => select.value),
+        /* Every visible control label in each group the menus join, so two
+         * controls answering one question under one word fail here
          * (AGENTS.md invariant 8). Own text nodes only: a `<label>` wrapping
          * a native `<select>` has every option's text in its `textContent`,
          * and the word a reader sees is the one before the control. */
-        groupLabels: [...document.querySelectorAll(".where-control")]
+        groupLabels: [...document.querySelectorAll(".where-menu, .drainage-menu")]
           /* Past the slot, to the group the control actually joins. The
              control is placed into a `.control-slot` now, which is
              `display: contents` and so is not the row it appears in -- and
@@ -3809,41 +3815,36 @@ for (const failure of [
             .filter((text) => text !== "")),
         filterbar: (() => {
           const bar = document.querySelector(".dashboard-filterbar");
-          const where = bar?.querySelector(".where-control");
+          const menu = bar?.querySelector(".where-menu, .drainage-menu");
           const grid = bar?.querySelector(".filterbar-controls");
-          return bar && where ? {
+          return bar && menu ? {
             height: Math.round(bar.getBoundingClientRect().height),
-            /* The grid the four place selects live in, measured apart from
-               the card around it. The card also carries a title row and, on
-               the pages that have one, a search row -- both legitimate
-               height that has nothing to do with the failure this budget
-               was written for. */
-            controlsHeight: grid ? Math.round(grid.getBoundingClientRect().height) : null,
-            whereDisplay: getComputedStyle(where).display
+            /* The grid the place menus live in, measured apart from the
+               card around it. The card also carries a title row and, on the
+               pages that have one, a search row -- both legitimate height
+               that has nothing to do with the failure this budget was
+               written for. */
+            controlsHeight: grid ? Math.round(grid.getBoundingClientRect().height) : null
           } : null;
         })(),
         viewport: document.documentElement.clientWidth,
         scroll: document.documentElement.scrollWidth
-      }), AXIS_LABELS);
+      }));
       console.log("  where control:", JSON.stringify(state));
-      check(state.stateValues.length >= 1, `${label}: no where control was built`);
-      /* The control has to carry the reader's choice, or the state narrows
+      check(state.stateValues.length >= 1, `${label}: no Where menu was built`);
+      check(state.drainageValues.length >= 1, `${label}: no Drainage-area menu was built`);
+      /* The menu has to carry the reader's choice, or the state narrows
        * while the select beside it reads "All states" -- the same
        * requirement S3a's subregion coverage above already holds the
        * drainage-area control to. */
       check(state.stateValues.every((value) => value === storageState?.code),
-        `${label}: the state select shows ${state.stateValues.join(", ")}, ` +
+        `${label}: the Where menu shows ${state.stateValues.join(", ")}, ` +
         `not the state the link opened on (${storageState?.code})`);
-      /* Exactly the axes this host asked for: every one of them built once
-       * per control, and every finer one not built at all. Both halves
-       * matter -- a missing axis breaks the drill-down, and an extra one is
-       * the duplicate drainage-area control ADR-071 removed. */
-      for (const [axis, built] of Object.entries(state.axisSelects)) {
-        const wanted = scenario.axes.includes(axis) ? state.stateValues.length : 0;
-        check(built === wanted,
-          `${label}: the where control built ${built} ${axis} selects, ` +
-          `expected ${wanted} (${JSON.stringify(state.axisSelects)})`);
-      }
+      /* A link naming only a state leaves the drainage menu at "all" --
+       * which is a row like any other, not an unset value. */
+      check(state.drainageValues.every((value) => value === "all"),
+        `${label}: the Drainage menu shows ${state.drainageValues.join(", ")}, ` +
+        `expected "all" for a state-only link`);
       for (const labels of state.groupLabels) {
         const repeated = labels.filter(
           (text, index) => labels.indexOf(text) !== index);
@@ -3854,18 +3855,15 @@ for (const failure of [
       check(state.scroll <= state.viewport + 1,
         `${label}: the page scrolls sideways with the where control carrying a link`);
       if (viewport.name === "desktop" && scenario.label !== "Storage map") {
-        check(state.filterbar?.whereDisplay === "contents",
-          `${label}: the four place selects still occupy one stacked grid cell`);
-        /* The regression this guards is the four place selects stacking into
-           one grid cell, which makes the control row four selects tall
+        /* The regression this guards is the place controls stacking into
+           one grid cell, which makes the control row several selects tall
            instead of one. Measured on the control grid rather than on the
            whole card: the card grew a search row of its own, which is
            height the reader asked for and not the failure being watched
-           for. `whereDisplay` above states the same requirement directly;
-           this catches a stack that arrives some other way. */
+           for. */
         check((state.filterbar?.controlsHeight ?? Infinity) < 260,
           `${label}: the filter controls are ${state.filterbar?.controlsHeight}px tall, `
-          + "expected under 260px -- the four place selects have stacked into one cell");
+          + "expected under 260px -- the place menus have stacked into one cell");
       }
       await checkAccessibility(tab, check, label);
     }
@@ -4029,7 +4027,9 @@ for (const failure of [
     });
     const label = `Nested navigation (${viewport.name})`;
     try {
-      // Storage Charts first: counties under state, basins under subregion.
+      // Storage Charts first: one Where menu holds states and, beneath
+        // their state headings, counties; basins stay grouped under their
+        // subregion in their own select.
       await tab.goto(`${URL}overview.html`,
         { waitUntil: "domcontentloaded", timeout: 60000 });
       await tab.waitForFunction(() => window.__overviewReady !== undefined,
@@ -4040,23 +4040,28 @@ for (const failure of [
             label: group.label,
             options: group.querySelectorAll("option").length
           }));
-        const looseOptions = (selector) => [...document.querySelectorAll(
+        const looseCodes = (selector, test) => [...document.querySelectorAll(
           `${selector} > option`)]
-          .filter((option) => option.value !== "all").length;
+          .map((option) => option.value)
+          .filter((value) => value !== "all" && test(value)).length;
         return {
-          countyGroups: groupsOf("#county-filter"),
-          countyLoose: looseOptions("#county-filter"),
-          countyCount: document.querySelectorAll("#county-filter option").length - 1,
+          placeGroups: groupsOf("#place-filter"),
+          /* A two-letter value is a state row and sits at the top level on
+           * purpose; a five-digit FIPS outside any grouping would be a
+           * county the hierarchy forgot to place. */
+          countyLoose: looseCodes("#place-filter", (v) => /^\d{5}$/.test(v)),
+          stateLoose: looseCodes("#place-filter", (v) => /^[A-Z]{2}$/.test(v)),
+          countyCount: [...document.querySelectorAll("#place-filter option")]
+            .filter((option) => /^\d{5}$/.test(option.value)).length,
           watershedGroups: groupsOf("#watershed-filter"),
-          watershedLoose: looseOptions("#watershed-filter"),
-          stateValue: document.querySelector("#state-filter")?.value ?? "",
+          watershedLoose: looseCodes("#watershed-filter", () => true),
           viewport: document.documentElement.clientWidth,
           scroll: document.documentElement.scrollWidth
         };
       });
       const before = await readNesting();
       console.log(`  ${label}:`, JSON.stringify({
-        countyGroups: before.countyGroups.length,
+        placeGroups: before.placeGroups.length,
         countyCount: before.countyCount,
         watershedGroups: before.watershedGroups.length
       }));
@@ -4064,14 +4069,14 @@ for (const failure of [
         `${label}: the page scrolls sideways with grouped selects`);
       /* Every county under exactly one state heading, none loose: the
        * hierarchy is stated, not implied. */
-      check(before.countyGroups.length > 0 || before.countyCount === 0,
-        `${label}: the county list has no state groupings`);
+      check(before.placeGroups.length > 0 || before.countyCount === 0,
+        `${label}: the place menu has no state groupings`);
       check(before.countyLoose === 0,
         `${label}: ${before.countyLoose} county options sit outside any state grouping`);
-      check(before.countyGroups.reduce((sum, group) => sum + group.options, 0)
-        === before.countyCount,
+      check(before.stateLoose >= 0 && before.placeGroups.reduce(
+        (sum, group) => sum + group.options, 0) === before.countyCount,
         `${label}: county groupings do not hold every county option`);
-      for (const group of before.countyGroups) {
+      for (const group of before.placeGroups) {
         check(/^[A-Z]{2}$/.test(group.label),
           `${label}: a county grouping is labelled "${group.label}", not a state code`);
       }
@@ -4080,96 +4085,90 @@ for (const failure of [
           `${label}: a drainage-area grouping is labelled "${group.label}", `
           + "a raw code no reader asked for");
       }
-      if (before.countyGroups.length > 0) {
-        /* Choose the state of the first county group and expect the list to
-         * narrow to what that state leaves. Not to that state alone: a
-         * state filter means the water (ADR-060), so Utah's list holds Bear
-         * Lake, whose county sits in Idaho -- what must hold is that no new
-         * state appears, the chosen state's counties survive intact, and
-         * everything else thins out. */
-        const chosen = before.countyGroups[0].label;
-        /* Below 640px the filter bar is folded behind its own toggle, and a
-         * control that is not on screen cannot take a choice -- open it
-         * first, exactly as a reader must. */
+      if (before.countyCount > 0) {
+        /* Choose a state from the merged menu and expect the address to
+         * carry it -- and the counties to stay all offered, grouped as they
+         * were. The old separate list narrowed by the state because a flat
+         * list could not show which state a county belonged to; grouped
+         * under headings, the menu shows that itself, so the list holding
+         * steady *is* the requirement now (ADR-084). */
+        const chosen = before.placeGroups[0].label;
         await tab.locator("#overview-filter-toggle")
           .click({ timeout: 5000 }).catch(() => {});
-        await tab.selectOption("#state-filter", chosen);
+        await tab.selectOption("#place-filter", chosen);
         await tab.waitForFunction((code) =>
           window.__overviewReady !== undefined
           && window.location.search.includes(`state=${code}`),
         chosen, { timeout: 60000 });
         const after = await readNesting();
-        const beforeCount = Object.fromEntries(
-          before.countyGroups.map((group) => [group.label, group.options]));
-        const afterCount = Object.fromEntries(
-          after.countyGroups.map((group) => [group.label, group.options]));
         check(after.countyLoose === 0,
           `${label}: after choosing ${chosen}, county options sit outside a grouping`);
-        for (const code of Object.keys(afterCount)) {
-          check(code in beforeCount,
-            `${label}: choosing ${chosen} added a ${code} grouping that was not `
-            + "offered before");
-          if (code === chosen) {
-            check(afterCount[code] === beforeCount[code],
-              `${label}: choosing ${chosen} dropped counties from its own grouping `
-              + `(${beforeCount[code]} -> ${afterCount[code]})`);
-          }
-        }
-        const afterTotal = Object.values(afterCount)
-          .reduce((sum, count) => sum + count, 0);
-        const beforeTotal = Object.values(beforeCount)
-          .reduce((sum, count) => sum + count, 0);
-        check(afterTotal < beforeTotal,
-          `${label}: choosing ${chosen} left ${afterTotal} counties, `
-          + `not narrower than the ${beforeTotal} offered before`);
+        const beforeTotal = before.placeGroups.reduce(
+          (sum, group) => sum + group.options, 0);
+        const afterTotal = after.placeGroups.reduce(
+          (sum, group) => sum + group.options, 0);
+        check(afterTotal === beforeTotal,
+          `${label}: choosing ${chosen} changed the counties on offer `
+          + `(${beforeTotal} -> ${afterTotal}); the grouped menu offers them all`);
         check(after.scroll <= after.viewport + 1,
-          `${label}: the page scrolls sideways after the county list narrowed`);
+          `${label}: the page scrolls sideways after the state choice`);
       }
 
-      // The where control, on the drought page, which offers every axis.
+      // The Drainage menu, on the drought page, which spans every level.
       await tab.goto(`${URL}drought.html`,
         { waitUntil: "domcontentloaded", timeout: 60000 });
       await tab.waitForFunction(() => window.__droughtReady !== undefined,
         null, { timeout: 120000 });
       await tab.waitForFunction(() =>
         document.querySelector(
-          '.where-control calcite-select[label="Which subregion to show"]') !== null,
+          '.drainage-menu calcite-select[label="Which drainage area to show"]') !== null,
       { timeout: 90000 });
-      const whereNesting = await tab.evaluate(() => {
-        const groupsOf = (name) => [...document.querySelectorAll(
-          `.where-control calcite-select[label="${name}"] calcite-option-group`)]
+      const menuNesting = await tab.evaluate(() => {
+        const groupsOf = (root) => [...root.querySelectorAll("calcite-option-group")]
           .map((group) => ({
             label: group.getAttribute("label"),
             options: group.querySelectorAll("calcite-option").length
           }));
         return {
-          subregionGroups: groupsOf("Which subregion to show"),
-          areaGroups: groupsOf("Which drainage area to show"),
-          stateGroups: groupsOf("Which state to show")
+          whereSelect: Boolean(document.querySelector(
+            '.where-menu calcite-select[label="Which state or county to show"]')),
+          whereGroups: (() => {
+            const root = document.querySelector(".where-menu");
+            return root ? groupsOf(root) : [];
+          })(),
+          drainageGroups: (() => {
+            const root = document.querySelector(".drainage-menu");
+            return root ? groupsOf(root) : [];
+          })()
         };
       });
-      console.log(`  ${label}: where control groups `
-        + JSON.stringify(whereNesting));
-      check(whereNesting.stateGroups.length === 0,
-        `${label}: the state list carries groupings though nothing sits above it`);
-      check(whereNesting.subregionGroups.length > 0
-        && whereNesting.subregionGroups.every((group) => /^[A-Z]/.test(group.label)),
-        `${label}: subregion rows are not grouped under named regions `
-        + JSON.stringify(whereNesting.subregionGroups));
-      check(whereNesting.areaGroups.length > 0
-        && whereNesting.areaGroups.every((group) => !/^\d+$/.test(group.label)),
-        `${label}: basin rows are not grouped under named subregions `
-        + JSON.stringify(whereNesting.areaGroups));
+      console.log(`  ${label}: menu groups `
+        + JSON.stringify(menuNesting));
+      check(menuNesting.whereSelect,
+        `${label}: no Where menu was built beside the Drainage menu`);
+      check(menuNesting.whereGroups.length === 0,
+        `${label}: the Where menu carries groupings though this page offers `
+        + "no counties to group");
+      /* Three tiers over one level of groups works because the tiers are
+       * ordered: region rows first ungrouped, then subregions under their
+       * regions, then basins under their subregions. */
+      check(menuNesting.drainageGroups.length > 0,
+        `${label}: the Drainage menu carries no grouping at all`);
+      check(menuNesting.drainageGroups.every((group) => /^[A-Z]/.test(group.label)
+        && !/^\d+$/.test(group.label)),
+        `${label}: a Drainage-menu grouping is labelled "${menuNesting.drainageGroups
+          .map((group) => group.label).join('", "')}", not a published name`);
       /* Keyboard reachability: every grouped row stays an enabled option of
        * the one native `<select>` the control renders internally -- nothing
        * parked outside the tab order behind a pointer-only flyout. */
       const reachable = await tab.evaluate(() =>
-        ["Which subregion to show", "Which drainage area to show"].map((name) => {
-          const select = document.querySelector(
-            `.where-control calcite-select[label="${name}"]`);
+        [".where-menu", ".drainage-menu"].map((rootSelector) => {
+          const root = document.querySelector(rootSelector);
+          if (!root) return { rootSelector, total: 0, disabled: -1, grouped: 0, loose: -1 };
+          const select = root.querySelector("calcite-select");
           const options = [...select.querySelectorAll("calcite-option")];
           return {
-            name,
+            rootSelector,
             total: options.length,
             disabled: options.filter((option) => option.hasAttribute("disabled")).length,
             grouped: select.querySelectorAll("calcite-option-group").length,
@@ -4177,13 +4176,9 @@ for (const failure of [
               .filter((option) => option.getAttribute("value") !== "all").length
           };
         }));
-      for (const axis of reachable) {
-        check(axis.disabled === 0,
-          `${label}: ${axis.disabled} ${axis.name} options are disabled`);
-        check(axis.loose === 0,
-          `${label}: ${axis.loose} ${axis.name} options sit outside any grouping`);
-        check(axis.grouped > 0,
-          `${label}: the ${axis.name} list carries no grouping at all`);
+      for (const menu of reachable) {
+        check(menu.disabled === 0,
+          `${label}: ${menu.disabled} ${menu.rootSelector} options are disabled`);
       }
     } catch (error) {
       failures.push(`${label}: ${error.message}`);

@@ -16,7 +16,7 @@ export function elementById<T extends HTMLElement>(id: string): T {
  * "Drainage area" four rows apart. The template names the position; this
  * finds it.
  *
- * The fallback is not defensive padding: `createWhereControl` and
+ * The fallback is not defensive padding: the place menus (ADR-084) and
  * `createLevelControl` are shared by four hosts, and a host that has not
  * declared a slot should still get its control rather than lose it.
  */

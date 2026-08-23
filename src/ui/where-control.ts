@@ -1,39 +1,28 @@
 /*
- * The control that picks where a reader is looking: a state select, and a
- * drainage-area drill-down (region -> subregion -> basin).
+ * The two place menus (ADR-084): a Where menu -- states, and counties
+ * grouped beneath them when the host can supply county material -- and a
+ * Drainage-area menu -- regions, subregions and basins in one grouped
+ * select spanning levels.
  *
  * Modelled closely on `createLevelControl` (`ui/level-control.ts`) -- built
  * from what the reference export publishes, never a list written here;
  * returns `null` when there is nothing to choose; takes a Calcite `scale`
- * because the hosts differ; and answers with a `set()` method so a page can
- * reflect a choice it adopted from somewhere else, such as a link.
+ * because the hosts differ.
  *
- * The narrowing, the option lists and what a reader's raw pick means are all
+ * The option lists and what a reader's raw pick means are all
  * `where-control-model.ts` -- pure functions built over
  * `data/opening-scope.ts#resolveOpeningScope`, kept apart from this file's
  * DOM building so they are testable in plain Node (see that module's own
- * doc). This file is the thin layer that turns `WhereControlView` into real
- * `<calcite-select>`s and wires their changes back through
- * `nextSelectionFor*`.
+ * doc). This file is the thin layer that turns their views into real
+ * `<calcite-select>`s and wires changes back through the model's
+ * next-selection functions.
  *
- * How many of the four it builds is the host's to say (`finest`). A page
- * that already owns a drainage-area control stops this one above it, so the
- * page never shows two controls carrying one label, one parameter and two
- * different lists (ADR-071).
- *
- * Changing the choice is a navigation on every host this control is wired
- * into (`main.ts`, `snow.ts`, `drought.ts`), the same choice
- * `createLevelControl` already made and for the same reason: `?state=` and
- * `?area=` are read once, at initialization, by every one of the four
- * surfaces (S3a-d), and reproducing that resolution live -- for three pages
- * with three different rules about what the area axis even means (D5) --
- * would be three separate re-render paths behind one shared control. A full
- * navigation is the one path already proven to keep the four surfaces
- * honest, and it is what a shared link already does. The `location.replace`
- * call itself is not here, the same way it is not in `createLevelControl`:
- * this module only calls `onChange` with the selection a reader picked, and
- * each host's own wiring function decides what "changed" means for that
- * page.
+ * Neither menu navigates itself. Each calls its callback with the reader's
+ * raw pick, and each host's own wiring decides what "changed" means for
+ * that page -- including the one case only the host can judge, a drainage
+ * row finer than the level the page draws, which takes the shared-link
+ * path (`location.replace`) rather than a re-render, because the level
+ * decides which files the page fetches (ADR-064).
  */
 import "@esri/calcite-components/components/calcite-label";
 import "@esri/calcite-components/components/calcite-option";
@@ -41,153 +30,197 @@ import "@esri/calcite-components/components/calcite-option-group";
 import "@esri/calcite-components/components/calcite-select";
 import type { OpeningRosters, OpeningSelection } from "../data/opening-scope";
 import {
-  nextSelectionForArea,
-  nextSelectionForRegion,
-  nextSelectionForState,
-  nextSelectionForSubregion,
-  offeredAxes,
-  whereControlView,
-  type WhereAxis,
-  type WhereAxisName
+  drainageMenuView,
+  nextSelectionForDrainageRow,
+  whereMenuView,
+  type CountyChoice
 } from "./where-control-model";
 
-/** What each axis is called, and what a reader's raw pick on it means.
- *
- * The visible text says what the axis *is* and the accessible name says what
- * *changes*, which is `createLevelControl`'s rule and the reason the two
- * differ: the visible label is already read out, and a screen reader hearing
- * "Region" twice learns nothing the second time. */
-const AXES: Readonly<Record<WhereAxisName, {
-  visible: string;
-  accessible: string;
-  next: (current: OpeningSelection, rosters: OpeningRosters, chosen: string) => OpeningSelection;
-}>> = {
-  state: {
-    visible: "State", accessible: "Which state to show",
-    next: (current, rosters, chosen) => nextSelectionForState(current, rosters, chosen)
-  },
-  region: {
-    visible: "Region", accessible: "Which region to show",
-    next: (current, _rosters, chosen) => nextSelectionForRegion(current, chosen)
-  },
-  subregion: {
-    visible: "Subregion", accessible: "Which subregion to show",
-    next: (current, _rosters, chosen) => nextSelectionForSubregion(current, chosen)
-  },
-  area: {
-    visible: "Drainage area", accessible: "Which drainage area to show",
-    next: (current, _rosters, chosen) => nextSelectionForArea(current, chosen)
-  }
-};
+/**
+ * One pick of the Where menu. `kind` is decided by the shape of the value,
+ * not by anything this module tracks: a five-digit value is a FIPS code
+ * (`kind: "county"`), anything else is a state choice -- the sentinel
+ * `"all"` included, which means every place axis this menu holds is
+ * cleared, because one menu asking one question has one "nowhere".
+ */
+export interface WherePick {
+  kind: "state" | "county";
+  /** The raw option value: a USPS code, a FIPS code, or `"all"`. */
+  value: string;
+}
 
-/** The unnarrowed selection: nothing chosen at any level. Used only to ask
- * "is there anything to choose at all", so a state already narrowed down to
- * a region-less corner of the roster cannot make an otherwise-real control
- * report itself as empty. */
-const NOTHING_CHOSEN: OpeningSelection = { state: "all", area: null };
+export interface WhereMenuOptions {
+  /**
+   * The Calcite scale to build the select at. The same reasoning as
+   * `createLevelControl`'s own option: a control eleven pixels shorter than
+   * the controls beside it reads as a different kind of control rather
+   * than as one more of them.
+   */
+  scale?: "s" | "m" | "l";
+  /**
+   * The counties the surface can offer, with the five-digit FIPS as the
+   * key (ADR-058) and the state travelling only as the group heading
+   * (ADR-076). Empty or omitted leaves a states-only menu, which is what a
+   * surface without county material takes -- a county group must never be
+   * half-offered.
+   */
+  counties?: readonly CountyChoice[];
+  /**
+   * The currently held county, when the surface keeps that axis and a link
+   * or stored view named one. Marked selected in place of the state row;
+   * `null` (the default) marks the state itself.
+   */
+  selectedCounty?: string | null;
+}
 
-export interface WhereControl {
+export interface WhereMenu {
   element: HTMLElement;
 }
 
 /* No `set()`, deliberately, and unlike `createLevelControl` which has one.
  *
- * All three hosts build this control from a selection that is already final:
- * the storage and snow pages widen for a deep link *before* constructing it,
- * and the drought page has no widening at all. Nothing reassigns the scope
- * afterwards, so a method to push a later selection in would never be
- * called, and an unreachable method is not insurance -- it is untested code
- * that reads as a supported path. When S5 adds a stored choice that can
- * arrive after first paint, that is the caller that earns it back. */
+ * Every host builds these menus from a selection that is already final: the
+ * pages widen for a deep link before constructing them, and nothing
+ * reassigns the scope afterwards. A method to push a later selection in
+ * would never be called, and an unreachable method is not insurance -- it
+ * is untested code that reads as a supported path. */
 
-export interface WhereControlOptions {
+export function createWhereMenu(
+  rosters: OpeningRosters,
+  current: OpeningSelection,
+  onPick: (pick: WherePick) => void,
+  options: WhereMenuOptions = {}
+): WhereMenu | null {
+  const view = whereMenuView(
+    rosters, current, options.counties ?? [], options.selectedCounty ?? null);
+  /* Nothing offered beyond the sentinel means no choice exists: an
+   * unpublished or unreachable reference export degrades to exactly this. */
+  if (view.options.length <= 1) return null;
+
+  const scale = options.scale ?? "m";
+  const wrapper = document.createElement("div");
+  wrapper.className = "where-menu";
+
+  const label = document.createElement("calcite-label");
+  label.append("Where");
+  const select = document.createElement("calcite-select");
+  select.setAttribute("scale", scale);
+  /* The accessible name says what changes, not what the control is: the
+   * visible label is already read out, and hearing "Where" twice teaches
+   * nothing the second time. */
+  select.setAttribute("label", "Which state or county to show");
+  fillSelect(select, view.options, view.value);
+  select.addEventListener("calciteSelectChange", () => {
+    const value = (select as unknown as { value: string }).value;
+    const kind: WherePick["kind"] = /^\d{5}$/.test(value) ? "county" : "state";
+    onPick({ kind, value });
+  });
+  label.append(select);
+  wrapper.append(label);
+
+  return { element: wrapper };
+}
+
+export interface DrainageMenuOptions {
   /**
-   * The Calcite scale to build every select at.
-   *
-   * The same reasoning as `createLevelControl`'s own option: the storage
-   * shell's panel is Calcite throughout at the default scale, while the
-   * snow and drought filter bars hold native selects a third taller. A
-   * control eleven pixels shorter than its neighbours reads as a different
-   * kind of control rather than as one more of them.
+   * The Calcite scale to build the select at. Same reasoning as the Where
+   * menu's: match the controls beside it.
    */
   scale?: "s" | "m" | "l";
   /**
-   * The finest axis this host wants built. Coarser axes are always built;
-   * everything below this one is left off.
-   *
-   * Default `"area"`, which is the whole drill-down and what the drought
-   * page takes -- there, this control is the only drainage-area control on
-   * the page.
-   *
-   * The storage and snow pages pass something coarser, because they are not
-   * in that position: each already owns a drainage-area control of its own,
-   * reading the same `?area=` this one writes (ADR-071). Two controls on one
-   * page, both labelled "Drainage area" and offering different lists, is one
-   * question asked twice -- and the page's own control is the one that can
-   * answer it, because it is built from what that page actually draws. This
-   * control is built from the published roster, which on snow includes 24
-   * basins holding no measurement site at all: offering them is offering a
-   * choice that empties the page.
-   *
-   * So the rule is one line: **this control stops one step above the page's
-   * own picker.** Snow's picker follows `?level=`, so its `finest` does too.
+   * Gates rows by what the surface can draw, tested against each row's own
+   * code. Omitted offers the whole published roster. Snow passes one built
+   * from its publishable figures at every level; the 24 siteless basins
+   * must not come back as choices that empty the page (ADR-071's repair,
+   * carried forward as per-row gating under ADR-084).
    */
-  finest?: WhereAxisName;
+  include?: (code: string) => boolean;
 }
 
-/** Builds one `calcite-label`-wrapped `calcite-select` and appends it to
- * `host`, returning the select. `calcite-label` wrapping the component with
- * the text as its child is the one pattern axe-core accepts here: neither a
- * plain `<label>` nor the component's own `label` attribute names the
- * control inside its shadow root (this feature has already failed that
- * check twice). The select's own `label` attribute is still set, for the
- * accessible name -- and it says what changes, not what the control is, the
- * same rule `createLevelControl` follows: the visible text already says
- * "State" or "Region", and a screen reader hearing that twice learns
- * nothing the second time. */
-function buildAxisSelect(
-  host: HTMLElement, visibleLabel: string, accessibleLabel: string, scale: "s" | "m" | "l"
-): HTMLElement {
+export interface DrainageMenu {
+  element: HTMLElement;
+  /**
+   * Reflect a selection the page adopted from somewhere else, such as a
+   * link read after construction. Marks the matching row, or "All drainage
+   * areas" when the selection names nothing or names something the menu
+   * does not offer -- a surviving choice shows as a row, a dead one reads
+   * as all, never as a value with no option behind it.
+   */
+  set(selection: OpeningSelection): void;
+}
+
+export function createDrainageMenu(
+  rosters: OpeningRosters,
+  current: OpeningSelection,
+  onPick: (selection: OpeningSelection) => void,
+  options: DrainageMenuOptions = {}
+): DrainageMenu | null {
+  let selection = current;
+
+  const firstView = drainageMenuView(rosters, selection, options.include);
+  if (firstView.options.length <= 1) return null;
+
+  const scale = options.scale ?? "m";
+  const wrapper = document.createElement("div");
+  wrapper.className = "drainage-menu";
+
   const label = document.createElement("calcite-label");
-  label.append(visibleLabel);
+  label.append("Drainage area");
   const select = document.createElement("calcite-select");
   select.setAttribute("scale", scale);
-  select.setAttribute("label", accessibleLabel);
+  select.setAttribute("label", "Which drainage area to show");
   label.append(select);
-  host.append(label);
-  return select;
+  wrapper.append(label);
+
+  function render(): void {
+    const view = drainageMenuView(rosters, selection, options.include);
+    fillSelect(select, view.options, view.value);
+  }
+
+  select.addEventListener("calciteSelectChange", () => {
+    const chosen = (select as unknown as { value: string }).value;
+    selection = nextSelectionForDrainageRow(selection, rosters, chosen);
+    render();
+    onPick(selection);
+  });
+
+  render();
+
+  return {
+    element: wrapper,
+    set(next: OpeningSelection): void {
+      selection = next;
+      render();
+    }
+  };
 }
 
 /**
- * Replaces `select`'s options with `axis.options` and marks `axis.value`
- * selected.
+ * Replaces `select`'s options with `options` and marks `selected` chosen.
  *
  * Consecutive options carrying the same `group` are wrapped in one
- * `calcite-option-group` heading, which is how a subregion list shows the
- * regions it belongs to and a basin list shows its subregions. Indented
- * groups inside one menu, not flyout submenus: measured at 360px, where a
- * flyout's full list is several screens of popup scroll and hover is not
- * available anyway, an option group keeps today's exact control footprint
- * and the browser's own keyboard navigation of a native `<select>` --
- * which is what `calcite-select` renders internally.
+ * `calcite-option-group` heading, which is how the Where menu shows
+ * counties under their state and the Drainage menu shows subregions under
+ * their region and basins under their subregion. Indented groups inside
+ * one menu, not flyout submenus: measured at 360px, where a flyout's full
+ * list is several screens of popup scroll and hover is not available
+ * anyway, an option group keeps the browser's own keyboard navigation of a
+ * native `<select>` -- which is what `calcite-select` renders internally.
  *
- * The `selected` attribute alone, not the attribute and an assigned `.value`.
- * This is not what `createLevelControl` does and the two are not the same
- * shape: that control builds its options once and never rebuilds them, using
- * `.value` only in a separate method, while this one rebuilds every axis on
- * every render because the lists below a change are different lists.
- *
- * Setting both was redundant rather than racy -- `document.createElement`
- * upgrades a registered Calcite element synchronously, and `calcite-select`
- * re-reads its options on a microtask, so the attribute is always seen. The
- * second write is dropped rather than explained, because two lines doing one
- * thing need a reason and there was none.
+ * `selected`, when given, marks the matching option through the attribute
+ * alone -- not the attribute and an assigned `.value`. `document
+ * .createElement` upgrades a registered Calcite element synchronously, and
+ * `calcite-select` re-reads its options on a microtask, so the attribute is
+ * always seen; two lines doing one thing need a reason and there is none.
  */
-function fillAxisSelect(select: HTMLElement, axis: WhereAxis): void {
+function fillSelect(
+  select: HTMLElement, options: readonly { value: string; label: string; group?: string }[],
+  selected?: string
+): void {
   select.replaceChildren();
   let group: HTMLElement | null = null;
   let current: string | undefined;
-  for (const option of axis.options) {
+  for (const option of options) {
     if (option.group !== current) {
       group = option.group === undefined ? null : (() => {
         const node = document.createElement("calcite-option-group");
@@ -200,76 +233,7 @@ function fillAxisSelect(select: HTMLElement, axis: WhereAxis): void {
     const node = document.createElement("calcite-option");
     node.setAttribute("value", option.value);
     node.textContent = option.label;
-    if (option.value === axis.value) node.setAttribute("selected", "");
+    if (selected !== undefined && option.value === selected) node.setAttribute("selected", "");
     (group ?? select).append(node);
   }
-}
-
-/**
- * Builds the where control: a state select and as much of the
- * region/subregion/drainage-area drill-down as the host asked for
- * (`WhereControlOptions.finest`), every built axis repopulated together from
- * one narrowed `whereControlView` whenever any of them changes.
- *
- * Returns `null` when there is nothing to choose -- every *built* axis
- * empty, which is what an unpublished or unreachable reference export
- * degrades to (`EMPTY_OPENING_ROSTERS` in `data/opening-scope.ts`). Judged
- * over the built axes and not all four, because a host that asked to stop
- * at region must not be handed a control on the strength of a basin list it
- * is not showing. A roster that publishes states but no region tier, or the
- * reverse, still builds a control: there is a real choice on at least one
- * axis, so nothing here decides those two are yoked together the way
- * `createLevelControl`'s single select does.
- */
-export function createWhereControl(
-  rosters: OpeningRosters,
-  current: OpeningSelection,
-  onChange: (selection: OpeningSelection) => void,
-  options: WhereControlOptions = {}
-): WhereControl | null {
-  const offered = offeredAxes(options.finest ?? "area");
-
-  const gate = whereControlView(rosters, NOTHING_CHOSEN);
-  /* Nothing to choose on *any* offered axis, not just the two coarsest.
-   * Checking state and region alone would build no control for a payload
-   * that offers subregions or drainage areas without them -- which is what
-   * a scope narrowed to one state looks like. */
-  const nothingOffered = (axis: WhereAxis): boolean => axis.options.length <= 1;
-  if (offered.every((name) => nothingOffered(gate[name]))) return null;
-
-  const scale = options.scale ?? "m";
-  let selection = current;
-
-  const wrapper = document.createElement("div");
-  wrapper.className = "where-control";
-
-  const selects = new Map<WhereAxisName, HTMLElement>();
-
-  function render(): void {
-    const next = whereControlView(rosters, selection);
-    for (const [name, select] of selects) fillAxisSelect(select, next[name]);
-  }
-
-  function commit(next: OpeningSelection): void {
-    selection = next;
-    render();
-    onChange(selection);
-  }
-
-  for (const name of offered) {
-    const axis = AXES[name];
-    const select = buildAxisSelect(wrapper, axis.visible, axis.accessible, scale);
-    select.addEventListener("calciteSelectChange", () => {
-      commit(axis.next(selection, rosters, (select as unknown as { value: string }).value));
-    });
-    selects.set(name, select);
-  }
-
-  /* The first fill is `render()` rather than a second `whereControlView`
-   * call over `current`: `selection` is `current` until a reader touches
-   * something, so the two are the same view, and one of them cannot then
-   * drift from the other. */
-  render();
-
-  return { element: wrapper };
 }

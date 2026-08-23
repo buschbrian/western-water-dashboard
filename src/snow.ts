@@ -80,8 +80,8 @@ import type { SnowpackPayload } from "./types";
 import { brandMarkup, pageLinksMarkup, updatePageLinks } from "./ui/page-header";
 import { placeInSlot } from "./ui/dom";
 import { createLevelControl } from "./ui/level-control";
-import { createWhereControl } from "./ui/where-control";
-import type { WhereAxisName } from "./ui/where-control-model";
+import { createDrainageMenu, createWhereMenu, type DrainageMenu } from "./ui/where-control";
+import { nextSelectionForState } from "./ui/where-control-model";
 import { createSnowMap, type SnowMapController } from "./ui/snow-map";
 import { createViewMap, mapStatusNote } from "./ui/view-map";
 import { nameSliderHandle } from "./ui/slider-label";
@@ -242,65 +242,16 @@ function formatInches(value: number | null): string {
   return value === null ? "—" : value.toFixed(1);
 }
 
-/**
- * The control that picks where a reader is looking (S4): a state and a
- * region/subregion/drainage-area drill-down, beside the level control in the
- * same filter bar. Wired after `renderSnow` rather than inside it, because
- * it needs the full, unnarrowed rosters -- `renderSnow`'s own `openingScope`
- * parameter is already narrowed to what this page draws, which is right for
- * everything else that function does and wrong for this control's own
- * region and subregion option lists (`resolveOpeningScope`'s doc: "never
- * unioned directly" for that reason).
- *
- * A full navigation, like the level control just below: every figure on
- * this page is a mean over a different set of sites once the area or the
- * state narrows, so a picked value takes the path a shared link already
- * takes rather than a re-render this page has no function for.
- *
- * It stops one step above `#snow-area`, this page's own drainage-area
- * picker, and does not repeat it (ADR-071). `#snow-area` is built from
- * `basinChoices` -- the areas this payload has a publishable figure for, at
- * the size `?level=` is drawing them, with each one's site count in the
- * label. The shared control is built from the published roster, which holds
- * 24 basins with no measurement site in them at all; offering those here
- * would be offering a choice that empties the page. So the two never both
- * name the same tier: at level 6 this control ends at subregion and
- * `#snow-area` carries the basins, and at level 4 it ends at region and
- * `#snow-area` carries the subregions.
+/*
+ * The two place menus (ADR-084) are wired inside `renderSnow`, beside the
+ * level control: the Drainage menu's gating needs this payload's own
+ * publishable choices (`basinChoices`), which only exist once the payload
+ * is in hand.
  */
-/** The finest axis the shared control builds, by the level this page draws.
- * One step above `#snow-area`'s own tier at each of them (ADR-071). */
-const FINEST_SHARED_AXIS: Readonly<Record<number, WhereAxisName>> = {
-  2: "state",
-  4: "region",
-  6: "subregion"
-};
-
-function wireWhereControl(rosters: OpeningRosters, current: OpeningSelection): void {
-  const host = document.querySelector<HTMLElement>("#snow-content .filterbar-controls");
-  if (!host) return;
-  const control = createWhereControl(rosters, current, (selection) => {
-      /* `searchWithPlace` remembers the choice and writes "everywhere" out
-       * loud rather than as an absent parameter -- see its own note for why
-       * a cleared filter must not become a link that means "no answer". */
-      const query = searchWithPlace(window.location.search, selection);
-      window.location.replace(`${window.location.pathname}${query}`);
-    /* Large, because the native selects it sits beside are a third taller
-     * than a Calcite control at the default scale. */
-    /* One step above whatever tier `#snow-area` is holding, which follows
-     * `?level=` (ADR-071). At level 6 that picker holds basins and this stops
-     * at subregion; at 4 it holds subregions and this stops at region; at 2 it
-     * holds the regions themselves and this stops at state. Written as a
-     * lookup rather than a comparison because the last case is not the same
-     * shape as the other two -- `level >= 6 ? "subregion" : "region"` gave
-     * region at level 2 as well, which is the tier the page's own picker was
-     * already offering. */
-  }, { scale: "l", finest: FINEST_SHARED_AXIS[level] ?? "subregion" });
-  if (control) placeInSlot(host, "where", control.element);
-}
 
 function renderSnow(
-  payload: SnowpackPayload, openingScope: OpeningScope, widenedForSite: string | null
+  payload: SnowpackPayload, openingScope: OpeningScope, widenedForSite: string | null,
+  rosters: OpeningRosters
 ): void {
   const content = document.querySelector<HTMLElement>("#snow-content");
   if (!content) return;
@@ -326,17 +277,13 @@ function renderSnow(
         <label>Site name or county<input id="snow-query" type="search" placeholder="Search sites" autocomplete="off"></label>
       </div>
       <!-- Coarsest place first, then finer, then how finely the ground is
-           divided, then the filters that are not places at all.
-           #snow-area is the last of the places, not the first of the
-           filters: the shared control above it stops one step short and
-           leaves this page's own picker to carry the finest tier
-           (ADR-071), so the run of place controls ends here. The where
-           slot is filled once the roster resolves and the level slot once
-           the reference export does; see the control-slot rule in app.css
-           for why these are slots and not appends. -->
+           divided, then the filters that are not places at all. The two
+           place menus and the level slot are filled once the roster, the
+           payload and the reference export resolve; see the control-slot
+           rule in app.css for why these are slots and not appends. -->
       <div id="snow-filter-controls" class="filterbar-controls">
         <div class="control-slot" data-slot="where"></div>
-        <label>Drainage area<select id="snow-area"><option value="all">The whole region</option></select></label>
+        <div class="control-slot" data-slot="area"></div>
         <div class="control-slot" data-slot="level"></div>
         <label>Elevation<select id="snow-elev">${ELEVATION_BANDS.map((band) => `<option value="${band}">${elevationBandLabel(band)}</option>`).join("")}</select></label>
         <label>Reporting<select id="snow-reporting">
@@ -412,7 +359,6 @@ function renderSnow(
     scopeSummaryEl.hidden = summary === null;
   }
 
-  const area = document.querySelector<HTMLSelectElement>("#snow-area");
   const status = document.querySelector<HTMLElement>("#snow-status");
   const curveHost = document.querySelector<HTMLElement>("#snow-curve-host");
   const monthRows = document.querySelector<HTMLTableSectionElement>("#snow-month-rows");
@@ -435,7 +381,7 @@ function renderSnow(
   const siteDetail = document.querySelector<HTMLElement>("#snow-site-detail");
   const basinPicker = document.querySelector<HTMLSelectElement>("#snow-basin-pick");
   const basinDetail = document.querySelector<HTMLElement>("#snow-basin-detail");
-  if (!area || !status || !curveHost || !monthRows || !siteRowsBody
+  if (!status || !curveHost || !monthRows || !siteRowsBody
     || !mapHost || !daySlider || !dayReading || !sitePicker || !siteDetail
     || !basinPicker || !basinDetail) return;
 
@@ -458,17 +404,11 @@ function renderSnow(
     }
   }
 
-  for (const choice of choices) {
-    const option = document.createElement("option");
-    option.value = choice.code;
-    option.textContent = `${choice.label} (${choice.siteCount} sites)`;
-    area.append(option);
-  }
-
-  /* The season card's own picker carries the same fourteen areas as the
-   * filter above, and is deliberately not that filter: the filter narrows
-   * the whole page, this names the one area whose season is drawn in full
-   * -- the same relationship the site picker has to the site table. */
+  /* The season card's own picker carries the same areas as the Drainage
+   * menu's drawn tier, and is deliberately not that filter: the menu
+   * narrows the whole page, this names the one area whose season is drawn
+   * in full -- the same relationship the site picker has to the site
+   * table. */
   for (const choice of choices) {
     const option = document.createElement("option");
     option.value = choice.code;
@@ -525,6 +465,10 @@ function renderSnow(
   const startDay = defaultMapDay(payload) ?? fallbackDay;
   let currentDay = startDay;
   let currentArea: string | null = null;
+  /* The Drainage-area menu, once wired below. Held so in-page area changes
+   * can reflect the new choice back into it -- the select never re-renders
+   * itself on an update that did not come from its own change event. */
+  let drainage: DrainageMenu | null = null;
   let currentSite: string | null = null;
   let currentBasin: string | null = null;
   /* The three controls that narrow only the site table. Held together so
@@ -897,8 +841,7 @@ function renderSnow(
   };
 
   const update = (): void => {
-    const chosen = area.value === "all" ? null : area.value;
-    currentArea = chosen;
+    const chosen = currentArea;
     const chosenLabel = chosen === null
       ? "the whole region"
       : choices.find((choice) => choice.code === chosen)?.label ?? "the whole region";
@@ -1105,6 +1048,75 @@ function renderSnow(
     applyFilter({ query: "", band: "all", status: "all" });
   });
 
+  /*
+   * The two place menus (ADR-084), wired beside the level control because
+   * the rosters are already in hand by the time this runs.
+   *
+   * The Where menu offers states alone -- this page's sites carry no FIPS
+   * county codes to offer (ADR-084 records the name-to-code work as debt).
+   * A state pick navigates, exactly as the drill-down's state select did:
+   * every figure here is a mean over a different set of sites once the
+   * state narrows.
+   *
+   * The Drainage menu replaces both the shared drill-down and this page's
+   * own `#snow-area` picker. Its rows are gated by what this payload can
+   * draw: a row at the drawn tier appears only when it has a publishable
+   * figure (`basinChoices`), a coarser row only when some publishable
+   * choice sits beneath it, and nothing finer than the drawn tier is
+   * offered at all -- offering it would force a level change onto a payload
+   * whose figures at that finer level are unknown here. That gating is
+   * ADR-071's empty-page repair, carried forward per row.
+   *
+   * A pick at the drawn tier -- or "All drainage areas" -- stays in this
+   * page, the way `#snow-area` always worked: the payload is already in
+   * memory, and a navigation would throw away the day slider and the site
+   * table for nothing. Any coarser pick takes the shared-link path. The
+   * clearing rule rides along unchanged: only a real pick of "All" sets
+   * `openingAreaCleared`, which is what lets a coarse `?area=14` link keep
+   * narrowing the page until the reader explicitly asks past it.
+   */
+  const filterControls = content.querySelector<HTMLElement>(".filterbar-controls");
+  const navigateWithPlace = (selection: OpeningSelection): void => {
+    /* `searchWithPlace` remembers the choice and writes "everywhere" out
+     * loud rather than as an absent parameter -- see its own note for why
+     * a cleared filter must not become a link that means "no answer". */
+    const nextQuery = searchWithPlace(window.location.search, selection);
+    window.location.replace(`${window.location.pathname}${nextQuery}`);
+  };
+  if (filterControls) {
+    const where = createWhereMenu(rosters, openingScope.selection, (pick) => {
+      if (pick.kind !== "state") return;
+      navigateWithPlace(nextSelectionForState(openingScope.selection, rosters, pick.value));
+    }, { scale: "l" });
+    if (where) placeInSlot(filterControls, "where", where.element);
+
+    const tierCodes = new Set(choices.map((choice) => choice.code));
+    const includeRow = (code: string): boolean => {
+      if (code.length > level) return false;
+      if (code.length === level) return tierCodes.has(code);
+      for (const tierCode of tierCodes) {
+        if (tierCode.startsWith(code)) return true;
+      }
+      return false;
+    };
+    drainage = createDrainageMenu(rosters, openingScope.selection, (selection) => {
+      const code = selection.area;
+      if (code !== null && !tierCodes.has(code)) {
+        navigateWithPlace(selection);
+        return;
+      }
+      /* The in-page path. Only a real reader pick reaches this branch --
+       * programmatic `set()` calls below never fire the select's change
+       * event -- which is what keeps a shared `?area=14` link from being
+       * treated as cleared before the reader has touched anything. */
+      if (code === null) openingAreaCleared = true;
+      currentArea = code;
+      drainage?.set({ state: openingScope.selection.state, area: code });
+      update();
+    }, { scale: "l", include: includeRow });
+    if (drainage) placeInSlot(filterControls, "area", drainage.element);
+  }
+
   /* The level control arrives with the reference export, which the map below
    * fetches anyway, so the page a reader asked for is never waiting on it
    * (ADR-064). */
@@ -1129,15 +1141,6 @@ function renderSnow(
     console.warn("The area-size control could not be built:", error);
   });
 
-  area.addEventListener("change", () => {
-    /* A real interaction, not the programmatic assignment near the bottom
-     * of this function -- setting `.value` in code never fires `change`,
-     * which is exactly what keeps a shared `?area=14` link's coarser code
-     * from being treated as "the reader already cleared it" before they
-     * have touched the control at all. */
-    if (area.value === "all") openingAreaCleared = true;
-    update();
-  });
   sitePicker.addEventListener("change", () => {
     renderSiteDetail(sitePicker.value || null);
   });
@@ -1158,9 +1161,12 @@ function renderSnow(
   if (querybox) querybox.value = wanted.query;
   if (elevSelect) elevSelect.value = wanted.band;
   if (statusSelect) statusSelect.value = wanted.status;
-  area.value = wanted.area !== null
+  /* Only an area this level actually groups sites into can be held;
+   * anything coarser stays in the address bar as the opening scope and the
+   * menu shows it as its own coarser row. */
+  currentArea = wanted.area !== null
     && choices.some((choice) => choice.code === wanted.area)
-    ? wanted.area : "all";
+    ? wanted.area : null;
   if (wanted.day !== null && days.includes(wanted.day)) currentDay = wanted.day;
   update();
   if (currentDay) {
@@ -1320,8 +1326,7 @@ try {
   }
 
   const payload = payloadForOpeningScope(levelPayload, openingScope.selection, level);
-  renderSnow(payload, openingScope, widenedForSite);
-  wireWhereControl(rosters, openingScope.selection);
+  renderSnow(payload, openingScope, widenedForSite, rosters);
 } catch (error) {
   console.error("Snowpack view failed:", error);
   const content = document.querySelector<HTMLElement>("#snow-content");

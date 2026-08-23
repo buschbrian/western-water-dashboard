@@ -38,7 +38,6 @@ import { stateName } from "./data/state-vocabulary";
 import {
   overviewScope,
   reservoirInState,
-  subregionNames,
   watershedOptions,
   type ScopeChoice
 } from "./overview-model";
@@ -47,7 +46,6 @@ import {
   ALL_RESERVOIRS,
   coversDrainageArea,
   describeFilter,
-  drainageAreaLabel,
   filterWhere,
   isFiltered,
   matchesFilter,
@@ -75,7 +73,8 @@ import { levelFromSearch, writeLevel } from "./state/level";
 import { supportsDashboard } from "./state/shell";
 import { placeInSlot } from "./ui/dom";
 import { createLevelControl } from "./ui/level-control";
-import { createWhereControl } from "./ui/where-control";
+import { createDrainageMenu, createWhereMenu, type DrainageMenu } from "./ui/where-control";
+import { nextSelectionForState } from "./ui/where-control-model";
 import { renderLegend } from "./ui/legend";
 import { loadMap, type MapController } from "./ui/map";
 import {
@@ -86,7 +85,6 @@ import {
   revealDetail,
   setDataState,
   setDetail,
-  setDrainageAreaOptions,
   setBaselineControl,
   setFilterControls,
   setFilterState,
@@ -155,19 +153,7 @@ let deepLink: Reservoir | null = null;
 let published: readonly Reservoir[] = [];
 /** Everything the map is currently drawing. */
 let inScope: ScopedReservoirs = asScoped([]);
-/* The subregion names the payload publishes, for the one place this page can
- * be asked about a four-digit area: a shared link. `watersheds.subregions` is
- * in `reservoirs.json` rather than `reference.json` because one copy of a
- * roster is the point of having one (ADR-060, ADR-064). */
-let subregionLabels: ReadonlyMap<string, string> = new Map();
-/* The area a shared link opened on, when it is coarser than the basins this
- * control offers -- `?area=14` is a region and `?area=1401` a subregion, and
- * both filter correctly because `matchesFilter` prefix-matches. The control
- * lists basins, so without this the map would narrow while the select beside
- * it read "All drainage areas", and the reader would have no way back to what
- * the link opened on. Held for the session rather than only while it is
- * chosen, so looking at one basin is not a one-way door. */
-let openingArea: string | null = null;
+let publishedAt = "";
 /* ADR-011's two dimensions, both the reader's to choose. Geography was
  * pinned to `utah`, which is why Fontenelle and Woodruff Narrows -- paid for
  * by the refresh every morning, connected to Utah by drainage but never
@@ -194,6 +180,10 @@ let largeReservoirAvailability = { lakePowell: true, lakeMead: true };
  * fails; the real value replaces it before the first draw. */
 let openingScope: OpeningScope = resolveOpeningScope(
   DEFAULT_OPENING_SELECTION, EMPTY_OPENING_ROSTERS);
+/** The published rosters, once the fetch lands. `drainageAreaName` and the
+ * place menus read them from here rather than through parameters, for the
+ * same reason `openingScope` is module-level. */
+let openingRosters: OpeningRosters = EMPTY_OPENING_ROSTERS;
 /* The reservoir a `?state=` narrowing was widened back for, because the
  * link also named it (see the widening logic below). Null when no widening
  * happened -- most loads. */
@@ -216,7 +206,6 @@ function percentShown(reservoir: Reservoir): ReturnType<typeof headlinePercent> 
   const month = selectedMonth();
   return month === null ? headlinePercent(reservoir) : monthPercent(reservoir, month);
 }
-let publishedAt = "";
 
 async function loadData(): Promise<readonly Reservoir[] | null> {
   // The template no longer carries this copy, so the first state has to be
@@ -229,7 +218,6 @@ async function loadData(): Promise<readonly Reservoir[] | null> {
       return null;
     }
     publishedAt = data.generated_at.slice(0, 10);
-    subregionLabels = subregionNames(data);
     /* The periods this payload can actually offer, and which one it opens on.
      * Both come from the data rather than from a constant here, so a change of
      * default in the pipeline reaches the page without a code change and a
@@ -374,40 +362,66 @@ async function wireLevelControl(): Promise<number> {
 }
 
 /**
- * The control that picks where a reader is looking (S4): a state and a
- * region/subregion/drainage-area drill-down, built beside the level control
- * from the same rosters this page already fetched for `openingScope`.
+ * The two place menus (ADR-084): a Where menu -- states alone here, until
+ * the panel carries a county contract -- and one Drainage-area menu across
+ * region, subregion and basin in place of the old drill-down-above-a-filter
+ * arrangement. Built beside the level control from the same rosters this
+ * page already fetched for `openingScope`.
  *
  * `current` is `openingScope.selection` at the point this is called, after
  * every widening this page does (the linked-reservoir override above) --
- * the control reflects the scope actually in force, not the raw address
- * bar. A full navigation, like the level control: `?state=` and `?area=`
- * are read once at initialization by this page and by the other three
- * surfaces (S3a-d), each with its own rule for what the area axis means
- * (D5), so a picked value takes the path a shared link already takes rather
- * than a re-render this page has no function for.
+ * the menus reflect the scope actually in force, not the raw address bar.
  *
- * It ends at subregion and never builds a drainage-area axis (ADR-071).
- * `[data-filter="drainage"]` sits in this same panel, already labelled
- * "Drainage area", and on this page a drainage-area choice *is* that filter
- * whichever control makes it: `?area=` is the legacy spelling of
- * `?drainage=` (`state/url.ts`), and the block below deliberately leaves
- * `?area=` to the filter rather than narrowing the roster with it (D5). Two
- * selects with one label, one parameter and one effect is one control shown
- * twice; the page's own is the one that offers exactly the areas the map
- * has, and the coarser code a link opened on above them.
+ * A Where pick is a full navigation, like the level control: `?state=` is
+ * read once at initialization by this page and by the other three surfaces
+ * (S3a-d), so a picked value takes the path a shared link already takes.
+ *
+ * A Drainage pick never navigates. On this page a drainage-area choice *is*
+ * the in-page filter -- greying rather than removing, totals untouched
+ * (D5, ADR-011) -- at every width the menu offers: codes nest, so a region
+ * or subregion row filters by prefix exactly as `[data-filter="drainage"]`
+ * filtered basins, and the write goes to `?drainage=` through the same
+ * `writeUrl` every other control here uses. The old split, where the
+ * shared control wrote `?area=` and the panel's own select wrote
+ * `?drainage=`, ended with ADR-084; reading `?area=` links still works,
+ * exactly as before.
  */
-function wireWhereControl(rosters: OpeningRosters, current: OpeningSelection): void {
+const drainageMenus: DrainageMenu[] = [];
+
+function wirePlaceMenus(rosters: OpeningRosters, current: OpeningSelection): void {
   for (const host of document.querySelectorAll<HTMLElement>(".filters")) {
-    const control = createWhereControl(rosters, current, (selection) => {
+    const where = createWhereMenu(rosters, current, (pick) => {
+      if (pick.kind !== "state") return;
       /* `searchWithPlace` remembers the choice and writes "everywhere" out
        * loud rather than as an absent parameter -- see its own note for why
        * a cleared filter must not become a link that means "no answer". */
-      const query = searchWithPlace(window.location.search, selection);
+      const query = searchWithPlace(window.location.search,
+        nextSelectionForState(current, rosters, pick.value));
       window.location.replace(`${window.location.pathname}${query}`);
-    }, { finest: "subregion" });
-    if (control) placeInSlot(host, "where", control.element);
+    });
+    if (where) placeInSlot(host, "where", where.element);
+
+    const drainage = createDrainageMenu(rosters, drainageMenuSelection(), (picked) => {
+      filterState = { ...filterState, drainageArea: picked.area };
+      applyFilter();
+      writeUrl({ ...viewState(), reservoir: selection.get() });
+    }, { include: scopeHoldsArea });
+    if (drainage) {
+      drainageMenus.push(drainage);
+      placeInSlot(host, "area", drainage.element);
+    }
   }
+}
+
+/** The selection the Drainage menus should show as chosen: the reader's own
+ * filter when there is one, otherwise the coarser code a link opened on --
+ * which the menus carry as their own rows, so it reads as chosen instead of
+ * silently disappearing behind "All". */
+function drainageMenuSelection(): OpeningSelection {
+  return {
+    state: openingScope.selection.state,
+    area: filterState.drainageArea ?? openingScope.selection.area
+  };
 }
 
 /**
@@ -602,6 +616,24 @@ function scopeHoldsArea(code: string): boolean {
 }
 
 /**
+ * The name of the region, subregion or basin a code names, read from the
+ * unnarrowed roster -- the same lookup the Drainage menu labels its rows
+ * from (`where-control-model.ts`), so the panel sentence and the menu can
+ * never disagree about one code. A subregion carries its level in the
+ * words ("Bear subregion"), because nineteen of the drawn basins carry
+ * their subregion's name exactly and a bare repeat would be two names for
+ * two different places. Null when the code names nothing the site
+ * publishes.
+ */
+function rosterAreaName(code: string, rosters: OpeningRosters): string | null {
+  const roster = code.length === 2 ? rosters.regions
+    : code.length === 4 ? rosters.subregions
+    : rosters.areas;
+  const name = roster.find((candidate) => candidate.huc6 === code)?.name ?? null;
+  return name !== null && code.length === 4 ? `${name} subregion` : name;
+}
+
+/**
  * A region or a subregion, named so it cannot be read as a basin.
  *
  * Nineteen of the drawn basins carry their subregion's name exactly -- basin
@@ -612,39 +644,16 @@ function scopeHoldsArea(code: string): boolean {
  *
  * Region names are published nowhere, so a region is named by its code.
  */
-function coarseAreaLabel(code: string): string {
-  if (code.length <= 2) return `Region ${code}`;
-  const name = subregionLabels.get(code);
-  return name ? `${name} subregion` : `Subregion ${code}`;
-}
-
-/** The drainage areas the map currently has, as the control's choices. The
- * areas follow the scope: `connected` brings two more reservoirs, and one of
- * them may be the only reservoir in its area.
- *
- * A coarser area a shared link opened on is offered above them, when the
- * scope still holds basins inside it -- see `openingArea`. */
-function drainageAreaChoices(): { value: string; label: string }[] {
-  const areas = watershedOptions(inScope);
-  const opening = openingArea;
-  const coarser = opening !== null
-    && !areas.some((area) => area.code === opening)
-    && scopeHoldsArea(opening)
-    ? [{ value: opening, label: coarseAreaLabel(opening) }]
-    : [];
-  return [{ value: "all", label: drainageAreaLabel(null) },
-    ...coarser,
-    ...areas.map((area) => ({ value: area.code, label: area.label }))];
-}
 
 /** The name of the chosen area, for the sentence under the controls. Read
- * from the list the control itself shows, so the sentence and the select
- * cannot name the same code differently. Null when nothing is chosen, and
- * also when the choice has left the scope. */
+ * from the published roster -- the same place the Drainage menu's rows come
+ * from, so the sentence and the menu cannot name one code differently.
+ * Null when nothing is chosen, and also when the choice has left the
+ * roster. */
 function drainageAreaName(): string | null {
   const chosen = filterState.drainageArea;
   if (chosen === null) return null;
-  return drainageAreaChoices().find((area) => area.value === chosen)?.label ?? null;
+  return rosterAreaName(chosen, openingRosters);
 }
 
 /**
@@ -725,14 +734,11 @@ function wireFilters(map: MapController): void {
     (["all", "late", "current"] as const).map((reporting) => ({
       value: reporting, label: reportingLabel(reporting)
     })),
-    drainageAreaChoices(),
     (kind, value) => {
       if (kind === "storage") {
         filterState = { ...filterState, storageClass: value === "all" ? null : Number(value) };
-      } else if (kind === "reporting") {
-        filterState = { ...filterState, reporting: value as FilterState["reporting"] };
       } else {
-        filterState = { ...filterState, drainageArea: value === "all" ? null : value };
+        filterState = { ...filterState, reporting: value as FilterState["reporting"] };
       }
       apply();
       writeUrl({ ...viewState(), reservoir: selection.get() });
@@ -944,7 +950,7 @@ if (!supportsDashboard(browserCapabilities())) {
    * `resolveOpeningScope` against an empty roster still applies `state`
    * (`state` is never checked against the rosters, only `area`'s aliveness
    * is) and falls back to the wide default box. */
-  const [reservoirs, map, openingRosters] = await Promise.all([
+  const [reservoirs, map, loadedRosters] = await Promise.all([
     loadData(),
     loadMap(selection),
     loadOpeningRosters().catch((error: unknown): OpeningRosters => {
@@ -953,6 +959,9 @@ if (!supportsDashboard(browserCapabilities())) {
       return EMPTY_OPENING_ROSTERS;
     })
   ]);
+  /* Module-level (declared beside `scope`, above): `drainageAreaName` and
+   * the place menus read it outside this function's scope. */
+  openingRosters = loadedRosters;
 
   /*
    * S3a (docs/OPENING-SCOPE-AND-THE-WESTERN-ROSTER.md): `?state=` and
@@ -1100,12 +1109,17 @@ if (!supportsDashboard(browserCapabilities())) {
        * basins, every such link was reset to "all drainage areas" here,
        * before it ever reached the filter it was written for. A code finer
        * than a basin still falls away, which is right: nothing published sits
-       * inside it. */
-      setDrainageAreaOptions(drainageAreaChoices());
+       * inside it.
+       *
+       * The menus re-render here too: their gating reads `inScope` at render
+       * time, so a scope change that brought or took areas is on the next
+       * populate, and a dead choice shows as "All" through the same
+        * fallback this block applies to `filterState`. */
       const chosenArea = filterState.drainageArea;
       if (chosenArea !== null && !scopeHoldsArea(chosenArea)) {
         filterState = { ...filterState, drainageArea: null };
       }
+      for (const menu of drainageMenus) menu.set(drainageMenuSelection());
       applyFilter();
       if (window.__dashboardReady) {
         window.__dashboardReady.reservoirs = inScope.length;
@@ -1201,7 +1215,6 @@ if (!supportsDashboard(browserCapabilities())) {
       drainageArea: wanted.drainageArea
     };
     /* Read before the first `applyScope`, which is what fills the control. */
-    openingArea = wanted.drainageArea;
     // A link to a month the payload no longer carries opens on the newest
     // reading rather than on nothing.
     const askedFor = wanted.month === null ? -1 : months.indexOf(wanted.month);
@@ -1239,7 +1252,7 @@ if (!supportsDashboard(browserCapabilities())) {
   applyBaseline();
   await loadContext(map);
   const levelsOffered = await wireLevelControl();
-  wireWhereControl(openingRosters, openingScope.selection);
+  wirePlaceMenus(openingRosters, openingScope.selection);
   /* The splash asks only when nothing else answered -- never over a shared
    * link, never over a remembered place, never twice. Built from the rosters
    * already fetched, so it costs no request and cannot arrive late. It is

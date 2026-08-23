@@ -145,31 +145,46 @@ cannot narrow twice. `WIDEST_SCOPE` remains for callers that must still pass an
 options object, and its `Required` is what makes admitting the next dominant
 reservoir a compile error rather than a silent exclusion.
 
-## One drainage-area control to a page (ADR-071)
+## Two place menus to a page (ADR-084)
 
-Three pages carry the shared **where control** — a state select and as much of
-the region → subregion → drainage-area drill-down as the host asks for
-(`finest`). Two of them already own a drainage-area control of their own, and
-the shared one **stops one step above it**:
+Every map page asks "where am I" with two single-select menus, both built as
+indented option groups ([ADR-076](../decisions/ADR-076-nest-the-place-menus-and-let-the-heading-carry-the-state.md)'s
+shape):
 
-| Page | Its own control | The where control offers |
+| Menu | Offers | Writes |
 |---|---|---|
-| Storage | `[data-filter="drainage"]` — the basins the map holds, plus the coarser code a link opened on | state → region → subregion |
-| Snow | `#snow-area` — the areas with a publishable figure at `?level=`, with site counts | one step above that tier: state → region → subregion at level 6, state → region at level 4, state alone at level 2 |
-| Drought | none | the whole drill-down |
+| **Where** (`createWhereMenu`) | states; counties grouped beneath their state where the surface has FIPS county material (the storage charts) | a state row → `?state=`, a county row → `?county=` |
+| **Drainage area** (`createDrainageMenu`) | regions, subregions and basins in one menu, each tier grouped under its parent | `?area=` (or `?drainage=` on storage), plus `?level=` when the row forces it |
 
-The reason is that both controls answer one question. On snow both write
-`?area=`; on storage `?area=` is the legacy spelling of the `?drainage=` the
-filter writes, and D5 leaves it to that filter rather than narrowing the roster
-with it. The page-owned control is the one that can answer it, because it is
-built from what the page draws: the published roster holds 24 basins with no
-snow measurement site in them, so offering those on the snow page offers a
-choice that empties it.
+Region, subregion and basin are one axis at three resolutions, so they live in
+one menu rather than three selects. **A row finer than the drawn level
+navigates** — it takes `location.replace` carrying its own `?level=`, because
+the level decides which files the page fetches (ADR-064); a row coarser than or
+equal to it narrows by prefix exactly as a link does. The level control stays:
+it answers the drawn question (division without narrowing) and the menu answers
+the selected question; merging them would answer two of the four scopes with
+one control.
 
-`offeredAxes` in `where-control-model.ts` is the rule, and it takes a **prefix
-and never a subset** — each axis's options are `resolveOpeningScope`'s answer
-under the axes above it, so a basin list with no subregion select above it is a
-list a reader cannot see the reason for or change.
+Snow's rows are gated by what its payload can draw: a row at the drawn tier is
+offered only when it has a publishable figure, a coarser row only when some
+publishable choice sits beneath it, and nothing finer than the drawn tier is
+offered. That is ADR-071's empty-page repair carried forward per row.
+Drought and storage offer the full published roster. On storage every drainage
+pick is the in-page dimming filter at any width (codes nest, so a subregion row
+prefix-filters), written to `?drainage=` through the same `writeUrl` as every
+other filter there; reading `?area=` links still works.
+
+The pure half lives in `where-control-model.ts` (`whereMenuView`,
+`drainageMenuView`, `nextSelectionForState`, `nextSelectionForDrainageRow`)
+over `resolveOpeningScope`'s narrowing; the DOM half is `where-control.ts`.
+The menus narrow against state but never against the reader's own area pick —
+a menu that removed the families around the current choice would leave "All"
+as the only way out.
+
+County exists only where the payload carries FIPS codes: reservoirs do, snow's
+site counties are bare names (recorded as debt in ADR-084), drought publishes
+no county rows. A county pick writes `?county=` and leaves `?state=` alone;
+the two axes stay two even though the controls are one.
 
 ## A county is where a thing is; a drainage area is where its water goes
 

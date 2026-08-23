@@ -70,7 +70,8 @@ import {
 import { levelFromSearch, writeLevel } from "./state/level";
 import { placeInSlot } from "./ui/dom";
 import { createLevelControl } from "./ui/level-control";
-import { createWhereControl } from "./ui/where-control";
+import { createDrainageMenu, createWhereMenu } from "./ui/where-control";
+import { nextSelectionForState } from "./ui/where-control-model";
 import { renderDroughtScatter } from "./viz/drought-scatter";
 import { renderDroughtGap } from "./viz/drought-gap";
 import { renderDroughtChange } from "./viz/drought-change";
@@ -305,12 +306,13 @@ function renderDrought(
         <div id="drought-filter-actions" class="filterbar-head-actions"><calcite-button id="drought-reset" class="reset-button" appearance="outline" scale="s" kind="neutral">Show every area</calcite-button></div>
       </div>
       <!-- Coarsest place first, then finer, then how finely the ground is
-           divided, then the filters that are not places at all. The first two
-           slots are filled once the roster and the reference export resolve;
-           see the control-slot rule in app.css for why these are slots
-           and not appends. -->
+           divided, then the filters that are not places at all. The first
+           three slots are filled once the roster and the reference export
+           resolve; see the control-slot rule in app.css for why these are
+           slots and not appends. -->
       <div id="drought-filter-controls" class="filterbar-controls">
         <div class="control-slot" data-slot="where"></div>
+        <div class="control-slot" data-slot="area"></div>
         <div class="control-slot" data-slot="level"></div>
         <label>Show areas with<select id="drought-worse">
           <option value="">Any conditions</option>
@@ -810,15 +812,16 @@ function renderDrought(
   });
 
   /*
-   * The control that picks where a reader is looking (S4): a state and a
-   * region/subregion/drainage-area drill-down, beside the level control in
-   * the same filter bar. `opening` carries the full, unnarrowed rosters
-   * this needs (`OpeningContext.rosters`) -- `openingSelection` above is
-   * already the resolved, aliveness-checked selection this page draws with,
-   * which is exactly what a repopulated control should show as chosen.
-   * Skipped, like the level control effectively is by its own `.catch`,
-   * when the reference export never resolved: there is nothing published to
-   * build either control's options from.
+   * The two place menus (ADR-084): Where -- states alone here, because this
+   * page publishes no county rows -- and one Drainage-area menu spanning
+   * region, subregion and basin in place of the old four-select drill-down.
+   * `opening` carries the full, unnarrowed rosters both need
+   * (`OpeningContext.rosters`) -- `openingSelection` above is already the
+   * resolved, aliveness-checked selection this page draws with, which is
+   * exactly what a repopulated menu should show as chosen. Skipped, like
+   * the level control effectively is by its own `.catch`, when the
+   * reference export never resolved: there is nothing published to build
+   * either menu's options from.
    *
    * A full navigation, the same choice and the same reason as the level
    * control just above: `?state=` and `?area=` are read once, here, before
@@ -826,22 +829,36 @@ function renderDrought(
    * caller), so a picked value takes the path a shared link already takes
    * rather than a re-render this page has no function for.
    *
-   * The one host that keeps all four axes, so `finest` is left at its
-   * default (ADR-071). The storage and snow pages stop this control above
-   * their own drainage-area picker; this page has no such picker, and
-   * `?area=` filters the drought map and opens the row it names (D4), so
-   * the area axis here is the only way a reader reaches one area at all.
+   * A drainage row finer than the level this page draws forces that level:
+   * it rides the same navigation carrying `?level=`, because the level
+   * decides which file this page fetches (ADR-064). A row coarser than or
+   * equal to it narrows by prefix exactly as the drill-down's selects did.
    */
   if (opening) {
-    const control = createWhereControl(opening.rosters, openingSelection, (selection) => {
+    const navigateWithPlace = (selection: OpeningSelection): void => {
       /* `searchWithPlace` remembers the choice and writes "everywhere" out
        * loud rather than as an absent parameter -- see its own note for why
        * a cleared filter must not become a link that means "no answer". */
-      const query = searchWithPlace(window.location.search, selection);
+      let query = searchWithPlace(window.location.search, selection);
+      if (selection.area !== null && selection.area.length > level) {
+        const params = new URLSearchParams(query.replace(/^\?/, ""));
+        writeLevel(params, selection.area.length);
+        query = `?${params.toString()}`;
+      }
       window.location.replace(`${window.location.pathname}${query}`);
+    };
+    const where = createWhereMenu(opening.rosters, openingSelection, (pick) => {
+      /* This page offers no counties, so every real pick is a state one;
+       * a county pick is refused rather than misread as a state code. */
+      if (pick.kind !== "state") return;
+      navigateWithPlace(nextSelectionForState(openingSelection, opening.rosters, pick.value));
     }, { scale: "l" });
+    const drainage = createDrainageMenu(opening.rosters, openingSelection, navigateWithPlace, { scale: "l" });
     const whereHost = content.querySelector<HTMLElement>(".filterbar-controls");
-    if (control && whereHost) placeInSlot(whereHost, "where", control.element);
+    if (whereHost) {
+      if (where) placeInSlot(whereHost, "where", where.element);
+      if (drainage) placeInSlot(whereHost, "area", drainage.element);
+    }
   }
 
   worseSelect?.addEventListener("change", () => {

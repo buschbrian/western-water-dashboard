@@ -131,8 +131,8 @@ export interface OpeningSplash {
 
 /**
  * Builds the dialog. Returns `null` when there is nothing to offer, which is
- * the same answer `createWhereControl` gives for the same reason: a chooser
- * with one choice on it is furniture.
+ * the same answer the place menus (`where-control.ts`) give for the same
+ * reason: a chooser with one choice on it is furniture.
  */
 export function createOpeningSplash(places: SplashPlaces): OpeningSplash | null {
   if (places.states.length < 2 && places.regions.length < 2) return null;

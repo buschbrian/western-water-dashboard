@@ -57,7 +57,7 @@ function panelContents(suffix: string): string {
         <h3 id="analysis-${suffix}">Analysis controls</h3>
         <!-- Where the reader is looking, before what they are looking at:
              coarsest place first, then finer, then how finely the ground is
-             divided. The two slots arrive after first paint and used to be
+             divided. The three slots arrive after first paint and used to be
              appended, which put the whole drill-down below the buttons at
              the bottom of this panel. See .control-slot. -->
         <div class="control-slot" data-slot="where"></div>
@@ -66,21 +66,16 @@ function panelContents(suffix: string): string {
              back to it; the button arrives from the same builder that made
              the dialog and opens that dialog, not a second list. -->
         <div class="control-slot" data-slot="reopen"></div>
-        <!-- The last of the places, and the finest. The shared control above
-             stops at subregion and leaves this one to carry the drainage
-             areas (ADR-071), so the run of place controls ends here rather
-             than restarting three rows below.
+        <!-- The last of the places. One menu across region, subregion and
+             basin (ADR-084), replacing both the old shared drill-down's
+             finer axes and this panel's own drainage-area select.
 
              Still a filter and not a scope: choosing one drainage area greys
              the rest and leaves every total alone, so the reader reads one
              area against the whole map rather than instead of it. ADR-011's
              distinction is about what a control does, not where it sits, and
-             the two controls that grey rather than remove follow it. -->
-        <calcite-label>
-          Drainage area
-          <calcite-select data-filter="drainage"
-            label="Filter reservoirs by drainage area"></calcite-select>
-        </calcite-label>
+             the controls that grey rather than remove follow it. -->
+        <div class="control-slot" data-slot="area"></div>
         <div class="control-slot" data-slot="level"></div>
         <calcite-label>
           Storage level

@@ -1,13 +1,12 @@
 /*
- * Slice S4 (docs/OPENING-SCOPE-AND-THE-WESTERN-ROSTER.md). Only the pure
- * half of `where-control.ts` is tested here -- `createWhereControl` builds
- * real custom elements, and nothing in this repo's test environment can
- * exercise one outside a browser (`ui/hover-content.test.ts` documents the
- * same split for the hover cards). `whereControlView` and the four
- * `nextSelectionFor*` functions are exactly the surface a DOM layer would
- * call, so pinning them down here pins down the control's real behaviour:
- * what each select offers, what it shows as chosen, and what a reader's
- * pick turns into.
+ * Only the pure half of the place menus is tested here -- `createWhereMenu`
+ * and `createDrainageMenu` build real custom elements, and nothing in this
+ * repo's test environment can exercise one outside a browser
+ * (`ui/hover-content.test.ts` documents the same split for the hover cards).
+ * `whereMenuView`, `drainageMenuView` and `nextSelectionFor*` are exactly
+ * the surface a DOM layer would call, so pinning them down here pins down
+ * the menus' real behaviour: what each menu offers, what it shows as
+ * chosen, and what a reader's pick turns into.
  *
  * The synthetic roster below is the same shape `data/opening-scope.test.ts`
  * uses -- two regions, four subregions, five basins, with two basins
@@ -19,14 +18,11 @@ import type { DrainageArea, DrainageAreaBox } from "../data/boundaries";
 import type { OpeningRosters, OpeningSelection } from "../data/opening-scope";
 import {
   ALL_VALUE,
-  AXIS_ORDER,
-  nextSelectionForArea,
-  nextSelectionForRegion,
+  drainageMenuView,
+  nextSelectionForDrainageRow,
   nextSelectionForState,
-  nextSelectionForSubregion,
-  offeredAxes,
-  whereControlView,
-  type WhereAxisName
+  whereMenuView,
+  type CountyChoice
 } from "./where-control-model";
 
 function box(west: number, south: number, east: number, north: number): DrainageAreaBox {
@@ -66,110 +62,197 @@ function values(list: readonly { value: string }[]): string[] {
   return list.map((entry) => entry.value);
 }
 
-describe("whereControlView: option lists narrow coarsest-first", () => {
-  it("offers every state the roster's areas touch, and only those", () => {
-    const view = whereControlView(ROSTERS, ALL);
-    // "All states" plus every code the AREAS list's `states` column holds,
-    // sorted: CO, ID, UT.
-    expect(values(view.state.options)).toEqual([ALL_VALUE, "CO", "ID", "UT"]);
+describe("drainageMenuView: one menu across levels", () => {
+  it("offers every tier at once, coarsest first, under one All row", () => {
+    const view = drainageMenuView(ROSTERS, ALL);
+    expect(values(view.options)).toEqual([
+      ALL_VALUE,
+      "14", "16",
+      "1401", "1402", "1601", "1602",
+      "140101", "140102", "140200", "160101", "160201"
+    ]);
+    expect(view.value).toBe(ALL_VALUE);
   });
 
-  it("never offers a border marker even if a roster carried one", () => {
-    const withBorder: OpeningRosters = {
-      ...ROSTERS,
-      areas: [...AREAS, area("180100", "Border Basin", "CA,MX")]
-    };
-    const view = whereControlView(withBorder, ALL);
-    expect(values(view.state.options)).not.toContain("MX");
-  });
-
-  it("narrows the state list's own regions by the chosen state, not just what sits under it", () => {
-    // Region 14 is AZ,CO,NM,UT,WY -- no ID. Region 16 is CA,ID,NV,OR,UT,WY --
-    // no CO. This is the pair that would fail if `region` options were never
-    // filtered by state at all.
-    const colorado = whereControlView(ROSTERS, { state: "CO", area: null });
-    expect(values(colorado.region.options)).toEqual([ALL_VALUE, "14"]);
-    const idaho = whereControlView(ROSTERS, { state: "ID", area: null });
-    expect(values(idaho.region.options)).toEqual([ALL_VALUE, "16"]);
-  });
-
-  it("narrows subregion options to the chosen region, with siblings still offered", () => {
-    const view = whereControlView(ROSTERS, { state: "all", area: "14" });
-    // 1601/1602 (region 16) dropped; 1401 and 1402 both offered, not just
-    // the chosen one -- a reader needs a sibling to switch to.
-    expect(values(view.subregion.options)).toEqual([ALL_VALUE, "1401", "1402"]);
-  });
-
-  it("narrows drainage-area options to the chosen subregion, with siblings still offered", () => {
-    const view = whereControlView(ROSTERS, { state: "all", area: "1401" });
-    expect(values(view.area.options)).toEqual([ALL_VALUE, "140101", "140102"]);
+  it("narrows by the chosen state but never by the chosen area", () => {
+    // Region 14 touches CO and not ID; region 16 the reverse. The state
+    // narrows because Where is coarser than Drainage.
+    expect(values(drainageMenuView(ROSTERS, { state: "CO", area: null }).options))
+      .toEqual([ALL_VALUE, "14", "1401", "1402", "140101", "140102", "140200"]);
+    // A reader narrowed to subregion 1401 still sees every other family:
+    // narrowing the menu against the reader's own pick would strand them.
+    const view = drainageMenuView(ROSTERS, { state: "all", area: "1401" });
+    expect(values(view.options)).toContain("1601");
+    expect(values(view.options)).toContain("140200");
+    expect(view.value).toBe("1401");
   });
 
   it("names a subregion at its own level, so it cannot be read as a basin", () => {
     // Subregion 1401 and basin 140101 are both named "Colorado Headwaters"
     // in this fixture, on purpose -- nineteen real drawn basins do this.
-    const view = whereControlView(ROSTERS, { state: "all", area: "14" });
-    const subregionOption = view.subregion.options.find((option) => option.value === "1401");
+    const view = drainageMenuView(ROSTERS, ALL);
+    const subregionOption = view.options.find((option) => option.value === "1401");
     expect(subregionOption?.label).toBe("Colorado Headwaters subregion");
-    const basinView = whereControlView(ROSTERS, { state: "all", area: "1401" });
-    const basinOption = basinView.area.options.find((option) => option.value === "140101");
+    const basinOption = view.options.find((option) => option.value === "140101");
     expect(basinOption?.label).toBe("Colorado Headwaters");
   });
-});
 
-describe("whereControlView: a surviving choice is kept on repopulate", () => {
-  it("keeps a chosen region selected and present among the options", () => {
-    const view = whereControlView(ROSTERS, { state: "all", area: "14" });
-    expect(view.region.value).toBe("14");
-    expect(values(view.region.options)).toContain("14");
-  });
-
-  it("keeps a chosen subregion selected once narrowed under its region", () => {
-    const view = whereControlView(ROSTERS, { state: "all", area: "1401" });
-    expect(view.region.value).toBe("14");
-    expect(view.subregion.value).toBe("1401");
-    expect(values(view.subregion.options)).toContain("1401");
-    // Not narrowed away by the state axis either.
-    expect(view.area.value).toBe(ALL_VALUE);
-  });
-
-  it("keeps a chosen basin selected at every coarser level too", () => {
-    const view = whereControlView(ROSTERS, { state: "UT", area: "140101" });
-    expect(view.state.value).toBe("UT");
-    expect(view.region.value).toBe("14");
-    expect(view.subregion.value).toBe("1401");
-    expect(view.area.value).toBe("140101");
-    expect(values(view.area.options)).toContain("140101");
-  });
-
-  it("survives repopulation after a state is added on top of an existing area choice", () => {
-    // The reader had narrowed to subregion 1401 with no state chosen, then
-    // picked Colorado -- a state 1401 does touch. The subregion choice must
-    // not reset just because the view was rebuilt around a new selection.
-    const before = whereControlView(ROSTERS, { state: "all", area: "1401" });
-    expect(before.subregion.value).toBe("1401");
-    const after = whereControlView(ROSTERS, { state: "CO", area: "1401" });
-    expect(after.subregion.value).toBe("1401");
-    expect(values(after.subregion.options)).toContain("1401");
+  it("shows a dead choice as All rather than as a value with no option", () => {
+    const view = drainageMenuView(ROSTERS, { state: "ID", area: "1402" });
+    expect(view.value).toBe(ALL_VALUE);
   });
 });
 
-describe("whereControlView: a dead choice falls back to all", () => {
-  it("drops an area a state selection leaves nothing under, at every level", () => {
-    // Subregion 1402 (Gunnison) is Colorado-only; nothing under it survives
-    // Idaho.
-    const view = whereControlView(ROSTERS, { state: "ID", area: "1402" });
-    expect(view.state.value).toBe("ID");
-    expect(view.region.value).toBe(ALL_VALUE);
-    expect(view.subregion.value).toBe(ALL_VALUE);
-    expect(view.area.value).toBe(ALL_VALUE);
+describe("drainageMenuView: gating rows by what the surface can draw", () => {
+  /* Snow's rule, spelled out with a publishable set that holds two of the
+   * three basins of region 14 and nothing else. */
+  const REPORTING = new Set(["140101", "140200"]);
+  const include = (code: string): boolean => {
+    if (code.length !== 6) {
+      for (const tierCode of REPORTING) {
+        if (tierCode.startsWith(code)) return true;
+      }
+      return false;
+    }
+    return REPORTING.has(code);
+  };
+
+  it("drops a basin row with no publishable figure", () => {
+    const values_ = values(drainageMenuView(ROSTERS, ALL, include).options);
+    expect(values_).toContain("140101");
+    expect(values_).not.toContain("140102");
   });
 
-  it("drops an area code that matches nothing in any state", () => {
-    const view = whereControlView(ROSTERS, { state: "all", area: "999999" });
-    expect(view.region.value).toBe(ALL_VALUE);
-    expect(view.subregion.value).toBe(ALL_VALUE);
-    expect(view.area.value).toBe(ALL_VALUE);
+  it("drops a coarser row whose every child is gone -- the empty-page repair per row", () => {
+    const values_ = values(drainageMenuView(ROSTERS, ALL, include).options);
+    // Subregion 1401 keeps basin 140101; region 16 loses everything.
+    expect(values_).toContain("1401");
+    expect(values_).not.toContain("1601");
+    expect(values_).not.toContain("16");
+  });
+
+  it("never offers a row finer than the surface draws when the gate refuses it", () => {
+    const snowAtSubregions = (code: string): boolean =>
+      code.length <= 4 && ["1401", "1402"].some((prefix) => code.startsWith(prefix));
+    const values_ = values(drainageMenuView(ROSTERS, ALL, snowAtSubregions).options);
+    expect(values_.filter((value) => value.length === 6)).toEqual([]);
+  });
+});
+
+/*
+ * The nesting itself (ADR-076's shape carried to three tiers): each finer
+ * section shows which coarser place its rows belong to, as indented group
+ * headings rather than flyout submenus -- measured at 360px, where a
+ * flyout is several screens of popup scroll.
+ */
+describe("drainageMenuView: the hierarchy shows inside the menu", () => {
+  it("groups subregion rows under their region's published name", () => {
+    const view = drainageMenuView(ROSTERS, ALL);
+    const rows = view.options.filter((row) => row.value === "1401" || row.value === "1601");
+    expect(rows.map((row) => row.group))
+      .toEqual(["Upper Colorado Region", "Great Basin Region"]);
+  });
+
+  it("groups basin rows under their subregion's plain name", () => {
+    // Plain, without the "subregion" suffix the option label carries: the
+    // heading states a parent level, it does not offer a sibling.
+    const view = drainageMenuView(ROSTERS, ALL);
+    const rows = view.options.filter((row) => row.value === "140101" || row.value === "140102");
+    expect(rows.map((row) => [row.label, row.group])).toEqual([
+      ["Colorado Headwaters", "Colorado Headwaters"],
+      ["Upper Colorado-Dolores", "Colorado Headwaters"]
+    ]);
+  });
+
+  it("leaves the All row and the region rows ungrouped above every group", () => {
+    const view = drainageMenuView(ROSTERS, ALL);
+    expect(view.options[0]).toEqual({ value: ALL_VALUE, label: "All drainage areas" });
+    for (const row of view.options.filter((entry) => entry.value.length === 2)) {
+      expect(row.group).toBeUndefined();
+    }
+  });
+
+  it("keeps same-group rows contiguous, which is what the renderer's one-run-per-heading rule needs", () => {
+    const view = drainageMenuView(ROSTERS, ALL);
+    const seen = new Map<string, number>();
+    view.options.forEach((row, index) => {
+      if (row.group !== undefined) {
+        const first = seen.get(row.group);
+        if (first !== undefined) {
+          // Every later row of a heading must directly follow the run.
+          expect(index).toBeGreaterThan(first);
+        } else {
+          seen.set(row.group, index);
+        }
+      }
+    });
+  });
+});
+
+describe("nextSelectionForDrainageRow", () => {
+  it("sets the picked code at any width", () => {
+    expect(nextSelectionForDrainageRow({ state: "UT", area: null }, ROSTERS, "140101"))
+      .toEqual({ state: "UT", area: "140101" });
+    expect(nextSelectionForDrainageRow({ state: "UT", area: "140101" }, ROSTERS, "14"))
+      .toEqual({ state: "UT", area: "14" });
+  });
+
+  it("clears the area entirely on 'All' -- one menu spanning every level has no coarser tier to fall back to", () => {
+    expect(nextSelectionForDrainageRow({ state: "UT", area: "140101" }, ROSTERS, ALL_VALUE))
+      .toEqual({ state: "UT", area: null });
+  });
+
+  it("drops a pick the chosen state leaves nothing under, rather than honouring it", () => {
+    expect(nextSelectionForDrainageRow({ state: "ID", area: null }, ROSTERS, "1401"))
+      .toEqual({ state: "ID", area: null });
+  });
+});
+
+describe("whereMenuView: states, with counties grouped beneath them", () => {
+  const COUNTIES: readonly CountyChoice[] = [
+    { fips: "49043", name: "Summit", state: "UT" },
+    { fips: "08037", name: "Summit", state: "CO" },
+    { fips: "49005", name: "Cache", state: "UT" },
+    // Two counties of the same name in one state are one choice too many
+    // for a label to carry; the FIPS is what makes them two values, and a
+    // fixture holding both would be testing the resolver, not this view.
+    { fips: "99001", name: "Nowhere", state: "ZZ" }
+  ];
+
+  it("offers every state the roster touches, then county rows grouped by state heading", () => {
+    const view = whereMenuView(ROSTERS, ALL, COUNTIES);
+    expect(values(view.options)).toEqual([ALL_VALUE, "CO", "ID", "UT", "08037", "49005", "49043"]);
+    expect(view.options.map((option) => option.group)).toEqual([
+      undefined, undefined, undefined, undefined, "Colorado", "Utah", "Utah"
+    ]);
+  });
+
+  it("drops a county whose state the roster does not touch", () => {
+    // ZZ names no offered state, so its heading would name nothing.
+    const view = whereMenuView(ROSTERS, ALL, COUNTIES);
+    expect(values(view.options)).not.toContain("99001");
+  });
+
+  it("keeps the FIPS as the value, whatever the row reads (ADR-058)", () => {
+    const view = whereMenuView(ROSTERS, ALL, COUNTIES);
+    const summit = view.options.filter((option) => option.label === "Summit County");
+    expect(summit.map((option) => option.value)).toEqual(["08037", "49043"]);
+  });
+
+  it("marks an explicit county over the state, and the state otherwise", () => {
+    expect(whereMenuView(ROSTERS, { state: "UT", area: null }, COUNTIES).value).toBe("UT");
+    expect(whereMenuView(ROSTERS, { state: "UT", area: null }, COUNTIES, "08037").value)
+      .toBe("08037");
+  });
+
+  it("offers states alone when no county material exists -- never a half-offered axis", () => {
+    const view = whereMenuView(ROSTERS, ALL, []);
+    expect(values(view.options)).toEqual([ALL_VALUE, "CO", "ID", "UT"]);
+    for (const row of view.options) expect(row.group).toBeUndefined();
+  });
+
+  it("reads the sentinel back through the resolved selection", () => {
+    expect(whereMenuView(ROSTERS, { state: "all", area: null }, []).value).toBe(ALL_VALUE);
   });
 });
 
@@ -187,124 +270,5 @@ describe("nextSelectionForState", () => {
   it("reads the sentinel back to the 'all' state", () => {
     const next = nextSelectionForState({ state: "CO", area: "14" }, ROSTERS, ALL_VALUE);
     expect(next.state).toBe("all");
-  });
-});
-
-describe("nextSelectionForRegion", () => {
-  it("replaces the whole area choice with the picked region", () => {
-    expect(nextSelectionForRegion({ state: "UT", area: "1401" }, "16"))
-      .toEqual({ state: "UT", area: "16" });
-  });
-
-  it("clears the area choice entirely on 'All regions' -- there is no coarser level", () => {
-    expect(nextSelectionForRegion({ state: "UT", area: "14" }, ALL_VALUE))
-      .toEqual({ state: "UT", area: null });
-  });
-});
-
-describe("nextSelectionForSubregion", () => {
-  it("sets the picked subregion", () => {
-    expect(nextSelectionForSubregion({ state: "all", area: "14" }, "1401"))
-      .toEqual({ state: "all", area: "1401" });
-  });
-
-  it("falls back to the region on 'All subregions', not to nothing", () => {
-    expect(nextSelectionForSubregion({ state: "all", area: "1401" }, ALL_VALUE))
-      .toEqual({ state: "all", area: "14" });
-  });
-
-  it("falls back to null when no region was chosen either", () => {
-    expect(nextSelectionForSubregion({ state: "all", area: null }, ALL_VALUE))
-      .toEqual({ state: "all", area: null });
-  });
-});
-
-describe("nextSelectionForArea", () => {
-  it("sets the picked drainage area", () => {
-    expect(nextSelectionForArea({ state: "all", area: "1401" }, "140101"))
-      .toEqual({ state: "all", area: "140101" });
-  });
-
-  it("falls back to the subregion on 'All drainage areas', dropping only the basin", () => {
-    expect(nextSelectionForArea({ state: "all", area: "140101" }, ALL_VALUE))
-      .toEqual({ state: "all", area: "1401" });
-  });
-});
-
-/*
- * The nesting itself (WATER-BODY-AND-NAVIGATION-SCOPING.md item 3): each
- * finer menu shows which coarser place its rows belong to, as indented
- * group headings rather than flyout submenus -- measured at 360px, where a
- * flyout is several screens of popup scroll.
- */
-describe("whereControlView: the hierarchy shows inside each menu", () => {
-  it("groups subregion rows under their region's published name", () => {
-    const view = whereControlView(ROSTERS, { state: "all", area: "14" });
-    const rows = view.subregion.options.filter((row) => row.value !== ALL_VALUE);
-    expect(rows.map((row) => row.group))
-      .toEqual(["Upper Colorado Region", "Upper Colorado Region"]);
-  });
-
-  it("groups basin rows under their subregion's plain name", () => {
-    // Plain, without the "subregion" suffix the option label carries: the
-    // heading states a parent level, it does not offer a sibling.
-    const view = whereControlView(ROSTERS, { state: "all", area: "1401" });
-    const rows = view.area.options.filter((row) => row.value !== ALL_VALUE);
-    expect(rows.map((row) => [row.label, row.group])).toEqual([
-      ["Colorado Headwaters", "Colorado Headwaters"],
-      ["Upper Colorado-Dolores", "Colorado Headwaters"]
-    ]);
-  });
-
-  it("leaves the All rows ungrouped above every group", () => {
-    const view = whereControlView(ROSTERS, ALL);
-    expect(view.subregion.options[0]).toEqual({ value: ALL_VALUE, label: "All subregions" });
-    expect(view.area.options[0]).toEqual({ value: ALL_VALUE, label: "All drainage areas" });
-  });
-
-  it("keeps the state list ungrouped -- nothing sits above it", () => {
-    const view = whereControlView(ROSTERS, ALL);
-    for (const row of view.state.options) expect(row.group).toBeUndefined();
-    for (const row of view.region.options) expect(row.group).toBeUndefined();
-  });
-});
-
-/*
- * Which axes a host gets (ADR-071). `createWhereControl` builds the selects
- * and cannot be called here, but the rule it applies is this function, and
- * the rule is what the storage and snow pages depend on: a page that owns
- * its own drainage-area control must not be handed a second one.
- */describe("offeredAxes", () => {
-  it("gives the whole drill-down by default, in drill-down order", () => {
-    expect(offeredAxes("area")).toEqual(["state", "region", "subregion", "area"]);
-    expect(offeredAxes("area")).toEqual([...AXIS_ORDER]);
-  });
-
-  it("stops at the named axis and offers nothing finer", () => {
-    expect(offeredAxes("subregion")).toEqual(["state", "region", "subregion"]);
-    expect(offeredAxes("region")).toEqual(["state", "region"]);
-    expect(offeredAxes("state")).toEqual(["state"]);
-  });
-
-  it("never drops a coarser axis to keep a finer one", () => {
-    /* A prefix, always: the finer lists are `resolveOpeningScope`'s answer
-     * under the coarser choices, so a basin select with no subregion select
-     * above it would show a list a reader has no way to change. */
-    for (const finest of AXIS_ORDER) {
-      const offered = offeredAxes(finest);
-      expect(offered).toEqual(AXIS_ORDER.slice(0, offered.length));
-      expect(offered[offered.length - 1]).toBe(finest);
-    }
-  });
-
-  it("keeps the storage and snow pages one step above their own picker", () => {
-    /* The three real callers, spelled out so a change to any of them fails
-     * here rather than only in the browser suite. Snow's follows `?level=`;
-     * drought owns no drainage-area picker and keeps all four. */
-    const snowFinest = (level: number): WhereAxisName => level >= 6 ? "subregion" : "region";
-    expect(offeredAxes(snowFinest(6))).not.toContain("area");
-    expect(offeredAxes(snowFinest(4))).not.toContain("subregion");
-    expect(offeredAxes("subregion")).not.toContain("area");
-    expect(offeredAxes("area")).toContain("area");
   });
 });
