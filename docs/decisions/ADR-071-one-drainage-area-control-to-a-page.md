@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Superseded by [ADR-084](ADR-084-two-place-menus-to-a-page.md)
 
 ## Date
 
