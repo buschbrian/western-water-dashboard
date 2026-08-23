@@ -241,8 +241,40 @@ describe("whereMenuView: states, with counties grouped beneath them", () => {
 
   it("marks an explicit county over the state, and the state otherwise", () => {
     expect(whereMenuView(ROSTERS, { state: "UT", area: null }, COUNTIES).value).toBe("UT");
+    expect(whereMenuView(ROSTERS, { state: "UT", area: null }, COUNTIES, "49043").value)
+      .toBe("49043");
+    // A county the held state does not hold is not offered (the narrowing
+    // rule above), and a value with no row behind it would read as whichever
+    // option the browser lands on -- the state is the honest fallback.
     expect(whereMenuView(ROSTERS, { state: "UT", area: null }, COUNTIES, "08037").value)
-      .toBe("08037");
+      .toBe("UT");
+  });
+
+  /* ADR-084: "the county list narrows by the chosen state alone, as
+   * ADR-076 left it." Without this, ?state=UT plus one click on another
+   * state's county writes a pair that holds zero reservoirs -- the two
+   * clicks the browser suite exists to make unreachable. */
+  it("narrows county rows to the held state, keeping the headings", () => {
+    const view = whereMenuView(ROSTERS, { state: "UT", area: null }, COUNTIES);
+    // State rows stay whole -- they are how the reader moves; only county
+    // rows narrow.
+    expect(values(view.options)).toEqual([ALL_VALUE, "CO", "ID", "UT", "49005", "49043"]);
+    expect(view.options.map((option) => option.group)).toEqual([
+      undefined, undefined, undefined, undefined, "Utah", "Utah"
+    ]);
+  });
+
+  it("offers every state's counties while no state is held", () => {
+    const view = whereMenuView(ROSTERS, ALL, COUNTIES);
+    expect(values(view.options)).toEqual([ALL_VALUE, "CO", "ID", "UT", "08037", "49005", "49043"]);
+  });
+
+  it("reads a held county outside the held state as the state, not as a row it does not offer", () => {
+    // A link can carry ?state=UT&county=08037; nothing honest in the menu
+    // matches, so the wider truth is what shows.
+    const view = whereMenuView(ROSTERS, { state: "UT", area: null }, COUNTIES, "08037");
+    expect(values(view.options)).not.toContain("08037");
+    expect(view.value).toBe("UT");
   });
 
   it("offers states alone when no county material exists -- never a half-offered axis", () => {

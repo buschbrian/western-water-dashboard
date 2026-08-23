@@ -138,15 +138,14 @@ function countyOptionLabel(name: string): string {
  * into `?state=` and a five-digit pick into `?county=`; this function does
  * not know or care which parameters those are.
  *
- * Counties are offered for every state at once, not narrowed to the chosen
- * one. ADR-076 narrowed a *separate* county select by the state select
- * beside it because a flat list had no way to show which state a county
- * belonged to; grouped under headings, the menu shows that itself, and
- * narrowing would take away the ability to move straight from one state's
- * county to another's without passing through "All". The fallback rule is
- * unchanged: a selected county the current data no longer holds reads as
- * "all", which is the caller's check (`selectedCounty` not matching any
- * offered row) and not this function's.
+ * Counties narrow by the held state when one is held, and all sit under
+ * their headings when none is (ADR-084: "the county list narrows by the
+ * chosen state alone, as ADR-076 left it"). The headings are why an
+ * un-narrowed list was ever honest -- every county visibly belonged
+ * somewhere -- but a state pick turns an out-of-state row into a two-click
+ * emptying of the page, so the narrowing returns exactly while that risk
+ * exists. Moving between states' counties costs one pass through "All";
+ * silently emptying the page cost more.
  */
 export function whereMenuView(
   rosters: OpeningRosters,
@@ -176,9 +175,19 @@ export function whereMenuView(
    * sorted by state first and only then by name. A county whose state is
    * not among the offered rows cannot be grouped honestly and is dropped
    * rather than wearing a heading that names nothing -- the same rule the
-   * drainage menu follows. */
+   * drainage menu follows.
+   *
+   * And a held state narrows the counties to its own (ADR-084: "the county
+   * list narrows by the chosen state alone, as ADR-076 left it"). The
+   * headings made narrowing look unnecessary while no state was held --
+   * every county is visible under some heading -- but with a state held,
+   * an out-of-state row is a two-click emptying of the charts: pick it and
+   * `?state=UT&county=06001` describes zero reservoirs, in silence. The
+   * two axes still stay two; this narrows what is *offered*, never what is
+   * *held*. */
   const grouped = [...counties]
     .filter((county) => stateLabels.has(county.state))
+    .filter((county) => stateValue === "all" || county.state === stateValue)
     .sort((a, b) => a.state.localeCompare(b.state) || a.name.localeCompare(b.name));
   for (const county of grouped) {
     const heading = stateLabels.get(county.state);
@@ -190,9 +199,14 @@ export function whereMenuView(
   /* Marking the selection: an explicit county wins over the state axis,
    * because both can be held at once (`?county=` narrows independently of
    * `?state=`), and what the menu should show is the finer of the two.
-   * A selected county that no offered row matches reads as the state --
-   * the caller clears it when it wants the fallback-to-all rule instead. */
-  const value = selectedCounty !== null ? selectedCounty : stateValue === "all" ? ALL_VALUE : stateValue;
+   * But only when that county is actually among the rows -- a link can
+   * carry a pair this menu would not offer (`?state=UT&county=06001`), and
+   * a selected value with no option behind it reads as whichever row the
+   * browser lands on. Falling back to the state names the wider truth the
+   * reader can act on. */
+  const countyHeld = selectedCounty !== null
+    && grouped.some((county) => county.fips === selectedCounty);
+  const value = countyHeld ? selectedCounty! : stateValue === "all" ? ALL_VALUE : stateValue;
   return { value, options };
 }
 

@@ -4212,6 +4212,10 @@ for (const failure of [
       const utahCounty = payload.reservoirs.find((reservoir) =>
         reservoir.state === "UT" && typeof reservoir.county_fips === "string")
         ?.county_fips;
+      const outsideCounty = payload.reservoirs.find((reservoir) =>
+        typeof reservoir.county_fips === "string"
+        && typeof reservoir.state === "string"
+        && reservoir.state !== "UT")?.county_fips;
       if (utahCounty) {
         await tab.goto(`${URL}overview.html?state=UT`,
           { waitUntil: "domcontentloaded", timeout: 60000 });
@@ -4219,6 +4223,20 @@ for (const failure of [
           null, { timeout: 120000 });
         await tab.locator("#overview-filter-toggle")
           .click({ timeout: 5000 }).catch(() => {});
+        /* With a state held, only that state's counties are on the menu
+         * (ADR-084's narrowing clause). Anything else is a two-click
+         * emptying of the charts: ?state=UT&county=<elsewhere> holds zero
+         * reservoirs and the page would say so in no words at all. */
+        if (outsideCounty) {
+          const offered = await tab.evaluate(() =>
+            [...document.querySelectorAll(".where-menu calcite-option")]
+              .map((option) => option.getAttribute("value")));
+          check(!offered.includes(outsideCounty),
+            `?state=UT still offers county ${outsideCounty}, whose state `
+            + "Utah does not hold -- one click from an unexplained empty table");
+          check(offered.includes(utahCounty),
+            `?state=UT dropped its own county ${utahCounty} from the menu`);
+        }
         await tab.evaluate((value) => {
           const select = document.querySelector("#place-filter")
             ?? document.querySelector(".where-menu calcite-select");
