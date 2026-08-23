@@ -44,24 +44,19 @@
 /* The storage-against-drought scatter. Everything that is not data takes its
    colour from a theme token, so the dark page keeps readable axes; the point
    fills are the monitor's palette and are set inline from the class table. */
-/* Why these charts are capped rather than left to fill the card.
- *
- * All three are hand-built SVG with a 640-unit viewBox and `inline-size:
- * 100%`, so on a wide card they scale up bodily -- measured at 1280px the
- * card is 1202px, which is a 1.88x upscale of *everything*: padding, fonts,
- * row heights and the gaps between them alike. That is where the page's
- * large empty bands came from. The scatter was 639px tall to hold fourteen
- * points; the ranked rows were 796px.
- *
- * A cap stops the upscale at a size the charts were drawn for, and centring
- * keeps them under the heading rather than hard against the left edge. The
- * numbers stay the same size as the prose around them instead of growing
- * with the window. */
+/* These SVGs render with a viewBox measured from the host rather than the old
+ * fixed 640-unit canvas. One unit is therefore one CSS pixel at every card
+ * width: type, padding and row height stay fixed while the plot lane spreads.
+ * The severity distribution is still fixed-scale and keeps its cap below. */
 .drought-scatter-host,
 .drought-gap-host,
 .drought-severity-host { margin-block-start: .5rem; }
 .drought-scatter,
-.drought-gap-chart,
+.drought-gap-chart {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+}
 .drought-severity-chart {
   display: block;
   inline-size: 100%;
@@ -130,8 +125,6 @@
 .drought-change-chart {
   display: block;
   inline-size: 100%;
-  max-inline-size: 54rem;
-  margin-inline: auto;
   block-size: auto;
 }
 .drought-change-host { margin-block-start: .5rem; }

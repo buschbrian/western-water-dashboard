@@ -14,10 +14,11 @@
  */
 import type { DetailMonth } from "../state/detail";
 import { formatAcreFeet, formatPercent } from "./format";
+import { renderResponsiveChart, stopResponsiveChart } from "./responsive";
 
 const SVG = "http://www.w3.org/2000/svg";
 
-const WIDTH = 300;
+const FALLBACK_WIDTH = 300;
 const HEIGHT = 132;
 const PAD_LEFT = 38;
 const PAD_RIGHT = 6;
@@ -53,13 +54,18 @@ function readingOf(month: DetailMonth): string {
  * Returns null when there is nothing to draw, so the caller can leave the
  * section out entirely rather than render an empty frame with axes on it.
  */
-export function renderTrendChart(months: readonly DetailMonth[], name: string): SVGSVGElement | null {
+function buildTrendChart(
+  months: readonly DetailMonth[],
+  name: string,
+  width: number
+): SVGSVGElement | null {
   const values = months
     .map((month) => month.storageAf)
     .filter((value): value is number => value !== null);
   if (!values.length) return null;
 
-  const plotWidth = WIDTH - PAD_LEFT - PAD_RIGHT;
+  const chartWidth = Math.max(PAD_LEFT + PAD_RIGHT + 80, width);
+  const plotWidth = chartWidth - PAD_LEFT - PAD_RIGHT;
   const plotHeight = HEIGHT - PAD_TOP - PAD_BOTTOM;
   /* The axis starts at zero and is never truncated: ordinary seasonal
    * drawdown on a cut axis looks like a cliff, and this chart sits next to a
@@ -71,7 +77,7 @@ export function renderTrendChart(months: readonly DetailMonth[], name: string): 
 
   const svg = element("svg", {
     class: "trend-chart",
-    viewBox: `0 0 ${WIDTH} ${HEIGHT}`,
+    viewBox: `0 0 ${chartWidth} ${HEIGHT}`,
     width: "100%",
     role: "img",
     "aria-label": `Storage for ${name} during the last ${months.length} months. ` +
@@ -82,7 +88,8 @@ export function renderTrendChart(months: readonly DetailMonth[], name: string): 
   for (const fraction of [0, 0.5, 1]) {
     const at = y(top * fraction);
     svg.append(element("line", {
-      class: "trend-grid", x1: PAD_LEFT, y1: at.toFixed(1), x2: WIDTH - PAD_RIGHT, y2: at.toFixed(1)
+      class: "trend-grid", x1: PAD_LEFT, y1: at.toFixed(1),
+      x2: chartWidth - PAD_RIGHT, y2: at.toFixed(1)
     }));
     const label = element("text", {
       class: "trend-axis", x: PAD_LEFT - 5, y: (at + 3.5).toFixed(1), "text-anchor": "end"
@@ -135,6 +142,27 @@ export function renderTrendChart(months: readonly DetailMonth[], name: string): 
   });
 
   return svg;
+}
+
+/** Draw the history at its real host width and keep it fitted after resize. */
+export function renderTrendChart(
+  host: HTMLElement,
+  months: readonly DetailMonth[],
+  name: string
+): boolean {
+  if (!months.some((month) => month.storageAf !== null)) {
+    stopResponsiveChart(host);
+    host.replaceChildren();
+    return false;
+  }
+  renderResponsiveChart(host, (width) => {
+    const chart = buildTrendChart(months, name, width);
+    if (chart) host.replaceChildren(chart);
+  }, {
+    fallbackWidth: FALLBACK_WIDTH,
+    minimumWidth: PAD_LEFT + PAD_RIGHT + 80
+  });
+  return true;
 }
 
 /** The numbers behind the chart, collapsed so the panel stays a panel. */

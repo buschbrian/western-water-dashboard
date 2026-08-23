@@ -29,7 +29,7 @@ import { WELL_MEASURED_PERCENT } from "../drought-model";
 
 const SVG = "http://www.w3.org/2000/svg";
 
-const WIDTH = 640;
+export const DROUGHT_SCATTER_FALLBACK_WIDTH = 640;
 const HEIGHT = 340;
 const PAD_LEFT = 46;
 const PAD_RIGHT = 14;
@@ -79,11 +79,13 @@ export interface DroughtScatterOptions {
  */
 export function renderDroughtScatter(
   points: readonly StorageAgainstDrought[],
-  options: DroughtScatterOptions
+  options: DroughtScatterOptions,
+  width = DROUGHT_SCATTER_FALLBACK_WIDTH
 ): SVGSVGElement | null {
   if (points.length === 0) return null;
 
-  const plotWidth = WIDTH - PAD_LEFT - PAD_RIGHT;
+  const chartWidth = Math.max(PAD_LEFT + PAD_RIGHT + 80, width);
+  const plotWidth = chartWidth - PAD_LEFT - PAD_RIGHT;
   const plotHeight = HEIGHT - PAD_TOP - PAD_BOTTOM;
   const x = (percent: number): number =>
     PAD_LEFT + (Math.min(AXIS_MAX, Math.max(0, percent)) / AXIS_MAX) * plotWidth;
@@ -91,7 +93,7 @@ export function renderDroughtScatter(
     PAD_TOP + plotHeight - (Math.min(AXIS_MAX, Math.max(0, percent)) / AXIS_MAX) * plotHeight;
 
   const svg = element("svg", {
-    viewBox: `0 0 ${WIDTH} ${HEIGHT}`,
+    viewBox: `0 0 ${chartWidth} ${HEIGHT}`,
     class: "drought-scatter",
     role: "img",
     "aria-label": options.ariaLabel
@@ -102,7 +104,7 @@ export function renderDroughtScatter(
   for (let value = 0; value <= AXIS_MAX; value += 25) {
     svg.append(element("line", {
       class: "drought-grid",
-      x1: PAD_LEFT, x2: WIDTH - PAD_RIGHT, y1: y(value), y2: y(value)
+      x1: PAD_LEFT, x2: chartWidth - PAD_RIGHT, y1: y(value), y2: y(value)
     }));
     svg.append(element("line", {
       class: "drought-grid",
@@ -126,7 +128,8 @@ export function renderDroughtScatter(
     class: "drought-guide", x1: x(50), x2: x(50), y1: PAD_TOP, y2: PAD_TOP + plotHeight
   }));
   svg.append(element("line", {
-    class: "drought-guide", x1: PAD_LEFT, x2: WIDTH - PAD_RIGHT, y1: y(50), y2: y(50)
+    class: "drought-guide", x1: PAD_LEFT, x2: chartWidth - PAD_RIGHT,
+    y1: y(50), y2: y(50)
   }));
 
   const axisX = element("text", {

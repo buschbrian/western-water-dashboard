@@ -22,8 +22,11 @@
  * keeps a change on Esri's side from turning into a sign-in dialog for a
  * reader who has no ArcGIS account.
  */
+import Graphic from "@arcgis/core/Graphic";
+import Point from "@arcgis/core/geometry/Point";
 import FeatureLayer from "@arcgis/core/layers/FeatureLayer";
 
+import type { SnowSiteInventorySite } from "../types";
 import {
   COUNTY_LABEL_SCALE,
   COUNTY_LABEL_SIZE_PX,
@@ -76,6 +79,7 @@ export const COUNTIES_SERVICE_URL =
 
 export const STATE_LAYER_ID = "reference-states";
 export const COUNTY_LAYER_ID = "reference-counties";
+export const SNOW_SITE_REFERENCE_LAYER_ID = "snow-site-reference";
 
 /** The field each service names its features with, read once here so a
  * rename upstream is one line rather than four. */
@@ -96,6 +100,12 @@ export interface ReferenceLayers {
   counties: FeatureLayer | null;
 }
 
+export interface SnowSiteReferenceResult {
+  layer: FeatureLayer;
+  /** Inventory sites placed in the client-side layer. */
+  drawn: number;
+}
+
 /**
  * Loads a layer against a deadline. Resolves to null on a refusal, an error
  * or a timeout -- every way of not arriving is the same fact to the caller.
@@ -113,12 +123,71 @@ async function loadWithin(
       deadline
     ]);
     if (!result) {
-      console.warn(`A boundary service did not answer in time: ${layer.url ?? layer.id}`);
+      console.warn(`A reference layer did not answer in time: ${layer.url ?? layer.id}`);
     }
     return result;
   } finally {
     clearTimeout(timer);
   }
+}
+
+const SNOW_SITE_OBJECT_ID_FIELD = "objectid";
+const SNOW_SITE_NAME_FIELD = "name";
+const WGS84 = { wkid: 4326 };
+
+/**
+ * Builds and loads the optional snow-station context against the same short
+ * deadline as the hosted boundaries.
+ *
+ * The point inventory is already committed and in memory. Loading here is
+ * still bounded because an SDK layer can fail while materializing its
+ * client-side source, and optional context must never hold the map busy.
+ */
+export async function loadSnowSiteReferenceLayer(
+  sites: readonly SnowSiteInventorySite[],
+  timeoutMs = REFERENCE_LOAD_TIMEOUT_MS
+): Promise<SnowSiteReferenceResult | null> {
+  const source = sites.map((site, index) => new Graphic({
+    geometry: new Point({
+      longitude: site.lon,
+      latitude: site.lat,
+      spatialReference: WGS84
+    }),
+    attributes: {
+      [SNOW_SITE_OBJECT_ID_FIELD]: index + 1,
+      [SNOW_SITE_NAME_FIELD]: site.name
+    }
+  }));
+  const layer = new FeatureLayer({
+    id: SNOW_SITE_REFERENCE_LAYER_ID,
+    listMode: "hide",
+    source,
+    fields: [
+      { name: SNOW_SITE_OBJECT_ID_FIELD, type: "oid" },
+      { name: SNOW_SITE_NAME_FIELD, type: "string" }
+    ],
+    objectIdField: SNOW_SITE_OBJECT_ID_FIELD,
+    geometryType: "point",
+    spatialReference: WGS84,
+    outFields: ["*"],
+    popupEnabled: false,
+    labelsVisible: false,
+    renderer: {
+      type: "simple",
+      /* A neutral triangle distinguishes a measurement site from the
+       * neutral reservoir circles beside it without introducing a second
+       * data palette onto the drought map. */
+      symbol: {
+        type: "simple-marker",
+        style: "triangle",
+        size: 6,
+        color: [247, 250, 252, 0.94],
+        outline: { color: "rgba(31,43,51,0.95)", width: 1 }
+      }
+    } as never
+  });
+  const loaded = await loadWithin(layer, timeoutMs);
+  return loaded ? { layer: loaded, drawn: source.length } : null;
 }
 
 function stateLayer(): FeatureLayer {

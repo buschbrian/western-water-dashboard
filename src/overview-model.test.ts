@@ -9,6 +9,7 @@ import {
   distributionStats,
   geographicChoices,
   openingScopeSummary,
+  overviewDrainageRosters,
   reservoirInState,
   stateOptions,
   subregionOf,
@@ -126,14 +127,14 @@ describe("the histogram's own statistics", () => {
 });
 
 describe("modern overview model", () => {
-  it("uses the same Utah-intersection scope as the modern map", () => {
+  it("shows the published roster except dominant reservoirs excluded by default", () => {
     const included = reservoir({ name: "Cross-border", rise_item_id: 100,
       intersects_utah: true });
     const powell = reservoir({ name: "Glen Canyon reservoir", rise_item_id: 509,
       intersects_utah: true });
     const outside = reservoir({ name: "Outside", rise_item_id: 101,
       intersects_utah: false });
-    expect(overviewScope([outside, powell, included])).toEqual([included]);
+    expect(overviewScope([outside, powell, included])).toEqual([outside, included]);
   });
 
   /* ADR-020. Publishing a reservoir the reader cannot reach by any choice of
@@ -147,12 +148,10 @@ describe("modern overview model", () => {
      * Lake Mead's admission added a third (ADR-062) and it was unreachable
      * until this loop learned it -- which is exactly the failure ADR-020
      * exists to catch, arriving through the test rather than the payload. */
-    for (const geography of ["utah", "connected"] as const) {
-      for (const lakePowell of ["include", "exclude"] as const) {
-        for (const lakeMead of ["include", "exclude"] as const) {
-          for (const shown of overviewScope(published, { geography, lakePowell, lakeMead })) {
-            reachable.add(shown.name);
-          }
+    for (const lakePowell of ["include", "exclude"] as const) {
+      for (const lakeMead of ["include", "exclude"] as const) {
+        for (const shown of overviewScope(published, { lakePowell, lakeMead })) {
+          reachable.add(shown.name);
         }
       }
     }
@@ -372,7 +371,8 @@ describe("the opening scope summary sentence", () => {
   const rosters: OpeningRosters = {
     regions: [{ huc6: "14", name: "Upper Colorado Region", states: "CO,UT,WY" }],
     subregions: [{ huc6: "1601", name: "Bear River", states: "ID,UT,WY" }],
-    areas: [{ huc6: "160101", name: "Bear Lake", states: "ID,UT" }]
+    areas: [{ huc6: "160101", name: "Bear Lake", states: "ID,UT" }],
+    subbasins: []
   };
   const selection = (overrides: Partial<OpeningSelection>): OpeningSelection =>
     ({ state: "all", area: null, ...overrides });
@@ -418,6 +418,52 @@ describe("the opening scope summary sentence", () => {
   });
 });
 
+describe("the overview Drainage area roster", () => {
+  it("builds the three named tiers from occupied basins", () => {
+    const rosters = overviewDrainageRosters([
+      reservoir({
+        huc6: "140100", huc6_name: "Colorado Headwaters",
+        connected_states: ["CO", "UT"]
+      }),
+      reservoir({
+        huc6: "140200", huc6_name: "Gunnison",
+        connected_states: ["CO"]
+      }),
+      reservoir({
+        huc6: "160101", huc6_name: "Bear Lake",
+        connected_states: ["ID", "UT", "WY"]
+      })
+    ], [
+      { huc2: "14", name: "Upper Colorado Region" },
+      { huc2: "16", name: "Great Basin Region" }
+    ], [
+      { huc4: "1401", name: "Colorado Headwaters" },
+      { huc4: "1402", name: "Gunnison" },
+      { huc4: "1601", name: "Bear River" }
+    ]);
+
+    expect(rosters.regions).toEqual([
+      { huc6: "14", name: "Upper Colorado Region", states: "CO,UT" },
+      { huc6: "16", name: "Great Basin Region", states: "ID,UT,WY" }
+    ]);
+    expect(rosters.subregions.map((area) => area.name))
+      .toEqual(["Colorado Headwaters", "Gunnison", "Bear River"]);
+    expect(rosters.areas.map((area) => area.huc6))
+      .toEqual(["140100", "140200", "160101"]);
+  });
+
+  it("unions drainage states across reservoirs in one basin", () => {
+    const rosters = overviewDrainageRosters([
+      reservoir({ huc6: "160101", connected_states: ["ID", "UT"] }),
+      reservoir({ huc6: "160101", connected_states: ["UT", "WY"] })
+    ], [{ huc2: "16", name: "Great Basin Region" }],
+    [{ huc4: "1601", name: "Bear River" }]);
+
+    expect(rosters.areas[0]?.states).toBe("ID,UT,WY");
+    expect(rosters.subregions[0]?.states).toBe("ID,UT,WY");
+  });
+});
+
 /* The geographic controls are one axis and the scope controls are another
  * (ADR-011). These assert the two do not leak into each other: a reader who
  * has not switched Lake Powell on -- which is everyone on first load, since
@@ -458,7 +504,7 @@ describe("the geographic controls against the scope controls", () => {
     const widestCodes = new Set(
       codes(geographicChoices(widest, openControls, names).drainageAreas));
     const defaultScope = overviewScope(payload.reservoirs,
-      { geography: "utah", lakePowell: "exclude", lakeMead: "exclude" });
+      { lakePowell: "exclude", lakeMead: "exclude" });
     const narrowed = codes(
       geographicChoices(defaultScope, openControls, names).drainageAreas);
     expect(narrowed.length).toBeLessThan(widestCodes.size);

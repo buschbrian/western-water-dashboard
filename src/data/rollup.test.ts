@@ -4,7 +4,7 @@ import { reservoirSymbol, sizeDomain } from "../viz/symbols";
 import {
   asScoped, basisLabel, isLakeMead, isLakePowell, percentFull, isLate,
   RECORD_MAX_BASIS, reservoirInScope, rollupOfScoped, scopeReservoirs,
-  sizeBasis, statewideRollup, WIDEST_SCOPE
+  sizeBasis, statewideRollup
 } from "./rollup";
 import type { Reservoir } from "../types";
 import { validateReservoirPayload } from "./validate";
@@ -25,7 +25,6 @@ const legacyAll = legacy.statewideSummary(payload.reservoirs);
  * open -- closed, the two sides answer different questions, which is the
  * point of a control rather than a defect in the oracle. */
 const CONNECTED_WITH_LAKE_POWELL = {
-  geography: "connected",
   lakePowell: "include",
   lakeMead: "include"
 } as const;
@@ -68,7 +67,6 @@ describe("statewide rollup parity with shared/reservoir-viz.js", () => {
 
   it("reproduces the legacy exclude-Lake-Powell aggregation", () => {
     const ported = statewideRollup(payload.reservoirs, {
-      geography: "connected",
       lakePowell: "exclude",
       lakeMead: "include"
     });
@@ -144,35 +142,7 @@ describe("statewide rollup parity with shared/reservoir-viz.js", () => {
 });
 
 describe("rollup rules independent of today's data", () => {
-  it("separates reservoirs in Utah from all connected reservoirs", () => {
-    const example = payload.reservoirs[0];
-    expect(example).toBeDefined();
-    if (!example) return;
-    /* Explicit ids, because the fixture is spread from a real record and
-     * would otherwise inherit that record's provider identity -- and if the
-     * payload happens to lead with a dominant reservoir (ADR-062) the fixture
-     * inherits its exclusion too, and the test measures the wrong thing. */
-    const reservoirs = [
-      { ...example, name: "Cross-border example", rise_item_id: 9001,
-        in_utah: false, intersects_utah: true },
-      { ...example, name: "Connected example", rise_item_id: 9002,
-        in_utah: false, intersects_utah: false }
-    ];
-
-    const utah = statewideRollup(reservoirs, {
-      geography: "utah",
-      lakePowell: "include"
-    });
-    const connected = statewideRollup(reservoirs, {
-      geography: "connected",
-      lakePowell: "include"
-    });
-
-    expect(utah.count).toBe(1);
-    expect(connected.count).toBe(2);
-  });
-
-  it("applies the Lake Powell choice independently of geography", () => {
+  it("applies the Lake Powell choice to the published roster", () => {
     const example = payload.reservoirs[0];
     expect(example).toBeDefined();
     if (!example) return;
@@ -191,26 +161,14 @@ describe("rollup rules independent of today's data", () => {
         in_utah: false, intersects_utah: false }
     ];
 
-    for (const geography of ["utah", "connected"] as const) {
-      const included = statewideRollup(reservoirs, {
-        geography,
-        lakePowell: "include"
-      });
-      const excluded = statewideRollup(reservoirs, {
-        geography,
-        lakePowell: "exclude"
-      });
+    const included = statewideRollup(reservoirs, { lakePowell: "include" });
+    const excluded = statewideRollup(reservoirs, { lakePowell: "exclude" });
 
-      expect(excluded.count).toBe(included.count - 1);
-      expect(excluded.storageAf).toBeCloseTo(
-        included.storageAf - lakePowell.current_storage_af,
-        6
-      );
-      expect(excluded.capacityAf).toBeCloseTo(
-        included.capacityAf - sizeBasis(lakePowell),
-        6
-      );
-    }
+    expect(excluded.count).toBe(included.count - 1);
+    expect(excluded.storageAf).toBeCloseTo(
+      included.storageAf - lakePowell.current_storage_af, 6);
+    expect(excluded.capacityAf).toBeCloseTo(
+      included.capacityAf - sizeBasis(lakePowell), 6);
   });
 
   it("excludes Lake Powell by its stable RISE identity when its label changes", () => {
@@ -228,26 +186,11 @@ describe("rollup rules independent of today's data", () => {
     const local = { ...example, name: "Local", rise_item_id: 100, intersects_utah: true };
 
     const result = statewideRollup([renamedPowell, local], {
-      geography: "utah",
       lakePowell: "exclude"
     });
 
     expect(result.count).toBe(1);
     expect(result.storageAf).toBe(local.current_storage_af);
-  });
-
-  it("keeps the production overview's Utah scope aligned with the typed rollup", () => {
-    const example = payload.reservoirs[0];
-    expect(example).toBeDefined();
-    if (!example) return;
-    const reservoirs = [
-      { ...example, name: "Lake Powell", intersects_utah: true },
-      { ...example, name: "Cross-border", in_utah: false, intersects_utah: true },
-      { ...example, name: "Connected", in_utah: false, intersects_utah: false }
-    ];
-
-    expect(legacy.utahReservoirs(reservoirs, true).map((reservoir) => reservoir.name))
-      .toEqual(["Cross-border"]);
   });
 
   it("uses capacity and falls back to record max", () => {
@@ -329,20 +272,19 @@ describe("the dominant-reservoir controls", () => {
    * answering what it answered: absent must mean excluded, or those callers
    * silently start adding 28 million acre-feet to totals nobody changed. */
   it("excludes Mead when no choice is given at all", () => {
-    const scope = { geography: "connected" as const, lakePowell: "include" as const };
+    const scope = { lakePowell: "include" as const };
     expect(reservoirInScope(mead(), scope)).toBe(false);
     expect(reservoirInScope(ordinary(), scope)).toBe(true);
   });
 
   it("includes Mead only when asked", () => {
-    const base = { geography: "connected" as const, lakePowell: "exclude" as const };
+    const base = { lakePowell: "exclude" as const };
     expect(reservoirInScope(mead(), { ...base, lakeMead: "include" })).toBe(true);
     expect(reservoirInScope(mead(), { ...base, lakeMead: "exclude" })).toBe(false);
   });
 
   it("keeps the two controls independent", () => {
     const scope = {
-      geography: "connected" as const,
       lakePowell: "exclude" as const,
       lakeMead: "include" as const
     };
@@ -350,13 +292,6 @@ describe("the dominant-reservoir controls", () => {
     expect(reservoirInScope(mead(), scope)).toBe(true);
   });
 
-  /* Mead is connected to Utah by drainage and its water never enters the
-   * state, so the Utah geography excludes it whatever the toggle says. */
-  it("keeps Mead out of the Utah geography however it is toggled", () => {
-    expect(reservoirInScope(mead(), {
-      geography: "utah", lakePowell: "include", lakeMead: "include"
-    })).toBe(false);
-  });
 });
 
 /*
@@ -537,10 +472,9 @@ describe("which period the combined comparison uses", () => {
  * The scope questions, answered once.
  *
  * These used to be a rule an agent or a reviewer had to hold in their head --
- * "pass WIDEST_SCOPE when the rows are already scoped" -- and the failure it
- * guarded against was silent: a total narrowed twice is still a total, and it
- * reads as a smaller region rather than as a bug. The brand moves the rule
- * into the type system; these are the behavioural half.
+ * A total narrowed twice is still a total, so the brand keeps the rule in the
+ * type system: once scope is applied, the totalling call accepts no inclusion
+ * controls.
  */
 describe("an already-scoped set", () => {
   it("totals identically whether it is scoped once or asked twice", () => {
@@ -550,18 +484,9 @@ describe("an already-scoped set", () => {
   });
 
   it("cannot be narrowed a second time by the totalling call", () => {
-    /* The failure this replaces: `updateSummary` passed `geography: "utah"`
-     * over rows the map had already scoped to the west, and the card read
-     * "Every reservoir" above a third of them. `rollupOfScoped` accepts no
-     * scope dimension, so the same mistake is now a type error. */
     const scoped = scopeReservoirs(payload.reservoirs, CONNECTED_WITH_LAKE_POWELL);
-    const narrowedByHand = statewideRollup(scoped, {
-      ...WIDEST_SCOPE, geography: "utah"
-    });
-
-    expect(rollupOfScoped(scoped).count).toBeGreaterThan(narrowedByHand.count);
     // @ts-expect-error a scope dimension is not part of ScopedRollupOptions
-    expect(() => rollupOfScoped(scoped, { geography: "utah" })).not.toThrow();
+    expect(() => rollupOfScoped(scoped, { lakePowell: "exclude" })).not.toThrow();
   });
 
   it("keeps carrying the reader's comparison period", () => {

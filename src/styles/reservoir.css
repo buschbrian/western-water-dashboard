@@ -58,7 +58,8 @@ body {
 
 /* The SVG chart draws its own gridlines from CSS variables the app sheet
  * defines, so it reads correctly on this background without local rules.
- * Give it room beyond the panel width it was sized for. */
+ * Its viewBox is measured from this page's host, so the type and padding
+ * stay the same size while the month lanes take the extra width. */
 .reservoir-main svg.trend-chart { max-width: 100%; height: auto; }
 
 /* The aerial view: positioned, because the map component owns its own

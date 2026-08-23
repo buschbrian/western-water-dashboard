@@ -8,7 +8,7 @@ except to change its status. When a decision changes, add a new record that
 supersedes the old one — the history is the point. The procedure is
 [`.claude/skills/adr/SKILL.md`](../../.claude/skills/adr/SKILL.md).
 
-Index checked 2026-08-22. Current architecture is described in
+Index checked 2026-08-23. Current architecture is described in
 [`docs/architecture/`](../architecture/README.md); these records say why it is
 that way. Read the **start here** record for your domain first, then only the
 records it points at — the full numeric table is at the bottom and is not
@@ -66,7 +66,11 @@ The four different scopes, the hydrologic level, and what a link carries.
   [ADR-074](ADR-074-compare-the-week-with-the-one-before-it.md),
   [ADR-076](ADR-076-nest-the-place-menus-and-let-the-heading-carry-the-state.md),
   [ADR-084](ADR-084-two-place-menus-to-a-page.md),
-  [ADR-085](ADR-085-gate-snows-drainage-rows-to-the-drawn-tier.md)
+  [ADR-085](ADR-085-gate-snows-drainage-rows-to-the-drawn-tier.md),
+  [ADR-086](ADR-086-open-the-place-chooser-from-every-page-header.md),
+  [ADR-087](ADR-087-retire-the-utah-reservoir-scope.md),
+  [ADR-088](ADR-088-offer-huc-8-on-drought-first.md),
+  [ADR-090](ADR-090-remove-retired-readiness-fields-with-the-controls.md)
 - Boundary sourcing: [ADR-024](ADR-024-use-full-resolution-watersheds-for-snow-sites.md),
   [ADR-034](ADR-034-hosted-boundary-layers-with-a-deadline.md),
   [ADR-037](ADR-037-refetch-the-boundaries-at-the-resolution-the-source-stops-adding.md)
@@ -96,7 +100,8 @@ ADR-041.**
   [ADR-036](ADR-036-accessibility-is-a-gate-and-a-measured-content-policy.md),
   [ADR-045](ADR-045-name-the-site-for-the-water-and-each-page-for-its-subject.md),
   [ADR-078](ADR-078-every-water-this-site-measures-is-a-reservoir.md),
-  [ADR-079](ADR-079-rename-through-a-former-name-table-and-publish-the-operator.md)
+  [ADR-079](ADR-079-rename-through-a-former-name-table-and-publish-the-operator.md),
+  [ADR-089](ADR-089-put-reservoir-state-facts-in-their-own-csv-columns.md)
 
 ### Symbology, cartography and map interaction
 Colour tables, label placement, layer order and basemaps. **Start with
@@ -119,7 +124,8 @@ ADR-008, then ADR-032 and ADR-061.**
 - Views and interaction: [ADR-021](ADR-021-snow-telemetry-goes-on-a-view-of-its-own.md),
   [ADR-023](ADR-023-fill-the-empty-drainage-areas.md),
   [ADR-029](ADR-029-the-table-narrows-where-the-map-dims.md),
-  [ADR-040](ADR-040-open-the-snow-map-on-the-season-peak.md)
+  [ADR-040](ADR-040-open-the-snow-map-on-the-season-peak.md),
+  [ADR-086](ADR-086-open-the-place-chooser-from-every-page-header.md)
 - Superseded, read only for history: ADR-007, ADR-016, ADR-022, ADR-025,
   ADR-027, ADR-030, ADR-043, ADR-054
 - Current architecture: [`docs/architecture/frontend.md`](../architecture/frontend.md)
@@ -219,6 +225,11 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-083](ADR-083-anchor-the-monthly-normal-window-once-per-chart.md) | Anchor the monthly normal window once per chart, not once per month | Accepted; narrows ADR-041's per-month rule for the live twelve-month line, no version bump |
 | [ADR-084](ADR-084-two-place-menus-to-a-page.md) | Two place menus to a page: Where (state, county) and Drainage area (across levels) | Accepted; supersedes ADR-071's picker truce, extends ADR-076's nesting to both menus |
 | [ADR-085](ADR-085-gate-snows-drainage-rows-to-the-drawn-tier.md) | Gate snow's drainage rows to the drawn tier and coarser | Accepted; narrows ADR-084's snow clause, payload reason stated |
+| [ADR-086](ADR-086-open-the-place-chooser-from-every-page-header.md) | Open the place chooser from every page header | Accepted |
+| [ADR-087](ADR-087-retire-the-utah-reservoir-scope.md) | Retire the Utah reservoir scope | Accepted; browser-readiness compatibility clause superseded by ADR-090 |
+| [ADR-088](ADR-088-offer-huc-8-on-drought-first.md) | Offer HUC-8 on drought first | Accepted; extends ADR-073 for drought only |
+| [ADR-089](ADR-089-put-reservoir-state-facts-in-their-own-csv-columns.md) | Put reservoir state facts in their own CSV columns | Accepted |
+| [ADR-090](ADR-090-remove-retired-readiness-fields-with-the-controls.md) | Remove retired readiness fields with their controls | Accepted; supersedes one clause of ADR-087 |
 
 ## Relationship to the historical journal
 

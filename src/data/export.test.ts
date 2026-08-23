@@ -62,7 +62,7 @@ describe("CSV serialization", () => {
       const end = line.indexOf("\"", 1);
       return line.slice(1, end === -1 ? undefined : end);
     };
-    expect(lines.slice(1).map(firstField)).toEqual(rows.map((row) => row.name));
+    expect(lines.slice(1).map(firstField)).toEqual(rows.map((row) => row.reservoirName));
     // Raw numbers, not the formatted ones the cells show.
     const first = rows[0];
     if (first?.storageAf !== null && first?.storageAf !== undefined) {
@@ -117,18 +117,21 @@ describe("two reservoirs with one name, exported", () => {
    * file replacing the first. */
   const lostCreekUt = {
     ...readPayload().reservoirs[0]!,
-    name: "Lost Creek", source_station_id: "544", state: "UT"
+    name: "Lost Creek", source_station_id: "544", state: "UT",
+    waterbody_states: ["UT"]
   };
   const lostCreekOr = {
     ...readPayload().reservoirs[1]!,
-    name: "Lost Creek", source_station_id: "14335040:OR:BOR", state: "OR"
+    name: "Lost Creek", source_station_id: "14335040:OR:BOR", state: "OR",
+    waterbody_states: ["OR", "CA"]
   };
 
-  it("names each row so a reader can tell them apart", () => {
+  it("keeps names and state facts in separate columns", () => {
     const rows = overviewCsv([lostCreekUt, lostCreekOr]).trim().split("\r\n");
 
-    expect(rows[1]).toContain("\"Lost Creek, UT\"");
-    expect(rows[2]).toContain("\"Lost Creek, OR\"");
+    expect(rows[0]).toContain("Reservoir,State,Waterbody states");
+    expect(rows[1]).toContain("Lost Creek,UT,UT");
+    expect(rows[2]).toContain("Lost Creek,OR,OR; CA");
   });
 
   it("leaves a unique name unqualified", () => {
@@ -146,10 +149,11 @@ describe("two reservoirs with one name, exported", () => {
       .toBe("lost-creek-or-2026-08-19.csv");
   });
 
-  it("carries the label into a single reservoir's history file", () => {
-    const csv = reservoirHistoryCsv(lostCreekOr, "Lost Creek, OR");
+  it("keeps the state facts in a single reservoir's history file", () => {
+    const csv = reservoirHistoryCsv(lostCreekOr);
 
-    expect(csv).toContain("\"Lost Creek, OR\"");
+    expect(csv).toContain("Reservoir,State,Waterbody states");
+    expect(csv).toContain("Lost Creek,OR,OR; CA");
     // The station is in the file either way, and stays the identity.
     expect(csv).toContain("14335040:OR:BOR");
   });

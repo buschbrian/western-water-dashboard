@@ -37,10 +37,11 @@
 import type { SpreadBox } from "../overview-model";
 import { storageColor } from "./classes";
 import { drainageLabel } from "./format";
+import { renderResponsiveChart, stopResponsiveChart } from "./responsive";
 
 const SVG = "http://www.w3.org/2000/svg";
 
-const WIDTH = 640;
+const FALLBACK_WIDTH = 640;
 /* Two lines of area name and the leading between them, which is what the
  * SDK version could not give a row: at one line per row "Southern Oregon
  * Coastal" and "Northern California Coastal" ran together. */
@@ -88,16 +89,21 @@ export function renderSpread(
   boxes: readonly SpreadBox[],
   options: SpreadOptions
 ): number {
-  host.replaceChildren();
-  if (boxes.length === 0) return 0;
+  if (boxes.length === 0) {
+    stopResponsiveChart(host);
+    host.replaceChildren();
+    return 0;
+  }
 
+  return renderResponsiveChart(host, (width) => {
+  const chartWidth = Math.max(PAD_LEFT + PAD_RIGHT + 80, width);
   const height = PAD_TOP + boxes.length * ROW_HEIGHT + PAD_BOTTOM;
-  const plotWidth = WIDTH - PAD_LEFT - PAD_RIGHT;
+  const plotWidth = chartWidth - PAD_LEFT - PAD_RIGHT;
   const x = (percent: number): number =>
     PAD_LEFT + (Math.min(AXIS_MAX, Math.max(0, percent)) / AXIS_MAX) * plotWidth;
 
   const svg = element("svg", {
-    viewBox: `0 0 ${WIDTH} ${height}`,
+    viewBox: `0 0 ${chartWidth} ${height}`,
     class: "spread-chart",
     role: "img",
     "aria-label": options.ariaLabel
@@ -205,7 +211,7 @@ export function renderSpread(
      * would overflow the lane on long names. What it is is said in the
      * page's copy beside the chart. */
     const countLabel = element("text", {
-      x: WIDTH - 4, y: y + 3.5, class: "spread-count", "text-anchor": "end"
+      x: chartWidth - 4, y: y + 3.5, class: "spread-count", "text-anchor": "end"
     });
     countLabel.textContent = String(box.count);
     group.append(countLabel);
@@ -229,6 +235,7 @@ export function renderSpread(
     svg.append(group);
   });
 
-  host.append(svg);
+  host.replaceChildren(svg);
   return boxes.length;
+  }, { fallbackWidth: FALLBACK_WIDTH, minimumWidth: PAD_LEFT + PAD_RIGHT + 80 });
 }

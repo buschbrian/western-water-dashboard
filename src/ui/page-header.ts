@@ -179,14 +179,15 @@ export function brandMarkup(headingLevel: 1 | 2, current: PageId): string {
  * reader is told which one they are on rather than left to notice a gap.
  */
 export function pageLinksMarkup(current: PageId, search: string = ""): string {
-  const carried = portableSearch(search);
+  const carriedFor = (page: PageLink): string =>
+    portableSearch(search, page.id === "drought" || page.id === "methods" ? 8 : 6);
   const others = PAGES.filter((page) => page.id !== current);
   const items = PAGES.map((page) => `
-        <calcite-dropdown-item id="menu-${page.id}-link" href="${linkHref(page.href, carried)}"
+        <calcite-dropdown-item id="menu-${page.id}-link" href="${linkHref(page.href, carriedFor(page))}"
           icon-start="${page.icon}"${page.id === current ? ' selected aria-current="page"' : ""}
           >${page.menuText}</calcite-dropdown-item>`).join("");
   const buttons = others.map((page) => `
-    <calcite-button id="${page.id}-link" class="page-link" slot="content-end" href="${linkHref(page.href, carried)}"
+    <calcite-button id="${page.id}-link" class="page-link" slot="content-end" href="${linkHref(page.href, carriedFor(page))}"
       appearance="transparent" kind="neutral" icon-start="${page.icon}"
       label="${page.label}"><span class="page-link-text">${page.text}</span></calcite-button>`).join("");
 
@@ -196,7 +197,15 @@ export function pageLinksMarkup(current: PageId, search: string = ""): string {
         text="Pages" label="Open the page menu"></calcite-action>
       <calcite-dropdown-group group-title="Pages">${items}
       </calcite-dropdown-group>
-    </calcite-dropdown>${buttons}`;
+      <calcite-dropdown-group group-title="Place">
+        <calcite-dropdown-item id="menu-place-chooser" icon-start="home" hidden>
+          Choose another place
+        </calcite-dropdown-item>
+      </calcite-dropdown-group>
+    </calcite-dropdown>
+    <calcite-action id="place-chooser-trigger" class="place-chooser-trigger"
+      slot="content-end" icon="home" text="Choose another place"
+      label="Open the place chooser" hidden></calcite-action>${buttons}`;
 }
 
 /**
@@ -213,8 +222,9 @@ export function pageLinksMarkup(current: PageId, search: string = ""): string {
  * not know about is left alone instead of having a query appended to it.
  */
 export function updatePageLinks(search: string): void {
-  const carried = portableSearch(search);
   for (const page of PAGES) {
+    const carried = portableSearch(
+      search, page.id === "drought" || page.id === "methods" ? 8 : 6);
     for (const id of [`${page.id}-link`, `menu-${page.id}-link`]) {
       document.getElementById(id)?.setAttribute("href", linkHref(page.href, carried));
     }

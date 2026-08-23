@@ -161,7 +161,7 @@ SCOPES = {
         description="Every HUC8 subbasin draining to the Pacific or closed inside the west",
         where=WEST_REGION_WHERE.format(field="huc8"),
         output="data/watersheds/west-huc8.geojson",
-        published=False,
+        published=True,
         level=8,
         # Measured 2026-08-18, regions 14-18: 571 subbasins. This is the
         # finest level the drought engine holds its published precision at;
@@ -232,15 +232,20 @@ ROSTER_SCOPE = DEFAULT_SCOPE
 # scopes for one at the right level would pick `utah-connected` or `west-huc6`
 # by dictionary order, which is a geography chosen by accident.
 #
-# HUC-8 is absent and that is a decision rather than an omission: 571 areas is
-# eight times the hosted-outline cost measured in ADR-063, and the archive
-# needs its own answer first.
+# HUC-8 remains absent here: storage and snow do not yet publish figures at
+# that level (ADR-088). Drought has its own offered-scope map below.
 #
 # HUC-2 joined in ADR-073. It costs the opposite of HUC-8: five areas is a
 # fifteenth of the drawn outlines and a fifteenth of the drought rows, and
 # every figure behind them is a sum or a mean over a coarser key that the
 # codes already nest into.
 DRAWN_SCOPES = {6: "west-huc6", 4: "west-huc4", 2: "west-huc2"}
+
+# Drought can publish the existing coverage method at HUC-8 without implying
+# that storage or snow can answer at the same level (ADR-088). Keeping this
+# separate is what lets `reference.json` publish the roster once while each
+# surface offers only levels with figures behind them.
+DROUGHT_DRAWN_SCOPES = {**DRAWN_SCOPES, 8: "west-huc8"}
 
 
 def get_scope(name: str) -> WatershedScope:

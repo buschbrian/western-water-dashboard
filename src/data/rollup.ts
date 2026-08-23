@@ -103,13 +103,11 @@ export interface StatewideRollup {
   basisShares: BasisShare[];
 }
 
-export type ReservoirGeography = "utah" | "connected";
 export type LakePowellChoice = "include" | "exclude";
 /** The same two values, for any reservoir large enough to need its own control. */
 export type ReservoirInclusion = LakePowellChoice;
 
 export interface StatewideRollupOptions {
-  geography: ReservoirGeography;
   lakePowell: LakePowellChoice;
   /** Defaults to excluded, like Lake Powell, for the same reason (ADR-062). */
   lakeMead?: ReservoirInclusion;
@@ -161,9 +159,9 @@ const DOMINANT_RESERVOIRS = [LAKE_POWELL, LAKE_MEAD] as const;
  * (ADR-062).
  */
 export const WIDEST_SCOPE: Required<Pick<
-  StatewideRollupOptions, "geography" | "lakePowell" | "lakeMead"
+  StatewideRollupOptions, "lakePowell" | "lakeMead"
 >> = {
-  geography: "connected", lakePowell: "include", lakeMead: "include"
+  lakePowell: "include", lakeMead: "include"
 };
 
 function matches(reservoir: Reservoir, entry: (typeof DOMINANT_RESERVOIRS)[number]): boolean {
@@ -184,7 +182,6 @@ export function isLakeMead(reservoir: Reservoir): boolean {
 export function reservoirInScope(
   reservoir: Reservoir, options: StatewideRollupOptions
 ): boolean {
-  if (options.geography === "utah" && !reservoir.intersects_utah) return false;
   /* Absent means excluded, which keeps every existing caller's answer
    * unchanged: they were written before Mead was on the roster and would
    * otherwise silently start including 28 million acre-feet. */

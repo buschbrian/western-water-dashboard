@@ -27,8 +27,7 @@ import {
   isOpeningScopeChosen
 } from "./data/opening-scope";
 import { readStoredPlace, resolveOpeningPlace, searchWithPlace } from "./state/opening-preference";
-import { offeredStates } from "./data/state-vocabulary";
-import { createOpeningSplash, createReopenControl, shouldAskWhere, wasDismissed } from "./ui/opening-splash";
+import { setupPlaceChooser, wasDismissed } from "./ui/opening-splash";
 import {
   asScoped, isLakeMead, isLakePowell, isLate, rollupOfScoped,
   type ScopedReservoirs,
@@ -163,7 +162,6 @@ let publishedAt = "";
  * restored is what a first paint would draw, and that has to be the view the
  * page opens on -- the whole west, both large reservoirs in. */
 let scope: ScopeChoice = {
-  geography: DEFAULT_URL_STATE.geography,
   lakePowell: DEFAULT_URL_STATE.lakePowell,
   lakeMead: DEFAULT_URL_STATE.lakeMead
 };
@@ -261,16 +259,9 @@ function updateSummary(): void {
   /* The headline follows the slider. A summary still reporting today while
    * the map draws last November is the page saying two things at once, and
    * the map is the louder one. */
-  /* `inScope` has already answered every scope question -- geography, Lake
-   * Powell and Lake Mead -- and its type says so, so `rollupOfScoped` cannot
-   * ask any of them a second time: it takes no scope dimensions at all.
-   *
-   * Two of the three were asked twice here, and both answers were wrong.
-   * `geography` was pinned to `utah`, so the headline counted the reservoirs
-   * whose water touches Utah under a card reading "Every reservoir": 59 of
-   * them, above a map drawing 196. `lakeMead` was absent, and absent means
-   * excluded, so the reader's own switch could not put Mead into a total the
-   * map had already drawn it into.
+  /* `inScope` has already answered the Lake Powell and Lake Mead questions,
+   * and its type says so, so `rollupOfScoped` cannot ask either one a second
+   * time.
    *
    * The reader's baseline period and its minimum still travel, so the total
    * and the details panel below it cannot disagree about which years "normal"
@@ -304,7 +295,7 @@ function updateSummary(): void {
     // ADR-011 and ADR-062 exist to prevent. A lake outside the selected place
     // is omitted; asking a California reader about Lake Mead is not context.
     scope: [
-      scope.geography === "connected" ? "Every reservoir" : "Utah waterbodies only",
+      "Every reservoir",
       ...(largeReservoirAvailability.lakePowell
         ? [`${scope.lakePowell === "include" ? "including" : "excluding"} Lake Powell`]
         : []),
@@ -456,7 +447,6 @@ function viewState(): Omit<DashboardUrlState, "reservoir"> {
     drainageArea: filterState.drainageArea,
     lakePowell: scope.lakePowell,
     lakeMead: scope.lakeMead ?? DEFAULT_URL_STATE.lakeMead,
-    geography: scope.geography,
     month: selectedMonth(),
     tableOpen,
     tableSort,
@@ -857,7 +847,7 @@ function renderDetail(): void {
       reservoir, storageColor(headlinePercent(reservoir)),
       activeBaselineId, baselineOptions, baselineMinimumYears) : null,
     reservoir ? () => downloadCsv(
-      reservoirHistoryCsv(reservoir, reservoirLabel(reservoir, inScope)),
+      reservoirHistoryCsv(reservoir),
       reservoirCsvFilename(reservoirLabel(reservoir, inScope), publishedAt)
     ) : undefined,
     /* The label is what resolves on the page: qualified where the roster
@@ -880,7 +870,7 @@ function renderDetail(): void {
         reservoir, storageColor(headlinePercent(reservoir)),
         activeBaselineId, baselineOptions, baselineMinimumYears, trace),
       () => downloadCsv(
-        reservoirHistoryCsv(reservoir, reservoirLabel(reservoir, inScope)),
+        reservoirHistoryCsv(reservoir),
         reservoirCsvFilename(reservoirLabel(reservoir, inScope), publishedAt)
       ),
       `reservoir.html?name=${encodeURIComponent(reservoirLabel(reservoir, inScope))}`
@@ -1013,7 +1003,7 @@ if (!supportsDashboard(browserCapabilities())) {
    * state link paired with a reservoir outside it must not silently drop the
    * reservoir the link was actually for.
    *
-   * Checked once, against a trial geography-scoped set, before `applyScope`
+   * Checked once, against a trial inclusion-scoped set, before `applyScope`
    * (and before the extent override just below) ever runs -- not discovered
    * after a narrow paint and corrected with a second one. `findReservoir` is
    * what does the matching, and it never resolves a bare name two
@@ -1027,17 +1017,17 @@ if (!supportsDashboard(browserCapabilities())) {
   const wanted = stateFromSearch(window.location.search);
   /* Set here, once, rather than rebuilt as a second literal for this check
    * and a third time below for the scope the map actually draws with: the
-   * widening decision has to be made against the same geography scope the
+   * widening decision has to be made against the same inclusion scope the
    * reader ends up looking at, or a field `ScopeChoice` gains later could go
    * into one copy and not the other, and the two would disagree about
    * whether a linked reservoir survives. `wireFilters`, `applyScope` and
    * everything else below already read the module-level `scope`, so setting
    * it here rather than after this check is what lets this check use it
    * too, instead of a fourth hand-built copy. */
-  scope = { geography: wanted.geography, lakePowell: wanted.lakePowell, lakeMead: wanted.lakeMead };
+  scope = { lakePowell: wanted.lakePowell, lakeMead: wanted.lakeMead };
   if (reservoirs && openingScope.selection.state !== "all" && wanted.reservoir !== null) {
-    const geographyScoped = overviewScope(reservoirs, scope);
-    const linked = findReservoir(geographyScoped, wanted.reservoir);
+    const inclusionScoped = overviewScope(reservoirs, scope);
+    const linked = findReservoir(inclusionScoped, wanted.reservoir);
     if (linked && !reservoirInState(linked, openingScope.selection.state)) {
       widenedForReservoir = linked;
       openingScope = resolveOpeningScope(
@@ -1137,7 +1127,6 @@ if (!supportsDashboard(browserCapabilities())) {
         window.__dashboardReady.late = inScope.filter(isLate).length;
         window.__dashboardReady.lakePowell = scope.lakePowell;
         window.__dashboardReady.lakeMead = scope.lakeMead ?? DEFAULT_URL_STATE.lakeMead;
-        window.__dashboardReady.geography = scope.geography;
         window.__dashboardReady.listItems =
           document.querySelectorAll("#start-panel .list-btn").length;
       }
@@ -1203,7 +1192,6 @@ if (!supportsDashboard(browserCapabilities())) {
     });
     setScopeControl((chosen) => {
       scope = {
-        geography: chosen.geography === "connected" ? "connected" : "utah",
         lakePowell: chosen.lakePowell ? "include" : "exclude",
         lakeMead: chosen.lakeMead ? "include" : "exclude"
       };
@@ -1239,7 +1227,6 @@ if (!supportsDashboard(browserCapabilities())) {
     }
     setTableRowOpen(tableOpen);
     setScopeValue({
-      geography: scope.geography,
       lakePowell: scope.lakePowell === "include",
       lakeMead: scope.lakeMead === "include"
     });
@@ -1262,28 +1249,19 @@ if (!supportsDashboard(browserCapabilities())) {
   await loadContext(map);
   const levelsOffered = await wireLevelControl();
   wirePlaceMenus(openingRosters, openingScope.selection);
-  /* The splash asks only when nothing else answered -- never over a shared
-   * link, never over a remembered place, never twice. Built from the rosters
-   * already fetched, so it costs no request and cannot arrive late. It is
-   * built even when it does not open, because the reopen control beside the
-   * place filters opens this same dialog: one chooser, not two lists. */
-  const splash = createOpeningSplash({
-    states: offeredStates({
-      reservoirStates: published.map((reservoir) => reservoir.waterbody_states ?? reservoir.state),
-      drainageAreaStates: openingRosters.areas.map((area) => area.states)
-    }).map((option) => option.code),
-    regions: openingRosters.regions
-  });
-  if (splash) {
-    document.body.append(splash.element);
-    if (shouldAskWhere(openingPlace.source, wasDismissed(), window.location.search)) {
-      splash.open();
-    } else {
-      for (const host of document.querySelectorAll<HTMLElement>(".filters")) {
-        placeInSlot(host, "reopen", createReopenControl(() => splash.open()));
-      }
+  /* Reuses the rosters already fetched, so the first-visit question cannot
+   * arrive late. The same builder also wires the wide-header action and the
+   * mobile menu item every shared-header page carries (ADR-086). */
+  await setupPlaceChooser({
+    rosters: openingRosters,
+    reservoirStates: published.map((reservoir) =>
+      reservoir.waterbody_states ?? reservoir.state),
+    askOnFirstVisit: {
+      source: openingPlace.source,
+      dismissed: wasDismissed(),
+      search: window.location.search
     }
-  }
+  });
 
   /* One fact per field, and fields are only ever added (never removed or
    * re-pointed at an expression another field already reads): two fields
@@ -1301,7 +1279,6 @@ if (!supportsDashboard(browserCapabilities())) {
      * total with Mead and one without are both true and are not the same
      * measurement (ADR-062). */
     lakeMead: scope.lakeMead ?? DEFAULT_URL_STATE.lakeMead,
-    geography: scope.geography,
     months: months.length,
     month: selectedMonth(),
     basemap: map.status.basemap,

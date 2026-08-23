@@ -54,7 +54,9 @@ const AREAS: readonly DrainageArea[] = [
   area("160201", "Great Salt Lake", "UT", box(-113, 40, -111, 41.5))
 ];
 
-const ROSTERS: OpeningRosters = { regions: REGIONS, subregions: SUBREGIONS, areas: AREAS };
+const ROSTERS: OpeningRosters = {
+  regions: REGIONS, subregions: SUBREGIONS, areas: AREAS, subbasins: []
+};
 
 const ALL: OpeningSelection = { state: "all", area: null };
 
@@ -72,6 +74,23 @@ describe("drainageMenuView: one menu across levels", () => {
       "140101", "140102", "140200", "160101", "160201"
     ]);
     expect(view.value).toBe(ALL_VALUE);
+  });
+
+  it("adds subbasins only when the host offers level 8", () => {
+    const rosters: OpeningRosters = {
+      ...ROSTERS,
+      subbasins: [
+        area("14010101", "Upper Headwaters", "CO"),
+        area("14010102", "Lower Headwaters", "CO,UT")
+      ]
+    };
+    const shared = drainageMenuView(rosters, ALL);
+    const drought = drainageMenuView(rosters, ALL, undefined, 8);
+    expect(values(shared.options)).not.toContain("14010101");
+    expect(values(drought.options)).toContain("14010101");
+    expect(values(drought.options)).toContain("14010102");
+    expect(drought.options.find((option) => option.value === "14010101")?.group)
+      .toBe("Colorado Headwaters");
   });
 
   it("narrows by the chosen state but never by the chosen area", () => {
@@ -313,7 +332,7 @@ describe("whereMenuView: a host that brings its own states", () => {
    * not offer has no honest heading. */
   it("uses the given list and ignores the empty rosters", () => {
     const view = whereMenuView(
-      { regions: [], subregions: [], areas: [] },
+      { regions: [], subregions: [], areas: [], subbasins: [] },
       { state: "UT", area: null },
       [{ fips: "49043", name: "Summit", state: "UT" }],
       null,
@@ -327,7 +346,7 @@ describe("whereMenuView: a host that brings its own states", () => {
 
   it("drops counties under states the host did not offer", () => {
     const view = whereMenuView(
-      { regions: [], subregions: [], areas: [] },
+      { regions: [], subregions: [], areas: [], subbasins: [] },
       { state: "all", area: null },
       [
         { fips: "49043", name: "Summit", state: "UT" },

@@ -40,17 +40,23 @@
  * this feature's life for exactly that reason, and the filter bars this sits
  * beside already hold native controls.
  */
-import { EVERYWHERE, type OpeningSelection } from "../data/opening-scope";
+import {
+  EVERYWHERE,
+  loadOpeningRosters,
+  type OpeningRosters,
+  type OpeningSelection
+} from "../data/opening-scope";
 import type { DrainageArea } from "../data/boundaries";
 import { searchWithPlace } from "../state/opening-preference";
-import { stateName } from "../data/state-vocabulary";
+import { offeredStates, stateName } from "../data/state-vocabulary";
 
 const DISMISSED_STORAGE_KEY = "utah-reservoir-dashboard-splash-dismissed";
 
-/** The three surfaces a place can be applied to. `href` is what the reader's
+/** The four data surfaces a place can be applied to. `href` is what the reader's
  * choice is appended to; `label` is what the button says. */
 const SUBJECTS = [
-  { key: "storage", href: "./index.html", label: "Storage" },
+  { key: "storage-map", href: "./index.html", label: "Storage map" },
+  { key: "storage-charts", href: "./overview.html", label: "Storage charts" },
   { key: "snow", href: "./snow.html", label: "Snowpack" },
   { key: "drought", href: "./drought.html", label: "Drought" }
 ] as const;
@@ -157,7 +163,7 @@ export function createOpeningSplash(places: SplashPlaces): OpeningSplash | null 
    * dialog is open. It is not a parameter and not stored: it decides which
    * page the chosen place is applied to, and the navigation bar carries the
    * place onto the other two if the reader goes looking. */
-  let subject: SubjectKey = "storage";
+  let subject: SubjectKey = "storage-map";
 
   const subjectGroup = document.createElement("fieldset");
   subjectGroup.className = "splash-subjects";
@@ -218,16 +224,14 @@ export function createOpeningSplash(places: SplashPlaces): OpeningSplash | null 
   }
   dialog.append(places_);
 
-  /* The skip is a real answer and gets one click, not a corner cross. A
-   * reader who wants the whole west is not declining to answer. */
+  /* The whole west is a real answer and gets one click, not a corner cross.
+   * It follows the chosen subject just like a state or region does; that is
+   * what makes reopening this site-level chooser a reset from any page. */
   const skip = document.createElement("button");
   skip.type = "button";
   skip.className = "splash-skip";
   skip.textContent = "Show the whole west";
-  skip.addEventListener("click", () => {
-    markDismissed();
-    dialog.close();
-  });
+  skip.addEventListener("click", () => choose({ state: EVERYWHERE, area: null }));
   dialog.append(skip);
 
   /* Escape closes a native dialog on its own, and it must mean the same as
@@ -246,25 +250,57 @@ export function createOpeningSplash(places: SplashPlaces): OpeningSplash | null 
 
 export { DISMISSED_STORAGE_KEY, wasDismissed };
 
+export interface PlaceChooserOptions {
+  /** Reuse a roster the page already fetched; otherwise make the one shared,
+   * deadline-bounded reference request. */
+  rosters?: OpeningRosters;
+  /** Reservoir waterbody-state lists already in hand on the storage map. */
+  reservoirStates?: readonly (readonly string[] | string | null | undefined)[];
+  /** The storage map's first-visit rule. Other pages omit it and only wire
+   * the explicit header action. */
+  askOnFirstVisit?: {
+    source: "link" | "stored" | "default";
+    dismissed: boolean;
+    search: string;
+  };
+}
+
 /**
- * The way back to a question the page asked once and never asked again.
+ * Builds the one chooser and connects both responsive header entry points.
  *
- * `shouldAskWhere` refuses to open over any query string, and its comment
- * records why that rule must not weaken for links. A reader *asking* to
- * see the chooser again is the opposite case: not an interruption but a
- * request, and it changes no URL state of its own -- the dialog's own
- * buttons navigate, so until one is pressed this is only text on a page.
- *
- * Native button, like the dialog itself: the splash left Calcite for the
- * same axe-core reasons at 360 pixels, and a control beside Calcite selects
- * is still allowed to be native when native is what survives.
+ * The controls are written hidden in `pageLinksMarkup`: a documentation page
+ * does not already need `reference.json`, and a failed optional request must
+ * not leave a live-looking button that opens an empty dialog. They become
+ * visible only after a useful chooser exists.
  */
-export function createReopenControl(onOpen: () => void): HTMLButtonElement {
-  const button = document.createElement("button");
-  button.type = "button";
-  button.className = "splash-reopen";
-  button.textContent = "Choose another place";
-  button.setAttribute("aria-label", "Open the place chooser");
-  button.addEventListener("click", onOpen);
-  return button;
+export async function setupPlaceChooser(
+  options: PlaceChooserOptions = {}
+): Promise<OpeningSplash | null> {
+  try {
+    const rosters = options.rosters ?? await loadOpeningRosters();
+    const states = offeredStates({
+      ...(options.reservoirStates === undefined
+        ? {} : { reservoirStates: options.reservoirStates }),
+      drainageAreaStates: rosters.areas.map((area) => area.states)
+    }).map((option) => option.code);
+    const splash = createOpeningSplash({ states, regions: rosters.regions });
+    if (!splash) return null;
+
+    document.body.append(splash.element);
+    for (const id of ["place-chooser-trigger", "menu-place-chooser"]) {
+      const trigger = document.getElementById(id);
+      if (!trigger) continue;
+      trigger.removeAttribute("hidden");
+      trigger.addEventListener("click", () => splash.open());
+    }
+
+    const first = options.askOnFirstVisit;
+    if (first && shouldAskWhere(first.source, first.dismissed, first.search)) {
+      splash.open();
+    }
+    return splash;
+  } catch (error) {
+    console.warn("The place chooser could not be built:", error);
+    return null;
+  }
 }

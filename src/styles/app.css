@@ -374,6 +374,7 @@ arcgis-map { width: 100%; height: 100%; min-width: 0; }
   margin: 1.25rem 0 .5rem;
   font-size: .9375rem;
 }
+.trend-chart-host { inline-size: 100%; }
 .trend-chart { display: block; width: 100%; height: auto; overflow: visible; }
 /* The parts of the chart that are not data take their colour from the theme.
  * The legacy popup wrote a light grey and a navy into the markup, which is
@@ -672,7 +673,8 @@ arcgis-map { width: 100%; height: 100%; min-width: 0; }
 #page-menu { display: none; }
 @media (max-width: 63.99rem) {
   #page-menu { display: block; }
-  .page-link { display: none; }
+  .page-link,
+  .place-chooser-trigger { display: none; }
 }
 @media (max-width: 47.99rem) {
   #sdk-name { display: none; }
@@ -1048,21 +1050,3 @@ arcgis-map { width: 100%; height: 100%; min-width: 0; }
   padding: .6rem;
   font-weight: 600;
 }
-
-/* The way back to the chooser, beside the place filters it mirrors. The
- * same quiet styling as the dialog's own buttons: it opens a chooser, it
- * is not a primary action, and it must not read as one next to them. */
-.splash-reopen {
-  font: inherit;
-  font-size: .85rem;
-  padding: .3rem .6rem;
-  border: 1px dashed var(--app-border);
-  border-radius: .35rem;
-  background: var(--app-surface);
-  color: var(--app-text);
-  cursor: pointer;
-}
-.splash-reopen:hover {
-  background: color-mix(in srgb, var(--app-accent) 12%, var(--app-surface));
-}
-.splash-reopen:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 2px; }

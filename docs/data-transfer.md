@@ -21,14 +21,21 @@ Two rules before any figure below is read:
 | `snowpack.json` | 3,629 KB | **304 KB** |
 | `reservoirs.json` | 2,055 KB | 220.8 KB |
 | `snow_sites.json` | 143 KB | 22 KB |
-| `reference.json` | 132.7 KB | 23.6 KB |
+| `reference.json` | 193 KB | 38.4 KB |
 | `data/drought/usdm-huc6.json` | 24.5 KB | 3.4 KB |
 | `data/drought/usdm-huc4.json` | 10.6 KB | 2.1 KB |
+| `data/drought/usdm-huc8.json` | 121 KB | 12.3 KB |
 
 The two storage figures were re-measured 2026-08-21, after R3 admitted
 Colorado; the section at the end of this file has the arithmetic. The
 `reference.json` note immediately below is older than they are and is kept for
 what it recorded at the time.
+
+Re-measured 2026-08-23 after ADR-088 published 571 HUC-8 roster entries:
+`reference.json` is 197,566 bytes raw and **39,314 bytes gzipped**. Each new
+entry is code, name, states and a four-number box; polygon geometry remains in
+the committed source and is requested from the hosted boundary service at
+runtime. The enforced ceiling is 64,000 gzipped bytes.
 
 Re-measured 2026-08-19, after ADR-067 dropped `geography.state`: `reference.json`
 went from 36.9 KB raw / 8.8 KB gzipped to **30.1 KB / 6.5 KB**, confirming

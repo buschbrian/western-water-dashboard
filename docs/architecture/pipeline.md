@@ -41,7 +41,7 @@ in the Pages workflow.
 compresses the JSON, so a raw byte count overstates what a reader pays several
 times over — `snowpack.json` is 3,607 KB on disk and 322 KB on the wire. The
 size guards measure the same way: the reference export's budget, in
-`tests/test_refresh.py` and `src/data/boundaries.test.ts` alike, is 30 KB
+`tests/test_refresh.py` and `src/data/boundaries.test.ts` alike, is 64 KB
 gzipped, and was a raw byte count until R3 — which would have failed on 142
 reservoirs of reviewed capacity while the figure a reader pays was still
 inside it. A budget in the wrong unit fails on the wrong thing.

@@ -16,8 +16,8 @@
  * the three surfaces; it only answers what states exist to choose and how to
  * read the one field (`states`) that is not already a plain string or array.
  * Nothing here is a `Scope` -- that name is already taken twice in this tree
- * (`watershed_scopes.py`'s `west-huc6`, `overview-model.ts`'s
- * `{geography, lakePowell}`), and a reader's chosen state is not a third one:
+ * (`watershed_scopes.py`'s `west-huc6`, `overview-model.ts`'s dominant-
+ * reservoir choices), and a reader's chosen state is not another one:
  * it stays a plain two-letter code (or the sentinel `"all"`), exactly the
  * type `reservoirInState`'s `state` parameter already has.
  */

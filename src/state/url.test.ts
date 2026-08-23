@@ -108,14 +108,14 @@ describe("the rest of the view in the link", () => {
     expect(searchWithState({})).toBe("");
   });
 
-  it("carries the filters, both scope dimensions and the month", () => {
+  it("carries the filters, reservoir choices and the month", () => {
     /* Powell is written as `exclude` now: the opening view has it in, so the
      * choice a link has to state is the one that takes it back out. */
     expect(searchWithState({
       storageClass: 0, reporting: "late", drainageArea: "140600", lakePowell: "exclude",
-      geography: "utah", month: "2026-02"
+      month: "2026-02"
     })).toBe("?class=0&late=true&drainage=140600&powell=exclude" +
-      "&reservoirs=utah&month=2026-02");
+      "&month=2026-02");
   });
 
   it("uses false to distinguish current data from no reporting filter", () => {
@@ -124,14 +124,9 @@ describe("the rest of the view in the link", () => {
     expect(stateFromSearch("").reporting).toBe("all");
   });
 
-  it("writes nothing for the geography the dashboard opens on", () => {
-    /* The dashboard opens on every reservoir it publishes. It opened on
-     * Utah's until the roster went west, at which point the default was
-     * hiding two thirds of the site's own subject -- so the narrower reading
-     * is the one a link has to state now. */
-    expect(searchWithState({ geography: "connected" })).toBe("");
-    expect(searchWithState({ geography: "utah" })).toBe("?reservoirs=utah");
-    expect(stateFromSearch("?reservoirs=nonsense").geography).toBe("connected");
+  it("ignores and removes the retired reservoirs geography parameter", () => {
+    expect(stateFromSearch("?reservoirs=utah")).toEqual(DEFAULT_URL_STATE);
+    expect(searchWithState({}, "?reservoirs=utah")).toBe("");
   });
 
   it("takes a month only in the shape the payload writes them", () => {
@@ -193,11 +188,10 @@ describe("the rest of the view in the link", () => {
             /* Mead's own dimension, not folded into Powell's: the four
              * combinations are four different totals (ADR-062). */
             for (const lakeMead of ["exclude", "include"] as const) {
-            for (const geography of ["utah", "connected"] as const) {
               for (const month of MONTHS) {
                 const state = {
                   reservoir: "Deer Creek", storageClass, reporting, drainageArea,
-                  lakePowell, lakeMead, geography, month,
+                  lakePowell, lakeMead, month,
                   /* The bottom row has its own round trip below. Held at its
                    * default here so this loop keeps testing the controls it
                    * was written for rather than multiplying by two more. */
@@ -218,7 +212,6 @@ describe("the rest of the view in the link", () => {
                     JSON.stringify(back));
                 }
               }
-            }
             }
           }
         }

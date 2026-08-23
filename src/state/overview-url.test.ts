@@ -18,7 +18,7 @@ describe("reading the overview view out of a link", () => {
 
   it("reads every field it owns", () => {
     const state = overviewStateFromSearch(
-      "?q=Deer&area=140600&state=UT&huc4=1406&county=49051&reporting=late&reservoirs=connected&powell=include" +
+      "?q=Deer&area=140600&state=UT&huc4=1406&county=49051&reporting=late&powell=include" +
       "&mead=include&storage=2&sort=percent&measure=storage&top=25&rank=name");
     expect(state).toEqual({
       query: "Deer",
@@ -27,7 +27,6 @@ describe("reading the overview view out of a link", () => {
       subregion: "1406",
       county: "49051",
       reporting: "late",
-      geography: "connected",
       lakePowell: "include",
       lakeMead: "include",
       storageClass: 2,
@@ -102,8 +101,7 @@ describe("writing the overview view into a link", () => {
   });
 
   it("survives a round trip in every combination the controls can reach", () => {
-    for (const geography of ["utah", "connected"] as const) {
-      for (const lakePowell of ["exclude", "include"] as const) {
+    for (const lakePowell of ["exclude", "include"] as const) {
         for (const reporting of ["all", "daily", "monthly", "late"] as const) {
           for (const measure of ["percent", "storage"] as const) {
             for (const limit of [0, 10, 15, 25]) {
@@ -112,13 +110,12 @@ describe("writing the overview view into a link", () => {
                 query: "Ken's Lake",
                 drainageArea: "140600",
                 storageClass: 3,
-                geography, lakePowell, reporting, measure, limit
+                lakePowell, reporting, measure, limit
               };
               expect(overviewStateFromSearch(searchWithOverviewState(state))).toEqual(state);
             }
           }
         }
-      }
     }
   });
 });
@@ -129,11 +126,10 @@ describe("writing the overview view into a link", () => {
 describe("a link shared between the map and the overview", () => {
   it("carries the filters both pages have in common", () => {
     const search = searchWithOverviewState({
-      drainageArea: "140600", geography: "connected", lakePowell: "include", storageClass: 1
+      drainageArea: "140600", lakePowell: "include", storageClass: 1
     });
     const onTheMap = stateFromSearch(search);
     expect(onTheMap.drainageArea).toBe("140600");
-    expect(onTheMap.geography).toBe("connected");
     expect(onTheMap.lakePowell).toBe("include");
     expect(onTheMap.storageClass).toBe(1);
   });
@@ -145,11 +141,15 @@ describe("a link shared between the map and the overview", () => {
     const fromMap = "?reservoirs=connected&powell=include&drainage=140600" +
       "&class=1&late=false";
     const state = overviewStateFromSearch(fromMap);
-    expect(state.geography).toBe("connected");
     expect(state.lakePowell).toBe("include");
     expect(state.drainageArea).toBe("140600");
     expect(state.storageClass).toBe(1);
     expect(state.reporting).toBe("all");
+  });
+
+  it("ignores and removes the retired reservoirs geography parameter", () => {
+    expect(overviewStateFromSearch("?reservoirs=utah")).toEqual(DEFAULT_OVERVIEW_STATE);
+    expect(searchWithOverviewState({}, "?reservoirs=utah")).toBe("");
   });
 
   it("accepts the map's late-only spelling", () => {

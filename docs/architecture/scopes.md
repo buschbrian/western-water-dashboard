@@ -42,14 +42,15 @@ reservoirs too small to point at. That literal equals the frozen oracle's own
 the opening view is carried by `src/data/opening-scope.ts` and the first-visit
 chooser instead — `unionOfAreaBoxes` over whatever place a reader picked.
 
-## Three levels are offered and the reader picks (ADR-064, ADR-073)
+## Three shared levels, and a drought-only fourth (ADR-064, ADR-073, ADR-088)
 
-HUC-6 is the default; HUC-4 and HUC-2 are the others. Every figure is published
-at all three, which is what makes a reader-chosen level a scope change rather
-than the view-scale change ADR-050 refuses. Drought coverage is computed per
-level; storage regroups on `huc6[:level]`, exact because codes nest; snow
-regroups from *sites* with the pipeline's rule, never by averaging the
-published basin means.
+HUC-6 is the default; HUC-4 and HUC-2 are the shared alternatives. Storage,
+snow and drought publish figures at those three levels. Drought also publishes
+HUC-8 subbasins through its own `drought_scopes` offer. Storage and snow do not
+offer HUC-8 until each can put an honest figure and interface behind it.
+Drought coverage is computed per level; storage regroups on `huc6[:level]`,
+exact because codes nest; snow regroups from *sites* with the pipeline's rule,
+never by averaging the published basin means.
 
 **A name is a figure too.** Each coarser level needs a roster published beside
 the numbers, or a picker labels its areas by code — the snow region picker read
@@ -68,15 +69,17 @@ states and `data.html` documents. Absent means basins; a link never carries
 `level=6`. Changing it is a **navigation**, not a re-render: the level changes
 which files a page fetches and every figure computed from them, so the control
 takes the path a shared link already takes — `location.replace`, never push.
-The control is appended when `reference.json` resolves rather than written into
+An HUC-8 drought link stays HUC-8 when it moves to drought or methods. A link
+to storage or snow coarsens an eight-digit place to its enclosing basin and
+drops the unsupported level. The control is appended when `reference.json` resolves rather than written into
 a template, because which levels are on offer is the export's answer
 (`drawn_scopes`), and it is built at the Calcite scale of the controls beside it.
 
 **The maps draw the level the payload declares** (ADR-050). No client file
 names a hydrologic level; it arrives as `DrainageScope { level, areas }` and the
-code is read from the attribute that level names. `JOINABLE_LEVEL` in
-`src/data/boundaries.ts` is the set of levels every figure on the site is keyed
-at, and
+code is read from the attribute that level names. `JOINABLE_LEVELS` and
+`DROUGHT_JOINABLE_LEVELS` in `src/data/boundaries.ts` are the explicit sets of
+levels each surface can join, and
 a scope published at another size says so out loud rather than drawing areas
 whose hover cards come back empty. Level is deliberately *not* driven by view
 scale: a finer outline a reader can point at, with no figure behind it, is less
@@ -109,9 +112,10 @@ names no place and is unmistakably someone showing someone else a thing. A list
 would need updating for every parameter any surface ever adds, and forgetting
 one buries a reader's link under a modal, which is what happened and what the
 smoke suite's deep-link case now catches. A reader who wants the question back
-asks for it: a "Choose another place" control beside the where filters reopens
-the same dialog, which changes nothing in the address bar until its own buttons
-are pressed.
+asks for it through **Choose another place** in every shared page header. The
+action is direct on wide screens and inside the page menu on phones. It reopens
+the same dialog and starts the selected destination from an empty query, so the
+new place travels and page-owned filters do not.
 
 The stored choice is **never written back into the address bar**: what a reader
 copies must be what they see, not what they prefer. `?state=all` exists so that
@@ -234,7 +238,7 @@ cheap, it is already written, and it is what found Lake Powell.
 ## The payload carries the roster; the service carries the shapes
 
 (ADR-047, ADR-048.) `reference.json` publishes each area's code, name and states
-and no drainage geometry — it was 1,001 KB raw and is 126.6 KB raw, **22.5 KB
+and no drainage geometry — it was 1,001 KB raw and is 193 KB raw, **38.4 KB
 on the wire**, and every map page fetches it whole on every load. Quote the wire
 figure. Outlines come from the hosted Watershed Boundary Dataset, quantized to
 the view.

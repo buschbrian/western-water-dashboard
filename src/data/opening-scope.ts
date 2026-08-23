@@ -23,9 +23,9 @@
  * A region is a filter, not a drawn level (D2). `?area=14` narrows the same
  * roster `?area=140100` does, at a coarser prefix -- it is never `?level=`,
  * which is a different axis entirely (ADR-064: how finely the ground is
- * *drawn*, always 4 or 6, because every drawn area needs a figure behind
- * it). Region and subregion have no figures of their own; they are entry
- * vocabulary over the same basin-level figures every level narrows down to.
+ * *drawn*. Region and subregion are entry vocabulary over basin figures on
+ * storage and snow. Drought additionally publishes HUC-8 figures, so its
+ * chooser may narrow one tier farther without changing the shared default.
  *
  * The honesty constraint (docs/OPENING-SCOPE-AND-THE-WESTERN-ROSTER.md,
  * "What a state selection is allowed to claim") is the reason this module
@@ -57,13 +57,10 @@ import {
 import { MAP_BOUNDS, unionOfAreaBoxes } from "../viz/extent";
 
 /**
- * The three prefix widths this module narrows between: a region (two
- * digits), a subregion (four) and a basin (six). Deliberately not
- * `JOINABLE_LEVELS` from `boundaries.ts` -- that list is which levels the
- * ground is *drawn* at (4 and 6, ADR-064), a different axis from this one.
- * Region is on this list and never on that one; a basin is on both, for
- * unrelated reasons -- it is where every figure on this site is keyed, and
- * separately it is the finest level this hierarchy narrows to.
+ * The four prefix widths this module can narrow between: a region (two
+ * digits), a subregion (four), a basin (six), and drought's subbasin (eight).
+ * Deliberately not a joinable-level list from `boundaries.ts`: which place
+ * codes can travel is separate from which figures each surface publishes.
  *
  * These are string-prefix widths, arithmetic on a fixed-width code -- not
  * hydrologic levels. `SUBREGION_LEVEL` below is the level, a claim about
@@ -76,23 +73,24 @@ import { MAP_BOUNDS, unionOfAreaBoxes } from "../viz/extent";
 const REGION_WIDTH = 2;
 const SUBREGION_WIDTH = 4;
 const AREA_WIDTH = 6;
-const OPENING_AREA_WIDTHS: ReadonlySet<number> = new Set([REGION_WIDTH, SUBREGION_WIDTH, AREA_WIDTH]);
+const SUBBASIN_WIDTH = 8;
+const OPENING_AREA_WIDTHS: ReadonlySet<number> = new Set([
+  REGION_WIDTH, SUBREGION_WIDTH, AREA_WIDTH, SUBBASIN_WIDTH
+]);
 
 /**
  * A code shaped like something this hierarchy can narrow with.
  *
  * `HUC_CODE` accepts any even width to twelve (`src/data/huc.ts`), which is
  * right for a payload's own `huc6` field but wrong for a reader's choice
- * here: an eight-digit code would silently narrow to zero areas at every
- * level this module knows, since nothing in this hierarchy is that fine --
- * region, subregion and basin are 2, 4 and 6 digits and nothing else.
+ * here: only the four published chooser tiers are accepted.
  *
  * Deliberately stricter than `state/filters.ts` and `state/url.ts`, which
  * both accept a wider range: `state/filters.ts`'s `DRAINAGE_AREA_CODE` is
  * `HUC_CODE` itself, unrestricted, and `state/url.ts`'s own check is looser
  * still (`/^[0-9]{1,12}$/`, which takes odd widths too). Those two are
  * matching a payload's own `huc6` field, which can legitimately be any
- * level the pipeline publishes; this module is matching a three-level
+ * level the pipeline publishes; this module is matching a four-level
  * hierarchy it defines itself, and a width outside it is not a finer
  * selection -- it is a selection this hierarchy has no level for, so it is
  * refused here rather than silently narrowing every roster to nothing.
@@ -111,8 +109,8 @@ function isOpeningAreaCode(value: string): boolean {
 export interface OpeningSelection {
   /** A USPS two-letter code, or "all". */
   state: string;
-  /** A region (2-digit), subregion (4-digit) or basin (6-digit) code, or
-   * `null` for "all". */
+  /** A region (2-digit), subregion (4-digit), basin (6-digit) or drought
+   * subbasin (8-digit) code, or `null` for "all". */
   area: string | null;
 }
 
@@ -148,7 +146,7 @@ export const DEFAULT_OPENING_SELECTION: OpeningSelection = { state: "all", area:
  * behaviour a page with no geography should have.
  */
 export const EMPTY_OPENING_ROSTERS: OpeningRosters =
-  { regions: [], subregions: [], areas: [] };
+  { regions: [], subregions: [], areas: [], subbasins: [] };
 
 /**
  * Whether the reader asked for a place at all.
@@ -198,7 +196,9 @@ export function openingSearchAnswered(search: string | null | undefined): boolea
     || (area !== null && isOpeningAreaCode(area));
 }
 
-export function openingSelectionFromSearch(search: string | null | undefined): OpeningSelection {
+export function openingSelectionFromSearch(
+  search: string | null | undefined, maxAreaWidth = AREA_WIDTH
+): OpeningSelection {
   // `+`, not `^\?`: a search string built by prefixing "?" onto something
   // that already had one -- unlikely by hand, easy by string concatenation
   // -- leaves more than one leading "?", and `URLSearchParams` only ever
@@ -210,7 +210,9 @@ export function openingSelectionFromSearch(search: string | null | undefined): O
   const area = params.get("area");
   return {
     state: state !== null && isUsStateCode(state) ? state : "all",
-    area: area !== null && isOpeningAreaCode(area) ? area : null
+    area: area !== null && isOpeningAreaCode(area)
+      ? area.slice(0, Math.min(area.length, maxAreaWidth))
+      : null
   };
 }
 
@@ -273,8 +275,8 @@ export function regionRosterFromReference(value: unknown): readonly DrainageArea
 }
 
 /**
- * The three rosters `resolveOpeningScope` narrows between: the five
- * regions, the published subregions and the published basins.
+ * The four rosters `resolveOpeningScope` narrows between: the five regions,
+ * published subregions and basins, and drought's published subbasins.
  *
  * `areas` is whatever `default_scope` names today -- 75 basins across the
  * west since ADR-063 -- not a literal `west-huc6`. The opening box this
@@ -287,6 +289,7 @@ export interface OpeningRosters {
   regions: readonly DrainageArea[];
   subregions: readonly DrainageArea[];
   areas: readonly DrainageArea[];
+  subbasins: readonly DrainageArea[];
 }
 
 /**
@@ -301,6 +304,7 @@ export interface OpeningRosters {
  * payload publishes.
  */
 const SUBREGION_LEVEL = 4;
+const SUBBASIN_LEVEL = 8;
 
 /**
  * `OpeningRosters`, fetched from the reference export in one request
@@ -328,6 +332,7 @@ export async function loadOpeningRosters(url?: string): Promise<OpeningRosters> 
   const value = await loadReference(url);
   const subregionGeography = referenceGeography(value, SUBREGION_LEVEL);
   const areaGeography = referenceGeography(value);
+  const subbasinGeography = referenceGeography(value, SUBBASIN_LEVEL, "drought");
   const subregionLevel = subregionGeography?.level ?? 0;
   if (subregionLevel && subregionLevel !== SUBREGION_LEVEL) {
     console.warn(
@@ -338,7 +343,10 @@ export async function loadOpeningRosters(url?: string): Promise<OpeningRosters> 
   return {
     regions: regionRosterFromReference(value),
     subregions: parseDrainageUnits(subregionGeography?.drainage, subregionLevel),
-    areas: parseDrainageUnits(areaGeography?.drainage, areaGeography?.level ?? 0)
+    areas: parseDrainageUnits(areaGeography?.drainage, areaGeography?.level ?? 0),
+    subbasins: subbasinGeography?.level === SUBBASIN_LEVEL
+      ? parseDrainageUnits(subbasinGeography.drainage, SUBBASIN_LEVEL)
+      : []
   };
 }
 
@@ -365,12 +373,12 @@ export interface OpeningScope {
   regions: readonly DrainageArea[];
   subregions: readonly DrainageArea[];
   areas: readonly DrainageArea[];
+  subbasins: readonly DrainageArea[];
   /**
-   * The basins the whole selection actually means -- `state` and every
-   * digit of `selection.area`, both applied. This is what a caller narrows
-   * reservoirs, snow sites and drought rows against (`withinOpeningArea`),
-   * and what `box` is built from. Never `regions` or `subregions` above,
-   * which stop one level short of this on purpose.
+   * The finest areas the whole selection actually means -- basins for a
+   * shared choice and subbasins for an eight-digit drought choice. This is
+   * what `box` is built from; filtering figures still uses the honoured
+   * prefix in `selection.area`.
    */
   chosenAreas: readonly DrainageArea[];
   /**
@@ -402,7 +410,7 @@ export interface OpeningScope {
  * `state`, never the reverse: `state` is applied to every roster first, and
  * `area`'s survival is checked against what state narrowing has left.
  *
- * Below `state`, region narrows subregion narrows basin -- the order
+ * Below `state`, region narrows subregion narrows basin narrows subbasin -- the order
  * `?area=` itself already expresses through its own width, since a shorter
  * code is a prefix of every longer code nested inside it (`HUC_CODE`'s
  * codes are fixed-width and nest). A four-digit selection is at once "this
@@ -417,15 +425,17 @@ export function resolveOpeningScope(
   const stateRegions = rosters.regions.filter((region) => areaReachesState(region, state));
   const stateSubregions = rosters.subregions.filter((subregion) => areaReachesState(subregion, state));
   const stateAreas = rosters.areas.filter((candidate) => areaReachesState(candidate, state));
+  const stateSubbasins = rosters.subbasins.filter((candidate) => areaReachesState(candidate, state));
 
-  /* Aliveness is checked against the finest roster regardless of the chosen
+  /* Aliveness is checked against the finest available roster regardless of the chosen
    * code's own width: a region or subregion prefix is alive exactly when
    * some basin beneath it survived the state narrowing, which is also the
    * right answer for a full six-digit code checked against itself. A code
    * that fails this is not narrowed to the nearest surviving ancestor --
    * it is dropped to "all", per the rule this module owes a test for. */
   const rawArea = selection.area;
-  const area = rawArea !== null && stateAreas.some((candidate) => candidate.huc6.startsWith(rawArea))
+  const finest = stateSubbasins.length > 0 ? stateSubbasins : stateAreas;
+  const area = rawArea !== null && finest.some((candidate) => candidate.huc6.startsWith(rawArea))
     ? rawArea
     : null;
 
@@ -435,6 +445,7 @@ export function resolveOpeningScope(
   // its own end.
   const regionPrefix = area !== null ? area.slice(0, REGION_WIDTH) : null;
   const subregionPrefix = area !== null ? area.slice(0, SUBREGION_WIDTH) : null;
+  const basinPrefix = area !== null ? area.slice(0, AREA_WIDTH) : null;
 
   const subregions = regionPrefix === null
     ? stateSubregions
@@ -442,24 +453,24 @@ export function resolveOpeningScope(
   const areas = subregionPrefix === null
     ? stateAreas
     : stateAreas.filter((candidate) => candidate.huc6.startsWith(subregionPrefix));
-  /* `areas` above is already narrowed to `subregionPrefix`, which is a
-   * prefix of `area` itself whenever `area` is longer than four digits, and
-   * *is* `area` exactly at two or four digits (see the slice comment
-   * above). So at every width but six, `areas` already equals what
-   * `chosenAreas` should be, and re-filtering `stateAreas` a second time
-   * from scratch -- once for the option list, once for the chosen set --
-   * would scan the same roster twice for the same answer. Only a full
-   * six-digit basin choice needs one more, cheaper pass, over the handful
-   * of siblings `areas` already narrowed to rather than the whole roster. */
+  const subbasins = basinPrefix === null
+    ? stateSubbasins
+    : stateSubbasins.filter((candidate) => candidate.huc6.startsWith(basinPrefix));
+  /* A choice through subregion width resolves against the basin list. A
+   * basin choice takes its one basin; an eight-digit drought choice takes
+   * its subbasin so the opening box is equally precise. */
   const chosenAreas = area === null || area.length <= SUBREGION_WIDTH
     ? areas
-    : areas.filter((candidate) => candidate.huc6.startsWith(area));
+    : area.length <= AREA_WIDTH
+      ? areas.filter((candidate) => candidate.huc6.startsWith(area))
+      : subbasins.filter((candidate) => candidate.huc6.startsWith(area));
 
   return {
     selection: { state, area },
     regions: stateRegions,
     subregions,
     areas,
+    subbasins,
     chosenAreas,
     box: unionOfAreaBoxes(chosenAreas) ?? MAP_BOUNDS
   };

@@ -46,7 +46,9 @@ const PORTABLE_ALIASES: Readonly<Record<string, string>> = { drainage: "area" };
  * dashboard still links to a clean address -- the same rule `url.ts`
  * follows, where a default is written as absence.
  */
-export function portableSearch(search: string | null | undefined): string {
+export function portableSearch(
+  search: string | null | undefined, maxAreaWidth = 6
+): string {
   const params = new URLSearchParams(String(search ?? "").replace(/^\?/, ""));
   const carried = new Map<string, string>();
   /* Canonical names first, then the aliases into whatever gap is left: a
@@ -65,6 +67,12 @@ export function portableSearch(search: string | null | undefined): string {
     const value = values[values.length - 1];
     if (value !== undefined) carried.set(name, value);
   }
+  const area = carried.get("area");
+  if (area !== undefined && /^\d+$/.test(area) && area.length > maxAreaWidth) {
+    carried.set("area", area.slice(0, maxAreaWidth));
+  }
+  const level = carried.get("level");
+  if (level !== undefined && Number(level) > maxAreaWidth) carried.delete("level");
   const parts = PORTABLE_PARAMS
     .filter((name) => carried.has(name))
     .map((name) => `${name}=${encodeURIComponent(carried.get(name) as string)}`);
@@ -75,4 +83,3 @@ export function portableSearch(search: string | null | undefined): string {
 export function linkHref(href: string, search: string): string {
   return search ? `${href}${search}` : href;
 }
-

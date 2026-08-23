@@ -26,6 +26,7 @@ import { sizeBasis } from "./data/rollup";
 import { stateName } from "./data/state-vocabulary";
 import type { Reservoir, ReservoirPayload } from "./types";
 import { methodsMarkup } from "./ui/methods-template";
+import { setupPlaceChooser } from "./ui/opening-splash";
 import { wireTheme } from "./ui/theme";
 import { formatAcreFeet, formatDate, formatPercent } from "./viz/format";
 import "./styles/methods.css";
@@ -36,6 +37,7 @@ if (!root) throw new Error("Missing #methods-app root");
 
 root.innerHTML = methodsMarkup(window.location.search);
 wireTheme();
+void setupPlaceChooser();
 
 /**
  * The one live fact on the page: when the data was published, and how many

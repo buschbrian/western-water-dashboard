@@ -145,6 +145,9 @@ export interface ReferenceGeography {
   drainage: unknown;
 }
 
+/** Which surface's published level offer to read from the shared export. */
+export type GeographySurface = "shared" | "drought";
+
 /**
  * The two collections the maps draw, taken from the reference export.
  *
@@ -155,7 +158,7 @@ export interface ReferenceGeography {
  * geography, and the two would eventually disagree.
  */
 export function referenceGeography(
-  value: unknown, wanted?: number
+  value: unknown, wanted?: number, surface: GeographySurface = "shared"
 ): ReferenceGeography | null {
   if (!isObject(value) || value.schema_version !== REFERENCE_SCHEMA_VERSION) return null;
   const geography = isObject(value.geography) ? value.geography : null;
@@ -166,7 +169,8 @@ export function referenceGeography(
    * (ADR-064). A client scanning the scopes for one at the right level would
    * find `utah-connected` or `west-huc6` by dictionary order, which is a
    * geography chosen by accident. */
-  const offered = isObject(watersheds?.drawn_scopes) ? watersheds.drawn_scopes : {};
+  const offeredField = surface === "drought" ? watersheds?.drought_scopes : watersheds?.drawn_scopes;
+  const offered = isObject(offeredField) ? offeredField : {};
   const levels = Object.entries(offered)
     .filter(([key, name]) => typeof name === "string" && Number.isInteger(Number(key))
       && !!scopes && isObject(scopes[name]))
@@ -270,19 +274,23 @@ export interface DrainageScope {
  */
 export const JOINABLE_LEVELS: readonly number[] = [2, 4, 6];
 
+/** Drought publishes the same coverage method for subbasins as well. */
+export const DROUGHT_JOINABLE_LEVELS: readonly number[] = [2, 4, 6, 8];
+
 /** Where every map opens, and what a reader who chooses nothing gets. */
 export const DEFAULT_LEVEL = 6;
 
 export async function loadDrainageScope(
-  level?: number, url = REFERENCE_URL
+  level?: number, url = REFERENCE_URL, surface: GeographySurface = "shared"
 ): Promise<DrainageScope> {
-  const geography = referenceGeography(await loadReference(url), level);
+  const geography = referenceGeography(await loadReference(url), level, surface);
   const drawn = geography?.level ?? 0;
   const areas = parseDrainageUnits(geography?.drainage, drawn);
-  if (drawn && !JOINABLE_LEVELS.includes(drawn)) {
+  const joinable = surface === "drought" ? DROUGHT_JOINABLE_LEVELS : JOINABLE_LEVELS;
+  if (drawn && !joinable.includes(drawn)) {
     console.warn(
       `The published scope is at hydrologic level ${drawn}, and this site's ` +
-      `figures exist at ${JOINABLE_LEVELS.join(" and ")}. The areas will draw ` +
+      `figures exist at ${joinable.join(" and ")}. The areas will draw ` +
       "and their numbers will not join.");
   }
   return { level: drawn, areas };
@@ -296,9 +304,12 @@ export async function loadDrainageScope(
  * answer. An export offering none leaves the reader with the default alone,
  * which is the state this site was in before ADR-064.
  */
-export async function loadOfferedLevels(url = REFERENCE_URL): Promise<number[]> {
-  const geography = referenceGeography(await loadReference(url));
+export async function loadOfferedLevels(
+  url = REFERENCE_URL, surface: GeographySurface = "shared"
+): Promise<number[]> {
+  const geography = referenceGeography(await loadReference(url), undefined, surface);
+  const joinable = surface === "drought" ? DROUGHT_JOINABLE_LEVELS : JOINABLE_LEVELS;
   const offered = (geography?.levels ?? []).filter(
-    (level) => JOINABLE_LEVELS.includes(level));
+    (level) => joinable.includes(level));
   return offered.length > 1 ? offered : [];
 }

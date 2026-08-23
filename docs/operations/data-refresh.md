@@ -20,9 +20,10 @@ scripts/refresh-daily.sh          # everything, exactly as the workflow does
 2. **Drought polygons** — `tools/fetch_drought_monitor.py`. A failure keeps the
    last verified GeoJSON; it must not block current reservoir readings.
 3. **Drought coverage, once per offered level** —
-   `tools/compute_drought_coverage.py` for HUC-6 (with history) and HUC-4
-   (`--no-history`). Both are computed from the one download, so either failing
-   means both are suspect and the polygons are reverted.
+   `tools/compute_drought_coverage.py` for HUC-2, HUC-4 and HUC-6 (with one
+   archive per level), and HUC-8 with `--no-history`. All are computed from
+   the one download, so one failing means all are suspect and the polygons
+   are reverted.
 4. **Pair check** — `tools/check_drought_pair.py`. If any coverage file
    disagrees with the polygons, every drought file is restored from the last
    commit. Publishing yesterday's week is a small honest loss; publishing two
@@ -58,7 +59,7 @@ into the issue, and four leading spaces is a Markdown code block.
 - Nothing is deleted on a bad day; the previous verified file stays.
 - A withdrawal notice carries no measurement. The validator rejects one that
   does.
-- The two drought levels always describe one week. `check_drought_pair.py`
+- The four drought levels always describe one week. `check_drought_pair.py`
   globs every coverage file, because a reader who changes the level fetches a
   different one.
 

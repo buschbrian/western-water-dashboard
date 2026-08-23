@@ -1,4 +1,4 @@
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -112,6 +112,26 @@ const oldUnexplainedTerms = [
 ];
 
 describe("user text", () => {
+  it("does not transform visible text in CSS", async () => {
+    const publishedPages = [
+      "index.html", "modern.html", "overview.html", "snow.html", "drought.html",
+      "methods.html", "data.html", "reservoir.html", "terms.html", "explore.html",
+      "legacy/index.html", "maplibre/index.html"
+    ];
+    const styleFiles = (await readdir(resolve(root, "src/styles")))
+      .filter((file) => file.endsWith(".css"))
+      .map((file) => `src/styles/${file}`);
+    const sources = await Promise.all([...publishedPages, ...styleFiles].map(async (file) => ({
+      file,
+      text: await readFile(resolve(root, file), "utf8")
+    })));
+    const found = sources
+      .filter(({ text }) => /\btext-transform\s*:/.test(text))
+      .map(({ file }) => file);
+
+    expect(found).toEqual([]);
+  });
+
   it("does not restore the old unexplained terms", async () => {
     const sources = await Promise.all(userTextFiles.map(async (file) => ({
       file,

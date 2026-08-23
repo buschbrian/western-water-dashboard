@@ -19,11 +19,22 @@ import "@esri/calcite-components/components/calcite-loader";
 import "@esri/calcite-components/components/calcite-navigation";
 
 import { installAnonymousAuthPolicy } from "./arcgis/basemaps";
-import { loadReferenceBoundaries } from "./arcgis/reference-layers";
+import {
+  loadReferenceBoundaries,
+  loadSnowSiteReferenceLayer,
+  REFERENCE_LOAD_TIMEOUT_MS,
+  SNOW_SITE_REFERENCE_LAYER_ID
+} from "./arcgis/reference-layers";
 
-import { loadDrainageScope, loadOfferedLevels, type DrainageScope } from "./data/boundaries";
+import {
+  DROUGHT_JOINABLE_LEVELS,
+  loadDrainageScope,
+  loadOfferedLevels,
+  type DrainageScope
+} from "./data/boundaries";
 import { loadDroughtCoverage } from "./data/drought-load";
 import { loadReservoirs } from "./data/load";
+import { loadSnowSiteInventory } from "./data/snow-sites-load";
 import { loadUsdmPolygons } from "./data/usdm-load";
 import {
   areaAtLevel,
@@ -72,11 +83,15 @@ import { placeInSlot } from "./ui/dom";
 import { createLevelControl } from "./ui/level-control";
 import { createDrainageMenu, createWhereMenu } from "./ui/where-control";
 import { nextSelectionForState } from "./ui/where-control-model";
-import { renderDroughtScatter } from "./viz/drought-scatter";
+import {
+  DROUGHT_SCATTER_FALLBACK_WIDTH,
+  renderDroughtScatter
+} from "./viz/drought-scatter";
 import { renderDroughtGap } from "./viz/drought-gap";
 import { renderDroughtChange } from "./viz/drought-change";
 import { CHANGE_CLASSES, changeColor, changeLabel } from "./viz/change-classes";
 import { renderDroughtSeverity } from "./viz/drought-severity";
+import { renderResponsiveChart, stopResponsiveChart } from "./viz/responsive";
 import type { DroughtCoveragePayload, Reservoir } from "./types";
 import { createDroughtMap } from "./ui/drought-map";
 import { RESERVOIR_REFERENCE_LAYER_ID } from "./ui/layers";
@@ -87,6 +102,7 @@ import {
   mapExtentFromBox
 } from "./viz/extent";
 import { brandMarkup, pageLinksMarkup, updatePageLinks } from "./ui/page-header";
+import { setupPlaceChooser } from "./ui/opening-splash";
 import { wireTheme } from "./ui/theme";
 import { DROUGHT_CLASSES, NO_DROUGHT_LABEL } from "./viz/drought-classes";
 import { formatDate, formatPercent } from "./viz/format";
@@ -111,6 +127,7 @@ root.innerHTML = `
     <section id="drought-content" aria-live="polite"><calcite-loader label="Loading drought conditions"></calcite-loader></section>
   </main>`;
 wireTheme();
+void setupPlaceChooser();
 
 /**
  * What a reader's `?state=` and `?area=` selection resolved to (slice S3c,
@@ -161,6 +178,7 @@ async function resolveOpening(selection: OpeningSelection): Promise<OpeningConte
  */
 const REGION_CODE_WIDTH = 2;
 const SUBREGION_CODE_WIDTH = 4;
+const SUBBASIN_CODE_WIDTH = 8;
 
 /**
  * The name of the region, subregion or basin a reader's `?area=` named, read
@@ -173,6 +191,7 @@ function chosenAreaName(area: string | null, rosters: OpeningRosters): string | 
   if (area === null) return null;
   const roster = area.length === REGION_CODE_WIDTH ? rosters.regions
     : area.length === SUBREGION_CODE_WIDTH ? rosters.subregions
+    : area.length === SUBBASIN_CODE_WIDTH ? rosters.subbasins
     : rosters.areas;
   return roster.find((candidate) => candidate.huc6 === area)?.name ?? null;
 }
@@ -252,8 +271,8 @@ function renderDrought(
    * opening a row, now that there are 75 areas rather than the fourteen the
    * old comment here was written against. Built from whichever published
    * roster tier this page is drawing -- regions at level two, subregions at
-   * four, basins at six -- rather than from `opening.scope.chosenAreas` (always the basin
-   * tier): `DroughtUnit` carries no `states` of its own, so `areaReachesState`
+   * four, basins at six and subbasins at eight -- rather than from
+   * `opening.scope.chosenAreas`: `DroughtUnit` carries no `states` of its own, so `areaReachesState`
    * has to run against the roster that does, at the width the units
    * themselves are published at, or a level-four unit would need to be
    * matched against six-digit codes it can never equal. `null` -- rather
@@ -265,6 +284,7 @@ function renderDrought(
     ? new Set(
         (level === REGION_CODE_WIDTH ? opening.rosters.regions
           : level === SUBREGION_CODE_WIDTH ? opening.rosters.subregions
+          : level === SUBBASIN_CODE_WIDTH ? opening.rosters.subbasins
           : opening.rosters.areas)
           .filter((area) => areaReachesState(area, openingSelection.state)
             && withinOpeningArea(area.huc6, levelArea))
@@ -306,6 +326,7 @@ function renderDrought(
          starts, because a toggle with nothing behind it is furniture. -->
     <section class="map-controls" id="drought-map-controls" aria-label="What the map shows" hidden>
       <label class="filterbar-toggle" for="drought-show-reservoirs">Show reservoirs<input id="drought-show-reservoirs" type="checkbox" /></label>
+      <label class="filterbar-toggle" id="drought-snow-sites-control" for="drought-show-snow-sites" hidden>Show snowpack sites<input id="drought-show-snow-sites" type="checkbox" /></label>
       <div class="control-slot" data-slot="map-mode"></div>
     </section>
     <section class="dashboard-filterbar mobile-filterbar" aria-labelledby="drought-filter-heading">
@@ -620,7 +641,7 @@ function renderDrought(
      * out is stated under the chart rather than silently dropped. */
     const points = storageAgainstDrought(ordered, storage);
     if (scatterHost) {
-      const chart = renderDroughtScatter(points, {
+      const scatterOptions = {
         drynessLabel: `${dryness.label.toLowerCase()} (${dryness.code})`,
         ariaLabel: `Each drainage area by how much of its land is in ` +
           `${dryness.label.toLowerCase()} or worse and how full its reservoirs ` +
@@ -633,7 +654,7 @@ function renderDrought(
          * narrowed to, never one selected before that narrowing and then
          * filtered away. */
         highlight: levelArea
-      });
+      };
       const missing = ordered.length - points.length;
       const note = document.createElement("p");
       note.className = "drought-chart-note";
@@ -642,8 +663,16 @@ function renderDrought(
           `${missing} ${missing === 1 ? "has" : "have"} no reservoir reading to ` +
           "compare against."
         : `All ${points.length} areas shown have a reservoir reading.`;
-      if (chart) scatterHost.replaceChildren(chart, note);
-      else {
+      if (points.length > 0) {
+        renderResponsiveChart(scatterHost, (width) => {
+          const chart = renderDroughtScatter(points, scatterOptions, width);
+          if (chart) scatterHost.replaceChildren(chart, note);
+        }, {
+          fallbackWidth: DROUGHT_SCATTER_FALLBACK_WIDTH,
+          minimumWidth: 140
+        });
+      } else {
+        stopResponsiveChart(scatterHost);
         scatterHost.replaceChildren(mapStatusNote(
           "No area in view has a reservoir reading to compare against."));
       }
@@ -802,7 +831,7 @@ function renderDrought(
    * page, because which levels are on offer is the export's answer to give
    * (ADR-064) and it is the same request the map below already makes. A
    * reader who never waits for it sees the page they asked for. */
-  void loadOfferedLevels().then((offered) => {
+  void loadOfferedLevels(undefined, "drought").then((offered) => {
     const control = createLevelControl(offered, level, (chosen) => {
       /* A full navigation rather than a re-render: the level changes which
        * file this page fetches and every figure computed from it, so the
@@ -869,7 +898,8 @@ function renderDrought(
       if (pick.kind !== "state") return;
       navigateWithPlace(nextSelectionForState(openingSelection, opening.rosters, pick.value));
     }, { scale: "l" });
-    const drainage = createDrainageMenu(opening.rosters, openingSelection, navigateWithPlace, { scale: "l" });
+    const drainage = createDrainageMenu(
+      opening.rosters, openingSelection, navigateWithPlace, { scale: "l", maxLevel: 8 });
     const whereHost = content.querySelector<HTMLElement>(".filterbar-controls");
     if (whereHost) {
       if (where) placeInSlot(whereHost, "where", where.element);
@@ -911,7 +941,11 @@ function renderDrought(
       legend.classList.remove("map-inset-legend");
       mapHost.append(legend);
       window.__droughtReady = {
-        ...(window.__droughtReady ?? {}), mapClassesDrawn: 0, mapOutlines: 0
+        ...(window.__droughtReady ?? {}),
+        mapClassesDrawn: 0,
+        mapOutlines: 0,
+        mapSnowSites: 0,
+        mapSnowSitesShown: false
       } as NonNullable<typeof window.__droughtReady>;
     };
     try {
@@ -920,8 +954,18 @@ function renderDrought(
        * -- they come from hosted services and resolve to null rather than
        * throwing, so a slow or missing state layer costs outlines and never
        * the map. */
-      const [drainageScope, usdm, boundaries] = await Promise.all(
-        [loadDrainageScope(level), loadUsdmPolygons(), loadReferenceBoundaries()]);
+      const snowSiteLayer = loadSnowSiteInventory(REFERENCE_LOAD_TIMEOUT_MS)
+        .then((inventory) => loadSnowSiteReferenceLayer(inventory.sites))
+        .catch((error: unknown) => {
+          console.warn("Snowpack sites could not be added to the drought map:", error);
+          return null;
+        });
+      const [drainageScope, usdm, boundaries, snowSites] = await Promise.all([
+        loadDrainageScope(level, undefined, "drought"),
+        loadUsdmPolygons(),
+        loadReferenceBoundaries(),
+        snowSiteLayer
+      ]);
       /* A technical failure -- the export or the boundary service came back
        * empty -- checked against the *unnarrowed* roster, before a chosen
        * place ever gets a chance to explain an empty list honestly instead. */
@@ -948,7 +992,11 @@ function renderDrought(
         legend.classList.remove("map-inset-legend");
         mapHost.append(legend);
         window.__droughtReady = {
-          ...(window.__droughtReady ?? {}), mapClassesDrawn: 0, mapOutlines: 0
+          ...(window.__droughtReady ?? {}),
+          mapClassesDrawn: 0,
+          mapOutlines: 0,
+          mapSnowSites: 0,
+          mapSnowSitesShown: false
         } as NonNullable<typeof window.__droughtReady>;
         return;
       }
@@ -999,7 +1047,8 @@ function renderDrought(
       const mapController = await createDroughtMap(
         mapElement, card, scope, usdm, reservoirs,
         { units: scopedUnits, storage: storage ?? new Map(), changes: mapChanges },
-        boundaries);
+        boundaries,
+        snowSites);
       const mapStatus = mapController.status;
       // After the component has claimed the host, never before.
       mapHost.append(legend);
@@ -1023,6 +1072,8 @@ function renderDrought(
        * not belong in a shared link beside `?state=` and `?area=`. */
       const reservoirLayer = mapElement.map?.findLayerById(
         RESERVOIR_REFERENCE_LAYER_ID);
+      const snowSiteReferenceLayer = mapElement.map?.findLayerById(
+        SNOW_SITE_REFERENCE_LAYER_ID);
       /* The toggles are declared markup in `.map-controls` above the bar,
        * hidden until the map starts; this only wires them. A Calcite switch
        * was tried for the checkbox and axe-core refused it: the component's
@@ -1041,6 +1092,20 @@ function renderDrought(
           if (reservoirLayer) reservoirLayer.visible = shown;
           window.__droughtReady = {
             ...(window.__droughtReady ?? {}), mapReservoirsShown: shown
+          } as NonNullable<typeof window.__droughtReady>;
+        });
+      }
+      const snowSitesControl = content.querySelector<HTMLElement>(
+        "#drought-snow-sites-control");
+      const snowSitesSwitch = content.querySelector<HTMLInputElement>(
+        "#drought-show-snow-sites");
+      if (snowSiteReferenceLayer && snowSitesSwitch) {
+        snowSitesControl?.removeAttribute("hidden");
+        snowSitesSwitch.addEventListener("change", () => {
+          const shown = snowSitesSwitch.checked;
+          snowSiteReferenceLayer.visible = shown;
+          window.__droughtReady = {
+            ...(window.__droughtReady ?? {}), mapSnowSitesShown: shown
           } as NonNullable<typeof window.__droughtReady>;
         });
       }
@@ -1100,6 +1165,8 @@ function renderDrought(
         mapReservoirs: mapStatus.reservoirs,
         mapReservoirLabels: mapStatus.reservoirLabels,
         mapReservoirsShown: mapStatus.reservoirsShown,
+        mapSnowSites: mapStatus.snowSites,
+        mapSnowSitesShown: mapStatus.snowSitesShown,
         mapStateBoundaries: mapStatus.stateBoundaries,
         mapCountyBoundaries: mapStatus.countyBoundaries,
         mapBasemap: mapStatus.basemap,
@@ -1114,7 +1181,7 @@ function renderDrought(
   })();
 }
 
-const level = levelFromSearch(window.location.search);
+const level = levelFromSearch(window.location.search, DROUGHT_JOINABLE_LEVELS);
 /* Read once, here, rather than inside `resolveOpening`: this is the
  * *requested* selection and stays available to `renderDrought` even when
  * resolving it against the reference export fails, which is what lets the
@@ -1125,7 +1192,7 @@ const level = levelFromSearch(window.location.search);
    * otherwise, and everywhere when neither did (`resolveOpeningPlace`). The
    * stored choice is never written back into the address bar: what a reader
    * copies should be what they are looking at, not what they prefer. */
-const requestedPlace = resolveOpeningPlace(window.location.search, readStoredPlace());
+const requestedPlace = resolveOpeningPlace(window.location.search, readStoredPlace(), 8);
 const requestedSelection = requestedPlace.selection;
 
 try {

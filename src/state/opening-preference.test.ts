@@ -68,12 +68,25 @@ describe("which answer wins", () => {
     expect(place.source).toBe("link");
     expect(place.selection).toEqual({ state: "all", area: "14" });
   });
+
+  it("keeps a subbasin on drought and coarsens it on shared surfaces", () => {
+    const stored = { state: "all", area: "14020001" };
+    expect(resolveOpeningPlace("?area=14020001", stored).selection.area).toBe("140200");
+    expect(resolveOpeningPlace("?area=14020001", stored, 8).selection.area).toBe("14020001");
+    expect(resolveOpeningPlace("", stored).selection.area).toBe("140200");
+    expect(resolveOpeningPlace("", stored, 8).selection.area).toBe("14020001");
+  });
 });
 
 describe("what is remembered", () => {
   it("round-trips a place", () => {
     writeStoredPlace({ state: "CO", area: "1401" });
     expect(readStoredPlace()).toEqual({ state: "CO", area: "1401" });
+  });
+
+  it("round-trips a drought subbasin", () => {
+    writeStoredPlace({ state: "CO", area: "14020001" });
+    expect(readStoredPlace()).toEqual({ state: "CO", area: "14020001" });
   });
 
   it("stores no preference as no key, not as a value", () => {

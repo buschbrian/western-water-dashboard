@@ -168,12 +168,20 @@ Each was found by a failing test or a screenshot. Do not regress them.
   happens after the data loads. A gutter cannot be late.
 - The card's height is **measured against the legend**, not capped at a
   constant, and needs `border-box` plus a `ResizeObserver`.
+- **Hand-built SVG charts use the host's measured width as their viewBox
+  width.** A fixed 640-unit viewBox scaled to a wide card enlarges type,
+  padding and row height with the marks. `src/viz/responsive.ts` redraws
+  within a fixed deadline so one SVG unit stays one CSS pixel and clears the
+  host's busy state on every exit.
 - Grid and flex children carrying unbreakable controls need `min-width: 0`, or
   one `<select>` widens the whole page by a platform-dependent amount.
 - **`calcite-navigation` clips, it does not scroll.** An overflowing header
   never widens the page, so a `scrollWidth` check cannot see it — it amputates
   the controls on the end of the bar. The smoke test measures each control's
   box against the viewport.
+- **The place chooser is site navigation.** Every shared header exposes
+  **Choose another place** directly at wide widths and inside the existing
+  page menu on phones. The storage analysis panel has no duplicate control.
 - **A `calcite-sheet` takes its height from `--calcite-sheet-height`.**
   `--calcite-sheet-max-height` only caps it.
 - **`ResizeObserver` needs a render loop.** Its callbacks arrive with the
@@ -185,19 +193,20 @@ Each was found by a failing test or a screenshot. Do not regress them.
 
 ## Filters
 
-**The geographic filters narrow each other, coarsest first.** State holds
-subregion holds drainage area, and each control is repopulated from what the
-ones above it leave. A selection that survives the narrowing is kept; one that
-does not falls back to "all" rather than silently filtering to nothing.
-Repopulating a `<select>` must preserve the reader's choice when it is still
-on offer, or the control resets on every keystroke.
+**A page has two geographic axes.** Where holds state and, on the storage
+surfaces that have reviewed FIPS data, county. Drainage area holds region,
+subregion and basin as three shared tiers of one choice (ADR-084). Drought
+adds a fourth, subbasin tier (ADR-088). The chosen state
+narrows both menus; a drainage choice that no longer reaches that state falls
+back to every area rather than silently filtering to nothing. Repopulating a
+menu must preserve the reader's choice while it is still on offer, or the
+control resets on every keystroke.
 
-**The hierarchy is stated in the menus themselves** (ADR-076). Place choices
-render as indented option groups — `calcite-option-group` in the where
-control, `optgroup` in the charts' filter bar: basins under their subregion,
-subregions under their region, counties under their state. Chosen over
-flyout submenus by measurement at 360px; the county row no longer carries a
-`, ST` suffix because its group heading carries the state instead (the key
+**The hierarchy is stated in the menus themselves** (ADR-076, ADR-084). Place
+choices render as indented `calcite-option-group` rows: basins under their
+subregion, subregions under their region, counties under their state. Chosen
+over flyout submenus by measurement at 360px; the county row no longer carries
+a `, ST` suffix because its group heading carries the state instead (the key
 is still the FIPS code, per ADR-058 as amended). The builders sort so
 same-group rows are contiguous — consecutive equal group labels form one
 heading, so an unsorted list would draw a heading twice.

@@ -246,6 +246,24 @@ export interface SnowSite {
   series: SnowSeriesRow[];
 }
 
+/** One reviewed station in `snow_sites.json`.
+ *
+ * The inventory deliberately stops before the daily reading fields carried
+ * by `SnowSite`: the drought map needs only stable point context, and should
+ * not fetch the much larger daily snow payload to say where a station is. */
+export type SnowSiteInventorySite = Pick<
+  SnowSite, "station" | "name" | "state" | "county" | "lat" | "lon" |
+  "elevation_feet" | "begins" | "huc6" | "huc6_name" | "provider_huc6"
+>;
+
+/** The small, reviewed station inventory used by optional reference layers. */
+export interface SnowSiteInventoryPayload {
+  schema_version: number;
+  retrieved: string;
+  site_count: number;
+  sites: SnowSiteInventorySite[];
+}
+
 export interface SnowRollupDay {
   date: string;
   reporting_site_count: number;

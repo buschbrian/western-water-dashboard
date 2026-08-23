@@ -30,7 +30,7 @@
  */
 
 import { HUC_CODE } from "../data/huc";
-import type { ReservoirGeography, LakePowellChoice } from "../data/rollup";
+import type { LakePowellChoice } from "../data/rollup";
 import type { ChartMeasure, ChartRank, OverviewCadence, OverviewSort } from "../overview-model";
 import { STORAGE_CLASSES } from "../viz/classes";
 
@@ -42,7 +42,6 @@ const OVERVIEW_PARAMS = {
   subregion: "huc4",
   county: "county",
   reporting: "reporting",
-  geography: "reservoirs",
   lakePowell: "powell",
   lakeMead: "mead",
   storageClass: "storage",
@@ -65,7 +64,9 @@ type OverviewField = keyof typeof OVERVIEW_PARAMS;
 const OVERVIEW_FIELDS = Object.keys(OVERVIEW_PARAMS) as OverviewField[];
 const OVERVIEW_OWNED_PARAMS = new Set<string>([
   ...OVERVIEW_FIELDS.map((field) => OVERVIEW_PARAMS[field]),
-  ...Object.values(MAP_FILTER_PARAMS)
+  ...Object.values(MAP_FILTER_PARAMS),
+  /* ADR-087: the retired scope is ignored and stripped on canonical write. */
+  "reservoirs"
 ]);
 
 export interface OverviewUrlState {
@@ -79,7 +80,6 @@ export interface OverviewUrlState {
   /** A five-digit county FIPS code, or "all". Never a county name. */
   county: string;
   reporting: OverviewCadence;
-  geography: ReservoirGeography;
   lakePowell: LakePowellChoice;
   /** Lake Mead's own control (ADR-062). Included by default, like Powell. */
   lakeMead: LakePowellChoice;
@@ -99,10 +99,6 @@ export const DEFAULT_OVERVIEW_STATE: OverviewUrlState = {
   subregion: "all",
   county: "all",
   reporting: "all",
-  /* Every reservoir, matching the storage map. See `state/url.ts` for why
-   * this moved: a default of Utah's waterbodies hid two thirds of the site's
-   * own subject once the roster went west. */
-  geography: "connected",
   /* Included, and absence means so. The storage map's `DEFAULT_URL_STATE`
    * carries the argument; the two pages share a scope a reader can carry
    * between them, so they cannot disagree about what an unset switch means. */
@@ -184,8 +180,6 @@ export function overviewStateFromSearch(search: string | null | undefined): Over
       state.reporting = oneOf(value, ["all", "daily", "monthly", "late"] as const, "all");
     } else if (key === MAP_FILTER_PARAMS.reporting) {
       state.reporting = value === "true" ? "late" : "all";
-    } else if (key === OVERVIEW_PARAMS.geography) {
-      state.geography = oneOf(value, ["utah", "connected"] as const, "connected");
     } else if (key === OVERVIEW_PARAMS.lakePowell) {
       state.lakePowell = oneOf(value, ["include", "exclude"] as const, "include");
     } else if (key === OVERVIEW_PARAMS.lakeMead) {
@@ -234,7 +228,6 @@ export function searchWithOverviewState(
   if (full.subregion !== "all") write("subregion", full.subregion);
   if (full.county !== "all") write("county", full.county);
   if (full.reporting !== "all") write("reporting", full.reporting);
-  if (full.geography !== "connected") write("geography", full.geography);
   if (full.lakePowell !== "include") write("lakePowell", full.lakePowell);
   if (full.lakeMead !== "include") write("lakeMead", full.lakeMead);
   if (full.storageClass !== null) write("storageClass", String(full.storageClass));

@@ -392,6 +392,15 @@ def build_watershed_sections() -> dict:
             raise ValueError(
                 f"{name!r} is offered as a drawn level and is not published, so its "
                 "roster would be missing from this file")
+    for level, name in watershed_scopes.DROUGHT_DRAWN_SCOPES.items():
+        scope = watershed_scopes.get_scope(name)
+        if scope.level != level:
+            raise ValueError(
+                f"{name!r} is registered at level {scope.level} and offered at {level}")
+        if not scope.published:
+            raise ValueError(
+                f"{name!r} is offered as a drought level and is not published, so its "
+                "roster would be missing from this file")
 
     scopes = {}
     for name, scope in sorted(watershed_scopes.SCOPES.items()):
@@ -454,6 +463,12 @@ def build_watershed_sections() -> dict:
         # behind it is a control that empties the map.
         "drawn_scopes": {str(level): name
                          for level, name in sorted(watershed_scopes.DRAWN_SCOPES.items())},
+        # Drought alone can answer at HUC-8 today (ADR-088). A separate map
+        # keeps the shared storage and snow offer honest while publishing the
+        # finer roster through the same reference contract.
+        "drought_scopes": {str(level): name
+                           for level, name in sorted(
+                               watershed_scopes.DROUGHT_DRAWN_SCOPES.items())},
         "scopes": scopes,
     }
 

@@ -97,15 +97,16 @@ function check(condition, message) {
 }
 
 const payload = JSON.parse(await readFile(path.join(REPO_ROOT, "reservoirs.json"), "utf8"));
+const snowSiteInventory = JSON.parse(
+  await readFile(path.join(REPO_ROOT, "snow_sites.json"), "utf8"));
 /* The scope the shell draws, computed the way src/main.ts computes it: every
  * published reservoir, both dominant ones included, because both switches
  * now open on (ADR-011, ADR-062 -- still controls, started the other way).
  * Derived from the payload rather than written down, so the morning refresh
  * cannot turn this red on its own.
  *
- * It was the waterbodies touching Utah until the roster went west. That
- * default was hiding two thirds of the site's own subject, and the geography
- * control still offers the narrower reading one choice away. */
+ * It was the waterbodies touching Utah until the roster went west. The old
+ * geography control is retired; state choices now live only in Where. */
 const isDominantReservoir = (reservoir) =>
   [509, 6124].includes(reservoir.rise_item_id) ||
   ["lake powell", "lake mead"].includes(reservoir.name.trim().toLowerCase());
@@ -262,8 +263,8 @@ const stateRows = filterState
  *
  * The charts page builds its subregion and drainage-area lists from the
  * widest scope on purpose: those controls answer "where can a reader go",
- * which is a question about the roster, while the geography select and the
- * two dominant-reservoir switches answer "what is in the total". A list
+ * which is a question about the roster, while the two dominant-reservoir
+ * switches answer "what is in the total". A list
  * built from the narrowed set changes shape under the very switch it is
  * meant to be steady beneath -- at the default load that lost four drainage
  * areas including Lake Powell's own. The state and county lists have always
@@ -573,6 +574,43 @@ const browser = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
   check(closed.display === "none" && closed.rectangles === 0,
     `${label}: the closed chooser remains visible (${closed.display}, `
       + `${closed.rectangles} layout rectangle(s))`);
+
+  /* At phone width the explicit entry point lives in the page menu. Reopen
+   * it, change subjects, and choose a state: the destination must contain
+   * only the new place, not the page state the chooser opened over. */
+  await tab.locator("#page-menu-trigger").click();
+  await tab.locator("#menu-place-chooser").click();
+  await tab.waitForSelector("dialog.opening-splash[open]", { timeout: 5000 });
+  await tab.getByRole("radio", { name: "Storage charts" }).check();
+  await tab.locator("dialog.opening-splash .splash-place-list .splash-place").first().click();
+  await tab.waitForURL(/overview\.html\?state=[A-Z]{2}$/, { timeout: 60000 });
+  check(!/[?&](class|late|reservoir|sort)=/.test(tab.url()),
+    `${label}: the reset destination kept page-owned state (${tab.url()})`);
+  await context.close();
+}
+
+/* Wide screens expose the same chooser directly in the shared header. A
+ * documentation page is the useful case: it has no analysis panel to fall
+ * back to, so a live direct action proves the chooser is genuinely global. */
+{
+  const context = await browser.newContext({ viewport: VIEWPORTS[0] });
+  const tab = await context.newPage();
+  const label = "Header place chooser (wide)";
+  console.log(`\n=== ${label}`);
+  await tab.goto(`${URL}methods.html?sort=name`,
+    { waitUntil: "domcontentloaded", timeout: 60000 });
+  await tab.waitForFunction(() =>
+    !document.querySelector("#place-chooser-trigger")?.hasAttribute("hidden"),
+  { timeout: 90000 });
+  check(await tab.locator("#place-chooser-trigger").isVisible(),
+    `${label}: the direct header action is not visible`);
+  await tab.locator("#place-chooser-trigger").click();
+  await tab.waitForSelector("dialog.opening-splash[open]", { timeout: 5000 });
+  await tab.getByRole("radio", { name: "Drought" }).check();
+  await tab.getByRole("button", { name: "Show the whole west" }).click();
+  await tab.waitForURL(/drought\.html\?state=all$/, { timeout: 60000 });
+  check(!/[?&]sort=/.test(tab.url()),
+    `${label}: the chooser did not reset the old page query (${tab.url()})`);
   await context.close();
 }
 
@@ -799,7 +837,7 @@ for (const viewport of VIEWPORTS) {
       return {
         menu: shown("#page-menu"),
         buttons: ["#overview-link", "#snow-link", "#drought-link", "#methods-link"].filter(shown),
-        menuItems: [...document.querySelectorAll("#page-menu calcite-dropdown-item")]
+        menuItems: [...document.querySelectorAll("#page-menu calcite-dropdown-item[href]")]
           .map((item) => item.getAttribute("href")),
         buttonHrefs: ["#overview-link", "#snow-link", "#drought-link", "#methods-link"]
           .map((selector) => document.querySelector(selector)?.getAttribute("href"))
@@ -858,46 +896,8 @@ for (const viewport of VIEWPORTS) {
     check(await tab.locator(`${controls} [data-large-reservoir="powell"]`).isVisible()
       && await tab.locator(`${controls} [data-large-reservoir="mead"]`).isVisible(),
     `${label}: the whole-West view does not offer both large reservoirs`);
-    /* Both of ADR-011's dimensions are the reader's to choose. The map opens
-     * on every published reservoir now, so the dimension to exercise is the
-     * *narrowing* one -- Utah's waterbodies alone. It was the other way round
-     * while the roster was Utah's and the wider reading was the one a reader
-     * could not reach. */
-    const wider = await tab.evaluate(async (selector) => {
-      const geography = document.querySelector(`${selector} [data-scope="geography"]`);
-      geography.value = "utah";
-      geography.dispatchEvent(new CustomEvent("calciteSelectChange", { bubbles: true }));
-      await new Promise((resolve) => { setTimeout(resolve, 900); });
-      return {
-        drawn: window.__dashboardReady.drawn,
-        geography: window.__dashboardReady.geography,
-        selectionOnTop: window.__dashboardReady.selectionOnTop,
-        drainageLabelsDeconflicted:
-          window.__dashboardReady.drainageLabelsDeconflicted,
-        search: window.location.search
-      };
-    }, controls);
-    check(wider.geography === "utah",
-      `${label}: the geography control did not narrow the scope`);
-    /* The selection ring is added over the reservoirs on the first draw and
-     * has to stay there through every redraw the scope control causes. It
-     * was added to the map once, so it sat above the opening layer and
-     * below each layer that replaced it, and no counted field could tell. */
-    check(wider.selectionOnTop,
-      `${label}: the selection ring fell beneath the reservoirs after a scope change`);
-    check(wider.drainageLabelsDeconflicted,
-      `${label}: the drainage names stopped being placed after a scope change`);
-    check(wider.drawn < expectedReservoirs,
-      `${label}: Utah's waterbodies drew ${wider.drawn}, no fewer than every ` +
-      `reservoir's ${expectedReservoirs} -- the narrower reading is unreachable`);
-    check(/reservoirs=utah/.test(wider.search),
-      `${label}: the narrower scope is missing from a shareable link`);
-    await tab.evaluate(async (selector) => {
-      const geography = document.querySelector(`${selector} [data-scope="geography"]`);
-      geography.value = "connected";
-      geography.dispatchEvent(new CustomEvent("calciteSelectChange", { bubbles: true }));
-      await new Promise((resolve) => { setTimeout(resolve, 900); });
-    }, controls);
+    check(await tab.locator(`${controls} [data-scope="geography"]`).count() === 0,
+      `${label}: the retired reservoirs geography control is still visible`);
     check(ready.selectionOnTop,
       `${label}: the selection ring is beneath the reservoirs on the first draw`);
     check(ready.filtered === false,
@@ -1230,12 +1230,17 @@ for (const viewport of VIEWPORTS) {
     const history = await tab.evaluate((selector) => {
       const host = document.querySelector(selector);
       const chart = host?.querySelector(".trend-chart");
+      const chartHost = chart?.parentElement;
       return {
         bars: host?.querySelectorAll(".trend-chart rect").length ?? 0,
         rows: host?.querySelectorAll(".trend-table tbody tr").length ?? 0,
         // A chart with no accessible name is a picture of numbers that a
         // reader who cannot see it is simply not given.
         chartLabel: chart?.getAttribute("aria-label") ?? "",
+        hostWidth: chartHost?.getBoundingClientRect().width ?? 0,
+        chartWidth: chart?.getBoundingClientRect().width ?? 0,
+        viewBoxWidth: chart?.viewBox.baseVal.width ?? 0,
+        busy: chartHost?.getAttribute("aria-busy"),
         // The table is the text alternative, so it has to be reachable
         // rather than merely present in the markup.
         summary: host?.querySelector(".trend-details summary")?.textContent ?? ""
@@ -1245,6 +1250,11 @@ for (const viewport of VIEWPORTS) {
     check(history.rows > 0, `${label}: the twelve-month table has no rows`);
     check(history.chartLabel.includes(firstName),
       `${label}: the twelve-month chart has no accessible name`);
+    check(Math.abs(history.chartWidth - history.hostWidth) <= 1
+      && Math.abs(history.viewBoxWidth - history.hostWidth) <= 1,
+    `${label}: history is ${history.chartWidth}px in a ${history.hostWidth}px host `
+      + `with a ${history.viewBoxWidth}-unit viewBox`);
+    check(history.busy !== "true", `${label}: history is still busy after resize`);
     check(history.summary.length > 0,
       `${label}: the twelve-month table has no control to open it`);
 
@@ -1787,7 +1797,10 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
           (most, node) => Math.max(most, node.getBoundingClientRect().width), 0),
         truncated: names.filter((name) => name.endsWith("…")).length,
         longest: names.reduce((most, name) => Math.max(most, name.length), 0),
-        busy: host?.getAttribute("aria-busy")
+        busy: host?.getAttribute("aria-busy"),
+        hostWidth: host?.getBoundingClientRect().width ?? 0,
+        svgWidth: host?.querySelector("svg")?.getBoundingClientRect().width ?? 0,
+        viewBoxWidth: host?.querySelector("svg")?.viewBox.baseVal.width ?? 0
       };
     });
     check(spread.rows > 1, `${label}: #spread-chart drew ${spread.rows} rows`);
@@ -1804,6 +1817,10 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
     check(spread.longest > 12,
       `${label}: #spread-chart names look clipped, longest is ${spread.longest} characters`);
     check(spread.busy === "false", `${label}: #spread-chart still reports itself busy`);
+    check(Math.abs(spread.svgWidth - spread.hostWidth) <= 1
+      && Math.abs(spread.viewBoxWidth - spread.hostWidth) <= 1,
+    `${label}: #spread-chart is ${spread.svgWidth}px in a ${spread.hostWidth}px host `
+      + `with a ${spread.viewBoxWidth}-unit viewBox`);
 
     const svgCharts = ["#capacity-chart", "#watershed-chart", "#trend-chart"];
     for (const host of svgCharts) {
@@ -1953,8 +1970,9 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
     const overviewCsvRows = overviewCsv.trim().split(/\r?\n/);
     check(overviewCsvRows.length === filtered + 1,
       `${label}: filtered CSV file has ${overviewCsvRows.length - 1} rows, expected ${filtered}`);
-    check(overviewCsvRows[0]?.startsWith("Reservoir,Drainage area,Full (percent)"),
-      `${label}: filtered CSV file columns do not match the table`);
+    check(overviewCsvRows[0]?.startsWith(
+      "Reservoir,State,Waterbody states,Drainage area,Full (percent)"),
+    `${label}: filtered CSV file does not keep state facts in their own columns`);
 
     /* The link. This page carried no URL state at all, so no view of it
      * could be handed to anybody -- and the more the six charts can say,
@@ -2020,24 +2038,32 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
         .includes(`state=${filterState.code}`),
       `${label}: the state choice is not in the address`);
 
-      // The subregion list is repopulated from what the state leaves.
+      /* The shared Drainage area menu spans all three tiers. A held state
+       * narrows the occupied subregion rows rather than leaving a separate
+       * native select to keep in sync. */
       const offeredSubregions = await tab.evaluate(() =>
-        [...document.querySelectorAll("#subregion-filter option")]
-          .map((option) => option.value));
-      check(offeredSubregions[0] === "all"
-        && JSON.stringify(offeredSubregions.slice(1))
-          === JSON.stringify(expectedStateSubregions),
-      `${label}: the subregion list is not what the state leaves ` +
-        `(${offeredSubregions.join(",")} vs all,${expectedStateSubregions.join(",")})`);
+        [...document.querySelectorAll(".drainage-menu calcite-option")]
+          .map((option) => option.getAttribute("value"))
+          .filter((value) => /^\d{4}$/.test(value ?? "")));
+      check(JSON.stringify(offeredSubregions.sort())
+        === JSON.stringify(expectedStateSubregions),
+      `${label}: the Drainage area menu's subregions are not what the state leaves ` +
+        `(${offeredSubregions.join(",")} vs ${expectedStateSubregions.join(",")})`);
 
-      // Picking a subregion narrows further and survives its own repopulation.
-      await tab.selectOption("#subregion-filter", filterSubregion.code);
+      // Picking a subregion narrows further and writes the shared area parameter.
+      await tab.evaluate((chosen) => {
+        const select = document.querySelector(".drainage-menu calcite-select");
+        select.value = chosen;
+        select.dispatchEvent(new CustomEvent("calciteSelectChange", { bubbles: true }));
+      }, filterSubregion.code);
       await tab.waitForFunction((expected) =>
         window.__overviewReady?.visible === expected
-        && window.location.search.includes("huc4="),
+        && window.location.search.includes("area="),
       filterSubregion.count, { timeout: 60000 });
-      check(await tab.locator("#subregion-filter").inputValue() === filterSubregion.code,
-        `${label}: the subregion choice did not survive its own repopulation`);
+      check(await tab.evaluate(() =>
+        document.querySelector(".drainage-menu calcite-select")?.value)
+        === filterSubregion.code,
+      `${label}: the subregion choice did not survive its own repopulation`);
 
       // A keystroke in the search box must not reset the geographic choices.
       await tab.locator("#reservoir-search").fill("zzz-no-such-reservoir");
@@ -2045,11 +2071,11 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
         null, { timeout: 60000 });
       const kept = await tab.evaluate(() => ({
         state: document.querySelector(".where-menu calcite-select")?.value,
-        subregion: document.querySelector("#subregion-filter")?.value
+        drainage: document.querySelector(".drainage-menu calcite-select")?.value
       }));
-      check(kept.state === filterState.code && kept.subregion === filterSubregion.code,
+      check(kept.state === filterState.code && kept.drainage === filterSubregion.code,
         `${label}: a keystroke reset the geographic filters ` +
-        `(${kept.state}, ${kept.subregion})`);
+        `(${kept.state}, ${kept.drainage})`);
 
       /* A shared link carrying the state and the subregion restores both --
        * the subregion needs its options to exist before the restore runs,
@@ -2065,18 +2091,40 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
         { timeout: 120000 });
         const restored = await geoRecipient.evaluate(() => ({
           state: document.querySelector(".where-menu calcite-select")?.value,
-          subregion: document.querySelector("#subregion-filter")?.value,
+          drainage: document.querySelector(".drainage-menu calcite-select")?.value,
           rows: document.querySelectorAll("#reservoir-rows tr").length
         }));
         check(restored.state === filterState.code
-          && restored.subregion === filterSubregion.code,
-        `${label}: a shared link restored (${restored.state}, ${restored.subregion}), ` +
+          && restored.drainage === filterSubregion.code,
+        `${label}: a shared link restored (${restored.state}, ${restored.drainage}), ` +
           `not (${filterState.code}, ${filterSubregion.code})`);
         check(restored.rows === filterSubregion.count,
           `${label}: a shared geographic link restored ${restored.rows} rows, ` +
           `not ${filterSubregion.count}`);
       } finally {
         await geoRecipient.close();
+      }
+
+      /* And the canonical shared spelling reaches the same row and count.
+       * `?huc4=` remains readable above; new menu picks write `?area=`. */
+      const areaRecipient = await context.newPage();
+      try {
+        await areaRecipient.goto(`${URL}overview.html` +
+          `?state=${filterState.code}&area=${filterSubregion.code}`,
+        { waitUntil: "domcontentloaded", timeout: 60000 });
+        await areaRecipient.waitForFunction((expected) =>
+          window.__overviewReady?.charts === expected, CHART_HOSTS.length,
+        { timeout: 120000 });
+        const restored = await areaRecipient.evaluate(() => ({
+          drainage: document.querySelector(".drainage-menu calcite-select")?.value,
+          rows: document.querySelectorAll("#reservoir-rows tr").length
+        }));
+        check(restored.drainage === filterSubregion.code
+          && restored.rows === filterSubregion.count,
+        `${label}: ?area=${filterSubregion.code} restored `
+          + `${restored.drainage} with ${restored.rows} rows`);
+      } finally {
+        await areaRecipient.close();
       }
 
       // The county axis, offered exactly when the payload carries counties.
@@ -2104,7 +2152,6 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
        * on, so this drives exactly one of the two independent controls. */
       check((await tab.evaluate(() => window.__overviewReady?.lakeMeadExcluded)) === false,
         `${label}: readiness signal reports Lake Mead out of the opening scope`);
-      await tab.selectOption("#geography-filter", "connected");
       await tab.locator("#lake-mead-toggle").uncheck();
       await tab.waitForFunction((expected) =>
         window.__overviewReady?.visible === expected
@@ -2230,7 +2277,9 @@ for (const viewport of VIEWPORTS) {
       // The same week over larger areas, published because the reader can
       // choose the level (ADR-064). Named on the page rather than left to be
       // guessed at from the other file's name.
+      "./data/drought/usdm-huc2.json",
       "./data/drought/usdm-huc4.json",
+      "./data/drought/usdm-huc8.json",
       "./api/reference.json",
       // The upstream sets (ADR-077), published under /data/ rather than /api/
       // because they are a derived trace, not an observation series.
@@ -2684,6 +2733,18 @@ for (const viewport of VIEWPORTS) {
        * padding did to "Escalante Desert-Sevier Lake". */
       clippedNames: [...document.querySelectorAll(".drought-gap-name")]
         .filter((node) => node.getBBox().x < 0).length,
+      responsiveCharts: ["drought-scatter-host", "drought-gap-host", "drought-change-host"]
+        .map((id) => {
+          const host = document.getElementById(id);
+          const svg = host?.querySelector("svg");
+          return {
+            id,
+            hostWidth: host?.getBoundingClientRect().width ?? 0,
+            svgWidth: svg?.getBoundingClientRect().width ?? 0,
+            viewBoxWidth: svg?.viewBox.baseVal.width ?? 0,
+            busy: host?.getAttribute("aria-busy")
+          };
+        }),
       areaLinks: [...document.querySelectorAll(".drought-row-links a")]
         .map((link) => link.getAttribute("href")),
       viewport: document.documentElement.clientWidth,
@@ -2726,6 +2787,34 @@ for (const viewport of VIEWPORTS) {
     `${state.severityTitles}/${state.severityBars} severity bars carry a description`);
     check(state.clippedNames === 0,
       `${label}: ${state.clippedNames} drainage-area names are cut off by the chart edge`);
+    for (const chart of state.responsiveCharts.filter((entry) => entry.svgWidth > 0)) {
+      check(Math.abs(chart.svgWidth - chart.hostWidth) <= 1
+        && Math.abs(chart.viewBoxWidth - chart.hostWidth) <= 1,
+      `${label}: #${chart.id} is ${chart.svgWidth}px in a ${chart.hostWidth}px host `
+        + `with a ${chart.viewBoxWidth}-unit viewBox`);
+      check(chart.busy !== "true", `${label}: #${chart.id} is still busy after drawing`);
+    }
+    /* A real resize, not only three fresh loads at three sizes. The observer
+     * has a fixed deadline and redraws against the latest measured width. */
+    if (viewport.name === "desktop") {
+      const originalScatterWidth = state.responsiveCharts[0]?.viewBoxWidth ?? 0;
+      await tab.setViewportSize({ width: viewport.width - 80, height: viewport.height });
+      await tab.waitForFunction((before) => {
+        const host = document.getElementById("drought-scatter-host");
+        const svg = host?.querySelector("svg");
+        return host?.getAttribute("aria-busy") === "false"
+          && svg?.viewBox.baseVal.width !== before
+          && Math.abs((svg?.viewBox.baseVal.width ?? 0)
+            - (host?.getBoundingClientRect().width ?? 0)) <= 1;
+      }, originalScatterWidth, { timeout: 5000 });
+      await tab.setViewportSize({ width: viewport.width, height: viewport.height });
+      await tab.waitForFunction((wanted) => {
+        const host = document.getElementById("drought-scatter-host");
+        const svg = host?.querySelector("svg");
+        return host?.getAttribute("aria-busy") === "false"
+          && Math.abs((svg?.viewBox.baseVal.width ?? 0) - wanted) <= 1;
+      }, originalScatterWidth, { timeout: 5000 });
+    }
     check(state.scroll <= state.viewport + 1,
       `${label}: page overflows horizontally (${state.scroll}px in ${state.viewport}px)`);
 
@@ -2794,6 +2883,16 @@ for (const viewport of VIEWPORTS) {
     check(mapState.ready?.mapReservoirsShown === false,
       `${label}: the drought map shows reservoirs on load ` +
       `(${mapState.ready?.mapReservoirsShown})`);
+    check(mapState.ready?.mapSnowSites === snowSiteInventory.site_count,
+      `${label}: the drought map placed ${mapState.ready?.mapSnowSites} of `
+      + `${snowSiteInventory.site_count} snowpack sites`);
+    check(mapState.ready?.mapSnowSitesShown === false,
+      `${label}: the drought map shows snowpack sites on load `
+      + `(${mapState.ready?.mapSnowSitesShown})`);
+    await tab.locator("#drought-show-snow-sites").check();
+    await tab.waitForFunction(
+      () => window.__droughtReady?.mapSnowSitesShown === true,
+      { timeout: 5000 });
 
     /* The hosted boundaries are optional, so the layer list is checked
      * against what actually loaded rather than against a fixed list -- a
@@ -2834,7 +2933,8 @@ for (const viewport of VIEWPORTS) {
        * opens on the classes, so this is the stacking order and not what is
        * on screen -- `mapMode` is the field that reports the second. */
       ["usdm-classes", "usdm-change", "drainage-outline-casing",
-        "drainage-outlines", ...boundaryLayers, "reservoir-reference"]);
+        "drainage-outlines", ...boundaryLayers, "reservoir-reference",
+        "snow-site-reference"]);
     /* The label ladder: at the opening view the states and the drainage areas
      * are named and the reservoirs are not, which is the whole point of the
      * thresholds -- the drainage areas are this map's subject and the
@@ -3155,10 +3255,9 @@ for (const viewport of VIEWPORTS) {
 
     /* The control, driven rather than described: a switch that reports a
      * scope it did not change is the failure this catches. Mead is the only
-     * reservoir in its drainage area and never touches Utah, so it appears
-     * only under the connected geography -- which is why the link opens
-     * there. */
-    await tab.goto(`${URL}?reservoirs=connected`,
+     * reservoir in its drainage area, so this exercises exactly one
+     * inclusion choice. */
+    await tab.goto(URL,
       { waitUntil: "domcontentloaded", timeout: 60000 });
     await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
     const withMead = await tab.evaluate(() => window.__dashboardReady.reservoirs);
@@ -3340,8 +3439,8 @@ for (const viewport of VIEWPORTS) {
     check(byState.ready.drainageAreas === 75,
       `${label}: a state choice left ${byState.ready.drainageAreas} drawn ` +
       "areas, expected all 75 -- they are context on this map");
-    /* A state is a *scope*, not a filter, and this page has always drawn the
-     * two differently: geography and the dominant-reservoir switches narrow
+    /* A state is a *scope*, not a filter, and this page draws place and
+     * analysis choices differently: state and the dominant-reservoir switches narrow
      * what is on the map, while the search box, the drainage-area select and
      * the reporting choice dim what is already there. State joins the first
      * group -- a reader who asks for one state is saying where they are, not
@@ -3558,6 +3657,7 @@ for (const failure of [
       label: "Storage map at subregions",
       url: `${URL}?level=4`,
       signal: "__dashboardReady",
+      levelsOffered: 3,
       /* The storage map publishes its readiness once, with the map already
        * drawn, so the signal appearing is enough here. */
       drawn: "drainageAreas",
@@ -3584,6 +3684,7 @@ for (const failure of [
       label: "Snowpack at subregions",
       url: `${URL}snow.html?level=4`,
       signal: "__snowReady",
+      levelsOffered: 3,
       /* The map starts after the figures are on screen by design, so its own
        * fields arrive on a later publish than the page's. */
       drawn: "mapBasins",
@@ -3602,6 +3703,7 @@ for (const failure of [
       label: "Drought at subregions",
       url: `${URL}drought.html?level=4`,
       signal: "__droughtReady",
+      levelsOffered: 4,
       drawn: "mapOutlines",
       check: (ready) => {
         check(ready.level === 4,
@@ -3638,7 +3740,7 @@ for (const failure of [
       /* Both renderings of the bar. They are generated from one table so
        * they cannot offer different sets, and the hrefs are built now
        * rather than written down, so both are read. */
-      navHrefs: [...document.querySelectorAll("#page-menu calcite-dropdown-item, .page-link")]
+      navHrefs: [...document.querySelectorAll("#page-menu calcite-dropdown-item[href], .page-link")]
         .map((link) => link.getAttribute("href"))
     }), scenario.signal);
     console.log("  ready:", JSON.stringify({
@@ -3646,9 +3748,9 @@ for (const failure of [
       control: state.control, chosen: state.chosen
     }));
     scenario.check(state.ready ?? {});
-    check(state.ready?.levelsOffered === 3,
+    check(state.ready?.levelsOffered === scenario.levelsOffered,
       `${scenario.label}: reported ${state.ready?.levelsOffered} area sizes on offer, `
-      + "expected regions, subregions and basins (ADR-073)");
+      + `expected ${scenario.levelsOffered}`);
     check(state.control >= 1,
       `${scenario.label}: no area-size control was built`);
     check(state.chosen === "4",
@@ -3665,13 +3767,51 @@ for (const failure of [
       `${scenario.label}: the bar drops the level: ${state.navHrefs.join(", ")}`);
   }
 
+  /* ADR-088: drought alone offers the fourth tier. The figures, outlines,
+   * level control and Drainage menu all have to agree on it; storage and
+   * snow links coarsen rather than opening an unsupported level. */
+  const fine = JSON.parse(
+    await readFile(path.join(REPO_ROOT, "data/drought/usdm-huc8.json"), "utf8"));
+  await tab.goto(`${URL}drought.html?level=8`,
+    { waitUntil: "domcontentloaded", timeout: 60000 });
+  await tab.waitForFunction(() =>
+    window.__droughtReady?.levelsOffered === 4
+      && window.__droughtReady?.mapOutlines !== undefined,
+  { timeout: 90000 });
+  const fineState = await tab.evaluate(() => ({
+    ready: window.__droughtReady,
+    chosen: document.querySelector(".level-control calcite-select")?.value ?? null,
+    subbasinRows: [...document.querySelectorAll(".drainage-menu calcite-option")]
+      .filter((option) => /^\d{8}$/.test(option.getAttribute("value") ?? "")).length,
+    hrefs: Object.fromEntries(["map", "overview", "snow", "drought", "methods"]
+      .map((id) => [id, document.querySelector(`#menu-${id}-link`)?.getAttribute("href")]))
+  }));
+  check(fineState.ready?.level === 8 && fineState.chosen === "8",
+    `Drought at subbasins: level is ${fineState.ready?.level} and control is ${fineState.chosen}`);
+  check(fineState.ready?.units === fine.unit_count
+    && fineState.ready?.rows === fine.unit_count
+    && fineState.ready?.mapOutlines === fine.unit_count,
+  `Drought at subbasins: figures or outlines do not cover all ${fine.unit_count} areas`);
+  check(fineState.ready?.mapChangeAreas === 0,
+    `Drought at subbasins: ${fineState.ready?.mapChangeAreas} areas make an unarchived change claim`);
+  check(fineState.subbasinRows === fine.unit_count,
+    `Drought at subbasins: menu offers ${fineState.subbasinRows} of ${fine.unit_count}`);
+  for (const id of ["map", "overview", "snow"]) {
+    check(!/[?&]level=8(?:&|$)/.test(fineState.hrefs[id] ?? ""),
+      `Drought at subbasins: ${id} link keeps unsupported level 8`);
+  }
+  for (const id of ["drought", "methods"]) {
+    check(/[?&]level=8(?:&|$)/.test(fineState.hrefs[id] ?? ""),
+      `Drought at subbasins: ${id} link drops level 8`);
+  }
+
   /* The default is the absence of the parameter, so a page with no `?level=`
    * must be the basins page it always was. */
   await tab.goto(URL, { waitUntil: "domcontentloaded", timeout: 60000 });
   await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 90000 });
   const fallback = await tab.evaluate(() => ({
     level: window.__dashboardReady?.level,
-    navHrefs: [...document.querySelectorAll("#page-menu calcite-dropdown-item, .page-link")]
+    navHrefs: [...document.querySelectorAll("#page-menu calcite-dropdown-item[href], .page-link")]
       .map((link) => link.getAttribute("href"))
   }));
   check(fallback.level === 6, `the storage map opens at level ${fallback.level}, expected 6`);
@@ -3698,7 +3838,7 @@ for (const failure of [
     return {
       area,
       search: window.location.search,
-      navHrefs: [...document.querySelectorAll("#page-menu calcite-dropdown-item, .page-link")]
+      navHrefs: [...document.querySelectorAll("#page-menu calcite-dropdown-item[href], .page-link")]
         .map((link) => link.getAttribute("href"))
     };
   });
@@ -4123,8 +4263,15 @@ for (const failure of [
               .filter((option) => /^\d{5}$/.test(option.getAttribute("value") ?? ""))
               .length;
           })(),
-          watershedGroups: nativeGroups("#watershed-filter"),
-          watershedLoose: looseCodes("#watershed-filter", () => true),
+          drainageGroups: calciteGroups(".drainage-menu"),
+          drainageRegions: (() => {
+            const root = document.querySelector(".drainage-menu calcite-select");
+            return root ? [...root.querySelectorAll(":scope > calcite-option")]
+              .filter((option) => /^\d{2}$/.test(
+                option.getAttribute("value") ?? "")).length : 0;
+          })(),
+          oldDrainageSelects: document.querySelectorAll(
+            "#subregion-filter, #watershed-filter").length,
           viewport: document.documentElement.clientWidth,
           scroll: document.documentElement.scrollWidth
         };
@@ -4133,7 +4280,7 @@ for (const failure of [
       console.log(`  ${label}:`, JSON.stringify({
         placeGroups: before.placeGroups.length,
         countyCount: before.countyCount,
-        watershedGroups: before.watershedGroups.length
+        drainageGroups: before.drainageGroups.length
       }));
       check(before.scroll <= before.viewport + 1,
         `${label}: the page scrolls sideways with grouped selects`);
@@ -4153,56 +4300,14 @@ for (const failure of [
           `${label}: a county grouping is labelled "${group.label}", `
           + "not a published state name");
       }
-      for (const group of before.watershedGroups) {
+      check(before.oldDrainageSelects === 0,
+        `${label}: ${before.oldDrainageSelects} retired drainage select(s) remain`);
+      check(before.drainageRegions > 0,
+        `${label}: the Drainage area menu offers no region rows`);
+      for (const group of before.drainageGroups) {
         check(!/^\d+$/.test(group.label),
           `${label}: a drainage-area grouping is labelled "${group.label}", `
           + "a raw code no reader asked for");
-      }
-      if (before.countyCount > 0) {
-        /* Choose a state from the merged menu and expect the address to
-         * carry it -- and the counties to stay all offered, grouped as they
-         * were. The old separate list narrowed by the state because a flat
-         * list could not show which state a county belonged to; grouped
-         * under headings, the menu shows that itself, so the list holding
-         * steady *is* the requirement now (ADR-084). */
-        const chosenCode = await tab.evaluate(() => {
-          const root = document.querySelector(".where-menu");
-          if (!root) return null;
-          const heading = root.querySelector("calcite-option-group")
-            ?.getAttribute("label");
-          if (!heading) return null;
-          const row = [...root.querySelectorAll(":scope > * > calcite-option")]
-            .find((option) =>
-              option.textContent?.trim() === heading.trim()
-              && /^[A-Z]{2}$/.test(option.getAttribute("value") ?? ""));
-          return row?.getAttribute("value") ?? null;
-        });
-        if (chosenCode) {
-          await tab.locator("#overview-filter-toggle")
-            .click({ timeout: 5000 }).catch(() => {});
-          await tab.evaluate((code) => {
-            const select = document.querySelector(".where-menu calcite-select");
-            select.value = code;
-            select.dispatchEvent(new CustomEvent("calciteSelectChange",
-              { bubbles: true }));
-          }, chosenCode);
-          await tab.waitForFunction((code) =>
-            window.location.search.includes(`state=${code}`),
-          chosenCode, { timeout: 60000 });
-          const after = await readNesting();
-          check(after.countyLoose === 0,
-            `${label}: after choosing ${chosenCode}, county options sit `
-            + "outside a grouping");
-          const beforeTotal = before.placeGroups.reduce(
-            (sum, group) => sum + group.options, 0);
-          const afterTotal = after.placeGroups.reduce(
-            (sum, group) => sum + group.options, 0);
-          check(afterTotal === beforeTotal,
-            `${label}: choosing ${chosenCode} changed the counties on offer `
-            + `(${beforeTotal} -> ${afterTotal}); the grouped menu offers them all`);
-          check(after.scroll <= after.viewport + 1,
-            `${label}: the page scrolls sideways after the state choice`);
-        }
       }
 
       /* A county pick leaves ?state= alone (ADR-084: "The two axes stay
@@ -4384,6 +4489,8 @@ for (const failure of [
             })(),
             toggleInGroup: Boolean(document.querySelector(
               ".map-controls #drought-show-reservoirs")),
+            snowSitesInGroup: Boolean(document.querySelector(
+              ".map-controls #drought-show-snow-sites")),
             toggleInBar: Boolean(document.querySelector(
               ".dashboard-filterbar .filterbar-toggle")),
             modeInGroup: Boolean(document.querySelector(
@@ -4408,6 +4515,9 @@ for (const failure of [
           check(state.toggleInGroup && !state.toggleInBar,
             `${label} ${page.name}: the reservoir toggle sits in the filter `
             + "bar instead of the map's own group");
+          check(state.snowSitesInGroup,
+            `${label} ${page.name}: the snowpack-site toggle is not in the `
+            + "map's own group");
           if (state.modeInGroup || state.modeInBar) {
             check(state.modeInGroup && !state.modeInBar,
               `${label} ${page.name}: the map-mode select landed in the `

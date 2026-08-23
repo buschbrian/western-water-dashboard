@@ -167,6 +167,9 @@ export interface DrainageMenuOptions {
    * carried forward as per-row gating under ADR-084).
    */
   include?: (code: string) => boolean;
+  /** Finest hydrologic tier this surface offers. Drought passes eight;
+   * storage and snow keep the basin default. */
+  maxLevel?: 6 | 8;
 }
 
 export interface DrainageMenu {
@@ -189,7 +192,7 @@ export function createDrainageMenu(
 ): DrainageMenu | null {
   let selection = current;
 
-  const firstView = drainageMenuView(rosters, selection, options.include);
+  const firstView = drainageMenuView(rosters, selection, options.include, options.maxLevel);
   if (firstView.options.length <= 1) return null;
 
   const scale = options.scale ?? "m";
@@ -205,7 +208,7 @@ export function createDrainageMenu(
   wrapper.append(label);
 
   function render(): void {
-    const view = drainageMenuView(rosters, selection, options.include);
+    const view = drainageMenuView(rosters, selection, options.include, options.maxLevel);
     fillSelect(select, view.options, view.value);
   }
 

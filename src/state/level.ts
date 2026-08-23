@@ -45,7 +45,8 @@ export function writeLevel(params: URLSearchParams, level: number): void {
 export const LEVEL_LABELS: Readonly<Record<number, string>> = {
   2: "Regions",
   4: "Subregions",
-  6: "Basins"
+  6: "Basins",
+  8: "Subbasins"
 };
 
 export function levelLabel(level: number): string {

@@ -103,8 +103,6 @@ interface DashboardReady {
   /** Lake Mead's own answer to the same question (ADR-062). Its own field,
    * never folded into Powell's: one fact per field. */
   lakeMead?: "include" | "exclude";
-  /** Utah waterbodies, or every connected reservoir (ADR-011). */
-  geography: "utah" | "connected";
   /** How many months the slider offers besides the newest reading. */
   months: number;
   /** The month on screen, or null while the map shows the newest reading. */
@@ -209,7 +207,7 @@ interface Window {
      * code -- distinct from `openingScopeResolved` below, which is "could
      * this be acted on at all" rather than "what was asked for". */
     stateFilter?: string;
-    /** `?area=`, the same way: a region, subregion or basin code, or null,
+    /** `?area=`, the same way: a region, subregion, basin or subbasin code, or null,
      * exactly as requested. Not `severityFilter` below, which is a
      * different axis entirely (drought class, not place). */
     areaFilter?: string | null;
@@ -249,6 +247,10 @@ interface Window {
     /** Whether the reference reservoirs are on screen. A separate fact from
      * how many were placed, so a separate field (ADR-045). */
     mapReservoirsShown?: boolean;
+    /** Snow monitoring sites placed as optional map context. */
+    mapSnowSites?: number;
+    /** Whether those sites are on screen. Separate from how many were placed. */
+    mapSnowSitesShown?: boolean;
     /** True while those reference reservoirs are carrying their names. */
     mapReservoirLabels?: boolean;
     /** True when the hosted state boundaries answered and were drawn.

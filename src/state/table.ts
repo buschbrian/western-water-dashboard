@@ -59,7 +59,14 @@ export const COLUMN_LABELS: Record<SortKey, string> = {
  * not -- neither is a per-month fact.
  */
 export interface TableRow {
+  /** The visible, duplicate-safe label. */
   name: string;
+  /** The payload's bare name, kept separate for structured exports. */
+  reservoirName: string;
+  /** State holding the published point. */
+  state: string;
+  /** Every state the waterbody touches. */
+  waterbodyStates: readonly string[];
   percent: NullableNumber;
   storageAf: NullableNumber;
   capacityAf: NullableNumber;
@@ -132,6 +139,9 @@ export function tableRows(input: TableInput): TableRow[] {
       /* The label a reader can tell apart, qualified with the state only
        * where another reservoir shares the name (ADR-066). */
       name: reservoirLabel(reservoir, reservoirs),
+      reservoirName: reservoir.name,
+      state: reservoir.state ?? "",
+      waterbodyStates: reservoir.waterbody_states ?? [],
       percent: percentOf(reservoir),
       storageAf: month === null ? reservoir.current_storage_af : monthlyMean(reservoir, month),
       capacityAf: reservoir.capacity_af,

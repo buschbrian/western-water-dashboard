@@ -1,4 +1,3 @@
-import { reservoirLabel } from "../state/selection";
 import type { TableRow } from "../state/table";
 import type { MonthlyRecord, Reservoir, SourceKey } from "../types";
 
@@ -56,26 +55,14 @@ export function capacitySource(reservoir: Reservoir): string {
   return "U.S. Army Corps of Engineers National Inventory of Dams";
 }
 
-/**
- * The visible table columns first, followed by the record's provenance.
- *
- * `Reservoir` carries the label rather than the bare name, qualified with the
- * state where another reservoir in the same file shares it (ADR-066). A
- * spreadsheet of two rows both called "Lost Creek" is two rows a reader
- * cannot tell apart, and the station column that could tell them apart is
- * four columns to the right.
- */
-export function overviewColumns(
-  among: readonly Reservoir[] = []
-): readonly CsvColumn<Reservoir>[] {
-  return [
-    { header: "Reservoir", value: (row) => reservoirLabel(row, among) },
-    ...OVERVIEW_COLUMNS.slice(1)
-  ];
+function waterbodyStateText(states: readonly string[] | null | undefined): string {
+  return (states ?? []).join("; ");
 }
 
 export const OVERVIEW_COLUMNS: readonly CsvColumn<Reservoir>[] = [
   { header: "Reservoir", value: (row) => row.name },
+  { header: "State", value: (row) => row.state },
+  { header: "Waterbody states", value: (row) => waterbodyStateText(row.waterbody_states) },
   { header: "Drainage area", value: (row) => row.huc6_name },
   { header: "Full (percent)", value: (row) => row.pct_of_capacity },
   { header: "Storage (acre-feet)", value: (row) => row.current_storage_af },
@@ -87,7 +74,7 @@ export const OVERVIEW_COLUMNS: readonly CsvColumn<Reservoir>[] = [
 ];
 
 export function overviewCsv(reservoirs: readonly Reservoir[]): string {
-  return serializeCsv(reservoirs, overviewColumns(reservoirs));
+  return serializeCsv(reservoirs, OVERVIEW_COLUMNS);
 }
 
 /**
@@ -101,7 +88,9 @@ export function overviewCsv(reservoirs: readonly Reservoir[]): string {
  * month is not mistaken for today's.
  */
 export const TABLE_COLUMNS: readonly CsvColumn<TableRow>[] = [
-  { header: "Reservoir", value: (row) => row.name },
+  { header: "Reservoir", value: (row) => row.reservoirName },
+  { header: "State", value: (row) => row.state },
+  { header: "Waterbody states", value: (row) => waterbodyStateText(row.waterbodyStates) },
   { header: "Drainage area", value: (row) => row.areaName },
   { header: "Full (percent)", value: (row) => row.percent },
   { header: "Storage (acre-feet)", value: (row) => row.storageAf },
@@ -117,12 +106,15 @@ export function tableCsv(rows: readonly TableRow[]): string {
 interface HistoryRow {
   reservoir: Reservoir;
   month: MonthlyRecord | null;
-  /** What the page called it, which is what the file should call it too. */
-  label: string;
 }
 
 const HISTORY_COLUMNS: readonly CsvColumn<HistoryRow>[] = [
-  { header: "Reservoir", value: ({ label }) => label },
+  { header: "Reservoir", value: ({ reservoir }) => reservoir.name },
+  { header: "State", value: ({ reservoir }) => reservoir.state },
+  {
+    header: "Waterbody states",
+    value: ({ reservoir }) => waterbodyStateText(reservoir.waterbody_states)
+  },
   { header: "Drainage area", value: ({ reservoir }) => reservoir.huc6_name },
   { header: "Measured by", value: ({ reservoir }) => reservoirProvider(reservoir) },
   {
@@ -146,18 +138,15 @@ const HISTORY_COLUMNS: readonly CsvColumn<HistoryRow>[] = [
 /**
  * One reservoir's twelve months, as a file.
  *
- * `label` is what the reader saw on screen -- the name, qualified with the
- * state where another reservoir shares it (ADR-066) -- so the file names the
- * reservoir the way the page did. It defaults to the bare name, which is
- * right for a caller with one reservoir and no set to compare it against.
+ * The name remains the bare published name; state facts sit in their own
+ * columns (ADR-089). The download filename may still use a duplicate-safe
+ * visible label.
  */
-export function reservoirHistoryCsv(
-  reservoir: Reservoir, label: string = reservoir.name
-): string {
+export function reservoirHistoryCsv(reservoir: Reservoir): string {
   const months: readonly (MonthlyRecord | null)[] = reservoir.monthly.length
     ? reservoir.monthly : [null];
   return serializeCsv(
-    months.map((month) => ({ reservoir, month, label })), HISTORY_COLUMNS);
+    months.map((month) => ({ reservoir, month })), HISTORY_COLUMNS);
 }
 
 function safeFilenamePart(value: string): string {

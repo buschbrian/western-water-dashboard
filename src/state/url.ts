@@ -13,7 +13,7 @@
  * `connectSelectionToUrl`, at the bottom, and it is four lines.
  */
 
-import type { LakePowellChoice, ReservoirGeography } from "../data/rollup";
+import type { LakePowellChoice } from "../data/rollup";
 import { isBaselineId } from "./baseline";
 import type { BaselineId } from "../types";
 import type { Reporting } from "./filters";
@@ -41,7 +41,6 @@ const SELECTION_PARAMS = {
    * spell it so a reader can carry a scope between the two pages (ADR-062).
    * Absent means included, exactly like Powell's. */
   lakeMead: "mead",
-  geography: "reservoirs",
   month: "month",
   /* The bottom row's two facts, one parameter each. `table=open` is the row
    * being open, `sort` is the order inside it -- a reader who sends a link
@@ -68,7 +67,9 @@ type SelectionField = keyof typeof SELECTION_PARAMS;
 const SELECTION_FIELDS = Object.keys(SELECTION_PARAMS) as SelectionField[];
 const OWNED_PARAMS = new Set<string>([
   ...SELECTION_FIELDS.map((field) => SELECTION_PARAMS[field]),
-  ...Object.values(LEGACY_FILTER_PARAMS)
+  ...Object.values(LEGACY_FILTER_PARAMS),
+  /* ADR-087: ignored on read and removed on the next canonical write. */
+  "reservoirs"
 ]);
 
 /**
@@ -88,8 +89,6 @@ export interface DashboardUrlState {
   lakePowell: LakePowellChoice;
   /** Lake Mead's own choice, for the reason Powell has one (ADR-062). */
   lakeMead: LakePowellChoice;
-  /** Utah waterbodies, or every connected reservoir (ADR-011). */
-  geography: ReservoirGeography;
   /** A month key the payload carries, or null for the newest reading. */
   month: string | null;
   /** True when the reader has opened the table under the map. */
@@ -122,26 +121,13 @@ export const DEFAULT_URL_STATE: DashboardUrlState = {
    * appears to be answering, and the reader who most needs the distinction
    * is the one least likely to find a switch that is already off.
    *
-   * This is the move `geography` made below, for the same reason and with
-   * the same consequence: a link written before this carried no parameter
-   * and now reads as "include". The alternative -- keeping the old meaning
+   * A link written before this carried no parameter and now reads as
+   * "include". The alternative -- keeping the old meaning
    * for absence -- costs every reader the opening view to spare a link the
    * change, so the writer below states the narrow choice out loud instead,
    * and `powell=exclude` is now a thing a link can say. */
   lakePowell: "include",
   lakeMead: "include",
-  /* The whole west, not Utah's waterbodies.
-   *
-   * This defaulted to `utah` when the roster was Utah's, and stayed there
-   * when the roster went west -- so the site published 198 reservoirs and
-   * opened showing 60 of them, behind a control most readers never touch.
-   * A dashboard that hides two thirds of its own subject by default is
-   * answering a question nobody asked.
-   *
-   * The narrower reading is still one choice away, and `?state=UT` now says
-   * the same thing more precisely (ADR-060: "Utah waterbodies" is exactly
-   * what `waterbody_states` contains). */
-  geography: "connected",
   month: null,
   tableOpen: false,
   tableSort: DEFAULT_SORT,
@@ -229,17 +215,12 @@ export function stateFromSearch(search: string | null | undefined): DashboardUrl
   state.drainageArea = drainage !== undefined && /^[0-9]{1,12}$/.test(drainage)
     ? drainage : null;
 
-  /* Only the narrow reading is spelled, which is the rule `geography` two
-   * lines down has always followed: anything but "exclude" -- absent,
+  /* Only the narrow reading is spelled: anything but "exclude" -- absent,
    * misspelt, hand-edited -- is the reservoir in the view. */
   state.lakePowell = lastValue(pairs, SELECTION_PARAMS.lakePowell) === "exclude"
     ? "exclude" : "include";
   state.lakeMead = lastValue(pairs, SELECTION_PARAMS.lakeMead) === "exclude"
     ? "exclude" : "include";
-  /* Only the narrow reading is spelled; anything else -- absent, misspelt,
-   * hand-edited -- is every reservoir, which is what the dashboard opens on. */
-  state.geography = lastValue(pairs, SELECTION_PARAMS.geography) === "utah"
-    ? "utah" : "connected";
   const month = lastValue(pairs, SELECTION_PARAMS.month);
   /* Whether the payload actually has this month is the page's business. A
    * link to a month that has aged out opens on the newest reading. */
@@ -288,9 +269,6 @@ export function searchWithState(
   }
   if (full.lakeMead !== "include") {
     parts.push(`${SELECTION_PARAMS.lakeMead}=${full.lakeMead}`);
-  }
-  if (full.geography !== "connected") {
-    parts.push(`${SELECTION_PARAMS.geography}=${full.geography}`);
   }
   if (full.month !== null) {
     parts.push(`${SELECTION_PARAMS.month}=${encodeURIComponent(full.month)}`);

@@ -17,6 +17,7 @@ import refresh_reservoirs
 from watershed_scopes import (
     DEFAULT_SCOPE,
     DRAWN_SCOPES,
+    DROUGHT_DRAWN_SCOPES,
     ROOT,
     ROSTER_SCOPE,
     SCOPES,
@@ -70,16 +71,15 @@ def test_the_coarser_western_scope_is_published_beside_the_drawn_one():
     assert DEFAULT_SCOPE != "west-huc4"
 
 
-def test_the_finest_western_scope_is_registered_and_draws_nothing():
-    """It exists so the geography can be fetched and reviewed before any
-    surface draws it, which is the state all three western scopes were in
-    until the coverage moved. Not published, so the reference export skips
-    it."""
+def test_the_finest_western_scope_is_published_for_drought_only():
+    """HUC-8 metadata travels once, while only drought offers figures at it."""
     scope = get_scope("west-huc8")
 
     assert scope.level == 8
     assert scope.output == "data/watersheds/west-huc8.geojson"
-    assert not scope.published
+    assert scope.published
+    assert 8 not in DRAWN_SCOPES
+    assert DROUGHT_DRAWN_SCOPES[8] == "west-huc8"
     # Banded rather than pinned: nine regions of the Watershed Boundary
     # Dataset are revised more often than one.
     assert scope.expected_count is None
@@ -177,10 +177,10 @@ def test_every_published_scopes_boxes_contain_the_rings_they_describe():
             assert box_north >= north, (name, code, "north")
             checked += 1
 
-    # 75 + 44 + 14 + 10 + 5: west-huc6, west-huc4, utah-connected,
-    # upper-colorado, west-huc2. A drop in this count means a scope stopped
+    # 75 + 44 + 571 + 14 + 10 + 5: west-huc6, west-huc4, west-huc8,
+    # utah-connected, upper-colorado, west-huc2. A drop in this count means a scope stopped
     # publishing boxes, not that fewer units needed checking.
-    assert checked == 148
+    assert checked == 719
 
 
 def test_every_roster_reservoir_sits_inside_the_roster_scope():

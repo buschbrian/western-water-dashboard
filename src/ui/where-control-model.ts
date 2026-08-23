@@ -35,6 +35,7 @@ import { offeredStates, type StateOption } from "../data/state-vocabulary";
  */
 const REGION_WIDTH = 2;
 const SUBREGION_WIDTH = 4;
+const BASIN_WIDTH = 6;
 
 /**
  * The value every "not narrowed" option carries. Never written into the
@@ -242,7 +243,8 @@ export function whereMenuView(
 export function drainageMenuView(
   rosters: OpeningRosters,
   selection: OpeningSelection,
-  include?: (code: string) => boolean
+  include?: (code: string) => boolean,
+  maxLevel = BASIN_WIDTH
 ): WhereAxis {
   const resolved = resolveOpeningScope(selection, rosters).selection.area;
 
@@ -253,8 +255,12 @@ export function drainageMenuView(
    * full lists the reader can move within. */
   const scope = resolveOpeningScope({ state: selection.state, area: null }, rosters);
 
-  const keepBasin = (area: DrainageArea): boolean => include === undefined || include(area.huc6);
-  const basins = scope.areas.filter(keepBasin);
+  const keep = (area: DrainageArea): boolean => include === undefined || include(area.huc6);
+  const offerSubbasins = maxLevel >= 8 && scope.subbasins.length > 0;
+  const subbasins = offerSubbasins ? scope.subbasins.filter(keep) : [];
+  const availableBasinCodes = new Set(subbasins.map((area) => area.huc6.slice(0, BASIN_WIDTH)));
+  const basins = scope.areas.filter((area) => keep(area)
+    && (!offerSubbasins || availableBasinCodes.has(area.huc6)));
   const basinPrefixes = new Set(basins.map((area) => area.huc6.slice(0, SUBREGION_WIDTH)));
   const subregions = scope.subregions.filter((subregion) => basinPrefixes.has(subregion.huc6));
   const subregionPrefixes = new Set(subregions.map((subregion) => subregion.huc6.slice(0, REGION_WIDTH)));
@@ -262,6 +268,7 @@ export function drainageMenuView(
 
   const regionNames = new Map(regions.map((region) => [region.huc6, region.name]));
   const subregionNames = new Map(subregions.map((subregion) => [subregion.huc6, subregion.name]));
+  const basinNames = new Map(basins.map((basin) => [basin.huc6, basin.name]));
 
   const options: WhereOption[] = [{ value: ALL_VALUE, label: "All drainage areas" }];
 
@@ -289,6 +296,19 @@ export function drainageMenuView(
     a.name.localeCompare(b.name));
   for (const area of placed) {
     const group = subregionNames.get(area.huc6.slice(0, SUBREGION_WIDTH));
+    options.push(group
+      ? { value: area.huc6, label: area.name, group }
+      : { value: area.huc6, label: area.name });
+  }
+
+  /* HUC-8 is a drought-only fourth tier (ADR-088). Its parent basin is the
+   * group heading; storage and snow keep the default `maxLevel` of six and
+   * never expose these rows merely because their metadata shares the file. */
+  const placedSubbasins = [...subbasins].sort((a, b) =>
+    a.huc6.slice(0, BASIN_WIDTH).localeCompare(b.huc6.slice(0, BASIN_WIDTH)) ||
+    a.name.localeCompare(b.name));
+  for (const area of placedSubbasins) {
+    const group = basinNames.get(area.huc6.slice(0, BASIN_WIDTH));
     options.push(group
       ? { value: area.huc6, label: area.name, group }
       : { value: area.huc6, label: area.name });

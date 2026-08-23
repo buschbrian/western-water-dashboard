@@ -491,7 +491,6 @@ export function setBaselineControl(
 type CalciteSwitch = HTMLElement & { checked: boolean };
 
 export interface ScopeControls {
-  geography: string;
   lakePowell: boolean;
   /** Lake Mead's own switch, for the reason Powell has one (ADR-062). */
   lakeMead: boolean;
@@ -508,17 +507,11 @@ export interface ScopeControls {
  */
 export function setScopeControl(onChange: (scope: ScopeControls) => void): void {
   const read = (): ScopeControls => ({
-    geography: document.querySelector<CalciteSelect>('[data-scope="geography"]')?.value ?? "utah",
     /* A control that is not on the page falls back to the opening view, not
      * to the narrow answer: a missing switch is the absence of a choice, and
      * absence now means the reservoir is in. */
     lakePowell: document.querySelector<CalciteSwitch>('[data-scope="powell"]')?.checked ?? true,
     lakeMead: document.querySelector<CalciteSwitch>('[data-scope="mead"]')?.checked ?? true
-  });
-  document.querySelectorAll<CalciteSelect>('[data-scope="geography"]').forEach((select) => {
-    select.addEventListener("calciteSelectChange", () => onChange({
-      ...read(), geography: select.value
-    }));
   });
   document.querySelectorAll<CalciteSwitch>('[data-scope="powell"]').forEach((toggle) => {
     toggle.addEventListener("calciteSwitchChange", () => onChange({
@@ -536,8 +529,6 @@ export function setScopeControl(onChange: (scope: ScopeControls) => void): void 
 }
 
 export function setScopeValue(scope: ScopeControls): void {
-  document.querySelectorAll<CalciteSelect>('[data-scope="geography"]')
-    .forEach((select) => { select.value = scope.geography; });
   document.querySelectorAll<CalciteSwitch>('[data-scope="powell"]')
     .forEach((toggle) => { toggle.checked = scope.lakePowell; });
   document.querySelectorAll<CalciteSwitch>('[data-scope="mead"]')
@@ -738,7 +729,9 @@ export function setDetail(view: DetailView | null, onExport?: () => void,
      * pieces return null when the reservoir has no monthly values, so a
      * reservoir that has only ever reported once gets no empty chart frame
      * and no heading over nothing. */
-    const chart = renderTrendChart(view.months, view.name);
+    const chartHost = document.createElement("div");
+    chartHost.className = "trend-chart-host";
+    const chart = renderTrendChart(chartHost, view.months, view.name);
     const table = renderTrendTable(view.months);
     if (chart || table) {
       const heading12 = document.createElement("h3");
@@ -746,7 +739,7 @@ export function setDetail(view: DetailView | null, onExport?: () => void,
       heading12.textContent = "The last 12 months";
       children.push(heading12);
       if (chart) {
-        children.push(chart);
+        children.push(chartHost);
         /* Each mark and its words are one element, so a wrap puts the whole
          * pair on the next line. Flat children wrapped between the dash and
          * "Normal value", which reads as a bar chart with a stray dash. */

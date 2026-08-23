@@ -65,6 +65,12 @@ describe("the parameters that travel", () => {
   it("is unmoved by a parameter it does not own sharing a prefix", () => {
     expect(portableSearch("?areas=140100&leveling=4&stated=UT")).toBe("");
   });
+
+  it("keeps a drought subbasin only for a surface that supports it", () => {
+    const drought = "?state=CO&area=14020001&level=8";
+    expect(portableSearch(drought, 8)).toBe(drought);
+    expect(portableSearch(drought)).toBe("?state=CO&area=140200");
+  });
 });
 
 describe("a page's href", () => {

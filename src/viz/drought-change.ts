@@ -39,10 +39,11 @@
  */
 import type { DroughtChange } from "../drought-model";
 import { changeColor, changeLabel } from "./change-classes";
+import { renderResponsiveChart, stopResponsiveChart } from "./responsive";
 
 const SVG = "http://www.w3.org/2000/svg";
 
-const WIDTH = 640;
+const FALLBACK_WIDTH = 640;
 /* The same row height the ranked gap chart uses, so the two charts on this
  * page read as one family rather than two. */
 const ROW_HEIGHT = 21;
@@ -101,18 +102,23 @@ export function renderDroughtChange(
   rows: readonly DroughtChange[],
   options: DroughtChangeOptions
 ): number {
-  host.replaceChildren();
-  if (rows.length === 0) return 0;
+  if (rows.length === 0) {
+    stopResponsiveChart(host);
+    host.replaceChildren();
+    return 0;
+  }
 
+  return renderResponsiveChart(host, (width) => {
+  const chartWidth = Math.max(PAD_LEFT + PAD_RIGHT + 80, width);
   const height = PAD_TOP + rows.length * ROW_HEIGHT + PAD_BOTTOM;
-  const plotWidth = WIDTH - PAD_LEFT - PAD_RIGHT;
+  const plotWidth = chartWidth - PAD_LEFT - PAD_RIGHT;
   const bound = changeAxisBound(rows);
   const middle = PAD_LEFT + plotWidth / 2;
   const x = (points: number): number =>
     middle + (Math.min(bound, Math.max(-bound, points)) / bound) * (plotWidth / 2);
 
   const svg = element("svg", {
-    viewBox: `0 0 ${WIDTH} ${height}`,
+    viewBox: `0 0 ${chartWidth} ${height}`,
     class: "drought-change-chart",
     role: "img",
     "aria-label": options.ariaLabel
@@ -179,6 +185,7 @@ export function renderDroughtChange(
     svg.append(group);
   });
 
-  host.append(svg);
+  host.replaceChildren(svg);
   return rows.length;
+  }, { fallbackWidth: FALLBACK_WIDTH, minimumWidth: PAD_LEFT + PAD_RIGHT + 80 });
 }

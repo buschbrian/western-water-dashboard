@@ -41,6 +41,7 @@ import {
   baselineChoices
 } from "./state/baseline";
 import { reservoirTemplate } from "./ui/reservoir-template";
+import { setupPlaceChooser } from "./ui/opening-splash";
 import { wireTheme } from "./ui/theme";
 import "./styles/reservoir.css";
 
@@ -50,6 +51,7 @@ if (!root) throw new Error("Missing #reservoir-app root");
 
 root.innerHTML = reservoirTemplate(window.location.search);
 wireTheme();
+void setupPlaceChooser();
 
 const found = root.querySelector<HTMLElement>("#reservoir-main");
 if (!found) throw new Error("Missing #reservoir-main");
@@ -162,11 +164,13 @@ async function renderFound(payload: ReservoirPayload,
   }
 
   // The twelve months, drawn by the same SVG builder the details panel uses.
-  const chart = renderTrendChart(view.months, view.name);
+  const chartHost = document.createElement("div");
+  chartHost.className = "trend-chart-host";
+  const chart = renderTrendChart(chartHost, view.months, view.name);
   const table = renderTrendTable(view.months);
   if (chart || table) {
     children.push(sectionHeading("The last 12 months"));
-    if (chart) children.push(chart);
+    if (chart) children.push(chartHost);
     if (table) children.push(table);
   }
 
@@ -197,7 +201,7 @@ async function renderFound(payload: ReservoirPayload,
   exportButton.setAttribute("icon-start", "export");
   exportButton.textContent = "Download this reservoir (CSV file)";
   exportButton.addEventListener("click", () => void downloadCsv(
-    reservoirHistoryCsv(reservoir, label),
+    reservoirHistoryCsv(reservoir),
     reservoirCsvFilename(label, payload.generated_at.slice(0, 10))));
   children.push(exportButton);
 

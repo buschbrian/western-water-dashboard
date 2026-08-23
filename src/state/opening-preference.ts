@@ -39,8 +39,8 @@ import { HUC_CODE } from "../data/huc";
  * them nothing in return, so it does not get renamed. */
 const PLACE_STORAGE_KEY = "utah-reservoir-dashboard-place";
 
-/** The widths `?area=` is offered at: region, subregion, drainage area. */
-const AREA_WIDTHS = new Set([2, 4, 6]);
+/** The widths `?area=` is offered at across all surfaces. */
+const AREA_WIDTHS = new Set([2, 4, 6, 8]);
 
 /**
  * A stored value is not a trusted one.
@@ -117,12 +117,19 @@ export interface OpeningPlace {
  * without a browser and so a caller can pass a stored value it read once.
  */
 export function resolveOpeningPlace(
-  search: string | null | undefined, stored: OpeningSelection | null
+  search: string | null | undefined, stored: OpeningSelection | null,
+  maxAreaWidth = 6
 ): OpeningPlace {
   if (openingSearchAnswered(search)) {
-    return { selection: openingSelectionFromSearch(search), source: "link" };
+    return { selection: openingSelectionFromSearch(search, maxAreaWidth), source: "link" };
   }
-  if (stored) return { selection: stored, source: "stored" };
+  if (stored) return {
+    selection: {
+      ...stored,
+      area: stored.area === null ? null : stored.area.slice(0, maxAreaWidth)
+    },
+    source: "stored"
+  };
   return { selection: { state: EVERYWHERE, area: null }, source: "default" };
 }
 

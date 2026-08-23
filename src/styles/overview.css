@@ -213,6 +213,7 @@ body {
   letter-spacing: .01em;
   cursor: pointer;
 }
+.filterbar-toggle[hidden] { display: none; }
 .filterbar-toggle input[type="checkbox"] { width: 1rem; height: 1rem; margin: 0; }
 .reset-button {
   min-height: 2.5rem;
@@ -398,8 +399,6 @@ body {
 .spread-chart {
   display: block;
   inline-size: 100%;
-  max-inline-size: 54rem;
-  margin-inline: auto;
   block-size: auto;
 }
 .spread-grid { stroke: var(--app-border); stroke-width: 1; }

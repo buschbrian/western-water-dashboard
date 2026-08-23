@@ -1086,8 +1086,14 @@ def test_one_export_contains_capacity_and_every_visualization_geography():
     # follow the reservoirs out past the fourteen Utah-connected areas.
     assert watersheds["roster_scope"] == "west-huc6"
     assert watersheds["scopes"]["west-huc6"]["unit_count"] == 75
+    assert watersheds["scopes"]["west-huc8"]["unit_count"] == 571
     assert watersheds["scopes"]["utah-connected"]["unit_count"] == 14
     assert watersheds["scopes"]["upper-colorado"]["unit_count"] == 10
+    assert watersheds["drawn_scopes"] == {
+        "2": "west-huc2", "4": "west-huc4", "6": "west-huc6"}
+    assert watersheds["drought_scopes"] == {
+        "2": "west-huc2", "4": "west-huc4", "6": "west-huc6",
+        "8": "west-huc8"}
 
 
 def test_the_committed_reference_export_matches_the_files_it_is_built_from():
@@ -1200,7 +1206,7 @@ def test_the_export_carries_no_polygons_but_the_state_outline():
     # The budget is what keeps the polygons out: they were 982 KB raw and
     # would not fit under this compressed either, and the structural
     # assertions above are what say so directly.
-    assert len(gzip.compress(render(sections).encode("utf-8"), 9)) < 30_000
+    assert len(gzip.compress(render(sections).encode("utf-8"), 9)) < 64_000
 
 
 # --- watershed enrichment -------------------------------------------------

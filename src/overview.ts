@@ -25,7 +25,7 @@ import { downloadCsv } from "./data/download";
 import { overviewCsv, overviewCsvFilename } from "./data/export";
 import {
   asScoped, isLakeMead, isLakePowell, isLate, rollupOfScoped, WIDEST_SCOPE,
-  type ReservoirGeography, type RollupCoverage, type StatewideRollup
+  type RollupCoverage, type StatewideRollup
 } from "./data/rollup";
 import { classIndexOf } from "./state/filters";
 import { offeredStates } from "./data/state-vocabulary";
@@ -50,19 +50,18 @@ import {
   filterAndSort,
   filterOverview,
   distributionStats,
-  geographicChoices,
   largestReservoirRecords,
   monthlyTrend,
   normalComparison,
   openingScopeSummary,
+  overviewDrainageRosters,
   overviewScope,
   percentFullValues,
   placeAxesAfterPick,
+  reservoirInState,
   spreadBoxes,
   countyOptions,
   stateOptions,
-  subregionOptions,
-  type FilterOption,
   watershedOptions,
   watershedRecords,
   type ChartMeasure,
@@ -71,13 +70,14 @@ import {
   type OverviewCadence,
   type OverviewSort
 } from "./overview-model";
-import { createWhereMenu } from "./ui/where-control";
+import { createDrainageMenu, createWhereMenu } from "./ui/where-control";
 import { placeInSlot } from "./ui/dom";
 import type { CountyChoice } from "./ui/where-control-model";
 import type {
   BaselineChoice, BaselineId, DroughtCoveragePayload, Reservoir, SnowpackPayload
 } from "./types";
 import { brandMarkup, pageLinksMarkup, updatePageLinks } from "./ui/page-header";
+import { setupPlaceChooser } from "./ui/opening-splash";
 import {
   wireMobileDisclosure,
   wireMobileFilterDisclosure
@@ -112,6 +112,7 @@ root.innerHTML = `
     <section id="overview-content" aria-live="polite"><calcite-loader label="Loading reservoir data"></calcite-loader></section>
   </main>`;
 wireTheme();
+void setupPlaceChooser();
 
 function renderRows(tbody: HTMLTableSectionElement, reservoirs: readonly Reservoir[]): void {
   tbody.replaceChildren(...reservoirs.map((reservoir) => {
@@ -244,6 +245,7 @@ interface ComparisonPeriod {
 
 async function renderOverview(
   allReservoirs: Reservoir[], generatedAt: string,
+  regions: readonly { huc2: string; name: string }[],
   subregions: readonly { huc4: string; name: string }[],
   openingScope: OpeningScope, openingRosters: OpeningRosters,
   period: ComparisonPeriod
@@ -310,9 +312,10 @@ async function renderOverview(
       <div id="overview-filter-search" class="filterbar-search">
         <label>Find a reservoir<input id="reservoir-search" type="search" placeholder="Name, drainage area or county" autocomplete="off" /></label>
       </div>
-      <!-- Coarsest first, then finest: where (state, with counties beneath),
-           subregion, drainage area. The two that are not places come last,
-           because a reader narrowing by geography should not have to step
+      <!-- Coarsest first, then finest: Where (state, with counties beneath),
+           then one Drainage area menu spanning region, subregion and basin.
+           The two controls that are not places come last,
+           because a reader narrowing by place should not have to step
            over a reporting schedule to get from one place to a smaller
            one. -->
       <div id="overview-filter-controls" class="filterbar-controls">
@@ -322,10 +325,8 @@ async function renderOverview(
              their state's name. Arrives after first paint like every
              control here; see the control-slot rule in app.css. -->
         <div class="control-slot" data-slot="place"></div>
-        <label>Subregion<select id="subregion-filter"><option value="all">All subregions</option></select></label>
-        <label>Drainage area<select id="watershed-filter"><option value="all">All drainage areas</option></select></label>
+        <div class="control-slot" data-slot="drainage"></div>
         <label>Reporting<select id="cadence-filter"><option value="all">All reporting</option><option value="daily">Daily</option><option value="monthly">Monthly</option><option value="late">Late or unavailable</option></select></label>
-        <label>Reservoirs<select id="geography-filter"><option value="connected">Every reservoir</option><option value="utah">Utah waterbodies only</option></select></label>
       </div>
     </section>
     <p id="filter-status" class="filter-status" role="status"></p>
@@ -467,36 +468,12 @@ async function renderOverview(
    * looking at a spread that does not match what is below it. */
   let storageClassFilter: number | null = null;
 
-  /* The reader's opening `?area=`, applied as a prefix match
-   * (`withinOpeningArea`) rather than through the subregion and
-   * drainage-area selects below, at every one of the three widths --  not
-   * only the region width those selects have no axis for at all.
-   *
-   * The selects' own option lists are built from which drainage areas this
-   * payload's *reservoirs* happen to occupy, not from the reference export's
-   * roster of areas that exist -- so a code the export can name is not
-   * guaranteed to be one of those options, and seeding `subregion.value` or
-   * `watershed.value` from it would silently do nothing on the mornings it
-   * is not. Filtering here instead means the sentence above never claims a
-   * narrowing that the table and charts below it do not also show: this is
-   * what actually narrows `scoped`, applied before `byState` is derived from
-   * it, so the subregion and drainage-area options below narrow to match for
-   * free, the same way they already narrow to the chosen state.
-   *
-   * No control offers this choice yet -- S4 adds one -- so "Reset view" is
-   * the only way to clear it until then. Held the same way
-   * `storageClassFilter` is: state without a control, read every time
-   * `update` runs. */
-  let openingArea: string | null = openingScope.selection.area;
-
   const openingSummary = document.querySelector<HTMLElement>("#opening-scope-summary");
   if (openingSummary) {
     const summary = openingScopeSummary(openingScope.selection, openingRosters);
     openingSummary.textContent = summary;
     openingSummary.hidden = summary === "";
   }
-
-  const watershed = document.querySelector<HTMLSelectElement>("#watershed-filter");
 
   /* The subregion names travel in the payload's own envelope (ADR-048), so a
    * code the roster does not carry is labelled by its code rather than lost.
@@ -508,52 +485,7 @@ async function renderOverview(
    * same reason -- and so the full list exists before the link's choice is
    * restored, or a shared ?huc4= would be discarded against an empty
    * control. */
-  const subregionChoices = subregionOptions(widestScope, subregionNames);
   const watershedChoices = watershedOptions(widestScope, 6, subregionNames);
-  /* The initial fill runs through `fillOptions` so the basins land under
-   * their subregion headings from the first paint, the way every later
-   * repopulation draws them. */
-  if (watershed) fillOptions(watershed, watershedChoices, "All drainage areas");
-
-  /* Repopulating a `<select>` has to preserve the reader's choice when it is
-   * still on offer. Rebuilding blind resets the control on every keystroke,
-   * which is the bug this exists to not have.
-   *
-   * Consecutive options carrying the same `group` are rendered under one
-   * `<optgroup>` heading, which is how the county list shows its states and
-   * the drainage-area list shows its subregions: indented groups inside one
-   * dropdown, measured to fit at 360px, rather than a flyout submenu whose
-   * full list is several screens tall there. */
-  function fillOptions(
-    element: HTMLSelectElement, options: FilterOption[], allLabel: string
-  ): void {
-    const wanted = element.value;
-    element.replaceChildren();
-    const all = document.createElement("option");
-    all.value = "all";
-    all.textContent = allLabel;
-    element.append(all);
-    let group: HTMLOptGroupElement | null = null;
-    let current: string | undefined;
-    for (const choice of options) {
-      if (choice.group !== current) {
-        group = choice.group === undefined ? null : (() => {
-          const node = document.createElement("optgroup");
-          node.label = choice.group!;
-          element.append(node);
-          return node;
-        })();
-        current = choice.group;
-      }
-      const option = document.createElement("option");
-      option.value = choice.code;
-      option.textContent = choice.label;
-      (group ?? element).append(option);
-    }
-    element.value = options.some((choice) => choice.code === wanted) ? wanted : "all";
-  }
-
-  const subregion = document.querySelector<HTMLSelectElement>("#subregion-filter");
   /* The two place axes, held here rather than read back out of the menu
    * (ADR-084: "The two axes stay two"). The merged Where menu *shows* the
    * finer of whatever is held -- a county over its state -- but a county
@@ -568,6 +500,7 @@ async function renderOverview(
    * front of them (the ADR-076 fallback rule, carried into one menu). */
   let chosenState = "all";
   let chosenCounty = "all";
+  let chosenDrainage: string | null = openingScope.selection.area;
   const countyChoices = countyOptions(allReservoirs);
   const countyStateOf = new Map(countyChoices
     .filter((choice) => choice.group !== undefined)
@@ -587,12 +520,25 @@ async function renderOverview(
     placeMenu?.set({ state: chosenState, area: null },
       chosenCounty === "all" ? null : chosenCounty);
   };
+  const menuRosters = openingRosters.areas.length > 0
+    ? openingRosters
+    : overviewDrainageRosters(allReservoirs, regions, subregions);
+  const drainageHasReservoir = (code: string, state = chosenState): boolean =>
+    widestScope.some((reservoir) =>
+      reservoirInState(reservoir, state) && withinOpeningArea(reservoir.huc6, code));
+  const reflectDrainage = (): void => {
+    drainageMenu?.set({ state: chosenState, area: chosenDrainage });
+  };
   const applyPlacePick = (pick: { kind: "state" | "county"; value: string }): void => {
     const next = placeAxesAfterPick(
       { state: chosenState, county: chosenCounty }, pick, countyStateOf);
     chosenState = next.state;
     chosenCounty = next.county;
+    if (chosenDrainage !== null && !drainageHasReservoir(chosenDrainage, chosenState)) {
+      chosenDrainage = null;
+    }
     reflectPlace();
+    reflectDrainage();
     void update();
   };
   /* Built from the published roster (`openingRosters`) and this payload's
@@ -617,20 +563,30 @@ async function renderOverview(
   if (placeMenu && placeMenuHost) {
     placeInSlot(placeMenuHost, "place", placeMenu.element);
   }
+  const drainageMenu = placeMenuHost
+    ? createDrainageMenu(menuRosters, { state: chosenState, area: chosenDrainage },
+      (selection) => {
+        chosenDrainage = selection.area;
+        void update();
+      }, {
+        scale: "l",
+        /* A storage-chart pick removes rows rather than dimming map context.
+         * Offer only basin families that contain at least one reservoir in
+         * the held state, so every row has an honest non-empty result. */
+        include: (code) => drainageHasReservoir(code)
+      })
+    : null;
+  if (drainageMenu && placeMenuHost) {
+    placeInSlot(placeMenuHost, "drainage", drainageMenu.element);
+  }
   const placeState = (): string => chosenState;
   const placeCounty = (): string => chosenCounty;
-  /* The subregion list starts at its widest; the first update() narrows it
-   * to the chosen state. It must exist before the URL restore below, so a
-   * link's subregion has an option to land on. */
-  if (subregion) fillOptions(subregion, subregionChoices, "All subregions");
-
   const tbody = document.querySelector<HTMLTableSectionElement>("#reservoir-rows");
   const search = document.querySelector<HTMLInputElement>("#reservoir-search");
   const cadence = document.querySelector<HTMLSelectElement>("#cadence-filter");
   const sort = document.querySelector<HTMLSelectElement>("#reservoir-sort");
   const lakePowell = document.querySelector<HTMLInputElement>("#lake-powell-toggle");
   const lakeMead = document.querySelector<HTMLInputElement>("#lake-mead-toggle");
-  const geography = document.querySelector<HTMLSelectElement>("#geography-filter");
   const reset = document.querySelector<HTMLButtonElement>("#reset-filters");
   const status = document.querySelector<HTMLElement>("#filter-status");
   const capacityHost = document.querySelector<HTMLElement>("#capacity-chart");
@@ -664,12 +620,11 @@ async function renderOverview(
   const chartMeasure = document.querySelector<HTMLSelectElement>("#chart-measure");
   const chartRank = document.querySelector<HTMLSelectElement>("#chart-rank");
   const exportButton = document.querySelector<HTMLElement>("#download-overview-csv");
-  if (!tbody || !search || !subregion || !watershed
-      || !cadence || !sort || !reset || !status
+  if (!tbody || !search || !cadence || !sort || !reset || !status
       || !capacityHost || !watershedHost || !trendHost || !normalHost
       || !distributionHost || !spreadHost
       || !chartLimit || !chartMeasure || !chartRank
-      || !lakePowell || !lakeMead || !geography || !exportButton) return;
+      || !lakePowell || !lakeMead || !exportButton) return;
 
   let exportRows: readonly Reservoir[] = [];
   exportButton.addEventListener("click", () => {
@@ -732,12 +687,13 @@ async function renderOverview(
    * same reason. */
   const currentUrlState = (): OverviewUrlState => ({
     query: search.value,
-    drainageArea: watershed.value,
+    drainageArea: chosenDrainage ?? "all",
     state: placeState(),
-    subregion: subregion.value,
+    /* Read for compatibility below; new picks use the one shared `area=`
+     * parameter at every tier (ADR-084). */
+    subregion: "all",
     county: placeCounty(),
     reporting: cadence.value as OverviewCadence,
-    geography: geography.value as ReservoirGeography,
     lakePowell: lakePowell.checked ? "include" : "exclude",
     lakeMead: lakeMead.checked ? "include" : "exclude",
     storageClass: storageClassFilter,
@@ -750,50 +706,20 @@ async function renderOverview(
   let revision = 0;
   const update = async (): Promise<void> => {
     const currentRevision = ++revision;
-    /* The opening scope's `?area=` narrows before the geographic controls
-     * compute their own options below, the same "coarsest first" order state
-     * already narrows subregion and subregion narrows drainage area --
-     * everything built from `inOpeningArea` inherits this for free rather
-     * than needing its own copy of the rule. */
-    const inOpeningArea = (reservoir: Reservoir): boolean =>
-      withinOpeningArea(reservoir.huc6, openingArea);
+    /* One drainage axis at any of its three widths. Prefix matching is the
+     * level contract: region, subregion and basin codes nest exactly. */
+    const inChosenDrainage = (reservoir: Reservoir): boolean =>
+      withinOpeningArea(reservoir.huc6, chosenDrainage);
     const scoped = overviewScope(allReservoirs, {
-      geography: geography.value as ReservoirGeography,
       lakePowell: lakePowell.checked ? "include" : "exclude",
       lakeMead: lakeMead.checked ? "include" : "exclude"
-    }).filter(inOpeningArea);
-    /* Each geographic control is repopulated from what the ones above it
-     * leave, so a reader who picks Wyoming is not then offered a subregion
-     * Wyoming has none of. A selection that survives the narrowing is kept;
-     * one that does not falls back to "all" rather than filtering to nothing
-     * silently.
-     *
-     * The set these are built from is the widest scope narrowed by the
-     * link's `?area=` and nothing else -- deliberately *not* `scoped`. The
-     * geographic controls answer "where can a reader go", which is a
-     * question about this payload's roster; the geography select and the two
-     * dominant-reservoir switches answer "what is in the total", which is
-     * ADR-011's other dimension entirely. Built from `scoped` they shrank
-     * with it: at the default load, with both dominant reservoirs excluded
-     * as ADR-062 requires, four of the roster's drainage areas were missing
-     * from the control -- including Lake Powell's own, so the list changed
-     * shape under the very switch it is supposed to be steady beneath.
-     * `stateChoices` is built once from the whole roster for the same
-     * reason, and `countyChoices` starts from it so the restore below has
-     * something to land on; subregion and drainage area are rebuilt
-     * because the controls above them narrow them. The Where menu is not:
-     * its counties stay grouped under every state's heading, which is what
-     * replaced the old narrowing-by-state (ADR-084). */
-    const choices = geographicChoices(widestScope.filter(inOpeningArea),
-      { state: placeState(), subregion: subregion.value }, subregionNames);
-    fillOptions(subregion, choices.subregions, "All subregions");
-    fillOptions(watershed, choices.drainageAreas, "All drainage areas");
+    }).filter(inChosenDrainage);
 
     const matching = filterOverview(scoped, {
       query: search.value,
       state: placeState(),
-      huc4: subregion.value,
-      huc6: watershed.value,
+      huc4: "all",
+      huc6: "all",
       county: placeCounty(),
       cadence: cadence.value as OverviewCadence
     });
@@ -824,7 +750,7 @@ async function renderOverview(
      * that includes 28 million acre-feet without saying so is the silent
      * total ADR-011 and ADR-062 exist to prevent. */
     status.textContent = `${visible.length} of ${scoped.length} reservoirs shown · ` +
-      `${geography.value === "connected" ? "Every reservoir" : "Utah waterbodies only"} · Lake Powell ` +
+      `Every reservoir · Lake Powell ` +
       `${lakePowell.checked ? "included" : "excluded"} · Lake Mead ` +
       `${lakeMead.checked ? "included" : "excluded"}${chosenClass}`;
     for (const host of chartHosts) host.setAttribute("aria-busy", "true");
@@ -883,7 +809,8 @@ async function renderOverview(
             categoryTitle: "Drainage area",
             onSelect: (labels) => {
               const chosen = watershedChoices.find((choice) => choice.label === labels[0]);
-              watershed.value = chosen?.code ?? "all";
+              chosenDrainage = chosen?.code ?? null;
+              reflectDrainage();
               void update();
             }
           }),
@@ -956,8 +883,8 @@ async function renderOverview(
   /* The Where menu is deliberately absent: its own pick handler calls
    * `update`, because a pick also has to move the two held axes before any
    * read of them means anything. */
-  for (const control of [search, subregion, watershed, cadence, sort,
-    lakePowell, lakeMead, geography, chartLimit, chartMeasure, chartRank]) {
+  for (const control of [search, cadence, sort,
+    lakePowell, lakeMead, chartLimit, chartMeasure, chartRank]) {
     const event = control instanceof HTMLSelectElement
       || (control instanceof HTMLInputElement && control.type === "checkbox")
       ? "change"
@@ -972,25 +899,21 @@ async function renderOverview(
   document.addEventListener(THEME_CHANGE_EVENT, () => void update());
   reset.addEventListener("click", () => {
     search.value = "";
-    watershed.value = "all";
+    chosenDrainage = null;
     chosenState = "all";
     chosenCounty = "all";
     reflectPlace();
-    subregion.value = "all";
+    reflectDrainage();
     cadence.value = "all";
     sort.value = "capacity";
     /* Both large reservoirs back in, matching what the page opens on.
      * Resetting them off would make "reset" a filter of its own. */
     lakePowell.checked = true;
     lakeMead.checked = true;
-    /* Every reservoir, matching what the page opens on. Resetting to Utah's
-     * waterbodies would have "reset" narrowed the page to a third of itself. */
-    geography.value = "connected";
     chartLimit.value = "15";
     chartMeasure.value = "percent";
     chartRank.value = "capacity";
     storageClassFilter = null;
-    openingArea = null;
     void update();
     search.focus();
   });
@@ -1002,8 +925,6 @@ async function renderOverview(
    * to every area, which is why this runs after the options are filled. */
   const wanted = overviewStateFromSearch(window.location.search);
   search.value = wanted.query;
-  watershed.value = watershedChoices.some((choice) => choice.code === wanted.drainageArea)
-    ? wanted.drainageArea : "all";
   /* A county in the link that this payload does not carry falls back to all,
    * the same way a drainage area does. A shared link outliving the roster it
    * was made from should show everything rather than nothing. Both axes are
@@ -1013,27 +934,20 @@ async function renderOverview(
     ? wanted.county : "all";
   chosenState = stateChoices.some((choice) => choice.code === wanted.state)
     ? wanted.state : "all";
+  /* `?area=` is the shared spelling. `?huc4=` remains a readable legacy
+   * spelling and is canonicalised to the same menu row on the next URL
+   * write. When both are present, `?area=` wins because it is the axis the
+   * merged menu owns. */
+  const wantedDrainage = openingScope.selection.area
+    ?? (wanted.drainageArea !== "all" ? wanted.drainageArea : null)
+    ?? (wanted.subregion !== "all" ? wanted.subregion : null);
+  chosenDrainage = wantedDrainage !== null
+    && [2, 4, 6].includes(wantedDrainage.length)
+    && drainageHasReservoir(wantedDrainage, chosenState)
+    ? wantedDrainage : null;
   reflectPlace();
-  /* State first, then subregion: the update below repopulates the subregion
-   * list from the chosen state, and a selection that survives that narrowing
-   * is kept while one that does not falls back to "all". */
-  subregion.value = subregionChoices.some((choice) => choice.code === wanted.subregion)
-    ? wanted.subregion : "all";
-  /* A subregion-width `?area=` link (four digits) has no parameter of its
-   * own on this page -- `?huc4=` is the canonical one -- so this reflects it
-   * into the visible control when an explicit `?huc4=` did not already claim
-   * one and this payload's own reservoirs happen to offer that subregion as
-   * a choice. Cosmetic, not load-bearing: `openingArea` above is what
-   * actually narrows the table and charts, at every width, whether or not
-   * the code the reference export can name happens to be one of this
-   * select's reservoir-derived options. */
-  if (subregion.value === "all" && openingScope.selection.area !== null
-      && openingScope.selection.area.length === 4
-      && subregionChoices.some((choice) => choice.code === openingScope.selection.area)) {
-    subregion.value = openingScope.selection.area;
-  }
+  reflectDrainage();
   cadence.value = wanted.reporting;
-  geography.value = wanted.geography;
   lakePowell.checked = wanted.lakePowell === "include";
   lakeMead.checked = wanted.lakeMead === "include";
   sort.value = wanted.sort;
@@ -1163,6 +1077,7 @@ try {
   const choices = baselineChoices(payload);
   const preferred = payload.default_baseline ?? "recent";
   await renderOverview(payload.reservoirs, payload.generated_at,
+    payload.watersheds?.regions ?? [],
     payload.watersheds?.subregions ?? [], openingScope, openingRosters, {
       id: choices.some((choice) => choice.id === preferred) ? preferred : "recent",
       choices,

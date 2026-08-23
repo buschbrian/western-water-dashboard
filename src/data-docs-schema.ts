@@ -502,6 +502,8 @@ export const REFERENCE_GROUPS: readonly ApiFieldGroup[] = [
     f("roster_scope", "identifier", "Scope the reservoir roster covers."),
     f("drawn_scopes", "object",
       "Scope drawn at each area size a reader may choose, keyed by the length of its codes."),
+    f("drought_scopes", "object",
+      "Scope drawn at each area size the drought page offers."),
     f("scopes", "object", "Named scope entries.")
   ]},
   { id: "reference-scope", title: "Named scope", path: "geography.watersheds.scopes.<scope>", fields: [
@@ -512,6 +514,8 @@ export const REFERENCE_GROUPS: readonly ApiFieldGroup[] = [
       "Four-digit drainage-area codes. Present in a scope at that level.", true),
     f("huc2", "array",
       "Two-digit region codes. Present in a scope at that level.", true),
+    f("huc8", "array",
+      "Eight-digit subbasin codes. Present in a scope at that level.", true),
     f("name", "identifier", "Stable scope name."),
     f("source_file", "file name", "Reviewed boundary source file."),
     f("level", "digits", "Size of the drainage areas, as the length of their code."),
@@ -523,6 +527,8 @@ export const REFERENCE_GROUPS: readonly ApiFieldGroup[] = [
       "Six-digit drainage-area code. Present in a scope at that level.", true),
     f("huc4", "identifier",
       "Four-digit drainage-area code. Present in a scope at that level.", true),
+    f("huc8", "identifier",
+      "Eight-digit subbasin code. Present in a scope at that level.", true),
     f("huc2", "identifier",
       "Two-digit region code. Present in a scope at that level.", true),
     f("name", "text", "Drainage-area name."),

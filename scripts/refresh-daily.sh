@@ -97,17 +97,17 @@ if ! "$python_bin" tools/fetch_drought_monitor.py; then
   warn "Drought download failed" "Keeping the last verified GeoJSON"
 fi
 
-# 3. Coverage, once per offered level (ADR-064, ADR-073). All three are
+# 3. Coverage, once per offered level (ADR-064, ADR-073, ADR-088). All four are
 # computed from the one download, so any of them failing means all are suspect
 # and the polygons go back: a reader who changes the level must never cross a
 # week boundary doing it.
 #
-# Each level keeps its own archive, named for the level the same way its
+# Levels 2, 4 and 6 keep their own archives, named for the level the same way their
 # coverage file is. merge_history still refuses to hold two levels in one file
 # -- the weeks join on their codes, and codes of two widths are two series
 # wearing one name -- and one file each is the answer to that, rather than one
-# level with a history and the others without. It is what gives every level a
-# previous week to compare against (ADR-074).
+# level with a history and the others without. HUC-8 deliberately starts
+# without one and makes no previous-week claim (ADR-088).
 #
 # Recomputed every day rather than only when the download reports a change: it
 # is deterministic, carries no timestamps, and takes about a minute, so a
@@ -115,7 +115,8 @@ fi
 # waiting for someone to notice.
 if ! "$python_bin" tools/compute_drought_coverage.py \
    || ! "$python_bin" tools/compute_drought_coverage.py --scope west-huc4 \
-   || ! "$python_bin" tools/compute_drought_coverage.py --scope west-huc2; then
+   || ! "$python_bin" tools/compute_drought_coverage.py --scope west-huc2 \
+   || ! "$python_bin" tools/compute_drought_coverage.py --scope west-huc8 --no-history; then
   warn "Coverage failed" "Reverting the polygons so the set stays on one week"
   git checkout -- data/drought/usdm-current.geojson
 fi
@@ -128,7 +129,7 @@ if ! "$python_bin" tools/check_drought_pair.py; then
   warn "Drought files mismatched" "Restoring all of them from the last commit"
   git checkout -- data/drought/usdm-current.geojson \
     data/drought/usdm-huc6.json data/drought/usdm-huc4.json \
-    data/drought/usdm-huc2.json
+    data/drought/usdm-huc2.json data/drought/usdm-huc8.json
 fi
 
 # 5. Snow has its own payload and its own failure mode. The reviewed inventory

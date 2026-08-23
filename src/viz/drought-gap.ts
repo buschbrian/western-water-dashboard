@@ -39,10 +39,11 @@
 import type { StorageGap } from "../drought-model";
 import { WELL_MEASURED_PERCENT } from "../drought-model";
 import { storageColor } from "./classes";
+import { renderResponsiveChart, stopResponsiveChart } from "./responsive";
 
 const SVG = "http://www.w3.org/2000/svg";
 
-const WIDTH = 640;
+const FALLBACK_WIDTH = 640;
 /* Tight enough that fourteen rows read as one list rather than a column of
  * separate charts. At 26 the block ran to 424 units, which the card then
  * scaled to nearly 800 pixels. */
@@ -96,13 +97,18 @@ export function renderDroughtGap(
   rows: readonly StorageGap[],
   options: DroughtGapOptions
 ): number {
-  host.replaceChildren();
-  if (rows.length === 0) return 0;
+  if (rows.length === 0) {
+    stopResponsiveChart(host);
+    host.replaceChildren();
+    return 0;
+  }
 
+  return renderResponsiveChart(host, (width) => {
+  const chartWidth = Math.max(PAD_LEFT + PAD_RIGHT + 80, width);
   const height = PAD_TOP + rows.length * ROW_HEIGHT + PAD_BOTTOM;
-  const plotWidth = WIDTH - PAD_LEFT - PAD_RIGHT;
+  const plotWidth = chartWidth - PAD_LEFT - PAD_RIGHT;
   const svg = element("svg", {
-    viewBox: `0 0 ${WIDTH} ${height}`,
+    viewBox: `0 0 ${chartWidth} ${height}`,
     class: "drought-gap-chart",
     role: "img",
     "aria-label": options.ariaLabel
@@ -184,6 +190,7 @@ export function renderDroughtGap(
     svg.append(group);
   });
 
-  host.append(svg);
+  host.replaceChildren(svg);
   return rows.length;
+  }, { fallbackWidth: FALLBACK_WIDTH, minimumWidth: PAD_LEFT + PAD_RIGHT + 80 });
 }

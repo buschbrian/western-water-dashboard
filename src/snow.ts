@@ -78,6 +78,7 @@ import { levelFromSearch, writeLevel } from "./state/level";
 import { snowStateFromSearch, writeSnowUrl } from "./state/snow-url";
 import type { SnowpackPayload } from "./types";
 import { brandMarkup, pageLinksMarkup, updatePageLinks } from "./ui/page-header";
+import { setupPlaceChooser } from "./ui/opening-splash";
 import { placeInSlot } from "./ui/dom";
 import { createLevelControl } from "./ui/level-control";
 import { createDrainageMenu, createWhereMenu, type DrainageMenu } from "./ui/where-control";
@@ -233,6 +234,7 @@ root.innerHTML = `
     <section id="snow-content" aria-live="polite"><calcite-loader label="Loading snow measurements"></calcite-loader></section>
   </main>`;
 wireTheme();
+void setupPlaceChooser();
 
 function formatFeet(value: number): string {
   return Math.round(value).toLocaleString("en-US");

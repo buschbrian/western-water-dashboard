@@ -110,7 +110,8 @@ describe("the table's order", () => {
    */
   it("keeps rows with no value last in both directions", () => {
     const row = (name: string, percent: NullableNumber): TableRow => ({
-      name, percent, storageAf: percent, capacityAf: null,
+      name, reservoirName: name, state: "", waterbodyStates: [],
+      percent, storageAf: percent, capacityAf: null,
       areaName: "", late: false, reading: "2026-08-14"
     });
     const source = [row("A", null), row("B", 10), row("C", 90)];
@@ -123,7 +124,8 @@ describe("the table's order", () => {
 
   it("breaks ties by name so an order is stable across refreshes", () => {
     const tie = (name: string): TableRow => ({
-      name, percent: 50, storageAf: 50, capacityAf: 100,
+      name, reservoirName: name, state: "", waterbodyStates: [],
+      percent: 50, storageAf: 50, capacityAf: 100,
       areaName: "Jordan", late: false, reading: "2026-08-14"
     });
     const sorted = [tie("Zebra"), tie("Alpha"), tie("Middle")]

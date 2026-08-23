@@ -29,7 +29,11 @@ import Graphic from "@arcgis/core/Graphic";
 import Polygon from "@arcgis/core/geometry/Polygon";
 import GraphicsLayer from "@arcgis/core/layers/GraphicsLayer";
 
-import type { ReferenceLayers } from "../arcgis/reference-layers";
+import {
+  SNOW_SITE_REFERENCE_LAYER_ID,
+  type ReferenceLayers,
+  type SnowSiteReferenceResult
+} from "../arcgis/reference-layers";
 import {
   createWatershedLayer,
   watershedCodeField,
@@ -103,6 +107,10 @@ export interface DroughtMapStatus {
    * counts what was placed: a field reports one fact, and "how many" and
    * "are they shown" are two. */
   reservoirsShown: boolean;
+  /** Snow monitoring sites placed for optional context. */
+  snowSites: number;
+  /** Whether those optional site points are on screen. */
+  snowSitesShown: boolean;
   /** True when the hosted state boundaries answered and were drawn. False
    * is a supported outcome, not a failure: the page is complete without
    * them. */
@@ -155,7 +163,8 @@ export async function createDroughtMap(
   usdm: UsdmPolygons,
   reservoirs: readonly ReservoirReference[],
   context: DroughtMapContext,
-  boundaries: ReferenceLayers
+  boundaries: ReferenceLayers,
+  snowSites: SnowSiteReferenceResult | null
 ): Promise<DroughtMapController> {
   const droughtLayer = new GraphicsLayer({ id: CLASS_LAYER_ID });
   for (const feature of usdm.features) {
@@ -340,6 +349,7 @@ export async function createDroughtMap(
    * `reservoirLabels` go on reporting what was placed; whether it is on
    * screen is a different fact and gets its own field. */
   reference.layer.visible = false;
+  if (snowSites) snowSites.layer.visible = false;
   const reservoirByName = new Map(
     reservoirs.map((reservoir) => [reservoir.name, reservoir]));
   const areaNames = new Map(areas.map((area) => [area.huc6, area.name]));
@@ -359,6 +369,8 @@ export async function createDroughtMap(
     reservoirs: reference.drawn,
     reservoirLabels: reference.labelled,
     reservoirsShown: reference.layer.visible,
+    snowSites: snowSites?.drawn ?? 0,
+    snowSitesShown: snowSites?.layer.visible ?? false,
     mode: "classes",
     changeAreas: changeInfos.length,
     stateBoundaries: boundaries.states !== null,
@@ -424,7 +436,11 @@ export async function createDroughtMap(
       outlineLayer,
       ...(boundaries.states ? [boundaries.states] : []),
       ...(boundaries.counties ? [boundaries.counties] : []),
-      reference.layer
+      reference.layer,
+      /* Discrete reference points sit above the borrowed boundary lines.
+       * A line over a point hides it; this is ADR-061's same ordering rule
+       * applied to snow sites as it is to reservoirs. */
+      ...(snowSites ? [snowSites.layer] : [])
     ]
   });
   /* A quiet background on purpose. This map labels states itself, from the
@@ -455,12 +471,29 @@ export async function createDroughtMap(
    */
   wireMapHover(element, {
     card,
-    include: () => [reference.layer, outlineLayer, droughtLayer],
+    include: () => [
+      reference.layer,
+      ...(snowSites ? [snowSites.layer] : []),
+      outlineLayer,
+      droughtLayer
+    ],
     resolve: (results: readonly GraphicHit[]): HoverResolution | null => {
       for (const result of results) {
         const attributes = result.graphic?.attributes;
         if (!attributes) continue;
         const layerId = hitLayerId(result);
+
+        /* The point is context rather than a second data surface. Naming it
+         * is enough; snow readings and their method stay on the snow page. */
+        if (layerId === SNOW_SITE_REFERENCE_LAYER_ID) {
+          return {
+            content: {
+              heading: String(attributes["name"]),
+              lines: ["Snowpack measurement site"]
+            },
+            graphic: result.graphic
+          };
+        }
 
         if (layerId === RESERVOIR_REFERENCE_LAYER_ID) {
           const reservoir = reservoirByName.get(String(attributes["name"]));

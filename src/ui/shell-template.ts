@@ -61,11 +61,6 @@ function panelContents(suffix: string): string {
              appended, which put the whole drill-down below the buttons at
              the bottom of this panel. See .control-slot. -->
         <div class="control-slot" data-slot="where"></div>
-        <!-- The way back to the first question. The opening chooser asks
-             once and dismisses itself for good, so this is the only way
-             back to it; the button arrives from the same builder that made
-             the dialog and opens that dialog, not a second list. -->
-        <div class="control-slot" data-slot="reopen"></div>
         <!-- The last of the places. One menu across region, subregion and
              basin (ADR-084), replacing both the old shared drill-down's
              finer axes and this panel's own drainage-area select.
@@ -87,18 +82,9 @@ function panelContents(suffix: string): string {
           <calcite-select data-filter="reporting"
             label="Filter reservoirs by reporting status"></calcite-select>
         </calcite-label>
-        <!-- Scope, not a filter, and separated from the three above because
-             of that: the filters grey reservoirs the map still draws, while
-             these change which reservoirs the map has (ADR-011). Both of that
-             record's dimensions, both the reader's to choose. -->
-        <calcite-label>
-          Reservoirs
-          <calcite-select data-scope="geography"
-            label="Which reservoirs to show">
-            <calcite-option value="connected">Every reservoir</calcite-option>
-            <calcite-option value="utah">Utah waterbodies only</calcite-option>
-          </calcite-select>
-        </calcite-label>
+        <!-- Reader-chosen roster controls. The former Utah-waterbody scope
+             was retired by ADR-087; only the two reservoirs large enough to
+             change every regional total retain explicit choices. -->
         <fieldset class="large-reservoirs" data-large-reservoirs>
           <legend>Very large reservoirs</legend>
           <p>These reservoirs can dominate a regional total.</p>

@@ -7,6 +7,9 @@ import { STORAGE_CLASSES, storageClass } from "../viz/classes";
 function row(name: string, percent: number | null, overrides: Partial<TableRow> = {}): TableRow {
   return {
     name,
+    reservoirName: name,
+    state: "",
+    waterbodyStates: [],
     percent,
     storageAf: 1000,
     capacityAf: 2000,

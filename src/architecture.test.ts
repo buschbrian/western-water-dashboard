@@ -173,7 +173,7 @@ describe("SDK architecture boundaries", () => {
   it("keeps the storage headline on the scope the map already applied", async () => {
     const source = await readFile(resolve(root, "src/main.ts"), "utf8");
     expect(source).toContain("rollupOfScoped(inScope, {");
-    for (const dimension of ["geography:", "lakePowell:", "lakeMead:"]) {
+    for (const dimension of ["lakePowell:", "lakeMead:"]) {
       expect(source.slice(source.indexOf("rollupOfScoped(inScope, {"),
         source.indexOf("rollupOfScoped(inScope, {") + 200)).not.toContain(dimension);
     }

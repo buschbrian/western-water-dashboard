@@ -9,8 +9,7 @@ import {
   type ScopedReservoirs,
   sizeBasis,
   type LakePowellChoice,
-  type ReservoirInclusion,
-  type ReservoirGeography
+  type ReservoirInclusion
 } from "./data/rollup";
 import { stateName, usStatesOnly } from "./data/state-vocabulary";
 import { capacityBasisName, changeLabel, formatChange, rankWithYears } from "./state/detail";
@@ -181,30 +180,23 @@ function classOf(percent: number): { classLabel: string; classColor: string } {
 /**
  * The reservoirs a page shows, for a given Lake Powell choice.
  *
- * ADR-011 made this two dimensions on purpose and said Lake Powell stays "a
- * deliberate comparison control instead of an accidental geographic
- * filter". It was a constant at every call site instead, which made the
- * control impossible to offer: excluding one large reservoir is not a
- * geographic rule, and a reader who wants the total with it has no way to
- * ask. Geography stays fixed at `utah` here -- that is the page's subject,
- * not a preference.
+ * Lake Powell and Lake Mead are deliberate comparison controls, not
+ * geographic filters. The retired Utah reservoir scope is no longer a third
+ * inclusion dimension (ADR-087).
  */
 export interface ScopeChoice {
-  geography: ReservoirGeography;
   lakePowell: LakePowellChoice;
   /** Absent means excluded, like Lake Powell's default (ADR-062). */
   lakeMead?: ReservoirInclusion;
 }
 
-export const DEFAULT_SCOPE: ScopeChoice = { geography: "utah", lakePowell: "exclude" };
+export const DEFAULT_SCOPE: ScopeChoice = { lakePowell: "exclude" };
 
 /**
  * The reservoirs a page shows.
  *
- * Both of ADR-011's dimensions are now the reader's to choose. Geography was
- * pinned to `utah` here, which is why Fontenelle and Woodruff Narrows -- two
- * reservoirs the refresh pays for every morning, connected to Utah by
- * drainage but never touching it -- were published and then drawn nowhere.
+ * Both dominant-reservoir dimensions are the reader's to choose. Everything
+ * else begins from the whole published western roster (ADR-087).
  */
 export function overviewScope(
   reservoirs: readonly Reservoir[],
@@ -380,14 +372,82 @@ export function watershedOptions(
 }
 
 /**
+ * The three drainage rosters the overview page can build without fetching
+ * `reference.json` on an ordinary, unscoped visit.
+ *
+ * Reservoirs already carry their basin and every state its water reaches;
+ * the payload envelope carries the names of the two coarser tiers. This
+ * reshapes those facts into the same `OpeningRosters` contract the shared
+ * Drainage-area menu reads. It intentionally contains only occupied basins:
+ * on this page a pick filters rows, so an area with no tracked reservoir is
+ * an empty-chart choice rather than useful map context.
+ */
+export function overviewDrainageRosters(
+  reservoirs: readonly Reservoir[],
+  regions: readonly { huc2: string; name: string }[],
+  subregions: readonly { huc4: string; name: string }[]
+): OpeningRosters {
+  const regionNames = new Map(regions.map((entry) => [entry.huc2, entry.name]));
+  const subregionNames = new Map(subregions.map((entry) => [entry.huc4, entry.name]));
+  const basins = new Map<string, { name: string; states: Set<string> }>();
+
+  for (const reservoir of reservoirs) {
+    if (!reservoir.huc6) continue;
+    const entry = basins.get(reservoir.huc6) ?? {
+      name: reservoir.huc6_name ?? reservoir.huc6,
+      states: new Set<string>()
+    };
+    /* `connected_states` is the drainage fact (ADR-060). The fallbacks keep
+     * a payload written before it existed usable without pretending the
+     * point's state is a complete drainage answer. */
+    const states = reservoir.connected_states?.length
+      ? reservoir.connected_states
+      : reservoir.waterbody_states?.length
+        ? reservoir.waterbody_states
+        : reservoir.state ? [reservoir.state] : [];
+    for (const state of states) entry.states.add(state);
+    basins.set(reservoir.huc6, entry);
+  }
+
+  const areas = [...basins].sort(([a], [b]) => a.localeCompare(b))
+    .map(([huc6, entry]) => ({
+      huc6,
+      name: entry.name,
+      states: [...entry.states].sort().join(",")
+    }));
+  const rollup = (width: 2 | 4, names: ReadonlyMap<string, string>) => {
+    const groups = new Map<string, Set<string>>();
+    for (const area of areas) {
+      const code = area.huc6.slice(0, width);
+      const states = groups.get(code) ?? new Set<string>();
+      for (const state of area.states.split(",").filter(Boolean)) states.add(state);
+      groups.set(code, states);
+    }
+    return [...groups].sort(([a], [b]) => a.localeCompare(b))
+      .map(([huc6, states]) => ({
+        huc6,
+        name: names.get(huc6) ?? huc6,
+        states: [...states].sort().join(",")
+      }));
+  };
+
+  return {
+    regions: rollup(2, regionNames),
+    subregions: rollup(4, subregionNames),
+    areas,
+    subbasins: []
+  };
+}
+
+/**
  * The two geographic controls that narrow each other, built together.
  *
  * State holds subregion holds drainage area, so each list is what the
  * controls above it leave -- and the caller passes the roster to narrow,
  * which is deliberately the *widest* scope rather than the reader's chosen
  * one. These controls answer "where can a reader go", a question about which
- * reservoirs this payload carries. The geography select and the two
- * dominant-reservoir switches answer ADR-011's other dimension, what is in
+ * reservoirs this payload carries. The two dominant-reservoir switches
+ * answer what is in
  * the total, and a control that followed them would change shape under
  * them: with Lake Powell excluded, which ADR-062 makes the default, the
  * drainage-area list lost four of the roster's areas including Powell's own.

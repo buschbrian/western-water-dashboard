@@ -211,7 +211,8 @@ describe("a data-only commit deploys on its own", () => {
      * name all of them: a reader who changes the level fetches a different
      * file, so leaving one behind puts them on another week silently. */
     for (const file of ["data/drought/usdm-current.geojson",
-      "data/drought/usdm-huc6.json", "data/drought/usdm-huc4.json"]) {
+      "data/drought/usdm-huc2.json", "data/drought/usdm-huc4.json",
+      "data/drought/usdm-huc6.json", "data/drought/usdm-huc8.json"]) {
       expect(refresh, `${file} is not restored when the week disagrees`)
         .toContain(file);
     }
@@ -219,18 +220,20 @@ describe("a data-only commit deploys on its own", () => {
 
   it("recomputes the coverage at every level the site offers", async () => {
     const refresh = await read("scripts/refresh-daily.sh");
-    /* All three from the one download. Any of them failing means all are
+    /* All four from the one download. Any of them failing means all are
      * suspect, which is why they share a revert. */
     for (const scope of ["west-huc4", "west-huc2"]) {
       expect(refresh)
         .toContain(`tools/compute_drought_coverage.py --scope ${scope}`);
     }
-    /* And each keeps its own archive, which is what gives every level a
-     * previous week to compare against (ADR-074). `merge_history` still
-     * refuses to hold two levels in one file; the answer is one file each,
-     * not one level with a history and two without. */
-    expect(refresh, "a level running with --no-history has no previous week")
-      .not.toContain("--no-history");
+    /* HUC-8 is intentionally the one no-history level (ADR-088); the three
+     * established levels retain their archives and previous-week claims. */
+    expect(refresh).toContain(
+      "tools/compute_drought_coverage.py --scope west-huc8 --no-history");
+    expect(refresh).not.toContain(
+      "tools/compute_drought_coverage.py --scope west-huc4 --no-history");
+    expect(refresh).not.toContain(
+      "tools/compute_drought_coverage.py --scope west-huc2 --no-history");
   });
 
   it("copies the runtime data into the published output instead of bundling it", async () => {

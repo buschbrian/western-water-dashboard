@@ -207,10 +207,8 @@ class TestCommittedOutput:
         a method change that leaves the step alone -- a new land mask, a
         changed class rule -- could recompute one level and leave the other
         published under the old method with nothing said. `merge_history`
-        refuses a mismatched archive week, but only the HUC-6 archive passes
-        through it; the HUC-4 file is written with --no-history and shipped
-        without that gate, which is exactly how it once shipped with no
-        version field at all. Both constants are the engine's, not the
+        refuses a mismatched archive week. HUC-8 deliberately has no archive,
+        so this direct file check is its gate too. Both constants are the engine's, not the
         morning's data, so this cannot go red on a data-only day.
         """
         directory = ROOT / "data" / "drought"
@@ -220,6 +218,18 @@ class TestCommittedOutput:
             assert version == METHOD_VERSION, (
                 f"{path.name} states method version {version!r} and the "
                 f"engine is {METHOD_VERSION!r}; recompute it")
+
+    def test_huc8_is_complete_and_makes_no_previous_week_claim(self):
+        payload = json.loads(
+            (ROOT / "data" / "drought" / "usdm-huc8.json").read_text(encoding="utf-8"))
+        boundaries = json.loads(
+            (ROOT / get_scope("west-huc8").output).read_text(encoding="utf-8"))
+        expected = sorted(
+            feature["properties"]["huc8"] for feature in boundaries["features"])
+        assert payload["level"] == 8
+        assert payload["unit_count"] == 571
+        assert [unit["huc8"] for unit in payload["units"]] == expected
+        assert "previous" not in payload
 
     def test_percentages_are_complete_and_sum_to_the_whole(self, payload):
         for unit in payload["units"]:

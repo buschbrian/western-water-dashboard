@@ -74,7 +74,9 @@ const AREAS: readonly DrainageArea[] = [
   area("160201", "Great Salt Lake", "UT", box(-113, 40, -111, 41.5))
 ];
 
-const ROSTERS: OpeningRosters = { regions: REGIONS, subregions: SUBREGIONS, areas: AREAS };
+const ROSTERS: OpeningRosters = {
+  regions: REGIONS, subregions: SUBREGIONS, areas: AREAS, subbasins: []
+};
 
 describe("reading ?state= and ?area=", () => {
   it("defaults to 'all' and null with no query string", () => {
@@ -105,11 +107,12 @@ describe("reading ?state= and ?area=", () => {
     expect(openingSelectionFromSearch("?area=140200").area).toBe("140200");
   });
 
-  it("refuses an area code at a width this hierarchy does not narrow at", () => {
-    // HUC_CODE itself accepts eight digits; this module's three levels do
-    // not, and a silently-accepted eight-digit code would narrow every
-    // roster to nothing.
-    expect(openingSelectionFromSearch("?area=14020001").area).toBeNull();
+  it("keeps HUC-8 on drought and coarsens it on shared surfaces", () => {
+    expect(openingSelectionFromSearch("?area=14020001").area).toBe("140200");
+    expect(openingSelectionFromSearch("?area=14020001", 8).area).toBe("14020001");
+  });
+
+  it("refuses an area code at a width no surface narrows at", () => {
     expect(openingSelectionFromSearch("?area=1").area).toBeNull();
     expect(openingSelectionFromSearch("?area=abcdef").area).toBeNull();
   });
@@ -128,6 +131,16 @@ describe("reading ?state= and ?area=", () => {
 });
 
 describe("narrowing coarsest-first", () => {
+  it("keeps an HUC-8 drought choice and builds its box from that subbasin", () => {
+    const subbasin = area(
+      "14010101", "Upper Colorado Headwaters", "CO", box(-108.5, 38.5, -107.5, 39.5));
+    const scope = resolveOpeningScope(
+      { state: "CO", area: "14010101" }, { ...ROSTERS, subbasins: [subbasin] });
+    expect(scope.selection.area).toBe("14010101");
+    expect(scope.chosenAreas).toEqual([subbasin]);
+    expect(scope.box).toEqual(subbasin.box);
+  });
+
   it("narrows region, subregion and area together when only a state is chosen", () => {
     const scope = resolveOpeningScope({ state: "UT", area: null }, ROSTERS);
     expect(scope.selection).toEqual({ state: "UT", area: null });
@@ -235,7 +248,8 @@ describe("the opening box", () => {
 
   it("falls back to MAP_BOUNDS rather than an empty view when nothing survives", () => {
     const scope = resolveOpeningScope(
-      { state: "all", area: "999999" }, { regions: [], subregions: [], areas: [] });
+      { state: "all", area: "999999" },
+      { regions: [], subregions: [], areas: [], subbasins: [] });
     expect(scope.chosenAreas).toHaveLength(0);
     expect(scope.box).toEqual(MAP_BOUNDS);
   });
@@ -330,7 +344,7 @@ describe("loadOpeningRosters against the committed reference export", () => {
   // directly and reassembled their results, could not have.
   const reference = readReferenceExport();
 
-  it("loads all three rosters from the real payload, structurally", async () => {
+  it("loads all four rosters from the real payload, structurally", async () => {
     stubFetchJson(reference);
     const warned = vi.spyOn(console, "warn").mockImplementation(() => {});
     const rosters = await loadOpeningRosters("test://opening-scope/committed");
@@ -338,11 +352,13 @@ describe("loadOpeningRosters against the committed reference export", () => {
     expect(rosters.regions.length).toBe(5);
     expect(rosters.subregions.length).toBeGreaterThan(0);
     expect(rosters.areas.length).toBeGreaterThan(0);
+    expect(rosters.subbasins).toHaveLength(571);
     // Subregions and basins are genuinely different levels here -- the
     // property the fallback test below exists because it can silently stop
     // being true.
     for (const subregion of rosters.subregions) expect(subregion.huc6).toMatch(/^\d{4}$/);
     for (const basin of rosters.areas) expect(basin.huc6).toMatch(/^\d{6}$/);
+    for (const subbasin of rosters.subbasins) expect(subbasin.huc6).toMatch(/^\d{8}$/);
 
     const scope = resolveOpeningScope({ state: "UT", area: null }, rosters);
     expect(scope.chosenAreas.length).toBeGreaterThan(0);

@@ -5,6 +5,7 @@ import {
   DRAINAGE_LINE,
   REFERENCE_SCHEMA_VERSION,
   DEFAULT_LEVEL,
+  DROUGHT_JOINABLE_LEVELS,
   JOINABLE_LEVELS,
   parseDrainageUnits,
   referenceGeography
@@ -176,6 +177,15 @@ describe("the drainage-area roster", () => {
     expect(geography?.level).toBe(DEFAULT_LEVEL);
   });
 
+  it("offers subbasins to drought without offering them to storage or snow", () => {
+    const reference = readReferenceExport();
+    const drought = referenceGeography(reference, 8, "drought");
+    expect(DROUGHT_JOINABLE_LEVELS).toEqual([2, 4, 6, 8]);
+    expect(drought?.levels).toEqual([2, 4, 6, 8]);
+    expect(drought?.level).toBe(8);
+    expect(parseDrainageUnits(drought?.drainage, 8)).toHaveLength(571);
+  });
+
   it("names an area after its code when the name is missing", () => {
     const parsed = parseDrainageUnits([{ huc6: "160203", states: "UT" }], 6);
     expect(parsed[0]?.name).toBe("160203");
@@ -219,7 +229,7 @@ describe("the reference export", () => {
     const bytes = gzipSync(
       Buffer.from(JSON.stringify(readReferenceExport()), "utf-8"),
       { level: 9 }).length;
-    expect(bytes).toBeLessThan(30_000);
+    expect(bytes).toBeLessThan(64_000);
   });
 
   it("draws the scope the export names, not one written down here", () => {
