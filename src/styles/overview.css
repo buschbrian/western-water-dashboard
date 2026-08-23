@@ -136,11 +136,17 @@ body {
  * drought bars use `.filterbar-controls`, the storage panel uses `.filters`,
  * and a rule naming only the first silently stopped applying to the third. */
 .where-menu,
-.drainage-menu {
+.drainage-menu,
+.snow-state-menu,
+.drought-state-menu,
+.drought-county-menu {
   min-width: 0;
 }
 .where-menu calcite-label,
-.drainage-menu calcite-label {
+.drainage-menu calcite-label,
+.snow-state-menu calcite-label,
+.drought-state-menu calcite-label,
+.drought-county-menu calcite-label {
   min-width: 0;
   --calcite-label-margin-bottom: 0;
   color: var(--app-muted);
@@ -189,32 +195,96 @@ body {
   letter-spacing: .01em;
 }
 .dashboard-filterbar calcite-select { width: 100%; min-width: 0; }
-/* The map's own controls, one row above the filter bar and of another
- * kind: they change what is drawn over the subject, not which subject is
- * drawn, so they share neither a row nor a shared link with the filters.
- * `display: flex` would beat the `hidden` attribute, so hidden is restated
- * -- the group arrives hidden and only shows once the map starts. */
-.map-controls {
+/* A secondary pane keeps display-only or table-only controls separate from
+ * the place row that changes every figure. Drought uses it for Map options;
+ * Snowpack uses it for Site options (ADR-092, ADR-094). */
+.map-controls,
+.filterbar-secondary-pane {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: .7rem;
+  margin-block-start: .9rem;
+  padding-block-start: .85rem;
+  border-block-start: 1px solid var(--app-border);
+}
+.map-controls[hidden],
+.filterbar-secondary-pane[hidden] { display: none; }
+.map-controls .control-slot { display: contents; }
+.map-controls-head,
+.filterbar-pane-head {
   display: flex;
   flex-wrap: wrap;
-  align-items: end;
-  gap: .65rem;
-  margin: .55rem .15rem 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: .5rem 1rem;
 }
-.map-controls[hidden] { display: none; }
-.map-controls .control-slot { display: contents; }
-.filterbar-toggle {
+.filterbar-pane-head .filterbar-head-actions { margin-inline-start: auto; }
+.map-controls-label {
+  margin: 0;
+  color: var(--app-muted);
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .01em;
+}
+.map-filter-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: .75rem 1rem;
+}
+.map-filter-controls > * { min-width: 0; }
+.snow-site-filter-controls {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  align-items: end;
+  gap: .75rem 1rem;
+}
+.snow-site-filter-controls > * { min-width: 0; }
+/* Direct Calcite labels carry a default bottom margin inside the host. The
+ * search label is native and has none, so leaving it in this one mixed row
+ * starts the search fourteen pixels below the two selects. */
+.snow-site-filter-controls calcite-label { --calcite-label-margin-bottom: 0; }
+.snow-site-filter-controls > label { min-block-size: 4.25rem; }
+.map-layer-controls {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  justify-content: flex-end;
+  gap: .5rem;
+  margin-inline-start: auto;
+}
+.map-layer-controls[hidden] { display: none; }
+.dashboard-filterbar .filterbar-toggle {
   display: inline-flex;
   align-items: center;
+  justify-content: space-between;
   gap: .45rem;
-  color: var(--app-muted);
-  font-size: .78rem;
+  flex: 0 1 12rem;
+  min-width: min(10.5rem, 100%);
+  min-height: 2.15rem;
+  padding: .35rem .55rem;
+  color: var(--app-text);
+  background: transparent;
+  border: 1px solid var(--app-accent);
+  border-radius: .35rem;
+  font-size: .72rem;
   font-weight: 700;
   letter-spacing: .01em;
   cursor: pointer;
 }
-.filterbar-toggle[hidden] { display: none; }
-.filterbar-toggle input[type="checkbox"] { width: 1rem; height: 1rem; margin: 0; }
+.dashboard-filterbar .filterbar-toggle[hidden] { display: none; }
+.dashboard-filterbar .filterbar-toggle:has(input:disabled) { cursor: default; opacity: .62; }
+.dashboard-filterbar .filterbar-toggle:has(input:checked) {
+  background: color-mix(in srgb, var(--app-accent) 12%, transparent);
+}
+.dashboard-filterbar .filterbar-toggle input[type="checkbox"] {
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 1rem;
+  min-height: 0;
+  margin: 0;
+}
+.map-mode-control { min-width: 0; }
 .reset-button {
   min-height: 2.5rem;
   padding: .45rem .85rem;
@@ -258,6 +328,49 @@ body {
 .overview-kpi span { font-size: .72rem; font-weight: 700; letter-spacing: .01em; }
 .overview-kpi strong { display: block; margin-block: .15rem; font-size: clamp(1.25rem, 2vw, 1.75rem); font-variant-numeric: tabular-nums; white-space: nowrap; }
 .overview-kpi small { font-size: .7rem; line-height: 1.35; }
+/* Drought condition names can be longer than a medium-width summary card.
+ * Give every card the same label and value rows, then let a condition wrap
+ * inside its own row instead of drawing through the next card. */
+.drought-summary .overview-kpi {
+  display: grid;
+  grid-template-rows: 2rem minmax(3.2rem, auto) auto;
+  align-content: start;
+}
+.drought-summary .overview-kpi span,
+.drought-summary .overview-kpi small {
+  overflow: visible;
+  text-overflow: clip;
+}
+.drought-summary .overview-kpi span { line-height: 1.35; }
+.drought-summary .overview-kpi small { line-height: 1rem; }
+.drought-summary .overview-kpi strong {
+  margin: 0;
+  line-height: 1.12;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+/* Snowpack has five cards, but the same alignment rule as drought: headings,
+ * values and notes start on matching rows, and a large seasonal percentage
+ * or date stays inside its own card at every supported width. */
+.snow-summary .overview-kpi {
+  display: grid;
+  grid-template-rows: 2rem minmax(2.6rem, auto) auto;
+  align-content: start;
+  min-block-size: 8.4rem;
+}
+.snow-summary .overview-kpi span,
+.snow-summary .overview-kpi small {
+  overflow: visible;
+  text-overflow: clip;
+}
+.snow-summary .overview-kpi span { line-height: 1.35; }
+.snow-summary .overview-kpi small { line-height: 1rem; }
+.snow-summary .overview-kpi strong {
+  margin: 0;
+  line-height: 1.12;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
 /* Six charts now, not two. `auto-fit` with a floor rather than a named
  * column count, for the same reason the filter bar is flex: the layout
  * should not have to know how many charts there are, and adding the fifth
@@ -615,11 +728,23 @@ body {
      the whole width together rather than sitting in a corner of the
      heading row, where they would each be a third of a 360px line. */
   .filterbar-controls { grid-template-columns: 1fr; }
+  .map-filter-controls { grid-template-columns: 1fr; }
+  .snow-site-filter-controls { grid-template-columns: 1fr; }
+  .map-layer-controls { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .map-controls-head .map-layer-controls { flex: 1 1 100%; margin-inline-start: 0; }
+  .map-layer-controls .filterbar-toggle { min-width: 0; }
+  .map-controls-label { margin-block-end: -.15rem; }
+  .map-mode-control { min-width: 0; }
   /* The search takes the head row's full width too, for the same reason
      every other control drops to one per line here: a shared row only
      works with room to share. */
   .filterbar-search > label { flex-basis: 100%; }
   .filterbar-head-actions { flex: 1 1 100%; justify-content: space-between; }
+  .filterbar-pane-head .filterbar-head-actions {
+    flex: 0 1 auto;
+    margin-inline-start: auto;
+    justify-content: flex-end;
+  }
   .dashboard-filterbar .reset-button { flex: 0 1 auto; }
   /* The data pages carry filters, context and display settings that are
      useful after a reader has seen the headline. A phone keeps each heading
@@ -647,7 +772,9 @@ body {
   }
   .mobile-filterbar:not(.mobile-filters-open) .filterbar-head-actions,
   .mobile-filterbar:not(.mobile-filters-open) > .filterbar-search,
-  .mobile-filterbar:not(.mobile-filters-open) > .filterbar-controls {
+  .mobile-filterbar:not(.mobile-filters-open) > .filterbar-controls,
+  .mobile-filterbar:not(.mobile-filters-open) > .map-controls,
+  .mobile-filterbar:not(.mobile-filters-open) > .filterbar-secondary-pane {
     display: none;
   }
   .mobile-filterbar.mobile-filters-open #overview-filter-actions {
@@ -673,6 +800,9 @@ body {
   /* The headline gets its own line on a phone; the rest pair up. */
   .overview-kpi { flex-basis: 9rem; }
   .overview-kpi-primary { flex-basis: 100%; }
+  /* Drought has exactly four peer summaries. Keeping all four at the same
+     width avoids a lone full-width Map age card under two half-width peers. */
+  .drought-summary .overview-kpi-primary { flex-basis: 9rem; }
   .card-heading { flex-wrap: wrap; }
   .table-actions { width: 100%; justify-content: stretch; }
   .table-actions calcite-button { flex: 1 1 auto; }

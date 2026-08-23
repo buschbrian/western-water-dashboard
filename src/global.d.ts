@@ -211,6 +211,13 @@ interface Window {
      * exactly as requested. Not `severityFilter` below, which is a
      * different axis entirely (drought class, not place). */
     areaFilter?: string | null;
+    /** Five-digit county FIPS requested on drought, or null. The county
+     * narrows whole drainage areas by intersection; it is not a county
+     * drought total. */
+    countyFilter?: string | null;
+    /** Whether a requested county resolved to its intersecting drainage
+     * rows. True with no county choice. */
+    countyScopeResolved?: boolean;
     /** Whether the opening-scope roster and reference export actually
      * resolved, as opposed to the degraded state a failed fetch leaves
      * `stateFilter`/`areaFilter` narrowing to run against with no boxes or

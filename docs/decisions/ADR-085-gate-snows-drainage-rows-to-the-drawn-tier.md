@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted; narrows ADR-084's snow clause
+Accepted; coarser-row presentation superseded by ADR-094
 
 ## Date
 

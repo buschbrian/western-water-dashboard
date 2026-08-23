@@ -149,10 +149,10 @@ cannot narrow twice. `WIDEST_SCOPE` remains for callers that must still pass an
 options object, and its `Required` is what makes admitting the next dominant
 reservoir a compile error rather than a silent exclusion.
 
-## Two place menus to a page (ADR-084)
+## Place controls by surface (ADR-084, ADR-091, ADR-094)
 
-Every map page asks "where am I" with two single-select menus, both built as
-indented option groups ([ADR-076](../decisions/ADR-076-nest-the-place-menus-and-let-the-heading-carry-the-state.md)'s
+Storage asks "where am I" with two single-select menus, both built as indented
+option groups ([ADR-076](../decisions/ADR-076-nest-the-place-menus-and-let-the-heading-carry-the-state.md)'s
 shape):
 
 | Menu | Offers | Writes |
@@ -169,13 +169,8 @@ it answers the drawn question (division without narrowing) and the menu answers
 the selected question; merging them would answer two of the four scopes with
 one control.
 
-Snow's rows are gated by what its payload can draw: a row at the drawn tier is
-offered only when it has a publishable figure, a coarser row only when some
-publishable choice sits beneath it, and nothing finer than the drawn tier is
-offered (ADR-085: a row can be gated honestly only against figures the payload
-publishes, and those exist per drawn level). That is ADR-071's empty-page
-repair carried forward per row.
-Drought and storage offer the full published roster. On storage every drainage
+Snow and Drought no longer use this across-level menu. Storage offers the full
+published roster. On storage every drainage
 pick is the in-page dimming filter at any width (codes nest, so a subregion row
 prefix-filters), written to `?drainage=` through the same `writeUrl` as every
 other filter there; reading `?area=` links still works.
@@ -187,10 +182,55 @@ The menus narrow against state but never against the reader's own area pick —
 a menu that removed the families around the current choice would leave "All"
 as the only way out.
 
-County exists only where the payload carries FIPS codes: reservoirs do, snow's
-site counties are bare names (recorded as debt in ADR-084), drought publishes
-no county rows. A county pick writes `?county=` and leaves `?state=` alone;
-the two axes stay two even though the controls are one.
+County exists in the combined Where menu only where the payload carries FIPS
+codes: reservoirs do. A storage county pick writes `?county=` and leaves
+`?state=` alone; the two axes stay two even though the controls are one.
+
+### Snowpack's sequential selected scope
+
+Snowpack orders three controls: **State**, **Area size**, then the area tier
+named by that size (ADR-094). The last control offers Region, Subregion or
+Basin rows only at the drawn level, and each row must have a publishable figure
+in the current Snowpack payload. That keeps ADR-085's empty-page repair while
+removing its coarser rows from this control.
+
+A state change clears `?area=` before the new state's areas are offered. An
+Area size change also clears it before navigating with the new `?level=`.
+The parameter meanings do not change. A coarser saved `?area=` can still
+narrow a finer page on arrival; the exact-tier control shows every area until
+the reader chooses one at that tier.
+
+County is not a place control on Snowpack. Each site carries a bare county
+name, not the verified five-digit identity used by the other county axes. Site
+name or county remains a table search beside Elevation and Reporting in the
+separate Site options pane.
+
+### Drought's sequential selected scope
+
+Drought orders four controls: **State**, **County**, **Area size**, then the
+area tier named by that size (ADR-091). County is absent until a state is held.
+Its five-digit FIPS choices come from the detailed Census county service. A
+chosen county is sent to the WBD service as a spatial filter at the drawn
+level; the returned codes select rows from the committed weekly coverage.
+Nothing computes a county drought share.
+
+The selected-scope result is therefore “whole drainage areas that intersect
+this county.” The page states that sentence and says the units are not clipped
+at the county line. A state still narrows through the published WBD `states`
+attribute, and an area still narrows by code prefix; county is an additional
+intersection against the exact drawn-level codes.
+
+Area size remains the drawn-scope control and still performs a full navigation.
+On drought, changing it clears the prior tier's `?area=` because the following
+menu is replaced by the new tier. It keeps `?state=` and page-local
+`?county=`. The area menu offers regions at level 2, subregions at 4, basins at
+6 and subbasins at 8—never all four at once.
+
+An unchosen county list is optional and fills after the figures render. A link
+that carries `?county=` must resolve before the figures render. Failure does
+not manufacture a county answer: the page keeps the wider resolved scope and
+says the county could not be loaded. County remains outside
+`portableSearch`; state, area and level continue to travel between pages.
 
 ## A county is where a thing is; a drainage area is where its water goes
 

@@ -554,7 +554,14 @@ const browser = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
       / (Math.min(foreground, background) + .05);
     return {
       contrast, display: style.display, open: dialog.hasAttribute("open"),
-      theme: document.documentElement.dataset.theme
+      theme: document.documentElement.dataset.theme,
+      regionHeading: [...dialog.querySelectorAll(".splash-places h3")]
+        .map((heading) => heading.textContent?.trim())
+        .find((text) => text === "A region") ?? null,
+      subjectColumns: new Set([...dialog.querySelectorAll(".splash-subjects label")]
+        .map((label) => Math.round(label.getBoundingClientRect().left))).size,
+      shortestPlaceButton: Math.min(...[...dialog.querySelectorAll(".splash-place")]
+        .map((button) => button.getBoundingClientRect().height))
     };
   });
   console.log("  opened:", JSON.stringify(opened));
@@ -562,6 +569,12 @@ const browser = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
   check(opened.open && opened.display === "flex", `${label}: the chooser did not open`);
   check(opened.contrast >= 4.5,
     `${label}: text contrast is ${opened.contrast.toFixed(2)}:1, expected at least 4.5:1`);
+  check(opened.regionHeading === "A region",
+    `${label}: the HUC2 choices are not named as regions`);
+  check(opened.subjectColumns === 2,
+    `${label}: the four subject choices do not form two aligned columns`);
+  check(opened.shortestPlaceButton >= 44,
+    `${label}: a place button is only ${opened.shortestPlaceButton}px high`);
 
   await tab.getByRole("button", { name: "Show the whole west" }).click();
   await tab.waitForFunction(() =>
@@ -2584,6 +2597,12 @@ for (const viewport of VIEWPORTS) {
       tableRows: document.querySelectorAll("#snow-site-rows tr").length,
       monthRows: document.querySelectorAll("#snow-month-rows tr").length,
       curveDrawn: Boolean(document.querySelector("#snow-curve-host svg")),
+      summaryCards: [...document.querySelectorAll(".snow-summary .overview-kpi")]
+        .map((card) => ({
+          height: card.getBoundingClientRect().height,
+          overflowCount: [...card.querySelectorAll("span, strong, small")]
+            .filter((node) => node.scrollWidth > node.clientWidth + 1).length
+        })),
       search: window.location.search,
       viewport: document.documentElement.clientWidth,
       scroll: document.documentElement.scrollWidth
@@ -2594,6 +2613,12 @@ for (const viewport of VIEWPORTS) {
       `${label}: curve drawn ${state.curveDrawn}, readiness holds ${state.ready?.curvePoints} points`);
     check(state.ready?.curvePoints === 0 || state.monthRows > 0,
       `${label}: a drawn curve published no month table rows`);
+    check(state.summaryCards.length === 5
+      && state.summaryCards.every((card) => card.overflowCount === 0),
+    `${label}: summary text leaves its card ${JSON.stringify(state.summaryCards)}`);
+    const snowSummaryHeights = state.summaryCards.map((card) => card.height);
+    check(Math.max(...snowSummaryHeights) - Math.min(...snowSummaryHeights) <= 1,
+      `${label}: summary card heights differ ${JSON.stringify(snowSummaryHeights)}`);
     check(!state.search.includes("area="),
       `${label}: the whole region still carries ${state.search}`);
     check(state.scroll <= state.viewport + 1,
@@ -2724,6 +2749,12 @@ for (const viewport of VIEWPORTS) {
       legendItems: document.querySelectorAll(".drought-legend-item").length,
       gapRows: document.querySelectorAll(".drought-gap-row").length,
       severityBars: document.querySelectorAll(".drought-severity-bar").length,
+      summaryCards: [...document.querySelectorAll(".drought-summary .overview-kpi")]
+        .map((card) => ({
+          width: card.getBoundingClientRect().width,
+          overflowCount: [...card.querySelectorAll("span, strong, small")]
+            .filter((node) => node.scrollWidth > node.clientWidth + 1).length
+        })),
       /* Every row and every bar carries its own sentence. A chart whose
        * marks a screen reader cannot read is half a chart on this page. */
       gapTitles: document.querySelectorAll(".drought-gap-row > title").length,
@@ -2755,6 +2786,12 @@ for (const viewport of VIEWPORTS) {
       `${label}: rendered ${state.rows} area rows, readiness reported ${state.ready?.rows}`);
     check(state.bars === state.rows && state.tableRows === state.rows,
       `${label}: ${state.bars} bars and ${state.tableRows} table rows for ${state.rows} areas`);
+    check(state.summaryCards.length === 4
+      && state.summaryCards.every((card) => card.overflowCount === 0),
+    `${label}: summary text leaves its card ${JSON.stringify(state.summaryCards)}`);
+    const summaryWidths = state.summaryCards.map((card) => card.width);
+    check(Math.max(...summaryWidths) - Math.min(...summaryWidths) <= 1,
+      `${label}: summary card widths differ ${JSON.stringify(summaryWidths)}`);
     check(expectedStorageJoined > 0
       && state.ready?.storageJoined === expectedStorageJoined,
       `${label}: storage joined ${state.ready?.storageJoined} areas, expected `
@@ -3002,6 +3039,90 @@ for (const viewport of VIEWPORTS) {
   }
   for (const err of errors) failures.push(`${label}: ${err}`);
   await context.close();
+}
+
+/* Snowpack's five-card strip changes row count at medium widths. Keep every
+ * card equal and contained there, between the standard desktop and phone
+ * widths. */
+{
+  const viewport = { name: "medium", width: 860, height: 900 };
+  const context = await newPageContext(browser, viewport);
+  const tab = await context.newPage();
+  const label = "Snowpack summary (medium 860px)";
+  try {
+    await tab.goto(`${URL}snow.html`, {
+      waitUntil: "domcontentloaded", timeout: 60000
+    });
+    await tab.waitForFunction(() => window.__snowReady !== undefined,
+      { timeout: 60000 });
+    const summary = await tab.evaluate(() => {
+      const cards = [...document.querySelectorAll(".snow-summary .overview-kpi")];
+      return {
+        cards: cards.length,
+        heights: cards.map((card) => card.getBoundingClientRect().height),
+        overflows: cards.flatMap((card, cardIndex) =>
+          [...card.querySelectorAll("span, strong, small")]
+            .filter((node) => node.scrollWidth > node.clientWidth + 1)
+            .map((node) => ({ cardIndex, tag: node.tagName, text: node.textContent }))),
+        scroll: document.documentElement.scrollWidth,
+        viewport: document.documentElement.clientWidth
+      };
+    });
+    check(summary.cards === 5,
+      `${label}: rendered ${summary.cards} summary cards`);
+    check(summary.overflows.length === 0,
+      `${label}: summary text leaves its box ${JSON.stringify(summary.overflows)}`);
+    check(Math.max(...summary.heights) - Math.min(...summary.heights) <= 1,
+      `${label}: card heights differ ${JSON.stringify(summary.heights)}`);
+    check(summary.scroll <= summary.viewport + 1,
+      `${label}: page overflows horizontally (${summary.scroll}px in ${summary.viewport}px)`);
+  } catch (error) {
+    failures.push(`${label}: ${error.message}`);
+  } finally {
+    await context.close();
+  }
+}
+
+/* Medium widths are where a long drought class used to draw through the
+ * next summary card. The standard matrix proves desktop and phone; this one
+ * holds the exact four-card layout between them. */
+{
+  const viewport = { name: "medium", width: 860, height: 900 };
+  const context = await newPageContext(browser, viewport);
+  const tab = await context.newPage();
+  const label = "Drought summary (medium 860px)";
+  try {
+    await tab.goto(`${URL}drought.html`, {
+      waitUntil: "domcontentloaded", timeout: 60000
+    });
+    await tab.waitForFunction(() => window.__droughtReady !== undefined,
+      { timeout: 60000 });
+    const summary = await tab.evaluate(() => {
+      const cards = [...document.querySelectorAll(".drought-summary .overview-kpi")];
+      return {
+        cards: cards.length,
+        heights: cards.map((card) => card.getBoundingClientRect().height),
+        overflows: cards.flatMap((card, cardIndex) =>
+          [...card.querySelectorAll("span, strong, small")]
+            .filter((node) => node.scrollWidth > node.clientWidth + 1)
+            .map((node) => ({ cardIndex, tag: node.tagName, text: node.textContent }))),
+        scroll: document.documentElement.scrollWidth,
+        viewport: document.documentElement.clientWidth
+      };
+    });
+    check(summary.cards === 4,
+      `${label}: rendered ${summary.cards} summary cards`);
+    check(summary.overflows.length === 0,
+      `${label}: summary text leaves its box ${JSON.stringify(summary.overflows)}`);
+    check(Math.max(...summary.heights) - Math.min(...summary.heights) <= 1,
+      `${label}: card heights differ ${JSON.stringify(summary.heights)}`);
+    check(summary.scroll <= summary.viewport + 1,
+      `${label}: page overflows horizontally (${summary.scroll}px in ${summary.viewport}px)`);
+  } catch (error) {
+    failures.push(`${label}: ${error.message}`);
+  } finally {
+    await context.close();
+  }
 }
 
 /*
@@ -3735,6 +3856,13 @@ for (const failure of [
       ready: window[key],
       control: document.querySelectorAll(".level-control calcite-select").length,
       chosen: document.querySelector(".level-control calcite-select")?.value ?? null,
+      snowAreaLabel: [...(document.querySelector(
+        ".snow-drainage-menu calcite-label")?.childNodes ?? [])]
+        .filter((node) => node.nodeType === 3)
+        .map((node) => node.textContent.trim()).join(" "),
+      snowAreaValues: [...document.querySelectorAll(
+        ".snow-drainage-menu calcite-option")]
+        .map((option) => option.getAttribute("value")),
       viewport: document.documentElement.clientWidth,
       scroll: document.documentElement.scrollWidth,
       /* Both renderings of the bar. They are generated from one table so
@@ -3755,6 +3883,13 @@ for (const failure of [
       `${scenario.label}: no area-size control was built`);
     check(state.chosen === "4",
       `${scenario.label}: the control shows ${state.chosen}, not the level in the address`);
+    if (scenario.label === "Snowpack at subregions") {
+      check(state.snowAreaLabel === "Subregion",
+        `${scenario.label}: the area control is labelled ${state.snowAreaLabel}`);
+      check(state.snowAreaValues.length > 1
+          && state.snowAreaValues.slice(1).every((value) => value?.length === 4),
+        `${scenario.label}: the area control mixes tiers ${state.snowAreaValues.join(", ")}`);
+    }
     check(state.scroll <= state.viewport + 1,
       `${scenario.label}: the page scrolls sideways at the coarser level`);
     /* The level is one parameter across all three maps, and the bar is where
@@ -3913,29 +4048,29 @@ for (const failure of [
     "Where control: no state narrows the default scope without emptying it");
 
   /*
-   * The two place menus every map page builds (ADR-084): Where -- states,
-   * counties beneath where a surface has county material -- and one
-   * Drainage-area menu spanning region, subregion and basin. What differs
-   * per host is only whether the menus exist at all, so the cases assert
-   * presence once each and one value apiece; the deeper behaviour (gating,
-   * level-forcing picks, the clearing rule) is held by the per-page
-   * coverage above and the model's own unit tests.
+   * Storage keeps ADR-084's two place menus. Snow and drought use their
+   * sequential State and drawn-tier area controls (ADR-094, ADR-091). The
+   * cases use each surface's selectors while holding the shared contract: a
+   * state link is shown as chosen and the hydrologic area stays at all.
    */
   const cases = [
     {
       label: "Storage map", url: `${URL}?state=${storageState?.code}`,
       signal: "__dashboardReady", drawn: "drainageAreas",
-      where: true, drainage: true
+      stateSelector: '.where-menu calcite-select[label="Which state or county to show"]',
+      drainageSelector: '.drainage-menu calcite-select[label="Which drainage area to show"]'
     },
     {
       label: "Snowpack", url: `${URL}snow.html?state=${storageState?.code}`,
       signal: "__snowReady", drawn: "mapBasins",
-      where: true, drainage: true
+      stateSelector: '.snow-state-menu calcite-select[label="Which state to show"]',
+      drainageSelector: ".snow-drainage-menu calcite-select"
     },
     {
       label: "Drought", url: `${URL}drought.html?state=${storageState?.code}`,
       signal: "__droughtReady", drawn: "mapOutlines",
-      where: true, drainage: true
+      stateSelector: '.drought-state-menu calcite-select[label="Which state to show"]',
+      drainageSelector: ".drought-drainage-menu calcite-select"
     }
   ];
 
@@ -3969,25 +4104,22 @@ for (const failure of [
       await tab.waitForFunction(
         ([key, field]) => window[key]?.[field] !== undefined,
         [scenario.signal, scenario.drawn], { timeout: 90000 });
-      await tab.waitForFunction(
-        () => document.querySelector(
-          '.where-menu calcite-select[label="Which state or county to show"]') !== null
-          && document.querySelector(
-          '.drainage-menu calcite-select[label="Which drainage area to show"]') !== null,
-        { timeout: 90000 });
-      const state = await tab.evaluate(() => ({
-        stateValues: [...document.querySelectorAll(
-          '.where-menu calcite-select[label="Which state or county to show"]')]
+      await tab.waitForFunction(([stateSelector, drainageSelector]) =>
+        document.querySelector(stateSelector) !== null
+          && document.querySelector(drainageSelector) !== null,
+      [scenario.stateSelector, scenario.drainageSelector], { timeout: 90000 });
+      const state = await tab.evaluate(({ stateSelector, drainageSelector }) => ({
+        stateValues: [...document.querySelectorAll(stateSelector)]
           .map((select) => select.value),
-        drainageValues: [...document.querySelectorAll(
-          '.drainage-menu calcite-select[label="Which drainage area to show"]')]
+        drainageValues: [...document.querySelectorAll(drainageSelector)]
           .map((select) => select.value),
         /* Every visible control label in each group the menus join, so two
          * controls answering one question under one word fail here
          * (AGENTS.md invariant 8). Own text nodes only: a `<label>` wrapping
          * a native `<select>` has every option's text in its `textContent`,
          * and the word a reader sees is the one before the control. */
-        groupLabels: [...document.querySelectorAll(".where-menu, .drainage-menu")]
+        groupLabels: [...document.querySelectorAll(
+          ".where-menu, .drainage-menu, .snow-state-menu, .drought-state-menu")]
           /* Past the slot, to the group the control actually joins. The
              control is placed into a `.control-slot` now, which is
              `display: contents` and so is not the row it appears in -- and
@@ -4004,7 +4136,8 @@ for (const failure of [
             .filter((text) => text !== "")),
         filterbar: (() => {
           const bar = document.querySelector(".dashboard-filterbar");
-          const menu = bar?.querySelector(".where-menu, .drainage-menu");
+          const menu = bar?.querySelector(
+            ".where-menu, .drainage-menu, .snow-state-menu, .drought-state-menu");
           const grid = bar?.querySelector(".filterbar-controls");
           return bar && menu ? {
             height: Math.round(bar.getBoundingClientRect().height),
@@ -4018,7 +4151,10 @@ for (const failure of [
         })(),
         viewport: document.documentElement.clientWidth,
         scroll: document.documentElement.scrollWidth
-      }));
+      }), {
+        stateSelector: scenario.stateSelector,
+        drainageSelector: scenario.drainageSelector
+      });
       console.log("  where control:", JSON.stringify(state));
       check(state.stateValues.length >= 1, `${label}: no Where menu was built`);
       check(state.drainageValues.length >= 1, `${label}: no Drainage-area menu was built`);
@@ -4366,72 +4502,136 @@ for (const failure of [
           `the link ?state=UT&county=${utahCounty} came back as "${roundTrip}"`);
       }
 
-      // The Drainage menu, on the drought page, which spans every level.
-      await tab.goto(`${URL}drought.html`,
+      /* Drought's page-specific sequence (ADR-091). Stub only the two
+       * selected-scope queries so this checks our wiring rather than the
+       * boundary publishers' uptime; map tile and reference-layer queries
+       * continue to their ordinary services. */
+      await context.route(
+        "**/USA_Census_Counties/FeatureServer/0/query**", async (route) => {
+          const requestUrl = new globalThis.URL(route.request().url());
+          const where = requestUrl.searchParams.get("where");
+          if (where === "STATE_ABBR='UT'") {
+            await route.fulfill({ contentType: "application/json", body: JSON.stringify({
+              features: [
+                { attributes: { FIPS: "49049", NAME: "Utah County", STATE_ABBR: "UT" } },
+                { attributes: { FIPS: "49051", NAME: "Wasatch County", STATE_ABBR: "UT" } }
+              ]
+            }) });
+            return;
+          }
+          if (where === "FIPS='49049'") {
+            await route.fulfill({ contentType: "application/json", body: JSON.stringify({
+              features: [{
+                attributes: { FIPS: "49049", NAME: "Utah County", STATE_ABBR: "UT" },
+                geometry: { rings: [[
+                  [-112, 40], [-111, 40], [-111, 41], [-112, 41], [-112, 40]
+                ]] }
+              }]
+            }) });
+            return;
+          }
+          await route.continue();
+        });
+      await context.route(
+        "**/Watershed_Boundary_Dataset_HUC_6s/FeatureServer/0/query**",
+        async (route) => {
+          if ((route.request().postData() ?? "").includes("esriSpatialRelIntersects")) {
+            await route.fulfill({ contentType: "application/json", body: JSON.stringify({
+              features: [
+                { attributes: { huc6: "160202" } },
+                { attributes: { huc6: "160203" } }
+              ]
+            }) });
+            return;
+          }
+          await route.continue();
+        });
+
+      await tab.goto(`${URL}drought.html?state=all&level=6`,
         { waitUntil: "domcontentloaded", timeout: 60000 });
       await tab.waitForFunction(() => window.__droughtReady !== undefined,
         null, { timeout: 120000 });
       await tab.waitForFunction(() =>
-        document.querySelector(
-          '.drainage-menu calcite-select[label="Which drainage area to show"]') !== null,
+        document.querySelector('.drought-state-menu calcite-select') !== null
+          && document.querySelector('.level-control calcite-select') !== null
+          && document.querySelector('.drought-drainage-menu calcite-select') !== null,
       { timeout: 90000 });
-      const menuNesting = await tab.evaluate(() => {
-        const groupsOf = (root) => [...root.querySelectorAll("calcite-option-group")]
-          .map((group) => ({
-            label: group.getAttribute("label"),
-            options: group.querySelectorAll("calcite-option").length
-          }));
+      const droughtOpening = await tab.evaluate(() => {
+        const state = document.querySelector(".drought-state-menu");
+        const level = document.querySelector(".level-control");
+        const area = document.querySelector(".drought-drainage-menu");
         return {
-          whereSelect: Boolean(document.querySelector(
-            '.where-menu calcite-select[label="Which state or county to show"]')),
-          whereGroups: (() => {
-            const root = document.querySelector(".where-menu");
-            return root ? groupsOf(root) : [];
-          })(),
-          drainageGroups: (() => {
-            const root = document.querySelector(".drainage-menu");
-            return root ? groupsOf(root) : [];
-          })()
+          county: Boolean(document.querySelector(".drought-county-menu")),
+          order: state && level && area
+            ? Boolean(state.compareDocumentPosition(level) & Node.DOCUMENT_POSITION_FOLLOWING)
+              && Boolean(level.compareDocumentPosition(area) & Node.DOCUMENT_POSITION_FOLLOWING)
+            : false,
+          areaLabel: area?.querySelector("calcite-label")?.firstChild?.textContent?.trim(),
+          areaValues: [...(area?.querySelectorAll("calcite-option") ?? [])]
+            .map((option) => option.getAttribute("value"))
         };
       });
-      console.log(`  ${label}: menu groups `
-        + JSON.stringify(menuNesting));
-      check(menuNesting.whereSelect,
-        `${label}: no Where menu was built beside the Drainage menu`);
-      check(menuNesting.whereGroups.length === 0,
-        `${label}: the Where menu carries groupings though this page offers `
-        + "no counties to group");
-      /* Three tiers over one level of groups works because the tiers are
-       * ordered: region rows first ungrouped, then subregions under their
-       * regions, then basins under their subregions. */
-      check(menuNesting.drainageGroups.length > 0,
-        `${label}: the Drainage menu carries no grouping at all`);
-      check(menuNesting.drainageGroups.every((group) => /^[A-Z]/.test(group.label)
-        && !/^\d+$/.test(group.label)),
-        `${label}: a Drainage-menu grouping is labelled "${menuNesting.drainageGroups
-          .map((group) => group.label).join('", "')}", not a published name`);
-      /* Keyboard reachability: every grouped row stays an enabled option of
-       * the one native `<select>` the control renders internally -- nothing
-       * parked outside the tab order behind a pointer-only flyout. */
-      const reachable = await tab.evaluate(() =>
-        [".where-menu", ".drainage-menu"].map((rootSelector) => {
-          const root = document.querySelector(rootSelector);
-          if (!root) return { rootSelector, total: 0, disabled: -1, grouped: 0, loose: -1 };
-          const select = root.querySelector("calcite-select");
-          const options = [...select.querySelectorAll("calcite-option")];
-          return {
-            rootSelector,
-            total: options.length,
-            disabled: options.filter((option) => option.hasAttribute("disabled")).length,
-            grouped: select.querySelectorAll("calcite-option-group").length,
-            loose: [...select.querySelectorAll(":scope > calcite-option")]
-              .filter((option) => option.getAttribute("value") !== "all").length
-          };
-        }));
-      for (const menu of reachable) {
-        check(menu.disabled === 0,
-          `${label}: ${menu.disabled} ${menu.rootSelector} options are disabled`);
-      }
+      check(droughtOpening.county === false,
+        `${label}: County appears before a state is selected`);
+      check(droughtOpening.order,
+        `${label}: drought controls do not flow State, Area size, Basin`);
+      check(droughtOpening.areaLabel === "Basin",
+        `${label}: level 6 labels its area control "${droughtOpening.areaLabel}"`);
+      check(droughtOpening.areaValues.slice(1).every((value) => /^\d{6}$/.test(value ?? "")),
+        `${label}: the Basin control mixes hydrologic tiers`);
+
+      /* Select State as a reader does. The navigation clears the old area
+       * and the next page reveals County as its own control. */
+      await tab.evaluate(() => {
+        const select = document.querySelector(".drought-state-menu calcite-select");
+        select.value = "UT";
+        select.dispatchEvent(new CustomEvent("calciteSelectChange", { bubbles: true }));
+      });
+      await tab.waitForFunction(() => window.location.search.includes("state=UT")
+        && document.querySelectorAll(".drought-county-menu calcite-option").length === 3,
+      { timeout: 90000 });
+      const countyState = await tab.evaluate(() => ({
+        values: [...document.querySelectorAll(".drought-county-menu calcite-option")]
+          .map((option) => option.getAttribute("value")),
+        order: (() => {
+          const state = document.querySelector(".drought-state-menu");
+          const county = document.querySelector(".drought-county-menu");
+          const level = document.querySelector(".level-control");
+          return state && county && level
+            ? Boolean(state.compareDocumentPosition(county) & Node.DOCUMENT_POSITION_FOLLOWING)
+              && Boolean(county.compareDocumentPosition(level) & Node.DOCUMENT_POSITION_FOLLOWING)
+            : false;
+        })()
+      }));
+      check(countyState.values.join(",") === "all,49049,49051",
+        `${label}: Utah counties are ${countyState.values.join(",")}`);
+      check(countyState.order,
+        `${label}: County does not follow State and precede Area size`);
+
+      await tab.evaluate(() => {
+        const select = document.querySelector(".drought-county-menu calcite-select");
+        select.value = "49049";
+        select.dispatchEvent(new CustomEvent("calciteSelectChange", { bubbles: true }));
+      });
+      await tab.waitForFunction(() => window.__droughtReady?.countyFilter === "49049"
+        && window.__droughtReady?.countyScopeResolved === true,
+      { timeout: 90000 });
+      const countyFiltered = await tab.evaluate(() => ({
+        ready: window.__droughtReady,
+        rows: document.querySelectorAll(".drought-row").length,
+        areaValues: [...document.querySelectorAll(
+          ".drought-drainage-menu calcite-option")]
+          .map((option) => option.getAttribute("value")),
+        summary: document.querySelector("#drought-scope-summary")?.textContent ?? ""
+      }));
+      check(countyFiltered.ready?.units === 2 && countyFiltered.rows === 2,
+        `${label}: county filter rendered ${countyFiltered.rows} rows and reported `
+        + `${countyFiltered.ready?.units}, expected 2`);
+      check(countyFiltered.areaValues.join(",") === "all,160202,160203",
+        `${label}: county Basin choices are ${countyFiltered.areaValues.join(",")}`);
+      check(countyFiltered.summary.includes("intersect Utah County")
+        && countyFiltered.summary.includes("drawn whole"),
+      `${label}: county summary does not state the whole-area intersection rule`);
     } catch (error) {
       failures.push(`${label}: ${error.message}`);
     } finally {
@@ -4444,13 +4644,12 @@ for (const failure of [
 }
 
 /*
- * One control family to a filter bar, and the map's own controls in their
- * own group. The place menus are Calcite; a native `<select>` beside them
- * differs in height, focus ring and open behaviour and reads as a
- * different kind of control. And the drought map's toggles change what is
- * drawn over the subject -- not a scope, not in a shared link -- so they
- * belong above the bar, declared, not appended onto its end after the map
- * resolves.
+ * One control family to a filter bar. The place menus are Calcite; a native
+ * `<select>` beside them differs in height, focus ring and open behaviour.
+ * Drought's presentation controls and Snowpack's table filters remain in
+ * their own labelled panes because neither group changes the selected place.
+ * Each pane sits inside the same card after the place controls and owns its
+ * upper-right action (ADR-092, ADR-094).
  */
 {
   console.log("\n=== Filter bar families");
@@ -4468,6 +4667,10 @@ for (const failure of [
         await tab.goto(page.url, { waitUntil: "domcontentloaded", timeout: 60000 });
         await tab.waitForFunction((key) => window[key] !== undefined,
           page.signal, { timeout: 120000 });
+        if (viewport.width <= 670) {
+          const prefix = page.name === "Drought" ? "drought" : "snow";
+          await tab.locator(`#${prefix}-filter-toggle`).click({ timeout: 5000 });
+        }
         const state = await tab.evaluate(() => {
           const bar = document.querySelector(".dashboard-filterbar");
           const selects = bar ? [...bar.querySelectorAll("select")] : [];
@@ -4478,21 +4681,86 @@ for (const failure of [
             calciteSelects: calciteSelects.length,
             scales: [...new Set(calciteSelects.map((select) =>
               select.getAttribute("scale")))],
-            /* The drought map's group: present, ahead of the bar, holding
-             * its own controls rather than lending them to the filters. */
+            /* The drought map's group: present inside the card after the
+             * filter grid, holding its own labelled row. */
             mapGroup: Boolean(document.querySelector(".map-controls")),
-            mapGroupBeforeBar: (() => {
+            mapGroupInsideBar: (() => {
               const group = document.querySelector(".map-controls");
               const bar = document.querySelector(".dashboard-filterbar");
-              return Boolean(group && bar && Boolean(
-                group.compareDocumentPosition(bar) & Node.DOCUMENT_POSITION_FOLLOWING));
+              return Boolean(group && bar && bar.contains(group));
             })(),
+            mapGroupAfterFilters: (() => {
+              const group = document.querySelector(".map-controls");
+              const filters = document.querySelector(".filterbar-controls");
+              return Boolean(group && filters && Boolean(
+                filters.compareDocumentPosition(group) & Node.DOCUMENT_POSITION_FOLLOWING));
+            })(),
+            siteGroup: Boolean(document.querySelector(".snow-site-controls")),
+            siteGroupInsideBar: (() => {
+              const group = document.querySelector(".snow-site-controls");
+              const bar = document.querySelector(".dashboard-filterbar");
+              return Boolean(group && bar && bar.contains(group));
+            })(),
+            siteGroupAfterFilters: (() => {
+              const group = document.querySelector(".snow-site-controls");
+              const filters = document.querySelector(".snow-place-controls");
+              return Boolean(group && filters && Boolean(
+                filters.compareDocumentPosition(group) & Node.DOCUMENT_POSITION_FOLLOWING));
+            })(),
+            siteSearchInGroup: Boolean(document.querySelector(
+              ".snow-site-controls #snow-query")),
+            elevationInGroup: Boolean(document.querySelector(
+              ".snow-site-controls #snow-elev")),
+            reportingInGroup: Boolean(document.querySelector(
+              ".snow-site-controls #snow-reporting")),
+            siteFiltersInPlaceGrid: Boolean(document.querySelector(
+              ".snow-place-controls #snow-query, .snow-place-controls #snow-elev, "
+              + ".snow-place-controls #snow-reporting")),
+            siteResetInHeader: Boolean(document.querySelector(
+              ".filterbar-pane-head #snow-reset")),
+            siteActionTop: document.querySelector("#snow-reset")
+              ?.getBoundingClientRect().top ?? 0,
+            siteFilterTop: document.querySelector(".snow-site-filter-controls")
+              ?.getBoundingClientRect().top ?? 0,
+            siteFilterBoxes: ["#snow-query", "#snow-elev", "#snow-reporting"]
+              .map((selector) => {
+                const control = document.querySelector(selector);
+                const box = control?.closest("label, calcite-label")
+                  ?.getBoundingClientRect();
+                return box ? { left: box.left, top: box.top, width: box.width } : null;
+              }),
+            snowPlaceBoxes: [".snow-state-menu", ".level-control", ".snow-drainage-menu"]
+              .map((selector) => {
+                const box = document.querySelector(selector)?.getBoundingClientRect();
+                return box ? { left: box.left, top: box.top, width: box.width } : null;
+              }),
             toggleInGroup: Boolean(document.querySelector(
               ".map-controls #drought-show-reservoirs")),
             snowSitesInGroup: Boolean(document.querySelector(
               ".map-controls #drought-show-snow-sites")),
             toggleInBar: Boolean(document.querySelector(
               ".dashboard-filterbar .filterbar-toggle")),
+            conditionInGroup: Boolean(document.querySelector(
+              ".map-controls #drought-worse")),
+            orderInGroup: Boolean(document.querySelector(
+              ".map-controls #drought-sort")),
+            presentationInPlaceGrid: Boolean(document.querySelector(
+              ".filterbar-controls #drought-worse, .filterbar-controls #drought-sort")),
+            layersInOwnGroup: Boolean(document.querySelector(
+              ".map-layer-controls #drought-show-reservoirs")),
+            layersInHeader: Boolean(document.querySelector(
+              ".map-controls-head .map-layer-controls #drought-show-reservoirs")),
+            layerActionTop: document.querySelector(
+              "label[for='drought-show-reservoirs']")?.getBoundingClientRect().top ?? 0,
+            mapFilterTop: document.querySelector(
+              ".map-filter-controls")?.getBoundingClientRect().top ?? 0,
+            toggleHeight: document.querySelector(
+              "label[for='drought-show-reservoirs']")?.getBoundingClientRect().height ?? 0,
+            presentationBoxes: ["#drought-worse", "#drought-sort"].map((selector) => {
+              const box = document.querySelector(selector)
+                ?.closest("calcite-label")?.getBoundingClientRect();
+              return box ? { left: box.left, top: box.top, width: box.width } : null;
+            }),
             modeInGroup: Boolean(document.querySelector(
               ".map-controls #drought-map-mode")),
             modeInBar: Boolean(document.querySelector(
@@ -4508,20 +4776,77 @@ for (const failure of [
         check(state.scales.every((scale) => scale === state.scales[0]),
           `${label} ${page.name}: the bar's Calcite selects mix scales `
           + `${JSON.stringify(state.scales)}`);
+        if (page.name === "Snowpack") {
+          check(state.siteGroup && state.siteGroupInsideBar && state.siteGroupAfterFilters,
+            `${label} ${page.name}: Site options are not a final pane inside `
+            + "the filter card");
+          check(state.siteSearchInGroup && state.elevationInGroup
+              && state.reportingInGroup && !state.siteFiltersInPlaceGrid,
+            `${label} ${page.name}: a table filter is outside Site options `
+            + "or inside the place row");
+          check(state.siteResetInHeader && state.siteActionTop < state.siteFilterTop,
+            `${label} ${page.name}: Show every site is not in the Site options header`);
+          const siteBoxes = state.siteFilterBoxes.filter(Boolean);
+          const placeBoxes = state.snowPlaceBoxes.filter(Boolean);
+          check(siteBoxes.length === 3 && placeBoxes.length === 3,
+            `${label} ${page.name}: a place or Site options control is missing`);
+          if (siteBoxes.length === 3 && placeBoxes.length === 3) {
+            if (viewport.width > 670) {
+              check(Math.max(...siteBoxes.map((box) => box.top))
+                  - Math.min(...siteBoxes.map((box) => box.top)) <= 2,
+                `${label} ${page.name}: Site options do not align in one row`);
+              check(Math.max(...placeBoxes.map((box) => box.top))
+                  - Math.min(...placeBoxes.map((box) => box.top)) <= 2
+                  && placeBoxes[0].left < placeBoxes[1].left
+                  && placeBoxes[1].left < placeBoxes[2].left,
+                `${label} ${page.name}: place controls are not State, Area size, area`);
+            } else {
+              check(siteBoxes[0].top < siteBoxes[1].top
+                  && siteBoxes[1].top < siteBoxes[2].top
+                  && Math.max(...siteBoxes.map((box) => box.width))
+                    - Math.min(...siteBoxes.map((box) => box.width)) <= 2,
+                `${label} ${page.name}: stacked Site options do not align`);
+              check(placeBoxes[0].top < placeBoxes[1].top
+                  && placeBoxes[1].top < placeBoxes[2].top,
+                `${label} ${page.name}: stacked place controls are out of order`);
+            }
+          }
+        }
         if (page.name === "Drought") {
-          check(state.mapGroup && state.mapGroupBeforeBar,
-            `${label} ${page.name}: the map controls are not their own group `
-            + "ahead of the filter bar");
-          check(state.toggleInGroup && !state.toggleInBar,
-            `${label} ${page.name}: the reservoir toggle sits in the filter `
-            + "bar instead of the map's own group");
+          check(state.mapGroup && state.mapGroupInsideBar && state.mapGroupAfterFilters,
+            `${label} ${page.name}: map options are not a final row inside `
+            + "the filter card");
+          check(state.toggleInGroup && state.toggleInBar,
+            `${label} ${page.name}: the reservoir toggle is not inside the `
+            + "card's map-options row");
           check(state.snowSitesInGroup,
             `${label} ${page.name}: the snowpack-site toggle is not in the `
             + "map's own group");
+          check(state.conditionInGroup && state.orderInGroup
+              && !state.presentationInPlaceGrid,
+            `${label} ${page.name}: condition or order is not in the map-options pane`);
+          check(state.layersInOwnGroup && state.toggleHeight > 0
+              && state.toggleHeight <= 40,
+            `${label} ${page.name}: layer toggles are not grouped compactly `
+            + `(height ${state.toggleHeight})`);
+          check(state.layersInHeader && state.layerActionTop < state.mapFilterTop,
+            `${label} ${page.name}: layer actions are not in the Map options header`);
+          const [conditionBox, orderBox] = state.presentationBoxes;
+          if (conditionBox && orderBox) {
+            if (viewport.width > 670) {
+              check(Math.abs(conditionBox.top - orderBox.top) <= 2,
+                `${label} ${page.name}: map filters do not align in one row`);
+            } else {
+              check(Math.abs(conditionBox.left - orderBox.left) <= 2
+                  && Math.abs(conditionBox.width - orderBox.width) <= 2
+                  && orderBox.top > conditionBox.top,
+                `${label} ${page.name}: stacked map filters do not align`);
+            }
+          }
           if (state.modeInGroup || state.modeInBar) {
-            check(state.modeInGroup && !state.modeInBar,
+            check(state.modeInGroup && state.modeInBar,
               `${label} ${page.name}: the map-mode select landed in the `
-              + "filter bar instead of the map's own group");
+              + "wrong control container");
           }
         }
       }

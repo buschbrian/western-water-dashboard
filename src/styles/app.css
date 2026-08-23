@@ -948,8 +948,8 @@ arcgis-map { width: 100%; height: 100%; min-width: 0; }
  * now and only the places scroll between them.
  */
 .opening-splash {
-  width: min(34rem, calc(100vw - 1.5rem));
-  max-height: min(42rem, calc(100dvh - 1.5rem));
+  width: min(38rem, calc(100vw - 1.5rem));
+  max-height: min(44rem, calc(100dvh - 1.5rem));
   /* `dvh` so a phone's collapsing address bar cannot leave the skip under
    * it; `vh` is the tallest the viewport ever gets, not the tallest it is. */
   /* A class selector beats the browser's `dialog:not([open])` rule. Keep the
@@ -959,83 +959,122 @@ arcgis-map { width: 100%; height: 100%; min-width: 0; }
   flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--app-border);
-  border-radius: .5rem;
-  padding: 1.25rem;
+  border-radius: .75rem;
+  padding: clamp(1rem, 3vw, 1.5rem);
   background: var(--app-surface-raised);
   color: var(--app-text);
+  box-shadow: 0 .75rem 2.5rem rgb(15 23 42 / .22);
 }
 .opening-splash[open] { display: flex; }
 
 .opening-splash::backdrop { background: rgb(15 23 42 / .45); }
 
-.opening-splash h2 { margin: 0 0 .25rem; font-size: 1.15rem; }
-.splash-intro { margin: 0 0 .9rem; }
+.opening-splash h2 {
+  margin: 0 0 .25rem;
+  font-size: 1.35rem;
+  line-height: 1.2;
+  text-align: center;
+}
+.splash-intro { margin: 0 0 1rem; text-align: center; color: var(--app-muted); }
 
-/* Three across wherever they fit, which at 360 pixels they only do with the
- * short labels the navigation already uses. Below that they stack rather
- * than leaving one option alone on a second row. */
+/* Four subjects stay in a balanced two-by-two grid at every tested width.
+ * An auto-fit row made the wide dialog three-and-one, so its last choice
+ * looked detached from the other three. */
 .splash-subjects {
-  /* A grid rather than a wrapping row. Three of these do not fit across 360
-   * pixels, and a flex wrap leaves the third alone under two, which reads as
-   * a mistake. Even columns wrap to an even two-and-one instead, which reads
-   * as a layout. */
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
-  gap: .35rem .75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: .5rem;
   border: 0;
   padding: 0;
-  margin: 0 0 .5rem;
+  margin: 0 0 .75rem;
   min-width: 0;
 }
 .splash-subjects legend + label { margin-top: 0; }
-.splash-subjects legend { padding: 0; margin-bottom: .4rem; font-weight: 600; }
+.splash-subjects legend {
+  padding: 0;
+  margin-bottom: .5rem;
+  font-weight: 700;
+}
 .splash-subjects label {
   display: inline-flex;
   align-items: center;
-  gap: .35rem;
+  gap: .5rem;
+  min-width: 0;
+  min-height: 2.75rem;
+  padding: .55rem .7rem;
+  border: 1px solid var(--app-border);
+  border-radius: .5rem;
+  background: var(--app-surface);
+  cursor: pointer;
   /* Keeps a label and its radio on one line, so "Drought" never wraps to a
    * row of its own while the two beside it sit half empty. */
   white-space: nowrap;
 }
+.splash-subjects label:hover {
+  border-color: var(--app-accent);
+  background: color-mix(in srgb, var(--app-accent) 8%, var(--app-surface));
+}
+.splash-subjects label:has(input:checked) {
+  border-color: var(--app-accent);
+  background: color-mix(in srgb, var(--app-accent) 14%, var(--app-surface));
+  box-shadow: inset 0 0 0 1px var(--app-accent);
+  font-weight: 700;
+}
+.splash-subjects label:has(input:focus-visible) {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 2px;
+}
+.splash-subjects input {
+  flex: 0 0 auto;
+  margin: 0;
+  accent-color: var(--app-accent);
+}
+.splash-subjects input:focus-visible { outline: 0; }
 
 /* The only part that scrolls. */
 .splash-places {
   flex: 1 1 auto;
   overflow-y: auto;
   min-height: 4rem;
-  /* A hairline above and below, so a list that continues past the fold looks
-   * like one rather than like the end of the dialog. */
-  border-block: 1px solid var(--panel-border, #c7d0da);
-  padding-block: .35rem;
+  border: 1px solid var(--app-border);
+  border-radius: .5rem;
+  padding: .75rem;
+  background: color-mix(in srgb, var(--app-surface) 58%, transparent);
 }
 .splash-places h3 {
-  margin: .6rem 0 .45rem;
-  font-size: .8rem;
+  margin: .85rem 0 .5rem;
+  font-size: .875rem;
   letter-spacing: .01em;
   color: var(--app-muted);
 }
-.splash-places h3:first-child { margin-top: .15rem; }
+.splash-places h3:first-child { margin-top: 0; }
 
 .splash-place-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .4rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(8.75rem, 100%), 1fr));
+  gap: .5rem;
   min-width: 0;
 }
 
 .splash-place,
 .splash-skip {
   font: inherit;
-  padding: .4rem .7rem;
+  min-height: 2.75rem;
+  padding: .55rem .75rem;
   border: 1px solid var(--app-border);
-  border-radius: .35rem;
-  background: var(--app-surface);
+  border-radius: .5rem;
+  background: var(--app-surface-raised);
   color: var(--app-text);
   cursor: pointer;
+  transition: border-color 120ms ease, background-color 120ms ease,
+    box-shadow 120ms ease;
 }
+.splash-place { width: 100%; text-align: start; font-weight: 600; }
 .splash-place:hover,
 .splash-skip:hover {
-  background: color-mix(in srgb, var(--app-accent) 12%, var(--app-surface));
+  border-color: var(--app-accent);
+  background: color-mix(in srgb, var(--app-accent) 12%, var(--app-surface-raised));
+  box-shadow: 0 1px 3px rgb(15 23 42 / .12);
 }
 .splash-place:focus-visible,
 .splash-skip:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 2px; }
@@ -1045,8 +1084,8 @@ arcgis-map { width: 100%; height: 100%; min-width: 0; }
  * not have to be found. */
 .splash-skip {
   flex: 0 0 auto;
-  margin-top: .9rem;
+  margin-top: .75rem;
   width: 100%;
-  padding: .6rem;
-  font-weight: 600;
+  background: color-mix(in srgb, var(--app-accent) 16%, var(--app-surface));
+  font-weight: 700;
 }

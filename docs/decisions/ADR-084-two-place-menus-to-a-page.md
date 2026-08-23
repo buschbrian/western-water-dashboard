@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted for storage; drought control presentation superseded by ADR-091; snow control presentation superseded by ADR-094
 
 ## Date
 

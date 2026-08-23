@@ -193,23 +193,56 @@ Each was found by a failing test or a screenshot. Do not regress them.
 
 ## Filters
 
-**A page has two geographic axes.** Where holds state and, on the storage
+**Storage has two geographic axes.** Where holds state and, on the storage
 surfaces that have reviewed FIPS data, county. Drainage area holds region,
-subregion and basin as three shared tiers of one choice (ADR-084). Drought
-adds a fourth, subbasin tier (ADR-088). The chosen state
-narrows both menus; a drainage choice that no longer reaches that state falls
-back to every area rather than silently filtering to nothing. Repopulating a
-menu must preserve the reader's choice while it is still on offer, or the
-control resets on every keystroke.
+subregion and basin as three shared tiers of one choice (ADR-084). The chosen
+state narrows both menus; a drainage choice that no longer reaches that state
+falls back to every area rather than silently filtering to nothing.
+Repopulating a menu must preserve the reader's choice while it is still on
+offer, or the control resets on every keystroke.
 
-**The hierarchy is stated in the menus themselves** (ADR-076, ADR-084). Place
-choices render as indented `calcite-option-group` rows: basins under their
-subregion, subregions under their region, counties under their state. Chosen
-over flyout submenus by measurement at 360px; the county row no longer carries
-a `, ST` suffix because its group heading carries the state instead (the key
-is still the FIPS code, per ADR-058 as amended). The builders sort so
-same-group rows are contiguous — consecutive equal group labels form one
-heading, so an unsorted list would draw a heading twice.
+**Snowpack orders its place controls sequentially** (ADR-094): State, Area
+size, then exactly one hydrologic tier. The last label follows the chosen
+size: Region, Subregion or Basin. Only areas with a publishable snow figure at
+that size are offered. County stays in Site name or county search because the
+site payload carries county names but no verified five-digit codes.
+
+The Snowpack filter card separates place from table filters. State, Area size
+and the hydrologic area form the first pane. The **Site options** pane puts
+Show every site in the upper-right of its heading, then aligns Site name or
+county, Elevation and Reporting below it. Those three controls and their reset
+action narrow only the measurement-site table. The five Snowpack summary
+cards reserve matching rows for their headings, values and short notes.
+
+**Drought orders its place controls sequentially** (ADR-091): State, County
+after a state is chosen, Area size, then exactly one hydrologic tier. The last
+label follows the chosen size: Region, Subregion, Basin or Subbasin. A county
+selects whole drainage areas that intersect its Census boundary; it never
+creates a county drought total. The county list fills independently so an
+unchosen hosted filter cannot hold the weekly figures. A county deep link
+resolves before first paint because its intersection changes every row.
+
+The drought filter card separates place from presentation. State, County, Area
+size and the hydrologic area form the first pane. The **Map options** pane puts
+its two outlined optional-layer actions in the upper-right of its heading,
+then puts Show areas with, Order by and Map shows in one aligned grid. On a
+phone the two layer actions share a row above the stacked selects. Condition
+and order keep their URL state and continue to update the figures below. Map
+mode and layer visibility remain local display state.
+
+The four drought summary cards reserve matching rows for their headings and
+values. A long worst-condition value wraps inside its own card. The extreme or
+exceptional card uses the same short heading-and-note rhythm as the other
+three; the count and coverage method do not change.
+
+**Storage's shared hierarchy is stated in the menus themselves** (ADR-076,
+ADR-084). Place choices render as indented `calcite-option-group` rows: basins
+under their subregion, subregions under their region, counties under their
+state. Chosen over flyout submenus by measurement at 360px; the county row no
+longer carries a `, ST` suffix because its group heading carries the state
+instead (the key is still the FIPS code, per ADR-058 as amended). The builders
+sort so same-group rows are contiguous — consecutive equal group labels form
+one heading, so an unsorted list would draw a heading twice.
 
 **A subregion code is published nowhere**: codes are fixed-width, so it is
 `huc6.slice(0, 4)`. Only the *names* are published, in `reservoirs.json`'s

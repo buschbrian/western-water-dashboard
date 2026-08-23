@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted; drought menu presentation superseded by ADR-091
 
 ## Date
 

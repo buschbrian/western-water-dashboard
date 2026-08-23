@@ -37,6 +37,12 @@ import { loadReservoirs } from "./data/load";
 import { loadSnowSiteInventory } from "./data/snow-sites-load";
 import { loadUsdmPolygons } from "./data/usdm-load";
 import {
+  loadCountyChoices,
+  loadCountyDrainageScope,
+  type CountyChoice,
+  type CountyDrainageScope
+} from "./data/county-scope";
+import {
   areaAtLevel,
   loadOpeningRosters,
   resolveOpeningScope,
@@ -81,8 +87,17 @@ import {
 import { levelFromSearch, writeLevel } from "./state/level";
 import { placeInSlot } from "./ui/dom";
 import { createLevelControl } from "./ui/level-control";
-import { createDrainageMenu, createWhereMenu } from "./ui/where-control";
-import { nextSelectionForState } from "./ui/where-control-model";
+import {
+  createDroughtCountyControl,
+  createDroughtCountyStatusControl,
+  createDroughtDrainageControl,
+  createDroughtStateControl
+} from "./ui/drought-place-control";
+import {
+  ALL_VALUE,
+  selectionForDroughtArea,
+  selectionForDroughtState
+} from "./ui/drought-place-control-model";
 import {
   DROUGHT_SCATTER_FALLBACK_WIDTH,
   renderDroughtScatter
@@ -143,6 +158,49 @@ void setupPlaceChooser();
 interface OpeningContext {
   rosters: OpeningRosters;
   scope: OpeningScope;
+}
+
+/** County is a drought-only selected-scope refinement (ADR-091). It keeps
+ * the figures keyed by drainage area and carries only which rows intersect
+ * the chosen county, plus the county box the map opens on. */
+interface DroughtCountyContext {
+  requested: string | null;
+  choices: readonly CountyChoice[];
+  selected: CountyChoice | null;
+  scope: CountyDrainageScope | null;
+  resolved: boolean;
+}
+
+function countyFromSearch(search: string): string | null {
+  const county = new URLSearchParams(search).get("county");
+  return county !== null && /^\d{5}$/.test(county) ? county : null;
+}
+
+async function resolveDroughtCounty(
+  search: string, state: string, level: number
+): Promise<DroughtCountyContext> {
+  const requested = countyFromSearch(search);
+  if (state === "all") {
+    return { requested, choices: [], selected: null, scope: null, resolved: requested === null };
+  }
+  /* An unchosen county is an optional control, not a reason to hold every
+   * weekly figure behind a hosted service. Its list fills after render. */
+  if (requested === null) {
+    return { requested: null, choices: [], selected: null, scope: null, resolved: true };
+  }
+  try {
+    const choices = await loadCountyChoices(state);
+    const selected = requested === null
+      ? null : choices.find((choice) => choice.fips === requested) ?? null;
+    if (requested !== null && selected === null) {
+      return { requested, choices, selected: null, scope: null, resolved: false };
+    }
+    const scope = selected ? await loadCountyDrainageScope(selected.fips, level) : null;
+    return { requested, choices, selected, scope, resolved: true };
+  } catch (error) {
+    console.warn("The county filter could not be loaded:", error);
+    return { requested, choices: [], selected: null, scope: null, resolved: requested === null };
+  }
 }
 
 /**
@@ -211,8 +269,22 @@ function chosenAreaName(area: string | null, rosters: OpeningRosters): string | 
  * line was drawn that was not. Null when nothing was chosen, so a caller
  * renders no sentence rather than a wordy no-op.
  */
-function openingScopeSentence(selection: OpeningScope["selection"], place: string | null): string | null {
+function openingScopeSentence(
+  selection: OpeningScope["selection"],
+  place: string | null,
+  county: DroughtCountyContext
+): string | null {
   const stateChosen = selection.state !== "all";
+  if (county.requested !== null && !county.resolved) {
+    return "The chosen county could not be loaded right now. " +
+      "Showing the drainage areas for the wider place instead.";
+  }
+  if (county.selected && county.scope) {
+    const area = place ? ` in ${place}` : "";
+    return `Showing drainage areas${area} that intersect ${county.selected.name}, ` +
+      `${stateName(county.selected.state)}. Each area is drawn whole, not cut off ` +
+      "at the county line.";
+  }
   if (!stateChosen && place === null) return null;
   const named = place && stateChosen ? `${place}, in ${stateName(selection.state)}`
     : place ?? stateName(selection.state);
@@ -234,6 +306,7 @@ function renderDrought(
    * below already say in words. */
   reservoirs: readonly ReservoirReference[],
   opening: OpeningContext | null,
+  county: DroughtCountyContext,
   /* What the reader actually typed, independent of whether `opening`
    * resolved -- a readiness field reports one fact, and "what was asked"
    * and "could it be honoured" are two different ones (see `stateFilter`/
@@ -259,6 +332,7 @@ function renderDrought(
    * unfiltered by construction, not merely by a narrowing that happens not
    * to remove anything. */
   const scopeChosen = isOpeningScopeChosen(openingSelection);
+  const countyChosen = county.selected !== null && county.scope !== null;
   /* `?area=` and `?level=` are independent parameters (a shared link from a
    * six-digit-basin page can land on a four-digit-subregion one), so the
    * selection is coarsened to what this page actually draws before it is
@@ -280,14 +354,15 @@ function renderDrought(
    * not be resolved and when nothing was chosen, which is what keeps
    * `unitsInOpeningScope` from narrowing a broken chooser (or an ordinary,
    * scope-free visit) into anything other than every published unit. */
-  const chosenCodesAtLevel: ReadonlySet<string> | null = opening && scopeChosen
+  const chosenCodesAtLevel: ReadonlySet<string> | null = opening && (scopeChosen || countyChosen)
     ? new Set(
         (level === REGION_CODE_WIDTH ? opening.rosters.regions
           : level === SUBREGION_CODE_WIDTH ? opening.rosters.subregions
           : level === SUBBASIN_CODE_WIDTH ? opening.rosters.subbasins
           : opening.rosters.areas)
           .filter((area) => areaReachesState(area, openingSelection.state)
-            && withinOpeningArea(area.huc6, levelArea))
+            && withinOpeningArea(area.huc6, levelArea)
+            && (!countyChosen || county.scope?.codes.has(area.huc6) === true))
           .map((area) => area.huc6))
     : null;
   /* Narrowed before the first line of markup is built below -- a reader who
@@ -295,11 +370,12 @@ function renderDrought(
    * paint, never the full 75 first and then a correction. */
   const scopedUnits = unitsInOpeningScope(payload.units, chosenCodesAtLevel);
   const scopeSentence = opening
-    ? openingScopeSentence(openingSelection, chosenAreaName(openingSelection.area, opening.rosters))
+    ? openingScopeSentence(
+        openingSelection, chosenAreaName(openingSelection.area, opening.rosters), county)
     /* The opening scope failed to load, but a reader still asked for a
      * place -- said so honestly rather than silently showing every area
      * with no explanation for why the choice did not take. */
-    : scopeChosen
+    : scopeChosen || county.requested !== null
       ? "The chosen place could not be loaded right now. Showing every drainage area."
       : null;
 
@@ -317,53 +393,53 @@ function renderDrought(
 
   content.innerHTML = `
     ${scopeSentence ? `<p id="drought-scope-summary" class="filter-status">${scopeSentence}</p>` : ""}
-    <!-- The map's own controls, above the filter bar and of a different
-         kind: these change what is drawn over the subject, not which
-         subject is drawn, so they are neither a scope nor a filter and do
-         not share a row -- or a shared link -- with either. Declared here
-         rather than appended once the map resolves, so the order a reader
-         meets is the order the page was written in; hidden until the map
-         starts, because a toggle with nothing behind it is furniture. -->
-    <section class="map-controls" id="drought-map-controls" aria-label="What the map shows" hidden>
-      <label class="filterbar-toggle" for="drought-show-reservoirs">Show reservoirs<input id="drought-show-reservoirs" type="checkbox" /></label>
-      <label class="filterbar-toggle" id="drought-snow-sites-control" for="drought-show-snow-sites" hidden>Show snowpack sites<input id="drought-show-snow-sites" type="checkbox" /></label>
-      <div class="control-slot" data-slot="map-mode"></div>
-    </section>
     <section class="dashboard-filterbar mobile-filterbar" aria-labelledby="drought-filter-heading">
       <div class="filterbar-head">
         <div class="filterbar-title"><p class="eyebrow">Land conditions</p><h2 id="drought-filter-heading">Narrow the drainage areas</h2></div>
         <button id="drought-filter-toggle" class="mobile-filter-toggle" type="button"
-          aria-controls="drought-filter-controls drought-filter-actions"
+          aria-controls="drought-filter-controls drought-filter-actions drought-map-controls"
           aria-expanded="false">Show filters</button>
         <div id="drought-filter-actions" class="filterbar-head-actions"><calcite-button id="drought-reset" class="reset-button" appearance="outline" scale="s" kind="neutral">Show every area</calcite-button></div>
       </div>
-      <!-- Coarsest place first, then finer, then how finely the ground is
-           divided, then the filters that are not places at all. The first
-           three slots are filled once the roster and the reference export
-           resolve; see the control-slot rule in app.css for why these are
-           slots and not appends. Every control here is one family --
-           Calcite selects at one scale -- and the map's own toggles are
-           not in this bar at all; they live in .map-controls above. -->
+      <!-- One place-reading order: state, its county when one is chosen,
+           area size, then one drainage menu at that size. The slots keep
+           that order independent of which request resolves first. -->
       <div id="drought-filter-controls" class="filterbar-controls">
-        <div class="control-slot" data-slot="where"></div>
-        <div class="control-slot" data-slot="area"></div>
+        <div class="control-slot" data-slot="state"></div>
+        <div class="control-slot" data-slot="county"></div>
         <div class="control-slot" data-slot="level"></div>
-        <calcite-label>Show areas with<calcite-select id="drought-worse" scale="l">
-          <calcite-option value="">Any conditions</calcite-option>
-          ${DROUGHT_CLASSES.map((entry) => `<calcite-option value="${entry.key}">${entry.label} (${entry.code}) or worse</calcite-option>`).join("")}
-        </calcite-select></calcite-label>
-        <calcite-label>Order by<calcite-select id="drought-sort" scale="l">
-          <calcite-option value="severity">Most severe first</calcite-option>
-          <calcite-option value="index">Highest severity index first</calcite-option>
-          <calcite-option value="storage">Emptiest reservoirs first</calcite-option>
-          <calcite-option value="name">Drainage area name</calcite-option>
-        </calcite-select></calcite-label>
+        <div class="control-slot" data-slot="area"></div>
       </div>
+      <!-- These controls change how the chosen drainage areas are presented.
+           The condition and order choices keep their shared-link state. The
+           layer toggles and map mode remain local display state. -->
+      <section class="map-controls" id="drought-map-controls" aria-label="Map options">
+        <div class="map-controls-head">
+          <p class="map-controls-label">Map options</p>
+          <div class="map-layer-controls" id="drought-map-layer-controls" role="group" aria-label="Map layers">
+            <label class="filterbar-toggle" for="drought-show-reservoirs">Show reservoirs<input id="drought-show-reservoirs" type="checkbox" disabled /></label>
+            <label class="filterbar-toggle" id="drought-snow-sites-control" for="drought-show-snow-sites" hidden>Show snowpack sites<input id="drought-show-snow-sites" type="checkbox" disabled /></label>
+          </div>
+        </div>
+        <div class="map-filter-controls">
+          <calcite-label>Show areas with<calcite-select id="drought-worse" scale="l">
+            <calcite-option value="">Any conditions</calcite-option>
+            ${DROUGHT_CLASSES.map((entry) => `<calcite-option value="${entry.key}">${entry.label} (${entry.code}) or worse</calcite-option>`).join("")}
+          </calcite-select></calcite-label>
+          <calcite-label>Order by<calcite-select id="drought-sort" scale="l">
+            <calcite-option value="severity">Most severe first</calcite-option>
+            <calcite-option value="index">Highest severity index first</calcite-option>
+            <calcite-option value="storage">Emptiest reservoirs first</calcite-option>
+            <calcite-option value="name">Drainage area name</calcite-option>
+          </calcite-select></calcite-label>
+          <div class="control-slot" data-slot="map-mode"></div>
+        </div>
+      </section>
     </section>
     <p id="drought-status" class="filter-status" role="status"></p>
-    <section class="overview-kpis" aria-label="Drought summary">
-      <article class="overview-kpi overview-kpi-primary"><span>Worst conditions</span><strong>${worst ? worst.label : "None"}</strong><small>${worst ? `The most severe class with land in it (${worst.code})` : "No drainage area has land in a drought class"}</small></article>
-      <article class="overview-kpi"><span>Areas in extreme drought or worse</span><strong>${extremeAreas} of ${scopedUnits.length}</strong><small>Any land at the extreme (D3) or exceptional (D4) class${thinlyMeasured > 0 ? `. ${thinlyMeasured} of these areas are measured over only part of their land` : ""}</small></article>
+    <section class="overview-kpis drought-summary" aria-label="Drought summary">
+      <article class="overview-kpi overview-kpi-primary"><span>Worst conditions</span><strong>${worst ? worst.label : "None"}</strong><small>${worst ? `Highest class with land in it (${worst.code})` : "No drainage area has land in a drought class"}</small></article>
+      <article class="overview-kpi"><span>Extreme or exceptional areas</span><strong>${extremeAreas} of ${scopedUnits.length}</strong><small>Land at D3 or D4${thinlyMeasured > 0 ? `. ${thinlyMeasured} areas use partial coverage` : ""}.</small></article>
       <article class="overview-kpi"><span>Map week</span><strong>${formatDate(payload.map_date)}</strong><small>Published ${formatDate(payload.release_date)}</small></article>
       <article class="overview-kpi"><span>Map age</span><strong${late ? ' class="late-badge"' : ""}>${age} ${age === 1 ? "day" : "days"}</strong><small>${late ? "Late data: a new weekly map has been missed" : "A new map is published each Thursday"}</small></article>
     </section>
@@ -796,6 +872,8 @@ function renderDrought(
        * failed to load. */
       stateFilter: openingSelection.state,
       areaFilter: openingSelection.area,
+      countyFilter: county.requested,
+      countyScopeResolved: county.resolved,
       /* A third, distinct fact from the two above: whether the request
        * *could* be acted on at all. `stateFilter`/`areaFilter` alone cannot
        * tell a reader (or a test) "asked for California, got it" apart from
@@ -838,7 +916,14 @@ function renderDrought(
        * honest implementation is the one a shared link already takes. Replace
        * rather than push, like every other control here -- the back button
        * leaves the site rather than unwinding filter changes one at a time. */
-      const params = new URLSearchParams(window.location.search);
+      /* Area size determines the tier the next control offers (ADR-091), so
+       * changing it clears the old tier's area choice. State and county stay
+       * in force and narrow the newly offered list. */
+      const placeQuery = searchWithPlace(window.location.search, {
+        state: openingSelection.state,
+        area: null
+      });
+      const params = new URLSearchParams(placeQuery.replace(/^\?/, ""));
       writeLevel(params, chosen);
       const query = params.toString();
       window.location.replace(`${window.location.pathname}${query ? `?${query}` : ""}`);
@@ -856,54 +941,68 @@ function renderDrought(
     console.warn("The area-size control could not be built:", error);
   });
 
-  /*
-   * The two place menus (ADR-084): Where -- states alone here, because this
-   * page publishes no county rows -- and one Drainage-area menu spanning
-   * region, subregion and basin in place of the old four-select drill-down.
-   * `opening` carries the full, unnarrowed rosters both need
-   * (`OpeningContext.rosters`) -- `openingSelection` above is already the
-   * resolved, aliveness-checked selection this page draws with, which is
-   * exactly what a repopulated menu should show as chosen. Skipped, like
-   * the level control effectively is by its own `.catch`, when the
-   * reference export never resolved: there is nothing published to build
-   * either menu's options from.
-   *
-   * A full navigation, the same choice and the same reason as the level
-   * control just above: `?state=` and `?area=` are read once, here, before
-   * `renderDrought` is ever called (see the comment on `resolveOpening`'s
-   * caller), so a picked value takes the path a shared link already takes
-   * rather than a re-render this page has no function for.
-   *
-   * A drainage row finer than the level this page draws forces that level:
-   * it rides the same navigation carrying `?level=`, because the level
-   * decides which file this page fetches (ADR-064). A row coarser than or
-   * equal to it narrows by prefix exactly as the drill-down's selects did.
-   */
+  /* Drought's page-specific sequence (ADR-091): State, County once a state
+   * is held, Area size, then one hydrologic tier at that size. Each change is
+   * a navigation because place and level are resolved before this render.
+   * The shared storage and snow controls keep ADR-084's combined menus. */
   if (opening) {
     const navigateWithPlace = (selection: OpeningSelection): void => {
-      /* `searchWithPlace` remembers the choice and writes "everywhere" out
-       * loud rather than as an absent parameter -- see its own note for why
-       * a cleared filter must not become a link that means "no answer". */
-      let query = searchWithPlace(window.location.search, selection);
-      if (selection.area !== null && selection.area.length > level) {
-        const params = new URLSearchParams(query.replace(/^\?/, ""));
-        writeLevel(params, selection.area.length);
-        query = `?${params.toString()}`;
-      }
+      const query = searchWithPlace(window.location.search, selection);
       window.location.replace(`${window.location.pathname}${query}`);
     };
-    const where = createWhereMenu(opening.rosters, openingSelection, (pick) => {
-      /* This page offers no counties, so every real pick is a state one;
-       * a county pick is refused rather than misread as a state code. */
-      if (pick.kind !== "state") return;
-      navigateWithPlace(nextSelectionForState(openingSelection, opening.rosters, pick.value));
-    }, { scale: "l" });
-    const drainage = createDrainageMenu(
-      opening.rosters, openingSelection, navigateWithPlace, { scale: "l", maxLevel: 8 });
-    const whereHost = content.querySelector<HTMLElement>(".filterbar-controls");
-    if (whereHost) {
-      if (where) placeInSlot(whereHost, "where", where.element);
-      if (drainage) placeInSlot(whereHost, "area", drainage.element);
+    const stateControl = createDroughtStateControl(
+      opening.rosters, openingSelection, (chosen) => {
+        const selection = selectionForDroughtState(chosen);
+        const query = searchWithPlace(window.location.search, selection);
+        const params = new URLSearchParams(query.replace(/^\?/, ""));
+        /* A county belongs to the old state; keeping it would create a pair
+         * this page could not honestly offer. */
+        params.delete("county");
+        window.location.replace(
+          `${window.location.pathname}?${params.toString()}`);
+      }, { scale: "l" });
+    const countyPicked = (chosen: string): void => {
+        const query = searchWithPlace(window.location.search, {
+          state: openingSelection.state,
+          area: null
+        });
+        const params = new URLSearchParams(query.replace(/^\?/, ""));
+        if (chosen === ALL_VALUE) params.delete("county");
+        else params.set("county", chosen);
+        window.location.replace(
+          `${window.location.pathname}?${params.toString()}`);
+      };
+    const countyControl = createDroughtCountyControl(
+      county.choices, county.selected?.fips ?? null, countyPicked, { scale: "l" });
+    const drainageControl = createDroughtDrainageControl(
+      opening.rosters,
+      openingSelection,
+      level,
+      countyChosen ? county.scope?.codes : undefined,
+      (chosen) => navigateWithPlace(selectionForDroughtArea(openingSelection, chosen)),
+      { scale: "l" });
+    const placeHost = content.querySelector<HTMLElement>(".filterbar-controls");
+    if (placeHost) {
+      placeInSlot(placeHost, "state", stateControl.element);
+      if (countyControl) placeInSlot(placeHost, "county", countyControl.element);
+      else if (openingSelection.state !== "all" && county.requested === null) {
+        const countySlot = placeHost.querySelector<HTMLElement>(
+          '.control-slot[data-slot="county"]');
+        const pending = createDroughtCountyStatusControl("Loading counties", { scale: "l" });
+        countySlot?.append(pending.element);
+        void loadCountyChoices(openingSelection.state).then((choices) => {
+          const control = createDroughtCountyControl(
+            choices, null, countyPicked, { scale: "l" });
+          if (control) countySlot?.replaceChildren(control.element);
+          else countySlot?.replaceChildren(
+            createDroughtCountyStatusControl("No counties are available", { scale: "l" }).element);
+        }).catch((error: unknown) => {
+          console.warn("The county choices could not be loaded:", error);
+          countySlot?.replaceChildren(
+            createDroughtCountyStatusControl("Counties are unavailable", { scale: "l" }).element);
+        });
+      }
+      if (drainageControl) placeInSlot(placeHost, "area", drainageControl.element);
     }
   }
 
@@ -914,9 +1013,15 @@ function renderDrought(
     update({ sort: sortSelect.value as DroughtSort });
   });
   resetButton?.addEventListener("click", () => {
-    if (worseSelect) worseSelect.value = "";
-    if (sortSelect) sortSelect.value = "severity";
-    update({ worse: null, sort: "severity" });
+    /* The label says every area, so clear every selected-scope and row
+     * filter. Keep Area size: it changes how the ground is divided, not
+     * which part of it is selected. */
+    const query = searchWithPlace(window.location.search, { state: "all", area: null });
+    const params = new URLSearchParams(query.replace(/^\?/, ""));
+    params.delete("county");
+    params.delete("worse");
+    params.delete("sort");
+    window.location.replace(`${window.location.pathname}?${params.toString()}`);
   });
 
   draw();
@@ -930,9 +1035,10 @@ function renderDrought(
     if (!mapHost) return;
     const failed = (): void => {
       mapHost.setAttribute("aria-busy", "false");
-      /* The declared map controls stay hidden -- a toggle for a map that
-       * did not start is furniture with nothing behind it. */
-      content.querySelector<HTMLElement>("#drought-map-controls")
+      /* Layer toggles for a map that did not start have nothing behind them.
+       * The condition and order controls stay available because they also
+       * narrow and order the figures below. */
+      content.querySelector<HTMLElement>("#drought-map-layer-controls")
         ?.setAttribute("hidden", "");
       mapHost.replaceChildren(mapStatusNote(
         "The map could not start. The bars and table carry the same shares."));
@@ -1040,7 +1146,9 @@ function renderDrought(
        * is the one conversion every fixed and chosen extent on this site
        * goes through, so the corner order and spatial reference cannot drift
        * between them. */
-      if (opening && scopeChosen) {
+      if (countyChosen && county.scope) {
+        mapElement.extent = mapExtentFromBox(county.scope.box);
+      } else if (opening && scopeChosen) {
         mapElement.extent = mapExtentFromBox(opening.scope.box);
       }
       const mapChanges = changesByArea(droughtChanges(scopedUnits, payload.previous));
@@ -1074,19 +1182,17 @@ function renderDrought(
         RESERVOIR_REFERENCE_LAYER_ID);
       const snowSiteReferenceLayer = mapElement.map?.findLayerById(
         SNOW_SITE_REFERENCE_LAYER_ID);
-      /* The toggles are declared markup in `.map-controls` above the bar,
-       * hidden until the map starts; this only wires them. A Calcite switch
+      /* The toggles are declared markup in `.map-controls` at the end of the
+       * filter card; this wires and enables them. A Calcite switch
        * was tried for the checkbox and axe-core refused it: the component's
        * real control lives in a shadow root, so neither a wrapping `<label>`
        * nor the component's own `label` attribute gave it an accessible
        * name. Native is the working answer, and inside its own group the
        * two controls are one family with each other. */
       const mapControls = content.querySelector<HTMLElement>("#drought-map-controls");
-      /* The group was written hidden: until now, toggling would have been
-       * promising a layer that does not exist. */
-      mapControls?.removeAttribute("hidden");
       const reservoirSwitch = content.querySelector<HTMLInputElement>("#drought-show-reservoirs");
       if (reservoirSwitch) {
+        reservoirSwitch.disabled = false;
         reservoirSwitch.addEventListener("change", () => {
           const shown = reservoirSwitch.checked;
           if (reservoirLayer) reservoirLayer.visible = shown;
@@ -1101,6 +1207,7 @@ function renderDrought(
         "#drought-show-snow-sites");
       if (snowSiteReferenceLayer && snowSitesSwitch) {
         snowSitesControl?.removeAttribute("hidden");
+        snowSitesSwitch.disabled = false;
         snowSitesSwitch.addEventListener("change", () => {
           const shown = snowSitesSwitch.checked;
           snowSiteReferenceLayer.visible = shown;
@@ -1116,15 +1223,19 @@ function renderDrought(
        * them nothing (ADR-074). The chart and the table column say why in
        * words; a select cannot. */
       if (mapStatus.changeAreas > 0) {
-        const modeField = document.createElement("label");
-        const modeSelect = document.createElement("select");
+        const modeField = document.createElement("calcite-label");
+        modeField.className = "map-mode-control";
+        modeField.append("Map shows");
+        const modeSelect = document.createElement("calcite-select");
         modeSelect.id = "drought-map-mode";
+        modeSelect.setAttribute("scale", "l");
+        modeSelect.setAttribute("label", "Which drought view the map shows");
         for (const [value, text] of [
           ["classes", "This week's classes"],
           ["change", "Change since last week"]
         ] as const) {
-          const option = document.createElement("option");
-          option.value = value;
+          const option = document.createElement("calcite-option");
+          option.setAttribute("value", value);
           option.textContent = text;
           modeSelect.append(option);
         }
@@ -1140,8 +1251,9 @@ function renderDrought(
           + `since ${formatDate(payload.previous?.map_date ?? "")}. `
           + "Only the drainage areas are coloured here. The monitor's own "
           + "classes are not drawn in this view.";
-        modeSelect.addEventListener("change", () => {
-          const mode = modeSelect.value === "change" ? "change" : "classes";
+        modeSelect.addEventListener("calciteSelectChange", () => {
+          const value = (modeSelect as unknown as { value: string }).value;
+          const mode = value === "change" ? "change" : "classes";
           mapController.setMode(mode);
           fillLegend(mode);
           if (mapCopy) mapCopy.textContent = mode === "change" ? changeCopy : classesCopy;
@@ -1149,10 +1261,8 @@ function renderDrought(
             ...(window.__droughtReady ?? {}), mapMode: mode
           } as NonNullable<typeof window.__droughtReady>;
         });
-        modeField.append("Map shows", modeSelect);
-        /* Into the declared slot beside the reservoir toggle, not appended
-         * to the filter bar: these two answer what is drawn over the
-         * subject, and that question has its own row. */
+        modeField.append(modeSelect);
+        /* Into the declared map-options slot at the end of the card. */
         if (mapControls) placeInSlot(mapControls, "map-mode", modeField);
       }
 
@@ -1204,8 +1314,11 @@ try {
    * `renderDrought` is ever called, so the very first paint of this page's
    * content already reflects the reader's narrowed scope -- there is no
    * intermediate render of all 75 areas for a chosen place to correct. */
-  const [drought, opening] = await Promise.all(
-    [loadDroughtCoverage(level), resolveOpening(requestedSelection)]);
+  const [drought, opening, county] = await Promise.all([
+    loadDroughtCoverage(level),
+    resolveOpening(requestedSelection),
+    resolveDroughtCounty(window.location.search, requestedSelection.state, level)
+  ]);
   /* Storage is context, not the subject: if the reservoir payload cannot be
    * read the drought figures still render, each row saying the storage
    * comparison is missing rather than the page failing whole. */
@@ -1217,7 +1330,7 @@ try {
   } catch (error) {
     console.warn("Reservoir storage could not be joined to the drought view:", error);
   }
-  renderDrought(drought, storage, reservoirs, opening, requestedSelection);
+  renderDrought(drought, storage, reservoirs, opening, county, requestedSelection);
 } catch (error) {
   console.error("Drought view failed:", error);
   const content = document.querySelector<HTMLElement>("#drought-content");

@@ -210,7 +210,7 @@ export function createOpeningSplash(places: SplashPlaces): OpeningSplash | null 
 
   if (places.regions.length > 0) {
     const regionHeading = document.createElement("h3");
-    regionHeading.textContent = "A river basin";
+    regionHeading.textContent = "A region";
     places_.append(regionHeading);
     const regionList = document.createElement("div");
     regionList.className = "splash-place-list";

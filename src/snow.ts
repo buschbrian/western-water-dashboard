@@ -81,8 +81,14 @@ import { brandMarkup, pageLinksMarkup, updatePageLinks } from "./ui/page-header"
 import { setupPlaceChooser } from "./ui/opening-splash";
 import { placeInSlot } from "./ui/dom";
 import { createLevelControl } from "./ui/level-control";
-import { createDrainageMenu, createWhereMenu, type DrainageMenu } from "./ui/where-control";
-import { nextSelectionForState } from "./ui/where-control-model";
+import {
+  createSnowDrainageControl,
+  createSnowStateControl
+} from "./ui/snow-place-control";
+import {
+  selectionForSnowArea,
+  selectionForSnowState
+} from "./ui/snow-place-control-model";
 import { createSnowMap, type SnowMapController } from "./ui/snow-map";
 import { createViewMap, mapStatusNote } from "./ui/view-map";
 import { nameSliderHandle } from "./ui/slider-label";
@@ -264,47 +270,44 @@ function renderSnow(
     <p id="snow-scope-summary" class="filter-status" role="status" hidden></p>
     <section class="dashboard-filterbar mobile-filterbar" aria-labelledby="snow-filter-heading">
       <div class="filterbar-head">
-        <div class="filterbar-title"><p class="eyebrow">Mountain snow</p><h2 id="snow-filter-heading">Choose a drainage area</h2></div>
+        <div class="filterbar-title"><p class="eyebrow">Mountain snow</p><h2 id="snow-filter-heading">Choose a place</h2></div>
         <button id="snow-filter-toggle" class="mobile-filter-toggle" type="button"
-          aria-controls="snow-filter-search snow-filter-controls snow-filter-actions"
+          aria-controls="snow-filter-controls snow-site-options"
           aria-expanded="false">Show filters</button>
       </div>
-      <!-- Its own row above the dropdowns, ruled off from them, the same as
-           the storage charts page. This search narrows the site table further
-           down the page, not the drainage area the row below is choosing
-           among, and it takes anything a reader types where every control
-           below offers a closed list. It used to ride in the head row beside
-           the title, which said the first half of that and not the second. -->
-      <div id="snow-filter-search" class="filterbar-search">
-        <label>Site name or county<input id="snow-query" type="search" placeholder="Search sites" autocomplete="off"></label>
-      </div>
-      <!-- Coarsest place first, then finer, then how finely the ground is
-           divided, then the filters that are not places at all. The two
-           place menus and the level slot are filled once the roster, the
-           payload and the reference export resolve; see the control-slot
-           rule in app.css for why these are slots and not appends. -->
-      <div id="snow-filter-controls" class="filterbar-controls">
-        <div class="control-slot" data-slot="where"></div>
-        <div class="control-slot" data-slot="area"></div>
+      <!-- Place is sequential: State, Area size, then the one hydrologic
+           tier that size names (ADR-094). The controls are filled once the
+           roster, payload and reference export resolve. -->
+      <div id="snow-filter-controls" class="filterbar-controls snow-place-controls">
+        <div class="control-slot" data-slot="state"></div>
         <div class="control-slot" data-slot="level"></div>
-        <!-- One control family to the bar: Calcite selects at one scale,
-             like the place menus and the area-size control beside them. -->
-        <calcite-label>Elevation<calcite-select id="snow-elev" scale="l">${ELEVATION_BANDS.map((band) => `<calcite-option value="${band}">${elevationBandLabel(band)}</calcite-option>`).join("")}</calcite-select></calcite-label>
-        <calcite-label>Reporting<calcite-select id="snow-reporting" scale="l">
-          <calcite-option value="all">Every site</calcite-option>
-          <calcite-option value="reporting">Sending values</calcite-option>
-          <calcite-option value="late">Late data only</calcite-option>
-        </calcite-select></calcite-label>
+        <div class="control-slot" data-slot="area"></div>
       </div>
-      <div id="snow-filter-actions" class="filterbar-head-actions"><calcite-button id="snow-reset" class="reset-button" appearance="outline" scale="s" kind="neutral">Show every site</calcite-button></div>
+      <!-- These controls narrow only the measurement-site table. They stay
+           together and separate from the place that all figures describe. -->
+      <div id="snow-site-options" class="filterbar-secondary-pane snow-site-controls">
+        <div class="filterbar-pane-head">
+          <p class="map-controls-label">Site options</p>
+          <div id="snow-filter-actions" class="filterbar-head-actions"><calcite-button id="snow-reset" class="reset-button" appearance="outline" scale="s" kind="neutral">Show every site</calcite-button></div>
+        </div>
+        <div id="snow-site-filter-controls" class="snow-site-filter-controls">
+          <label>Site name or county<input id="snow-query" type="search" placeholder="Search sites" autocomplete="off"></label>
+          <calcite-label>Elevation<calcite-select id="snow-elev" scale="l">${ELEVATION_BANDS.map((band) => `<calcite-option value="${band}">${elevationBandLabel(band)}</calcite-option>`).join("")}</calcite-select></calcite-label>
+          <calcite-label>Reporting<calcite-select id="snow-reporting" scale="l">
+            <calcite-option value="all">Every site</calcite-option>
+            <calcite-option value="reporting">Sending values</calcite-option>
+            <calcite-option value="late">Late data only</calcite-option>
+          </calcite-select></calcite-label>
+        </div>
+      </div>
     </section>
     <p id="snow-status" class="filter-status" role="status"></p>
-    <section class="overview-kpis" aria-label="Snow measurement summary">
+    <section class="overview-kpis snow-summary" aria-label="Snow measurement summary">
       <article class="overview-kpi overview-kpi-primary"><span>Newest value</span><strong data-snow-kpi="now">—</strong><small data-snow-kpi="now-note">—</small></article>
       <article class="overview-kpi"><span>Season high point</span><strong data-snow-kpi="peak">—</strong><small data-snow-kpi="peak-note">—</small></article>
       <article class="overview-kpi"><span>Measurement sites</span><strong data-snow-kpi="sites">—</strong><small>Measured every day</small></article>
-      <article class="overview-kpi"><span>Late data</span><strong data-snow-kpi="late">—</strong><small>More than two days without a new value</small></article>
-      <article class="overview-kpi"><span>Data published</span><strong>${formatDate(payload.as_of)}</strong><small>Snow season ${seasonLabel(payload)}</small></article>
+      <article class="overview-kpi"><span>Late data</span><strong data-snow-kpi="late">—</strong><small>No new value for more than two days</small></article>
+      <article class="overview-kpi"><span>Data published</span><strong>${formatDate(payload.as_of)}</strong><small>${payload.water_year - 1}–${payload.water_year} snow season</small></article>
     </section>
     <section class="overview-card" aria-labelledby="snow-map-heading">
       <div class="card-heading">
@@ -472,10 +475,6 @@ function renderSnow(
   const startDay = defaultMapDay(payload) ?? fallbackDay;
   let currentDay = startDay;
   let currentArea: string | null = null;
-  /* The Drainage-area menu, once wired below. Held so in-page area changes
-   * can reflect the new choice back into it -- the select never re-renders
-   * itself on an update that did not come from its own change event. */
-  let drainage: DrainageMenu | null = null;
   let currentSite: string | null = null;
   let currentBasin: string | null = null;
   /* The three controls that narrow only the site table. Held together so
@@ -876,8 +875,8 @@ function renderSnow(
         ? `${reading.meanInches.toFixed(1)} in`
         : "—");
     setKpi("now-note", latest
-      ? `Of normal on ${formatDate(latest.date)}, the newest day when at ` +
-        `least half the sites gave a value (${latest.reportingSites} of ${rows.length})`
+      ? `${formatDate(latest.date)} · ${latest.reportingSites} of ${rows.length} sites; ` +
+        "at least half required"
       : reading
         ? `Snow water on ${formatDate(reading.date)}. There is too little ` +
           "normal snow for this date to compare against"
@@ -885,7 +884,7 @@ function renderSnow(
     const peak = seasonHighPoint(curve, floor);
     setKpi("peak", peak ? formatPercent(peak.percent) : "—");
     setKpi("peak-note", peak
-      ? `Of normal, on ${formatDate(peak.date)}, from ${peak.reportingSites} sites`
+      ? `${formatDate(peak.date)} · ${peak.reportingSites} sites`
       : "Too few sites have values yet this season");
     setKpi("sites", String(rows.length));
     setKpi("late", String(rows.filter((row) => row.late).length));
@@ -1056,33 +1055,13 @@ function renderSnow(
   });
 
   /*
-   * The two place menus (ADR-084), wired beside the level control because
-   * the rosters are already in hand by the time this runs.
-   *
-   * The Where menu offers states alone -- this page's sites carry no FIPS
-   * county codes to offer (ADR-084 records the name-to-code work as debt).
-   * A state pick navigates, exactly as the drill-down's state select did:
-   * every figure here is a mean over a different set of sites once the
-   * state narrows.
-   *
-   * The Drainage menu replaces both the shared drill-down and this page's
-   * own `#snow-area` picker. Its rows are gated by what this payload can
-   * draw: a row at the drawn tier appears only when it has a publishable
-   * figure (`basinChoices`), a coarser row only when some publishable
-   * choice sits beneath it, and nothing finer than the drawn tier is
-   * offered at all -- offering it would force a level change onto a payload
-   * whose figures at that finer level are unknown here. That gating is
-   * ADR-071's empty-page repair, carried forward per row.
-   *
-   * A pick at the drawn tier -- or "All drainage areas" -- stays in this
-   * page, the way `#snow-area` always worked: the payload is already in
-   * memory, and a navigation would throw away the day slider and the site
-   * table for nothing. Any coarser pick takes the shared-link path. The
-   * clearing rule rides along unchanged: only a real pick of "All" sets
-   * `openingAreaCleared`, which is what lets a coarse `?area=14` link keep
-   * narrowing the page until the reader explicitly asks past it.
+   * Snowpack's place row follows the same sequential reading order as
+   * drought (ADR-094): State, Area size, then the one tier that size names.
+   * The final tier remains gated by what this payload can draw, so a choice
+   * cannot empty the page. County stays absent because sites carry names,
+   * not the five-digit codes the shared county contract requires.
    */
-  const filterControls = content.querySelector<HTMLElement>(".filterbar-controls");
+  const filterControls = content.querySelector<HTMLElement>(".snow-place-controls");
   const navigateWithPlace = (selection: OpeningSelection): void => {
     /* `searchWithPlace` remembers the choice and writes "everywhere" out
      * loud rather than as an absent parameter -- see its own note for why
@@ -1091,36 +1070,23 @@ function renderSnow(
     window.location.replace(`${window.location.pathname}${nextQuery}`);
   };
   if (filterControls) {
-    const where = createWhereMenu(rosters, openingScope.selection, (pick) => {
-      if (pick.kind !== "state") return;
-      navigateWithPlace(nextSelectionForState(openingScope.selection, rosters, pick.value));
+    const state = createSnowStateControl(rosters, openingScope.selection, (value) => {
+      navigateWithPlace(selectionForSnowState(value));
     }, { scale: "l" });
-    if (where) placeInSlot(filterControls, "where", where.element);
+    placeInSlot(filterControls, "state", state.element);
 
     const tierCodes = new Set(choices.map((choice) => choice.code));
-    const includeRow = (code: string): boolean => {
-      if (code.length > level) return false;
-      if (code.length === level) return tierCodes.has(code);
-      for (const tierCode of tierCodes) {
-        if (tierCode.startsWith(code)) return true;
-      }
-      return false;
-    };
-    drainage = createDrainageMenu(rosters, openingScope.selection, (selection) => {
-      const code = selection.area;
-      if (code !== null && !tierCodes.has(code)) {
-        navigateWithPlace(selection);
-        return;
-      }
-      /* The in-page path. Only a real reader pick reaches this branch --
-       * programmatic `set()` calls below never fire the select's change
-       * event -- which is what keeps a shared `?area=14` link from being
-       * treated as cleared before the reader has touched anything. */
-      if (code === null) openingAreaCleared = true;
-      currentArea = code;
-      drainage?.set({ state: openingScope.selection.state, area: code });
-      update();
-    }, { scale: "l", include: includeRow });
+    const drainage = createSnowDrainageControl(
+      rosters, openingScope.selection, level, tierCodes, (value) => {
+        const selection = selectionForSnowArea(openingScope.selection, value);
+        const code = selection.area;
+        /* Only a real reader pick reaches this callback. That is what keeps
+         * a shared `?area=14` link from being treated as cleared before the
+         * reader has touched anything. */
+        if (code === null) openingAreaCleared = true;
+        currentArea = code;
+        update();
+      }, { scale: "l" });
     if (drainage) placeInSlot(filterControls, "area", drainage.element);
   }
 
@@ -1130,17 +1096,18 @@ function renderSnow(
   void loadOfferedLevels().then((offered) => {
     const control = createLevelControl(offered, level, (chosen) => {
       /* A full navigation rather than a re-render: every figure on this page
-       * is a mean over a different set of sites at the other level, so this
-       * is the path a shared link already takes. Replaced, not pushed, like
-       * every other control here. */
+       * is a mean over a different set of sites at the other level. The old
+       * area belongs to the old tier, so clear it before the new tier is
+       * offered. Replaced, not pushed, like every other control here. */
       const params = new URLSearchParams(window.location.search);
       writeLevel(params, chosen);
+      params.delete("area");
       const query = params.toString();
       window.location.replace(`${window.location.pathname}${query ? `?${query}` : ""}`);
       /* Large, because the native selects it sits beside are a third taller
        * than a Calcite control at the default scale. */
     }, { scale: "l" });
-    const levelHost = content.querySelector<HTMLElement>(".filterbar-controls");
+    const levelHost = content.querySelector<HTMLElement>(".snow-place-controls");
     if (control && levelHost) placeInSlot(levelHost, "level", control.element);
     levelsOffered = offered.length || 1;
     publishReady();
