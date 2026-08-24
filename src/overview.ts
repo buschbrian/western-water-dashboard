@@ -2,8 +2,11 @@ import "@esri/calcite-components/main.css";
 import { setAssetPath as setCalciteAssetPath } from "@esri/calcite-components";
 import "@esri/calcite-components/components/calcite-action";
 import "@esri/calcite-components/components/calcite-button";
+import "@esri/calcite-components/components/calcite-label";
 import "@esri/calcite-components/components/calcite-loader";
 import "@esri/calcite-components/components/calcite-navigation";
+import "@esri/calcite-components/components/calcite-option";
+import "@esri/calcite-components/components/calcite-select";
 
 import { loadReservoirs } from "./data/load";
 import { baselineChoices, periodLabel } from "./state/baseline";
@@ -83,6 +86,7 @@ import {
   wireMobileFilterDisclosure
 } from "./ui/mobile-filter-disclosure";
 import { THEME_CHANGE_EVENT, wireTheme } from "./ui/theme";
+import { reservoirLabel } from "./state/selection";
 import { formatAcreFeet, formatDate, formatPercent } from "./viz/format";
 import "./styles/overview.css";
 
@@ -114,16 +118,37 @@ root.innerHTML = `
 wireTheme();
 void setupPlaceChooser();
 
-function renderRows(tbody: HTMLTableSectionElement, reservoirs: readonly Reservoir[]): void {
+/** The permanent map link for one reservoir. Qualified against the complete
+ * roster so a filtered table never turns one of two shared names back into
+ * an ambiguous bare-name link. */
+function reservoirMapHref(reservoir: Reservoir, allReservoirs: readonly Reservoir[]): string {
+  return `./?reservoir=${encodeURIComponent(reservoirLabel(reservoir, allReservoirs))}`;
+}
+
+function renderRows(
+  tbody: HTMLTableSectionElement,
+  reservoirs: readonly Reservoir[],
+  allReservoirs: readonly Reservoir[]
+): void {
   tbody.replaceChildren(...reservoirs.map((reservoir) => {
     const row = document.createElement("tr");
     row.dataset.reservoir = reservoir.name;
-    const cells = [reservoir.name, reservoir.huc6_name ?? "Not assigned",
+    const label = reservoirLabel(reservoir, allReservoirs);
+    const cells = [label, reservoir.huc6_name ?? "Not assigned",
       formatPercent(reservoir.pct_of_capacity), formatAcreFeet(reservoir.current_storage_af),
       formatAcreFeet(reservoir.capacity_af), formatDate(reservoir.as_of)];
     cells.forEach((value, index) => {
       const cell = document.createElement("td");
-      cell.textContent = value;
+      if (index === 0) {
+        const link = document.createElement("a");
+        link.className = "overview-reservoir-link";
+        link.href = reservoirMapHref(reservoir, allReservoirs);
+        link.textContent = value;
+        link.setAttribute("aria-label", `Open ${value} on the storage map`);
+        cell.append(link);
+      } else {
+        cell.textContent = value;
+      }
       if (index === 5 && isLate(reservoir)) cell.className = "late-badge";
       row.append(cell);
     });
@@ -326,7 +351,9 @@ async function renderOverview(
              control here; see the control-slot rule in app.css. -->
         <div class="control-slot" data-slot="place"></div>
         <div class="control-slot" data-slot="drainage"></div>
-        <label>Reporting<select id="cadence-filter"><option value="all">All reporting</option><option value="daily">Daily</option><option value="monthly">Monthly</option><option value="late">Late or unavailable</option></select></label>
+        <!-- One control family to the bar: a Calcite select at the same
+             scale as the two place menus beside it. -->
+        <calcite-label>Reporting<calcite-select id="cadence-filter" scale="l"><calcite-option value="all">All reporting</calcite-option><calcite-option value="daily">Daily</calcite-option><calcite-option value="monthly">Monthly</calcite-option><calcite-option value="late">Late or unavailable</calcite-option></calcite-select></calcite-label>
       </div>
     </section>
     <p id="filter-status" class="filter-status" role="status"></p>
@@ -362,7 +389,7 @@ async function renderOverview(
     <div class="overview-chart-grid">
       <section class="overview-card overview-card-wide" aria-labelledby="capacity-heading">
         <div class="card-heading">
-          <div><h2 id="capacity-heading">Largest reservoirs</h2><p>Click a bar to narrow everything below to that reservoir. Your choice appears in the search box above, and clearing it brings the rest back. A reservoir can hold more than its full level when water is held above the usual pool. A bar can then run past 100%.</p></div>
+          <div><h2 id="capacity-heading">Largest reservoirs</h2><p>Click a bar to open that reservoir on the storage map. A reservoir can hold more than its full level when water is held above the usual pool. A bar can then run past 100%.</p></div>
           <span class="sdk-badge">Bar chart</span>
         </div>
         <div id="capacity-chart" class="chart-host" aria-busy="true"></div>
@@ -404,7 +431,7 @@ async function renderOverview(
     </div>
     <section class="overview-card table-card mobile-table-card" aria-labelledby="table-heading">
       <div class="card-heading">
-        <div><h2 id="table-heading">Reservoir detail</h2><p>Exact values for the same filtered records shown above.</p></div>
+        <div><h2 id="table-heading">Reservoir detail</h2><p>Exact values for the same filtered records shown above. Choose a reservoir name to open it on the storage map.</p></div>
         <button id="overview-table-toggle" class="mobile-disclosure-toggle" type="button"
           aria-controls="overview-table-actions overview-table-scroll"
           aria-expanded="false">Show table</button>
@@ -583,7 +610,7 @@ async function renderOverview(
   const placeCounty = (): string => chosenCounty;
   const tbody = document.querySelector<HTMLTableSectionElement>("#reservoir-rows");
   const search = document.querySelector<HTMLInputElement>("#reservoir-search");
-  const cadence = document.querySelector<HTMLSelectElement>("#cadence-filter");
+  const cadence = document.querySelector<HTMLElement & { value: string }>("#cadence-filter");
   const sort = document.querySelector<HTMLSelectElement>("#reservoir-sort");
   const lakePowell = document.querySelector<HTMLInputElement>("#lake-powell-toggle");
   const lakeMead = document.querySelector<HTMLInputElement>("#lake-mead-toggle");
@@ -743,7 +770,7 @@ async function renderOverview(
     void renderWeekly(scoped);
     renderClassStrip(matching);
     exportRows = filterAndSort(visible, "", sort.value as OverviewSort);
-    renderRows(tbody, exportRows);
+    renderRows(tbody, exportRows, allReservoirs);
     const chosenClass = storageClassFilter === null
       ? "" : ` · ${STORAGE_CLASSES[storageClassFilter]?.label ?? ""}`;
     /* Both dominant reservoirs are named, whatever their state: a scope
@@ -787,7 +814,8 @@ async function renderOverview(
       await Promise.all([
         renderArcgisBarChart(capacityHost,
           largestReservoirRecords(visible, {
-            limit, measure, rank: chartRank.value as ChartRank
+            limit, measure, rank: chartRank.value as ChartRank,
+            labelAmong: allReservoirs
           }),
           measure === "storage"
             ? "Acre-feet stored by the largest reservoirs in the filtered view"
@@ -796,12 +824,12 @@ async function renderOverview(
           {
             measure,
             categoryTitle: "Reservoir",
-            /* The bar becomes the filter. Clearing the selection clears the
-             * search rather than leaving the reader in a view they cannot
-             * see the cause of. */
+            /* The bar is a route into the map's own reservoir details. Its
+             * label is already qualified against the complete roster, so
+             * the public `?reservoir=` contract can resolve it exactly. */
             onSelect: (labels) => {
-              search.value = labels[0] ?? "";
-              void update();
+              const label = labels[0];
+              if (label) window.location.assign(`./?reservoir=${encodeURIComponent(label)}`);
             }
           }),
         renderArcgisBarChart(watershedHost, watershedRecords(visible),
@@ -883,7 +911,7 @@ async function renderOverview(
   /* The Where menu is deliberately absent: its own pick handler calls
    * `update`, because a pick also has to move the two held axes before any
    * read of them means anything. */
-  for (const control of [search, cadence, sort,
+  for (const control of [search, sort,
     lakePowell, lakeMead, chartLimit, chartMeasure, chartRank]) {
     const event = control instanceof HTMLSelectElement
       || (control instanceof HTMLInputElement && control.type === "checkbox")
@@ -891,6 +919,7 @@ async function renderOverview(
       : "input";
     control.addEventListener(event, () => void update());
   }
+  cadence.addEventListener("calciteSelectChange", () => void update());
   /* Each chart reads the page's Calcite colours once, when it is built --
    * they are baked into the SDK's own chart config, not CSS the cascade can
    * re-theme on its own. Without this, flipping the theme toggle after the

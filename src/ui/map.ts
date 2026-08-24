@@ -171,6 +171,18 @@ function panelPadding(): ViewPadding {
   return { top: 0, right: overlap("detail-panel"), bottom: 0, left: overlap("start-panel") };
 }
 
+/** Keeps light-DOM map furniture in the same visible rectangle as the view.
+ * View padding protects the geography, but the component's slotted controls
+ * do not follow it: when the details panel opened over the right edge, the
+ * tools stayed behind it. These inset values move both control clusters, the
+ * scale bar and the map key clear of whichever shell panels are open. */
+function setMapStageInsets(padding: ViewPadding): void {
+  const stage = document.querySelector<HTMLElement>(".map-stage");
+  if (!stage) return;
+  stage.style.setProperty("--map-left-inset", `${padding.left}px`);
+  stage.style.setProperty("--map-right-inset", `${padding.right}px`);
+}
+
 type MapElement = HTMLElement & {
   map?: ArcGISMap | null;
   basemap?: unknown;
@@ -354,7 +366,9 @@ export async function loadMap(
    * equivalent property: setting padding only after ready makes the SDK fit
    * the region behind the summary panel and then shift an already-resolved
    * view. */
-  element.padding = panelPadding();
+  const openingPadding = panelPadding();
+  element.padding = openingPadding;
+  setMapStageInsets(openingPadding);
   /* The opening view is the derived region: one zoom level out from the
    * drainage-area polygons, the same box the two production pages open at.
    * Set here rather than eased into after the layer loads -- the target is a
@@ -376,12 +390,11 @@ export async function loadMap(
   element.setAttribute("aria-label", "Interactive map of western reservoirs and drainage areas");
   element.map = map;
   element.animationsDisabled = reducedMotionQuery.matches;
-  /* Every tool on the right. The left of the map is the storage summary's
-   * lane: the shell draws its panels over the map (`content-behind`), so a
-   * control at the top left sat underneath the panel and only the fullscreen
-   * button was reachable. Zoom is included because the component set does
-   * not add one -- `view.ui.components` is empty for a map component, so
-   * without this there is no way to zoom but the scroll wheel. */
+  /* The same two clusters as the snow and drought maps. Navigation stays on
+   * the right; appearance and fullscreen sit on the left. Locate remains on
+   * this full map because a reader can be standing near a reservoir. The
+   * stage insets above move each cluster clear of an open shell panel. Zoom
+   * is explicit because a map component adds no controls of its own. */
   /* The SDK's own basemap gallery, in the SDK's own expand, rather than a
    * select in the storage summary: the background belongs to the map, and a
    * second control panel inside the panel that holds the analysis controls
@@ -393,11 +406,11 @@ export async function loadMap(
     <arcgis-home slot="top-right"></arcgis-home>
     <arcgis-compass slot="top-right"></arcgis-compass>
     <arcgis-locate slot="top-right"></arcgis-locate>
-    <arcgis-expand slot="top-right" id="basemap-expand" close-on-esc
+    <arcgis-expand slot="top-left" id="basemap-expand" close-on-esc
       expand-icon="basemap" expand-tooltip="Map background">
       <arcgis-basemap-gallery></arcgis-basemap-gallery>
     </arcgis-expand>
-    <arcgis-fullscreen slot="top-right"></arcgis-fullscreen>
+    <arcgis-fullscreen slot="top-left"></arcgis-fullscreen>
     <arcgis-scale-bar slot="bottom-right" unit="dual"></arcgis-scale-bar>`;
   element.addEventListener("arcgisViewReadyChange", () => {
     /* Not `{ once: true }` any more, and guarded on the view's own `ready`
@@ -631,8 +644,10 @@ export async function loadMap(
    * is no longer there. */
   function syncPadding(): void {
     const view = element.view;
+    const padding = panelPadding();
+    setMapStageInsets(padding);
     if (!view?.ready) return;
-    view.padding = panelPadding();
+    view.padding = padding;
   }
 
   const shellResize = new ResizeObserver(() => syncPadding());

@@ -26,3 +26,10 @@ screenshots/
 # The planning brief for the review branch: a scratch document, not a
 # repository artifact.
 BUILD-BRIEF.md
+
+# Generated repository atlas and its local skill installation. The
+# authoritative architecture stays in docs/architecture/; this local
+# companion is rebuilt from one data file.
+.atlas/
+.agents/
+skills-lock.json
