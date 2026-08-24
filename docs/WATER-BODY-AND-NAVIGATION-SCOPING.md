@@ -6,15 +6,38 @@
 > and current architecture is [`docs/architecture/`](architecture/README.md).
 > See [`docs/history/README.md`](history/README.md).
 
-Status: Scoping, written 2026-08-21. **Partly delivered.** Item 3, the nested
-drainage and county menus, shipped the same day, together with the cheap fix
-this document asked for first -- narrowing the county list by the chosen state.
-Item 4, the reopen control, was delivered 2026-08-22. The resolution rate that
-gates items 1 and 2 was measured 2026-08-21 (section 1 below), and item 5's
-count exists in
-[`WESTERN-SOURCE-CANDIDATES.md`](WESTERN-SOURCE-CANDIDATES.md). Items 1, 2 and
-5 remain not started. Every measurement below is as it was written; nothing
-here has been rewritten to describe today.
+Status: Scoping, written 2026-08-21. **Four of the five items are closed;
+item 5 remains open.** Item 3, the nested drainage and county menus, shipped
+the same day, together with the cheap fix this document asked for first --
+narrowing the county list by the chosen state. That presentation was itself
+superseded on 2026-08-23, when
+[ADR-095](decisions/ADR-095-order-storage-map-place-filters-from-state-to-area.md)
+and its two predecessors put every map on one coarsest-to-finest sequence.
+Item 4, the reopen control, was delivered 2026-08-22 and extended to every
+page header by
+[ADR-086](decisions/ADR-086-open-the-place-chooser-from-every-page-header.md).
+
+Items 1 and 2 were both answered on 2026-08-22, and neither by the route this
+document scoped. **Item 1** was closed by
+[ADR-079](decisions/ADR-079-rename-through-a-former-name-table-and-publish-the-operator.md):
+twenty-six names were corrected at their reviewed sources and the operator is
+published beside the name, rather than normalizing against a hydrographic
+service at the resolution rate section 1 measured. **Item 2** was closed by
+[ADR-078](decisions/ADR-078-every-water-this-site-measures-is-a-reservoir.md),
+which decided the question rather than sourcing it: every water on the roster
+is a reservoir by rule, no per-record type field is published, and the local
+name keeps its own form. The National Hydrography Dataset work both items
+would have needed is therefore not pending -- it is not the plan any more.
+
+**Item 5 remains open**, and its count is in
+[`WESTERN-SOURCE-CANDIDATES.md`](WESTERN-SOURCE-CANDIDATES.md). It moved once:
+the fifth provider, admitted 2026-08-22 under
+[ADR-080](decisions/ADR-080-build-the-usgs-provider-against-the-keyless-legacy-service-now.md),
+brought seven reservoirs in Arizona, Nevada and Washington. Idaho, Oregon and
+Wyoming are untouched.
+
+Every measurement below is as it was written; nothing here has been rewritten
+to describe today.
 
 Five items were raised on 2026-08-21; this records what each one actually is,
 what it costs, what it would break, and the order the next agent should work

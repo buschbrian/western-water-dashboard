@@ -78,7 +78,7 @@ body {
 .mobile-filter-toggle,
 .mobile-disclosure-toggle { display: none; }
 .filterbar-title { min-width: 0; }
-.filterbar-title h2 { margin: .1rem 0 0; font-size: 1rem; }
+.filterbar-title h2 { margin: .1rem 0 0; font-size: var(--app-section-heading); }
 /* The search box, on its own line above every dropdown and ruled off from
  * them.
  *
@@ -117,16 +117,10 @@ body {
    is appended when the reference export resolves rather than written into the
    template (ADR-064). `min-width: 0` for the same reason every other grid
    child here has it: an unbreakable control widens the whole page otherwise.
-   The label text is styled by the rule below, which the shadow root does not
-   reach, so the uppercase treatment is set on the host. */
-.filterbar-controls .level-control {
-  min-width: 0;
-  --calcite-label-margin-bottom: 0;
-  color: var(--app-muted);
-  font-size: .72rem;
-  font-weight: 700;
-  letter-spacing: .01em;
-}
+   Its label text takes the shared control-label treatment in app.css, which
+   reaches the shadow root through Calcite's own tokens; a `font-size` here
+   would not. */
+.filterbar-controls .level-control { min-width: 0; }
 /* The place menus are `calcite-label`-wrapped selects inside one
    wrapper each -- one menu apiece, but the same reason and the same fix as
    `.level-control` above: appended when the reference export resolves, and
@@ -152,31 +146,36 @@ body {
 .drought-state-menu calcite-label,
 .drought-county-menu calcite-label {
   min-width: 0;
-  --calcite-label-margin-bottom: 0;
-  color: var(--app-muted);
-  font-size: .72rem;
-  font-weight: 700;
-  letter-spacing: .01em;
 }
 .dashboard-filterbar .reset-button { flex: 0 0 auto; }
 
+/* A native label in a filter bar is the same level as the Calcite one
+ * beside it, and stands the same distance from the control it names. Both
+ * numbers are Calcite's, not ours: its label lays the text out at
+ * line-height 1.375 and leaves a .5rem gap above the control, and a native
+ * label at .25rem started the search box four pixels above the selects in
+ * the same row. */
 .dashboard-filterbar label, .sort-control {
   display: grid;
-  gap: .25rem;
+  gap: .5rem;
   color: var(--app-muted);
-  font-size: .72rem;
+  font-size: var(--app-control-label);
   font-weight: 700;
+  line-height: 1.375;
   letter-spacing: .01em;
 }
+/* 2.75rem, which is what `calcite-select scale="l"` measures. At 2.5rem the
+ * search box was four pixels shorter than every select under it, and the
+ * two rows of one bar did not read as one set of controls. */
 .dashboard-filterbar input, .dashboard-filterbar select, .sort-control select {
   width: 100%;
-  min-height: 2.5rem;
+  min-height: 2.75rem;
   padding: .45rem .65rem;
   color: var(--app-text);
   background: var(--app-surface-raised);
   border: 1px solid var(--app-border);
   border-radius: .3rem;
-  font: 400 .9rem "Avenir Next", Avenir, sans-serif;
+  font: 400 var(--app-control-text) "Avenir Next", Avenir, sans-serif;
   letter-spacing: normal;
 }
 .dashboard-filterbar input:focus-visible, .dashboard-filterbar select:focus-visible,
@@ -185,19 +184,11 @@ body {
   outline-offset: .12rem;
 }
 /* One control family to a bar: where the place menus bring Calcite selects
- * into a filter bar, the bar's own selects are Calcite too, at one scale --
- * and the labels take the same small muted treatment the native ones get,
- * or two kinds of label sit in one row reading as two different things.
+ * into a filter bar, the bar's own selects are Calcite too, at one scale.
+ * Both kinds of label take the shared control-label treatment in app.css,
+ * which is the only place that can reach a `calcite-label`'s own text.
  * Without the width rule a calcite-select hugs its widest option instead
  * of filling its grid cell like every neighbour. */
-.dashboard-filterbar calcite-label {
-  display: grid;
-  gap: .25rem;
-  color: var(--app-muted);
-  font-size: .72rem;
-  font-weight: 700;
-  letter-spacing: .01em;
-}
 .dashboard-filterbar calcite-select { width: 100%; min-width: 0; }
 /* A secondary pane keeps display-only or table-only controls separate from
  * the place row that changes every figure. Drought uses it for Map options;
@@ -223,12 +214,16 @@ body {
   gap: .5rem 1rem;
 }
 .filterbar-pane-head .filterbar-head-actions { margin-inline-start: auto; }
+/* "Map options", "Site options": a group heading inside a filter, one step
+ * below the section heading that names the bar and one step above the
+ * labels of the controls it holds. It carried the control-label size and
+ * the muted colour, which made it the same thing as the labels beneath it
+ * rather than the name of the group they belong to. */
 .map-controls-label {
   margin: 0;
-  color: var(--app-muted);
-  font-size: .72rem;
+  color: var(--app-text);
+  font-size: var(--app-group-heading);
   font-weight: 700;
-  letter-spacing: .01em;
 }
 .map-filter-controls {
   display: grid;
@@ -244,11 +239,10 @@ body {
   gap: .75rem 1rem;
 }
 .snow-site-filter-controls > * { min-width: 0; }
-/* Direct Calcite labels carry a default bottom margin inside the host. The
- * search label is native and has none, so leaving it in this one mixed row
- * starts the search fourteen pixels below the two selects. */
-.snow-site-filter-controls calcite-label { --calcite-label-margin-bottom: 0; }
-.snow-site-filter-controls > label { min-block-size: 4.25rem; }
+/* The bottom margin every Calcite label carries is cleared for the whole
+ * bar in app.css now, and the native label beside these two stands at the
+ * same height and the same distance from its control, so the row needs no
+ * minimum of its own to line up. */
 .map-layer-controls {
   display: flex;
   flex-wrap: nowrap;
@@ -271,7 +265,7 @@ body {
   background: transparent;
   border: 1px solid var(--app-accent);
   border-radius: .35rem;
-  font-size: .72rem;
+  font-size: var(--app-control-label);
   font-weight: 700;
   letter-spacing: .01em;
   cursor: pointer;
@@ -425,7 +419,7 @@ body {
   border-radius: .65rem;
 }
 .chart-settings-copy { flex: 1 1 20rem; min-width: 0; }
-.chart-settings-copy h2 { margin: .1rem 0 .2rem; font-size: 1rem; }
+.chart-settings-copy h2 { margin: .1rem 0 .2rem; font-size: var(--app-section-heading); }
 .chart-settings-copy p:last-child {
   margin: 0;
   color: var(--app-muted);
@@ -439,25 +433,30 @@ body {
   gap: .6rem .75rem;
   min-width: 0;
 }
+/* The chart settings are a lighter surface than the filter bar, but a
+ * control is still a control: these carried .7rem labels over .8rem selects
+ * beside a bar carrying .72rem over .9rem, which is drift rather than a
+ * step. Both take the shared ladder now. */
 .chart-settings-controls label {
   display: grid;
-  gap: .25rem;
+  gap: .5rem;
   min-width: 0;
   color: var(--app-muted);
-  font-size: .7rem;
+  font-size: var(--app-control-label);
   font-weight: 700;
+  line-height: 1.375;
   letter-spacing: .01em;
 }
 .chart-settings-controls select {
   width: 100%;
   min-width: 0;
-  min-height: 2.25rem;
+  min-height: 2.75rem;
   padding: .35rem .5rem;
   color: var(--app-text);
   background: var(--app-surface-raised);
   border: 1px solid var(--app-border);
   border-radius: .25rem;
-  font: 400 .8rem "Avenir Next", Avenir, sans-serif;
+  font: 400 var(--app-control-text) "Avenir Next", Avenir, sans-serif;
   letter-spacing: normal;
 }
 .chart-settings-controls select:focus-visible {
@@ -466,7 +465,7 @@ body {
 }
 .overview-card { min-width: 0; padding: .9rem; }
 .card-heading { display: flex; gap: 1rem; align-items: start; justify-content: space-between; }
-.card-heading h2 { margin: 0; font-size: 1.05rem; }
+.card-heading h2 { margin: 0; font-size: var(--app-section-heading); }
 .card-heading p { margin: .25rem 0 .65rem; color: var(--app-muted); font-size: .8rem; line-height: 1.4; }
 .sdk-badge {
   flex: 0 0 auto;
@@ -859,7 +858,7 @@ body {
   border: 1px solid var(--app-border);
   border-radius: .65rem;
 }
-.class-strip-head h2 { margin: 0; font-size: 1rem; }
+.class-strip-head h2 { margin: 0; font-size: var(--app-section-heading); }
 .class-strip-head p {
   margin: .2rem 0 .6rem;
   color: var(--app-muted);

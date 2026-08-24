@@ -138,7 +138,12 @@ every way of no longer being busy has to clear it, the unhappy ones included.
 **A readiness signal field reports one fact.** Current surfaces publish
 `window.__dashboardReady`. Two fields that read the same expression make two
 assertions about one fact, which is how a whole map layer was deleted without
-a test noticing. Add fields; never remove one.
+a test noticing. Add fields, and never remove one while the behaviour it
+reports still exists. A readiness field is a verification seam, not public
+API: when a control is retired the field that reported it is retired with it,
+rather than left behind reporting a constant (ADR-090). ADR-087 first kept
+`geography` permanently reporting `connected`; ADR-090 superseded that clause
+and removed the field.
 
 **Accessibility is a release gate** (ADR-036). The smoke suite runs axe-core
 over every page at every tested width and watches the font host. Calcite and
@@ -190,6 +195,39 @@ Each was found by a failing test or a screenshot. Do not regress them.
   measured size when the gesture ends — `pointerup`, `keyup`.
 - Controls belong **above** the reservoir list. The list scrolls inside its own
   box, so anything after it is behind a nested scroller.
+- **A `calcite-label` never sees a `font-size` or a `color` set on its host.**
+  It paints the slotted text inside its own shadow root, at
+  `--calcite-font-size-relative-base` in `--calcite-color-text-1`. Those two
+  tokens are the only way in; `font-weight` and `letter-spacing` are not set
+  there and do inherit. Set the label token beside
+  `--calcite-select-font-size`, or shrinking a label shrinks the control it
+  names. Every filter surface sets both once, in `app.css`.
+- **`--calcite-label-margin-bottom` defaults to .75rem** and is 12px of dead
+  space under every Calcite label. In a row aligned to `end` it lifts that one
+  control above its neighbours; in a stacked panel it doubles the pitch. Filter
+  surfaces clear it and set their own spacing.
+
+## The type ladder
+
+One ladder, set as tokens in `:root` and used by every page. Each level is
+strictly smaller than the one above it, so a reader can tell a section from a
+group from a control label by size alone.
+
+| Token | Size | Names |
+|---|---|---|
+| `--app-section-heading` | 1.05rem | A section: a card, a filter bar, a panel section |
+| `--app-group-heading` | .85rem | A group inside a filter: Map options, Site options, Very large reservoirs |
+| `--app-control-label` | .72rem | One control's label, native or Calcite |
+| `--app-control-text` | .9rem | What a control says. Not a heading, and outside the ladder |
+
+The eyebrow above a filter bar's heading is a kicker, not a level: it stays at
+`.eyebrow`'s own small muted treatment.
+
+Native and Calcite controls in one row have to agree on more than size. A
+filter bar's native inputs are `2.75rem` tall, which is what
+`calcite-select scale="l"` measures, and its native labels stand `.5rem` above
+their control at line-height 1.375, which is what a `calcite-label` does. Get
+either wrong and the mixed row on the snowpack page steps.
 
 ## Filters
 

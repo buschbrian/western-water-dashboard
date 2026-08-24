@@ -16,13 +16,20 @@ Read that before a non-trivial change; this is the checklist.
 - **Anything that can wait forever needs a deadline**, and every exit from a
   loading state must clear `aria-busy` — the unhappy ones too.
 - **A readiness field reports one fact.** Add fields to
-  `window.__dashboardReady`; never remove one.
+  `window.__dashboardReady`, and never remove one while the behaviour it
+  reports still exists. Readiness fields are verification seams, not public
+  API: a field whose control is retired goes with the control (ADR-090).
 - **Reference layers sink below discrete data and may sit above continuous
   data** (ADR-042, ADR-061). A point can be hidden by a line; a tiled surface
   cannot.
 - **Rows that are already scoped keep their type.** Use `scopeReservoirs` and
   `rollupOfScoped` rather than passing scope options twice
   ([`docs/architecture/scopes.md`](../docs/architecture/scopes.md)).
+- **Type comes from the ladder**, not from a literal. `--app-section-heading`,
+  `--app-group-heading`, `--app-control-label` and `--app-control-text` are set
+  in `app.css` and used on every page. A `calcite-label` cannot see a
+  `font-size` on its host — set `--calcite-font-size-relative-base` and
+  `--calcite-select-font-size` together, or the control shrinks with its label.
 - **No `text-transform` anywhere.** `innerText` returns what CSS transformed,
   which is what a screen reader and the smoke suite both read.
 - Layout constraints already solved — page widths, the 56px zoom gutter,

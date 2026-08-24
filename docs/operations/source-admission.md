@@ -61,9 +61,9 @@ operator means by full, and the dam inventory was long the only place to read
 one; where the provider that publishes the readings publishes a full level too,
 that figure wins.
 
-`preferred_capacity` is the rule and it is **opt-in** — a caller names the
-`capacity_basis` its provider's figure carries, and the two federal audits name
-none, so nothing outside California moved. A preferred figure **names its
+`preferred_capacity` is the rule and it is **opt-in** -- a caller names the
+`capacity_basis` its provider's figure carries, and `tools/audit_cdec_stations.py`
+is still the only audit that names one, so nothing outside California moved. A preferred figure **names its
 source or the roster refuses to load**: `cdec_reservoir_report` and
 `reclamation_project_record` both require `capacity_source_url` in
 `validate_capacity_evidence`. The disagreement screen measures against the

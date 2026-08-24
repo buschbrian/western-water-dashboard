@@ -1,8 +1,19 @@
 # Scoping an upstream trace
 
 > **Scoping document, not a specification.** It records what was measured on
-> 2026-08-21 and what the work would be. Nothing here is built. Current
-> architecture is [`docs/architecture/`](architecture/README.md).
+> 2026-08-21 and what the work would be. Current architecture is
+> [`docs/architecture/`](architecture/README.md).
+>
+> **Status (2026-08-24): built, except the ordering.** The trace shipped on
+> 2026-08-22 as [ADR-077](decisions/ADR-077-publish-what-drains-to-a-reservoir-as-an-upstream-set.md):
+> `tools/build_upstream_index.py` traces every published reservoir once
+> against the Network-Linked Data Index and commits `upstream_index.json`,
+> which the details panel and each reservoir page read. The contributing-area
+> polygon is a tool input and is never published, for the reason the last
+> section of this document gives. **The upstream set is unordered**, and the
+> flowline-navigation slice that would order it — a second tool and a second
+> reference file — remains not started. Every measurement below is as it was
+> written; nothing here has been rewritten to describe today.
 
 Every figure below came from a live query against the named service on this
 machine, not from its documentation. Sizes are the actual response, timings

@@ -19,6 +19,8 @@ Never write, where a reader can see it:
 | `RISE` | Bureau of Reclamation |
 | `AWDB` | Natural Resources Conservation Service |
 | `CDEC` | California Department of Water Resources |
+| `CDSS` | Colorado Division of Water Resources |
+| `USGS`, `NWIS` | U.S. Geological Survey |
 
 Also: no `text-transform` in `src/styles/` or the pages — `innerText` returns
 what CSS transformed, so an uppercase label is what a screen reader says.
