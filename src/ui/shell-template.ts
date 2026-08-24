@@ -41,14 +41,6 @@ function panelContents(suffix: string): string {
           <small data-value="updated">—</small>
         </div>
       </section>
-      <!-- The key to the map, above the controls that change it: a reader
-           meeting the circles for the first time needs to know what they
-           mean before being asked to filter them. Filled by renderLegend
-           from the class table, never written out here (ADR-008). -->
-      <section class="legend" aria-labelledby="legend-${suffix}">
-        <h3 id="legend-${suffix}">What the circles mean</h3>
-        <div class="legend-host" data-legend="${suffix}"></div>
-      </section>
       <!-- Before the list, not after it. The list scrolls inside its own
            box, so controls placed below it sat behind a nested scroller --
            238px below the fold on a desktop panel and 815px down a phone
@@ -200,6 +192,15 @@ export function renderShell(root: HTMLElement): void {
             <p>Loading the map&hellip;</p>
           </div>
         </div>
+        <!-- The key belongs to the map it explains. It used to take a full
+             section from both copies of the storage summary, several inches
+             from the circles on a wide screen. This one inset copy is filled
+             from the class table by renderLegend (ADR-008). It opens on a
+             wide map and starts compact on a phone, where the map is short. -->
+        <details id="storage-map-legend" class="legend storage-map-legend" open>
+          <summary>What the circles mean</summary>
+          <div class="legend-host" data-legend="map"></div>
+        </details>
         <div id="map-hover" class="map-hover" aria-hidden="true" hidden></div>
       </section>
 

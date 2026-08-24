@@ -1275,12 +1275,19 @@ for (const viewport of VIEWPORTS) {
      * the class table, so the count is the assertion that matters: a sixth
      * class added to that table with no legend entry would mean the map
      * draws a colour the key does not explain. */
-    const legend = await tab.evaluate((selector) => ({
-      entries: document.querySelectorAll(`${selector} .legend-classes li`).length,
-      colors: [...document.querySelectorAll(`${selector} .legend-classes .legend-swatch`)]
+    const legend = await tab.evaluate(() => ({
+      copies: document.querySelectorAll("[data-legend]").length,
+      insideMap: Boolean(document.querySelector(".map-stage #storage-map-legend")),
+      open: document.querySelector("#storage-map-legend")?.open ?? null,
+      entries: document.querySelectorAll("#storage-map-legend .legend-classes li").length,
+      colors: [...document.querySelectorAll("#storage-map-legend .legend-classes .legend-swatch")]
         .map((swatch) => getComputedStyle(swatch).backgroundColor),
-      notes: document.querySelectorAll(`${selector} .legend-notes li`).length
-    }), mobile ? "#start-sheet" : "#start-panel");
+      notes: document.querySelectorAll("#storage-map-legend .legend-notes li").length
+    }));
+    check(legend.copies === 1 && legend.insideMap,
+      `${label}: the storage key has ${legend.copies} copies or is outside the map`);
+    check(legend.open === !mobile,
+      `${label}: the map key starts ${legend.open ? "open" : "closed"} at this width`);
     check(legend.entries === 5,
       `${label}: the map key has ${legend.entries} storage classes, not 5`);
     check(legend.notes === 3,
@@ -1300,7 +1307,15 @@ for (const viewport of VIEWPORTS) {
         // alternative link and the navigation are the light-DOM surfaces
         // that have covered them before.
         navigation: rect("calcite-navigation"),
+        stage: rect(".map-stage"),
+        startPanel: rect("#start-panel"),
+        detailPanel: rect("#detail-panel"),
+        legend: rect("#storage-map-legend"),
+        zoom: rect("arcgis-zoom"),
         home: rect("arcgis-home"),
+        compass: rect("arcgis-compass"),
+        locate: rect("arcgis-locate"),
+        basemap: rect("arcgis-expand"),
         fullscreen: rect("arcgis-fullscreen")
       };
     });
@@ -1538,10 +1553,24 @@ for (const viewport of VIEWPORTS) {
 
     check(layout.navigation && layout.navigation.right <= layout.viewport + 1,
       `${label}: the navigation is clipped`);
-    for (const [control, box] of [["Home", layout.home], ["Fullscreen", layout.fullscreen]]) {
+    for (const [control, box] of [["Zoom", layout.zoom], ["Home", layout.home],
+      ["Compass", layout.compass], ["Locate", layout.locate],
+      ["Map background", layout.basemap], ["Fullscreen", layout.fullscreen]]) {
       check(box && box.left >= 0 && box.right <= layout.viewport + 1 &&
         box.top >= (layout.navigation?.bottom ?? 0) && box.bottom <= viewport.height + 1,
       `${label}: the ${control} map control is clipped or covered by navigation`);
+    }
+    if (!mobile) {
+      const overlaps = (a, b) => Boolean(a && b &&
+        Math.max(a.left, b.left) < Math.min(a.right, b.right) &&
+        Math.max(a.top, b.top) < Math.min(a.bottom, b.bottom));
+      for (const [control, box] of [["Zoom", layout.zoom], ["Home", layout.home],
+        ["Compass", layout.compass], ["Locate", layout.locate],
+        ["Map background", layout.basemap], ["Fullscreen", layout.fullscreen],
+        ["Map key", layout.legend]]) {
+        check(!overlaps(box, layout.startPanel) && !overlaps(box, layout.detailPanel),
+          `${label}: the ${control} is behind an open shell panel`);
+      }
     }
 
     if (mobile) {
@@ -1749,6 +1778,31 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
     check(rankedChart.categoryFormat?.type === "category"
       && rankedChart.categoryFormat?.characterLimit === null,
     `${label}: the reservoir chart still shortens category names`);
+
+    /* A reservoir is one route into the map, from both exact-value surfaces:
+     * the table exposes real anchors (copyable and openable in a new tab),
+     * and the chart carries the same canonical labels into its selection
+     * handler. Shared names are qualified before either surface sees them. */
+    const storageMapLinks = await tab.evaluate(() => {
+      const links = [...document.querySelectorAll("#reservoir-rows .overview-reservoir-link")];
+      const table = links.map((link) => ({
+        text: link.textContent?.trim() ?? "",
+        reservoir: new URL(link.href).searchParams.get("reservoir"),
+        path: new URL(link.href).pathname
+      }));
+      const chart = document.querySelector("#capacity-chart arcgis-chart");
+      const chartLabels = chart?.layer?.source?.toArray()
+        ?.map((graphic) => String(graphic.attributes?.label ?? "")) ?? [];
+      return { table, chartLabels };
+    });
+    check(storageMapLinks.table.length === expectedReservoirs,
+      `${label}: ${storageMapLinks.table.length} of ${expectedReservoirs} table rows link to the map`);
+    check(storageMapLinks.table.every((link) =>
+      link.path.endsWith("/") && link.reservoir === link.text),
+    `${label}: a reservoir table link is not a canonical storage-map deep link`);
+    const tableLinkLabels = new Set(storageMapLinks.table.map((link) => link.text));
+    check(storageMapLinks.chartLabels.every((name) => tableLinkLabels.has(name)),
+      `${label}: a ranked-chart reservoir has no matching storage-map link`);
 
     /* The category charts carry many more names than the trend, scatter and
      * histogram. Their hosts grow with those names, and the box plot turns
@@ -2243,6 +2297,26 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
      * filled, and the shadow roots have rendered their real controls. */
     await checkAccessibility(tab, check, label);
     await tab.screenshot({ path: `screenshots/overview-${viewport.name}.png`, fullPage: false });
+
+    /* Drive the actual chart-selection contract last because success leaves
+     * this page: selecting its first bar must navigate to the map's public
+     * `?reservoir=` link, not turn the chart into a hidden extra filter. */
+    const chartTarget = await tab.locator("#capacity-chart arcgis-chart").evaluate((chart) => {
+      const graphic = chart.layer?.source?.toArray()?.[0];
+      return {
+        id: Number(graphic?.attributes?.ObjectID),
+        label: String(graphic?.attributes?.label ?? "")
+      };
+    });
+    const followedChartLink = tab.waitForURL((url) =>
+      url.pathname.endsWith("/") && url.searchParams.get("reservoir") === chartTarget.label,
+    { timeout: 60000 });
+    await tab.locator("#capacity-chart arcgis-chart").evaluate((chart, id) => {
+      chart.dispatchEvent(new CustomEvent("arcgisSelectionComplete", {
+        detail: { selectionData: { selectionOIDs: [id] } }
+      }));
+    }, chartTarget.id);
+    await followedChartLink;
   } catch (err) {
     failures.push(`${label}: ${err.message}`);
   }
@@ -4661,6 +4735,7 @@ for (const failure of [
     const label = `Filter bar families (${viewport.name})`;
     try {
       for (const page of [
+        { name: "Storage Charts", url: `${URL}overview.html`, signal: "__overviewReady" },
         { name: "Snowpack", url: `${URL}snow.html`, signal: "__snowReady" },
         { name: "Drought", url: `${URL}drought.html`, signal: "__droughtReady" }
       ]) {
@@ -4668,7 +4743,8 @@ for (const failure of [
         await tab.waitForFunction((key) => window[key] !== undefined,
           page.signal, { timeout: 120000 });
         if (viewport.width <= 670) {
-          const prefix = page.name === "Drought" ? "drought" : "snow";
+          const prefix = page.name === "Drought" ? "drought"
+            : page.name === "Snowpack" ? "snow" : "overview";
           await tab.locator(`#${prefix}-filter-toggle`).click({ timeout: 5000 });
         }
         const state = await tab.evaluate(() => {

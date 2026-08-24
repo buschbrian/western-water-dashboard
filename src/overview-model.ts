@@ -13,6 +13,7 @@ import {
 } from "./data/rollup";
 import { stateName, usStatesOnly } from "./data/state-vocabulary";
 import { capacityBasisName, changeLabel, formatChange, rankWithYears } from "./state/detail";
+import { reservoirLabel } from "./state/selection";
 import { formatAcreFeet } from "./viz/format";
 import { STALE_COLOR, storageClass } from "./viz/classes";
 import { formatPercent } from "./viz/format";
@@ -561,6 +562,10 @@ export interface ChartOptions {
   limit?: number;
   measure?: ChartMeasure;
   rank?: ChartRank;
+  /** The complete roster a published label must be unambiguous within.
+   * A filtered view can hold only one of two same-named reservoirs, but the
+   * storage map link the chart produces opens against the complete roster. */
+  labelAmong?: readonly Reservoir[];
 }
 
 function rankReservoirs(reservoirs: readonly Reservoir[], rank: ChartRank): Reservoir[] {
@@ -615,6 +620,7 @@ export function largestReservoirRecords(
   const settings: ChartOptions = typeof options === "number" ? { limit: options } : options;
   const limit = settings.limit ?? 15;
   const measure = settings.measure ?? "percent";
+  const labelAmong = settings.labelAmong ?? reservoirs;
   return rankReservoirs(
     reservoirs.filter((reservoir) =>
       reservoir.capacity_af !== null && reservoir.pct_of_capacity !== null),
@@ -623,7 +629,7 @@ export function largestReservoirRecords(
     .slice(0, limit)
     .map((reservoir, index) => ({
       id: index + 1,
-      label: reservoir.name,
+      label: reservoirLabel(reservoir, labelAmong),
       /* `percent` is the bar's length, so it carries whichever measure the
        * reader chose. The class -- and therefore the colour -- is always
        * taken from the percentage, never from the length. */

@@ -18,6 +18,7 @@ import {
   filterAndSort,
   filterOverview,
   fixedCohort,
+  largestReservoirRecords,
   monthlyTrend,
   percentFullValues,
   overviewScope,
@@ -170,6 +171,17 @@ describe("modern overview model", () => {
     const high = reservoir({ name: "High", pct_of_capacity: 80 });
     expect(filterAndSort([missing, low, high], "", "percent").map((item) => item.name))
       .toEqual(["High", "Low", "Missing"]);
+  });
+
+  it("qualifies a chart label against the complete roster used by map links", () => {
+    const utah = reservoir({ name: "Lost Creek", state: "UT", source_station_id: "ut-1" });
+    const oregon = reservoir({ name: "Lost Creek", state: "OR", source_station_id: "or-1" });
+
+    /* The filtered chart contains only Utah's row. Its published map link
+     * still opens against both records, so a bare label would resolve to
+     * neither on the destination map. */
+    expect(largestReservoirRecords([utah], { labelAmong: [utah, oregon] })[0]?.label)
+      .toBe("Lost Creek, UT");
   });
 
   it("cross-filters query, watershed and reporting status", () => {

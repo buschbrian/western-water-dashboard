@@ -64,7 +64,29 @@ calcite-shell-panel { --calcite-shell-panel-width: 21rem; }
 .map-stage,
 #map-host,
 arcgis-map { width: 100%; height: 100%; min-width: 0; }
-.map-stage { position: relative; overflow: hidden; background: #ded8cd; }
+.map-stage {
+  position: relative;
+  overflow: hidden;
+  background: #ded8cd;
+  /* Updated with the shell panels. The map view already uses the same
+     insets as padding; these two keep its slotted controls and inset key in
+     that visible rectangle as well. */
+  --map-left-inset: 0px;
+  --map-right-inset: 0px;
+}
+
+/* ArcGIS positions these light-DOM children at the named corners but does
+ * not follow the view's padding. `translate` leaves the component's own
+ * transform free for its open and close behavior while moving the complete
+ * control, including an expand popover's anchor, clear of the shell panels. */
+arcgis-map > [slot="top-left"],
+arcgis-map > [slot="bottom-left"] {
+  translate: var(--map-left-inset) 0;
+}
+arcgis-map > [slot="top-right"],
+arcgis-map > [slot="bottom-right"] {
+  translate: calc(-1 * var(--map-right-inset)) 0;
+}
 
 .map-state {
   position: absolute;
@@ -174,6 +196,36 @@ arcgis-map { width: 100%; height: 100%; min-width: 0; }
  * as one block, and the three symbols that are not a class, which each need
  * a sentence. Both are generated in legend.ts from the class table. */
 .legend h3 { margin: 0 0 .5rem; font-size: 1rem; }
+.storage-map-legend {
+  position: absolute;
+  z-index: 4;
+  inset-block-end: .5rem;
+  inset-inline-start: calc(var(--map-left-inset) + .5rem);
+  max-inline-size: min(21rem,
+    calc(100% - var(--map-left-inset) - var(--map-right-inset) - 5rem));
+  padding: .45rem .6rem;
+  color: var(--app-text);
+  background: color-mix(in srgb, var(--app-surface-raised) 90%, transparent);
+  border: 1px solid var(--app-border);
+  border-radius: .3rem;
+  box-shadow: 0 .15rem .5rem rgb(20 45 56 / 14%);
+}
+.storage-map-legend summary {
+  font-size: .875rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.storage-map-legend summary:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 2px;
+}
+.storage-map-legend .legend-host { margin-block-start: .45rem; }
+.storage-map-legend .legend-classes {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.storage-map-legend:not([open]) {
+  max-inline-size: calc(100% - var(--map-left-inset) - var(--map-right-inset) - 5rem);
+}
 .legend-classes,
 .legend-notes { margin: 0; padding: 0; list-style: none; }
 /* A grid, not a wrapping row.

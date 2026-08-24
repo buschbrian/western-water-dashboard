@@ -53,7 +53,8 @@ export interface BarChartOptions {
    * name of an axis. Each chart says which of the two it is showing.
    */
   categoryTitle?: string;
-  /** Given the labels the reader clicked. Turns the chart into a filter. */
+  /** Given the labels the reader clicked. The page decides whether that
+   * selection filters this view or opens the selected subject elsewhere. */
   onSelect?: (labels: string[]) => void;
 }
 

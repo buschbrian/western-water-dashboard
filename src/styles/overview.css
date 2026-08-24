@@ -566,6 +566,11 @@ body {
 .overview-table th { position: sticky; inset-block-start: 0; z-index: 1; color: var(--app-muted); background: var(--app-surface-raised); font-size: .72rem; font-weight: 700; letter-spacing: .01em; }
 .overview-table td:nth-child(n + 3), .overview-table th:nth-child(n + 3) { text-align: end; font-variant-numeric: tabular-nums; }
 .overview-table tbody tr:hover { background: color-mix(in srgb, var(--app-accent) 8%, transparent); }
+.overview-reservoir-link { font-weight: 600; }
+.overview-reservoir-link:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 2px;
+}
 .late-badge { color: #7f461d; font-weight: 700; }
 
 /* Class-legend chips, shared by the drought bars and the snow map. The

@@ -88,6 +88,7 @@ function syncResponsiveShell(): void {
   const detailPanel = elementById<ToggleSurface>("detail-panel");
   const startSheet = elementById<ToggleSurface>("start-sheet");
   const detailSheet = elementById<ToggleSurface>("detail-sheet");
+  const mapLegend = document.querySelector<HTMLDetailsElement>("#storage-map-legend");
   /* The two panel toggles are icon-only at every width now. With their text
    * they measured 152px and 145px in a bar that has to fit inside the
    * viewport, spent on words the panel each one opens repeats as its own
@@ -103,10 +104,16 @@ function syncResponsiveShell(): void {
      * summary, and crossing back to phone width closes it rather than
      * covering the map during a rotation. */
     setOpen(startSheet, false);
+    /* The same key stays in the map on a phone, but starts as one compact
+     * control instead of covering the short map. A reader can open it in
+     * place. Crossing back to a wide map restores the visible inset used by
+     * the other map pages. */
+    if (mapLegend) mapLegend.open = false;
   } else {
     setOpen(startSheet, false);
     setOpen(detailSheet, false);
     setOpen(startPanel, true);
+    if (mapLegend) mapLegend.open = true;
   }
   /* Crossing the width changes which surface each toggle drives, and closes
    * the pair belonging to the other width. The header has to follow, or a
