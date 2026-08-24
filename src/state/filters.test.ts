@@ -45,13 +45,14 @@ const everyArea: (string | null)[] = [null,
 const everyState: FilterState[] = [null, ...STORAGE_CLASSES.map((_, index) => index)]
   .flatMap((storageClass) => (["all", "late", "current"] as const)
     .flatMap((reporting) => everyArea.map((drainageArea) =>
-      ({ storageClass, reporting, drainageArea }))));
+      ({ storageClass, reporting, county: null, drainageArea }))));
 
 /** The attributes `createReservoirLayer` puts on each feature. */
 function featureAttributes(reservoir: (typeof reservoirs)[number]) {
   return {
     fill_percent: headlinePercent(reservoir),
     late: isLate(reservoir) ? 1 : 0,
+    county_fips: reservoir.county_fips ?? "",
     // The layer writes the empty string where a reservoir has no area, so
     // the comparison here is against the same value the map holds.
     drainage_area: reservoir.huc6 ?? ""
@@ -67,11 +68,17 @@ function featureAttributes(reservoir: (typeof reservoirs)[number]) {
  * match, and only a six-digit choice happens to equal the field outright.
  */
 function boundsAccept(
-  attributes: { fill_percent: number | null; late: number; drainage_area: string },
+  attributes: {
+    fill_percent: number | null;
+    late: number;
+    county_fips: string;
+    drainage_area: string;
+  },
   state: FilterState
 ): boolean {
   if (!isFiltered(state)) return true;
   const bounds = filterBounds(state);
+  if (bounds.county !== null && attributes.county_fips !== bounds.county) return false;
   if (bounds.drainageArea !== null && !attributes.drainage_area.startsWith(bounds.drainageArea)) {
     return false;
   }
@@ -115,7 +122,9 @@ describe("the two forms of one filter", () => {
   it("covers every reservoir exactly once across the storage classes", () => {
     for (const reservoir of reservoirs) {
       const matched = STORAGE_CLASSES.filter((_, index) =>
-        matchesFilter(reservoir, { storageClass: index, reporting: "all", drainageArea: null }));
+        matchesFilter(reservoir, {
+          storageClass: index, reporting: "all", county: null, drainageArea: null
+        }));
       // None is the honest answer for a reservoir with no readable
       // percentage; more than one would mean the breaks overlap.
       expect(matched.length, reservoir.name)
@@ -139,40 +148,63 @@ describe("the where clause", () => {
   });
 
   it("leaves the lowest class without a lower bound", () => {
-    expect(filterWhere({ storageClass: 0, reporting: "all", drainageArea: null }))
+    expect(filterWhere({ storageClass: 0, reporting: "all", county: null, drainageArea: null }))
       .toBe(`fill_percent < ${STORAGE_CLASSES[1]?.min}`);
   });
 
   it("leaves the highest class without an upper bound", () => {
     const top = STORAGE_CLASSES.length - 1;
-    expect(filterWhere({ storageClass: top, reporting: "all", drainageArea: null }))
+    expect(filterWhere({ storageClass: top, reporting: "all", county: null, drainageArea: null }))
       .toBe(`fill_percent >= ${STORAGE_CLASSES[top]?.min}`);
   });
 
   it("combines a storage class with a reporting status", () => {
-    expect(filterWhere({ storageClass: 2, reporting: "late", drainageArea: null }))
+    expect(filterWhere({ storageClass: 2, reporting: "late", county: null, drainageArea: null }))
       .toBe(`late = 1 AND fill_percent >= ${STORAGE_CLASSES[2]?.min} ` +
         `AND fill_percent < ${STORAGE_CLASSES[3]?.min}`);
-    expect(filterWhere({ storageClass: null, reporting: "current", drainageArea: null })).toBe("late = 0");
+    expect(filterWhere({
+      storageClass: null, reporting: "current", county: null, drainageArea: null
+    })).toBe("late = 0");
+  });
+
+  it("matches a county by five-digit FIPS and refuses any other shape", () => {
+    expect(filterWhere({
+      storageClass: null, reporting: "all", county: "49049", drainageArea: null
+    })).toBe("county_fips = '49049'");
+    for (const bad of ["49", "Utah", "4904'", "490490"]) {
+      expect(filterWhere({
+        storageClass: null, reporting: "all", county: bad, drainageArea: null
+      })).toBeNull();
+    }
   });
 
   it("quotes a drainage area as a prefix match, and refuses one that is not a code", () => {
-    expect(filterWhere({ storageClass: null, reporting: "all", drainageArea: "140600" }))
+    expect(filterWhere({
+      storageClass: null, reporting: "all", county: null, drainageArea: "140600"
+    }))
       .toBe("drainage_area LIKE '140600%'");
     // The one value in the clause that comes from data. Anything that is not
     // a code is dropped rather than quoted, which leaves the state filtering
     // nothing rather than carrying a string into the clause.
     for (const bad of ["' OR 1=1 --", "140600'", "", "14 0600", "14060", "1406000000000"]) {
-      expect(filterWhere({ storageClass: null, reporting: "all", drainageArea: bad })).toBeNull();
+      expect(filterWhere({
+        storageClass: null, reporting: "all", county: null, drainageArea: bad
+      })).toBeNull();
     }
   });
 
   it("matches by prefix at 2, 4 and 6 digits, the same widths the predicate accepts", () => {
-    expect(filterWhere({ storageClass: null, reporting: "all", drainageArea: "14" }))
+    expect(filterWhere({
+      storageClass: null, reporting: "all", county: null, drainageArea: "14"
+    }))
       .toBe("drainage_area LIKE '14%'");
-    expect(filterWhere({ storageClass: null, reporting: "all", drainageArea: "1406" }))
+    expect(filterWhere({
+      storageClass: null, reporting: "all", county: null, drainageArea: "1406"
+    }))
       .toBe("drainage_area LIKE '1406%'");
-    expect(filterWhere({ storageClass: null, reporting: "all", drainageArea: "140600" }))
+    expect(filterWhere({
+      storageClass: null, reporting: "all", county: null, drainageArea: "140600"
+    }))
       .toBe("drainage_area LIKE '140600%'");
   });
 });
@@ -188,12 +220,15 @@ describe("the predicate and the clause at every code width", () => {
     for (const width of [2, 4, 6] as const) {
       const codes = [...new Set(basinCodes.map((code) => code.slice(0, width)))];
       for (const drainageArea of codes) {
-        const state: FilterState = { storageClass: null, reporting: "all", drainageArea };
+        const state: FilterState = {
+          storageClass: null, reporting: "all", county: null, drainageArea
+        };
         const clause = filterWhere(state);
         expect(clause, `width ${width}, code ${drainageArea}`)
           .toBe(`drainage_area LIKE '${drainageArea}%'`);
         for (const reservoir of reservoirs) {
           const attributes = { fill_percent: headlinePercent(reservoir), late: isLate(reservoir) ? 1 : 0,
+            county_fips: reservoir.county_fips ?? "",
             drainage_area: reservoir.huc6 ?? "" };
           expect(
             boundsAccept(attributes, state),
@@ -211,13 +246,35 @@ describe("the predicate and the clause at every code width", () => {
    * the two forms can still be asked a question the payload never asks. */
   it("agree that a code of an odd width is no filter at all", () => {
     const odd = (basinCodes[0] ?? "140600").slice(0, 5);
-    const state: FilterState = { storageClass: null, reporting: "all", drainageArea: odd };
+    const state: FilterState = {
+      storageClass: null, reporting: "all", county: null, drainageArea: odd
+    };
     expect(filterWhere(state)).toBe(null);
     expect(isFiltered(state)).toBe(false);
     for (const reservoir of reservoirs) {
       expect(matchesFilter(reservoir, state), `${reservoir.name} was filtered by ${odd}`)
         .toBe(true);
     }
+  });
+});
+
+describe("the county predicate and clause", () => {
+  it("agree for every county in the committed roster", () => {
+    const counties = [...new Set(reservoirs.map((reservoir) => reservoir.county_fips)
+      .filter((county): county is string => typeof county === "string"))];
+    const disagreed: string[] = [];
+    for (const county of counties) {
+      const state: FilterState = {
+        storageClass: null, reporting: "all", county, drainageArea: null
+      };
+      for (const reservoir of reservoirs) {
+        if (boundsAccept(featureAttributes(reservoir), state)
+            !== matchesFilter(reservoir, state)) {
+          disagreed.push(`${reservoir.name} under county ${county}`);
+        }
+      }
+    }
+    expect(disagreed).toEqual([]);
   });
 });
 
@@ -230,14 +287,18 @@ describe("what the panel says", () => {
   });
 
   it("reports how many of how many, because the map dims rather than hides", () => {
-    const summary = describeFilter({ storageClass: 0, reporting: "late", drainageArea: null }, 3, 51);
+    const summary = describeFilter({
+      storageClass: 0, reporting: "late", county: null, drainageArea: null
+    }, 3, 51);
     expect(summary).toContain("3 of 51");
     expect(summary).toContain("grey");
     expect(describeFilter(ALL_RESERVOIRS, 51, 51)).toBe("Showing all 51 reservoirs.");
   });
 
   it("reads as a sentence whichever controls the reader has used", () => {
-    const area = { storageClass: null, reporting: "all", drainageArea: "140600" } as const;
+    const area = {
+      storageClass: null, reporting: "all", county: null, drainageArea: "140600"
+    } as const;
     expect(describeFilter(area, 6, 51, "Lower Green"))
       .toContain("Showing 6 of 51 reservoirs in Lower Green.");
     expect(describeFilter({ ...area, storageClass: 0 }, 2, 51, "Lower Green"))
@@ -246,6 +307,8 @@ describe("what the panel says", () => {
     // having one -- the moment after a scope change, before the control is
     // refilled.
     expect(describeFilter(area, 6, 51, null)).toContain("in one drainage area.");
+    expect(describeFilter({ ...area, county: "49049" }, 3, 51, "Lower Green", "Utah County"))
+      .toContain("in Utah County and in Lower Green.");
   });
 
   it("keeps every label in Simplified Technical English", () => {
@@ -254,7 +317,9 @@ describe("what the panel says", () => {
       ...STORAGE_CLASSES.map((_, index) => storageLabel(index)),
       storageLabel(null),
       ...(["all", "late", "current"] as const).map(reportingLabel),
-      describeFilter({ storageClass: 1, reporting: "current", drainageArea: null }, 4, 51),
+      describeFilter({
+        storageClass: 1, reporting: "current", county: null, drainageArea: null
+      }, 4, 51),
       describeFilter(ALL_RESERVOIRS, 51, 51)
     ].join(" ");
     expect(copy).not.toMatch(retired);
@@ -301,7 +366,9 @@ describe("the prefix test both the predicate and the storage map's scope use", (
   it("agrees with the predicate at every width a reader can choose", () => {
     for (const drainageArea of everyArea) {
       if (drainageArea === null) continue;
-      const state: FilterState = { storageClass: null, reporting: "all", drainageArea };
+      const state: FilterState = {
+        storageClass: null, reporting: "all", county: null, drainageArea
+      };
       for (const reservoir of reservoirs) {
         expect(
           coversDrainageArea(drainageArea, reservoir.huc6 ?? ""),

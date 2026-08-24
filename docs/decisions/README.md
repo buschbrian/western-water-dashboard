@@ -65,7 +65,6 @@ The four different scopes, the hydrologic level, and what a link carries.
   [ADR-073](ADR-073-draw-the-regions-too-and-read-them-from-their-own-publisher.md),
   [ADR-074](ADR-074-compare-the-week-with-the-one-before-it.md),
   [ADR-076](ADR-076-nest-the-place-menus-and-let-the-heading-carry-the-state.md),
-  [ADR-084](ADR-084-two-place-menus-to-a-page.md),
   [ADR-085](ADR-085-gate-snows-drainage-rows-to-the-drawn-tier.md),
   [ADR-086](ADR-086-open-the-place-chooser-from-every-page-header.md),
   [ADR-087](ADR-087-retire-the-utah-reservoir-scope.md),
@@ -74,11 +73,13 @@ The four different scopes, the hydrologic level, and what a link carries.
   [ADR-091](ADR-091-order-drought-place-filters-from-state-to-area.md),
   [ADR-092](ADR-092-separate-drought-place-controls-from-presentation-controls.md),
   [ADR-093](ADR-093-align-drought-layer-actions-and-summary-cards.md),
-  [ADR-094](ADR-094-order-snowpack-place-controls-and-separate-site-options.md)
+  [ADR-094](ADR-094-order-snowpack-place-controls-and-separate-site-options.md),
+  [ADR-095](ADR-095-order-storage-map-place-filters-from-state-to-area.md)
 - Boundary sourcing: [ADR-024](ADR-024-use-full-resolution-watersheds-for-snow-sites.md),
   [ADR-034](ADR-034-hosted-boundary-layers-with-a-deadline.md),
   [ADR-037](ADR-037-refetch-the-boundaries-at-the-resolution-the-source-stops-adding.md)
-- Superseded, read only for history: ADR-005, ADR-009, ADR-011, ADR-014
+- Superseded, read only for history: ADR-005, ADR-009, ADR-011, ADR-014,
+  ADR-084
 - Current architecture: [`docs/architecture/scopes.md`](../architecture/scopes.md)
 
 ### Measurement method and statistical honesty
@@ -227,7 +228,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-081](ADR-081-divide-snows-summed-water-by-summed-normals-once.md) | Divide snow's summed water by summed normals, once, and floor the curve's denominator at the drawing | Accepted; supersedes the snow rollups' mean of ratios, adds a method version to `snowpack.json` |
 | [ADR-082](ADR-082-publish-a-drought-severity-and-coverage-index.md) | Publish a Drought Severity and Coverage Index over measured land | Accepted; derived client-side from published shares, thinly measured areas marked never dropped |
 | [ADR-083](ADR-083-anchor-the-monthly-normal-window-once-per-chart.md) | Anchor the monthly normal window once per chart, not once per month | Accepted; narrows ADR-041's per-month rule for the live twelve-month line, no version bump |
-| [ADR-084](ADR-084-two-place-menus-to-a-page.md) | Two place menus to a page: Where (state, county) and Drainage area (across levels) | Accepted for storage; drought presentation superseded by ADR-091; snow presentation superseded by ADR-094 |
+| [ADR-084](ADR-084-two-place-menus-to-a-page.md) | Two place menus to a page: Where (state, county) and Drainage area (across levels) | Superseded by ADR-095 |
 | [ADR-085](ADR-085-gate-snows-drainage-rows-to-the-drawn-tier.md) | Gate snow's drainage rows to the drawn tier and coarser | Accepted; coarser-row presentation superseded by ADR-094, publishability gate retained |
 | [ADR-086](ADR-086-open-the-place-chooser-from-every-page-header.md) | Open the place chooser from every page header | Accepted |
 | [ADR-087](ADR-087-retire-the-utah-reservoir-scope.md) | Retire the Utah reservoir scope | Accepted; browser-readiness compatibility clause superseded by ADR-090 |
@@ -238,6 +239,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-092](ADR-092-separate-drought-place-controls-from-presentation-controls.md) | Separate drought place controls from presentation controls | Accepted; layer-control placement superseded by ADR-093 |
 | [ADR-093](ADR-093-align-drought-layer-actions-and-summary-cards.md) | Align drought layer actions and summary cards | Accepted; supersedes ADR-092 only for layer-control placement |
 | [ADR-094](ADR-094-order-snowpack-place-controls-and-separate-site-options.md) | Order Snowpack place controls and separate site options | Accepted; supersedes ADR-084's snow presentation and ADR-085's coarser rows |
+| [ADR-095](ADR-095-order-storage-map-place-filters-from-state-to-area.md) | Order Storage map place filters from state to area | Accepted; supersedes ADR-084 for the Storage map |
 
 ## Relationship to the historical journal
 

@@ -149,10 +149,38 @@ cannot narrow twice. `WIDEST_SCOPE` remains for callers that must still pass an
 options object, and its `Required` is what makes admitting the next dominant
 reservoir a compile error rather than a silent exclusion.
 
-## Place controls by surface (ADR-084, ADR-091, ADR-094)
+## Place controls by surface (ADR-091, ADR-094, ADR-095)
 
-Storage asks "where am I" with two single-select menus, both built as indented
-option groups ([ADR-076](../decisions/ADR-076-nest-the-place-menus-and-let-the-heading-carry-the-state.md)'s
+### Storage map's sequential selected scope
+
+The Storage map orders four controls: **State**, **County**, **Area size**, then
+the area tier named by that size (ADR-095). County is absent until a state is
+held. Its choices use each reservoir's reviewed five-digit waterbody county
+assignment. The area menu offers regions at level 2, subregions at 4 and
+basins at 6—never all three at once.
+
+The order is shared with Drought and Snowpack; the effect is Storage's own.
+State is the `waterbody_states` scope and changes the roster and totals. County
+and hydrologic area are analysis filters: they dim the other reservoirs,
+narrow the list and table, and leave the wider total and drawn roster alone.
+
+A state change clears County and hydrologic area. An Area size change keeps
+State and page-local `?county=`, clears `?area=` and `?drainage=`, then performs
+the existing full navigation. A County change clears an area that holds no
+matching reservoir. The exact-tier area choices come from the full published
+roster with both dominant reservoirs available, then narrow by State and
+County; a Lake Powell or Lake Mead switch never removes a place choice.
+
+Saved links keep their meanings. A coarser `?area=` or `?drainage=` can still
+prefix-filter a finer page on arrival; the exact-tier control shows every area
+until the reader chooses one at that tier. County stays outside
+`portableSearch`; state, area and level continue to travel between pages.
+
+### Storage charts' mixed menus
+
+Storage charts continue to ask "where am I" with ADR-084's two single-select
+menus, both built as indented option groups
+([ADR-076](../decisions/ADR-076-nest-the-place-menus-and-let-the-heading-carry-the-state.md)'s
 shape):
 
 | Menu | Offers | Writes |
@@ -169,11 +197,8 @@ it answers the drawn question (division without narrowing) and the menu answers
 the selected question; merging them would answer two of the four scopes with
 one control.
 
-Snow and Drought no longer use this across-level menu. Storage offers the full
-published roster. On storage every drainage
-pick is the in-page dimming filter at any width (codes nest, so a subregion row
-prefix-filters), written to `?drainage=` through the same `writeUrl` as every
-other filter there; reading `?area=` links still works.
+The charts offer the full published roster. They keep the mixed menu because
+ADR-095 changes only the map.
 
 The pure half lives in `where-control-model.ts` (`whereMenuView`,
 `drainageMenuView`, `nextSelectionForState`, `nextSelectionForDrainageRow`)
@@ -182,9 +207,9 @@ The menus narrow against state but never against the reader's own area pick —
 a menu that removed the families around the current choice would leave "All"
 as the only way out.
 
-County exists in the combined Where menu only where the payload carries FIPS
-codes: reservoirs do. A storage county pick writes `?county=` and leaves
-`?state=` alone; the two axes stay two even though the controls are one.
+County exists in the combined Where menu because reservoirs carry FIPS codes.
+A chart county pick writes `?county=` and leaves `?state=` alone; the two axes
+stay two even though the controls are one.
 
 ### Snowpack's sequential selected scope
 

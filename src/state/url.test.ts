@@ -112,9 +112,9 @@ describe("the rest of the view in the link", () => {
     /* Powell is written as `exclude` now: the opening view has it in, so the
      * choice a link has to state is the one that takes it back out. */
     expect(searchWithState({
-      storageClass: 0, reporting: "late", drainageArea: "140600", lakePowell: "exclude",
-      month: "2026-02"
-    })).toBe("?class=0&late=true&drainage=140600&powell=exclude" +
+      storageClass: 0, reporting: "late", county: "49049",
+      drainageArea: "140600", lakePowell: "exclude", month: "2026-02"
+    })).toBe("?class=0&late=true&county=49049&drainage=140600&powell=exclude" +
       "&month=2026-02");
   });
 
@@ -190,7 +190,7 @@ describe("the rest of the view in the link", () => {
             for (const lakeMead of ["exclude", "include"] as const) {
               for (const month of MONTHS) {
                 const state = {
-                  reservoir: "Deer Creek", storageClass, reporting, drainageArea,
+                  reservoir: "Deer Creek", storageClass, reporting, county: null, drainageArea,
                   lakePowell, lakeMead, month,
                   /* The bottom row has its own round trip below. Held at its
                    * default here so this loop keeps testing the controls it
@@ -244,6 +244,15 @@ describe("the rest of the view in the link", () => {
     expect(stateFromSearch("?drainage=Lower%20Green").drainageArea).toBeNull();
     expect(stateFromSearch("?drainage=").drainageArea).toBeNull();
     expect(stateFromSearch("?area=140600").drainageArea).toBe("140600");
+  });
+
+  it("takes a county only as a five-digit FIPS code", () => {
+    expect(stateFromSearch("?county=49049").county).toBe("49049");
+    expect(searchWithState({ county: "49049" })).toBe("?county=49049");
+    for (const bad of ["49", "Utah", "4904'", "490490"]) {
+      expect(stateFromSearch(`?county=${encodeURIComponent(bad)}`).county).toBeNull();
+      expect(searchWithState({ county: bad })).toBe("");
+    }
   });
 
   it("opens the dashboard rather than breaking on a hand-edited link", () => {
