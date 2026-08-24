@@ -190,6 +190,7 @@ const RESERVOIR_FIELDS = [
   { name: "size_basis", type: "double" as const },
   { name: "fill_percent", type: "double" as const },
   { name: "late", type: "small-integer" as const },
+  { name: "county_fips", type: "string" as const },
   { name: DRAINAGE_AREA_FIELD, type: "string" as const },
   { name: SYMBOL_KEY_FIELD, type: "string" as const }
 ];
@@ -283,6 +284,7 @@ function reservoirEntries(
         size_basis: sizeBasis(reservoir),
         fill_percent: percent,
         late: symbol.accent === null ? 0 : 1,
+        county_fips: reservoir.county_fips ?? "",
         /* The empty string rather than null: a null fails every comparison,
          * so a reservoir with no drainage area is excluded by any area
          * choice, which is what the list does with it too. */

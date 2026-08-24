@@ -68,6 +68,8 @@ interface DashboardReady {
   /** The drainage area the filter is narrowed to, or null for every area.
    * Not `drainageAreas`, which counts the boundaries the map drew. */
   areaFilter: string | null;
+  /** Five-digit waterbody county FIPS selected on Storage, or null. */
+  countyFilter: string | null;
   /** The period the details panel is currently measuring against. One fact:
    * what the reader would see, not what the payload prefers. */
   baseline: string;

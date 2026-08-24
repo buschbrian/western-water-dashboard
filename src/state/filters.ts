@@ -29,12 +29,14 @@ export interface FilterState {
   /** An index into `STORAGE_CLASSES`, or null for every class. */
   storageClass: number | null;
   reporting: Reporting;
+  /** A five-digit county FIPS code, or null for every county. */
+  county: string | null;
   /** A drainage-area code the payload carries, or null for every area. */
   drainageArea: string | null;
 }
 
 export const ALL_RESERVOIRS: FilterState = {
-  storageClass: null, reporting: "all", drainageArea: null
+  storageClass: null, reporting: "all", county: null, drainageArea: null
 };
 
 /** The index of a reservoir's storage class, or null when it has none. */
@@ -48,6 +50,7 @@ export function classIndexOf(reservoir: Reservoir): number | null {
 export function isFiltered(state: FilterState): boolean {
   return state.storageClass !== null
     || state.reporting !== "all"
+    || countyCode(state) !== null
     /* The validated code, so a refused one reads as "nothing is filtered"
      * here too -- otherwise `filterWhere` returns null for a filter this
      * reports as active, and the caller hands the layer no clause while the
@@ -58,6 +61,8 @@ export function isFiltered(state: FilterState): boolean {
 export function matchesFilter(reservoir: Reservoir, state: FilterState): boolean {
   if (state.reporting === "late" && !isLate(reservoir)) return false;
   if (state.reporting === "current" && isLate(reservoir)) return false;
+  const county = countyCode(state);
+  if (county !== null && reservoir.county_fips !== county) return false;
   /* Matched by prefix rather than by equality, which is exact at every level
    * a reader may choose: hydrologic codes are fixed-width and nest, so a
    * four-digit choice is the subregion a six-digit code sits inside and a
@@ -95,6 +100,8 @@ export interface FilterBounds {
   minPercent: number | null;
   /** Exclusive upper bound on `fill_percent`, null for none. */
   maxPercent: number | null;
+  /** Five-digit waterbody county FIPS, or null for every county. */
+  county: string | null;
   /** A `drainage_area` code to match by prefix, null to accept every area.
    * Matched by prefix rather than equality for the reason `matchesFilter`
    * is: a shorter code is a region or subregion a full-width code sits
@@ -114,6 +121,11 @@ export interface FilterBounds {
  * 12, so this refuses a 5-digit typo the same way it refuses a letter.
  */
 const DRAINAGE_AREA_CODE = HUC_CODE;
+const COUNTY_CODE = /^\d{5}$/;
+
+function countyCode(state: FilterState): string | null {
+  return state.county !== null && COUNTY_CODE.test(state.county) ? state.county : null;
+}
 
 /**
  * The drainage area a filter actually asks for, or null when it asks for
@@ -165,6 +177,7 @@ export function filterBounds(state: FilterState): FilterBounds {
     late: state.reporting === "all" ? null : state.reporting === "late" ? 1 : 0,
     minPercent: index === null || index === 0 || !lower ? null : lower.min,
     maxPercent: index === null ? null : upper?.min ?? null,
+    county: countyCode(state),
     drainageArea: drainageAreaCode(state)
   };
 }
@@ -181,6 +194,7 @@ export function filterWhere(state: FilterState): string | null {
   if (!isFiltered(state)) return null;
   const bounds = filterBounds(state);
   const clauses: string[] = [];
+  if (bounds.county !== null) clauses.push(`county_fips = '${bounds.county}'`);
   if (bounds.drainageArea !== null) {
     /* A prefix match, not an equality, because `matchesFilter` is one: codes
      * nest, so a four-digit choice has to match every six-digit code sitting
@@ -235,16 +249,23 @@ export function drainageAreaLabel(name: string | null): string {
  * so this has to say how many of how many, not just how many.
  */
 export function describeFilter(
-  state: FilterState, shown: number, total: number, drainageAreaName: string | null = null
+  state: FilterState, shown: number, total: number,
+  drainageAreaName: string | null = null,
+  countyName: string | null = null
 ): string {
   if (!isFiltered(state)) return `Showing all ${total} reservoirs.`;
   /* The area is part of the noun -- "reservoirs in Jordan" -- and the other
    * two are what is said about them. Keeping the area out of the list after
    * the colon is what makes the sentence read when it is the only choice. */
-  const where = state.drainageArea === null
-    ? ""
-    : ` in ${drainageAreaName === null || drainageAreaName === ""
-      ? "one drainage area" : drainageAreaName}`;
+  const places = [
+    state.county === null ? null
+      : countyName === null || countyName === "" ? "one county" : countyName,
+    state.drainageArea === null ? null
+      : drainageAreaName === null || drainageAreaName === ""
+        ? "one drainage area" : drainageAreaName
+  ].filter((place): place is string => place !== null);
+  const where = places.length === 0 ? ""
+    : ` in ${places.map((place, index) => index === 0 ? place : `in ${place}`).join(" and ")}`;
   const parts = [
     state.storageClass === null ? null : storageLabel(state.storageClass).toLowerCase(),
     state.reporting === "all" ? null : reportingLabel(state.reporting).toLowerCase()

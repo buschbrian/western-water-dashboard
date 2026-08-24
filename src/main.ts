@@ -33,17 +33,16 @@ import {
   type ScopedReservoirs,
   type RollupCoverage
 } from "./data/rollup";
-import { stateName } from "./data/state-vocabulary";
+import { offeredStates, stateName, type StateOption } from "./data/state-vocabulary";
 import {
+  countyOptions,
   overviewScope,
   reservoirInState,
-  watershedOptions,
   type ScopeChoice
 } from "./overview-model";
 import { describeReservoir } from "./state/detail";
 import {
   ALL_RESERVOIRS,
-  coversDrainageArea,
   describeFilter,
   filterWhere,
   isFiltered,
@@ -72,8 +71,19 @@ import { levelFromSearch, writeLevel } from "./state/level";
 import { supportsDashboard } from "./state/shell";
 import { placeInSlot } from "./ui/dom";
 import { createLevelControl } from "./ui/level-control";
-import { createDrainageMenu, createWhereMenu, type DrainageMenu } from "./ui/where-control";
-import { nextSelectionForState } from "./ui/where-control-model";
+import {
+  createStorageCountyControl,
+  createStorageDrainageControl,
+  createStorageStateControl,
+  type StoragePlaceControl
+} from "./ui/storage-place-control";
+import {
+  selectionForStorageArea,
+  selectionForStorageState,
+  storageCountyAxis,
+  storageDrainageAxis,
+  type StorageCountyChoice
+} from "./ui/storage-place-control-model";
 import { renderLegend } from "./ui/legend";
 import { loadMap, type MapController } from "./ui/map";
 import {
@@ -125,8 +135,12 @@ const selection = createSelectionStore();
 /* What the filter currently shows. The readiness signal is written after the
  * first draw and the filter keeps changing after that, so this is the one
  * place the answer lives and both readers take it from here. */
-const filterStatus: { filtered: boolean; shown: number; drainageArea: string | null } =
-  { filtered: false, shown: 0, drainageArea: null };
+const filterStatus: {
+  filtered: boolean;
+  shown: number;
+  county: string | null;
+  drainageArea: string | null;
+} = { filtered: false, shown: 0, county: null, drainageArea: null };
 
 /* The reservoir a shared link asked for, once it has been matched against
  * the reservoirs actually in scope. Null both when there was no link and
@@ -341,6 +355,10 @@ async function wireLevelControl(): Promise<number> {
        * the path a shared link already takes. Replaced, not pushed, like
        * every other control on this page. */
       const params = new URLSearchParams(window.location.search);
+      /* A place below Area size belongs to the old tier. Both spellings are
+       * public link contracts, so clear both before writing the new tier. */
+      params.delete("drainage");
+      params.delete("area");
       writeLevel(params, chosen);
       const query = params.toString();
       window.location.replace(`${window.location.pathname}${query ? `?${query}` : ""}`);
@@ -353,66 +371,124 @@ async function wireLevelControl(): Promise<number> {
 }
 
 /**
- * The two place menus (ADR-084): a Where menu -- states alone here, until
- * the panel carries a county contract -- and one Drainage-area menu across
- * region, subregion and basin in place of the old drill-down-above-a-filter
- * arrangement. Built beside the level control from the same rosters this
- * page already fetched for `openingScope`.
+ * Storage's place controls follow the same sequence as Drought and Snow
+ * (ADR-095): State, County when a state is chosen, Area size, then the exact
+ * hydrologic tier that Area size names. State is still the waterbody scope;
+ * County and the hydrologic tier are analysis filters, so they dim the rest
+ * of the roster and do not change its totals (ADR-029).
  *
- * `current` is `openingScope.selection` at the point this is called, after
- * every widening this page does (the linked-reservoir override above) --
- * the menus reflect the scope actually in force, not the raw address bar.
- *
- * A Where pick is a full navigation, like the level control: `?state=` is
- * read once at initialization by this page and by the other three surfaces
- * (S3a-d), so a picked value takes the path a shared link already takes.
- *
- * A Drainage pick never navigates. On this page a drainage-area choice *is*
- * the in-page filter -- greying rather than removing, totals untouched
- * (D5, ADR-011) -- at every width the menu offers: codes nest, so a region
- * or subregion row filters by prefix exactly as `[data-filter="drainage"]`
- * filtered basins, and the write goes to `?drainage=` through the same
- * `writeUrl` every other control here uses. The old split, where the
- * shared control wrote `?area=` and the panel's own select wrote
- * `?drainage=`, ended with ADR-084; reading `?area=` links still works,
- * exactly as before.
+ * Place choices are built from the full published roster with both dominant
+ * reservoirs included. Their switches answer a total question, not where a
+ * reader can go, and must not make a county or basin disappear from a menu.
  */
-const drainageMenus: DrainageMenu[] = [];
+const countyControls: StoragePlaceControl[] = [];
+const drainageControls: StoragePlaceControl[] = [];
 
-function wirePlaceMenus(rosters: OpeningRosters, current: OpeningSelection): void {
-  for (const host of document.querySelectorAll<HTMLElement>(".filters")) {
-    const where = createWhereMenu(rosters, current, (pick) => {
-      if (pick.kind !== "state") return;
-      /* `searchWithPlace` remembers the choice and writes "everywhere" out
-       * loud rather than as an absent parameter -- see its own note for why
-       * a cleared filter must not become a link that means "no answer". */
-      const query = searchWithPlace(window.location.search,
-        nextSelectionForState(current, rosters, pick.value));
-      window.location.replace(`${window.location.pathname}${query}`);
-    });
-    if (where) placeInSlot(host, "where", where.element);
-
-    const drainage = createDrainageMenu(rosters, drainageMenuSelection(), (picked) => {
-      filterState = { ...filterState, drainageArea: picked.area };
-      applyFilter();
-      writeUrl({ ...viewState(), reservoir: selection.get() });
-    }, { include: scopeHoldsArea });
-    if (drainage) {
-      drainageMenus.push(drainage);
-      placeInSlot(host, "area", drainage.element);
-    }
-  }
+function placeReservoirs(): readonly Reservoir[] {
+  return overviewScope(published, { lakePowell: "include", lakeMead: "include" })
+    .filter((reservoir) => reservoirInState(reservoir, openingScope.selection.state));
 }
 
-/** The selection the Drainage menus should show as chosen: the reader's own
- * filter when there is one, otherwise the coarser code a link opened on --
- * which the menus carry as their own rows, so it reads as chosen instead of
- * silently disappearing behind "All". */
-function drainageMenuSelection(): OpeningSelection {
+function storageStates(): readonly StateOption[] {
+  if (published.length > 0) {
+    return offeredStates({
+      reservoirStates: published.map((reservoir) =>
+        reservoir.waterbody_states?.length
+          ? reservoir.waterbody_states
+          : reservoir.state ? [reservoir.state] : [])
+    });
+  }
+  return offeredStates({
+    drainageAreaStates: openingRosters.areas.map((area) => area.states)
+  });
+}
+
+function storageCounties(): StorageCountyChoice[] {
+  const state = openingScope.selection.state;
+  if (state === "all") return [];
+  return countyOptions(placeReservoirs())
+    /* County is the reservoir point's reviewed five-digit assignment. A
+     * waterbody may touch more than one state, but its county sits in one. */
+    .filter((choice) => choice.group === state)
+    .map((choice) => ({ fips: choice.code, name: choice.label }));
+}
+
+function placeHoldsArea(code: string): boolean {
+  return placeReservoirs().some((reservoir) =>
+    (filterState.county === null || reservoir.county_fips === filterState.county)
+      && reservoir.huc6?.startsWith(code));
+}
+
+function storageAreaCodes(): Set<string> {
+  return new Set(placeReservoirs()
+    .filter((reservoir) =>
+      filterState.county === null || reservoir.county_fips === filterState.county)
+    .flatMap((reservoir) => reservoir.huc6 ? [reservoir.huc6.slice(0, level)] : []));
+}
+
+function storageAreaSelection(): OpeningSelection {
   return {
     state: openingScope.selection.state,
     area: filterState.drainageArea ?? openingScope.selection.area
   };
+}
+
+function reflectStoragePlaceControls(): void {
+  const countyAxis = storageCountyAxis(storageCounties(), filterState.county);
+  for (const control of countyControls) control.set(countyAxis);
+  const areaAxis = storageDrainageAxis(
+    openingRosters, storageAreaSelection(), level, storageAreaCodes());
+  for (const control of drainageControls) control.set(areaAxis);
+}
+
+function wirePlaceControls(rosters: OpeningRosters, current: OpeningSelection): void {
+  for (const host of document.querySelectorAll<HTMLElement>(".filters")) {
+    const state = createStorageStateControl(storageStates(), current, (picked) => {
+      /* State owns every place below it. Clear both the map-filter and old
+       * opening-area spellings before taking the normal full-navigation path. */
+      const params = new URLSearchParams(window.location.search);
+      params.delete("county");
+      params.delete("drainage");
+      params.delete("area");
+      const query = searchWithPlace(params.toString(), selectionForStorageState(picked));
+      window.location.replace(`${window.location.pathname}${query}`);
+    });
+    placeInSlot(host, "state", state.element);
+
+    const county = createStorageCountyControl(
+      storageCounties(), filterState.county, (picked) => {
+        filterState = {
+          ...filterState,
+          county: picked === "all" ? null : picked
+        };
+        const area = filterState.drainageArea;
+        if (area !== null && !placeHoldsArea(area)) {
+          filterState = { ...filterState, drainageArea: null };
+        }
+        reflectStoragePlaceControls();
+        applyFilter();
+        writeUrl({ ...viewState(), reservoir: selection.get() });
+      });
+    if (county) {
+      countyControls.push(county);
+      placeInSlot(host, "county", county.element);
+    }
+
+    const drainage = createStorageDrainageControl(
+      rosters, storageAreaSelection(), level, storageAreaCodes(), (picked) => {
+        filterState = {
+          ...filterState,
+          drainageArea: selectionForStorageArea(storageAreaSelection(), picked).area
+        };
+        reflectStoragePlaceControls();
+        applyFilter();
+        writeUrl({ ...viewState(), reservoir: selection.get() });
+      });
+    if (drainage) {
+      drainageControls.push(drainage);
+      placeInSlot(host, "area", drainage.element);
+    }
+  }
 }
 
 /**
@@ -444,6 +520,7 @@ function viewState(): Omit<DashboardUrlState, "reservoir"> {
   return {
     storageClass: filterState.storageClass,
     reporting: filterState.reporting,
+    county: filterState.county,
     drainageArea: filterState.drainageArea,
     lakePowell: scope.lakePowell,
     lakeMead: scope.lakeMead ?? DEFAULT_URL_STATE.lakeMead,
@@ -598,13 +675,6 @@ async function renderRankingChart(): Promise<void> {
 }
 
 
-/** Whether any drainage area the map currently has sits inside this code.
- * The one question both the control's choices and the surviving filter are
- * answered from, so a code cannot be offered and refused at once. */
-function scopeHoldsArea(code: string): boolean {
-  return watershedOptions(inScope).some((area) => coversDrainageArea(code, area.code));
-}
-
 /**
  * The name of the region, subregion or basin a code names, read from the
  * unnarrowed roster -- the same lookup the Drainage menu labels its rows
@@ -644,6 +714,14 @@ function drainageAreaName(): string | null {
   const chosen = filterState.drainageArea;
   if (chosen === null) return null;
   return rosterAreaName(chosen, openingRosters);
+}
+
+/** The chosen county's published name. FIPS is the identity; the name is
+ * display only, so two Summit Counties remain two choices. */
+function countyName(): string | null {
+  const chosen = filterState.county;
+  if (chosen === null) return null;
+  return storageCounties().find((county) => county.fips === chosen)?.name ?? null;
 }
 
 /**
@@ -696,21 +774,16 @@ function wireFilters(map: MapController): void {
       { storage: String(filterState.storageClass ?? "all"),
         reporting: filterState.reporting },
       openingPlaceSummary() +
-        describeFilter(filterState, shown.length, inScope.length, drainageAreaName()),
+        describeFilter(
+          filterState, shown.length, inScope.length, drainageAreaName(), countyName()),
       isFiltered(filterState)
     );
-    /* The Drainage menus are views of `filterState`, not holders of it --
-     * there is no `[data-filter="drainage"]` select left to re-sync. Every
-     * path that changes the filter runs through here (a pick, the reset
-     * button, a scope change), so this is where both panels' copies are
-     * brought back to one answer; without it a reset leaves the menu naming
-     * an area nothing is filtered to, and a pick in one panel never reaches
-     * the other. `set` only re-renders options -- programmatic repopulation
-     * fires no change event -- so the menu that caused this run does not
-     * re-enter its own handler. */
-    for (const menu of drainageMenus) menu.set(drainageMenuSelection());
+    /* The place controls are views of `filterState`, not holders of it.
+     * Reset, scope switches and either panel copy all converge here. */
+    reflectStoragePlaceControls();
     filterStatus.filtered = isFiltered(filterState);
     filterStatus.shown = shown.length;
+    filterStatus.county = filterState.county;
     filterStatus.drainageArea = filterState.drainageArea;
     // The table lists what the filter matched, so it is rebuilt from the
     // same `apply` the map effect and the panel sentence are written by.
@@ -721,6 +794,7 @@ function wireFilters(map: MapController): void {
     if (window.__dashboardReady) {
       window.__dashboardReady.filtered = filterStatus.filtered;
       window.__dashboardReady.shown = filterStatus.shown;
+      window.__dashboardReady.countyFilter = filterStatus.county;
       window.__dashboardReady.areaFilter = filterStatus.drainageArea;
     }
   };
@@ -1096,29 +1170,21 @@ if (!supportsDashboard(browserCapabilities())) {
       if (selection.get() && !findReservoir(inScope, selection.get())) {
         selection.set(null, { source: "scope" });
       }
-      /* The areas the map has changed with the scope. A chosen area that no
-       * longer holds one of them would leave every reservoir dimmed with a
-       * control offering no way back, so it falls back to all of them --
-       * the same rule the selection above follows.
-       *
-       * Held by prefix and not by equality, because the reader's choice is
-       * not always one of the codes on the list. A link may carry a region or
-       * a subregion (`?area=14`, `?area=1401`), which `matchesFilter` and the
-       * `where` clause both handle; compared for equality against six-digit
-       * basins, every such link was reset to "all drainage areas" here,
-       * before it ever reached the filter it was written for. A code finer
-       * than a basin still falls away, which is right: nothing published sits
-       * inside it.
-       *
-       * The menus re-render here too: their gating reads `inScope` at render
-       * time, so a scope change that brought or took areas is on the next
-       * populate, and a dead choice shows as "All" through the same
-        * fallback this block applies to `filterState`. */
+      /* County and hydrologic area are dependent places. A dead choice would
+       * dim every reservoir while its control offers no way back, so it falls
+       * to All before the controls reflect this scope. County is valid only
+       * after State; area is held by prefix so old region and subregion links
+       * continue to filter even though ADR-095 shows only the exact tier. */
+      const chosenCounty = filterState.county;
+      if (chosenCounty !== null
+          && !storageCounties().some((county) => county.fips === chosenCounty)) {
+        filterState = { ...filterState, county: null };
+      }
       const chosenArea = filterState.drainageArea;
-      if (chosenArea !== null && !scopeHoldsArea(chosenArea)) {
+      if (chosenArea !== null && !placeHoldsArea(chosenArea)) {
         filterState = { ...filterState, drainageArea: null };
       }
-      for (const menu of drainageMenus) menu.set(drainageMenuSelection());
+      reflectStoragePlaceControls();
       applyFilter();
       if (window.__dashboardReady) {
         window.__dashboardReady.reservoirs = inScope.length;
@@ -1209,6 +1275,7 @@ if (!supportsDashboard(browserCapabilities())) {
     filterState = {
       storageClass: wanted.storageClass,
       reporting: wanted.reporting,
+      county: wanted.county,
       drainageArea: wanted.drainageArea
     };
     /* Read before the first `applyScope`, which is what fills the control. */
@@ -1248,7 +1315,7 @@ if (!supportsDashboard(browserCapabilities())) {
   applyBaseline();
   await loadContext(map);
   const levelsOffered = await wireLevelControl();
-  wirePlaceMenus(openingRosters, openingScope.selection);
+  wirePlaceControls(openingRosters, openingScope.selection);
   /* Reuses the rosters already fetched, so the first-visit question cannot
    * arrive late. The same builder also wires the wide-header action and the
    * mobile menu item every shared-header page carries (ADR-086). */
@@ -1303,6 +1370,7 @@ if (!supportsDashboard(browserCapabilities())) {
     levelsOffered,
     /* The chosen area, which is not `drainageAreas` -- that one counts the
      * boundaries the map drew. One fact per field. */
+    countyFilter: filterStatus.county,
     areaFilter: filterStatus.drainageArea,
     /* Two facts, two fields: which period the panel is measuring against, and
      * how many periods the reader is being offered. The second is what tells

@@ -35,6 +35,7 @@ const SELECTION_PARAMS = {
   reservoir: "reservoir",
   storageClass: "class",
   reporting: "late",
+  county: "county",
   drainageArea: "drainage",
   lakePowell: "powell",
   /* Lake Mead's own parameter, spelled the way the storage charts already
@@ -84,6 +85,8 @@ export interface DashboardUrlState {
   /** An index into the storage class table, or null for every class. */
   storageClass: number | null;
   reporting: Reporting;
+  /** A five-digit county FIPS code, or null for every county. */
+  county: string | null;
   /** A drainage-area code the payload carries, or null for every area. */
   drainageArea: string | null;
   lakePowell: LakePowellChoice;
@@ -109,6 +112,7 @@ export const DEFAULT_URL_STATE: DashboardUrlState = {
   reservoir: null,
   storageClass: null,
   reporting: "all",
+  county: null,
   drainageArea: null,
   /* Both large reservoirs are in the opening view, and absence means so.
    *
@@ -207,6 +211,9 @@ export function stateFromSearch(search: string | null | undefined): DashboardUrl
     ? canonicalLate === "true" ? "late" : canonicalLate === "false" ? "current" : "all"
     : oldReporting === "late" || oldReporting === "current" ? oldReporting : "all";
 
+  const county = lastValue(pairs, SELECTION_PARAMS.county);
+  state.county = county !== undefined && /^\d{5}$/.test(county) ? county : null;
+
   const drainage = lastValue(pairs, SELECTION_PARAMS.drainageArea) ??
     lastValue(pairs, LEGACY_FILTER_PARAMS.drainageArea);
   /* Only the shape is checked, as with the month: whether the map currently
@@ -260,6 +267,9 @@ export function searchWithState(
   }
   if (full.reporting !== "all") {
     parts.push(`${SELECTION_PARAMS.reporting}=${full.reporting === "late" ? "true" : "false"}`);
+  }
+  if (full.county !== null && /^\d{5}$/.test(full.county)) {
+    parts.push(`${SELECTION_PARAMS.county}=${full.county}`);
   }
   if (full.drainageArea !== null && /^[0-9]{1,12}$/.test(full.drainageArea)) {
     parts.push(`${SELECTION_PARAMS.drainageArea}=${encodeURIComponent(full.drainageArea)}`);

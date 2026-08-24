@@ -47,23 +47,16 @@ function panelContents(suffix: string): string {
            sheet. Controls come before the thing they control. -->
       <section class="filters" aria-labelledby="analysis-${suffix}">
         <h3 id="analysis-${suffix}">Analysis controls</h3>
-        <!-- Where the reader is looking, before what they are looking at:
-             coarsest place first, then finer, then how finely the ground is
-             divided. The three slots arrive after first paint and used to be
-             appended, which put the whole drill-down below the buttons at
-             the bottom of this panel. See .control-slot. -->
-        <div class="control-slot" data-slot="where"></div>
-        <!-- The last of the places. One menu across region, subregion and
-             basin (ADR-084), replacing both the old shared drill-down's
-             finer axes and this panel's own drainage-area select.
-
-             Still a filter and not a scope: choosing one drainage area greys
-             the rest and leaves every total alone, so the reader reads one
-             area against the whole map rather than instead of it. ADR-011's
-             distinction is about what a control does, not where it sits, and
-             the controls that grey rather than remove follow it. -->
-        <div class="control-slot" data-slot="area"></div>
+        <!-- Storage follows the shared place sequence (ADR-095): State,
+             County after a state is chosen, Area size, then exactly the
+             hydrologic tier Area size names. These slots arrive after first
+             paint; fixed slots keep their order above the list in both panel
+             copies. County and the final area are still analysis filters:
+             they grey the rest and leave every total alone. -->
+        <div class="control-slot" data-slot="state"></div>
+        <div class="control-slot" data-slot="county"></div>
         <div class="control-slot" data-slot="level"></div>
+        <div class="control-slot" data-slot="area"></div>
         <calcite-label>
           Storage level
           <calcite-select data-filter="storage"

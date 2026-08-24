@@ -60,6 +60,18 @@ describe("the reservoir layer", () => {
     expect(layer.fields?.map((field) => field.name)).toContain(NAME_FIELD);
     expect(layer.source.at(0)?.attributes?.[NAME_FIELD]).toBe("Deer Creek");
   });
+
+  it("carries the reviewed county FIPS used by the Storage filter", () => {
+    const withCounty = {
+      ...reservoir("Jordanelle"),
+      county_fips: "49051",
+      county_name: "Wasatch County"
+    };
+    const { layer } = createReservoirLayer([withCounty]);
+
+    expect(layer.fields?.map((field) => field.name)).toContain("county_fips");
+    expect(layer.source.at(0)?.attributes?.county_fips).toBe("49051");
+  });
 });
 
 describe("the drainage-area names", () => {

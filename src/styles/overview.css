@@ -127,7 +127,7 @@ body {
   font-weight: 700;
   letter-spacing: .01em;
 }
-/* The place menus (ADR-084) are `calcite-label`-wrapped selects inside one
+/* The place menus are `calcite-label`-wrapped selects inside one
    wrapper each -- one menu apiece, but the same reason and the same fix as
    `.level-control` above: appended when the reference export resolves, and
    `min-width: 0` because an unbreakable select otherwise refuses to shrink
@@ -137,6 +137,8 @@ body {
  * and a rule naming only the first silently stopped applying to the third. */
 .where-menu,
 .drainage-menu,
+.storage-state-menu,
+.storage-county-menu,
 .snow-state-menu,
 .drought-state-menu,
 .drought-county-menu {
@@ -144,6 +146,8 @@ body {
 }
 .where-menu calcite-label,
 .drainage-menu calcite-label,
+.storage-state-menu calcite-label,
+.storage-county-menu calcite-label,
 .snow-state-menu calcite-label,
 .drought-state-menu calcite-label,
 .drought-county-menu calcite-label {

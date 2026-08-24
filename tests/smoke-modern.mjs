@@ -240,6 +240,31 @@ const storageState = [...new Set(inScope.flatMap(statesOf))].sort()
 const outsideStorageState = storageState
   ? inScope.find((reservoir) => !statesOf(reservoir).includes(storageState.code))
   : null;
+/* A reviewed county that is offered after the chosen Storage state and
+ * narrows that state's roster without emptying it. The option builder groups
+ * counties by the reservoir point's state, while the state scope follows the
+ * waterbody, so both conditions are kept here. */
+const storageCounty = storageState
+  ? [...new Set(inScope
+    .filter((reservoir) => statesOf(reservoir).includes(storageState.code)
+      && reservoir.state === storageState.code
+      && typeof reservoir.county_fips === "string")
+    .map((reservoir) => reservoir.county_fips))].sort()
+    .map((code) => {
+      const rows = inScope.filter((reservoir) =>
+        statesOf(reservoir).includes(storageState.code)
+          && reservoir.county_fips === code);
+      return {
+        code,
+        name: rows.find((reservoir) => reservoir.county_name)?.county_name ?? code,
+        count: rows.length,
+        areas: [...new Set(rows.map((reservoir) => reservoir.huc6)
+          .filter((area) => typeof area === "string"))].sort()
+      };
+    })
+    .find((candidate) => candidate.count > 0 && candidate.count < storageState.count
+      && candidate.areas.length > 0)
+  : null;
 
 /* A subregion the default scope holds more than one basin of, for the link a
  * reader shares after choosing a region rather than a single drainage area.
@@ -3548,8 +3573,8 @@ for (const viewport of VIEWPORTS) {
     const bySubregion = await tab.evaluate(() => ({
       ready: window.__dashboardReady,
       control: document.querySelector('#start-panel .drainage-menu calcite-select')?.value,
-      /* Every choice the menu offers, so the coarse one can be shown to be
-       * on it exactly once and under a name no basin also answers to. */
+      /* ADR-095 offers only the exact drawn tier. A coarser saved link still
+       * filters by prefix, while this control honestly shows every basin. */
       options: [...document.querySelectorAll(
         '#start-panel .drainage-menu calcite-option')]
         .map((option) => ({ value: option.getAttribute("value"), label: option.textContent })),
@@ -3574,24 +3599,14 @@ for (const viewport of VIEWPORTS) {
       `${label}: filtering by subregion removed reservoirs from the map`);
     check(bySubregion.where === `drainage_area LIKE '${sharedSubregion?.code}%'`,
       `${label}: the map filter is "${bySubregion.where}" for a subregion link`);
-    /* The control has to carry the reader's choice, or the map narrows while
-     * the select beside it reads "All drainage areas" and there is no way
-     * back to what the link opened on. */
-    check(bySubregion.control === sharedSubregion?.code,
-      `${label}: the drainage-area control shows "${bySubregion.control}", ` +
-      "not the subregion the link opened on");
-    const offered = bySubregion.options
-      .filter((option) => option.value === sharedSubregion?.code);
-    check(offered.length === 1,
-      `${label}: the subregion appears ${offered.length} times in the ` +
-      "drainage-area control, expected once");
-    check(offered[0]?.label === sharedSubregion?.label,
-      `${label}: the subregion is labelled "${offered[0]?.label}", ` +
-      `expected "${sharedSubregion?.label}"`);
-    check(bySubregion.options.filter((option) =>
-      option.label === offered[0]?.label).length === 1,
-    `${label}: "${offered[0]?.label}" names more than one choice in the ` +
-    "drainage-area control");
+    check(bySubregion.control === "all",
+      `${label}: a coarser saved area makes the Basin control show ` +
+      `"${bySubregion.control}", expected "all"`);
+    check(!bySubregion.options.some((option) =>
+      option.value === sharedSubregion?.code)
+      && bySubregion.options.slice(1).every((option) => /^\d{6}$/.test(option.value ?? "")),
+    `${label}: the Basin control mixes tiers for a subregion link: ` +
+    JSON.stringify(bySubregion.options.map((option) => option.value)));
     check(bySubregion.summary.includes(`in ${sharedSubregion?.label}`),
       `${label}: the summary reads "${bySubregion.summary}" and does not ` +
       "name the subregion the reader asked for");
@@ -3682,27 +3697,20 @@ for (const viewport of VIEWPORTS) {
     const byRegion = await tab.evaluate(() => ({
       ready: window.__dashboardReady,
       control: document.querySelector('#start-panel .drainage-menu calcite-select')?.value,
+      options: [...document.querySelectorAll(
+        '#start-panel .drainage-menu calcite-option')]
+        .map((option) => option.getAttribute("value")),
       summary: document.querySelector('#start-panel [data-filter="summary"]')?.textContent ?? ""
     }));
-    /* The row the reader's code names, by value: the menu marks the choice
-     * through the select's own value, and the label is what a reader sees
-     * against it. Read in a second pass because the expected code lives on
-     * the Node side of the evaluate boundary. */
-    byRegion.chosenLabel = [...(await tab.evaluate(() =>
-      [...document.querySelectorAll('#start-panel .drainage-menu calcite-option')]
-        .map((option) => [option.getAttribute("value"), option.textContent])))]
-      .find(([value]) => value === sharedRegion?.code)?.[1] ?? null;
     check(byRegion.ready.areaFilter === sharedRegion?.code,
       `${label}: a two-digit ?area= was not applied (${byRegion.ready.areaFilter})`);
     check(byRegion.ready.shown === sharedRegion?.count,
       `${label}: the region showed ${byRegion.ready.shown} reservoirs, ` +
       `expected ${sharedRegion?.count}`);
-    check(byRegion.control === sharedRegion?.code,
-      `${label}: the drainage-area control shows "${byRegion.control}", ` +
-      "not the region the link opened on");
-    check(byRegion.chosenLabel === sharedRegion?.label,
-      `${label}: the region is labelled "${byRegion.chosenLabel}", ` +
-      `expected "${sharedRegion?.label}"`);
+    check(byRegion.control === "all"
+      && byRegion.options.slice(1).every((value) => /^\d{6}$/.test(value ?? "")),
+    `${label}: a region link made the Basin control ` +
+    `${byRegion.control} with ${byRegion.options.join(", ")}`);
     check(byRegion.summary.includes(`in ${sharedRegion?.label}`),
       `${label}: the summary reads "${byRegion.summary}" and does not name ` +
       "the region the reader asked for");
@@ -3930,6 +3938,13 @@ for (const failure of [
       ready: window[key],
       control: document.querySelectorAll(".level-control calcite-select").length,
       chosen: document.querySelector(".level-control calcite-select")?.value ?? null,
+      storageAreaLabel: [...(document.querySelector(
+        ".storage-drainage-menu calcite-label")?.childNodes ?? [])]
+        .filter((node) => node.nodeType === 3)
+        .map((node) => node.textContent.trim()).join(" "),
+      storageAreaValues: [...document.querySelectorAll(
+        ".storage-drainage-menu calcite-option")]
+        .map((option) => option.getAttribute("value")),
       snowAreaLabel: [...(document.querySelector(
         ".snow-drainage-menu calcite-label")?.childNodes ?? [])]
         .filter((node) => node.nodeType === 3)
@@ -3957,6 +3972,14 @@ for (const failure of [
       `${scenario.label}: no area-size control was built`);
     check(state.chosen === "4",
       `${scenario.label}: the control shows ${state.chosen}, not the level in the address`);
+    if (scenario.label === "Storage map at subregions") {
+      check(state.storageAreaLabel === "Subregion",
+        `${scenario.label}: the area control is labelled ${state.storageAreaLabel}`);
+      check(state.storageAreaValues.length > 1
+          && state.storageAreaValues.filter((value) => value !== "all")
+            .every((value) => value?.length === 4),
+        `${scenario.label}: the area control mixes tiers ${state.storageAreaValues.join(", ")}`);
+    }
     if (scenario.label === "Snowpack at subregions") {
       check(state.snowAreaLabel === "Subregion",
         `${scenario.label}: the area control is labelled ${state.snowAreaLabel}`);
@@ -4058,9 +4081,9 @@ for (const failure of [
     `the bar kept its first-paint links after the map was narrowed: ` +
     narrowedBar.navHrefs.join(", "));
 
-  /* The panel renders twice -- desktop and phone sheet -- so two Drainage
-   * menus exist, and they are two views of one filter state, not two
-   * filters (ADR-084; the same invariant shell.ts states for every control
+  /* The panel renders twice -- desktop and phone sheet -- so two exact-tier
+   * area controls exist, and they are two views of one filter state, not two
+   * filters (ADR-095; the same invariant shell.ts states for every control
    * it keeps in step). A pick in one must appear in the other, and "Show
    * every reservoir" must leave neither naming an area the page is not
    * filtered to. Readiness carries the answer both menus have to agree
@@ -4101,13 +4124,10 @@ for (const failure of [
 }
 
 /*
- * The where control (S4): a state select and as much of the
- * region/subregion/drainage-area drill-down as the host asked for
- * (ADR-071), beside the level control in the storage panel and the
- * snow/drought filter bars. This is its own committed coverage -- the same
- * reason the area-size block above holds the level control's: a slice that
- * ships no coverage of its own is how a whole feature ends up untested (this
- * project has already found that once).
+ * The shared State and exact-tier area contract, beside Area size in the
+ * Storage panel and the Snowpack and Drought filter bars. This is its own
+ * committed coverage: a slice that ships no coverage of its own is how a
+ * whole feature ends up untested.
  *
  * `storageState` is the state the storage-map coverage above already proved
  * narrows the default scope without emptying it. Reused here rather than
@@ -4119,20 +4139,20 @@ for (const failure of [
  */
 {
   check(Boolean(storageState),
-    "Where control: no state narrows the default scope without emptying it");
+    "Place controls: no state narrows the default scope without emptying it");
 
   /*
-   * Storage keeps ADR-084's two place menus. Snow and drought use their
-   * sequential State and drawn-tier area controls (ADR-094, ADR-091). The
-   * cases use each surface's selectors while holding the shared contract: a
-   * state link is shown as chosen and the hydrologic area stays at all.
+   * All three maps use sequential State and drawn-tier area controls
+   * (ADR-095, ADR-094, ADR-091). The cases use each surface's selectors while
+   * holding the shared contract: a state link is shown as chosen and the
+   * hydrologic area stays at all.
    */
   const cases = [
     {
       label: "Storage map", url: `${URL}?state=${storageState?.code}`,
       signal: "__dashboardReady", drawn: "drainageAreas",
-      stateSelector: '.where-menu calcite-select[label="Which state or county to show"]',
-      drainageSelector: '.drainage-menu calcite-select[label="Which drainage area to show"]'
+      stateSelector: '.storage-state-menu calcite-select[label="Which state to show"]',
+      drainageSelector: ".storage-drainage-menu calcite-select"
     },
     {
       label: "Snowpack", url: `${URL}snow.html?state=${storageState?.code}`,
@@ -4193,7 +4213,8 @@ for (const failure of [
          * a native `<select>` has every option's text in its `textContent`,
          * and the word a reader sees is the one before the control. */
         groupLabels: [...document.querySelectorAll(
-          ".where-menu, .drainage-menu, .snow-state-menu, .drought-state-menu")]
+          ".where-menu, .drainage-menu, .storage-state-menu, .storage-county-menu, "
+          + ".snow-state-menu, .drought-state-menu")]
           /* Past the slot, to the group the control actually joins. The
              control is placed into a `.control-slot` now, which is
              `display: contents` and so is not the row it appears in -- and
@@ -4211,7 +4232,8 @@ for (const failure of [
         filterbar: (() => {
           const bar = document.querySelector(".dashboard-filterbar");
           const menu = bar?.querySelector(
-            ".where-menu, .drainage-menu, .snow-state-menu, .drought-state-menu");
+            ".where-menu, .drainage-menu, .storage-state-menu, .storage-county-menu, "
+            + ".snow-state-menu, .drought-state-menu");
           const grid = bar?.querySelector(".filterbar-controls");
           return bar && menu ? {
             height: Math.round(bar.getBoundingClientRect().height),
@@ -4230,14 +4252,13 @@ for (const failure of [
         drainageSelector: scenario.drainageSelector
       });
       console.log("  where control:", JSON.stringify(state));
-      check(state.stateValues.length >= 1, `${label}: no Where menu was built`);
+      check(state.stateValues.length >= 1, `${label}: no State control was built`);
       check(state.drainageValues.length >= 1, `${label}: no Drainage-area menu was built`);
-      /* The menu has to carry the reader's choice, or the state narrows
+      /* The control has to carry the reader's choice, or the state narrows
        * while the select beside it reads "All states" -- the same
-       * requirement S3a's subregion coverage above already holds the
-       * drainage-area control to. */
+       * requirement every exact-tier area control follows. */
       check(state.stateValues.every((value) => value === storageState?.code),
-        `${label}: the Where menu shows ${state.stateValues.join(", ")}, ` +
+        `${label}: the State control shows ${state.stateValues.join(", ")}, ` +
         `not the state the link opened on (${storageState?.code})`);
       /* A link naming only a state leaves the drainage menu at "all" --
        * which is a row like any other, not an unset value. */
@@ -4575,6 +4596,169 @@ for (const failure of [
         check(roundTrip.includes("state=UT") && roundTrip.includes(`county=${utahCounty}`),
           `the link ?state=UT&county=${utahCounty} came back as "${roundTrip}"`);
       }
+
+      /* Storage's page-specific sequence (ADR-095). Its County and area
+       * controls filter reservoirs in place; State remains the waterbody
+       * scope, so the map draws the state roster while the matching count,
+       * list and layer clause narrow together. */
+      check(Boolean(storageCounty),
+        `${label}: no reviewed county narrows the chosen Storage state`);
+      await tab.goto(`${URL}?state=all&level=6`,
+        { waitUntil: "domcontentloaded", timeout: 60000 });
+      await tab.waitForFunction(() => window.__dashboardReady !== undefined,
+        null, { timeout: 90000 });
+      check(await tab.locator("#start-panel .storage-county-menu").count() === 0,
+        `${label}: Storage County appears before a state is selected`);
+
+      await tab.goto(`${URL}?state=${storageState?.code}&level=6`,
+        { waitUntil: "domcontentloaded", timeout: 60000 });
+      await tab.waitForFunction(() => window.__dashboardReady !== undefined,
+        null, { timeout: 90000 });
+      await tab.waitForFunction(() =>
+        document.querySelector("#start-panel .storage-state-menu calcite-select") !== null
+          && document.querySelector("#start-panel .storage-county-menu calcite-select") !== null
+          && document.querySelector("#start-panel .level-control calcite-select") !== null
+          && document.querySelector("#start-panel .storage-drainage-menu calcite-select") !== null,
+      { timeout: 90000 });
+      const storageOpening = await tab.evaluate(() => {
+        const state = document.querySelector("#start-panel .storage-state-menu");
+        const county = document.querySelector("#start-panel .storage-county-menu");
+        const level = document.querySelector("#start-panel .level-control");
+        const area = document.querySelector("#start-panel .storage-drainage-menu");
+        return {
+          order: state && county && level && area
+            ? Boolean(state.compareDocumentPosition(county)
+                & Node.DOCUMENT_POSITION_FOLLOWING)
+              && Boolean(county.compareDocumentPosition(level)
+                & Node.DOCUMENT_POSITION_FOLLOWING)
+              && Boolean(level.compareDocumentPosition(area)
+                & Node.DOCUMENT_POSITION_FOLLOWING)
+            : false,
+          areaLabel: [...(area?.querySelector("calcite-label")?.childNodes ?? [])]
+            .filter((node) => node.nodeType === 3)
+            .map((node) => node.textContent.trim()).join(" "),
+          areaValues: [...(area?.querySelectorAll("calcite-option") ?? [])]
+            .map((option) => option.getAttribute("value")),
+          countyValues: [...(county?.querySelectorAll("calcite-option") ?? [])]
+            .map((option) => option.getAttribute("value"))
+        };
+      });
+      check(storageOpening.order,
+        `${label}: Storage controls do not flow State, County, Area size, Basin`);
+      check(storageOpening.areaLabel === "Basin"
+        && storageOpening.areaValues.slice(1)
+          .every((value) => /^\d{6}$/.test(value ?? "")),
+      `${label}: Storage Basin control is "${storageOpening.areaLabel}" with `
+        + storageOpening.areaValues.join(", "));
+      check(storageOpening.countyValues.includes(storageCounty?.code),
+        `${label}: Storage state ${storageState?.code} does not offer county `
+        + `${storageCounty?.code}`);
+
+      const expectedStorageCountyAreas = (storageCounty?.areas ?? []).filter((code) =>
+        drawnScope.units.some((unit) => unit.huc6 === code
+          && String(unit.states ?? "").split(",").map((state) => state.trim())
+            .includes(storageState?.code)));
+
+      await tab.evaluate((county) => {
+        const select = document.querySelector(
+          "#start-panel .storage-county-menu calcite-select");
+        select.value = county;
+        select.dispatchEvent(new CustomEvent("calciteSelectChange", { bubbles: true }));
+      }, storageCounty?.code);
+      await tab.waitForFunction((county) =>
+        window.__dashboardReady?.countyFilter === county,
+      storageCounty?.code, { timeout: 60000 });
+      const storageByCounty = await tab.evaluate(() => ({
+        ready: window.__dashboardReady,
+        listShown: document.querySelectorAll(
+          "#start-panel .list-btn:not(.list-btn-excluded)").length,
+        areaValues: [...document.querySelectorAll(
+          "#start-panel .storage-drainage-menu calcite-option")]
+          .map((option) => option.getAttribute("value")),
+        summary: document.querySelector(
+          '#start-panel [data-filter="summary"]')?.textContent ?? "",
+        where: document.querySelector("arcgis-map")?.map
+          ?.findLayerById("reservoirs")?.featureEffect?.filter?.where ?? null,
+        search: window.location.search
+      }));
+      check(storageByCounty.ready?.drawn === storageState?.count
+        && storageByCounty.ready?.shown === storageCounty?.count
+        && storageByCounty.listShown === storageCounty?.count,
+      `${label}: Storage County drew ${storageByCounty.ready?.drawn}, showed `
+        + `${storageByCounty.ready?.shown} and listed ${storageByCounty.listShown}`);
+      check(storageByCounty.where === `county_fips = '${storageCounty?.code}'`,
+        `${label}: Storage County layer filter is "${storageByCounty.where}"`);
+      check(storageByCounty.search.includes(`county=${storageCounty?.code}`)
+        && storageByCounty.summary.includes(storageCounty?.name ?? "\u0000")
+        && storageByCounty.summary.includes("grey"),
+      `${label}: Storage County URL or summary lost ${storageCounty?.name}`);
+      check(JSON.stringify(storageByCounty.areaValues.slice(1).sort())
+        === JSON.stringify([...expectedStorageCountyAreas].sort()),
+      `${label}: Storage County basins are ${storageByCounty.areaValues.join(", ")}, `
+        + `expected all,${expectedStorageCountyAreas.join(",")}`);
+
+      const storageCountyArea = expectedStorageCountyAreas[0];
+      const storageCountyAreaCount = inScope.filter((reservoir) =>
+        statesOf(reservoir).includes(storageState?.code)
+          && reservoir.county_fips === storageCounty?.code
+          && reservoir.huc6 === storageCountyArea).length;
+      await tab.evaluate((area) => {
+        const select = document.querySelector(
+          "#start-panel .storage-drainage-menu calcite-select");
+        select.value = area;
+        select.dispatchEvent(new CustomEvent("calciteSelectChange", { bubbles: true }));
+      }, storageCountyArea);
+      await tab.waitForFunction((area) =>
+        window.__dashboardReady?.areaFilter === area,
+      storageCountyArea, { timeout: 60000 });
+      const storageByCountyArea = await tab.evaluate(() => ({
+        ready: window.__dashboardReady,
+        where: document.querySelector("arcgis-map")?.map
+          ?.findLayerById("reservoirs")?.featureEffect?.filter?.where ?? null,
+        search: window.location.search
+      }));
+      check(storageByCountyArea.ready?.shown === storageCountyAreaCount
+        && storageByCountyArea.ready?.drawn === storageState?.count,
+      `${label}: combined Storage place filter showed `
+        + `${storageByCountyArea.ready?.shown} of ${storageByCountyArea.ready?.drawn}`);
+      check(storageByCountyArea.where?.includes(
+        `county_fips = '${storageCounty?.code}'`)
+        && storageByCountyArea.where?.includes(
+          `drainage_area LIKE '${storageCountyArea}%'`)
+        && storageByCountyArea.search.includes(`county=${storageCounty?.code}`)
+        && storageByCountyArea.search.includes(`drainage=${storageCountyArea}`),
+      `${label}: combined Storage URL or layer clause is not congruent`);
+
+      await tab.evaluate(() => {
+        const select = document.querySelector(
+          "#start-panel .level-control calcite-select");
+        select.value = "4";
+        select.dispatchEvent(new CustomEvent("calciteSelectChange", { bubbles: true }));
+      });
+      await tab.waitForFunction((county) =>
+        window.__dashboardReady?.level === 4
+          && window.__dashboardReady?.countyFilter === county
+          && window.__dashboardReady?.areaFilter === null,
+      storageCounty?.code, { timeout: 90000 });
+      const storageAtNewSize = await tab.evaluate(() => ({
+        search: window.location.search,
+        label: [...(document.querySelector(
+          "#start-panel .storage-drainage-menu calcite-label")?.childNodes ?? [])]
+          .filter((node) => node.nodeType === 3)
+          .map((node) => node.textContent.trim()).join(" "),
+        values: [...document.querySelectorAll(
+          "#start-panel .storage-drainage-menu calcite-option")]
+          .map((option) => option.getAttribute("value"))
+      }));
+      check(storageAtNewSize.search.includes(`county=${storageCounty?.code}`)
+        && !/[?&](?:area|drainage)=/.test(storageAtNewSize.search),
+      `${label}: Storage Area size did not keep County and clear area: `
+        + storageAtNewSize.search);
+      check(storageAtNewSize.label === "Subregion"
+        && storageAtNewSize.values.slice(1)
+          .every((value) => /^\d{4}$/.test(value ?? "")),
+      `${label}: Storage level 4 is "${storageAtNewSize.label}" with `
+        + storageAtNewSize.values.join(", "));
 
       /* Drought's page-specific sequence (ADR-091). Stub only the two
        * selected-scope queries so this checks our wiring rather than the

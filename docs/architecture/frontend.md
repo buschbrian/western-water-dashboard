@@ -193,13 +193,20 @@ Each was found by a failing test or a screenshot. Do not regress them.
 
 ## Filters
 
-**Storage has two geographic axes.** Where holds state and, on the storage
-surfaces that have reviewed FIPS data, county. Drainage area holds region,
-subregion and basin as three shared tiers of one choice (ADR-084). The chosen
-state narrows both menus; a drainage choice that no longer reaches that state
-falls back to every area rather than silently filtering to nothing.
-Repopulating a menu must preserve the reader's choice while it is still on
-offer, or the control resets on every keystroke.
+**The Storage map orders its place controls sequentially** (ADR-095): State,
+County after a state is chosen, Area size, then exactly one hydrologic tier.
+The last label follows the chosen size: Region, Subregion or Basin. State uses
+the waterbody-state scope and changes the roster and totals. County and the
+hydrologic tier are analysis filters: they dim the other reservoirs, narrow
+the list, table and ranking chart, and leave the total unchanged.
+
+A State change clears County and area. An Area size change keeps State and
+County, clears the area and navigates to the new tier. A County change clears
+an area with no matching reservoir. Place choices come from the full
+published roster with both dominant reservoirs available, so the Lake Powell
+and Lake Mead switches never remove a county or area from its control. A
+coarser saved area may continue to prefix-filter a finer page; the exact-tier
+control shows every area until the reader chooses a row at that tier.
 
 **Snowpack orders its place controls sequentially** (ADR-094): State, Area
 size, then exactly one hydrologic tier. The last label follows the chosen
@@ -235,14 +242,15 @@ values. A long worst-condition value wraps inside its own card. The extreme or
 exceptional card uses the same short heading-and-note rhythm as the other
 three; the count and coverage method do not change.
 
-**Storage's shared hierarchy is stated in the menus themselves** (ADR-076,
+**The Storage charts keep the mixed hierarchy in their menus** (ADR-076,
 ADR-084). Place choices render as indented `calcite-option-group` rows: basins
 under their subregion, subregions under their region, counties under their
 state. Chosen over flyout submenus by measurement at 360px; the county row no
 longer carries a `, ST` suffix because its group heading carries the state
 instead (the key is still the FIPS code, per ADR-058 as amended). The builders
 sort so same-group rows are contiguous — consecutive equal group labels form
-one heading, so an unsorted list would draw a heading twice.
+one heading, so an unsorted list would draw a heading twice. ADR-095 changes
+the Storage map, not this chart filter bar.
 
 **A subregion code is published nowhere**: codes are fixed-width, so it is
 `huc6.slice(0, 4)`. Only the *names* are published, in `reservoirs.json`'s
