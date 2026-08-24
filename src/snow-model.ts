@@ -569,13 +569,37 @@ export function newestReading(points: readonly CurvePoint[]): CurvePoint | null 
   return null;
 }
 
-/** The highest mean among days that meet the floor, or null when none does. */
-export function seasonHighPoint(
+/**
+ * The day the snowpack stood highest against its own normal, or null when no
+ * day qualifies.
+ *
+ * Not the season's peak snow, which is `defaultMapDay` and is a different
+ * question with a different answer: in the 2026 season this reads 78.4% on
+ * 2026-01-08, while the deepest day is 2026-03-13 and is itself only 60.7%
+ * of normal. The most water and the best showing against normal are rarely
+ * the same day, and the page now names them apart -- "Best against normal"
+ * here, "season high point" on the map.
+ *
+ * Both floors, like `newestHeadline`, and for the same reason. This function
+ * held only the reporting floor, and the maximum of a ratio is exactly where
+ * a weak denominator does its worst: on 2026-08-24 the published summary read
+ * **10,250% of normal on 2025-10-04**, from 545 sites dividing a dusting by a
+ * mean normal of four ten-thousandths of an inch. The reporting floor cannot
+ * catch that -- every site in the region was reporting -- so the number
+ * cleared the only gate it had, and it went out under the same name the map
+ * was using for 2026-03-13.
+ *
+ * `curveForDrawing`'s note says to leave the KPI path unfiltered because it
+ * "already appl[ies] its own, stricter floor". That was true of the newest
+ * value and never true here.
+ */
+export function bestAgainstNormal(
   points: readonly CurvePoint[], floor: number
 ): CurvePoint | null {
   let best: CurvePoint | null = null;
   for (const point of points) {
     if (point.percent === null || point.reportingSites < floor) continue;
+    if (!percentIsMeaningful(point)) continue;
     if (best === null || point.percent > (best.percent as number)) best = point;
   }
   return best;

@@ -55,7 +55,7 @@ import {
   payloadForState,
   percentOfNormal,
   regionCurve,
-  seasonHighPoint,
+  bestAgainstNormal,
   seasonLabel,
   siteByStation,
   siteMonthReadings,
@@ -304,7 +304,7 @@ function renderSnow(
     <p id="snow-status" class="filter-status" role="status"></p>
     <section class="overview-kpis snow-summary" aria-label="Snow measurement summary">
       <article class="overview-kpi overview-kpi-primary"><span>Newest value</span><strong data-snow-kpi="now">—</strong><small data-snow-kpi="now-note">—</small></article>
-      <article class="overview-kpi"><span>Season high point</span><strong data-snow-kpi="peak">—</strong><small data-snow-kpi="peak-note">—</small></article>
+      <article class="overview-kpi"><span>Best against normal</span><strong data-snow-kpi="peak">—</strong><small data-snow-kpi="peak-note">—</small></article>
       <article class="overview-kpi"><span>Measurement sites</span><strong data-snow-kpi="sites">—</strong><small>Measured every day</small></article>
       <article class="overview-kpi"><span>Late data</span><strong data-snow-kpi="late">—</strong><small>No new value for more than two days</small></article>
       <article class="overview-kpi"><span>Data published</span><strong>${formatDate(payload.as_of)}</strong><small>${payload.water_year - 1}–${payload.water_year} snow season</small></article>
@@ -770,10 +770,10 @@ function renderSnow(
           `snow water on ${formatDate(newest.date)}. There is too little ` +
           "normal snow for this date to compare against.");
       }
-      const peak = seasonHighPoint(points, floor);
+      const peak = bestAgainstNormal(points, floor);
       if (peak) {
-        parts.push(`Season high point: ${formatPercent(peak.percent)} of ` +
-          `normal on ${formatDate(peak.date)}.`);
+        parts.push(`Best against normal: ${formatPercent(peak.percent)} ` +
+          `on ${formatDate(peak.date)}.`);
       }
       reading.textContent = parts.length > 0 ? parts.join(" ")
         : "Too few sites in this area have values yet this season.";
@@ -881,7 +881,7 @@ function renderSnow(
         ? `Snow water on ${formatDate(reading.date)}. There is too little ` +
           "normal snow for this date to compare against"
         : "Too few sites have values yet this season");
-    const peak = seasonHighPoint(curve, floor);
+    const peak = bestAgainstNormal(curve, floor);
     setKpi("peak", peak ? formatPercent(peak.percent) : "—");
     setKpi("peak-note", peak
       ? `${formatDate(peak.date)} · ${peak.reportingSites} sites`

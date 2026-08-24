@@ -23,7 +23,7 @@ import {
   observedPeak,
   regionCurve,
   regionDepthCurve,
-  seasonHighPoint,
+  bestAgainstNormal,
   seasonLabel,
   siteByStation,
   siteMonthReadings,
@@ -438,17 +438,36 @@ describe("headline readings", () => {
     expect(headlineFloor(3, 2)).toBe(2);
   });
 
-  it("refuses an October artifact as the season high point", () => {
+  it("refuses an October artifact as the best against normal", () => {
     // 115.8% from twelve early sites is not the story; 77.7% from 169 is.
-    expect(seasonHighPoint(points, 109)?.percent).toBe(77.7);
+    expect(bestAgainstNormal(points, 109)?.percent).toBe(77.7);
   });
 
   it("refuses two unmelted June stations as the newest value", () => {
     expect(newestHeadline(points, 109)?.date).toBe("2026-04-01");
   });
 
+  it("refuses a thin denominator as the best against normal", () => {
+    /* The reporting floor cannot catch this one: every site is reporting.
+     * This is the shape that published 10,250% of normal on an October day,
+     * from a mean normal of almost nothing. */
+    const thinNormal: CurvePoint[] = [
+      { date: "2025-10-04", percent: 10250, reportingSites: 545, normalInches: 0.04 },
+      { date: "2026-03-13", percent: 61.4, reportingSites: 549, normalInches: 13.7 }
+    ];
+    expect(bestAgainstNormal(thinNormal, 300)?.date).toBe("2026-03-13");
+  });
+
+  it("returns null when every day fails the denominator", () => {
+    const allThin: CurvePoint[] = [
+      { date: "2025-10-04", percent: 10250, reportingSites: 545, normalInches: 0.04 },
+      { date: "2025-10-05", percent: 650, reportingSites: 545, normalInches: 0.12 }
+    ];
+    expect(bestAgainstNormal(allThin, 300)).toBeNull();
+  });
+
   it("returns null when no day meets the floor", () => {
-    expect(seasonHighPoint(points, 200)).toBeNull();
+    expect(bestAgainstNormal(points, 200)).toBeNull();
     expect(newestHeadline(points, 200)).toBeNull();
   });
 
@@ -484,7 +503,7 @@ describe("headline readings", () => {
     const region = regionCurve(payload);
     const floor = headlineFloor(payload.site_count, 2);
     // Data-independent: any real season has at least one broad reading.
-    expect(seasonHighPoint(region, floor)).not.toBeNull();
+    expect(bestAgainstNormal(region, floor)).not.toBeNull();
     expect(newestHeadline(region, floor)).not.toBeNull();
   });
 });
