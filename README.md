@@ -9,8 +9,8 @@ context in one typed ArcGIS 5.1 and Calcite 5 application.
 
 The project began as a Utah reservoir map. Its current scope follows five
 western hydrologic regions across eleven states. The application draws 75
-basins or 44 larger subregions, reads a reviewed western reservoir roster, and
-uses 637 mountain snow sites. Counts that can change with provider reporting
+basins or 44 larger subregions, reads a reviewed western reservoir roster fed
+by five observation providers, and uses 637 mountain snow sites. Counts that can change with provider reporting
 are read from the runtime payloads rather than written into application code.
 
 ## Dashboard pages
@@ -36,10 +36,11 @@ The storage map lets a reader:
 
 - point at or select a reservoir for its storage, full level, reading date,
   comparison period, history rank, and change over time;
-- narrow the view by state, subregion, drainage area, county, storage class,
-  reporting status, reservoir geography, Lake Powell, or Lake Mead — with the
-  hierarchy shown in the menus themselves: basins under their subregion,
-  subregions under their region, counties under their state;
+- narrow the view by place, storage class, reporting status, Lake Powell, or
+  Lake Mead. The place controls run coarsest to finest — State, then County,
+  then Area size, then the one hydrologic tier that size names (ADR-095).
+  State changes the roster and the totals; County and the hydrologic area are
+  analysis filters that dim the rest and leave every total alone;
 - move or play the month slider through the last twelve published months;
 - open a keyboard-reachable reservoir list;
 - sort the matching reservoirs in a table and download the exact rows and
@@ -49,8 +50,9 @@ The storage map lets a reader:
 The storage map opens on the complete western roster, with Lake Powell and
 Lake Mead both in the totals. Each is large enough to dominate a regional
 figure, so each keeps its own switch and every page states which of the two
-the figure beside it holds. The narrower Utah-waterbody view remains
-available as a deliberate choice.
+the figure beside it holds. The separate Utah-waterbody reservoir scope was
+retired with its `?reservoirs=` parameter (ADR-087); Utah is reachable through
+the same State control as every other state.
 
 A first visit with no link and no remembered place opens a short chooser: a
 state or a river basin, and one of the three subjects. It is skippable in one
@@ -132,16 +134,19 @@ Stable public paths are documented on the [data page](data.html):
 | `/api/snowpack.json` | Water-year site series and drainage-area summaries against 1991–2020. |
 | `/data/drought/usdm-huc6.json` | Weekly drought shares for 75 basins. |
 | `/data/drought/usdm-huc4.json` | The same week measured over 44 larger subregions. |
+| `/data/drought/usdm-huc8.json` | The same week measured over the finer subbasins (ADR-088). |
 | `/data/drought/usdm-current.geojson` | The verified current U.S. Drought Monitor polygons. |
 | `/api/reference.json` | Reviewed capacity evidence and the drainage-area roster, without polygon geometry. |
+| `/data/upstream_index.json` | For each reservoir, the published reservoirs and snow sites on land that drains to it (ADR-077). |
 
-The daily pipeline reads observations from the Bureau of Reclamation, the
-Natural Resources Conservation Service, the California Department of Water
-Resources and the Colorado Division of Water Resources. Dam evidence comes
-from the U.S. Army Corps of Engineers National Inventory of Dams. Drainage
-areas come from the U.S. Geological Survey Watershed Boundary Dataset. Drought
-data comes from the U.S. Drought Monitor. The complete ownership and failure
-contract is in
+The daily pipeline reads observations from five providers: the Bureau of
+Reclamation, the Natural Resources Conservation Service, the U.S. Geological
+Survey, the California Department of Water Resources and the Colorado Division
+of Water Resources. Dam evidence comes from the U.S. Army Corps of Engineers
+National Inventory of Dams. Drainage areas come from the U.S. Geological
+Survey Watershed Boundary Dataset, and what drains to each reservoir from the
+same agency's Network-Linked Data Index (ADR-077). Drought data comes from the
+U.S. Drought Monitor. The complete ownership and failure contract is in
 [`docs/AUTHORITATIVE-SOURCE-INVENTORY.md`](docs/AUTHORITATIVE-SOURCE-INVENTORY.md).
 
 California is a production provider as of 2026-08-20: 142 reservoirs, read
@@ -156,6 +161,16 @@ review in
 [`admitted_cdss_reservoirs.json`](admitted_cdss_reservoirs.json). The review
 of both sources is in [`docs/CDSS-CDEC-API-REVIEW.md`](docs/CDSS-CDEC-API-REVIEW.md)
 and [`docs/COLORADO-ADMISSION-REVIEW.md`](docs/COLORADO-ADMISSION-REVIEW.md).
+
+The U.S. Geological Survey became the fifth provider on 2026-08-22 with seven
+reservoirs in Arizona, Nevada and Washington, admitted on confirmed dam
+matches; four more candidates are held with their findings in
+[`admitted_usgs_reservoirs.json`](admitted_usgs_reservoirs.json). It is the
+only provider that publishes no full level of its own, so every one of its
+denominators comes from the dam inventory. It is built against the keyless
+legacy daily-values service, which is documented to retire in early 2027;
+ADR-080 records that migration as debt with a date rather than a discovery
+waiting to happen.
 
 ### Storage metrics
 
@@ -264,37 +279,49 @@ The original modernization phases are complete. ArcGIS 5.1 is the production
 runtime; the MapLibre rebuild was superseded by the decision to keep retired
 paths as redirects. The western geography, reader-chosen opening scope, the
 first-visit place chooser and the remembered place behind it, the 637-site
-snow network, the western federal reservoir roster, drought measurements,
-accessibility gates, and transfer policy have all shipped. The Utah state
+snow network, the five-provider western reservoir roster, the upstream sets,
+drought measurements at four area sizes, accessibility gates, and transfer
+policy have all shipped. The Utah state
 mask is retired and the state boundary is no longer published (ADR-067);
 state outlines a reader can see come from Esri's Living Atlas, built from
 U.S. Census Bureau boundaries, and are drawn only where a continuous surface
 means a line cannot hide the subject (ADR-061).
 
-Current product work is narrower:
+Current product work is narrower, in the order it should be worked:
 
-- settle the 21 California candidates still held for source disagreements,
-  each named with its finding in `admitted_cdec_reservoirs.json`;
+- **the U.S. Geological Survey migration, due before early 2027** (ADR-080).
+  The fifth provider is built against the keyless legacy daily-values service,
+  which is documented to retire. Either register the free API key and amend
+  ADR-004 for that one provider, or withdraw its seven reservoirs under
+  ADR-056. Nothing in the repository will warn you — `check_reference_freshness.py`
+  watches reviewed inputs, not service retirements. This is the only item here
+  with an external deadline;
+- **complete a human visual review of every page and viewport.** Automated
+  tests cannot judge colour balance, terrain, density, or visual hierarchy
+  because the ArcGIS canvas is blank in headless Chromium;
+- settle the 21 California and 4 U.S. Geological Survey candidates still held
+  for source disagreements, each named with its finding in its roster file;
 - keep automatically reported late and withdrawn feeds under review;
-- re-check vendor accessibility exceptions and the content policy on SDK
-  upgrades;
-- decide whether to build the upstream trace scoped in
-  [`docs/UPSTREAM-TRACE-SCOPING.md`](docs/UPSTREAM-TRACE-SCOPING.md);
-- work the four remaining items in
-  [`docs/WATER-BODY-AND-NAVIGATION-SCOPING.md`](docs/WATER-BODY-AND-NAVIGATION-SCOPING.md)
-  — reopening the first-visit chooser, water-body names and type from the
-  National Hydrography Dataset, and the remaining reservoir sources for
-  Arizona, Nevada, Idaho, Oregon, Washington and Wyoming. The fifth, nesting
-  the place menus, shipped (ADR-076);
-- give the first-visit chooser its counts. The design that ordered it wanted
-  "eleven reservoirs, eighty-five snow sites" on each tile, which is what
-  makes offering a state with no reservoirs obviously right rather than
-  apparently broken. It needs all three payloads, and a chooser that waits on
-  three fetches arrives late, which is the one thing that shape must not be;
-  and
-- complete a human visual review of every page and viewport. Automated tests
-  cannot judge color balance, terrain, density, or visual hierarchy because
-  the ArcGIS canvas is blank in headless Chromium.
+- re-check the two vendor accessibility items and the content policy on the
+  next SDK upgrade: the `aria-prohibited-attr` entry in `AXE_EXCEPTIONS`, the
+  unnamed Calcite slider handle that `src/ui/slider-label.ts` works around, and
+  the measured `script-src`;
+- resolve the four published points that have no water body in any source that
+  can be asked;
+- source the states still missing — Idaho, Oregon and Wyoming outright, and the
+  rest of Arizona, Nevada and Washington beyond the seven the fifth provider
+  brought. The survey is item 5 of
+  [`docs/WATER-BODY-AND-NAVIGATION-SCOPING.md`](docs/WATER-BODY-AND-NAVIGATION-SCOPING.md),
+  whose other four items are closed; and
+- two deferred decisions, neither of them blocking: whether to order the
+  upstream sets, which is the flowline-navigation slice
+  [`docs/UPSTREAM-TRACE-SCOPING.md`](docs/UPSTREAM-TRACE-SCOPING.md)
+  deliberately left out of ADR-077, and whether to give the first-visit chooser
+  its counts. That design wanted "eleven reservoirs, eighty-five snow sites" on
+  each tile, which is what makes offering a state with no reservoirs obviously
+  right rather than apparently broken. It needs all three payloads, and a
+  chooser that waits on three fetches arrives late, which is the one thing that
+  shape must not be.
 
 Start with [`docs/README.md`](docs/README.md) for the maintained documentation
 index. Key records include:
@@ -321,11 +348,12 @@ index. Key records include:
 - ArcGIS map pixels render blank in headless Chromium. Runtime readiness and a
   human review are therefore both required evidence.
 - A link carries only what a reader changed, so the meaning of an absent
-  parameter is part of the contract. Two defaults have moved: `reservoirs=`
-  when the roster went west, and `powell=` and `mead=` when the two largest
-  reservoirs joined the opening view. A link written before either change and
-  carrying neither parameter now reads as the current default. Both spellings
-  of every parameter are still accepted.
+  parameter is part of the contract. `powell=` and `mead=` changed default
+  when the two largest reservoirs joined the opening view, and a link written
+  before that change reads as the current default. `?reservoirs=` is no longer
+  read or written at all: an old link carrying it opens the current western
+  view, with no hidden scope kept behind it (ADR-087). Both spellings of every
+  surviving parameter are still accepted.
 
 ## License and commercial use
 

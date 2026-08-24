@@ -87,7 +87,8 @@ export function methodsMarkup(search: string): string {
 
     <section class="methods-section" id="sources" aria-labelledby="sources-heading">
       <h2 id="sources-heading">Where the numbers come from</h2>
-      <p>Storage observations come from two federal programmes. Each reservoir record names the one it came from, with the identifier that
+      <p>Storage observations come from five programmes. Three are federal and two are
+        run by a state. Each reservoir record names the one it came from, with the identifier that
         requested it. Any value on this site therefore traces back to its publisher.</p>
       <dl class="methods-list">
         <dt>Bureau of Reclamation</dt>
@@ -114,14 +115,20 @@ export function methodsMarkup(search: string): string {
           daily-values service. Read the source at
           <a href="https://waterservices.usgs.gov/" target="_blank"
             rel="noreferrer">waterservices.usgs.gov</a>.</dd>
-        <dt>Full level for Bureau of Reclamation sites</dt>
+        <dt>Full level, for most reservoirs</dt>
         <dd>The U.S. Army Corps of Engineers National Inventory of Dams. The repository holds these figures rather than requesting them each morning. A
         full level is a property of the dam and does not change daily. Read the source at
           <a href="https://nid.sec.usace.army.mil/" target="_blank"
-            rel="noreferrer">the National Inventory of Dams</a>.</dd>
-        <dt>Full level for the other sites</dt>
-        <dd>The reservoir details published by the Natural Resources Conservation Service
-          alongside the storage readings.</dd>
+            rel="noreferrer">the National Inventory of Dams</a>.
+          <br />This is the only full level the U.S. Geological Survey sites have. That
+          service publishes storage and no full level of its own.</dd>
+        <dt>Full level, where the provider publishes one</dt>
+        <dd>That figure is used in place of the inventory. The operator is the authority
+          on what full means for its own reservoir. The California Data Exchange Center
+          publishes one for many of its reservoirs. The water and climate service
+          publishes one beside some of its readings. A few Bureau of Reclamation
+          reservoirs use a project record, where the inventory disagrees with the
+          readings. Each reservoir's details name the figure used for it.</dd>
         <dt>Snow measurements</dt>
         <dd>Daily snow water equivalent for the mountain sites on the snowpack page. It
         comes from the same Natural Resources Conservation Service water and climate
@@ -216,11 +223,11 @@ export function methodsMarkup(search: string): string {
         instead. The reservoir details say which of the two the percentage measures
         against.</dd>
         <dt>Which full level</dt>
-        <dd>Three different full levels reach this site, and they do not mean the same
-          thing. A <strong>normal full level</strong> is the amount a reservoir is operated
+        <dd>Full levels reach this site in more than one form, and they do not mean the
+          same thing. A <strong>normal full level</strong> is the amount a reservoir is operated
           to hold. A <strong>maximum level</strong> includes storage above that, which is
-          kept empty to catch a flood and is not meant to be occupied. A third group carries
-          the full level the water and climate service publishes beside its readings. Each
+          kept empty to catch a flood and is not meant to be occupied. Others carry the
+          full level the provider publishes beside its own readings. Each
           reservoir's details name the one used for it.
           <br />This matters most where it is least visible. A reservoir measured against
           a maximum level reads lower than the same reservoir measured against a normal
@@ -348,16 +355,17 @@ export function methodsMarkup(search: string): string {
         Every figure on the page is measured again at the size chosen. The drought shares cover the larger areas, and the reservoir totals add up
         over them. The snow figures are the mean over the same measurement sites in a
         different grouping. No figure is an average of the smaller areas' figures.</p>
-      <p><strong>A reservoir is included when one of the two federal programmes above
+      <p><strong>A reservoir is included when one of the five programmes above
         publishes its storage, and this project can trace a full level for it.</strong>
         There is no separate geographic test beyond the west itself. The roster used to be
         narrower — a reservoir had to be connected to Utah by drainage — and it is not any
         more.</p>
       <p data-live="scope-counts" class="methods-live"></p>
       <p><strong>These are the reservoirs this site tracks. They are not all the stored
-        water in the west.</strong> The two federal programmes cover the large federal
-        projects well and cover other reservoirs unevenly. Several states publish their own
-        reservoir records that this site does not yet read. A drainage area can therefore
+        water in the west.</strong> The three federal programmes cover the large federal
+        projects well and cover other reservoirs unevenly. California and Colorado publish
+        their own reservoir records and this site reads both. Other states publish records
+        this site does not yet read. A drainage area can therefore
         hold much more stored water than the total here shows. Read every combined figure on
         this site as a figure about the reservoirs it names.</p>
       <p>The maps and tables can narrow the list by state, and that filter follows the
@@ -368,7 +376,7 @@ export function methodsMarkup(search: string): string {
 
     <section class="methods-section" id="coverage" aria-labelledby="coverage-heading">
       <h2 id="coverage-heading">How complete this is</h2>
-      <p>The two federal programmes cover the large federal projects well. They cover
+      <p>The three federal programmes cover the large federal projects well. They cover
         everything else unevenly, so the reservoirs this site tracks and the stored water
         in a state are different quantities. In some states they are very different.</p>
       <p>The table says what this site holds for each state, and what it is known to be

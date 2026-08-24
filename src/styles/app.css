@@ -13,6 +13,26 @@
      terracotta everywhere, because that colour is also carrying "storage
      fell" arrows on large type where it is already fine. */
   --app-badge-text: #9a5339;
+  /* One type ladder, shared by every page.
+   *
+   * Section headings carried 1rem in five rules and 1.05rem in a sixth, so
+   * a filter bar's heading read a step below the card heading above it
+   * although the two name sibling sections. The three levels below it were
+   * worse: a filter's group heading, its control labels and its control
+   * text were each set two or three different ways, and the Calcite half of
+   * them was not set at all -- a `calcite-label` paints its text inside its
+   * own shadow root at `--calcite-font-size-relative-base`, so the
+   * `font-size` a stylesheet puts on the host never reaches it. The labels
+   * therefore rendered at 14px in Calcite's own text colour beside native
+   * labels at 11.5px in the muted one, a step under the heading they sat
+   * beneath rather than a step under it.
+   *
+   * The ladder strictly decreases: section 16.8px, group 13.6px, label
+   * 11.5px. Control text is not a heading and sits outside it at 14.4px. */
+  --app-section-heading: 1.05rem;
+  --app-group-heading: .85rem;
+  --app-control-label: .72rem;
+  --app-control-text: .9rem;
   --calcite-color-brand: var(--app-accent);
   font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
 }
@@ -195,7 +215,7 @@ arcgis-map > [slot="bottom-right"] {
 /* The map key. Two lists: the storage classes, which are a scale and read
  * as one block, and the three symbols that are not a class, which each need
  * a sentence. Both are generated in legend.ts from the class table. */
-.legend h3 { margin: 0 0 .5rem; font-size: 1rem; }
+.legend h3 { margin: 0 0 .5rem; font-size: var(--app-section-heading); }
 .storage-map-legend {
   position: absolute;
   z-index: 4;
@@ -291,7 +311,7 @@ arcgis-map > [slot="bottom-right"] {
 }
 .basemap-note[hidden] { display: none; }
 
-.reservoir-list h3 { margin: 0; font-size: 1rem; }
+.reservoir-list h3 { margin: 0; font-size: var(--app-section-heading); }
 .list-hint {
   margin: .25rem 0 .5rem;
   color: var(--app-muted);
@@ -526,14 +546,45 @@ arcgis-map > [slot="bottom-right"] {
  * directly. */
 .control-slot { display: contents; }
 .filters h3,
-.detail-placeholder h2 { margin: 0; font-size: 1rem; }
+.detail-placeholder h2 { margin: 0; font-size: var(--app-section-heading); }
 .filter-summary,
 .detail-placeholder p { color: var(--app-muted); font-size: .875rem; line-height: 1.5; }
 /* min-width: 0 for the same reason the reservoir name has it: a select sizes
  * itself to its longest option, by a platform-dependent amount that comes
  * from font metrics, and would otherwise widen the panel and the page. */
-.filters calcite-label { min-width: 0; margin-block-start: .5rem; }
+/* .875rem, which is the gap the fieldset and the period note below already
+ * carry, so the whole control stack has one pitch. It was .5rem on top of
+ * the 12px bottom margin every Calcite label used to add; clearing that
+ * margin for the sake of the rows on the other pages left eight pixels
+ * between one select and the next control's label. */
+.filters calcite-label { min-width: 0; margin-block-start: .875rem; }
 .filters calcite-select { min-width: 0; width: 100%; }
+/* A control label is a control label, native or Calcite.
+ *
+ * `calcite-label` renders the slotted text inside a shadow `.container`
+ * that sets its own `font-size: var(--calcite-font-size-relative-base)` and
+ * `color: var(--calcite-label-text-color, var(--calcite-color-text-1))`, so
+ * a `font-size` or `color` on the host is never seen -- these labels drew
+ * at 14px in Calcite's strongest text colour, one step under the section
+ * heading above them instead of a step under it. `font-weight` and
+ * `letter-spacing` are not set in the shadow root and do inherit, which is
+ * why they are still declared on the host.
+ *
+ * `--calcite-select-font-size` is pinned beside the label token because the
+ * select reads the same relative-size token at scale m: without it, making
+ * the label smaller would shrink the control's own text with it. */
+.filters calcite-label,
+.dashboard-filterbar calcite-label {
+  --calcite-font-size-relative-base: var(--app-control-label);
+  --calcite-label-text-color: var(--app-muted);
+  --calcite-label-margin-bottom: 0;
+  font-weight: 700;
+  letter-spacing: .01em;
+}
+.filters calcite-select,
+.dashboard-filterbar calcite-select {
+  --calcite-select-font-size: var(--app-control-text);
+}
 .filters .large-reservoirs {
   display: grid;
   gap: .5rem;
@@ -543,9 +594,13 @@ arcgis-map > [slot="bottom-right"] {
   border: 1px solid var(--app-border);
   border-radius: .4rem;
 }
+/* A group heading inside a filter: one step below the section heading that
+ * names the whole panel, one step above the labels of the controls it
+ * holds. The same level as "Map options" and "Site options" on the pages
+ * that carry a filter bar. */
 .filters .large-reservoirs legend {
   padding-inline: .25rem;
-  font-size: .8125rem;
+  font-size: var(--app-group-heading);
   font-weight: 700;
 }
 .filters .large-reservoirs p {
@@ -757,7 +812,7 @@ arcgis-map > [slot="bottom-right"] {
 /* The twelve-month slider. Sits between the analysis controls and the list,
  * because it changes what the list is showing. Its gap comes from the
  * `.panel-copy > * + *` rule with every other section's. */
-.months h3 { margin: 0; font-size: 1rem; }
+.months h3 { margin: 0; font-size: var(--app-section-heading); }
 .month-current {
   margin: .25rem 0 .35rem;
   color: var(--app-muted);

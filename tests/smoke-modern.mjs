@@ -498,8 +498,14 @@ const VIEWPORTS = [
   { name: "small-phone", width: 360, height: 780 }
 ];
 
+/* The provider acronyms are here for the same reason `RISE` and `AWDB` are:
+ * a reader meets "U.S. Geological Survey", never the service's own initials,
+ * and every provider's name arrives from a payload field that spells it the
+ * short way. `CDEC` was already named in the visible-language rule and had
+ * nothing enforcing it; `NWIS`, `CDSS` and `USGS` joined the roster with the
+ * fifth provider. */
 const RETIRED_TERMS =
-  /\bcadence\b|stale feed|period-of-record|seasonal percentile|\baf\b|\bRISE\b|\bAWDB\b/i;
+  /\bcadence\b|stale feed|period-of-record|seasonal percentile|\baf\b|\bRISE\b|\bAWDB\b|\bCDEC\b|\bCDSS\b|\bUSGS\b|\bNWIS\b/i;
 
 /* Text a reader can see, including inside every open shadow root. Calcite
  * and the ArcGIS components render their own labels in shadow DOM, so the
@@ -5118,6 +5124,108 @@ for (const failure of [
       }
       await context.close();
     }
+  }
+}
+
+/*
+ * The type ladder, on every filter surface.
+ *
+ * Section heading, then group heading, then control label, each strictly
+ * smaller than the one above it -- and one control-label size for the whole
+ * surface whether the label is native or Calcite. That last clause is the
+ * one that broke: a `calcite-label` paints its slotted text inside its own
+ * shadow root at `--calcite-font-size-relative-base`, so the `font-size` the
+ * stylesheet set on the host was never read and half the labels in a row
+ * drew at 14px in Calcite's own text colour beside native ones at 11.5px.
+ * The measurement therefore has to reach the shadow container; reading the
+ * host would have reported the ladder as correct throughout.
+ */
+{
+  console.log("\n=== Filter type ladder");
+  const viewport = VIEWPORTS[0];
+  const context = await newPageContext(browser, viewport);
+  const tab = await context.newPage();
+  const errors = [];
+  tab.on("pageerror", (err) => errors.push(`uncaught: ${err.message}`));
+  const label = "Filter type ladder";
+  try {
+    for (const page of [
+      { name: "Storage map", url: `${URL}index.html`, signal: "__dashboardReady" },
+      { name: "Storage Charts", url: `${URL}overview.html`, signal: "__overviewReady" },
+      { name: "Snowpack", url: `${URL}snow.html`, signal: "__snowReady" },
+      { name: "Drought", url: `${URL}drought.html`, signal: "__droughtReady" }
+    ]) {
+      await tab.goto(page.url, { waitUntil: "domcontentloaded", timeout: 60000 });
+      await tab.waitForFunction((key) => window[key] !== undefined,
+        page.signal, { timeout: 120000 });
+      const state = await tab.evaluate(() => {
+        const surface = document.querySelector(".dashboard-filterbar")
+          || document.querySelector(".filters");
+        if (!surface) return null;
+        /* The text a reader sees, not the host a stylesheet can reach. */
+        const textStyle = (el) => {
+          if (el.tagName === "CALCITE-LABEL" && el.shadowRoot) {
+            const container = el.shadowRoot.querySelector(".container");
+            if (container) return getComputedStyle(container);
+          }
+          return getComputedStyle(el);
+        };
+        const px = (value) => Math.round(parseFloat(value) * 100) / 100;
+        const heading = surface.querySelector("h2, h3");
+        const group = document.querySelector(
+          ".map-controls-label, .large-reservoirs legend");
+        /* Every label that names one control. The inline chips in a pane
+         * header are their own kind of control and are measured with them. */
+        const labels = [...surface.querySelectorAll("label, calcite-label")];
+        const sizes = [...new Set(labels.map((el) => px(textStyle(el).fontSize)))];
+        const colors = [...new Set(labels
+          .filter((el) => el.closest(
+            ".filterbar-search, .filterbar-controls, .map-filter-controls, "
+            + ".snow-site-filter-controls") || el.parentElement === surface)
+          .map((el) => textStyle(el).color))];
+        return {
+          labelCount: labels.length,
+          sizes,
+          colors,
+          headingSize: heading ? px(getComputedStyle(heading).fontSize) : 0,
+          groupSize: group ? px(getComputedStyle(group).fontSize) : 0
+        };
+      });
+      console.log(`  ${label} (${page.name}):`, JSON.stringify(state));
+      if (!state) {
+        failures.push(`${label} ${page.name}: no filter surface found`);
+        continue;
+      }
+      check(state.labelCount > 0, `${label} ${page.name}: no control labels found`);
+      check(state.sizes.length === 1,
+        `${label} ${page.name}: the surface's control labels render at `
+        + `${state.sizes.length} different sizes ${JSON.stringify(state.sizes)} -- `
+        + "a Calcite label needs --calcite-font-size-relative-base, not a font-size");
+      check(state.colors.length === 1,
+        `${label} ${page.name}: stacked control labels render in `
+        + `${state.colors.length} different colours ${JSON.stringify(state.colors)} -- `
+        + "a Calcite label needs --calcite-label-text-color, not a color");
+      check(state.headingSize > Math.max(...state.sizes),
+        `${label} ${page.name}: the section heading (${state.headingSize}) does not `
+        + `stand above the control labels (${JSON.stringify(state.sizes)})`);
+      /* Not every surface holds a group. The storage charts bar is one row
+       * of filters and names no group inside itself. */
+      if (state.groupSize > 0) {
+        check(state.headingSize > state.groupSize,
+          `${label} ${page.name}: the section heading (${state.headingSize}) does not `
+          + `stand above the group heading (${state.groupSize})`);
+        check(state.groupSize > Math.max(...state.sizes),
+          `${label} ${page.name}: the group heading (${state.groupSize}) does not `
+          + `stand above the control labels (${JSON.stringify(state.sizes)})`);
+      }
+    }
+  } catch (error) {
+    failures.push(`${label}: ${error.message}`);
+  } finally {
+    if (errors.length) {
+      for (const message of errors) failures.push(`${label}: ${message}`);
+    }
+    await context.close();
   }
 }
 

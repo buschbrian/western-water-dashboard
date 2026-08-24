@@ -32,8 +32,10 @@ on any page.
 3. **Check layer order against the subject.** Reference geometry may sit over a
    continuous surface and never over points (ADR-061); the storage and snow maps
    keep their basemap reference layers sunk (ADR-042).
-4. **Keep the readiness contract.** Add fields to `window.__dashboardReady`;
-   never remove one. Clear `aria-busy` on every exit, failures included.
+4. **Keep the readiness contract.** Add fields to `window.__dashboardReady`
+   and never remove one while the behaviour it reports still exists. A field
+   whose control is retired is removed with it (ADR-090). Clear `aria-busy` on
+   every exit, failures included.
 5. **Say it in Simplified Technical English**, `aria-label`s included.
 6. **Run the browser suite.** Layout, visible text and console errors are
    invisible to the unit tests.

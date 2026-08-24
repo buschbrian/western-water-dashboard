@@ -1,6 +1,12 @@
 # Western reservoir source candidates
 
-Status: Research inventory, checked 2026-08-20
+Status: Research inventory, checked 2026-08-20. **Three of its candidates
+were built since**: California (2026-08-20), Colorado (2026-08-21) and the
+U.S. Geological Survey (2026-08-22), which took the roster from two providers
+to five. Idaho, Oregon and Wyoming are the survey's remaining open ground. The
+survey below is as it was written on its date and is not rewritten to describe
+today; the current source list is
+[`AUTHORITATIVE-SOURCE-INVENTORY.md`](AUTHORITATIVE-SOURCE-INVENTORY.md).
 
 The production roster is now western and is still fed by two federal
 providers, the Bureau of Reclamation and the Natural Resources Conservation
