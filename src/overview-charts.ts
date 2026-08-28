@@ -982,6 +982,13 @@ export async function renderArcgisNormalChart(
     type: "esriSLS", style: "esriSLSDash", width: 1.6, color: [...CHART_INK.mean]
   }, 0, "y");
   model.setGuideVisibility(true, 0, "y");
+  /* Over the dots, not under them. A guide defaults to the back of the plot,
+   * and this one is the chart's whole claim -- "dots below the dashed line
+   * hold less than they usually do" -- so the reader has to be able to see
+   * which side of it a dot is on. Several hundred reservoirs sit within a few
+   * points of 100 and the cluster buried the line exactly where it was doing
+   * the most work. */
+  model.setGuideAbove(true, 0, "y");
   model.showLinearTrend = false;
 
   /* The SDK only supports numeric fields in `additionalTooltipField`; the

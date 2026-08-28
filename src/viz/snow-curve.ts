@@ -93,10 +93,14 @@ export function renderSnowCurve(
 
   for (let level = 0; level <= top; level += step) {
     const at = y(level);
-    svg.append(element("line", {
-      class: level === 100 ? "snow-normal-line" : "snow-grid",
-      x1: PAD_LEFT, y1: at.toFixed(1), x2: WIDTH - PAD_RIGHT, y2: at.toFixed(1)
-    }));
+    /* The line at normal is drawn after the season, not here with the grid:
+     * see below. Its axis label still belongs with the other labels. */
+    if (level !== 100) {
+      svg.append(element("line", {
+        class: "snow-grid",
+        x1: PAD_LEFT, y1: at.toFixed(1), x2: WIDTH - PAD_RIGHT, y2: at.toFixed(1)
+      }));
+    }
     const label = element("text", {
       class: "snow-axis", x: PAD_LEFT - 6, y: (at + 3.5).toFixed(1),
       "text-anchor": "end"
@@ -140,6 +144,23 @@ export function renderSnowCurve(
     run.push(`${x(point.date).toFixed(1)},${y(point.percent).toFixed(1)}`);
   }
   flush();
+
+  /* Normal, over the season rather than under it. This is the line the curve
+   * is read against, so it cannot be the one thing the curve hides: drawn
+   * with the gridlines it disappeared under the season wherever the two ran
+   * together, which is exactly where a reader is asking whether snow is above
+   * or below normal. The same rule puts the scatter's "usual level" guide
+   * over its dots in `overview-charts.ts`.
+   *
+   * Drawn only when the gridline loop above reached exactly 100, which is
+   * where its "Normal" axis label is written. The wider steps (250, 500) step
+   * straight over it, and a line without its label is not a reference. */
+  if (100 % step === 0) {
+    svg.append(element("line", {
+      class: "snow-normal-line",
+      x1: PAD_LEFT, y1: y(100).toFixed(1), x2: WIDTH - PAD_RIGHT, y2: y(100).toFixed(1)
+    }));
+  }
 
   // The newest reading gets a marker and a spoken value.
   const latest = [...points].reverse().find((point) => point.percent !== null);

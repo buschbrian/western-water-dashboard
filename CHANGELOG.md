@@ -240,6 +240,32 @@ and is not listed here.
   `innerText` returns what CSS transformed, so a screen reader and the smoke
   suite were both handed `STORED NOW`.
 
+### Fixed
+
+- **Every ranked reservoir is named again.** The storage map's ranking chart
+  gave each bar 18 pixels. A reservoir name wraps to two lines in that axis
+  lane and the SDK drops a category label it cannot fit, so the chart
+  published a name for every second bar and left the ones between it
+  anonymous. The row is 26 pixels now and the whole set keeps its names.
+
+- **Long drainage-area names no longer land on each other.** The storage
+  charts allowed two lines for a category label. A drainage area carries its
+  states, so "Lower Colorado-Lake Mead (AZ, NV, UT)" wraps to three and the
+  third line sat on the neighbouring name. Category rows now hold three lines.
+
+- **The two comparison charts fill their row.** Four of the six chart cards
+  span every column, so only two can share a row -- but the grid fitted as
+  many columns as the width allowed and opened a third at about 1400px that
+  nothing could fill. The twelve-month and scatter cards shrank to 417 pixels
+  beside an empty third of the row. The grid now stops at two columns.
+
+- **A reference line is drawn over the data it explains.** The scatter's usual
+  level ran behind the dots, and several hundred reservoirs sit within a few
+  points of it, so the line disappeared exactly where "above or below normal"
+  is read. The same rule now applies to the snow season curve's normal line.
+  The drought scatter's halfway lines stay behind its points: those are
+  scaffolding for reading the corners, not a claim about the data.
+
 ### Documentation
 
 - **The maintained documentation describes the western product.** The project

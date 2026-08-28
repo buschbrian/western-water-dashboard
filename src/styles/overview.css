@@ -372,10 +372,21 @@ body {
 /* Six charts now, not two. `auto-fit` with a floor rather than a named
  * column count, for the same reason the filter bar is flex: the layout
  * should not have to know how many charts there are, and adding the fifth
- * and sixth to a two-column track list is what would have left a hole. */
+ * and sixth to a two-column track list is what would have left a hole.
+ *
+ * Two columns is the ceiling, though, and that *is* a property of the set:
+ * four of the six cards are `.overview-card-wide` and span every column, so
+ * only two cards can ever share a row. Left to fit as many 28rem tracks as
+ * the width allows, a third column opened at about 1400px and nothing could
+ * fill it -- the twelve-month and scatter cards shrank to 417px each and the
+ * right third of the row sat empty. The floor here is therefore whichever is
+ * larger: the 28rem readable minimum, or half the row. Half the row can
+ * never be beaten into three tracks, so the count falls from two to one and
+ * never rises to three. */
 .overview-chart-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(28rem, 100%), 1fr));
+  grid-template-columns:
+    repeat(auto-fit, minmax(max(min(28rem, 100%), calc(50% - .375rem)), 1fr));
   gap: .75rem;
 }
 /* Two charts sharing a row start at the same height.
@@ -487,13 +498,19 @@ body {
  * "Coastal" sitting on "Northern" with no gap between the two areas. The
  * chart looked like it had lost a row rather than like it had two.
  *
- * 1.6rem holds two 11px lines and the leading between them. It is applied to
- * every category chart rather than only the two with long names, because
- * which names are long is the reader's filter to change, not a property of
- * the chart. */
+ * 1.6rem held two 11px lines and the leading between them, and two was one
+ * short. A drainage area carries its states -- "Lower Colorado-Lake Mead
+ * (AZ, NV, UT)" wraps to three lines in this lane -- and the third line
+ * overflowed the row and landed on the neighbouring name: measured at 1280,
+ * "NV, UT)" sat on top of "Upper Colorado-", and "Snake" on "(WA)". The SDK
+ * wraps a vertical label it cannot fit and does not shrink the row to match.
+ *
+ * 2.4rem holds three of those lines. It is applied to every category chart
+ * rather than only the ones with long names, because which names are long is
+ * the reader's filter to change, not a property of the chart. */
 #capacity-chart,
 #watershed-chart {
-  height: max(27rem, calc(var(--chart-category-count, 0) * 1.6rem + 6rem));
+  height: max(27rem, calc(var(--chart-category-count, 0) * 2.4rem + 6rem));
 }
 /* The spread chart is SVG now and sizes to its own content, so it takes no
    height from the host at all -- the row height lives in `viz/spread.ts`
@@ -820,7 +837,7 @@ body {
      names, not fewer, so this is the width that needs the room most. */
   #capacity-chart,
   #watershed-chart {
-    height: max(23rem, calc(var(--chart-category-count, 0) * 1.6rem + 6rem));
+    height: max(23rem, calc(var(--chart-category-count, 0) * 2.4rem + 6rem));
   }
 }
 

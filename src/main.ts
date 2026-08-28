@@ -640,8 +640,21 @@ async function renderRankingChart(): Promise<void> {
   host.setAttribute("aria-busy", "true");
   /* One readable bar per reservoir. The row is far shorter than the full
    * set, so the host takes the height the bars need and the region scrolls,
-   * exactly the way the table beside it does. */
-  host.style.blockSize = `${Math.max(272, records.length * 18 + 88)}px`;
+   * exactly the way the table beside it does.
+   *
+   * 26 pixels a bar, not 18. A reservoir name wraps to two 11px lines in
+   * this axis lane, and the SDK drops a category label it cannot fit rather
+   * than overlapping it -- so at 18 the chart published a name for every
+   * *second* bar and left the ones between it anonymous, which is worse than
+   * a taller chart: a ranked bar whose name is missing cannot be read at all.
+   * Measured at 26 the whole set keeps its names.
+   *
+   * The overview's category charts allow three lines (`overview.css`) because
+   * their categories are drainage areas carrying a state list. Reservoir
+   * names are shorter, and 382 of them at a three-line row would make a
+   * canvas tall enough to approach the browser's own limit, so this surface
+   * buys back only the line it actually needs. */
+  host.style.blockSize = `${Math.max(272, records.length * 26 + 88)}px`;
   try {
     /* Loaded when the reader first opens the row, not with the page: the
      * charts package is the heaviest optional part of the application, and
