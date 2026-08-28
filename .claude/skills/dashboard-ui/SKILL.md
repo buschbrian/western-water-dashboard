@@ -28,7 +28,8 @@ on any page.
    360; the zoom control has a 56px lane below 640px; grid and flex children
    carrying controls need `min-width: 0`; `calcite-navigation` clips rather
    than scrolls.
-2. **Take colour from the table, never from a literal** (ADR-008).
+2. **Take colour from the table, never from a literal** (ADR-008), and keep one
+   colour language per map across pages (ADR-032).
 3. **Check layer order against the subject.** Reference geometry may sit over a
    continuous surface and never over points (ADR-061); the storage and snow maps
    keep their basemap reference layers sunk (ADR-042).
