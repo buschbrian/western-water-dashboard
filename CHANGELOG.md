@@ -297,6 +297,14 @@ and is not listed here.
   unit is one CSS pixel; the type, the padding and the axis stay put and only
   the plot lane spreads.
 
+- **A reservoir's twelve-month chart labels every month it has room for.** The
+  chart dropped to every third month whatever its size, a rule set when it
+  only ever drew at about 300 pixels in the storage details panel. The
+  reservoir page gives it around 700, where all twelve labels fit with room to
+  spare, so seven of them were being left off a chart wide enough to carry
+  them. The interval is chosen from the width now, and counted back from the
+  newest month, so the month a reader looks for first is always named.
+
 ### Documentation
 
 - **The maintained documentation describes the western product.** The project

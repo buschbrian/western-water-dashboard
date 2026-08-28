@@ -1301,7 +1301,32 @@ for (const viewport of VIEWPORTS) {
         busy: chartHost?.getAttribute("aria-busy"),
         // The table is the text alternative, so it has to be reachable
         // rather than merely present in the markup.
-        summary: host?.querySelector(".trend-details summary")?.textContent ?? ""
+        summary: host?.querySelector(".trend-details summary")?.textContent ?? "",
+        /* The month labels along the bottom. How many are drawn is decided
+         * from the width now, so the assertion is that they clear each other
+         * and stay on the canvas -- not that there is any particular number
+         * of them. The newest month has to be one of them, because it is the
+         * one a reader looks for first. */
+        months: (() => {
+          if (!chart) return null;
+          const labels = [...chart.querySelectorAll("text.trend-axis")]
+            .filter((node) => /^[A-Z][a-z]{2} \d\d$/.test((node.textContent || "").trim()));
+          const boxes = labels.map((node) => node.getBoundingClientRect())
+            .sort((a, b) => a.left - b.left);
+          const canvas = chart.getBoundingClientRect();
+          let collisions = 0;
+          for (let i = 1; i < boxes.length; i += 1) {
+            if (boxes[i].left < boxes[i - 1].right - 0.5) collisions += 1;
+          }
+          return {
+            count: labels.length,
+            collisions,
+            offCanvas: boxes.filter((box) =>
+              box.left < canvas.left - 0.5 || box.right > canvas.right + 0.5).length,
+            newest: labels[labels.length - 1]?.textContent?.trim() ?? "",
+            rows: host?.querySelectorAll(".trend-table tbody tr").length ?? 0
+          };
+        })()
       };
     }, detailSelector);
     check(history.bars > 0, `${label}: the twelve-month chart drew no bars`);
@@ -1312,6 +1337,15 @@ for (const viewport of VIEWPORTS) {
       && Math.abs(history.viewBoxWidth - history.hostWidth) <= 1,
     `${label}: history is ${history.chartWidth}px in a ${history.hostWidth}px host `
       + `with a ${history.viewBoxWidth}-unit viewBox`);
+    check(history.months !== null && history.months.count > 0,
+      `${label}: the twelve-month chart labels no month on its axis`);
+    check(history.months === null || history.months.collisions === 0,
+      `${label}: ${history.months?.collisions} pairs of month labels overlap`);
+    check(history.months === null || history.months.offCanvas === 0,
+      `${label}: ${history.months?.offCanvas} month labels start outside the chart`);
+    check(history.months === null || history.months.count <= history.months.rows,
+      `${label}: ${history.months?.count} month labels for `
+      + `${history.months?.rows} months of history`);
     check(history.busy !== "true", `${label}: history is still busy after resize`);
     check(history.summary.length > 0,
       `${label}: the twelve-month table has no control to open it`);

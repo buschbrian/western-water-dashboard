@@ -24,6 +24,26 @@ const PAD_LEFT = 38;
 const PAD_RIGHT = 6;
 const PAD_TOP = 8;
 const PAD_BOTTOM = 22;
+/* The lane one month label needs. "Sep 25" measures about 30 units at the
+ * axis type size; 40 leaves clear space between neighbours. */
+const MONTH_LABEL_LANE = 40;
+
+/**
+ * How many months to step between labels so they do not collide.
+ *
+ * This used to be a fixed every-third-month, decided when the chart only ever
+ * drew at about 300 pixels in the storage details panel. The chart measures
+ * its host now, and the reservoir page gives it around 700, where all twelve
+ * labels fit with room to spare -- but the fixed rule kept dropping seven of
+ * them. Deciding from the width instead means a wide card shows every month
+ * and a narrow one still thins until the labels clear each other.
+ */
+export function monthLabelStep(months: number, plotWidth: number): number {
+  for (let step = 1; step <= months; step += 1) {
+    if (Math.ceil(months / step) * MONTH_LABEL_LANE <= plotWidth) return step;
+  }
+  return Math.max(1, months);
+}
 
 function element<K extends keyof SVGElementTagNameMap>(
   name: K, attributes: Record<string, string | number>
@@ -129,9 +149,13 @@ function buildTrendChart(
     svg.append(element("polyline", { class: "trend-normal", points: normalPoints.join(" ") }));
   }
 
-  // Every third month, and always the last: twelve labels collide at 300px.
+  /* Counted back from the newest month rather than forward from the oldest,
+   * so the month a reader looks for first is always labelled and the gaps
+   * stay even. Forward from the oldest, a step that did not divide the run
+   * left the last two labels adjacent and touching. */
+  const labelStep = monthLabelStep(months.length, plotWidth);
   months.forEach((month, index) => {
-    if (index % 3 !== 0 && index !== months.length - 1) return;
+    if ((months.length - 1 - index) % labelStep !== 0) return;
     const label = element("text", {
       class: "trend-axis", x: x(index).toFixed(1), y: HEIGHT - 7, "text-anchor": "middle"
     });
