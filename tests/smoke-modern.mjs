@@ -1962,6 +1962,19 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
           (most, node) => Math.max(most, node.getBoundingClientRect().width), 0),
         truncated: names.filter((name) => name.endsWith("…")).length,
         longest: names.reduce((most, name) => Math.max(most, name.length), 0),
+        /* Measured, not counted. A name is right-anchored against a lane, so
+         * one too wide for that lane is not shortened -- it keeps every
+         * character and starts to the left of the canvas, where the first
+         * word simply is not drawn. The two string checks above cannot see
+         * that, and did not: eight western names ran off this chart's left
+         * edge while both of them passed. */
+        offCanvas: (() => {
+          const svg = host?.querySelector("svg");
+          if (!svg) return 0;
+          const edge = svg.getBoundingClientRect().left;
+          return [...(host?.querySelectorAll(".spread-name") ?? [])]
+            .filter((node) => node.getBoundingClientRect().left < edge - 0.5).length;
+        })(),
         busy: host?.getAttribute("aria-busy"),
         hostWidth: host?.getBoundingClientRect().width ?? 0,
         svgWidth: host?.querySelector("svg")?.getBoundingClientRect().width ?? 0,
@@ -1981,6 +1994,8 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
       `${label}: #spread-chart shortened ${spread.truncated} area names`);
     check(spread.longest > 12,
       `${label}: #spread-chart names look clipped, longest is ${spread.longest} characters`);
+    check(spread.offCanvas === 0,
+      `${label}: #spread-chart draws ${spread.offCanvas} area names off its left edge`);
     check(spread.busy === "false", `${label}: #spread-chart still reports itself busy`);
     check(Math.abs(spread.svgWidth - spread.hostWidth) <= 1
       && Math.abs(spread.viewBoxWidth - spread.hostWidth) <= 1,

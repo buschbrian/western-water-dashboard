@@ -37,6 +37,7 @@
 import type { SpreadBox } from "../overview-model";
 import { storageColor } from "./classes";
 import { drainageLabel } from "./format";
+import { labelLane, measureNameWidth } from "./label-lane";
 import { renderResponsiveChart, stopResponsiveChart } from "./responsive";
 
 const SVG = "http://www.w3.org/2000/svg";
@@ -50,12 +51,23 @@ const PAD_TOP = 26;
 const PAD_BOTTOM = 38;
 /* The measured lane the drought page's ranked charts use, for the longest
  * drainage-area name this data carries. */
-const PAD_LEFT = 162;
+const BASE_PAD_LEFT = 162;
 /* Wide enough for the right-aligned sample count beside each row, which is
  * the one number a reader needs to weigh a box on a chart whose subject is
  * its outliers: a three-reservoir box and a forty-reservoir box are drawn
  * identically, and the count is the difference. */
-const PAD_RIGHT = 40;
+/* The reservoir-count column outside the plot on the right.
+ *
+ * Measured rather than guessed: the widest count is 11 units wide and, drawn
+ * right-anchored 4 units in, reaches 15 units back from the edge. 40 reserved
+ * 25 units of nothing, which on a 316-unit phone chart is width the name lane
+ * needed -- "Lower Colorado-Lake Mead (AZ, NV, UT)" wants 203 and could only
+ * be given 196, so it lost its first word. 26 leaves the count its 15 and
+ * still clears the plot's right edge, arrow and all, by 11. */
+const PAD_RIGHT = 26;
+/* The narrowest data lane worth drawing. `minimumWidth` below reserves
+ * exactly this, so it is also how far the name lane may grow. */
+const MINIMUM_PLOT = 80;
 const BOX_HEIGHT = 13;
 const OUTLIER_RADIUS = 3;
 
@@ -96,8 +108,17 @@ export function renderSpread(
   }
 
   return renderResponsiveChart(host, (width) => {
-  const chartWidth = Math.max(PAD_LEFT + PAD_RIGHT + 80, width);
+  const chartWidth = Math.max(BASE_PAD_LEFT + PAD_RIGHT + MINIMUM_PLOT, width);
   const height = PAD_TOP + boxes.length * ROW_HEIGHT + PAD_BOTTOM;
+  /* The name lane, measured from the names this chart is about to draw. A
+   * drainage area carries its states, and at the fixed 162 the western roster
+   * pushed eight of them off the left edge -- "Escalante Desert-Sevier Lake
+   * (NV, UT)" began as "ante Desert-Sevier Lake". Same rule, and the same
+   * helper, as the drought comparison charts. */
+  const names = boxes.map((box) => drainageLabel(box.group, box.groupStates));
+  const PAD_LEFT = labelLane(
+    measureNameWidth(host, names, "spread-name"),
+    chartWidth - PAD_RIGHT - MINIMUM_PLOT, BASE_PAD_LEFT);
   const plotWidth = chartWidth - PAD_LEFT - PAD_RIGHT;
   const x = (percent: number): number =>
     PAD_LEFT + (Math.min(AXIS_MAX, Math.max(0, percent)) / AXIS_MAX) * plotWidth;
@@ -237,5 +258,5 @@ export function renderSpread(
 
   host.replaceChildren(svg);
   return boxes.length;
-  }, { fallbackWidth: FALLBACK_WIDTH, minimumWidth: PAD_LEFT + PAD_RIGHT + 80 });
+  }, { fallbackWidth: FALLBACK_WIDTH, minimumWidth: BASE_PAD_LEFT + PAD_RIGHT + MINIMUM_PLOT });
 }

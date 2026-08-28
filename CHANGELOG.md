@@ -305,6 +305,14 @@ and is not listed here.
   them. The interval is chosen from the width now, and counted back from the
   newest month, so the month a reader looks for first is always named.
 
+- **The storage spread chart shows every drainage-area name in full.** Eight
+  of them ran off its left edge -- "Escalante Desert-Sevier Lake (NV, UT)"
+  began as "ante Desert-Sevier Lake" -- because the name lane was fixed at the
+  width the Utah roster needed. It is measured from the names on the chart
+  now, the same rule the drought comparison charts follow. The count column
+  beside the boxes was reserving 40 units for a figure that needs 15, and the
+  25 units that freed are what let the longest name fit on a phone.
+
 ### Documentation
 
 - **The maintained documentation describes the western product.** The project
