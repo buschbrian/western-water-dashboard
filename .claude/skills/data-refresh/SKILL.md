@@ -1,6 +1,6 @@
 ---
 name: data-refresh
-description: Run, debug or change the daily data refresh, its drought computation, its self-healing issues or the long-lived rebuilds.
+description: Run, debug or change the daily data refresh — its reservoir, drought and snow stages, its self-healing issues and the long-lived rebuilds. Use when the morning job failed or opened an issue, a committed payload looks wrong or stale, or the refresh sequence, its retries or its published file list need changing.
 ---
 
 # Data refresh

@@ -12,7 +12,9 @@ visits.
 ## Read first
 
 [`docs/architecture/scopes.md`](../../../docs/architecture/scopes.md), all of
-it. Then ADR-063, ADR-068, ADR-064, ADR-044.
+it. Then ADR-063, ADR-068, ADR-064, ADR-073 (regions are the third drawn
+level) and ADR-088 (drought offers HUC-8; storage and snow do not). ADR-044
+for the opening box.
 
 ## The four scopes are four questions
 
@@ -42,7 +44,10 @@ constant** — that coupling is what ADR-068 was written to break.
    outranks everywhere. The stored choice is never written back into the URL.
    The first-visit chooser appears only when the query string is **empty**.
 4. Check the level contract: `?level=` carries the digit count, absent means
-   basins, and changing it is a navigation (`location.replace`), not a
+   basins. The drawn levels are `DRAWN_SCOPES = {6, 4, 2}`
+   (`watershed_scopes.py`); drought alone adds 8 through
+   `DROUGHT_DRAWN_SCOPES`, because storage and snow publish no figures there
+   (ADR-088). Changing the level is a navigation (`location.replace`), not a
    re-render.
 5. Check the dominant-reservoir contract: readers start with Powell and Mead
    included; the library default is the opposite on purpose. Rows already

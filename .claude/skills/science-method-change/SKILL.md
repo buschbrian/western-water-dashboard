@@ -1,6 +1,6 @@
 ---
 name: science-method-change
-description: Change a published estimator — seasonal normal, rank, percentile, drought sampling or area measurement. Strict procedure covering method version, rebuilds and regression evidence.
+description: Change a published estimator — seasonal normal, history rank, percentile, snow rollup, drought sampling or area measurement. Use whenever how a published number is computed would change, including a refactor that could move an output by a rounding step, or when asked to bump a method version, rebuild the normals, or explain why a figure moved.
 ---
 
 # Scientific method change
@@ -13,7 +13,8 @@ procedure.
 
 1. [`docs/architecture/hydrology-methods.md`](../../../docs/architecture/hydrology-methods.md) — all of it.
 2. ADR-041 (the reader picks the period), ADR-046 (denominators), ADR-055
-   (area), ADR-059 (measured land), ADR-056 (freshness).
+   (area), ADR-059 (measured land), ADR-081 (snow's summed ratio), ADR-082
+   (drought index), ADR-083 (monthly window), ADR-056 (freshness).
 3. The estimator itself: `pipeline/seasonal.py`, or
    `tools/compute_drought_coverage.py` for drought.
 
@@ -25,8 +26,13 @@ procedure.
    the change is about: a leap year, the year-end wrap, a tie, a border basin,
    a monthly feed.
 3. **Change the estimator.**
-4. **Bump `METHOD_VERSION`.** It is not `schema_version`: a field can keep its
-   name, type and units while the estimator under it changes. Three places
+4. **Bump the right method version.** There are three, one per payload:
+   storage is `METHOD_VERSION` — a literal in **both** `pipeline/constants.py`
+   and `tools/build_normal_baselines.py`, held equal by
+   `tests/test_normal_baselines.py`; drought is `METHOD_VERSION` in
+   `tools/compute_drought_coverage.py`; snow is `SNOW_METHOD_VERSION` in
+   `refresh_snowpack.py` (ADR-081). None is `schema_version`: a field can keep
+   its name, type and units while the estimator under it changes. Three places
    refuse to mix versions — the normals builder, `load_normals`, and
    `merge_history` — and they are the point.
 5. **Rebuild what the change invalidates.** A seasonal-estimator change means

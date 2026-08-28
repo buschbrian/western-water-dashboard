@@ -1,6 +1,6 @@
 ---
 name: reservoir-source
-description: Add, replace, review or debug a reservoir data provider or roster entry. Covers admission screens, capacity authority, freshness and the refresh that must ship with it.
+description: Add, replace, review or debug a reservoir data provider or roster entry — admission screens, capacity authority, freshness and the refresh that must ship with it. Use when adding a reservoir or a provider, asking why a feed went quiet or a reservoir left the map, reviewing a held admission candidate, or deciding which figure is a reservoir's denominator.
 ---
 
 # Reservoir source
@@ -12,8 +12,9 @@ reviewing a held candidate.
 
 1. [`docs/operations/source-admission.md`](../../../docs/operations/source-admission.md) — the procedure and its evidence.
 2. [`pipeline/AGENTS.md`](../../../pipeline/AGENTS.md) — module ownership.
-3. ADR-070, then ADR-003 (denominator), ADR-066 (identity), ADR-056 (freshness),
-   ADR-069 (deduplication). Index:
+3. ADR-070, then ADR-072 (both denominator), ADR-003 (capacity), ADR-065
+   (the ceiling), ADR-066 (identity), ADR-056 (freshness), ADR-069
+   (deduplication). Index:
    [`docs/decisions/README.md`](../../../docs/decisions/README.md).
 
 ## Files that normally matter
@@ -32,8 +33,9 @@ reviewing a held candidate.
    is the denominator (ADR-070), and it must name its source URL or the roster
    refuses to load.
 3. **Read the closest existing adapter** in `pipeline/providers.py` before
-   writing a new one. `SourceKey` is exhaustive: a fourth provider is a compile
-   error until every table names it.
+   writing a new one. `SourceKey` (`src/types.ts`) is exhaustive across five
+   providers — rise, awdb, cdec, cdss, usgs — so a sixth is a compile error
+   until every `Record<SourceKey, …>` table names it.
 4. **Discover candidates** with the matching audit tool.
 5. **Run the admission and discrepancy screens.** A dam match is not the whole
    question — four further screens compare the provider's full level, the
