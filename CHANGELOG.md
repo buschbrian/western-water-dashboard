@@ -289,6 +289,14 @@ and is not listed here.
   height at all, so the card showed a caption over nothing. The shape now
   lives beside the segment fill it shares, in the stylesheet both pages load.
 
+- **The snow season curves keep one type size at every width.** Both curves
+  were drawn on a fixed canvas scaled to fit the card, so the whole picture
+  stretched with it: the axis type rendered at roughly 21 pixels on a 1280
+  desktop and roughly 5 on a 360 phone, and the plot fell from 456 pixels tall
+  to 119. They now measure their host the way the drought charts do, so one
+  unit is one CSS pixel; the type, the padding and the axis stay put and only
+  the plot lane spreads.
+
 ### Documentation
 
 - **The maintained documentation describes the western product.** The project

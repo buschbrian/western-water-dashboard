@@ -2758,6 +2758,24 @@ for (const viewport of VIEWPORTS) {
       tableRows: document.querySelectorAll("#snow-site-rows tr").length,
       monthRows: document.querySelectorAll("#snow-month-rows tr").length,
       curveDrawn: Boolean(document.querySelector("#snow-curve-host svg")),
+      /* The season curve is drawn on a canvas measured from its host, so one
+       * SVG unit is one CSS pixel and the axis type is the size it was chosen
+       * to be at every width. On the old fixed 640-unit canvas the whole
+       * picture scaled with the card: the axis rendered around 21 pixels on a
+       * desktop and around 5 on a phone. The viewBox width tracking the drawn
+       * width is what holds that. */
+      curveScale: (() => {
+        const svg = document.querySelector("#snow-curve-host svg");
+        if (!svg) return null;
+        const box = svg.getBoundingClientRect();
+        const viewBox = (svg.getAttribute("viewBox") || "").split(/\s+/).map(Number);
+        const label = svg.querySelector("text.snow-axis");
+        return {
+          drawnWidth: Math.round(box.width),
+          viewBoxWidth: Math.round(viewBox[2] ?? 0),
+          labelHeight: label ? Math.round(label.getBoundingClientRect().height) : 0
+        };
+      })(),
       /* The class spread bar. Measured, not counted: it is built from the
        * shared `.drought-bar` shape, and while that shape lived in a sheet
        * this page does not load the bar had seven segments and no height --
@@ -2794,6 +2812,13 @@ for (const viewport of VIEWPORTS) {
     check(state.spread === null || state.spread.painted === state.spread.segments,
       `${label}: ${state.spread?.painted} of ${state.spread?.segments} spread `
       + "segments have any width");
+    check(state.curveScale === null
+      || Math.abs(state.curveScale.viewBoxWidth - state.curveScale.drawnWidth) <= 1,
+    `${label}: the season curve draws ${state.curveScale?.viewBoxWidth} units `
+      + `across ${state.curveScale?.drawnWidth} pixels, so its type is scaled`);
+    check(state.curveScale === null || state.curveScale.labelHeight >= 12,
+      `${label}: the season curve's axis type renders at `
+      + `${state.curveScale?.labelHeight}px`);
     check(state.curveDrawn === (state.ready?.curvePoints > 0),
       `${label}: curve drawn ${state.curveDrawn}, readiness holds ${state.ready?.curvePoints} points`);
     check(state.ready?.curvePoints === 0 || state.monthRows > 0,

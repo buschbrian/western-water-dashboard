@@ -8,17 +8,27 @@
  * Unlike that curve this one is in inches, because a single site needs no
  * cross-site denominator: the honest comparison is this year's line against
  * the normal line, on the same axis.
+ *
+ * The canvas is measured from the host, for the reason set out at the top of
+ * `snow-curve.ts`: on a fixed canvas scaled to the card, the axis type grew
+ * and shrank with the width instead of staying the size it was chosen to be.
  */
 import type { SitePoint, SiteTiming } from "../snow-model";
+import { renderResponsiveChart, stopResponsiveChart } from "./responsive";
 
 const SVG = "http://www.w3.org/2000/svg";
 
-const WIDTH = 640;
-const HEIGHT = 240;
+/** The width to draw at before the host has been measured. */
+const FALLBACK_WIDTH = 640;
+/** Fixed while the width is measured, and the same height as the season
+ * curve above it: the two cards are read one after the other. */
+const HEIGHT = 340;
 const PAD_LEFT = 40;
 const PAD_RIGHT = 10;
 const PAD_TOP = 12;
 const PAD_BOTTOM = 24;
+/** Enough for the axis, its labels, and a plot lane worth drawing. */
+const MINIMUM_WIDTH = PAD_LEFT + PAD_RIGHT + 80;
 
 const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -69,21 +79,31 @@ function polylineRuns(
 }
 
 /**
- * Returns null when the site has nothing to draw, so the caller can say so
- * in words rather than render axes around nothing.
+ * Draws the site's water year into `host`, and keeps it fitted as the host
+ * resizes.
+ *
+ * Returns how many days carry a reading, and 0 when the site has nothing to
+ * draw -- the caller then says so in words rather than leaving axes around
+ * nothing. The host is left empty in that case, never holding a stale curve.
  */
 export function renderSiteCurve(
-  points: readonly SitePoint[], timing: SiteTiming, ariaLabel: string
-): SVGSVGElement | null {
-  if (points.length < 2) return null;
+  host: HTMLElement, points: readonly SitePoint[], timing: SiteTiming,
+  ariaLabel: string
+): number {
   const values = points.flatMap((point) =>
     [point.inches, point.normalInches].filter((value): value is number => value !== null));
-  if (values.length === 0) return null;
+  if (points.length < 2 || values.length === 0) {
+    stopResponsiveChart(host);
+    host.replaceChildren();
+    return 0;
+  }
 
+  return renderResponsiveChart(host, (width) => {
+  const chartWidth = Math.max(MINIMUM_WIDTH, width);
   const first = dayNumber(points[0]!.date);
   const last = dayNumber(points[points.length - 1]!.date);
   const span = Math.max(1, last - first);
-  const plotWidth = WIDTH - PAD_LEFT - PAD_RIGHT;
+  const plotWidth = chartWidth - PAD_LEFT - PAD_RIGHT;
   const plotHeight = HEIGHT - PAD_TOP - PAD_BOTTOM;
   const top = Math.max(1, Math.max(...values, timing.peakInches ?? 0) * 1.1);
   const x = (date: string): number =>
@@ -95,8 +115,7 @@ export function renderSiteCurve(
 
   const svg = element("svg", {
     class: "snow-curve",
-    viewBox: `0 0 ${WIDTH} ${HEIGHT}`,
-    width: "100%",
+    viewBox: `0 0 ${chartWidth} ${HEIGHT}`,
     role: "img",
     "aria-label": ariaLabel
   });
@@ -106,7 +125,7 @@ export function renderSiteCurve(
     const at = y(level);
     svg.append(element("line", {
       class: "snow-grid",
-      x1: PAD_LEFT, y1: at.toFixed(1), x2: WIDTH - PAD_RIGHT, y2: at.toFixed(1)
+      x1: PAD_LEFT, y1: at.toFixed(1), x2: chartWidth - PAD_RIGHT, y2: at.toFixed(1)
     }));
     const label = element("text", {
       class: "snow-axis", x: PAD_LEFT - 6, y: (at + 3.5).toFixed(1),
@@ -182,5 +201,7 @@ export function renderSiteCurve(
     svg.append(marker);
   }
 
-  return svg;
+  host.replaceChildren(svg);
+  return points.filter((point) => point.inches !== null).length;
+  }, { fallbackWidth: FALLBACK_WIDTH, minimumWidth: MINIMUM_WIDTH });
 }

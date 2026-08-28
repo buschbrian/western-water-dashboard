@@ -428,6 +428,14 @@ function renderSnow(
   const siteDetail = document.querySelector<HTMLElement>("#snow-site-detail");
   const basinPicker = document.querySelector<HTMLSelectElement>("#snow-basin-pick");
   const basinDetail = document.querySelector<HTMLElement>("#snow-basin-detail");
+  /* One host each, kept for the life of the page rather than rebuilt with
+   * the card around them. Each carries a ResizeObserver that keeps its curve
+   * fitted (`viz/responsive.ts`), and a fresh host every time the reader
+   * picked a different site would leave a fresh observer behind with it. */
+  const siteCurveHost = document.createElement("div");
+  siteCurveHost.className = "snow-curve-host";
+  const basinCurveHost = document.createElement("div");
+  basinCurveHost.className = "snow-curve-host";
   if (!status || !curveHost || !monthRows || !siteRowsBody
     || !mapHost || !daySlider || !dayReading || !sitePicker || !siteDetail
     || !basinPicker || !basinDetail) return;
@@ -666,12 +674,6 @@ function renderSnow(
         hydrologicPath(basin.huc6, basin.huc6_name, payload),
         coordinateText(site.lat, site.lon), "Station point");
 
-      const chart = renderSiteCurve(points, timing,
-        `Snow water for ${site.name}, in inches, day by day for the season ` +
-        `${seasonLabel(payload)}, with the normal middle value as a second ` +
-        `line. The table below lists the value on the first day of each month.`);
-      lastSiteCurvePoints = chart
-        ? points.filter((point) => point.inches !== null).length : 0;
 
       const reading = document.createElement("p");
       reading.className = "snow-site-reading";
@@ -744,15 +746,22 @@ function renderSnow(
 
       const children: Node[] = [stats];
       if (location) children.push(location);
-      if (chart) children.push(chart);
-      else {
+      children.push(siteCurveHost, reading, timingLine, table);
+      siteDetail.replaceChildren(...children);
+
+      /* Drawn once the host is in the document, so it can be measured. A
+       * curve rendered into a detached host would have to be drawn twice:
+       * once at the fallback width and again at the real one. */
+      lastSiteCurvePoints = renderSiteCurve(siteCurveHost, points, timing,
+        `Snow water for ${site.name}, in inches, day by day for the season ` +
+        `${seasonLabel(payload)}, with the normal middle value as a second ` +
+        `line. The table below lists the value on the first day of each month.`);
+      if (lastSiteCurvePoints === 0) {
         const empty = document.createElement("p");
         empty.className = "chart-empty";
         empty.textContent = "This site has no values to draw this season.";
-        children.push(empty);
+        siteCurveHost.replaceChildren(empty);
       }
-      children.push(reading, timingLine, table);
-      siteDetail.replaceChildren(...children);
     }
     writeUrl();
     publishReady();
@@ -787,13 +796,6 @@ function renderSnow(
        * whose normal is too small to divide by is a hole in the line, not
        * an axis-rescaling outlier. The reading below stays on the raw
        * points, which hold their own, stricter headline floor. */
-      const chart = renderSnowCurve(curveForDrawing(points),
-        `Mean snow water for ${rollup.huc6_name} as a percent of normal, ` +
-        `day by day for the season ${seasonLabel(payload)}. The dashed line ` +
-        `marks normal. The table below lists the value on the first day of ` +
-        `each month.`);
-      lastBasinCurvePoints = chart
-        ? curveForDrawing(points).filter((point) => point.percent !== null).length : 0;
 
       /* The same floor the page's headlines hold to: at least half the
        * area's sites, so October's first flurries cannot headline the
@@ -859,16 +861,22 @@ function renderSnow(
       scroller.append(tableElement);
       table.append(summary, scroller);
 
-      const children: Node[] = [stats];
-      if (chart) children.push(chart);
-      else {
+      const children: Node[] = [stats, basinCurveHost, reading, table];
+      basinDetail.replaceChildren(...children);
+
+      /* Drawn once the host is in the document, for the same reason as the
+       * site card above. */
+      lastBasinCurvePoints = renderSnowCurve(basinCurveHost, curveForDrawing(points),
+        `Mean snow water for ${rollup.huc6_name} as a percent of normal, ` +
+        `day by day for the season ${seasonLabel(payload)}. The dashed line ` +
+        `marks normal. The table below lists the value on the first day of ` +
+        `each month.`);
+      if (lastBasinCurvePoints === 0) {
         const empty = document.createElement("p");
         empty.className = "chart-empty";
         empty.textContent = "This area has no values to draw this season.";
-        children.push(empty);
+        basinCurveHost.replaceChildren(empty);
       }
-      children.push(reading, table);
-      basinDetail.replaceChildren(...children);
     }
     writeUrl();
     publishReady();
@@ -939,16 +947,13 @@ function renderSnow(
 
     /* The drawing gets the denominator floor (`curveForDrawing`); the
      * headlines and the month table above stay on the raw curve. */
-    const chart = renderSnowCurve(curveForDrawing(curve),
+    /* The curve draws into its own host and stays fitted to it, so the axis
+     * keeps one size at every card width (`viz/responsive.ts`). */
+    const curvePoints = renderSnowCurve(curveHost, curveForDrawing(curve),
       `Mean snow water for ${chosenLabel} as a percent of normal, day by day ` +
       `for the season ${seasonLabel(payload)}. The dashed line marks normal. ` +
       `The table below lists the value on the first day of each month.`);
-    let curvePoints = 0;
-    if (chart) {
-      curveHost.replaceChildren(chart);
-      curvePoints = curveForDrawing(curve)
-        .filter((point) => point.percent !== null).length;
-    } else {
+    if (curvePoints === 0) {
       const empty = document.createElement("p");
       empty.className = "chart-empty";
       empty.textContent =

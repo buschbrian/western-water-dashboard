@@ -8,17 +8,34 @@
  * theme keeps the axis readable. The line breaks where the reporting floor
  * is not met rather than bridging the gap -- a drawn segment claims there
  * was a value there.
+ *
+ * The canvas is measured from the host rather than fixed, so one SVG unit is
+ * one CSS pixel at every card width. Drawn on a fixed 640-unit canvas scaled
+ * to the card, the whole picture stretched: the axis type rendered around
+ * 21 pixels on a 1280 desktop and around 5 on a 360 phone, so the chart was
+ * oversized where there was room and unreadable where there was not. Now the
+ * type, the padding and the axis stay put and only the plot lane spreads --
+ * the same rule the drought charts follow.
  */
 import type { CurvePoint } from "../snow-model";
+import { renderResponsiveChart, stopResponsiveChart } from "./responsive";
 
 const SVG = "http://www.w3.org/2000/svg";
 
-const WIDTH = 640;
-const HEIGHT = 240;
+/** The width to draw at before the host has been measured. */
+const FALLBACK_WIDTH = 640;
+/* Height stays fixed while width is measured, the way the drought scatter
+ * sizes itself: a season is a wide plot, and the number that decides how
+ * readable it is is the height of the plot rather than its aspect. 340
+ * matches that scatter, and replaces the 456 pixels the old canvas happened
+ * to reach on a desktop and the 119 it fell to on a phone. */
+const HEIGHT = 340;
 const PAD_LEFT = 40;
 const PAD_RIGHT = 10;
 const PAD_TOP = 10;
 const PAD_BOTTOM = 24;
+/** Enough for the axis, its labels, and a plot lane worth drawing. */
+const MINIMUM_WIDTH = PAD_LEFT + PAD_RIGHT + 80;
 
 const MONTH_SHORT = ["Jan", "Feb", "Mar", "Apr", "May", "Jun",
   "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
@@ -60,18 +77,27 @@ export function snowAxisScale(maxPercent: number): { top: number; step: number }
 }
 
 /**
- * Returns null when no day meets the reporting floor, so the caller can say
- * so in words rather than render axes around nothing.
+ * Draws the season into `host`, and keeps it fitted as the host resizes.
+ *
+ * Returns how many days were drawn, and 0 when no day meets the reporting
+ * floor -- the caller then says so in words rather than leaving axes around
+ * nothing. The host is left empty in that case, never holding a stale curve.
  */
 export function renderSnowCurve(
-  points: readonly CurvePoint[], ariaLabel: string
-): SVGSVGElement | null {
+  host: HTMLElement, points: readonly CurvePoint[], ariaLabel: string
+): number {
   const drawable = points.filter((point) => point.percent !== null);
-  if (drawable.length < 2 || points.length < 2) return null;
+  if (drawable.length < 2 || points.length < 2) {
+    stopResponsiveChart(host);
+    host.replaceChildren();
+    return 0;
+  }
 
+  return renderResponsiveChart(host, (width) => {
+  const chartWidth = Math.max(MINIMUM_WIDTH, width);
   const first = dayNumber(points[0]!.date);
   const span = Math.max(1, dayNumber(points[points.length - 1]!.date) - first);
-  const plotWidth = WIDTH - PAD_LEFT - PAD_RIGHT;
+  const plotWidth = chartWidth - PAD_LEFT - PAD_RIGHT;
   const plotHeight = HEIGHT - PAD_TOP - PAD_BOTTOM;
   /* The axis always reaches 150 so "just under normal" cannot fill the
    * frame and read as a good year; a genuinely big year extends it, with a
@@ -85,8 +111,7 @@ export function renderSnowCurve(
 
   const svg = element("svg", {
     class: "snow-curve",
-    viewBox: `0 0 ${WIDTH} ${HEIGHT}`,
-    width: "100%",
+    viewBox: `0 0 ${chartWidth} ${HEIGHT}`,
     role: "img",
     "aria-label": ariaLabel
   });
@@ -98,7 +123,7 @@ export function renderSnowCurve(
     if (level !== 100) {
       svg.append(element("line", {
         class: "snow-grid",
-        x1: PAD_LEFT, y1: at.toFixed(1), x2: WIDTH - PAD_RIGHT, y2: at.toFixed(1)
+        x1: PAD_LEFT, y1: at.toFixed(1), x2: chartWidth - PAD_RIGHT, y2: at.toFixed(1)
       }));
     }
     const label = element("text", {
@@ -158,7 +183,7 @@ export function renderSnowCurve(
   if (100 % step === 0) {
     svg.append(element("line", {
       class: "snow-normal-line",
-      x1: PAD_LEFT, y1: y(100).toFixed(1), x2: WIDTH - PAD_RIGHT, y2: y(100).toFixed(1)
+      x1: PAD_LEFT, y1: y(100).toFixed(1), x2: chartWidth - PAD_RIGHT, y2: y(100).toFixed(1)
     }));
   }
 
@@ -178,5 +203,7 @@ export function renderSnowCurve(
     svg.append(marker);
   }
 
-  return svg;
+  host.replaceChildren(svg);
+  return drawable.length;
+  }, { fallbackWidth: FALLBACK_WIDTH, minimumWidth: MINIMUM_WIDTH });
 }

@@ -2,7 +2,17 @@
  * navigation, cards, filter bar and tables reuse the workspace stylesheet,
  * so the two data pages stay one design that is edited in one place. */
 
-.snow-curve { display: block; }
+/* The season curves render with a viewBox measured from their host rather
+   than a fixed 640-unit canvas scaled to the card, so one unit is one CSS
+   pixel at every width: the axis type and padding stay the size they were
+   chosen to be and only the plot lane spreads. `block-size: auto` therefore
+   resolves to the height the module drew, not to a scaled fraction of it. */
+.snow-curve-host { min-inline-size: 0; }
+.snow-curve {
+  display: block;
+  inline-size: 100%;
+  block-size: auto;
+}
 .snow-grid { stroke: var(--app-border); stroke-width: 1; }
 .snow-month-tick { stroke: var(--app-muted); }
 .snow-axis { font-size: 10px; fill: var(--app-muted); }
