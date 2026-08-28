@@ -39,6 +39,7 @@
 import type { StorageGap } from "../drought-model";
 import { WELL_MEASURED_PERCENT } from "../drought-model";
 import { storageColor } from "./classes";
+import { labelLane, measureNameWidth } from "./label-lane";
 import { renderResponsiveChart, stopResponsiveChart } from "./responsive";
 
 const SVG = "http://www.w3.org/2000/svg";
@@ -57,8 +58,11 @@ const PAD_BOTTOM = 34;
  * 20-pixel one. "Escalante Desert-Sevier Lake" needs about 142 units at the
  * size below, and at 140 it started 19 units left of the canvas and had its
  * first word cut off. */
-const PAD_LEFT = 162;
+const BASE_PAD_LEFT = 162;
 const PAD_RIGHT = 18;
+/* The narrowest data lane worth drawing. `minimumWidth` below reserves
+ * exactly this, so it is also how far the name lane may grow. */
+const MINIMUM_PLOT = 80;
 
 /** Both values are percentages and both run the whole way, so no week can be
  * flattered by cropping the axis to the values it happens to have. */
@@ -77,6 +81,12 @@ function element<K extends keyof SVGElementTagNameMap>(
     node.setAttribute(key, String(value));
   }
   return node;
+}
+
+/** Measured over only part of its area, which the row marks with an asterisk. */
+function isThinlyMeasured(row: StorageGap): boolean {
+  return row.measuredPercent !== null
+    && row.measuredPercent < WELL_MEASURED_PERCENT;
 }
 
 export interface DroughtGapOptions {
@@ -104,7 +114,14 @@ export function renderDroughtGap(
   }
 
   return renderResponsiveChart(host, (width) => {
-  const chartWidth = Math.max(PAD_LEFT + PAD_RIGHT + 80, width);
+  const chartWidth = Math.max(BASE_PAD_LEFT + PAD_RIGHT + MINIMUM_PLOT, width);
+  /* The name lane, measured from the names this chart is about to draw
+   * rather than fixed to the roster it was written for. The asterisk is part
+   * of the widest name whenever it is part of a name at all. */
+  const names = rows.map((row) => isThinlyMeasured(row) ? `${row.name} *` : row.name);
+  const PAD_LEFT = labelLane(
+    measureNameWidth(host, names, "drought-gap-name"),
+    chartWidth - PAD_RIGHT - MINIMUM_PLOT, BASE_PAD_LEFT);
   const height = PAD_TOP + rows.length * ROW_HEIGHT + PAD_BOTTOM;
   const plotWidth = chartWidth - PAD_LEFT - PAD_RIGHT;
   const svg = element("svg", {
@@ -141,8 +158,7 @@ export function renderDroughtGap(
      * description between them. */
     const group = element("g", { class: "drought-gap-row" });
 
-    const thin = row.measuredPercent !== null
-      && row.measuredPercent < WELL_MEASURED_PERCENT;
+    const thin = isThinlyMeasured(row);
 
     const name = element("text", {
       x: PAD_LEFT - 10, y: y + 4, class: "drought-gap-name", "text-anchor": "end"
@@ -192,5 +208,5 @@ export function renderDroughtGap(
 
   host.replaceChildren(svg);
   return rows.length;
-  }, { fallbackWidth: FALLBACK_WIDTH, minimumWidth: PAD_LEFT + PAD_RIGHT + 80 });
+  }, { fallbackWidth: FALLBACK_WIDTH, minimumWidth: BASE_PAD_LEFT + PAD_RIGHT + MINIMUM_PLOT });
 }

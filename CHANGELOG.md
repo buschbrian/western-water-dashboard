@@ -266,6 +266,22 @@ and is not listed here.
   The drought scatter's halfway lines stay behind its points: those are
   scaffolding for reading the corners, not a claim about the data.
 
+- **The drought severity axis is readable at every area size.** It drew a
+  gridline and a label for every whole drainage area, which was right for
+  fourteen of them and wrong once the roster went west: 23 basins put 24
+  labels into 152 pixels of axis and the numbers ran together into a grey
+  smear, and the subbasin size drew 153. The step is chosen from a ladder of
+  whole areas now, so the count stays near eight however many areas are in
+  view.
+
+- **The longest drainage-area name is no longer cut off.** The two drought
+  comparison charts wrote names into a lane measured when the longest was
+  "Escalante Desert-Sevier Lake". "Klamath-Northern California Coastal" is
+  wider, so at the subregion size the top row read "hath-Northern California
+  Coastal". The lane is measured from the names each chart is about to draw,
+  growing until the data lane reaches the width the chart already reserved
+  for it.
+
 ### Documentation
 
 - **The maintained documentation describes the western product.** The project

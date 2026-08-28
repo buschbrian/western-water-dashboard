@@ -34,6 +34,38 @@ const PAD_RIGHT = 14;
 /** The grey the "no drought" bar takes -- the absence of a class, not a class. */
 const NO_CLASS_COLOR = "#9aa5ad";
 
+/* Whole numbers only: an area is counted or it is not, so a step of 2.5 areas
+ * would offer a reading that cannot happen. */
+const AXIS_STEPS = [1, 2, 5, 10, 20, 50, 100, 200, 500] as const;
+
+/** Gridline count the ladder aims to stay under. */
+const MOST_TICKS = 8;
+
+/**
+ * The axis top and the whole-area step for the tallest bar.
+ *
+ * A step of one was right for fourteen drainage areas and wrong the moment
+ * the roster went west. The tick loop drew a gridline and a label for every
+ * whole area, so 23 basins at their worst class put 24 labels into 152
+ * pixels of axis -- the numbers ran together into a grey smear and the plot
+ * behind them read as hatching. At the subbasin size it drew 153.
+ *
+ * Picking the step from this ladder keeps the label count near eight however
+ * many areas are in view, and every step on it is a whole number of areas, so
+ * the reason the old step existed survives. The top is rounded up to a
+ * multiple of the step so the axis ends on a drawn gridline, which also gives
+ * the tallest bar's own figure room above it.
+ */
+export function severityAxisScale(highest: number): { top: number; step: number } {
+  const areas = Math.max(1, Math.ceil(highest));
+  for (const step of AXIS_STEPS) {
+    const top = Math.ceil(areas / step) * step;
+    if (top / step <= MOST_TICKS) return { top, step };
+  }
+  const step = AXIS_STEPS[AXIS_STEPS.length - 1]!;
+  return { top: Math.ceil(areas / step) * step, step };
+}
+
 function element<K extends keyof SVGElementTagNameMap>(
   name: K, attributes: Record<string, string | number>
 ): SVGElementTagNameMap[K] {
@@ -68,16 +100,19 @@ export function renderDroughtSeverity(
 
   const plotWidth = WIDTH - PAD_LEFT - PAD_RIGHT;
   const plotHeight = HEIGHT - PAD_TOP - PAD_BOTTOM;
-  /* The axis is a whole number of areas, so the ticks are whole areas too.
-   * A count of areas has no fractional values and an axis that offers them
-   * invites a reading that cannot happen. */
-  const top = Math.max(1, ...counts.map((entry) => entry.count));
+  /* The axis is a whole number of areas, so the ticks are whole areas too:
+   * a count of areas has no fractional values and an axis that offers them
+   * invites a reading that cannot happen. How many areas one tick is worth
+   * comes from `severityAxisScale`, because at one area a tick the labels
+   * collided as soon as the roster grew. */
+  const { top, step: tickStep } =
+    severityAxisScale(Math.max(1, ...counts.map((entry) => entry.count)));
   const step = plotWidth / counts.length;
   const barWidth = Math.min(64, step * 0.62);
   const y = (count: number): number =>
     PAD_TOP + plotHeight - (count / top) * plotHeight;
 
-  for (let tick = 0; tick <= top; tick += 1) {
+  for (let tick = 0; tick <= top; tick += tickStep) {
     svg.append(element("line", {
       x1: PAD_LEFT, x2: WIDTH - PAD_RIGHT, y1: y(tick), y2: y(tick),
       class: "drought-severity-grid"

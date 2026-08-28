@@ -39,6 +39,7 @@
  */
 import type { DroughtChange } from "../drought-model";
 import { changeColor, changeLabel } from "./change-classes";
+import { labelLane, measureNameWidth } from "./label-lane";
 import { renderResponsiveChart, stopResponsiveChart } from "./responsive";
 
 const SVG = "http://www.w3.org/2000/svg";
@@ -51,8 +52,11 @@ const PAD_TOP = 26;
 const PAD_BOTTOM = 34;
 /* The same measured lane the gap chart's names need: "Escalante
  * Desert-Sevier Lake" is the longest name this data carries. */
-const PAD_LEFT = 162;
+const BASE_PAD_LEFT = 162;
 const PAD_RIGHT = 18;
+/* The narrowest data lane worth drawing. `minimumWidth` below reserves
+ * exactly this, so it is also how far the name lane may grow. */
+const MINIMUM_PLOT = 80;
 const BAR_HEIGHT = 11;
 
 /** The smallest half-width the axis will use, in points of land. A quiet week
@@ -109,7 +113,13 @@ export function renderDroughtChange(
   }
 
   return renderResponsiveChart(host, (width) => {
-  const chartWidth = Math.max(PAD_LEFT + PAD_RIGHT + 80, width);
+  const chartWidth = Math.max(BASE_PAD_LEFT + PAD_RIGHT + MINIMUM_PLOT, width);
+  /* The name lane, measured from the names this chart is about to draw
+   * rather than fixed to the roster it was written for. */
+  const names = rows.map((row) => row.name);
+  const PAD_LEFT = labelLane(
+    measureNameWidth(host, names, "drought-change-name"),
+    chartWidth - PAD_RIGHT - MINIMUM_PLOT, BASE_PAD_LEFT);
   const height = PAD_TOP + rows.length * ROW_HEIGHT + PAD_BOTTOM;
   const plotWidth = chartWidth - PAD_LEFT - PAD_RIGHT;
   const bound = changeAxisBound(rows);
@@ -187,5 +197,5 @@ export function renderDroughtChange(
 
   host.replaceChildren(svg);
   return rows.length;
-  }, { fallbackWidth: FALLBACK_WIDTH, minimumWidth: PAD_LEFT + PAD_RIGHT + 80 });
+  }, { fallbackWidth: FALLBACK_WIDTH, minimumWidth: BASE_PAD_LEFT + PAD_RIGHT + MINIMUM_PLOT });
 }
