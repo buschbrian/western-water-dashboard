@@ -49,6 +49,7 @@ import {
 import type { DrainageArea } from "../data/boundaries";
 import { searchWithPlace } from "../state/opening-preference";
 import { offeredStates, stateName } from "../data/state-vocabulary";
+import { regionNameInContext } from "./place-label";
 
 const DISMISSED_STORAGE_KEY = "utah-reservoir-dashboard-splash-dismissed";
 
@@ -199,10 +200,13 @@ export function createOpeningSplash(places: SplashPlaces): OpeningSplash | null 
   places_.className = "splash-places";
 
   const statesHeading = document.createElement("h3");
+  statesHeading.id = "splash-states-heading";
   statesHeading.textContent = "A state";
   places_.append(statesHeading);
   const stateList = document.createElement("div");
   stateList.className = "splash-place-list";
+  stateList.setAttribute("role", "group");
+  stateList.setAttribute("aria-labelledby", statesHeading.id);
   for (const code of places.states) {
     stateList.append(placeButton(stateName(code), { state: code, area: null }, choose));
   }
@@ -210,15 +214,20 @@ export function createOpeningSplash(places: SplashPlaces): OpeningSplash | null 
 
   if (places.regions.length > 0) {
     const regionHeading = document.createElement("h3");
+    regionHeading.id = "splash-regions-heading";
     regionHeading.textContent = "A region";
     places_.append(regionHeading);
     const regionList = document.createElement("div");
     regionList.className = "splash-place-list";
+    regionList.setAttribute("role", "group");
+    regionList.setAttribute("aria-labelledby", regionHeading.id);
     for (const region of places.regions) {
-      /* Named at its own level, the rule the drainage-area control follows:
-       * a bare name would collide with the basins that share it. */
+      /* The heading names this one-level list as regions, so repeating the
+       * source roster's "Region" suffix on every button adds no information.
+       * Mixed-level drainage controls keep the full canonical names. */
       regionList.append(placeButton(
-        region.name, { state: EVERYWHERE, area: region.huc6 }, choose));
+        regionNameInContext(region.name),
+        { state: EVERYWHERE, area: region.huc6 }, choose));
     }
     places_.append(regionList);
   }

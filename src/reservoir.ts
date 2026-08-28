@@ -20,6 +20,7 @@ import "@esri/calcite-components/main.css";
 import { setAssetPath as setCalciteAssetPath } from "@esri/calcite-components";
 
 import { downloadCsv } from "./data/download";
+import { hydrologicPath } from "./data/hydrologic-path";
 import {
   reservoirCsvFilename, reservoirHistoryCsv
 } from "./data/export";
@@ -42,7 +43,9 @@ import {
 } from "./state/baseline";
 import { reservoirTemplate } from "./ui/reservoir-template";
 import { setupPlaceChooser } from "./ui/opening-splash";
+import { createLocationFacts } from "./ui/location-facts";
 import { wireTheme } from "./ui/theme";
+import { coordinateText } from "./viz/coordinates";
 import "./styles/reservoir.css";
 
 setCalciteAssetPath(new URL(/* @vite-ignore */ "../", import.meta.url).href);
@@ -138,6 +141,11 @@ async function renderFound(payload: ReservoirPayload,
   if (view.late) children.push(note(view.late, "detail-late"));
   children.push(headline, definitionList(view.rows, "detail-rows"));
 
+  const location = createLocationFacts(
+    hydrologicPath(reservoir.huc6, reservoir.huc6_name, payload.watersheds ?? {}),
+    coordinateText(reservoir.lat, reservoir.lon));
+  if (location) children.push(sectionHeading("Location"), location);
+
   // The reservoir's own ground, from Esri's World Imagery. Mounted after
   // the page is on screen and outside the readiness signal: a slow image
   // must not hold the page's facts hostage, and its own deadline replaces
@@ -225,7 +233,9 @@ async function renderFound(payload: ReservoirPayload,
     const index = await loadUpstreamIndex();
     const station = reservoir.source_station_id;
     const trace = station === null ? null : index.traces[station];
-    if (trace) main.append(...upstreamSection(trace, payload.reservoirs));
+    if (trace && station) {
+      main.append(...upstreamSection(trace, payload.reservoirs, station));
+    }
   } catch {
     console.error("The upstream index could not be read:");
   }
@@ -243,7 +253,8 @@ async function renderFound(payload: ReservoirPayload,
  */
 function upstreamSection(
   trace: UpstreamTrace,
-  roster: readonly Reservoir[]
+  roster: readonly Reservoir[],
+  station: string
 ): HTMLElement[] {
   if (trace.screen) {
     return [
@@ -269,6 +280,15 @@ function upstreamSection(
     + `site${sites === 1 ? "" : "s"} sit upstream of this one, on land that `
     + "drains to it.";
   children.push(sentence);
+  if (sites > 0) {
+    const snowLink = document.createElement("p");
+    snowLink.className = "reservoir-links";
+    const link = document.createElement("a");
+    link.href = `snow.html?state=all&upstream=${encodeURIComponent(station)}`;
+    link.textContent = "See snow upstream of this reservoir";
+    snowLink.append(link);
+    children.push(snowLink);
+  }
   if (count > 0) {
     const byStation = new Map(
       roster.filter((r) => r.source_station_id)

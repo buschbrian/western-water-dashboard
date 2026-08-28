@@ -97,6 +97,10 @@ function check(condition, message) {
 }
 
 const payload = JSON.parse(await readFile(path.join(REPO_ROOT, "reservoirs.json"), "utf8"));
+const snowPayload = JSON.parse(
+  await readFile(path.join(REPO_ROOT, "snowpack.json"), "utf8"));
+const upstreamIndex = JSON.parse(
+  await readFile(path.join(REPO_ROOT, "upstream_index.json"), "utf8"));
 const snowSiteInventory = JSON.parse(
   await readFile(path.join(REPO_ROOT, "snow_sites.json"), "utf8"));
 /* The scope the shell draws, computed the way src/main.ts computes it: every
@@ -589,6 +593,9 @@ const browser = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
       regionHeading: [...dialog.querySelectorAll(".splash-places h3")]
         .map((heading) => heading.textContent?.trim())
         .find((text) => text === "A region") ?? null,
+      regionButtons: [...dialog.querySelectorAll(
+        '.splash-place-list[aria-labelledby="splash-regions-heading"] .splash-place')]
+        .map((button) => button.textContent?.trim()),
       subjectColumns: new Set([...dialog.querySelectorAll(".splash-subjects label")]
         .map((label) => Math.round(label.getBoundingClientRect().left))).size,
       shortestPlaceButton: Math.min(...[...dialog.querySelectorAll(".splash-place")]
@@ -602,6 +609,13 @@ const browser = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
     `${label}: text contrast is ${opened.contrast.toFixed(2)}:1, expected at least 4.5:1`);
   check(opened.regionHeading === "A region",
     `${label}: the HUC2 choices are not named as regions`);
+  check(await tab.getByRole("group", { name: "A region" }).count() === 1,
+    `${label}: the region choices have no accessible group name`);
+  const expectedRegionButtons = [...regionNames.values()]
+    .map((name) => name.replace(/ Region$/, ""));
+  check(JSON.stringify(opened.regionButtons) === JSON.stringify(expectedRegionButtons),
+    `${label}: the region buttons repeat their group or lose a roster name `
+      + `(${opened.regionButtons.join(", ")})`);
   check(opened.subjectColumns === 2,
     `${label}: the four subject choices do not form two aligned columns`);
   check(opened.shortestPlaceButton >= 44,
@@ -1473,6 +1487,25 @@ for (const viewport of VIEWPORTS) {
      * moved out of above the reservoir list. */
     check(table.toolsBeforeRows,
       `${label}: the table's export control is behind the row scroller`);
+    if (viewport.name === "desktop") {
+      const geoJsonButton = tab.locator('[data-table="geojson"]').first();
+      check(await geoJsonButton.count() === 1,
+        `${label}: the reservoir table has no GeoJSON control`);
+      const [geoJsonDownload] = await Promise.all([
+        tab.waitForEvent("download", { timeout: 5000 }),
+        geoJsonButton.click()
+      ]);
+      const collection = JSON.parse(
+        await readFile(await geoJsonDownload.path(), "utf8"));
+      check(collection.type === "FeatureCollection"
+        && collection.features.length === table.openRows,
+      `${label}: GeoJSON holds ${collection.features?.length} points for `
+        + `${table.openRows} visible table rows`);
+      check(collection.features.every((feature) =>
+        feature.geometry?.type === "Point"
+        && feature.geometry.coordinates?.length === 2),
+      `${label}: the reservoir GeoJSON contains a non-point feature`);
+    }
 
     /* The split between the map and this row.
      *
@@ -2687,6 +2720,29 @@ for (const viewport of VIEWPORTS) {
     check(linked.tableRows < linked.ready?.sites,
       `${label}: a narrowed view shows ${linked.tableRows} of ${linked.ready?.sites} sites`);
 
+    /* The visible site rows, as points. Same promise as the CSV download:
+     * the file holds exactly the rows on screen, so it is checked against
+     * the count the page just rendered rather than against the payload. */
+    if (viewport.name === "desktop") {
+      const geoJsonButton = tab.locator("#snow-geojson");
+      check(await geoJsonButton.count() === 1,
+        `${label}: the measurement site table has no GeoJSON control`);
+      const [geoJsonDownload] = await Promise.all([
+        tab.waitForEvent("download", { timeout: 15000 }),
+        geoJsonButton.click()
+      ]);
+      const collection = JSON.parse(
+        await readFile(await geoJsonDownload.path(), "utf8"));
+      check(collection.type === "FeatureCollection"
+        && collection.features.length === linked.tableRows,
+      `${label}: GeoJSON holds ${collection.features?.length} points for `
+        + `${linked.tableRows} visible site rows`);
+      check(collection.features.every((feature) =>
+        feature.geometry?.type === "Point"
+        && feature.geometry.coordinates?.length === 2),
+      `${label}: the snow GeoJSON contains a non-point feature`);
+    }
+
     const snowFiltersOpened = await exerciseMobileFilterDisclosure(
       tab, check, label, "snow", viewport);
 
@@ -2796,6 +2852,12 @@ for (const viewport of VIEWPORTS) {
       chart: Boolean(document.querySelector("#snow-site-detail svg")),
       normalLine: Boolean(document.querySelector("#snow-site-detail .site-curve-normal")),
       monthRows: document.querySelectorAll("#snow-site-detail tbody tr").length,
+      pathRows: document.querySelectorAll(
+        "#snow-site-detail .hydrologic-path li").length,
+      coordinates: document.querySelector(
+        "#snow-site-detail .coordinate-facts")?.textContent ?? "",
+      copyControl: Boolean(document.querySelector(
+        "#snow-site-detail .coordinate-copy")),
       search: window.location.search,
       nameButtons: document.querySelectorAll(".site-name-button").length
     }));
@@ -2807,6 +2869,11 @@ for (const viewport of VIEWPORTS) {
       `${label}: the site curve has no normal line to compare against`);
     check(siteState.monthRows > 0,
       `${label}: the site card published no month table rows`);
+    check(siteState.pathRows === 3,
+      `${label}: the site card has ${siteState.pathRows} hydrologic path rows`);
+    check(siteState.coordinates.includes("Station point")
+      && siteState.coordinates.includes("°") && siteState.copyControl,
+    `${label}: the site card does not show both coordinate forms and a copy action`);
     check(siteState.search.includes("site="),
       `${label}: the chosen site is not in the address bar (${siteState.search})`);
     check(siteState.nameButtons === siteState.ready?.tableRows,
@@ -4299,6 +4366,105 @@ for (const failure of [
   }
 }
 
+/* A reservoir's committed upstream snow set, through the real cross-link.
+ * Counts are derived from the two payloads: an indexed station can be absent
+ * from today's snow file, and the page must say and count the current
+ * intersection rather than treating the index as current telemetry. */
+{
+  const nameCounts = new Map(payload.reservoirs.map((reservoir) => [
+    reservoir.name,
+    payload.reservoirs.filter((candidate) => candidate.name === reservoir.name).length
+  ]));
+  const stationRoster = new Set(snowPayload.sites.map((site) => site.station));
+  const candidate = payload.reservoirs
+    .map((reservoir) => ({
+      reservoir,
+      station: reservoir.source_station_id,
+      trace: reservoir.source_station_id
+        ? upstreamIndex.traces[reservoir.source_station_id] : null
+    }))
+    .find(({ reservoir, trace }) => nameCounts.get(reservoir.name) === 1
+      && trace && !trace.screen
+      && trace.upstream_snow_sites.filter((station) => stationRoster.has(station)).length > 1);
+  check(Boolean(candidate),
+    "Upstream snow cross-link: no uniquely named reservoir has current upstream snow sites");
+  if (candidate) {
+    const expected = candidate.trace.upstream_snow_sites
+      .filter((station) => stationRoster.has(station)).length;
+    const outside = snowPayload.sites.find(
+      (site) => !candidate.trace.upstream_snow_sites.includes(site.station));
+    const context = await newPageContext(browser, VIEWPORTS[0]);
+    const tab = await context.newPage();
+    const errors = [];
+    tab.on("pageerror", (error) => errors.push(`uncaught: ${error.message}`));
+    tab.on("console", (message) => {
+      if (message.type() === "error") errors.push(`console: ${message.text()}`);
+    });
+    const label = "Upstream snow cross-link";
+    console.log(`\n=== ${label}`);
+    try {
+      await tab.goto(
+        `${URL}reservoir.html?name=${encodeURIComponent(candidate.reservoir.name)}`,
+        { waitUntil: "domcontentloaded", timeout: 60000 });
+      await tab.waitForFunction(() => window.__reservoirReady?.status === "found",
+        { timeout: 90000 });
+      const href = await tab.locator(
+        'a[href*="snow.html"][href*="upstream="]').getAttribute("href");
+      check(Boolean(href), `${label}: the reservoir page offers no Snowpack link`);
+      const linked = new globalThis.URL(href ?? "", tab.url());
+      check(linked.searchParams.get("state") === "all",
+        `${label}: direct link does not protect itself from a stored place (${href})`);
+      check(linked.searchParams.get("upstream") === candidate.station,
+        `${label}: direct link carries ${linked.searchParams.get("upstream")}, `
+        + `expected ${candidate.station}`);
+
+      await tab.goto(linked.href, { waitUntil: "domcontentloaded", timeout: 60000 });
+      await tab.waitForFunction(
+        () => window.__snowReady?.upstreamStatus === "applied",
+        { timeout: 90000 });
+      const applied = await tab.evaluate(() => ({
+        ready: window.__snowReady,
+        summary: document.querySelector("#snow-upstream-summary")?.textContent ?? "",
+        rows: document.querySelectorAll("#snow-site-rows tr").length,
+        clear: Boolean(document.querySelector("#snow-upstream-summary button"))
+      }));
+      check(applied.ready?.upstream === candidate.station,
+        `${label}: readiness reports ${applied.ready?.upstream}, expected ${candidate.station}`);
+      check(applied.ready?.sites === expected && applied.ready?.upstreamSites === expected,
+        `${label}: shows ${applied.ready?.sites} sites and reports `
+        + `${applied.ready?.upstreamSites}, expected ${expected}`);
+      check(applied.rows === expected,
+        `${label}: rendered ${applied.rows} site rows, expected ${expected}`);
+      check(applied.summary.includes(candidate.reservoir.name)
+        && applied.summary.includes("upstream of") && applied.clear,
+      `${label}: active summary does not name the reservoir, relationship and clear action`);
+
+      check(Boolean(outside), `${label}: every current site is in the candidate set`);
+      if (outside) {
+        await tab.goto(
+          `${linked.href}&site=${encodeURIComponent(outside.station)}`,
+          { waitUntil: "domcontentloaded", timeout: 60000 });
+        await tab.waitForFunction(
+          () => window.__snowReady?.upstreamStatus === "linked-site-wins",
+          { timeout: 90000 });
+        const precedence = await tab.evaluate(() => ({
+          ready: window.__snowReady,
+          summary: document.querySelector("#snow-upstream-summary")?.textContent ?? ""
+        }));
+        check(precedence.ready?.site === outside.station,
+          `${label}: the linked site resolved as ${precedence.ready?.site}, `
+          + `expected ${outside.station}`);
+        check(precedence.summary.includes("more specific"),
+          `${label}: the page did not explain why the linked site won`);
+      }
+    } catch (error) {
+      failures.push(`${label}: ${error.message}`);
+    }
+    for (const message of errors) failures.push(`${label}: ${message}`);
+    await context.close();
+  }
+}
+
 /*
  * The one-reservoir page, at every width and in every state a link can
  * produce.
@@ -4337,6 +4503,12 @@ for (const failure of [
         ready: window.__reservoirReady?.status ?? null,
         busy: document.querySelector("#reservoir-main")?.getAttribute("aria-busy"),
         text: document.body.innerText,
+        pathRows: document.querySelectorAll(
+          "#reservoir-main .hydrologic-path li").length,
+        coordinateText: document.querySelector(
+          "#reservoir-main .coordinate-facts")?.textContent ?? "",
+        coordinateCopy: Boolean(document.querySelector(
+          "#reservoir-main .coordinate-copy")),
         scroll: document.documentElement.scrollWidth,
         viewport: document.documentElement.clientWidth
       }));
@@ -4352,6 +4524,12 @@ for (const failure of [
           + "the reservoir's name on it");
         check(state.text.includes("acre-feet"),
           `Reservoir page (${viewport.name}): a found page with no reading on it`);
+        check(state.pathRows === 3,
+          `Reservoir page (${viewport.name}): has ${state.pathRows} hydrologic path rows`);
+        check(state.coordinateText.includes("Published point")
+          && state.coordinateText.includes("°") && state.coordinateCopy,
+        `Reservoir page (${viewport.name}): does not show both coordinate forms `
+          + "and a copy action");
       }
       if (label === "unknown") {
         check(state.text.includes("No reservoir by that name"),

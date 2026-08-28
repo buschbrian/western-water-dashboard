@@ -309,7 +309,8 @@ export function describeReservoir(
   baseline: BaselineId = "recent",
   choices: readonly BaselineChoice[] = FALLBACK_CHOICES,
   minimumYears = 0,
-  upstream?: UpstreamTrace
+  upstream?: UpstreamTrace,
+  locationRows: readonly DetailRow[] = []
 ): DetailView {
   const active = activeBaseline(reservoir, baseline, minimumYears);
   const comparison = {
@@ -374,9 +375,7 @@ export function describeReservoir(
         value: SCHEDULE_NAMES[reservoir.data_frequency] ?? "Every day"
       },
       { label: "Measured by", value: providerName(reservoir) },
-      ...(reservoir.huc6_name
-        ? [{ label: "Drainage area", value: reservoir.huc6_name }]
-        : []),
+      ...locationRows,
       ...(upstream ? upstreamRows(upstream) : [])
     ],
     late: lateMessage(reservoir),

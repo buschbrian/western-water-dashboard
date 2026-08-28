@@ -160,6 +160,11 @@ interface Window {
     curvePoints: number;
     tableRows: number;
     area: string | null;
+    /** Reservoir source identifier whose upstream station set was requested. */
+    upstream?: string | null;
+    /** Current snow sites left after the upstream set and place intersect. */
+    upstreamSites?: number | null;
+    upstreamStatus?: "applied" | "linked-site-wins" | "unavailable" | null;
     /* The map half, present once the map module has resolved. Added fields,
      * never replacements: the page's figures are complete without a map. */
     mapBasins?: number;

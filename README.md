@@ -8,10 +8,12 @@ levels, climate comparisons, weekly drought measurements, and drainage-area
 context in one typed ArcGIS 5.1 and Calcite 5 application.
 
 The project began as a Utah reservoir map. Its current scope follows five
-western hydrologic regions across eleven states. The application draws 75
-basins or 44 larger subregions, reads a reviewed western reservoir roster fed
-by five observation providers, and uses 637 mountain snow sites. Counts that can change with provider reporting
-are read from the runtime payloads rather than written into application code.
+western hydrologic regions across eleven states. The application can draw five
+regions, 44 subregions, 75 basins, or 571 drought subbasins. It reads a reviewed
+western reservoir roster fed by five observation providers and a western
+network of automated mountain snow sites. Counts that can change with provider
+reporting are read from the runtime payloads rather than written into
+application code.
 
 ## Dashboard pages
 
@@ -44,7 +46,7 @@ The storage map lets a reader:
 - move or play the month slider through the last twelve published months;
 - open a keyboard-reachable reservoir list;
 - sort the matching reservoirs in a table and download the exact rows and
-  order on screen as CSV; and
+  order on screen as CSV or WGS84 point GeoJSON; and
 - share the complete view through the address bar.
 
 The storage map opens on the complete western roster, with Lake Powell and
@@ -55,10 +57,10 @@ retired with its `?reservoirs=` parameter (ADR-087); Utah is reachable through
 the same State control as every other state.
 
 A first visit with no link and no remembered place opens a short chooser: a
-state or a river basin, and one of the three subjects. It is skippable in one
-action, it is never shown over a shared link, and the choice it produces is
-the same `?state=` and `?area=` a reader can set from the controls. The place
-is remembered between visits; a link always outranks it.
+state or a hydrologic region, and one of the four data views. It is skippable
+in one action, it is never shown over a shared link, and the choice it produces
+is the same `?state=` and `?area=` a reader can set from the controls. The
+place is remembered between visits; a link always outranks it.
 
 The storage charts use the same geographic and reservoir scope. Their search,
 filters, summary strip, six ArcGIS charts, and semantic table update together.
@@ -66,6 +68,10 @@ Every published reservoir also has a page of its own —
 `reservoir.html?name=...` — linked from the map's details panel and from each
 other surface that names one; a reservoir whose feed goes quiet keeps its page
 and says its reading was withdrawn rather than disappearing into an error.
+The page also shows its Region → Subregion → Basin path, copyable decimal and
+DMS coordinates, and a link to the current snow-measuring sites upstream of
+it when the committed trace contains any. Snowpack can export the sites now
+listed as WGS84 point GeoJSON.
 The snow and drought pages share the reader's chosen state or drainage area
 where that choice has the same meaning, and every page writes its own view to
 a shareable URL.
@@ -203,11 +209,16 @@ reservoir or every form of water in a drainage area.
 
 The western scope follows where water drains, not a longitude box. It includes
 hydrologic regions 14 through 18: the Colorado River, Great Basin, Pacific
-Northwest, and California systems. The maps offer two complete measurement
-levels:
+Northwest, and California systems. Storage, snow, and drought offer three
+complete measurement levels:
 
-- 75 six-digit basins, the default; and
-- 44 four-digit subregions.
+- 5 two-digit regions;
+- 44 four-digit subregions; and
+- 75 six-digit basins, the default.
+
+Drought also offers 571 eight-digit subbasins. Its weekly land-share figures
+are measured again at that level; they are not split or averaged from a larger
+area.
 
 A reservoir is assigned to a drainage area from its reviewed dam or outlet
 point. State and county filters describe where the waterbody is. Those are
@@ -278,7 +289,7 @@ than asserting today's numbers.
 The original modernization phases are complete. ArcGIS 5.1 is the production
 runtime; the MapLibre rebuild was superseded by the decision to keep retired
 paths as redirects. The western geography, reader-chosen opening scope, the
-first-visit place chooser and the remembered place behind it, the 637-site
+first-visit place chooser and the remembered place behind it, the mountain
 snow network, the five-provider western reservoir roster, the upstream sets,
 drought measurements at four area sizes, accessibility gates, and transfer
 policy have all shipped. The Utah state

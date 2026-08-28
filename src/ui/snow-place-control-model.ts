@@ -14,6 +14,7 @@ import {
   type OpeningSelection
 } from "../data/opening-scope";
 import { offeredStates } from "../data/state-vocabulary";
+import { regionNameInContext } from "./place-label";
 
 export const ALL_VALUE = "all";
 
@@ -71,7 +72,10 @@ export function snowDrainageAxis(
     value: held,
     options: [
       { value: ALL_VALUE, label: `All ${words.plural}` },
-      ...offered.map((area) => ({ value: area.huc6, label: area.name }))
+      ...offered.map((area) => ({
+        value: area.huc6,
+        label: level === 2 ? regionNameInContext(area.name) : area.name
+      }))
     ]
   };
 }

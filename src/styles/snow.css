@@ -41,6 +41,27 @@
 .snow-site-reading { margin: .5rem 0 0; font-size: .84rem; }
 .snow-site-timing { margin: .25rem 0 0; color: var(--app-muted); font-size: .8rem; }
 
+.upstream-filter-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem .75rem;
+  align-items: center;
+}
+.upstream-filter-clear {
+  padding: .3rem .6rem;
+  border: 1px solid var(--app-border);
+  border-radius: .25rem;
+  color: var(--app-accent);
+  background: var(--app-surface-raised);
+  font: inherit;
+  font-size: .78rem;
+  cursor: pointer;
+}
+.upstream-filter-clear:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 2px;
+}
+
 /* A site name in the table is a real button; it looks like the link it
  * behaves as, and keeps the row's text metrics. */
 .site-name-button {

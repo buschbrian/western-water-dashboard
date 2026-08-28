@@ -27,8 +27,11 @@ const utah: OpeningSelection = { state: "UT", area: null };
 
 describe("Snowpack's sequential place controls", () => {
   it("offers only the chosen and measurable tier", () => {
-    expect(snowDrainageAxis(rosters, utah, 2, new Set(["16"]))
-      .options.map((option) => option.value)).toEqual(["all", "16"]);
+    expect(snowDrainageAxis(rosters, utah, 2, new Set(["16"])).options)
+      .toEqual([
+        { value: "all", label: "All regions" },
+        { value: "16", label: "Great Basin" }
+      ]);
     expect(snowDrainageAxis(rosters, utah, 4, new Set(["1602"]))
       .options.map((option) => option.value)).toEqual(["all", "1602"]);
     expect(snowDrainageAxis(rosters, utah, 6, new Set(["160202"]))

@@ -22,6 +22,13 @@ describe("snow URL state", () => {
     expect(snowStateFromSearch("").site).toBeNull();
   });
 
+  it("reads the reservoir source identifiers used by the upstream index", () => {
+    expect(snowStateFromSearch("?upstream=6124").upstream).toBe("6124");
+    expect(snowStateFromSearch("?upstream=14335040%3AOR%3ABOR").upstream)
+      .toBe("14335040:OR:BOR");
+    expect(snowStateFromSearch("?upstream=%2Fbad").upstream).toBeNull();
+  });
+
   /* `?basin=` opens an area's own season card; `?area=` filters the page.
    * The two are separate for the same reason `?site=` is separate from the
    * table's narrowing controls. */
@@ -36,9 +43,11 @@ describe("snow URL state", () => {
       for (const day of ["2026-04-01", null]) {
         for (const site of ["1030:CO:SNTL", null]) {
           for (const basin of ["160201", null]) {
-            const state = { area, day, site, basin, query: "", band: "all" as const,
-              status: "all" as const };
-            expect(snowStateFromSearch(snowSearchFromState(state, ""))).toEqual(state);
+            for (const upstream of ["6124", null]) {
+              const state = { area, day, site, upstream, basin, query: "", band: "all" as const,
+                status: "all" as const };
+              expect(snowStateFromSearch(snowSearchFromState(state, ""))).toEqual(state);
+            }
           }
         }
       }
@@ -47,16 +56,16 @@ describe("snow URL state", () => {
 
   it("drops every parameter entirely for the default view", () => {
     expect(snowSearchFromState(
-      { area: null, day: null, site: null, basin: null, query: "", band: "all",
+      { area: null, day: null, site: null, upstream: null, basin: null, query: "", band: "all",
         status: "all" },
       "?area=160201&day=2026-04-01&site=1030%3ACO%3ASNTL&basin=140100" +
-      "&q=alta&elev=high&status=late"))
+      "&upstream=6124&q=alta&elev=high&status=late"))
       .toBe("");
   });
 
   it("leaves parameters it does not own alone", () => {
     const search = snowSearchFromState(
-      { area: "140100", day: null, site: null, basin: null, query: "",
+      { area: "140100", day: null, site: null, upstream: null, basin: null, query: "",
         band: "all", status: "all" },
       "?theme=dark");
     expect(search).toContain("theme=dark");
@@ -86,7 +95,7 @@ describe("snow URL state", () => {
 
   it("leaves a whitespace-only search out of the address bar", () => {
     expect(snowSearchFromState(
-      { area: null, day: null, site: null, basin: null, query: "   ",
+      { area: null, day: null, site: null, upstream: null, basin: null, query: "   ",
         band: "all", status: "all" }, ""))
       .toBe("");
   });

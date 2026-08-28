@@ -142,10 +142,6 @@ export function provenanceRows(reservoir: Reservoir): ProvenanceRow[] {
     const state = reservoir.state ? `, ${reservoir.state}` : "";
     rows.push({ label: "County", value: `${reservoir.county_name}${state}` });
   }
-  if (reservoir.huc6_name) {
-    const code = reservoir.huc6 ? ` (${reservoir.huc6})` : "";
-    rows.push({ label: "Drainage area", value: `${reservoir.huc6_name}${code}` });
-  }
   rows.push({
     label: "Full level",
     value: capacitySource(reservoir)

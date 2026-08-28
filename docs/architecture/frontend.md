@@ -39,6 +39,28 @@ to neither). A name the roster withdrew lands on the withdrawal notice --
 name, last reading date, publisher, and no measurement, because the notice
 carries none to publish. Readiness is `window.__reservoirReady.status`.
 
+### Point location and downloads
+
+Reservoir and snow details use `data/hydrologic-path.ts` for one containment
+path: HUC-2 Region, HUC-4 Subregion and HUC-6 Basin. The parent codes come
+from the six-digit assignment and their names come from the payload rosters;
+there is no second client geography table. `ui/location-facts.ts` renders the
+full block on reading pages, while the Storage details panel uses its compact
+rows.
+
+Coordinates are the payload's WGS84 point, formatted by
+`viz/coordinates.ts`. A reservoir labels `lat` and `lon` **Published point**;
+it never substitutes the optional dam or outlet `huc_assignment_point`, which
+answers a different question. A snow station labels its point **Station
+point**. Both show decimal degrees and DMS and copy plain `latitude,
+longitude` decimal values (ADR-096).
+
+The Storage and Snowpack table GeoJSON downloads are built from the same row
+arrays their renderers receive, just like CSV. Each file is a WGS84 point
+`FeatureCollection`, longitude first, with raw numeric properties and the
+provider identifier as feature identity. No hosted watershed polygon enters
+the file.
+
 ## SDK boundaries
 
 **No `@arcgis/core/widgets/*`.** Every widget is deprecated in 5.0 and removed
@@ -251,6 +273,15 @@ size, then exactly one hydrologic tier. The last label follows the chosen
 size: Region, Subregion or Basin. Only areas with a publishable snow figure at
 that size are offered. County stays in Site name or county search because the
 site payload carries county names but no verified five-digit codes.
+
+`?upstream=<reservoir source_station_id>` adds the committed ADR-077 station
+set as a Snowpack-local selection (ADR-097). It intersects an explicit State
+or Area and every rollup is rebuilt from the current matching station series
+with ADR-081's ratio-of-sums rule. A valid `?site=` link is more specific and
+prevents a conflicting upstream set from being applied. A missing or screened
+trace keeps the resolved place instead of manufacturing an empty answer. The
+active summary names the reservoir, current matching count and any indexed
+stations absent from the current snow payload.
 
 The Snowpack filter card separates place from table filters. State, Area size
 and the hydrologic area form the first pane. The **Site options** pane puts

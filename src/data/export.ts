@@ -1,4 +1,5 @@
 import type { TableRow } from "../state/table";
+import type { SiteRow } from "../snow-model";
 import type { MonthlyRecord, Reservoir, SourceKey } from "../types";
 
 export type CsvValue = string | number | boolean | null | undefined;
@@ -103,6 +104,81 @@ export function tableCsv(rows: readonly TableRow[]): string {
   return serializeCsv(rows, TABLE_COLUMNS);
 }
 
+interface PointGeometry {
+  type: "Point";
+  /** GeoJSON is longitude first, then latitude, in WGS84. */
+  coordinates: [number, number];
+}
+
+interface PointFeature<Properties extends object> {
+  type: "Feature";
+  id: string | number;
+  geometry: PointGeometry;
+  properties: Properties;
+}
+
+function pointFeature<Properties extends object>(
+  id: string | number,
+  lon: number,
+  lat: number,
+  properties: Properties
+): PointFeature<Properties> {
+  return {
+    type: "Feature",
+    id,
+    geometry: { type: "Point", coordinates: [lon, lat] },
+    properties
+  };
+}
+
+function featureCollection(features: readonly PointFeature<object>[]): string {
+  return `${JSON.stringify({ type: "FeatureCollection", features }, null, 2)}\n`;
+}
+
+/** The exact reservoir rows on screen, as WGS84 points with raw values. */
+export function tableGeoJson(rows: readonly TableRow[]): string {
+  return featureCollection(rows.map((row) => pointFeature(
+    row.sourceIdentifier ?? row.name,
+    row.lon,
+    row.lat,
+    {
+      reservoir: row.reservoirName,
+      state: row.state,
+      waterbody_states: row.waterbodyStates,
+      huc6: row.huc6,
+      drainage_area: row.areaName,
+      full_percent: row.percent,
+      storage_acre_feet: row.storageAf,
+      full_level_acre_feet: row.capacityAf,
+      reading: row.reading,
+      late_data: row.late
+    }
+  )));
+}
+
+/** The exact snow-site rows on screen, as WGS84 points with raw values. */
+export function snowSiteGeoJson(rows: readonly SiteRow[]): string {
+  return featureCollection(rows.map((row) => pointFeature(
+    row.station,
+    row.lon,
+    row.lat,
+    {
+      station: row.station,
+      name: row.name,
+      state: row.state,
+      county: row.county,
+      huc6: row.huc6,
+      drainage_area: row.basinName,
+      elevation_feet: row.elevationFeet,
+      snow_water_inches: row.inches,
+      normal_inches: row.normalInches,
+      percent_of_normal: row.percent,
+      observed: row.latestDate,
+      late_data: row.late
+    }
+  )));
+}
+
 interface HistoryRow {
   reservoir: Reservoir;
   month: MonthlyRecord | null;
@@ -154,7 +230,15 @@ function safeFilenamePart(value: string): string {
 }
 
 export function overviewCsvFilename(date: string): string {
-  return `utah-reservoirs-${date.slice(0, 10)}.csv`;
+  return `western-reservoirs-${date.slice(0, 10)}.csv`;
+}
+
+export function reservoirGeoJsonFilename(date: string): string {
+  return `western-reservoirs-${date.slice(0, 10)}.geojson`;
+}
+
+export function snowGeoJsonFilename(date: string): string {
+  return `western-snow-sites-${date.slice(0, 10)}.geojson`;
 }
 
 /**

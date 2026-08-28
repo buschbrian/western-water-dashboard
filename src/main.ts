@@ -4,14 +4,17 @@ import { setAssetPath as setCalciteAssetPath } from "@esri/calcite-components";
 import { installAnonymousAuthPolicy } from "./arcgis/basemaps";
 import { loadDrainageScope, loadOfferedLevels } from "./data/boundaries";
 import { loadReservoirs } from "./data/load";
-import { downloadCsv } from "./data/download";
+import { downloadCsv, downloadText } from "./data/download";
 import { loadUpstreamIndex } from "./data/load";
+import { hydrologicPath, type HydrologicRosters } from "./data/hydrologic-path";
 import type { UpstreamIndex } from "./types";
 import {
   overviewCsvFilename,
+  reservoirGeoJsonFilename,
   reservoirCsvFilename,
   reservoirHistoryCsv,
-  tableCsv
+  tableCsv,
+  tableGeoJson
 } from "./data/export";
 import {
   monthKeys, monthLabel, monthPercent, monthlyRollup, type MonthlyRollup
@@ -85,7 +88,9 @@ import {
   type StorageCountyChoice
 } from "./ui/storage-place-control-model";
 import { renderLegend } from "./ui/legend";
+import { hydrologicPathRows } from "./ui/location-facts";
 import { loadMap, type MapController } from "./ui/map";
+import { coordinateText } from "./viz/coordinates";
 import {
   browserCapabilities,
   markFilteredInList,
@@ -110,6 +115,7 @@ import {
   wireCopyViewLinks,
   wirePanels,
   wireTableExport,
+  wireTableGeoJson,
   wireTableRow
 } from "./ui/shell";
 import { updatePageLinks } from "./ui/page-header";
@@ -167,6 +173,8 @@ let published: readonly Reservoir[] = [];
 /** Everything the map is currently drawing. */
 let inScope: ScopedReservoirs = asScoped([]);
 let publishedAt = "";
+/** HUC-2 and HUC-4 names that complete each reservoir's HUC-6 path. */
+let hydrologicRosters: HydrologicRosters = {};
 /* ADR-011's two dimensions, both the reader's to choose. Geography was
  * pinned to `utah`, which is why Fontenelle and Woodruff Narrows -- paid for
  * by the refresh every morning, connected to Utah by drainage but never
@@ -230,6 +238,7 @@ async function loadData(): Promise<readonly Reservoir[] | null> {
       return null;
     }
     publishedAt = data.generated_at.slice(0, 10);
+    hydrologicRosters = data.watersheds ?? {};
     /* The periods this payload can actually offer, and which one it opens on.
      * Both come from the data rather than from a constant here, so a change of
      * default in the pipeline reaches the page without a code change and a
@@ -913,13 +922,25 @@ function renderReservoirList(): void {
  * once and cached, and the panel is drawn again only if the reader has not
  * already moved to another reservoir while it loaded.
  */
+function locationRowsFor(reservoir: Reservoir): { label: string; value: string }[] {
+  const path = hydrologicPath(
+    reservoir.huc6, reservoir.huc6_name, hydrologicRosters);
+  const rows = hydrologicPathRows(path);
+  const point = coordinateText(reservoir.lat, reservoir.lon);
+  return point
+    ? [...rows, { label: "Published point", value: point.decimal }]
+    : rows;
+}
+
 function renderDetail(): void {
   const reservoir = findReservoir(inScope, selection.get());
   const station = reservoir?.source_station_id ?? null;
+  const locationRows = reservoir ? locationRowsFor(reservoir) : [];
   setDetail(
     reservoir ? describeReservoir(
       reservoir, storageColor(headlinePercent(reservoir)),
-      activeBaselineId, baselineOptions, baselineMinimumYears) : null,
+      activeBaselineId, baselineOptions, baselineMinimumYears,
+      undefined, locationRows) : null,
     reservoir ? () => downloadCsv(
       reservoirHistoryCsv(reservoir),
       reservoirCsvFilename(reservoirLabel(reservoir, inScope), publishedAt)
@@ -942,7 +963,8 @@ function renderDetail(): void {
     setDetail(
       describeReservoir(
         reservoir, storageColor(headlinePercent(reservoir)),
-        activeBaselineId, baselineOptions, baselineMinimumYears, trace),
+        activeBaselineId, baselineOptions, baselineMinimumYears, trace,
+        locationRows),
       () => downloadCsv(
         reservoirHistoryCsv(reservoir),
         reservoirCsvFilename(reservoirLabel(reservoir, inScope), publishedAt)
@@ -1248,6 +1270,9 @@ if (!supportsDashboard(browserCapabilities())) {
      * was handed, so the file cannot hold a different set, order or month. */
     wireTableExport(() => downloadCsv(
       tableCsv(shownRows), overviewCsvFilename(publishedAt)));
+    wireTableGeoJson(() => downloadText(
+      tableGeoJson(shownRows), reservoirGeoJsonFilename(publishedAt),
+      "application/geo+json"));
     wireFilters(map);
     setMonthControl(months, (index) => {
       monthIndex = Math.max(0, Math.min(months.length, index));

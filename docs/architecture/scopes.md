@@ -9,6 +9,7 @@ them with one constant is the mistake this document exists to prevent.
 | Roster scope | `watershed_scopes.ROSTER_SCOPE`, published as `roster_scope` | Which geography were the published reservoirs admitted from? |
 | Opening scope | `OPENING_SCOPE_HUC6_BOUNDS` in `src/viz/extent.ts`, `src/data/opening-scope.ts` | Where does a page open when the reader has chosen nothing? |
 | Selected scope | `?state=`, `?area=`, `?level=`, the stored place | Where has *this* reader asked to be? |
+| Snow station set | Snowpack's page-local `?upstream=` | Which current snow stations sit upstream of one reservoir? |
 
 ## Drawn and roster are two names (ADR-063)
 
@@ -229,6 +230,15 @@ County is not a place control on Snowpack. Each site carries a bare county
 name, not the verified five-digit identity used by the other county axes. Site
 name or county remains a table search beside Elevation and Reporting in the
 separate Site options pane.
+
+Snowpack also accepts page-local `?upstream=<reservoir source_station_id>`
+(ADR-097). This is an unordered station set from `upstream_index.json`, not a
+fifth hydrologic scope and not portable state. It intersects a State or Area
+that is explicitly in the URL. Reservoir-page links include `?state=all`, so
+a recipient's stored place cannot silently narrow the set. Area size still
+controls grouping, and the client rebuilds each surviving rollup from its
+station series rather than averaging published basin percentages. A valid
+`?site=` is the most specific request and wins if it conflicts with the set.
 
 ### Drought's sequential selected scope
 

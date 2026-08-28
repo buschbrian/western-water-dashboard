@@ -7,6 +7,22 @@ and is not listed here.
 
 ### Added
 
+- **Point geography that can leave the dashboard.** Reservoir and snow-site
+  details now show the full Region, Subregion and Basin path from the
+  published HUC rosters, plus decimal and degrees-minutes-seconds coordinates
+  with a copy action. Storage and Snowpack can download the points currently
+  listed as WGS84 GeoJSON, with provider identities and raw measurements.
+  Reservoir coordinates remain the published waterbody point; the separate
+  dam or outlet assignment point is not relabelled as the same fact
+  (ADR-096).
+
+- **Snow above one reservoir.** A reservoir page now opens Snowpack on the
+  current measurement sites in its committed upstream set. Every headline,
+  area mean, curve, map value and table row is rebuilt from those stations
+  with the existing ratio-of-sums method. The filter intersects an explicit
+  place, reports indexed sites missing from today's snow payload, and yields
+  to a more specific linked station rather than hiding it (ADR-097).
+
 - **A fifth provider: the U.S. Geological Survey, seven reservoirs.** The
   sites the 2026-08-22 review ruled new -- Horseshoe and Bartlett on the Salt
   River system in Arizona, Weber in Nevada, Wynoochee, Alder, Mud Mountain

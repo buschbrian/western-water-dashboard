@@ -152,13 +152,15 @@ class TestEngine:
 
 class TestCommittedOutput:
     @pytest.fixture(scope="class")
-    def payload(self):
+    @classmethod
+    def payload(cls):
         path = ROOT / "data" / "drought" / "usdm-huc6.json"
         assert path.exists(), "run tools/compute_drought_coverage.py"
         return json.loads(path.read_text(encoding="utf-8"))
 
     @pytest.fixture(scope="class")
-    def source(self):
+    @classmethod
+    def source(cls):
         return json.loads(
             (ROOT / "data" / "drought" / "usdm-current.geojson")
             .read_text(encoding="utf-8"))
@@ -430,7 +432,8 @@ class TestCommittedHistory:
     """The file in the repository, checked for shape rather than for values."""
 
     @pytest.fixture(scope="class")
-    def history(self):
+    @classmethod
+    def history(cls):
         path = ROOT / "data" / "drought" / "usdm-huc6-history.json"
         if not path.exists():
             pytest.skip("no drought history has been built in this checkout")
