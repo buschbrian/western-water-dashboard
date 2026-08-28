@@ -616,6 +616,26 @@ body {
   border: 1px solid var(--app-border);
   border-radius: .2rem;
 }
+/* The stacked share bar, and the segments inside it.
+ *
+ * Shared, not drought's own, which is why it lives here beside the fill its
+ * empty segment already used. Snowpack builds the same bar for the class
+ * spread above its site table, on purpose -- a reader who has learned one
+ * stacked share bar has learned both, and each page passes its own class
+ * colours in. These two rules stayed behind in `drought.css` when the fill
+ * moved, and Snowpack does not load that sheet, so its bar had seven
+ * segments and no height at all: the card drew its caption over an invisible
+ * chart. The name is kept because both pages' markup and the smoke suite
+ * already use it. */
+.drought-bar {
+  display: flex;
+  overflow: hidden;
+  block-size: 1.3rem;
+  border: 1px solid var(--app-border);
+  border-radius: .35rem;
+}
+.drought-segment { min-inline-size: 0; }
+
 /* The "none of the classes" fill: a neutral hatch, used by a coverage bar
  * segment, a legend chip, or anything else that has to say "no value". */
 .drought-segment-none {

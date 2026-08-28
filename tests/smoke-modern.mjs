@@ -2758,6 +2758,22 @@ for (const viewport of VIEWPORTS) {
       tableRows: document.querySelectorAll("#snow-site-rows tr").length,
       monthRows: document.querySelectorAll("#snow-month-rows tr").length,
       curveDrawn: Boolean(document.querySelector("#snow-curve-host svg")),
+      /* The class spread bar. Measured, not counted: it is built from the
+       * shared `.drought-bar` shape, and while that shape lived in a sheet
+       * this page does not load the bar had seven segments and no height --
+       * a chart present in the DOM and invisible on the page. */
+      spread: (() => {
+        const bar = document.querySelector("#snow-spread .drought-bar");
+        if (!bar) return null;
+        const box = bar.getBoundingClientRect();
+        return {
+          height: Math.round(box.height),
+          width: Math.round(box.width),
+          segments: bar.querySelectorAll(".drought-segment").length,
+          painted: [...bar.querySelectorAll(".drought-segment")]
+            .filter((piece) => piece.getBoundingClientRect().width > 0).length
+        };
+      })(),
       summaryCards: [...document.querySelectorAll(".snow-summary .overview-kpi")]
         .map((card) => ({
           height: card.getBoundingClientRect().height,
@@ -2770,6 +2786,14 @@ for (const viewport of VIEWPORTS) {
     }));
     check(state.tableRows === state.ready?.sites && state.tableRows > 0,
       `${label}: the whole region renders ${state.tableRows} of ${state.ready?.sites} sites`);
+    check(state.spread !== null && state.spread.segments > 0,
+      `${label}: the site table has no class spread bar`);
+    check(state.spread === null || state.spread.height > 0,
+      `${label}: the class spread bar drew ${state.spread?.segments} segments `
+      + `at ${state.spread?.height}px tall, so the reader sees nothing`);
+    check(state.spread === null || state.spread.painted === state.spread.segments,
+      `${label}: ${state.spread?.painted} of ${state.spread?.segments} spread `
+      + "segments have any width");
     check(state.curveDrawn === (state.ready?.curvePoints > 0),
       `${label}: curve drawn ${state.curveDrawn}, readiness holds ${state.ready?.curvePoints} points`);
     check(state.ready?.curvePoints === 0 || state.monthRows > 0,

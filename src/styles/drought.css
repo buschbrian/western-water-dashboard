@@ -26,15 +26,6 @@
   font-variant-numeric: tabular-nums;
 }
 
-.drought-bar {
-  display: flex;
-  overflow: hidden;
-  block-size: 1.3rem;
-  border: 1px solid var(--app-border);
-  border-radius: .35rem;
-}
-.drought-segment { min-inline-size: 0; }
-
 .drought-row-reading { color: var(--app-muted); font-size: .78rem; }
 .drought-row-links { display: flex; flex-wrap: wrap; gap: .35rem .9rem; font-size: .78rem; }
 .drought-row-links a { color: var(--app-accent); }

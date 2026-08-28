@@ -282,6 +282,13 @@ and is not listed here.
   growing until the data lane reaches the width the chart already reserved
   for it.
 
+- **Snowpack's class spread bar is visible again.** The bar above the
+  measurement site table is built from the stacked share shape the drought
+  view uses, on purpose, but two of that shape's rules had stayed behind in a
+  stylesheet Snowpack does not load. The bar drew its seven segments with no
+  height at all, so the card showed a caption over nothing. The shape now
+  lives beside the segment fill it shares, in the stylesheet both pages load.
+
 ### Documentation
 
 - **The maintained documentation describes the western product.** The project

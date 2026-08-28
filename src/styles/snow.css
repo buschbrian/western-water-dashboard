@@ -95,10 +95,12 @@
   .snow-day-row calcite-slider { flex-basis: 100%; order: 3; }
 }
 
-/* The class spread above the site table. The bar itself reuses the drought
-   view's `.drought-bar` shape deliberately: a reader who has learned one
-   stacked share bar has learned both, and the colours come from each page's
-   own class table. */
+/* The class spread above the site table. The bar itself reuses the shared
+   `.drought-bar` shape deliberately: a reader who has learned one stacked
+   share bar has learned both, and the colours come from each page's own
+   class table. That shape lives in `overview.css`, which this page loads --
+   while it lived in `drought.css`, which this page does not load, the bar
+   here had no height and the caption sat under nothing. */
 .snow-spread { margin-block-end: .75rem; }
 .snow-spread-note {
   margin: .4rem 0 0;
