@@ -9,10 +9,14 @@ import {
   capacitySource,
   overviewCsv,
   overviewCsvFilename,
+  reservoirGeoJsonFilename,
   reservoirCsvFilename,
   reservoirHistoryCsv,
   serializeCsv,
-  tableCsv
+  snowGeoJsonFilename,
+  snowSiteGeoJson,
+  tableCsv,
+  tableGeoJson
 } from "./export";
 
 describe("CSV serialization", () => {
@@ -104,9 +108,53 @@ describe("CSV serialization", () => {
 
   it("constructs stable, readable filenames", () => {
     expect(overviewCsvFilename("2026-08-14T12:00:00Z"))
-      .toBe("utah-reservoirs-2026-08-14.csv");
+      .toBe("western-reservoirs-2026-08-14.csv");
     expect(reservoirCsvFilename("Ken's Lake", "2026-08-14"))
       .toBe("ken-s-lake-2026-08-14.csv");
+    expect(reservoirGeoJsonFilename("2026-08-14T12:00:00Z"))
+      .toBe("western-reservoirs-2026-08-14.geojson");
+    expect(snowGeoJsonFilename("2026-08-14T12:00:00Z"))
+      .toBe("western-snow-sites-2026-08-14.geojson");
+  });
+});
+
+describe("GeoJSON point exports", () => {
+  it("writes the reservoir rows in their visible order with longitude first", () => {
+    const reservoirs = readPayload().reservoirs;
+    const rows = tableRows({
+      reservoirs, filter: ALL_RESERVOIRS, month: null, percentOf: headlinePercent,
+      sort: { key: "name", direction: "asc" }
+    }).slice(0, 2);
+    const collection = JSON.parse(tableGeoJson(rows)) as {
+      type: string;
+      features: { id: string | number; geometry: { coordinates: number[] };
+        properties: Record<string, unknown> }[];
+    };
+
+    expect(collection.type).toBe("FeatureCollection");
+    expect(collection.features).toHaveLength(rows.length);
+    expect(collection.features.map((feature) => feature.properties.reservoir))
+      .toEqual(rows.map((row) => row.reservoirName));
+    expect(collection.features[0]?.geometry.coordinates)
+      .toEqual([rows[0]?.lon, rows[0]?.lat]);
+    expect(collection.features[0]?.properties.full_percent).toBe(rows[0]?.percent);
+  });
+
+  it("writes a snow station with its point, identity and raw measurements", () => {
+    const row = {
+      station: "1:UT:SNTL", name: "Alta", county: "Salt Lake", state: "UT",
+      huc6: "160202", basinName: "Jordan", lat: 40.5, lon: -111.6,
+      elevationFeet: 8800, latestDate: "2026-08-15", late: false,
+      inches: 1.2, normalInches: 2.4, percent: 50
+    };
+    const collection = JSON.parse(snowSiteGeoJson([row])) as {
+      features: { id: string; geometry: { coordinates: number[] };
+        properties: Record<string, unknown> }[];
+    };
+
+    expect(collection.features[0]?.id).toBe(row.station);
+    expect(collection.features[0]?.geometry.coordinates).toEqual([-111.6, 40.5]);
+    expect(collection.features[0]?.properties.snow_water_inches).toBe(1.2);
   });
 });
 

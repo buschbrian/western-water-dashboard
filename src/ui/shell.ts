@@ -295,6 +295,11 @@ export function wireTableExport(onExport: () => void): void {
     .forEach((button) => { button.addEventListener("click", onExport); });
 }
 
+export function wireTableGeoJson(onExport: () => void): void {
+  document.querySelectorAll<HTMLElement>('[data-table="geojson"]')
+    .forEach((button) => { button.addEventListener("click", onExport); });
+}
+
 /** Copies the address after every control has written the current state.
  * Confirmation replaces the button's own text, so it is visible and
  * keyboard-accessible without adding another live region to the two copies

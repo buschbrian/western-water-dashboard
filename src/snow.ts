@@ -22,6 +22,8 @@ import "@esri/calcite-components/components/calcite-slider";
 
 import { installAnonymousAuthPolicy } from "./arcgis/basemaps";
 import { loadDrainageScope, loadOfferedLevels } from "./data/boundaries";
+import { downloadText } from "./data/download";
+import { snowGeoJsonFilename, snowSiteGeoJson } from "./data/export";
 import {
   areaAtLevel,
   DEFAULT_OPENING_SELECTION,
@@ -36,6 +38,8 @@ import {
 import { readStoredPlace, resolveOpeningPlace, searchWithPlace } from "./state/opening-preference";
 import { stateName } from "./data/state-vocabulary";
 import { loadSnowpack } from "./data/snow-load";
+import { hydrologicPath } from "./data/hydrologic-path";
+import { loadUpstreamIndex } from "./data/load";
 import {
   areaCanReport,
   basinChoices,
@@ -52,6 +56,7 @@ import {
   measuredScope,
   payloadAtLevel,
   payloadForSites,
+  payloadForStationSet,
   payloadForState,
   percentOfNormal,
   regionCurve,
@@ -72,13 +77,20 @@ import {
   type CurvePoint,
   type ElevationBand,
   type SiteFilter,
+  type SiteRow,
   type SiteStatus
 } from "./snow-model";
 import { levelFromSearch, writeLevel } from "./state/level";
 import { snowStateFromSearch, writeSnowUrl } from "./state/snow-url";
-import type { SnowpackPayload } from "./types";
+import type { SnowpackPayload, SnowSite } from "./types";
 import { brandMarkup, pageLinksMarkup, updatePageLinks } from "./ui/page-header";
 import { setupPlaceChooser } from "./ui/opening-splash";
+import { createLocationFacts } from "./ui/location-facts";
+import {
+  missingStationCount,
+  upstreamSummary as upstreamSummaryText,
+  type UpstreamView
+} from "./ui/upstream-filter-model";
 import { placeInSlot } from "./ui/dom";
 import { createLevelControl } from "./ui/level-control";
 import {
@@ -89,6 +101,7 @@ import {
   selectionForSnowArea,
   selectionForSnowState
 } from "./ui/snow-place-control-model";
+import { coordinateText } from "./viz/coordinates";
 import { createSnowMap, type SnowMapController } from "./ui/snow-map";
 import { createViewMap, mapStatusNote } from "./ui/view-map";
 import { nameSliderHandle } from "./ui/slider-label";
@@ -250,6 +263,8 @@ function formatInches(value: number | null): string {
   return value === null ? "—" : value.toFixed(1);
 }
 
+type SiteBasin = Pick<SnowSite, "huc6" | "huc6_name">;
+
 /*
  * The two place menus (ADR-084) are wired inside `renderSnow`, beside the
  * level control: the Drainage menu's gating needs this payload's own
@@ -259,7 +274,8 @@ function formatInches(value: number | null): string {
 
 function renderSnow(
   payload: SnowpackPayload, openingScope: OpeningScope, widenedForSite: string | null,
-  rosters: OpeningRosters
+  rosters: OpeningRosters, siteBasins: ReadonlyMap<string, SiteBasin>,
+  upstreamView: UpstreamView | null
 ): void {
   const content = document.querySelector<HTMLElement>("#snow-content");
   if (!content) return;
@@ -268,6 +284,7 @@ function renderSnow(
   const days = regionPoints.map((point) => point.date);
   content.innerHTML = `
     <p id="snow-scope-summary" class="filter-status" role="status" hidden></p>
+    <div id="snow-upstream-summary" class="filter-status upstream-filter-status" role="status" hidden></div>
     <section class="dashboard-filterbar mobile-filterbar" aria-labelledby="snow-filter-heading">
       <div class="filterbar-head">
         <div class="filterbar-title"><p class="eyebrow">Mountain snow</p><h2 id="snow-filter-heading">Choose a place</h2></div>
@@ -348,7 +365,7 @@ function renderSnow(
       <div id="snow-site-detail"><p class="chart-empty">Choose a measurement site above, or select one in the table below.</p></div>
     </section>
     <section class="overview-card table-card" aria-labelledby="snow-table-heading">
-      <div class="card-heading"><div><h2 id="snow-table-heading">Measurement sites</h2><p>The newest value at each site, ordered by drainage area and name. Select a site name to see its season. A summer value near zero is normal: the snow melts each summer.</p></div></div>
+      <div class="card-heading"><div><h2 id="snow-table-heading">Measurement sites</h2><p>The newest value at each site, ordered by drainage area and name. Select a site name to see its season. A summer value near zero is normal: the snow melts each summer.</p></div><calcite-button id="snow-geojson" appearance="outline" icon-start="export" scale="s">Download these points (GeoJSON file)</calcite-button></div>
       <div class="snow-spread" id="snow-spread"></div>
       <div class="table-scroll" tabindex="0" role="region" aria-label="Measurement site table, scrolls sideways"><table class="overview-table"><thead><tr><th>Site</th><th>Drainage area</th><th>Elevation (feet)</th><th>Snow water (inches)</th><th>Normal (inches)</th><th>Of normal</th><th>Observed</th></tr></thead><tbody id="snow-site-rows"></tbody></table></div>
     </section>`;
@@ -366,11 +383,31 @@ function renderSnow(
     scopeSummaryEl.hidden = summary === null;
   }
 
+  const upstreamSummary = document.querySelector<HTMLElement>("#snow-upstream-summary");
+  if (upstreamSummary && upstreamView) {
+    const message = document.createElement("span");
+    message.textContent = upstreamSummaryText(upstreamView);
+    const clear = document.createElement("button");
+    clear.type = "button";
+    clear.className = "upstream-filter-clear";
+    clear.textContent = "Clear upstream filter";
+    clear.addEventListener("click", () => {
+      const params = new URLSearchParams(window.location.search);
+      params.delete("upstream");
+      const query = params.toString();
+      window.location.replace(
+        `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
+    });
+    upstreamSummary.replaceChildren(message, clear);
+    upstreamSummary.hidden = false;
+  }
+
   const status = document.querySelector<HTMLElement>("#snow-status");
   const curveHost = document.querySelector<HTMLElement>("#snow-curve-host");
   const monthRows = document.querySelector<HTMLTableSectionElement>("#snow-month-rows");
   const siteRowsBody = document.querySelector<HTMLTableSectionElement>("#snow-site-rows");
   const querybox = document.querySelector<HTMLInputElement>("#snow-query");
+  const geoJsonButton = document.querySelector<HTMLElement>("#snow-geojson");
   /* Calcite selects, like every other control in this bar. `.value` reads
    * and assigns the same way; only the change event carries the
    * component's own name. */
@@ -496,13 +533,14 @@ function renderSnow(
    * link. */
   function urlState(): {
     area: string | null; day: string | null; site: string | null;
-    basin: string | null;
+    upstream: string | null; basin: string | null;
     query: string; band: ElevationBand; status: SiteStatus;
   } {
     return {
       area: currentArea,
       day: currentDay === startDay ? null : currentDay,
       site: currentSite,
+      upstream: upstreamView?.station ?? null,
       basin: currentBasin,
       query: siteFilter.query,
       band: siteFilter.band,
@@ -553,6 +591,7 @@ function renderSnow(
   let lastCurvePoints = 0;
   let lastSiteCurvePoints = 0;
   let lastBasinCurvePoints = 0;
+  let shownSiteRows: readonly SiteRow[] = [];
 
   const publishReady = (): void => {
     const rows = siteRows(payload, currentArea);
@@ -567,6 +606,9 @@ function renderSnow(
       basins: payload.rollups.filter(areaCanReport).length,
       curvePoints: lastCurvePoints,
       tableRows: rows.length,
+      upstream: upstreamView?.station ?? null,
+      upstreamSites: upstreamView?.currentSites ?? null,
+      upstreamStatus: upstreamView?.status ?? null,
       area: currentArea,
       site: currentSite,
       siteCurvePoints: lastSiteCurvePoints,
@@ -612,12 +654,17 @@ function renderSnow(
     } else {
       const points = sitePoints(site);
       const timing = siteTiming(site, payload.water_year);
+      const basin = siteBasins.get(site.station) ?? site;
 
       const stats = document.createElement("p");
       stats.className = "snow-site-stats";
-      stats.textContent = `${site.name} · ${site.huc6_name} · ` +
+      stats.textContent = `${site.name} · ${basin.huc6_name} · ` +
         `${formatFeet(site.elevation_feet)} feet · ${site.county} County, ` +
         `${site.state} · Records begin ${formatDate(site.begins)}`;
+
+      const location = createLocationFacts(
+        hydrologicPath(basin.huc6, basin.huc6_name, payload),
+        coordinateText(site.lat, site.lon), "Station point");
 
       const chart = renderSiteCurve(points, timing,
         `Snow water for ${site.name}, in inches, day by day for the season ` +
@@ -696,6 +743,7 @@ function renderSnow(
       table.append(summary, scroller);
 
       const children: Node[] = [stats];
+      if (location) children.push(location);
       if (chart) children.push(chart);
       else {
         const empty = document.createElement("p");
@@ -926,6 +974,7 @@ function renderSnow(
      * them are listed. Kept in that order so the chart, the map and the KPIs
      * above keep describing the area rather than the table's search box. */
     const shown = filterSiteRows(rows, siteFilter);
+    shownSiteRows = shown;
 
     siteRowsBody.replaceChildren(...shown.map((site) => {
       const row = document.createElement("tr");
@@ -1052,6 +1101,11 @@ function renderSnow(
     if (elevSelect) elevSelect.value = "all";
     if (statusSelect) statusSelect.value = "all";
     applyFilter({ query: "", band: "all", status: "all" });
+  });
+  geoJsonButton?.addEventListener("click", () => {
+    downloadText(
+      snowSiteGeoJson(shownSiteRows), snowGeoJsonFilename(payload.generated_at),
+      "application/geo+json");
   });
 
   /*
@@ -1230,6 +1284,7 @@ function renderSnow(
 }
 
 const level = levelFromSearch(window.location.search);
+const requestedSnowState = snowStateFromSearch(window.location.search);
 
 try {
   /*
@@ -1253,18 +1308,28 @@ try {
    * dead code already does), and the fallback here is that same empty
    * roster rather than a second code path.
    */
-  const [rawSnowpack, rosters] = await Promise.all([
+  const [rawSnowpack, rosters, upstreamIndex] = await Promise.all([
     loadSnowpack(),
     loadOpeningRosters().catch((error: unknown): OpeningRosters => {
       console.warn("The opening-scope rosters could not load; the page " +
         "opens with no area narrowing.", error);
       return EMPTY_OPENING_ROSTERS;
-    })
+    }),
+    requestedSnowState.upstream
+      ? loadUpstreamIndex().catch((error: unknown) => {
+        console.warn("The upstream index could not load; the Snowpack page " +
+          "will show its chosen place instead.", error);
+        return null;
+      })
+      : Promise.resolve(null)
   ]);
   /* Regrouped before anything reads it, so the picker, the curves, the table,
    * the map and the `?basin=` link all describe the areas the reader asked
    * for and none of them has to know a level exists (ADR-064). */
   const levelPayload = payloadAtLevel(rawSnowpack, level);
+  const siteBasins = new Map<string, SiteBasin>(rawSnowpack.sites.map((site) => [
+    site.station, { huc6: site.huc6, huc6_name: site.huc6_name }
+  ]));
   let openingScope = resolveOpeningScope(
     resolveOpeningPlace(window.location.search, readStoredPlace()).selection, rosters);
 
@@ -1286,7 +1351,7 @@ try {
    * that said "narrowed to Colorado" while the map and table plainly showed
    * Idaho too would be worse than naming the whole region and saying why.
    */
-  const wantedSite = snowStateFromSearch(window.location.search).site;
+  const wantedSite = requestedSnowState.site;
   let widenedForSite: string | null = null;
   if (wantedSite !== null) {
     const linkedSite = siteByStation(levelPayload, wantedSite);
@@ -1299,8 +1364,42 @@ try {
     }
   }
 
-  const payload = payloadForOpeningScope(levelPayload, openingScope.selection, level);
-  renderSnow(payload, openingScope, widenedForSite, rosters);
+  let payload = payloadForOpeningScope(levelPayload, openingScope.selection, level);
+  let upstreamView: UpstreamView | null = null;
+  if (requestedSnowState.upstream) {
+    const station = requestedSnowState.upstream;
+    const trace = upstreamIndex?.traces[station];
+    /* Counted against every station the payload publishes, never against the
+     * narrowed view: a selected place hides a site, it does not make the
+     * measurement missing (ADR-097). */
+    const reporting = new Set(levelPayload.sites.map((site) => site.station));
+    const indexed = trace?.upstream_snow_sites ?? [];
+    const facts = {
+      station,
+      reservoirName: trace?.name ?? null,
+      indexedSites: indexed.length,
+      missingSites: missingStationCount(indexed, reporting)
+    };
+    if (!trace || trace.screen) {
+      upstreamView = { ...facts, currentSites: null, status: "unavailable" };
+    } else {
+      const linkedSite = wantedSite ? siteByStation(levelPayload, wantedSite) : null;
+      if (linkedSite && !trace.upstream_snow_sites.includes(linkedSite.station)) {
+        upstreamView = {
+          ...facts,
+          currentSites: null,
+          status: "linked-site-wins",
+          linkedSiteName: linkedSite.name
+        };
+      } else {
+        payload = payloadForStationSet(payload, trace.upstream_snow_sites);
+        upstreamView = {
+          ...facts, currentSites: payload.site_count, status: "applied"
+        };
+      }
+    }
+  }
+  renderSnow(payload, openingScope, widenedForSite, rosters, siteBasins, upstreamView);
 } catch (error) {
   console.error("Snowpack view failed:", error);
   const content = document.querySelector<HTMLElement>("#snow-content");

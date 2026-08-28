@@ -111,6 +111,7 @@ describe("the table's order", () => {
   it("keeps rows with no value last in both directions", () => {
     const row = (name: string, percent: NullableNumber): TableRow => ({
       name, reservoirName: name, state: "", waterbodyStates: [],
+      sourceIdentifier: name, huc6: "140100", lat: 40, lon: -110,
       percent, storageAf: percent, capacityAf: null,
       areaName: "", late: false, reading: "2026-08-14"
     });
@@ -125,6 +126,7 @@ describe("the table's order", () => {
   it("breaks ties by name so an order is stable across refreshes", () => {
     const tie = (name: string): TableRow => ({
       name, reservoirName: name, state: "", waterbodyStates: [],
+      sourceIdentifier: name, huc6: "140100", lat: 40, lon: -110,
       percent: 50, storageAf: 50, capacityAf: 100,
       areaName: "Jordan", late: false, reading: "2026-08-14"
     });

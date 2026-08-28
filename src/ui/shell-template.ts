@@ -254,6 +254,10 @@ export function renderShell(root: HTMLElement): void {
                     scale="s">
                     Download these rows (CSV file)
                   </calcite-button>
+                  <calcite-button data-table="geojson" appearance="outline" icon-start="export"
+                    scale="s">
+                    Download these points (GeoJSON file)
+                  </calcite-button>
                 </div>
                 <!-- Its own scroller. The page is tested at 360px and may not
                      scroll sideways at any width, and six columns of numbers

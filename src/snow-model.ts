@@ -50,6 +50,8 @@ export interface SiteRow {
   state: string;
   huc6: string;
   basinName: string;
+  lat: number;
+  lon: number;
   elevationFeet: number;
   latestDate: string;
   late: boolean;
@@ -162,11 +164,9 @@ export function payloadAtLevel(
  * `"all"` returns the payload unchanged, the same sentinel `reservoirInState`
  * reads in `overview-model.ts`.
  */
-export function payloadForState(
-  payload: SnowpackPayload, state: string
+function payloadForSelectedSites(
+  payload: SnowpackPayload, sites: SnowSite[]
 ): SnowpackPayload {
-  if (state === "all") return payload;
-  const sites = payload.sites.filter((site) => site.state === state);
   const floors = new Map(
     payload.rollups.map((rollup) => [rollup.huc6, rollup.minimum_reporting_sites]));
   const names = new Map(
@@ -190,6 +190,31 @@ export function payloadForState(
       };
     });
   return payloadForSites(payload, sites, rollups);
+}
+
+export function payloadForState(
+  payload: SnowpackPayload, state: string
+): SnowpackPayload {
+  if (state === "all") return payload;
+  return payloadForSelectedSites(
+    payload, payload.sites.filter((site) => site.state === state));
+}
+
+/**
+ * The payload narrowed to an unordered set of station identifiers.
+ *
+ * This is the client-side half of the committed upstream index (ADR-077):
+ * the index decides membership, while this function rebuilds every area
+ * and every page total from the current snow payload's matching sites. It
+ * uses the same ratio-of-sums series builder as state narrowing and level
+ * regrouping; published area percentages are never averaged together.
+ */
+export function payloadForStationSet(
+  payload: SnowpackPayload, stations: Iterable<string>
+): SnowpackPayload {
+  const wanted = stations instanceof Set ? stations : new Set(stations);
+  return payloadForSelectedSites(
+    payload, payload.sites.filter((site) => wanted.has(site.station)));
 }
 
 /**
@@ -433,6 +458,8 @@ export function siteRows(
         state: site.state,
         huc6: site.huc6,
         basinName: site.huc6_name,
+        lat: site.lat,
+        lon: site.lon,
         elevationFeet: site.elevation_feet,
         latestDate: site.latest_date,
         late: site.late,

@@ -67,6 +67,11 @@ export interface TableRow {
   state: string;
   /** Every state the waterbody touches. */
   waterbodyStates: readonly string[];
+  /** Stable source identity for machine-readable exports. */
+  sourceIdentifier: string | number | null;
+  huc6: string;
+  lat: number;
+  lon: number;
   percent: NullableNumber;
   storageAf: NullableNumber;
   capacityAf: NullableNumber;
@@ -142,6 +147,10 @@ export function tableRows(input: TableInput): TableRow[] {
       reservoirName: reservoir.name,
       state: reservoir.state ?? "",
       waterbodyStates: reservoir.waterbody_states ?? [],
+      sourceIdentifier: reservoir.source_station_id ?? reservoir.rise_item_id,
+      huc6: reservoir.huc6 ?? "",
+      lat: reservoir.lat,
+      lon: reservoir.lon,
       percent: percentOf(reservoir),
       storageAf: month === null ? reservoir.current_storage_af : monthlyMean(reservoir, month),
       capacityAf: reservoir.capacity_af,

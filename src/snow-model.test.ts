@@ -19,6 +19,7 @@ import {
   percentIsMeaningful,
   MEANINGFUL_NORMAL_INCHES,
   percentOfNormal,
+  payloadForStationSet,
   payloadForState,
   observedPeak,
   regionCurve,
@@ -246,6 +247,49 @@ describe("the payload narrowed to one state's sites", () => {
     expect(kept!.site_count).toBe(1);
     expect(kept!.series.length).toBeGreaterThan(0);
     expect(kept!.series.every((day) => day.mean_percent_of_normal_median === null)).toBe(true);
+  });
+});
+
+describe("the payload narrowed to an upstream station set", () => {
+  it("keeps only current matching stations and rebuilds the area's ratio of sums", () => {
+    const area = payload.rollups.find((rollup) =>
+      payload.sites.filter((site) => site.huc6 === rollup.huc6).length >= 2);
+    expect(area, "the payload has no area with two sites").toBeDefined();
+    const chosen = payload.sites
+      .filter((site) => site.huc6 === area!.huc6)
+      .slice(0, 2);
+    const ids = new Set([...chosen.map((site) => site.station), "missing:XX:SNTL"]);
+    const narrowed = payloadForStationSet(payload, ids);
+
+    expect(narrowed.sites.map((site) => site.station))
+      .toEqual(chosen.map((site) => site.station));
+    expect(narrowed.site_count).toBe(chosen.length);
+    expect(narrowed.rollups).toHaveLength(1);
+    expect(narrowed.rollups[0]?.site_count).toBe(chosen.length);
+
+    let compared = 0;
+    for (const day of narrowed.rollups[0]?.series ?? []) {
+      if (day.mean_percent_of_normal_median === null) continue;
+      const rows = chosen
+        .map((site) => site.series.find(([date]) => date === day.date))
+        .filter((row): row is [string, number | null, number | null] => row !== undefined)
+        .filter(([, value, normal]) => value !== null && normal !== null);
+      const water = rows.reduce((sum, [, value]) => sum + (value ?? 0), 0);
+      const normal = rows.reduce((sum, [, , value]) => sum + (value ?? 0), 0);
+      if (rows.length < (narrowed.rollups[0]?.minimum_reporting_sites ?? 2)
+        || normal <= 0) continue;
+      expect(day.mean_percent_of_normal_median)
+        .toBeCloseTo(water / normal * 100, 1);
+      compared += 1;
+    }
+    expect(compared).toBeGreaterThan(0);
+  });
+
+  it("returns an empty measured payload when no current station matches", () => {
+    const narrowed = payloadForStationSet(payload, ["missing:XX:SNTL"]);
+    expect(narrowed.sites).toEqual([]);
+    expect(narrowed.rollups).toEqual([]);
+    expect(narrowed.site_count).toBe(0);
   });
 });
 
@@ -677,6 +721,7 @@ describe("narrowing the site table", () => {
   const row = (over: Partial<SiteRow>): SiteRow => ({
     station: "1:UT:SNTL", name: "Alta", county: "Salt Lake", state: "UT",
     huc6: "160202", basinName: "Jordan", elevationFeet: 8800,
+    lat: 40.5, lon: -111.6,
     latestDate: "2026-08-15", late: false, inches: 1, normalInches: 2, percent: 50,
     ...over
   });

@@ -172,7 +172,7 @@ describe("baselineRows", () => {
 });
 
 describe("provenanceRows", () => {
-  it("names the agency, the station, the place and the denominator", () => {
+  it("names the agency, the station, the county and the denominator", () => {
     const rows = provenanceRows(reservoir({
       county_name: "Grand County",
       huc6_name: "Lower Green"
@@ -181,7 +181,7 @@ describe("provenanceRows", () => {
     expect(values["Measured by"]).toBe("Natural Resources Conservation Service");
     expect(values["Station identifier"]).toBe("10UTTEST:UT:BOR");
     expect(values["County"]).toContain("Grand County");
-    expect(values["Drainage area"]).toContain("Lower Green");
+    expect(values["Drainage area"]).toBeUndefined();
     expect(values["Full level"]).toContain("National Inventory of Dams");
   });
 

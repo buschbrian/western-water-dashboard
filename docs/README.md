@@ -61,7 +61,7 @@ evidence about a date, never a description of the present.
 ## Current work
 
 The typed ArcGIS application, western geography, the opening choice and its
-reopen control, the five reservoir providers, the 637-site snow network, the
+reopen control, the five reservoir providers, the mountain snow network, the
 upstream sets, drought at four area sizes, accessibility gates and
 compatibility redirects are in production. What remains, in the order it
 should be worked:

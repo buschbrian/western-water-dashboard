@@ -22,6 +22,8 @@ export interface SnowUrlState {
   day: string | null;
   /** A measurement site's station identifier, or null for none chosen. */
   site: string | null;
+  /** Reservoir source identifier whose committed upstream station set is shown. */
+  upstream: string | null;
   /** The drainage area whose own season card is open, or null for none.
    * Separate from `area` on purpose: `area` is the shared cross-page filter
    * and narrows the whole page, while this names the one area the reader is
@@ -37,12 +39,15 @@ export interface SnowUrlState {
 /** Station triplets look like "1030:CO:SNTL"; the page still checks the
  * value against the sites the payload actually carries. */
 const STATION_PATTERN = /^[0-9A-Za-z]+:[A-Z]{2}:[A-Z]+$/;
+/** Reservoir sources include numeric IDs, short codes and agency triplets. */
+const SOURCE_STATION_PATTERN = /^[0-9A-Za-z][0-9A-Za-z:._-]{0,79}$/;
 
 export function snowStateFromSearch(search: string): SnowUrlState {
   const params = new URLSearchParams(search);
   const area = params.get("area");
   const day = params.get("day");
   const site = params.get("site");
+  const upstream = params.get("upstream");
   const basin = params.get("basin");
   const band = params.get("elev");
   const status = params.get("status");
@@ -54,6 +59,7 @@ export function snowStateFromSearch(search: string): SnowUrlState {
     area: area && HUC_CODE.test(area) ? area : null,
     day: day && /^\d{4}-\d{2}-\d{2}$/.test(day) ? day : null,
     site: site && STATION_PATTERN.test(site) ? site : null,
+    upstream: upstream && SOURCE_STATION_PATTERN.test(upstream) ? upstream : null,
     basin: basin && HUC_CODE.test(basin) ? basin : null,
     query,
     band: band && isElevationBand(band) ? band : "all",
@@ -69,6 +75,8 @@ export function snowSearchFromState(state: SnowUrlState, search: string): string
   else params.delete("day");
   if (state.site) params.set("site", state.site);
   else params.delete("site");
+  if (state.upstream) params.set("upstream", state.upstream);
+  else params.delete("upstream");
   if (state.basin) params.set("basin", state.basin);
   else params.delete("basin");
   /* The default of each narrowing control is the absence of its parameter,

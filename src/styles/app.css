@@ -431,6 +431,88 @@ arcgis-map > [slot="bottom-right"] {
    * on this site may scroll horizontally at 360px. */
   overflow-wrap: anywhere;
 }
+
+/* A point and its containing HUC levels are one small geography block, but
+ * not one fact: the ordered path says containment and the definition list
+ * says where the published point lies. These styles are shared by the map
+ * panel and both reading pages so the hierarchy keeps the same grammar. */
+.location-facts {
+  display: grid;
+  gap: .8rem;
+  min-inline-size: 0;
+}
+.hydrologic-path {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: .5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.hydrologic-path li {
+  display: grid;
+  align-content: start;
+  gap: .15rem;
+  min-inline-size: 0;
+  padding: .55rem .65rem;
+  border: 1px solid var(--app-border);
+  border-radius: .4rem;
+  background: var(--app-surface-raised);
+}
+.hydrologic-path-level {
+  color: var(--app-muted);
+  font-size: .72rem;
+}
+.hydrologic-path-name {
+  font-size: .86rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.hydrologic-path code {
+  color: var(--app-muted);
+  font-size: .75rem;
+  font-variant-numeric: tabular-nums;
+}
+.coordinate-facts {
+  display: grid;
+  grid-template-columns: minmax(7rem, max-content) minmax(0, 1fr);
+  gap: .25rem .75rem;
+  margin: 0;
+  font-size: .82rem;
+}
+.coordinate-facts dt { color: var(--app-muted); }
+.coordinate-facts dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.coordinate-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+  align-items: center;
+}
+.coordinate-copy {
+  padding: .35rem .65rem;
+  border: 1px solid var(--app-border);
+  border-radius: .25rem;
+  color: var(--app-accent);
+  background: var(--app-surface-raised);
+  font: inherit;
+  font-size: .78rem;
+  cursor: pointer;
+}
+.coordinate-copy:hover { background: var(--app-surface); }
+.coordinate-copy:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 2px;
+}
+.coordinate-copy-status { color: var(--app-muted); font-size: .75rem; }
+
+@media (max-width: 38rem) {
+  .hydrologic-path { grid-template-columns: minmax(0, 1fr); }
+  .coordinate-facts { grid-template-columns: minmax(0, 1fr); }
+}
 .detail-export { margin-block-start: 1rem; }
 
 .detail-page-link { margin-block-start: 0.75rem; }

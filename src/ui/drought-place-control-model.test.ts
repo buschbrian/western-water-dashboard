@@ -31,8 +31,11 @@ const utah: OpeningSelection = { state: "UT", area: null };
 
 describe("drought's sequential place controls", () => {
   it("offers only the tier chosen by Area size", () => {
-    expect(droughtDrainageAxis(rosters, utah, 2).options.map((option) => option.value))
-      .toEqual(["all", "14", "16"]);
+    expect(droughtDrainageAxis(rosters, utah, 2).options).toEqual([
+      { value: "all", label: "All regions" },
+      { value: "14", label: "Upper Colorado" },
+      { value: "16", label: "Great Basin" }
+    ]);
     expect(droughtDrainageAxis(rosters, utah, 4).options.map((option) => option.value))
       .toEqual(["all", "1602"]);
     expect(droughtDrainageAxis(rosters, utah, 6).options.map((option) => option.value))
