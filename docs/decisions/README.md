@@ -42,7 +42,8 @@ denominator. **Start with ADR-070, then ADR-072, then ADR-003.**
   [ADR-070](ADR-070-the-operators-own-full-level-is-the-denominator.md),
   [ADR-072](ADR-072-divide-by-a-figure-the-water-has-not-been-seen-above.md),
   [ADR-077](ADR-077-publish-what-drains-to-a-reservoir-as-an-upstream-set.md),
-  [ADR-097](ADR-097-filter-snow-by-the-committed-upstream-set.md)
+  [ADR-097](ADR-097-filter-snow-by-the-committed-upstream-set.md),
+  [ADR-099](ADR-099-admit-an-operator-measured-reservoir-with-no-dam-inventory-record.md)
 - Freshness and withdrawal:
   [ADR-056](ADR-056-withdraw-a-reading-that-belongs-to-another-season.md)
 - Procedure: [`docs/operations/source-admission.md`](../operations/source-admission.md)
@@ -97,7 +98,8 @@ ADR-041.**
   [ADR-060](ADR-060-three-questions-about-a-state.md),
   [ADR-081](ADR-081-divide-snows-summed-water-by-summed-normals-once.md),
   [ADR-082](ADR-082-publish-a-drought-severity-and-coverage-index.md),
-  [ADR-083](ADR-083-anchor-the-monthly-normal-window-once-per-chart.md)
+  [ADR-083](ADR-083-anchor-the-monthly-normal-window-once-per-chart.md),
+  [ADR-100](ADR-100-a-sub-daily-providers-day-is-its-last-reading.md)
 - Current architecture: [`docs/architecture/hydrology-methods.md`](../architecture/hydrology-methods.md)
 
 ### Visible language, accessibility and naming
@@ -123,6 +125,7 @@ ADR-008, then ADR-032 and ADR-061.**
   [ADR-074](ADR-074-compare-the-week-with-the-one-before-it.md),
   [ADR-075](ADR-075-draw-the-spread-chart-rather-than-configure-it.md)
 - Layers and basemaps: [ADR-033](ADR-033-open-every-map-on-the-oceans-basemap.md),
+  [ADR-101](ADR-101-bound-the-basemap-chain-and-draw-the-data-without-it.md),
   [ADR-042](ADR-042-sink-the-basemaps-reference-layers-below-the-data.md),
   [ADR-061](ADR-061-reference-geometry-over-continuous-data-only.md)
 - Labels and symbols: [ADR-035](ADR-035-a-label-ladder-tied-to-containment.md),
@@ -142,7 +145,8 @@ ADR-008, then ADR-032 and ADR-061.**
 **Start with ADR-004.**
 
 - Current: [ADR-004](ADR-004-no-api-key-and-refuse-credential-challenges.md),
-  [ADR-080](ADR-080-build-the-usgs-provider-against-the-keyless-legacy-service-now.md)
+  [ADR-098](ADR-098-use-a-pipeline-only-key-for-the-usgs-ogc-service.md)
+- Superseded, read only for history: ADR-080
 
 ## Every record, in order
 
@@ -150,8 +154,8 @@ ADR-008, then ADR-032 and ADR-061.**
 |---|---|---|
 | [ADR-001](ADR-001-adopt-a-build-step.md) | Adopt a build step, retiring the zero-build constraint | Accepted |
 | [ADR-002](ADR-002-data-is-copied-never-bundled.md) | Runtime data is copied into the published output, never bundled | Accepted |
-| [ADR-003](ADR-003-capacity-from-the-national-inventory-of-dams.md) | Take reservoir capacity from the National Inventory of Dams | Accepted; ADR-070 prefers the operator's own figure where there is one |
-| [ADR-004](ADR-004-no-api-key-and-refuse-credential-challenges.md) | Run the ArcGIS map without an API key, and refuse credential challenges | Accepted |
+| [ADR-003](ADR-003-capacity-from-the-national-inventory-of-dams.md) | Take reservoir capacity from the National Inventory of Dams | Accepted; ADR-070 prefers the operator's own figure where there is one, ADR-099 admits one reservoir the inventory has no record of |
+| [ADR-004](ADR-004-no-api-key-and-refuse-credential-challenges.md) | Run the ArcGIS map without an API key, and refuse credential challenges | Accepted; narrowed by ADR-098 for pipeline-only source credentials |
 | [ADR-005](ADR-005-commit-generalized-watershed-boundaries.md) | Commit one generalized watershed boundary file | Superseded by ADR-037 |
 | [ADR-006](ADR-006-simplified-technical-english.md) | Write all visible text in Simplified Technical English | Accepted |
 | [ADR-007](ADR-007-two-rendering-engines.md) | Keep two rendering engines, and keep the old pages live | Superseded by ADR-016 |
@@ -162,7 +166,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-012](ADR-012-build-phase-2-beside-production.md) | Build the Phase 2 shell beside the production pages | Superseded by ADR-019 |
 | [ADR-013](ADR-013-count-reservoirs-whose-waterbody-intersects-utah.md) | Count reservoirs whose waterbody intersects Utah | Accepted |
 | [ADR-014](ADR-014-use-the-ugrc-utah-state-boundary.md) | Use the maintained UGRC Utah state boundary | Superseded by ADR-067 |
-| [ADR-015](ADR-015-confirm-a-dam-by-position-before-name.md) | Confirm a reservoir's dam by position before name | Accepted |
+| [ADR-015](ADR-015-confirm-a-dam-by-position-before-name.md) | Confirm a reservoir's dam by position before name | Accepted; ADR-099 accepts the operator's own location for one reservoir with no record to confirm against |
 | [ADR-016](ADR-016-arcgis-is-the-primary-application.md) | Make ArcGIS the primary application and keep legacy pages for comparison | Superseded by ADR-019 |
 | [ADR-017](ADR-017-map-geography-comes-from-the-drainage-areas.md) | The map's geography is derived from the drainage areas | Accepted |
 | [ADR-018](ADR-018-reference-data-ships-as-one-versioned-export.md) | Capacity and geography ship as one versioned reference export | Accepted |
@@ -227,7 +231,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-077](ADR-077-publish-what-drains-to-a-reservoir-as-an-upstream-set.md) | Publish what drains to a reservoir as an unordered upstream set | Accepted; precomputed against NLDI, keyed per ADR-066, geometry never published |
 | [ADR-078](ADR-078-every-water-this-site-measures-is-a-reservoir.md) | Every water this site measures is a reservoir | Accepted; type follows roster membership, no per-record field, natural lakes keep their names |
 | [ADR-079](ADR-079-rename-through-a-former-name-table-and-publish-the-operator.md) | Rename through a former-name table, and publish the operator | Accepted; 26 provider names normalized, old spellings resolve forever, operator searchable |
-| [ADR-080](ADR-080-build-the-usgs-provider-against-the-keyless-legacy-service-now.md) | Build the USGS provider against the keyless legacy service now | Accepted; 2027 migration recorded as named debt with a date |
+| [ADR-080](ADR-080-build-the-usgs-provider-against-the-keyless-legacy-service-now.md) | Build the USGS provider against the keyless legacy service now | Superseded by ADR-098 |
 | [ADR-081](ADR-081-divide-snows-summed-water-by-summed-normals-once.md) | Divide snow's summed water by summed normals, once, and floor the curve's denominator at the drawing | Accepted; supersedes the snow rollups' mean of ratios, adds a method version to `snowpack.json` |
 | [ADR-082](ADR-082-publish-a-drought-severity-and-coverage-index.md) | Publish a Drought Severity and Coverage Index over measured land | Accepted; derived client-side from published shares, thinly measured areas marked never dropped |
 | [ADR-083](ADR-083-anchor-the-monthly-normal-window-once-per-chart.md) | Anchor the monthly normal window once per chart, not once per month | Accepted; narrows ADR-041's per-month rule for the live twelve-month line, no version bump |
@@ -245,6 +249,10 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-095](ADR-095-order-storage-map-place-filters-from-state-to-area.md) | Order Storage map place filters from state to area | Accepted; supersedes ADR-084 for the Storage map |
 | [ADR-096](ADR-096-publish-point-location-without-publishing-new-geography.md) | Publish point location without publishing new geography | Accepted; HUC path from payload rosters, visible table rows exported as WGS84 points |
 | [ADR-097](ADR-097-filter-snow-by-the-committed-upstream-set.md) | Filter snow by the committed upstream set | Accepted; extends ADR-077 and keeps ADR-081's estimator |
+| [ADR-098](ADR-098-use-a-pipeline-only-key-for-the-usgs-ogc-service.md) | Use a pipeline-only key for the USGS OGC service | Accepted; supersedes ADR-080 and narrows ADR-004 |
+| [ADR-099](ADR-099-admit-an-operator-measured-reservoir-with-no-dam-inventory-record.md) | Admit an operator-measured reservoir with no dam inventory record | Accepted; extends ADR-003 and ADR-015 for one admission, screens unchanged elsewhere |
+| [ADR-100](ADR-100-a-sub-daily-providers-day-is-its-last-reading.md) | A sub-daily provider's day is its last reading | Accepted; no method version bump, the method is unchanged and the code now performs it |
+| [ADR-101](ADR-101-bound-the-basemap-chain-and-draw-the-data-without-it.md) | Bound the basemap chain, and draw the data without it | Accepted; the chain gets one 15s budget, an exhausted budget draws the reservoirs on a plain background |
 
 ## Relationship to the historical journal
 

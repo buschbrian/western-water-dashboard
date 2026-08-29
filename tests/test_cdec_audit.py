@@ -206,17 +206,24 @@ def test_the_service_own_full_level_settles_a_disagreement_with_the_inventory():
     assert row["discrepancies"] == []
 
 
-def test_the_inventory_still_holds_a_reservoir_the_service_says_nothing_about():
-    # The rule reaches only as far as the service's own report. Where it
-    # publishes no full level there is no second figure to prefer, and the
-    # inventory's pool is both the denominator and the screen.
+def test_the_inventory_uses_a_larger_pool_that_contains_the_observed_series():
+    # ADR-072 reaches every inventory-derived denominator, including a CDEC
+    # candidate for which the service publishes no full level. Jackson
+    # Meadows has stood above the conservation pool but inside the same dam
+    # record's maximum pool, so that larger figure is the denominator rather
+    # than a disagreement.
+    match = Match({"name": "Jackson Meadows", "lon": -120.556, "lat": 39.509,
+                   "normal_storage_af": 53100.0, "max_storage_af": 69200.0,
+                   "nid_storage_af": 69200.0, "nid_id": "CA00254"},
+                  0.347, "position")
     decision = Decision("Jackson Meadows", True, "confirmed by position",
-                        None, 53100.0, "normal_storage")
+                        match, 53100.0, "normal_storage")
     row = review(candidate("JCK", "Jackson Meadows (Nevada Co Wd)",
                            [68700, 68000, 67000]), decision, None)
-    assert row["publishable"] is False
-    assert [found["screen"] for found in row["discrepancies"]] == [
-        "seen above the capacity it would be divided by"]
+    assert row["publishable"] is True
+    assert row["capacity_af"] == 69200.0
+    assert row["capacity_basis"] == "max_storage"
+    assert row["discrepancies"] == []
 
 
 def test_a_reservoir_above_even_its_own_operators_figure_is_still_held():

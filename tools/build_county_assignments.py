@@ -47,7 +47,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from refresh_reservoirs import (  # noqa: E402
     ALL_RESERVOIR_IDS, AWDB_RESERVOIRS, CDEC_RESERVOIRS, CDSS_RESERVOIRS,
-    RESERVOIRS, USGS_RESERVOIRS,
+    DNRC_RESERVOIRS, RESERVOIRS, SRP_RESERVOIRS, USGS_RESERVOIRS,
 )
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -137,7 +137,8 @@ def main() -> int:
     for station in ALL_RESERVOIR_IDS:
         row = (RESERVOIRS.get(station) or AWDB_RESERVOIRS.get(station)
                or CDEC_RESERVOIRS.get(station) or CDSS_RESERVOIRS.get(station)
-               or USGS_RESERVOIRS.get(station))
+               or USGS_RESERVOIRS.get(station) or SRP_RESERVOIRS.get(station)
+               or DNRC_RESERVOIRS.get(station))
         if row is None:
             missing_config.append(station)
             continue

@@ -51,6 +51,7 @@ jobs:
         id: refresh
         env:
           PYTHONUNBUFFERED: "1"
+          USGS_API_KEY: ${{ secrets.USGS_API_KEY }}
         run: scripts/refresh-daily.sh
 
       # The monitor publishes each Thursday. When it does not, nothing above

@@ -7,6 +7,34 @@ and is not listed here.
 
 ### Added
 
+- **Two more providers, both of them reservoir operators: five more
+  reservoirs.** The Salt River Project publishes total storage for the four
+  reservoirs it runs on Arizona's Salt River system -- Roosevelt, Apache,
+  Canyon and Saguaro -- and Montana's Department of Natural Resources and
+  Conservation publishes East Fork Rock Creek, the one sensor of its ten that
+  drains west rather than to the Gulf of Mexico. Both publish a full level for
+  water they operate themselves, so both denominators are the operator's own
+  figure rather than the dam inventory's (ADR-070). East Fork Rock Creek is
+  the only reservoir on the roster with no dam inventory record at all: ADR-099
+  admits it on the operator's own location and full level, and its roster file
+  states that absence as a finding instead of leaving the field blank. The
+  details panel names which full level each percentage is measured against for
+  all five, the same way it does for every other operator's figure.
+
+- **The weekly drought table can be downloaded.** The list of drainage areas
+  now has a download action, and it writes exactly what is on screen: the
+  filter and the sort a reader chose, not the whole payload. Each row carries
+  the class shares, the severity index, the change since last week and the
+  combined storage figure shown beside the name.
+
+- **Compact published facts for a question service.** Three new files under
+  `/data/assistant/` carry current reservoir, snow and drought facts with
+  their as-of dates, each under a size budget, rebuilt every morning after the
+  payloads they are read from. The builder validates all three before
+  replacing any, so a failure keeps the last accepted set and never blocks the
+  data refresh. The service that reads them is in `worker/` and is not
+  connected to any page yet.
+
 - **Point geography that can leave the dashboard.** Reservoir and snow-site
   details now show the full Region, Subregion and Basin path from the
   published HUC rosters, plus decimal and degrees-minutes-seconds coordinates
@@ -142,6 +170,24 @@ and is not listed here.
 
 ### Changed
 
+- **The U.S. Geological Survey provider reads the agency's modern service.**
+  The seven reservoirs admitted in August moved off the keyless daily-values
+  service, which is documented to retire in early 2027, onto the modern
+  collection that replaces it. That service needs an API key, so the pipeline
+  holds one: a secret the morning job sends in a request header and that never
+  reaches a reader's browser, which leaves the public pages anonymous as before
+  (ADR-098, superseding ADR-080 and narrowing ADR-004). The reviewed daily
+  statistic is now committed beside each station, because one admitted station
+  publishes two of them and picking by response order would let a published
+  number change without anyone deciding it should. A missing key reads as a
+  provider failure, and the last verified records stay.
+
+- **The morning job asks dense providers only for the days it is missing.** A
+  committed daily history keeps one representative value per date for
+  providers that publish far more often than daily and clip their record --
+  the Salt River Project publishes every five minutes and keeps three years.
+  The estimator receives the same daily series it always did.
+
 - **The place menus show their hierarchy instead of implying it.** The
   drainage-area lists now carry their region and subregion as headings, and
   the county list on Storage Charts carries its state -- so a subregion reads
@@ -241,6 +287,56 @@ and is not listed here.
   suite were both handed `STORED NOW`.
 
 ### Fixed
+
+- **The Salt River Project reservoirs published a mid-morning reading as the
+  day's storage.** That provider publishes every five minutes, and the
+  reduction to one value a day kept whichever reading the sort happened to
+  leave last rather than the day's final one -- an 08:10 figure standing in
+  for the day on a two-day fetch. 4,348 of the 4,388 committed daily values
+  were affected, by as much as 10,206 acre-feet, and none of them would ever
+  have corrected themselves: the refresh asks only for days it has not
+  cached. Every stored figure for the four reservoirs has been re-read from
+  the provider. Canyon Lake's history rank moves from 66.7 to 100.0, Apache
+  Lake's change over a year from -2,402 to -1,314 acre-feet, and every other
+  published figure for the four moves with them. Montana's readings are
+  reduced the same way and were corrected with them.
+
+- **A revised reading could not replace the one already cached.** The daily
+  cache and the day's fetch overlap on purpose, because a provider revises a
+  provisional reading after publishing it. Merging the two kept the cached
+  value on about half the overlapping days, so a correction the provider
+  published could not reach a reader.
+
+- **Montana's published source address pointed at no service.** The address
+  recorded beside the standard-period values named a service path that does
+  not exist. It is now read from the same constant the provider requests
+  with, so the two cannot drift apart again.
+
+- **The first visit no longer waits on the map's background.** The storage
+  map picks its background from a list of candidates, trying each in turn.
+  Every candidate had a time limit and the list itself had none, so a reader
+  whose first choice was slow could wait up to a hundred seconds looking at
+  "Loading reservoir data" -- while that data sat fetched and checked behind a
+  background image it does not need. The list now has fifteen seconds in
+  total. Past that the reservoirs are drawn on a plain background and the
+  reader can choose a background from the map's own list (ADR-101). A reload
+  used to look like the fix, which is why this read as an occasional fault
+  rather than a slow one.
+
+- **A dashboard that fails to start now says so.** The whole start-up ran
+  without anything to catch a failure in it, so a single error anywhere in it
+  left the page showing its loading message for as long as the reader was
+  willing to look at it -- no warning, nothing to act on, and nothing to do
+  but reload. A start-up that fails now reports that the data is unavailable
+  and asks for a reload, and it stops every surface from saying it is still
+  waiting.
+
+- **The storage map's key no longer covers the map's credit line.** Both the
+  key and the mapping service's own credit line are pinned to the bottom of
+  the same map area, and the key was placed against the area rather than
+  against the line, so it took a bite out of "Esri | GEBCO | Garmin |
+  NaturalVue" at every window size. The key now clears it. The browser suite
+  measures the two against each other from now on, at every width it tests.
 
 - **Every ranked reservoir is named again.** The storage map's ranking chart
   gave each bar 18 pixels. A reservoir name wraps to two lines in that axis

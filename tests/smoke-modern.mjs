@@ -1390,6 +1390,24 @@ for (const viewport of VIEWPORTS) {
         startPanel: rect("#start-panel"),
         detailPanel: rect("#detail-panel"),
         legend: rect("#storage-map-legend"),
+        /* The SDK pins its attribution strip to the bottom of the view and
+           renders it inside the map component's shadow root, where the
+           light-DOM `rect` above cannot see it. */
+        attribution: (() => {
+          const stack = [document];
+          while (stack.length) {
+            const root = stack.pop();
+            const found = root.querySelector(".esri-attribution");
+            if (found) {
+              const box = found.getBoundingClientRect();
+              return { left: box.left, right: box.right, top: box.top, bottom: box.bottom };
+            }
+            for (const node of root.querySelectorAll("*")) {
+              if (node.shadowRoot) stack.push(node.shadowRoot);
+            }
+          }
+          return null;
+        })(),
         zoom: rect("arcgis-zoom"),
         home: rect("arcgis-home"),
         compass: rect("arcgis-compass"),
@@ -1648,6 +1666,23 @@ for (const viewport of VIEWPORTS) {
       document.getElementById("table-close").click();
       await new Promise((resolve) => { setTimeout(resolve, 300); });
     });
+
+    /* The map key must not sit on the attribution.
+     *
+     * Both are pinned to the bottom of the same stage -- the key by this
+     * project, the strip by the SDK -- so a key inset measured from the stage
+     * alone lands on top of it. At half a rem the key covered the upper half
+     * of "Esri | GEBCO | Garmin | NaturalVue" at every width, which no
+     * headless screenshot could show and no other assertion here looked at.
+     * Geometry is readable even where the canvas is blank, so this check runs
+     * everywhere the suite does. Attribution a reader cannot read is
+     * attribution the map does not carry. */
+    const boxesOverlap = (a, b) => Boolean(a && b &&
+      Math.max(a.left, b.left) < Math.min(a.right, b.right) &&
+      Math.max(a.top, b.top) < Math.min(a.bottom, b.bottom));
+    check(layout.attribution !== null, `${label}: the map draws no attribution strip`);
+    check(!boxesOverlap(layout.legend, layout.attribution),
+      `${label}: the map key covers the map's attribution`);
 
     check(layout.navigation && layout.navigation.right <= layout.viewport + 1,
       `${label}: the navigation is clipped`);

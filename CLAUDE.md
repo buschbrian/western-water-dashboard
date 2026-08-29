@@ -27,5 +27,16 @@ This file adds only what is specific to working here as Claude.
   the lockfile.
 - **Python runs from the checked-in virtual environment** where one exists:
   `.venv/bin/python -m pytest tests/ -q`.
-- **Headless Chromium renders the ArcGIS canvas blank.** A screenshot is not
-  evidence that a map drew. Say so rather than implying a visual check happened.
+- **Headless Chromium renders the ArcGIS canvas blank**, so a Playwright
+  screenshot is not evidence that a map drew. Say so rather than implying a
+  visual check happened.
+- **A real browser does draw it**, and the in-app browser pane is one. The map
+  renders there in full -- basemap, drainage boundaries, every reservoir
+  circle -- so a genuine visual check *is* available for the one thing the
+  smoke suites cannot judge. What it costs: the view needs roughly half a
+  minute to settle, the canvas lives inside the map component's shadow root so
+  a bare `document.querySelectorAll("canvas")` finds nothing, and `view.updating`
+  stays true forever once the portal request is refused (ADR-004) even with
+  every layer view settled -- read the layer views, not the view. A capture
+  taken while the pane is hidden can be a stale frame, so confirm the pane is
+  showing before believing a screenshot that looks half-drawn.

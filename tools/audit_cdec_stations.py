@@ -50,7 +50,8 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from admission import (  # noqa: E402
-    admit_all, discrepancies, distance_km, preferred_capacity,
+    admit_all, denominator_for, discrepancies, distance_km,
+    preferred_capacity,
 )
 from huc import assign_huc, load_units  # noqa: E402
 from tools.audit_candidate_capacity import (  # noqa: E402
@@ -455,7 +456,24 @@ def review(candidate: dict, decision, service_capacity_af: float | None) -> dict
     three inventory storage fields below it are the record the dam match was
     made against, not the denominator.
     """
-    evidence = dict(decision.evidence(),
+    observed = candidate.get("observed_max_af")
+    # ADR-072 chooses among the inventory's own figures only where the
+    # provider publishes no full level. The Colorado audit already hands the
+    # discrepancy screens that chosen denominator; California must ask the
+    # same question. Where CDEC does publish a full level, ADR-070 takes
+    # precedence and the inventory's first-preference figure remains the
+    # comparison evidence beside it.
+    if decision.match is not None and not service_capacity_af:
+        inventory_capacity, inventory_basis = denominator_for(
+            decision.match.dam, observed)
+    else:
+        inventory_capacity = decision.capacity_af
+        inventory_basis = decision.capacity_basis
+    chosen = type(decision)(
+        decision.name, decision.admitted, decision.reason, decision.match,
+        inventory_capacity, inventory_basis)
+
+    evidence = dict(chosen.evidence(),
                     station=candidate["station"],
                     state=candidate["state"],
                     huc6=candidate["huc6"],
@@ -469,10 +487,10 @@ def review(candidate: dict, decision, service_capacity_af: float | None) -> dict
     # rather than left to the roster builder, but both are still reported:
     # the decision was made from the pair and a reviewer reads the pair.
     evidence["service_capacity_af"] = service_capacity_af
-    evidence["inventory_capacity_af"] = decision.capacity_af
-    evidence["inventory_capacity_basis"] = decision.capacity_basis
+    evidence["inventory_capacity_af"] = inventory_capacity
+    evidence["inventory_capacity_basis"] = inventory_basis
     capacity, basis = preferred_capacity(
-        decision, service_capacity_af, CDEC_CAPACITY_BASIS)
+        chosen, service_capacity_af, CDEC_CAPACITY_BASIS)
     # Only where a dam was confirmed. A denominator written into a row that
     # has no dam behind it reads as a reservoir this project could measure,
     # and the four that need a reviewed capacity by hand are exactly those
@@ -483,7 +501,7 @@ def review(candidate: dict, decision, service_capacity_af: float | None) -> dict
     evidence["discrepancies"] = [
         {"screen": screen, "detail": detail}
         for screen, detail in discrepancies(
-            decision,
+            chosen,
             highest_readings=candidate.get("highest_readings"),
             service_capacity_af=service_capacity_af,
             provider_basis=CDEC_CAPACITY_BASIS)]

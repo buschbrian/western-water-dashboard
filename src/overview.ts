@@ -330,12 +330,12 @@ async function renderOverview(
         </div>
       </div>
       <!-- The open control, above the closed ones and ruled off from them.
-           A search matches a name, a drainage area or a county, all at once
+           A search matches a name, operator, provider, drainage area or county, all at once
            and on anything a reader types; every control below it offers a
            closed list and narrows to one member of it. Laid out among them
            it read as the first dropdown. -->
       <div id="overview-filter-search" class="filterbar-search">
-        <label>Find a reservoir<input id="reservoir-search" type="search" placeholder="Name, drainage area or county" autocomplete="off" /></label>
+        <label>Find a reservoir<input id="reservoir-search" type="search" placeholder="Name, operator, provider, drainage area or county" autocomplete="off" /></label>
       </div>
       <!-- Coarsest first, then finest: Where (state, with counties beneath),
            then one Drainage area menu spanning region, subregion and basin.

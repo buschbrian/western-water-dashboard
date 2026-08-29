@@ -64,6 +64,7 @@ EXPECTED_UNITS = {
     "150200": "Little Colorado",
     "150301": "Lower Colorado",
     "150501": "Middle Gila",
+    "150601": "Salt",
     "150602": "Verde",
     "160101": "Upper Bear",
     "160102": "Lower Bear",
@@ -256,11 +257,12 @@ def test_every_published_reservoir_lands_in_exactly_one_unit(units, reservoirs):
 
 
 def test_the_areas_holding_reservoirs_are_exactly_the_roster_scopes(reservoirs, units):
-    """61 of the 75 drawn areas hold nothing, and that is the current state of
-    the expansion rather than a fault: coverage moved west and the roster has
-    not, because admitting a reservoir means tracing a capacity and reviewing
-    it (ADR-063). What must stay true is that every area holding a reservoir
-    is one the map opens on -- this is the assertion that fails when a
+    """20 of the 75 drawn areas hold nothing, and that is the current state of
+    the expansion rather than a fault: admitting a reservoir means tracing a
+    capacity and reviewing it (ADR-063), so the roster fills the drawn scope
+    one review at a time. Salt is the most recent to fill, with the four Salt
+    River Project reservoirs. What must stay true is that every area holding a
+    reservoir is one the map draws -- this is the assertion that fails when a
     reservoir is admitted outside it and the extent is left behind."""
     represented = {reservoir["huc6"] for reservoir in reservoirs}
 

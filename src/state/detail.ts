@@ -82,7 +82,9 @@ const PROVIDER_NAMES: Record<SourceKey, string> = {
   awdb: "Natural Resources Conservation Service",
   cdec: "California Department of Water Resources",
   cdss: "Colorado Division of Water Resources",
-  usgs: "U.S. Geological Survey"
+  usgs: "U.S. Geological Survey",
+  srp: "Salt River Project",
+  dnrc: "Montana Department of Natural Resources and Conservation"
 };
 
 export function providerName(reservoir: Reservoir): string {
@@ -142,22 +144,22 @@ export function changeLabel(base: string, elapsed: number | null | undefined): s
 /**
  * What a reservoir's full level actually measures.
  *
- * Three different quantities are published as "capacity" across the two
+ * Three different quantities are published as "capacity" across the seven
  * providers, and until now the details panel called all three of them the
  * same thing. They are not the same thing: a normal full level is the pool a
  * reservoir is operated to hold, and a maximum level includes storage above
  * it that exists to catch a flood and is not meant to be occupied. A
  * reservoir at 60% of one is not at 60% of the other.
  *
- * It matters more than the count of each suggests. Fifteen of the 198
- * reservoirs are measured against a maximum level, and those fifteen are a
- * quarter of the combined denominator every regional percentage is divided by
- * -- Lake Powell alone is most of it. So a reader comparing two reservoirs, or
- * reading a combined figure, is comparing against mixed bases unless the
- * panel says which. (It read "four of the sixty-nine" and "71%" for as long
- * as the roster had been western: a count in a comment goes stale the same
- * way a count in a sentence does, and `statewideRollup` publishes these as
- * `basisShares` so no surface has to state them.)
+ * It matters more than the count of each suggests. Ninety-two of the 392
+ * reservoirs are measured against a maximum level, and those ninety-two are
+ * more than a fifth of the combined denominator every regional percentage is
+ * divided by -- Lake Powell alone is three quarters of it. So a reader
+ * comparing two reservoirs, or reading a combined figure, is comparing
+ * against mixed bases unless the panel says which. (It read "four of the
+ * sixty-nine" and "71%", then "fifteen of the 198": a count in a comment goes
+ * stale the same way a count in a sentence does, and `statewideRollup`
+ * publishes these as `basisShares` so no surface has to state them.)
  */
 const CAPACITY_BASIS_NAMES: Record<string, string> = {
   normal_storage: "the normal full level",
@@ -168,7 +170,16 @@ const CAPACITY_BASIS_NAMES: Record<string, string> = {
   nid_storage: "the largest level the dam inventory publishes",
   reclamation_project_record: "the full level published by the reservoir operator",
   awdb_reservoir_metadata: "the full level published with the readings",
-  cdec_reservoir_report: "the full level published by the reservoir operator"
+  cdec_reservoir_report: "the full level published by the reservoir operator",
+  /* The Salt River Project and Montana's Department of Natural Resources and
+     Conservation each measure water they operate themselves, so each
+     published full level is the operator's own figure and reads as one
+     (ADR-070). Montana's is the only full level on the roster with no dam
+     inventory record behind it, which ADR-099 accepts on the operator's
+     authority; the phrase does not have to say so, because it already names
+     who published it. */
+  srp_reservoir_metadata: "the full level published by the reservoir operator",
+  dnrc_stage_metadata: "the full level published by the reservoir operator"
 };
 
 /** The words for a basis, or null when the provider named none. */

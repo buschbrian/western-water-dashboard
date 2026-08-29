@@ -12,7 +12,9 @@ import {
   type ReservoirInclusion
 } from "./data/rollup";
 import { stateName, usStatesOnly } from "./data/state-vocabulary";
-import { capacityBasisName, changeLabel, formatChange, rankWithYears } from "./state/detail";
+import {
+  capacityBasisName, changeLabel, formatChange, providerName, rankWithYears
+} from "./state/detail";
 import { reservoirLabel } from "./state/selection";
 import { formatAcreFeet } from "./viz/format";
 import { STALE_COLOR, storageClass } from "./viz/classes";
@@ -239,6 +241,8 @@ function searchText(reservoir: Reservoir): string {
   return normalize([
     reservoir.name,
     reservoir.operator ?? "",
+    providerName(reservoir),
+    reservoir.source_label,
     reservoir.huc6_name ?? "",
     reservoir.county_name ?? "",
     reservoir.state ?? ""

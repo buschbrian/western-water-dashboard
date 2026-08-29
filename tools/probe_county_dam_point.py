@@ -7,8 +7,9 @@ Arizona, and the lake a Utah reader asks about is in San Juan County, Utah.
 `OPEN-BACKLOG-SCOPING.md` left open how many reservoirs would move if
 counties followed the drainage rule instead. This probe measures it.
 
-It reads the reviewed dam points from `capacities.json` -- the same points the
-upstream trace starts from -- assigns each against the same full-resolution
+It reads the merged reviewed dam points from `pipeline.roster.load_capacities`
+-- `capacities.json` plus every admitted provider roster, the same points the
+refresh and upstream trace use -- assigns each against the same full-resolution
 Census-counties service `build_county_assignments.py` used for the committed
 file (so the diff measures the two points, not two sources), and diffs the
 answer against `counties.json`.
@@ -32,6 +33,8 @@ import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
+sys.path.insert(0, str(ROOT))
+from pipeline.roster import load_capacities  # noqa: E402
 
 COUNTY_LAYER = ("https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/"
                 "services/USA_Census_Counties/FeatureServer/0")
@@ -66,8 +69,7 @@ def county_at(lon: float, lat: float) -> list[dict]:
 
 
 def main() -> int:
-    capacities = json.loads(
-        (ROOT / "capacities.json").read_text(encoding="utf-8"))["capacities"]
+    capacities = load_capacities()
     counties = json.loads(
         (ROOT / "counties.json").read_text(encoding="utf-8"))["counties"]
 
@@ -79,8 +81,14 @@ def main() -> int:
 
     moved: list[tuple[str, dict, dict]] = []
     unresolved: list[str] = []
-    for station, entry in sorted(dams.items(), key=lambda kv: kv[1]["name"]):
-        name = entry["name"]
+    def reservoir_name(item: tuple[str, dict]) -> str:
+        station, entry = item
+        return (entry.get("name")
+                or (counties.get(station) or {}).get("name")
+                or station)
+
+    for station, entry in sorted(dams.items(), key=reservoir_name):
+        name = reservoir_name((station, entry))
         found = county_at(entry["dam_lon"], entry["dam_lat"])
         if not found:
             unresolved.append(f"{name}: no county contains the dam point")

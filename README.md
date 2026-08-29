@@ -145,19 +145,22 @@ Stable public paths are documented on the [data page](data.html):
 | `/api/reference.json` | Reviewed capacity evidence and the drainage-area roster, without polygon geometry. |
 | `/data/upstream_index.json` | For each reservoir, the published reservoirs and snow sites on land that drains to it (ADR-077). |
 
-The daily pipeline reads observations from five providers: the Bureau of
+The daily pipeline reads observations from seven providers: the Bureau of
 Reclamation, the Natural Resources Conservation Service, the U.S. Geological
-Survey, the California Department of Water Resources and the Colorado Division
-of Water Resources. Dam evidence comes from the U.S. Army Corps of Engineers
+Survey, the California Department of Water Resources, the Colorado Division
+of Water Resources, the Salt River Project and the Montana Department of
+Natural Resources and Conservation. The last two are operators publishing
+readings for water they run themselves, rather than agencies publishing for
+everyone. Dam evidence comes from the U.S. Army Corps of Engineers
 National Inventory of Dams. Drainage areas come from the U.S. Geological
 Survey Watershed Boundary Dataset, and what drains to each reservoir from the
 same agency's Network-Linked Data Index (ADR-077). Drought data comes from the
 U.S. Drought Monitor. The complete ownership and failure contract is in
 [`docs/AUTHORITATIVE-SOURCE-INVENTORY.md`](docs/AUTHORITATIVE-SOURCE-INVENTORY.md).
 
-California is a production provider as of 2026-08-20: 142 reservoirs, read
-from the state's own service, with the full level taken from the operator's
-published figure wherever it publishes one (ADR-070). Twenty-one candidates
+California is a production provider, re-audited 2026-08-28: 147 reservoirs,
+read from the state's own service, with the full level taken from the operator's
+published figure wherever it publishes one (ADR-070). Twelve candidates
 are held rather than published and
 [`admitted_cdec_reservoirs.json`](admitted_cdec_reservoirs.json) names each
 with the finding behind it. Colorado followed on 2026-08-21 with ten
@@ -173,10 +176,20 @@ reservoirs in Arizona, Nevada and Washington, admitted on confirmed dam
 matches; four more candidates are held with their findings in
 [`admitted_usgs_reservoirs.json`](admitted_usgs_reservoirs.json). It is the
 only provider that publishes no full level of its own, so every one of its
-denominators comes from the dam inventory. It is built against the keyless
-legacy daily-values service, which is documented to retire in early 2027;
-ADR-080 records that migration as debt with a date rather than a discovery
-waiting to happen.
+denominators comes from the dam inventory. It now reads the agency's modern
+OGC daily collection, which needs an API key: the key is a pipeline-only
+secret that never reaches a reader's browser, and the reviewed daily statistic
+is committed beside each station so the service cannot silently change which
+series a published number came from (ADR-098).
+
+The Salt River Project and Montana's Department of Natural Resources and
+Conservation followed on 2026-08-29 — four Arizona reservoirs on the Salt
+River system, and East Fork Rock Creek in Montana. Both publish a full level
+for water they operate themselves, so both denominators are the operator's own
+figure (ADR-070). East Fork Rock Creek is the one reservoir on the roster with
+no dam inventory record behind it at all; ADR-099 admits it on the operator's
+own location and full level, and its roster file states the absence as a
+finding rather than leaving a blank field.
 
 ### Storage metrics
 
@@ -300,17 +313,10 @@ means a line cannot hide the subject (ADR-061).
 
 Current product work is narrower, in the order it should be worked:
 
-- **the U.S. Geological Survey migration, due before early 2027** (ADR-080).
-  The fifth provider is built against the keyless legacy daily-values service,
-  which is documented to retire. Either register the free API key and amend
-  ADR-004 for that one provider, or withdraw its seven reservoirs under
-  ADR-056. Nothing in the repository will warn you — `check_reference_freshness.py`
-  watches reviewed inputs, not service retirements. This is the only item here
-  with an external deadline;
 - **complete a human visual review of every page and viewport.** Automated
   tests cannot judge colour balance, terrain, density, or visual hierarchy
   because the ArcGIS canvas is blank in headless Chromium;
-- settle the 21 California and 4 U.S. Geological Survey candidates still held
+- settle the 12 California and 4 U.S. Geological Survey candidates still held
   for source disagreements, each named with its finding in its roster file;
 - keep automatically reported late and withdrawn feeds under review;
 - re-check the two vendor accessibility items and the content policy on the
@@ -319,9 +325,12 @@ Current product work is narrower, in the order it should be worked:
   the measured `script-src`;
 - resolve the four published points that have no water body in any source that
   can be asked;
-- source the states still missing — Idaho, Oregon and Wyoming outright, and the
-  rest of Arizona, Nevada and Washington beyond the seven the fifth provider
-  brought. The survey is item 5 of
+- source the remaining coverage gaps — Idaho, Oregon and Wyoming outright,
+  plus further Nevada and Washington reservoirs. The two sources the
+  2026-08-28 follow-up found are now built: SRP's four additive Arizona
+  reservoirs and DNRC's one in-scope Montana reservoir are published, and
+  DNRC's nine remaining sensors drain to the Gulf of Mexico rather than being
+  a coverage gap. The survey is item 5 of
   [`docs/WATER-BODY-AND-NAVIGATION-SCOPING.md`](docs/WATER-BODY-AND-NAVIGATION-SCOPING.md),
   whose other four items are closed; and
 - two deferred decisions, neither of them blocking: whether to order the

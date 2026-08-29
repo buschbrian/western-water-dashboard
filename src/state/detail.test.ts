@@ -46,15 +46,20 @@ describe("the details a reader sees", () => {
   it("names the measuring agency in full, not the payload's own label", () => {
     /* The agency, never the system it publishes through: the payload's own
      * labels carry retired vocabulary (ADR-006) and a reader is told who
-     * measured the water. Five providers now, and the table is exhaustive
-     * on purpose -- a sixth arriving with no name of its own would fail
-     * here rather than reaching a reader as `undefined`. */
+     * measured the water. Seven providers now, and the table is exhaustive
+     * on purpose -- an eighth arriving with no name of its own would fail
+     * here rather than reaching a reader as `undefined`. The last two are
+     * operators measuring their own water rather than agencies measuring
+     * everyone's, which changes nothing here: a reader is still told who
+     * took the reading. */
     const agencies: Record<string, string> = {
       rise: "Bureau of Reclamation",
       awdb: "Natural Resources Conservation Service",
       cdec: "California Department of Water Resources",
       cdss: "Colorado Division of Water Resources",
-      usgs: "U.S. Geological Survey"
+      usgs: "U.S. Geological Survey",
+      srp: "Salt River Project",
+      dnrc: "Montana Department of Natural Resources and Conservation"
     };
     for (const reservoir of reservoirs) {
       expect(providerName(reservoir)).toBe(agencies[reservoir.source_key]);

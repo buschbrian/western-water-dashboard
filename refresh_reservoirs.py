@@ -64,36 +64,47 @@ import watershed_scopes
 # `R.providers._get_cdec_json`, not a copy of the name).
 from pipeline import (  # noqa: F401
     constants, freshness, geography, history, numbers, providers, roster,
-    seasonal,
+    seasonal, source_history,
 )
 from pipeline.constants import (  # noqa: F401
     ADMITTED_CDEC_RESERVOIRS_PATH, ADMITTED_CDSS_RESERVOIRS_PATH,
     ADMITTED_RESERVOIRS_PATH, ADMITTED_RISE_RESERVOIRS_PATH,
+    ADMITTED_DNRC_RESERVOIRS_PATH, ADMITTED_SRP_RESERVOIRS_PATH,
     ADMITTED_USGS_RESERVOIRS_PATH, AWDB_DATA_URL,
     AWDB_MONTHLY_STALE_AFTER_DAYS, BASE_AWDB_RESERVOIRS, BASE_RISE_RESERVOIRS,
     CAPACITY_PATH, COUNTIES_PATH, DEFAULT_BASELINE, EXPORT_PATH,
     EXPORT_SCHEMA_VERSION, LOCAL_TZ, METHOD_VERSION, MIN_BASELINE_YEARS,
     NORMALS_PATH, OUTPUT_PATH, RESERVOIR_SCHEMA_VERSION, RISE_RESULT_URL,
+    SOURCE_HISTORY_PATH,
     SEASONAL_WINDOW_DAYS, SOURCE_COVERAGE, SOURCE_COVERAGE_REVIEWED,
     STALE_AFTER_DAYS, START_DATE, WITHDRAW_AFTER_DAYS, local_today
 )
 from pipeline.roster import (  # noqa: F401
-    ADMITTED_CDEC_RESERVOIRS, ADMITTED_CDSS_RESERVOIRS, ADMITTED_RESERVOIRS,
-    ADMITTED_RISE_RESERVOIRS, ADMITTED_USGS_RESERVOIRS, ALL_RESERVOIR_IDS,
+    ADMITTED_CDEC_RESERVOIRS, ADMITTED_CDSS_RESERVOIRS,
+    ADMITTED_DNRC_RESERVOIRS, ADMITTED_RESERVOIRS,
+    ADMITTED_RISE_RESERVOIRS, ADMITTED_SRP_RESERVOIRS,
+    ADMITTED_USGS_RESERVOIRS, ALL_RESERVOIR_IDS,
     ALL_RESERVOIR_NAMES, AWDB_RESERVOIRS, CDEC_RESERVOIRS, CDSS_RESERVOIRS,
+    DNRC_RESERVOIRS,
     REQUIRED_CAPACITY_EVIDENCE, RESERVOIRS, RESERVOIR_NAMES,
-    USGS_RESERVOIRS, load_admitted_cdec_reservoirs,
+    SRP_RESERVOIRS, USGS_RESERVOIRS, load_admitted_cdec_reservoirs,
     load_admitted_cdss_reservoirs, load_admitted_reservoirs,
     load_admitted_rise_reservoirs, load_admitted_usgs_reservoirs,
     load_capacities, validate_capacity_evidence
 )
 from pipeline.providers import (  # noqa: F401
     CDEC_DATA_URL, CDEC_MISSING_VALUE, CDEC_STORAGE_SENSOR, CDSS_BASE_URL,
-    CDSS_SERIES_URL, CDSS_STATIONS_URL, MAX_PAGES, RETRY_ATTEMPTS,
-    RETRY_BACKOFF_SECONDS, USGS_DV_URL, _get_awdb_json, _get_cdss_json,
+    CDSS_SERIES_URL, CDSS_STATIONS_URL, DNRC_SERIES_URL, DNRC_STAGE_URL,
+    MAX_PAGES, RETRY_ATTEMPTS, RETRY_BACKOFF_SECONDS, SRP_BASE_URL,
+    SRP_SERIES_URL, SRP_STATIONS_URL, USGS_DV_URL, USGS_LEGACY_DV_URL,
+    _get_awdb_json, _get_cdss_json,
     _get_cdec_json, _get_json, _get_usgs_json, fetch_awdb_series,
-    fetch_cdss_series, fetch_cdec_series, fetch_rise_series,
-    fetch_usgs_series
+    fetch_cdss_series, fetch_cdec_series, fetch_dnrc_series,
+    fetch_rise_series, fetch_srp_series, fetch_srp_station_list,
+    fetch_usgs_series, reduce_to_daily_last, validate_srp_station
+)
+from pipeline.source_history import (  # noqa: F401
+    load_source_history, merge_source_series, source_history_document,
 )
 from pipeline.seasonal import (  # noqa: F401
     CANONICAL_YEAR_DAYS, annual_seasonal_values, canonical_day,
@@ -319,6 +330,8 @@ def load_capacity_catalog() -> dict:
     catalog["admitted_cdec_reservoirs"] = ADMITTED_CDEC_RESERVOIRS_PATH.name
     catalog["admitted_cdss_reservoirs"] = ADMITTED_CDSS_RESERVOIRS_PATH.name
     catalog["admitted_usgs_reservoirs"] = ADMITTED_USGS_RESERVOIRS_PATH.name
+    catalog["admitted_srp_reservoirs"] = ADMITTED_SRP_RESERVOIRS_PATH.name
+    catalog["admitted_dnrc_reservoirs"] = ADMITTED_DNRC_RESERVOIRS_PATH.name
     catalog["dam_points"]["count"] = sum(
         1 for entry in catalog["capacities"].values()
         if entry.get("dam_lon") is not None and entry.get("dam_lat") is not None)
@@ -697,7 +710,8 @@ def main() -> int:
     parser.add_argument("--dry-run", action="store_true",
                         help="compute everything but don't write reservoirs.json")
     parser.add_argument("--source",
-                        choices=("all", "rise", "awdb", "cdec", "cdss", "usgs"),
+                        choices=("all", "rise", "awdb", "cdec", "cdss", "usgs",
+                                 "srp", "dnrc"),
                         default="all",
                         help="refresh one source and merge the other source's previously "
                              "published records (default: all)")
@@ -706,6 +720,7 @@ def main() -> int:
     today = local_today()
     end = (today + pd.Timedelta(days=1)).strftime("%Y%m%d")
     previous = load_previous(OUTPUT_PATH)
+    dense_history = load_source_history(SOURCE_HISTORY_PATH)
     capacities = load_capacities()
     normals = load_normals()
     if normals:
@@ -718,13 +733,17 @@ def main() -> int:
           f"({len(RESERVOIRS)} Reclamation, {len(ADMITTED_RESERVOIRS)} admitted, "
           f"{len(ADMITTED_CDEC_RESERVOIRS)} California, "
           f"{len(ADMITTED_CDSS_RESERVOIRS)} Colorado, "
-          f"{len(ADMITTED_USGS_RESERVOIRS)} USGS)")
+          f"{len(ADMITTED_USGS_RESERVOIRS)} USGS, "
+          f"{len(ADMITTED_SRP_RESERVOIRS)} SRP, "
+          f"{len(ADMITTED_DNRC_RESERVOIRS)} DNRC)")
 
     rise_targets = RESERVOIRS if args.source in {"all", "rise"} else {}
     awdb_targets = AWDB_RESERVOIRS if args.source in {"all", "awdb"} else {}
     cdec_targets = CDEC_RESERVOIRS if args.source in {"all", "cdec"} else {}
     cdss_targets = CDSS_RESERVOIRS if args.source in {"all", "cdss"} else {}
     usgs_targets = USGS_RESERVOIRS if args.source in {"all", "usgs"} else {}
+    srp_targets = SRP_RESERVOIRS if args.source in {"all", "srp"} else {}
+    dnrc_targets = DNRC_RESERVOIRS if args.source in {"all", "dnrc"} else {}
     if args.only:
         # Named, because a person types a name and not a station triplet. The
         # roster is keyed by station since ADR-066, so a name is resolved to
@@ -738,11 +757,15 @@ def main() -> int:
         cdec_targets = {k: v for k, v in CDEC_RESERVOIRS.items() if k in chosen}
         cdss_targets = {k: v for k, v in CDSS_RESERVOIRS.items() if k in chosen}
         usgs_targets = {k: v for k, v in USGS_RESERVOIRS.items() if k in chosen}
+        srp_targets = {k: v for k, v in SRP_RESERVOIRS.items() if k in chosen}
+        dnrc_targets = {k: v for k, v in DNRC_RESERVOIRS.items() if k in chosen}
         found = {RESERVOIR_NAMES.get(station, station)
                  for station in set(rise_targets) | set(awdb_targets)
-                 | set(cdec_targets) | set(cdss_targets) | set(usgs_targets)}
+                 | set(cdec_targets) | set(cdss_targets) | set(usgs_targets)
+                 | set(srp_targets) | set(dnrc_targets)}
         missing = (wanted - found - set(rise_targets) - set(awdb_targets)
-                   - set(cdec_targets) - set(cdss_targets) - set(usgs_targets))
+                   - set(cdec_targets) - set(cdss_targets) - set(usgs_targets)
+                   - set(srp_targets) - set(dnrc_targets))
         if missing:
             print(f"ERROR: unknown reservoir(s): {', '.join(sorted(missing))}", file=sys.stderr)
             return 2
@@ -882,7 +905,9 @@ def main() -> int:
 
     for site_no, (name, lat, lon, capacity_af, cadence) in usgs_targets.items():
         try:
-            df = fetch_usgs_series(site_no, START_DATE, end)
+            df = fetch_usgs_series(
+                site_no, ADMITTED_USGS_RESERVOIRS[site_no]["statistic_id"],
+                START_DATE, end)
         except Exception as exc:  # noqa: BLE001
             reason = (f"USGS fetch failed after {RETRY_ATTEMPTS} attempts: "
                       f"{type(exc).__name__}: {exc}")
@@ -907,13 +932,81 @@ def main() -> int:
             name, None, lat, lon, df, today,
             ADMITTED_USGS_RESERVOIRS[site_no]["capacity"],
             source_key="usgs", source_label="U.S. Geological Survey",
-            source_url=USGS_DV_URL + "/",
+            source_url="https://api.waterdata.usgs.gov/",
             data_frequency=cadence, stale_after_days=stale_after,
             change_tolerance_days=45 if cadence == "monthly" else 10,
             source_station_id=site_no,
             normals=normals,
         ))
         time.sleep(0.2)
+
+    srp_stations = None
+    if srp_targets:
+        try:
+            srp_stations = fetch_srp_station_list()
+        except Exception as exc:  # noqa: BLE001
+            print(f"WARNING: SRP station-list validation failed: {type(exc).__name__}: {exc}")
+    for measurement_key, (name, lat, lon, capacity_af, cadence) in srp_targets.items():
+        row = ADMITTED_SRP_RESERVOIRS[measurement_key]
+        history_key = f"srp:{measurement_key}"
+        cached = dense_history.get(history_key)
+        try:
+            if srp_stations is None:
+                raise RuntimeError("SRP station list did not answer")
+            validate_srp_station(row, srp_stations)
+            earliest = today - pd.DateOffset(years=3)
+            fetch_start = (cached["date"].max() if cached is not None and not cached.empty
+                           else earliest)
+            incoming = fetch_srp_series(
+                row["measurement_id"], row["history_data_id"],
+                pd.Timestamp(fetch_start).strftime("%Y%m%d"), end)
+            df = merge_source_series(cached, incoming)
+            dense_history[history_key] = df
+        except Exception as exc:  # noqa: BLE001
+            reason = (f"SRP fetch failed after {RETRY_ATTEMPTS} attempts: "
+                      f"{type(exc).__name__}: {exc}")
+            print(f"WARNING: {name} ({measurement_key}) -- {reason}")
+            if measurement_key in previous:
+                records.append(carry_forward(previous[measurement_key], today, reason))
+            continue
+        if df.empty:
+            reason = "SRP returned no usable storage rows"
+            print(f"WARNING: {name} ({measurement_key}) -- {reason}")
+            if measurement_key in previous:
+                records.append(carry_forward(previous[measurement_key], today, reason))
+            continue
+        records.append(summarize(
+            name, None, lat, lon, df, today, row["capacity"],
+            source_key="srp", source_label="Salt River Project",
+            source_url="https://streamflow.watershedconnection.com/dwr",
+            data_frequency="daily", stale_after_days=STALE_AFTER_DAYS,
+            source_station_id=measurement_key, normals=normals,
+            operator=row.get("operator")))
+
+    for sensor_id, (name, lat, lon, capacity_af, cadence) in dnrc_targets.items():
+        row = ADMITTED_DNRC_RESERVOIRS[sensor_id]
+        try:
+            df = fetch_dnrc_series(sensor_id, START_DATE, end)
+        except Exception as exc:  # noqa: BLE001
+            reason = (f"DNRC fetch failed after {RETRY_ATTEMPTS} attempts: "
+                      f"{type(exc).__name__}: {exc}")
+            print(f"WARNING: {name} ({sensor_id}) -- {reason}")
+            if sensor_id in previous:
+                records.append(carry_forward(previous[sensor_id], today, reason))
+            continue
+        if df.empty:
+            reason = "DNRC returned no usable storage rows"
+            print(f"WARNING: {name} ({sensor_id}) -- {reason}")
+            if sensor_id in previous:
+                records.append(carry_forward(previous[sensor_id], today, reason))
+            continue
+        records.append(summarize(
+            name, None, lat, lon, df, today, row["capacity"],
+            source_key="dnrc", source_label="Montana DNRC StAGE",
+            source_url="https://gis.dnrc.mt.gov/arcgis/rest/services/WRD/WMB_StAGE/MapServer",
+            data_frequency="daily", stale_after_days=STALE_AFTER_DAYS,
+            source_station_id=sensor_id, normals=normals,
+            operator=row.get("operator")))
 
     if args.only:
         print(json.dumps(records, indent=2))
@@ -924,7 +1017,8 @@ def main() -> int:
     # refresh into a partial dashboard.
     selected_stations = (set(rise_targets) | set(awdb_targets)
                          | set(cdec_targets) | set(cdss_targets)
-                         | set(usgs_targets))
+                         | set(usgs_targets) | set(srp_targets)
+                         | set(dnrc_targets))
     refreshed_sources: set[str] = set()
     if args.source != "all":
         # Which feeds this run actually spoke to, read from what it fetched
@@ -1049,8 +1143,9 @@ def main() -> int:
         "stale_after_days_by_cadence": {"daily": STALE_AFTER_DAYS,
                                          "monthly": AWDB_MONTHLY_STALE_AFTER_DAYS},
         "source": ("Bureau of Reclamation RISE API, USDA NRCS AWDB, the "
-                   "California Data Exchange Center and the Colorado "
-                   "Division of Water Resources"),
+                   "California Data Exchange Center, the Colorado Division "
+                   "of Water Resources, the U.S. Geological Survey, the Salt "
+                   "River Project and Montana DNRC StAGE"),
         "sources": [
             {"key": "rise", "label": "Bureau of Reclamation RISE",
              "url": "https://data.usbr.gov/rise-api", "cadence": "daily"},
@@ -1064,7 +1159,13 @@ def main() -> int:
              "url": "https://dwr.state.co.us/Rest/GET/api/v2/",
              "cadence": "daily"},
             {"key": "usgs", "label": "U.S. Geological Survey",
-             "url": USGS_DV_URL + "/",
+             "url": "https://api.waterdata.usgs.gov/",
+             "cadence": "daily"},
+            {"key": "srp", "label": "Salt River Project",
+             "url": "https://streamflow.watershedconnection.com/dwr",
+             "cadence": "daily"},
+            {"key": "dnrc", "label": "Montana DNRC StAGE",
+             "url": "https://gis.dnrc.mt.gov/arcgis/rest/services/WRD/WMB_StAGE/MapServer",
              "cadence": "daily"},
         ],
         "source_counts": {
@@ -1073,6 +1174,8 @@ def main() -> int:
             "cdec": sum(1 for r in records if r.get("source_key") == "cdec"),
             "cdss": sum(1 for r in records if r.get("source_key") == "cdss"),
             "usgs": sum(1 for r in records if r.get("source_key") == "usgs"),
+            "srp": sum(1 for r in records if r.get("source_key") == "srp"),
+            "dnrc": sum(1 for r in records if r.get("source_key") == "dnrc"),
         },
         "reservoir_count": len(records),
         "stale_count": sum(1 for r in records if r.get("is_stale")),
@@ -1142,6 +1245,9 @@ def main() -> int:
         return 0
 
     OUTPUT_PATH.write_text(json.dumps(payload, indent=2) + "\n")
+    SOURCE_HISTORY_PATH.write_text(
+        json.dumps(source_history_document(
+            dense_history, today.strftime("%Y-%m-%d")), indent=2) + "\n")
     print(f"\nWrote {len(records)} reservoirs ({payload['stale_count']} stale) to {OUTPUT_PATH}")
     return 0
 

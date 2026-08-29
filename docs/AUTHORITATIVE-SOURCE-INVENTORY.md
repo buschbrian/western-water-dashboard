@@ -37,7 +37,7 @@ geometry.
 | Utah state boundary | Utah Geospatial Resource Center Utah State Boundary ArcGIS service: `https://services1.arcgis.com/99lidPhWCzftIe9K/ArcGIS/rest/services/UtahStateBoundary/FeatureServer/0` | Python's `in_utah` and `intersects_utah` point-in-state checks. No map draws a mask from it any more (ADR-067); the outside-state mask this row used to serve is retired | `scripts/fetch-utah-boundary.mjs` validates one Utah polygon and commits the normalized copy when run | No runtime service dependency; a failed rebuild writes nothing | Requests `0.0001` degrees, about 10 metres. Adopted under ADR-014. |
 | Current drought polygons | U.S. Drought Monitor ArcGIS service, produced by the National Drought Mitigation Center, U.S. Department of Agriculture, and National Oceanic and Atmospheric Administration: `https://services5.arcgis.com/0OTVzJS4K09zlixn/arcgis/rest/services/USDM_current/FeatureServer/0` | Source geometry for the drought map and drainage-area statistics | The daily workflow validates the complete current layer and commits `data/drought/usdm-current.geojson`; the producer normally publishes a new map each week. Coverage is computed for both offered levels and the current and prior weeks are retained | A failed independent download keeps the last verified polygons and coverage files and does not block current reservoir data | Requests `0.001` degrees, about 100 metres. Adopted and loaded by the Drought page. |
 | Snow monitoring-site inventory | Natural Resources Conservation Service station API: `https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1/stations`, joined to the full-resolution U.S. Geological Survey drainage-area layer | Reviewed station list and drainage-area assignment | `snow_sites.json` is a committed inventory rebuilt deliberately | No runtime service dependency; an incomplete inventory build writes nothing | Full-resolution drainage-area geometry is used for point assignment. Adopted. |
-| USGS reservoir storage observations | U.S. Geological Survey daily-values service (legacy): `https://waterservices.usgs.gov/nwis/dv`, parameter 00054, acre-feet | Daily storage records for seven admitted sites in Arizona, Nevada and Washington | `refresh_reservoirs.py` validates and commits them into the same normalized `reservoirs.json`. `tools/audit_usgs_stations.py` gathers the admission evidence for the ruled-new candidates and decides with the shared screens; four candidates are held with findings in `admitted_usgs_reservoirs.json` | An individual failure keeps the last known record; a broadly failed run does not replace the complete payload | No geometry is taken from this service. The provider publishes no full level, so every denominator comes from the dam inventory under ADR-003/ADR-072. Keyless today by decision of ADR-080: the documented early-2027 retirement makes the migration named debt. Adopted 2026-08-22. |
+| USGS reservoir storage observations | U.S. Geological Survey OGC daily-values collection: `https://api.waterdata.usgs.gov/ogcapi/v0/collections/daily/items`, parameter 00054, acre-feet | Daily storage records for seven admitted sites in Arizona, Nevada and Washington | `refresh_reservoirs.py` validates and commits them into the same normalized `reservoirs.json`. The reviewed statistic is pinned per station. `tools/audit_usgs_stations.py` gathers admission evidence and `tools/check_usgs_migration_parity.py` compares the retired path before cutover; four candidates remain held with findings | An individual failure keeps the last known record; a broadly failed run does not replace the complete payload. The API key is held only by the pipeline and sent in `X-Api-Key` | No geometry is taken from this service. The provider publishes no full level, so every denominator comes from the dam inventory under ADR-003/ADR-072. Migrated under ADR-098 on 2026-08-29. |
 | Upstream contributing areas | U.S. Geological Survey Network-Linked Data Index over NHDPlus: `https://api.water.usgs.gov/nldi`. Keyless, anonymous, CORS-open | What drains to each reservoir: the contributing basin polygon (tool input, never published) and which published reservoir and snow points sit inside it | `tools/build_upstream_index.py` traces every published reservoir once -- position, COMID, basin, point-in-polygon against this project's own rosters -- and commits `upstream_index.json` with the COMID as evidence (ADR-077). Derived on demand: rebuilt after an admission or a snow-network change, not daily. Published verbatim in `dist/`; the details panel and each reservoir page read it | The tool screens rather than empties (`no_flowline`, `no_basin`, service errors carry reasons), flags basins past 300,000 square miles for review, and aborts with nothing written on a quota refusal. A failed browser fetch costs the panel's upstream row, not the page | No geometry is published from this service. Traces start at the reviewed dam point where one exists, at the published waterbody point otherwise; self-inclusion is excluded by rule. Adopted 2026-08-22. |
 | Snow measurements | Natural Resources Conservation Service water and climate API: `https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1/data` | Daily snow-water values and 1991–2020 comparisons | `refresh_snowpack.py` validates the 637-site western inventory and writes `snowpack.json` atomically | A short response is retried per station; a bounded number of missing sites is named in the payload, and a broader failure keeps the previous complete payload | No geometry is taken from this service. Adopted and loaded by the Snowpack page. |
 | Reservoir discovery and basin references | Bureau of Reclamation public ArcGIS feature services, including `https://services5.arcgis.com/HDRa0B57OVrv2E1q/ArcGIS/rest/services/Reclamation_Reservoirs/FeatureServer` | Discovery, scope review, and design comparison only | No ArcGIS feature-service response is copied into daily observed storage | An outage cannot change or stop the measurement refresh | Reference only. Promote a specific layer only after its fields, update schedule, and failure path are documented here. |
@@ -133,13 +133,14 @@ California's Data Exchange Center and Colorado's Division of Water Resources
 both answer keyless requests with stable station identifiers. The measured
 review in [`CDSS-CDEC-API-REVIEW.md`](CDSS-CDEC-API-REVIEW.md) puts
 California first by water covered, and **California was promoted on
-2026-08-20**: 142 reservoirs publish current observations from it, and the
+2026-08-20; re-audited 2026-08-28**: 147 reservoirs publish current
+observations from it, and the
 denominator decision this rule required is recorded as ADR-070 -- where the
 provider that publishes the readings also publishes a full level, that figure
 is the denominator, and it carries its own citation in the reviewed roster.
 
-Twenty-one California candidates are still held where the dam, the full level
-or the series disagree, and each is named with its finding in
+Twelve California candidates are still held where the dam, the full level or
+the series disagree, and each is named with its finding in
 `admitted_cdec_reservoirs.json` rather than published over.
 
 **Colorado followed on 2026-08-21, scoped to the drawn drainages.** The
@@ -153,6 +154,65 @@ above. Its daily refresh costs about 400,000 rows against the service's own
 published 600,000-row daily quota, which the admission review records as an
 operating constraint rather than a problem -- nothing else may share that
 quota on a refresh morning.
+
+### 6. Move the Geological Survey to its modern service -- cut over 2026-08-29
+
+ADR-080 built the provider against the keyless legacy daily-values service and
+named its early-2027 retirement as debt. ADR-098 spends that debt: the modern
+OGC daily collection, a key held only by the pipeline and sent in a header,
+and the reviewed daily statistic committed beside each station -- because
+Weber Reservoir exposes two of them and selecting by response order would let
+a published figure change with no decision behind it.
+
+**The comparison ADR-098 requires has been run at day level and agrees
+everywhere.** `tools/check_usgs_migration_parity.py` compares the two services
+directly and needs the key for its modern half. What has been measured without
+one is the published output against the retired service, and it is repeatable
+by anyone on any morning:
+
+```bash
+.venv/bin/python tools/check_usgs_migration_parity.py --against-published
+```
+
+For each of the seven stations it takes the day the payload reports and the
+three days its 7, 30 and 365-day changes are measured from -- **28
+comparisons spanning a year, all 28 identical**, Weber Reservoir among them.
+That confirms site identity, the chosen statistic and the unit on real
+published values, and it exits non-zero if that ever stops being true.
+
+**The full-series comparison has now been run, and agrees everywhere.** With
+`USGS_API_KEY` set, `--days 365` compared both services day by day for all
+seven stations on 2026-08-29: **2,496 days on each side and nothing
+differing**. The day counts match station for station -- 365 where the record
+is complete, 362 for Alder Reservoir and 309 for Mud Mountain Lake -- so
+neither service omits a day the other returned, which is the second half of
+what the tool calls a pass.
+
+Mud Mountain Lake is measured on statistic `30800` where the other six use
+`32400`. That is the reason ADR-098 committed the statistic beside each
+station rather than taking whichever the service returned first, and the run
+is the evidence it was the right call.
+
+**Where the key comes from, because ADR-098 does not say.** The record
+decided that the pipeline holds a key and never says how one is obtained,
+which is how a documented dependency becomes tribal knowledge. It is issued
+by the service itself at <https://api.waterdata.usgs.gov>. It belongs in two
+places and nowhere else: the repository's `USGS_API_KEY` Actions secret,
+which the morning workflow reads, and the shell of whoever runs the parity
+tool by hand. It is never committed, never placed in a request URL, and
+never sent to a reader's browser.
+
+```bash
+gh secret set USGS_API_KEY --repo buschbrian/western-water-dashboard
+```
+
+**The repository had no such secret when this was written**, so the migrated
+provider had never run anywhere but on the machine that migrated it. A run
+without the key is not silent: each of the seven records carries the failure
+as its `fetch_error`, the refresh prints that text rather than the generic
+quiet-feed note, and the self-healing stale-feed issue opens once the
+two-day threshold passes. ADR-056's sixty days is the outer bound for
+withdrawal, not the time to notice.
 
 ## Review boundary
 

@@ -1039,6 +1039,38 @@ if (!supportsDashboard(browserCapabilities())) {
   installAnonymousAuthPolicy((error) => {
     console.warn("Secured map resource refused:", error.url);
   });
+  /* A boot that dies has to say so.
+   *
+   * Everything below this line runs inside one top-level `await`, and until
+   * now nothing caught it. A throw anywhere in it -- the map component
+   * failing to construct, a custom element that is not defined yet, a
+   * rejection from any of the wiring after the data arrives -- left the shell
+   * standing with its spinner and the words "Loading reservoir data" on
+   * screen forever. No message, no error, nothing in the panel a reader could
+   * act on, and no way out but a reload. That is the state this reports.
+   *
+   * Reported only until the boot finishes: a rejection from some later
+   * background work is not a reason to tell a reader the dashboard is
+   * unavailable when it is already on screen and working.
+   *
+   * `aria-busy` is cleared with it, because a surface that has stopped
+   * waiting has to stop saying it is waiting whichever way it stopped. */
+  let booted = false;
+  const reportBootFailure = (detail: unknown): void => {
+    if (booted) return;
+    booted = true;
+    console.error("The dashboard did not finish loading:", detail);
+    setDataState({ kind: "error" });
+    document.querySelectorAll<HTMLElement>("[aria-busy='true']")
+      .forEach((element) => { element.setAttribute("aria-busy", "false"); });
+  };
+  window.addEventListener("unhandledrejection", (event) => {
+    reportBootFailure(event.reason);
+  });
+  window.addEventListener("error", (event) => {
+    reportBootFailure(event.error ?? event.message);
+  });
+
   renderShell(root);
   wirePanels();
   wireCopyViewLinks();
@@ -1448,4 +1480,7 @@ if (!supportsDashboard(browserCapabilities())) {
      * to run against with no boxes or place names behind it. */
     openingScopeResolved: openingRosters.areas.length > 0
   };
+
+  /* The boot reached its end, so a later rejection is somebody else's. */
+  booted = true;
 }

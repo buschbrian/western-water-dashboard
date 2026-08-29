@@ -165,6 +165,16 @@ describe("modern overview model", () => {
     expect(filterAndSort([bear, deer], "upper", "name")).toEqual([bear]);
   });
 
+  it("filters by operator or measurement provider", () => {
+    const srp = reservoir({ name: "Roosevelt Lake", source_key: "srp",
+      source_label: "Salt River Project", operator: "Salt River Project" });
+    const rise = reservoir({ name: "Lake Powell", source_key: "rise",
+      source_label: "Reclamation RISE", operator: null });
+    expect(filterAndSort([srp, rise], "salt river", "name")).toEqual([srp]);
+    expect(filterAndSort([srp, rise], "bureau of reclamation", "name"))
+      .toEqual([rise]);
+  });
+
   it("sorts missing capacity percentages last", () => {
     const missing = reservoir({ name: "Missing", pct_of_capacity: null });
     const low = reservoir({ name: "Low", pct_of_capacity: 20 });

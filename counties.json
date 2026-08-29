@@ -1,7 +1,7 @@
 {
   "source": "Esri Living Atlas, USA Census Counties (U.S. Census Bureau 2020 boundaries)",
   "source_layer": "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_Counties/FeatureServer/0",
-  "retrieved": "2026-08-22",
+  "retrieved": "2026-08-29",
   "assignment_point": "published_point",
   "roster": "the refresh's own roster, not reservoirs.json -- a reservoir withdrawn for going quiet (ADR-056) has not moved county",
   "note": "The county holding each reservoir's published waterbody point. Deliberately not the dam point the drainage area is assigned from (ADR-058): Glen Canyon Dam is in Coconino County, Arizona, and Lake Powell is in San Juan County, Utah. Keyed on the five-digit FIPS code, because this roster holds two Summit Counties in different states.",
@@ -174,12 +174,6 @@
       "county_name": "Routt County",
       "state": "CO"
     },
-    "09246300:CO:BOR": {
-      "name": "Elkhead Reservoir",
-      "county_fips": "08081",
-      "county_name": "Moffat County",
-      "state": "CO"
-    },
     "09255450:WY:BOR": {
       "name": "High Savery Reservoir",
       "county_fips": "56007",
@@ -318,12 +312,6 @@
       "county_name": "Washington County",
       "state": "UT"
     },
-    "09UTWTNY:UT:BOR": {
-      "name": "Whitney",
-      "county_fips": "49043",
-      "county_name": "Summit County",
-      "state": "UT"
-    },
     "10020200:WY:BOR": {
       "name": "Woodruff Narrows",
       "county_fips": "56041",
@@ -332,12 +320,6 @@
     },
     "10055500:ID:BOR": {
       "name": "Bear Lake",
-      "county_fips": "16007",
-      "county_name": "Bear Lake County",
-      "state": "ID"
-    },
-    "10069500:ID:BOR": {
-      "name": "Montpelier Reservoir",
       "county_fips": "16007",
       "county_name": "Bear Lake County",
       "state": "ID"
@@ -666,12 +648,6 @@
       "county_name": "Deer Lodge County",
       "state": "MT"
     },
-    "12330800:MT:BOR": {
-      "name": "Lower Willow Creek Reservoir",
-      "county_fips": "30039",
-      "county_name": "Granite County",
-      "state": "MT"
-    },
     "12336500:MT:BOR": {
       "name": "Nevada Lake",
       "county_fips": "30077",
@@ -700,12 +676,6 @@
       "name": "Flathead Lake",
       "county_fips": "30047",
       "county_name": "Lake County",
-      "state": "MT"
-    },
-    "12380500:MT:BOR": {
-      "name": "Lower Jocko Lake",
-      "county_fips": "30063",
-      "county_name": "Missoula County",
       "state": "MT"
     },
     "12390000:MT:BOR": {
@@ -1248,11 +1218,35 @@
       "county_name": "Lincoln County",
       "state": "WY"
     },
+    "355": {
+      "name": "Roosevelt Lake",
+      "county_fips": "04013",
+      "county_name": "Maricopa County",
+      "state": "AZ"
+    },
+    "396": {
+      "name": "Apache Lake",
+      "county_fips": "04013",
+      "county_name": "Maricopa County",
+      "state": "AZ"
+    },
+    "400": {
+      "name": "Canyon Lake",
+      "county_fips": "04013",
+      "county_name": "Maricopa County",
+      "state": "AZ"
+    },
     "4003399B": {
       "name": "Overland Reservoir",
       "county_fips": "08029",
       "county_name": "Delta County",
       "state": "CO"
+    },
+    "406": {
+      "name": "Saguaro Lake",
+      "county_fips": "04013",
+      "county_name": "Maricopa County",
+      "state": "AZ"
     },
     "432": {
       "name": "Huntington North",
@@ -1516,6 +1510,12 @@
       "name": "Castaic",
       "county_fips": "06037",
       "county_name": "Los Angeles County",
+      "state": "CA"
+    },
+    "CFW": {
+      "name": "Bear River At Camp Far West Dam",
+      "county_fips": "06115",
+      "county_name": "Yuba County",
       "state": "CA"
     },
     "CGS": {
@@ -1812,6 +1812,12 @@
       "county_name": "Kern County",
       "state": "CA"
     },
+    "JCK": {
+      "name": "Jackson Meadows (Nevada Co Wd)",
+      "county_fips": "06091",
+      "county_name": "Sierra County",
+      "state": "CA"
+    },
     "JNK": {
       "name": "Jenkinson Lake",
       "county_fips": "06017",
@@ -1918,6 +1924,12 @@
       "name": "Lake Mccloud",
       "county_fips": "06089",
       "county_name": "Shasta County",
+      "state": "CA"
+    },
+    "MCS": {
+      "name": "Lake Mc Swain",
+      "county_fips": "06043",
+      "county_name": "Mariposa County",
       "state": "CA"
     },
     "MDO": {
@@ -2088,6 +2100,12 @@
       "county_name": "Placer County",
       "state": "CA"
     },
+    "RTD": {
+      "name": "Ruth Dam",
+      "county_fips": "06105",
+      "county_name": "Trinity County",
+      "state": "CA"
+    },
     "SAT": {
       "name": "San Antonio Reservoir, Alameda Co",
       "county_fips": "06001",
@@ -2110,6 +2128,12 @@
       "name": "Scotts Flat",
       "county_fips": "06057",
       "county_name": "Nevada County",
+      "state": "CA"
+    },
+    "SGB": {
+      "name": "San Gabriel",
+      "county_fips": "06037",
+      "county_name": "Los Angeles County",
       "state": "CA"
     },
     "SGC": {
@@ -2327,6 +2351,12 @@
       "county_fips": "08045",
       "county_name": "Garfield County",
       "state": "CO"
+    },
+    "cdf80586ea15410ebee861ac51f924d3": {
+      "name": "East Fork Rock Creek Reservoir",
+      "county_fips": "30039",
+      "county_name": "Granite County",
+      "state": "MT"
     }
   },
   "keyed_by": "source_station_id"

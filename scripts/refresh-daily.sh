@@ -56,7 +56,8 @@ if [ "$dry_run" = 1 ]; then
   note "  3. drought coverage $python_bin tools/compute_drought_coverage.py, every offered level"
   note "  4. pair check       $python_bin tools/check_drought_pair.py"
   note "  5. snow             $python_bin refresh_snowpack.py"
-  note "  6. commit the published set:"
+  note "  6. assistant indexes $python_bin tools/build_assistant_indexes.py (keeps the last accepted set on failure)"
+  note "  7. commit the published set:"
   published_files | sed 's/^/       /'
   exit 0
 fi
@@ -139,7 +140,14 @@ if ! "$python_bin" refresh_snowpack.py; then
   warn "Snow download failed" "Keeping the last complete snow payload"
 fi
 
-# 6. Commit. Every published file is staged together, which is what keeps the
+# 6. Compact assistant indexes are an optional reader surface. Their builder
+# validates all three before replacing any; a failure keeps the previous set
+# with its explicit as-of dates and never blocks the core data refresh.
+if ! "$python_bin" tools/build_assistant_indexes.py; then
+  warn "Assistant indexes failed" "Keeping the last accepted assistant indexes"
+fi
+
+# 7. Commit. Every published file is staged together, which is what keeps the
 # drought files describing one week in the commit as well as in the working
 # tree.
 if [ "${REFRESH_SKIP_COMMIT:-0}" = "1" ]; then

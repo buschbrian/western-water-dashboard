@@ -10,6 +10,7 @@ and deduplicated.
 """
 
 import datetime as dt
+import os
 import time
 
 import pandas as pd
@@ -346,21 +347,63 @@ def fetch_cdss_series(abbrev: str, start: str, end: str) -> pd.DataFrame:
               [["date", "storage_af"]].reset_index(drop=True))
 
 
-#: The U.S. Geological Survey's legacy daily-values service. Parameter 00054
-#: is the agency's own code for reservoir storage in acre-feet; the service is
-#: keyless until its documented early-2027 retirement, which ADR-080 accepts
-#: as known debt with a date rather than a credential sought in a hurry.
-USGS_DV_URL = "https://waterservices.usgs.gov/nwis/dv"
+#: The U.S. Geological Survey's modern OGC daily-values collection. Parameter
+#: 00054 is the agency's own code for reservoir storage in acre-feet. The API
+#: key is deliberately supplied in a header so it cannot enter a requested URL
+#: or a provider log (ADR-098).
+USGS_DV_URL = "https://api.waterdata.usgs.gov/ogcapi/v0/collections/daily/items"
+USGS_LEGACY_DV_URL = "https://waterservices.usgs.gov/nwis/dv"
+USGS_API_KEY_ENV = "USGS_API_KEY"
+USGS_STORAGE_PARAMETER = "00054"
+USGS_PAGE_LIMIT = 10000
+
+SRP_BASE_URL = "https://streamflow.watershedconnection.com/api/watershedconnectiondata"
+SRP_STATIONS_URL = f"{SRP_BASE_URL}/getstationlist"
+SRP_SERIES_URL = f"{SRP_BASE_URL}/getmeasurementdata"
+DNRC_STAGE_URL = "https://gis.dnrc.mt.gov/arcgis/rest/services/WRD/WMB_StAGE/MapServer"
+DNRC_SERIES_URL = f"{DNRC_STAGE_URL}/2/query"
 
 
-def _get_usgs_json(url: str, params: dict):
-    """GET an NWIS reply with the shared transient-failure policy."""
+def _usgs_api_key() -> str:
+    """Return the pipeline-only API key or fail before making a request.
+
+    Checked for shape, not just for presence. A header value has to encode as
+    latin-1, so a key carrying anything else fails inside the HTTP client with
+    a `UnicodeEncodeError` and a stack trace ending in `putheader` -- which
+    names neither this provider nor the variable that is wrong. ADR-098 says a
+    key problem is visible as a provider failure; a traceback from the fourth
+    library down is not that.
+
+    The case that found this was a placeholder pasted verbatim into a shell,
+    so the value never has to be a plausible key for the refresh to hit it.
+    Never log the key itself: the message says what is wrong with it, and
+    nothing about what it is.
+    """
+    api_key = os.environ.get(USGS_API_KEY_ENV, "").strip()
+    if not api_key:
+        raise RuntimeError(
+            f"{USGS_API_KEY_ENV} is required for the USGS OGC daily service")
+    try:
+        api_key.encode("latin-1")
+    except UnicodeEncodeError:
+        raise RuntimeError(
+            f"{USGS_API_KEY_ENV} holds characters that cannot be sent in a "
+            "request header, so it is not the key. A placeholder pasted from "
+            "documentation is the usual cause.") from None
+    return api_key
+
+
+def _get_usgs_json(url: str, params: dict | None = None):
+    """GET one OGC page with the shared transient-failure policy."""
     for attempt in range(RETRY_ATTEMPTS):
         try:
             resp = requests.get(url, params=params, timeout=60,
-                                headers={"User-Agent":
-                                         "western-water-dashboard/refresh "
-                                         "(+https://github.com/buschbrian)"})
+                                headers={
+                                    "User-Agent":
+                                        "western-water-dashboard/refresh "
+                                        "(+https://github.com/buschbrian)",
+                                    "X-Api-Key": _usgs_api_key(),
+                                })
             resp.raise_for_status()
             return resp.json()
         except (requests.exceptions.RequestException, ValueError):
@@ -370,46 +413,63 @@ def _get_usgs_json(url: str, params: dict):
     raise AssertionError("unreachable")
 
 
-def fetch_usgs_series(site_no: str, start: str, end: str) -> pd.DataFrame:
+def fetch_usgs_series(site_no: str, statistic_id: str,
+                      start: str, end: str) -> pd.DataFrame:
     """Pull a USGS daily 00054 series, normalized to [date, storage_af].
 
     The same contract every provider answers with. What this one adds:
 
-    **The reply nests twice.** Each entry of `value.timeSeries` is one
-    parameter-and-method series, and each carries a list of value *blocks*
-    whose own `value` is the list of daily readings -- so a reading sits
-    three levels deep where CDSS keeps it at one.
+    **The reply is an OGC feature collection.** Storage sites do not all use
+    one daily statistic, and one admitted site exposes two. The reviewed
+    statistic id is therefore part of the roster and of every request rather
+    than inferred from response order.
 
     **The calendar needs no repair.** Each reading is stamped with the day
-    it belongs to (`dateTime` at midnight local), and the value behind that
-    stamp is that day's figure, so dates are kept as written.
+    it belongs to -- the collection's `time` property, one date per row -- and
+    the value behind that stamp is that day's figure, so dates are kept as
+    written. This provider is already daily, so nothing here reduces by day.
 
     **A quiet site answers with an empty series**, not an error: no blocks,
     no readings, an empty frame -- the same "no usable rows" state every
     other adapter produces.
     """
     cleaned = []
-    payload = _get_usgs_json(USGS_DV_URL, {
-        "sites": site_no, "parameterCd": "00054",
-        "startDT": dt.datetime.strptime(start, "%Y%m%d").date().isoformat(),
-        "endDT": dt.datetime.strptime(end, "%Y%m%d").date().isoformat(),
-        "format": "json",
-    })
-    for series in payload.get("value", {}).get("timeSeries", []):
-        for block in series.get("values", []):
-            for reading in block.get("value", []):
-                raw = reading.get("value")
-                if raw in (None, ""):
-                    continue
-                try:
-                    number = float(raw)
-                except (TypeError, ValueError):
-                    continue
-                # Provisional or approved, a negative storage is a sentinel,
-                # not a reading.
-                if number >= 0:
-                    cleaned.append({"date": reading.get("dateTime"),
-                                    "storage_af": number})
+    next_url: str | None = USGS_DV_URL
+    params: dict | None = {
+        "monitoring_location_id": f"USGS-{site_no}",
+        "parameter_code": USGS_STORAGE_PARAMETER,
+        "statistic_id": statistic_id,
+        "datetime": (
+            f"{dt.datetime.strptime(start, '%Y%m%d').date().isoformat()}/"
+            f"{dt.datetime.strptime(end, '%Y%m%d').date().isoformat()}"
+        ),
+        "limit": USGS_PAGE_LIMIT,
+        "f": "json",
+    }
+    page = 0
+    while next_url and page < MAX_PAGES:
+        payload = _get_usgs_json(next_url, params)
+        params = None  # every OGC next link is already a complete URL
+        page += 1
+        for feature in payload.get("features") or []:
+            reading = feature.get("properties") or {}
+            if reading.get("monitoring_location_id") != f"USGS-{site_no}" \
+                    or reading.get("parameter_code") != USGS_STORAGE_PARAMETER \
+                    or reading.get("statistic_id") != statistic_id \
+                    or reading.get("unit_of_measure") != "Acre-ft":
+                continue
+            raw = reading.get("value")
+            try:
+                number = float(raw)
+            except (TypeError, ValueError):
+                continue
+            if number >= 0:
+                cleaned.append({"date": reading.get("time"),
+                                "storage_af": number})
+        next_url = next((link.get("href") for link in payload.get("links") or []
+                         if link.get("rel") == "next" and link.get("href")), None)
+    if next_url:
+        raise RuntimeError(f"USGS OGC pagination exceeded {MAX_PAGES} pages")
     if not cleaned:
         return pd.DataFrame({"date": pd.Series(dtype="datetime64[ns]"),
                              "storage_af": pd.Series(dtype="float64")})
@@ -420,3 +480,175 @@ def fetch_usgs_series(site_no: str, start: str, end: str) -> pd.DataFrame:
     df = df[df["date"] <= local_today()]
     return (df.sort_values("date").drop_duplicates(subset="date", keep="last")
               [["date", "storage_af"]].reset_index(drop=True))
+
+
+def reduce_to_daily_last(frame: pd.DataFrame) -> pd.DataFrame:
+    """Reduce sub-daily observations to one row per day: the day's last.
+
+    Two providers publish far more often than daily -- the Salt River Project
+    every five minutes, Montana's StAGE service every quarter hour -- and the
+    estimator downstream wants one figure per date. The day's last reading is
+    that figure, the same choice the daily providers' own services make.
+
+    **Sort on the observation time, never on the calendar day.** The obvious
+    spelling normalizes first and then sorts, which leaves every reading in a
+    day holding an identical sort key. `sort_values` is not stable by default,
+    so `keep="last"` then returns an arbitrary reading of the day rather than
+    its last: a two-day fetch of five-minute values was observed publishing an
+    08:10 reading as the day's storage. The full timestamp orders the readings
+    the way the day actually ran, and a stable sort keeps two readings that
+    share one timestamp in the order the service sent them.
+
+    Expects `observed_at` and `date` columns; returns only the published two.
+    """
+    return (frame.sort_values("observed_at", kind="stable")
+                 .drop_duplicates("date", keep="last")
+                 [["date", "storage_af"]].reset_index(drop=True))
+
+
+def _get_srp_json(url: str, params: dict):
+    """GET an SRP JSON response with the common bounded retry policy."""
+    for attempt in range(RETRY_ATTEMPTS):
+        try:
+            response = requests.get(url, params=params, timeout=120,
+                                    headers={"Accept": "application/json"})
+            response.raise_for_status()
+            return response.json()
+        except (requests.exceptions.RequestException, ValueError):
+            if attempt == RETRY_ATTEMPTS - 1:
+                raise
+            time.sleep(RETRY_BACKOFF_SECONDS * 2**attempt)
+    raise AssertionError("unreachable")
+
+
+def fetch_srp_station_list() -> list[dict]:
+    payload = _get_srp_json(SRP_STATIONS_URL, {"getLastReadings": "true"})
+    if not isinstance(payload, list):
+        raise ValueError("SRP station list is not an array")
+    return payload
+
+
+def validate_srp_station(row: dict, stations: list[dict]) -> None:
+    station = next((item for item in stations
+                    if item.get("stationId") == row["station_id"]), None)
+    if station is None:
+        raise ValueError(f"SRP station {row['station_id']} is missing")
+    if not (station.get("reservoirDatas") or [{}])[0].get("isReservoirActive"):
+        raise ValueError(f"SRP station {row['station_id']} is not active")
+    measurement = next((item for item in station.get("measurements") or []
+                        if item.get("measurementId") == row["measurement_id"]), None)
+    if measurement is None or measurement.get("dataId") != row["data_id"] \
+            or measurement.get("units") != "Acre-ft" \
+            or measurement.get("displayName") != "Current Volume":
+        raise ValueError(f"SRP station {row['station_id']} measurement changed")
+    capacity = float((station.get("reservoirDatas") or [{}])[0]
+                     .get("maxConservationStorage") or 0)
+    if capacity != float(row["capacity"]["capacity_af"]):
+        raise ValueError(f"SRP station {row['station_id']} full level changed")
+
+
+def fetch_srp_series(measurement_id: int, history_data_id: str,
+                     start: str, end: str) -> pd.DataFrame:
+    """Fetch five-minute SRP storage and keep the last reading of each day."""
+    payload = _get_srp_json(SRP_SERIES_URL, {
+        "measurementId": measurement_id, "units": "Acre-ft",
+        "startDate": dt.datetime.strptime(start, "%Y%m%d").date().isoformat(),
+        "endDate": dt.datetime.strptime(end, "%Y%m%d").date().isoformat(),
+    })
+    readings = payload.get("timeSeriesData") if isinstance(payload, dict) else None
+    if not isinstance(readings, list):
+        raise ValueError("SRP history has no timeSeriesData array")
+    rows = []
+    for reading in readings:
+        # SRP publishes explicit all-null rows for intervals with no reading.
+        # They represent absence, not a changed measurement identity. A row
+        # with any measurement value still has to pass every pinned check.
+        if reading.get("readingValue") is None \
+                and reading.get("dataId") is None \
+                and reading.get("unit") is None \
+                and reading.get("approval") is None \
+                and reading.get("grade") is None:
+            continue
+        if reading.get("dataId") != history_data_id or reading.get("unit") != "Acre-ft":
+            raise ValueError(f"SRP measurement {measurement_id} identity or unit changed")
+        if not isinstance(reading.get("approval"), int) \
+                or not isinstance(reading.get("grade"), int):
+            raise ValueError(f"SRP measurement {measurement_id} quality fields changed")
+        rows.append({"date": reading.get("readingDate"),
+                     "storage_af": reading.get("readingValue")})
+    if not rows:
+        return pd.DataFrame({"date": pd.Series(dtype="datetime64[ns]"),
+                             "storage_af": pd.Series(dtype="float64")})
+    frame = pd.DataFrame(rows)
+    frame["observed_at"] = pd.to_datetime(frame["date"], errors="coerce")
+    frame["storage_af"] = pd.to_numeric(frame["storage_af"], errors="coerce")
+    frame = frame.dropna(subset=["observed_at", "storage_af"])
+    frame = frame[frame["storage_af"] >= 0]
+    frame["date"] = frame["observed_at"].dt.normalize()
+    frame = frame[frame["date"] <= local_today()]
+    return reduce_to_daily_last(frame)
+
+
+def _get_dnrc_json(params: dict) -> dict:
+    for attempt in range(RETRY_ATTEMPTS):
+        try:
+            response = requests.get(DNRC_SERIES_URL, params=params, timeout=120)
+            response.raise_for_status()
+            payload = response.json()
+            if payload.get("error"):
+                raise ValueError(str(payload["error"]))
+            return payload
+        except (requests.exceptions.RequestException, ValueError):
+            if attempt == RETRY_ATTEMPTS - 1:
+                raise
+            time.sleep(RETRY_BACKOFF_SECONDS * 2**attempt)
+    raise AssertionError("unreachable")
+
+
+def fetch_dnrc_series(sensor_id: str, start: str, end: str) -> pd.DataFrame:
+    """Fetch the owner-operated StAGE storage series and reduce it by day."""
+    start_day = dt.datetime.strptime(start, "%Y%m%d").date().isoformat()
+    end_day = dt.datetime.strptime(end, "%Y%m%d").date().isoformat()
+    rows, offset = [], 0
+    while offset // 2000 < MAX_PAGES:
+        payload = _get_dnrc_json({
+            "f": "json",
+            "where": (f"SensorID='{sensor_id}' AND Timestamp >= DATE '{start_day}' "
+                      f"AND Timestamp <= DATE '{end_day}'"),
+            "outFields": "SensorID,Timestamp,RecordedValue,GradeCode,ApprovalLevel",
+            "orderByFields": "Timestamp ASC", "returnGeometry": "false",
+            "resultOffset": offset, "resultRecordCount": 2000,
+        })
+        features = payload.get("features") or []
+        for feature in features:
+            reading = feature.get("attributes") or {}
+            if reading.get("SensorID") != sensor_id:
+                raise ValueError(f"DNRC sensor identity changed for {sensor_id}")
+            # DNRC publishes an explicit row with all three measurement and
+            # quality fields null for a gap. It is absence, not a malformed
+            # measurement, and is dropped before validating usable rows.
+            if reading.get("RecordedValue") is None:
+                continue
+            if not isinstance(reading.get("GradeCode"), int) \
+                    or not isinstance(reading.get("ApprovalLevel"), int):
+                raise ValueError(f"DNRC quality fields changed for {sensor_id}")
+            rows.append({"date": reading.get("Timestamp"),
+                         "storage_af": reading.get("RecordedValue")})
+        if len(features) < 2000 and not payload.get("exceededTransferLimit"):
+            break
+        offset += len(features)
+        if not features:
+            break
+    if offset // 2000 >= MAX_PAGES:
+        raise RuntimeError(f"DNRC pagination exceeded {MAX_PAGES} pages")
+    if not rows:
+        return pd.DataFrame({"date": pd.Series(dtype="datetime64[ns]"),
+                             "storage_af": pd.Series(dtype="float64")})
+    frame = pd.DataFrame(rows)
+    frame["observed_at"] = pd.to_datetime(frame["date"], unit="ms", utc=True,
+                                          errors="coerce").dt.tz_localize(None)
+    frame["storage_af"] = pd.to_numeric(frame["storage_af"], errors="coerce")
+    frame = frame.dropna(subset=["observed_at", "storage_af"])
+    frame["date"] = frame["observed_at"].dt.normalize()
+    frame = frame[(frame["storage_af"] >= 0) & (frame["date"] <= local_today())]
+    return reduce_to_daily_last(frame)

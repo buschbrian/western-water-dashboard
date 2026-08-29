@@ -9,6 +9,7 @@ Run with `pytest tests/` or directly with `python tests/test_refresh.py`.
 
 import gzip
 import json
+import random
 import sys
 from pathlib import Path
 
@@ -300,8 +301,9 @@ def test_committed_capacity_table_covers_every_reservoir():
     caps = payload["capacities"]
     assert set(R.BASE_RISE_RESERVOIRS) <= set(caps), (
         "capacity table does not cover every original RISE site")
-    assert set(R.RESERVOIRS) <= set(R.load_capacities()), (
-        "reviewed capacity evidence does not cover every RISE site")
+    reviewed_ids = (R.ALL_RESERVOIR_IDS - set(R.BASE_AWDB_RESERVOIRS))
+    assert reviewed_ids <= set(R.load_capacities()), (
+        "reviewed capacity evidence does not cover every reviewed reservoir")
     assert "National Inventory of Dams" in payload["source"]
 
     published = R.load_previous(R.OUTPUT_PATH)
@@ -341,12 +343,20 @@ def test_awdb_inventory_has_traceable_capacity_and_cadence():
     # R3's first source: 137 the rules admitted, plus five a person admitted
     # against a screen -- Lake Mohave and San Luis on reviewed dam evidence,
     # Martis Creek and Seven Oaks as flood-control dams held empty on
-    # purpose, and Morena as a real reservoir that is simply low. Each
-    # carries the screen it was admitted against in the file itself.
-    assert len(R.ADMITTED_CDEC_RESERVOIRS) == 142
-    assert len(R.CDEC_RESERVOIRS) == 142
+    # purpose, and Morena as a real reservoir that is simply low. The
+    # 2026-08-28 re-audit admitted five more after the California audit began
+    # applying ADR-072 to the inventory's own larger pool, as the Colorado
+    # audit already did. Each reviewed exception carries the screen it was
+    # admitted against in the file itself.
+    assert len(R.ADMITTED_CDEC_RESERVOIRS) == 147
+    assert len(R.CDEC_RESERVOIRS) == 147
     assert sum(1 for row in R.ADMITTED_CDEC_RESERVOIRS.values()
                if row.get("review")) == 5
+    cdec_document = json.loads(R.ADMITTED_CDEC_RESERVOIRS_PATH.read_text())
+    assert set(cdec_document["withheld"]) == {
+        "BMP", "BUC", "CLA", "FMT", "GDR", "GNT",
+        "HVS", "MAT", "ONF", "RLC", "SCC", "VIL",
+    }, "every unresolved California candidate must keep its finding"
     # R3's second state source: ten of the thirteen in-scope candidates the
     # Colorado audit screened -- three held with findings in the file itself
     # (Ivanhoe and Trout Lake above their own record's largest pool; Garnet
@@ -358,16 +368,28 @@ def test_awdb_inventory_has_traceable_capacity_and_cadence():
     assert len(R.CDSS_RESERVOIRS) == 10
     # Seven more with the U.S. Geological Survey's admission (ADR-080):
     # Horseshoe, Bartlett, Weber, Wynoochee, Alder, Mud Mountain, Lake Tapps.
-    # 387 minus the five retired 2026-08-22 (issue #24), see above.
-    assert len(R.ALL_RESERVOIR_IDS) == 382
+    usgs_document = json.loads(R.ADMITTED_USGS_RESERVOIRS_PATH.read_text())
+    assert set(usgs_document["withheld"]) == {
+        "10288500", "10297000", "10348800", "13087900",
+    }, "every unresolved USGS candidate must keep its finding"
+    # 387 after the California re-audit, then four additive SRP reservoirs
+    # and one in-scope DNRC reservoir.
+    assert len(R.ALL_RESERVOIR_IDS) == 392
     assert not (set(R.RESERVOIRS) & set(R.AWDB_RESERVOIRS))
-    # Five providers, five disjoint sets of station ids. An id in two of
+    # Seven providers, seven disjoint sets of station ids. An id in two of
     # them is one reservoir fetched twice and summed twice (ADR-069).
     assert not (set(R.CDEC_RESERVOIRS)
                 & (set(R.RESERVOIRS) | set(R.AWDB_RESERVOIRS)))
     assert not (set(R.CDSS_RESERVOIRS)
                 & (set(R.RESERVOIRS) | set(R.AWDB_RESERVOIRS)
                    | set(R.CDEC_RESERVOIRS)))
+    assert len(R.SRP_RESERVOIRS) == 4
+    assert len(R.DNRC_RESERVOIRS) == 1
+    provider_ids = [set(rows) for rows in (
+        R.RESERVOIRS, R.AWDB_RESERVOIRS, R.CDEC_RESERVOIRS,
+        R.CDSS_RESERVOIRS, R.USGS_RESERVOIRS, R.SRP_RESERVOIRS,
+        R.DNRC_RESERVOIRS)]
+    assert sum(map(len, provider_ids)) == len(set().union(*provider_ids))
     for triplet, (name, lat, lon, capacity, cadence) in R.AWDB_RESERVOIRS.items():
         assert name
         assert triplet.count(":") == 2
@@ -1075,6 +1097,8 @@ def test_one_export_contains_capacity_and_every_visualization_geography():
     assert sections["capacity_catalog"]["capacities"]["290"]["nid_id"] == "UT10117"
     assert sections["capacity_catalog"]["capacities"]["290"]["name"] == "Deer Creek"
     assert sections["capacity_catalog"]["keyed_by"] == "source_station_id"
+    reviewed_ids = (R.ALL_RESERVOIR_IDS - set(R.BASE_AWDB_RESERVOIRS))
+    assert reviewed_ids <= set(sections["capacity_catalog"]["capacities"])
     geography = sections["geography"]
     # No state outline here (ADR-067): no map draws a mask from it any more,
     # so `geography` is watersheds and nothing else.
@@ -1618,6 +1642,251 @@ def test_every_colorado_admission_names_its_dam():
         assert capacity["nid_id"], abbrev
         assert capacity["capacity_basis"] in {
             "normal_storage", "max_storage", "nid_storage"}, abbrev
+
+
+# --- the fifth provider: USGS modern daily values -------------------------
+
+def usgs_feature(day, value, *, site="10301700", statistic="32400",
+                 unit="Acre-ft"):
+    return {"type": "Feature", "properties": {
+        "monitoring_location_id": f"USGS-{site}",
+        "parameter_code": "00054", "statistic_id": statistic,
+        "time": day, "value": value, "unit_of_measure": unit,
+        "approval_status": "Approved", "qualifier": None,
+    }}
+
+
+def test_usgs_ogc_answers_the_provider_contract_and_follows_next(monkeypatch):
+    later = (R.local_today() + pd.Timedelta(days=3)).strftime("%Y-%m-%d")
+    pages = [
+        {"features": [usgs_feature("2026-08-12", 300),
+                      usgs_feature("2026-08-10", 100)],
+         "links": [{"rel": "next", "href": "https://example.test/page-2"}]},
+        {"features": [usgs_feature("2026-08-10", 111),
+                      usgs_feature("2026-08-11", "bad"),
+                      usgs_feature(later, 999)], "links": []},
+    ]
+    calls = []
+    monkeypatch.setattr(R.providers, "_get_usgs_json",
+                        lambda url, params=None: calls.append((url, params)) or pages.pop(0))
+    frame = R.fetch_usgs_series("10301700", "32400", "20260801", "20261231")
+    assert frame["date"].dt.strftime("%Y-%m-%d").tolist() == [
+        "2026-08-10", "2026-08-12"]
+    assert frame["storage_af"].tolist() == [111.0, 300.0]
+    assert calls[0][1]["monitoring_location_id"] == "USGS-10301700"
+    assert calls[0][1]["statistic_id"] == "32400"
+    assert calls[1] == ("https://example.test/page-2", None)
+
+
+def test_usgs_ogc_rejects_rows_outside_the_reviewed_series(monkeypatch):
+    monkeypatch.setattr(R.providers, "_get_usgs_json", lambda url, params=None: {
+        "features": [
+            usgs_feature("2026-08-10", 100, statistic="00003"),
+            usgs_feature("2026-08-11", 200, site="99999999"),
+            usgs_feature("2026-08-12", 300, unit="ft"),
+            usgs_feature("2026-08-13", -1),
+            usgs_feature("2026-08-14", 400),
+        ], "links": [],
+    })
+    frame = R.fetch_usgs_series("10301700", "32400", "20260801", "20260831")
+    assert frame["storage_af"].tolist() == [400.0]
+
+
+def test_usgs_api_key_is_a_header_and_never_a_query_parameter(monkeypatch):
+    seen = {}
+
+    class Response:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return {"features": [], "links": []}
+
+    monkeypatch.setenv("USGS_API_KEY", "secret-value")
+    monkeypatch.setattr(R.providers.requests, "get",
+                        lambda url, **kwargs: seen.update(url=url, **kwargs) or Response())
+    R.providers._get_usgs_json(R.USGS_DV_URL, {"limit": 1})
+    assert seen["headers"]["X-Api-Key"] == "secret-value"
+    assert "api_key" not in seen["params"]
+    assert "secret-value" not in seen["url"]
+
+
+def test_usgs_api_key_is_required_before_a_request(monkeypatch):
+    monkeypatch.delenv("USGS_API_KEY", raising=False)
+    with pytest.raises(RuntimeError, match="USGS_API_KEY is required"):
+        R.providers._usgs_api_key()
+
+
+def test_a_key_that_cannot_be_a_header_is_refused_by_name(monkeypatch):
+    """A placeholder pasted from documentation is a key of the wrong shape.
+
+    Sent as-is it fails four libraries down, in `putheader`, with a
+    `UnicodeEncodeError` naming neither this provider nor the variable at
+    fault -- and ADR-098 says a key problem reads as a provider failure. The
+    refusal has to name the variable, and must not quote the value: a key of
+    the wrong shape is still a secret."""
+    monkeypatch.setenv("USGS_API_KEY", "\u2026")
+
+    with pytest.raises(RuntimeError, match="cannot be sent in a request header"):
+        R.providers._usgs_api_key()
+
+    monkeypatch.setenv("USGS_API_KEY", "an-ordinary-key")
+    assert R.providers._usgs_api_key() == "an-ordinary-key"
+
+
+def test_the_usgs_roster_pins_the_daily_statistic():
+    assert {row["statistic_id"] for row in R.ADMITTED_USGS_RESERVOIRS.values()} \
+        == {"30800", "32400"}
+    assert R.ADMITTED_USGS_RESERVOIRS["10301700"]["statistic_id"] == "32400"
+
+
+def test_srp_reduces_five_minute_values_to_the_last_reading_of_each_day(monkeypatch):
+    monkeypatch.setattr(R.providers, "_get_srp_json", lambda url, params: {
+        "timeSeriesData": [
+            {"dataId": "expected", "readingDate": "2026-08-28T00:00:00",
+             "readingValue": 10, "approval": 800, "grade": -1, "unit": "Acre-ft"},
+            {"dataId": "expected", "readingDate": "2026-08-28T23:55:00",
+             "readingValue": 12, "approval": 800, "grade": -1, "unit": "Acre-ft"},
+            {"dataId": "expected", "readingDate": "2026-08-29T05:05:00",
+             "readingValue": 11, "approval": 800, "grade": -1, "unit": "Acre-ft"},
+        ]})
+    frame = R.fetch_srp_series(355, "expected", "20260828", "20260829")
+    assert frame["storage_af"].tolist() == [12.0, 11.0]
+
+
+def test_srp_refuses_changed_identity_unit_or_quality_fields(monkeypatch):
+    monkeypatch.setattr(R.providers, "_get_srp_json", lambda url, params: {
+        "timeSeriesData": [{"dataId": "other", "readingDate": "2026-08-28",
+                            "readingValue": 10, "approval": 800, "grade": -1,
+                            "unit": "Acre-ft"}]})
+    with pytest.raises(ValueError, match="identity or unit changed"):
+        R.fetch_srp_series(355, "expected", "20260828", "20260829")
+
+
+def test_srp_drops_explicit_all_null_gap_rows(monkeypatch):
+    monkeypatch.setattr(R.providers, "_get_srp_json", lambda url, params: {
+        "timeSeriesData": [
+            {"dataId": None, "readingDate": "2026-08-28T00:00:00",
+             "readingValue": None, "approval": None, "grade": None,
+             "unit": None},
+            {"dataId": "expected", "readingDate": "2026-08-28T23:55:00",
+             "readingValue": 12, "approval": 800, "grade": -1,
+             "unit": "Acre-ft"},
+        ]})
+
+    frame = R.fetch_srp_series(355, "expected", "20260828", "20260829")
+
+    assert frame["storage_af"].tolist() == [12.0]
+
+
+def test_srp_station_validation_pins_full_level_and_measurement():
+    row = R.ADMITTED_SRP_RESERVOIRS["355"]
+    station = {"stationId": 8, "reservoirDatas": [{
+        "isReservoirActive": True, "maxConservationStorage": "1631532"}],
+        "measurements": [{"measurementId": 355, "dataId": row["data_id"],
+                          "units": "Acre-ft", "displayName": "Current Volume"}]}
+    R.validate_srp_station(row, [station])
+
+
+def test_dnrc_reduces_duplicate_timestamps_and_rejects_wrong_sensor(monkeypatch):
+    stamp = int(pd.Timestamp("2026-08-28T22:00:00Z").timestamp() * 1000)
+    monkeypatch.setattr(R.providers, "_get_dnrc_json", lambda params: {
+        "features": [{"attributes": {"SensorID": "sensor", "Timestamp": stamp,
+                                      "RecordedValue": 10, "GradeCode": -1,
+                                      "ApprovalLevel": 800}},
+                     {"attributes": {"SensorID": "sensor", "Timestamp": stamp,
+                                      "RecordedValue": 11, "GradeCode": -1,
+                                      "ApprovalLevel": 800}}]})
+    frame = R.fetch_dnrc_series("sensor", "20260828", "20260829")
+    assert frame["storage_af"].tolist() == [11.0]
+
+
+def test_dense_providers_keep_each_days_last_reading(monkeypatch):
+    """Two days of readings, not two readings, because one day never failed.
+
+    Both dense adapters reduce sub-daily observations to one row per day and
+    both promise the day's last. Reducing on the calendar day alone leaves
+    every reading in a day holding the same sort key, and `sort_values` is not
+    stable: with a single day in the frame the arbitrary choice happens to be
+    the right one, and with two it is not. This fixture is the smallest one
+    that can tell those apart, so it is the size the test has to be.
+
+    The value is the reading's own index, so the assertion names exactly which
+    reading of the day was published: 287 is 23:55, and 98 is 08:10.
+    """
+    srp_rows = []
+    for index in range(576):
+        stamp = pd.Timestamp("2026-08-28") + pd.Timedelta(minutes=5 * index)
+        srp_rows.append({"dataId": "expected", "readingDate": stamp.isoformat(),
+                         "readingValue": float(index), "approval": 800,
+                         "grade": -1, "unit": "Acre-ft"})
+    monkeypatch.setattr(R.providers, "_get_srp_json",
+                        lambda url, params: {"timeSeriesData": srp_rows})
+
+    frame = R.fetch_srp_series(355, "expected", "20260828", "20260829")
+
+    assert frame["storage_af"].tolist() == [287.0, 575.0]
+
+    base = int(pd.Timestamp("2026-08-28T00:00:00Z").timestamp() * 1000)
+    features = [{"attributes": {"SensorID": "sensor",
+                                "Timestamp": base + index * 900_000,
+                                "RecordedValue": float(index),
+                                "GradeCode": -1, "ApprovalLevel": 800}}
+                for index in range(192)]
+    monkeypatch.setattr(R.providers, "_get_dnrc_json",
+                        lambda params: {"features": features})
+
+    frame = R.fetch_dnrc_series("sensor", "20260828", "20260829")
+
+    assert frame["storage_af"].tolist() == [95.0, 191.0]
+
+
+def test_a_dense_provider_reduces_by_the_clock_not_by_arrival(monkeypatch):
+    """A service is free to answer out of order; the day's last is a fact
+    about the clock, not about which row arrived last."""
+    rows = []
+    for index in range(576):
+        stamp = pd.Timestamp("2026-08-28") + pd.Timedelta(minutes=5 * index)
+        rows.append({"dataId": "expected", "readingDate": stamp.isoformat(),
+                     "readingValue": float(index), "approval": 800,
+                     "grade": -1, "unit": "Acre-ft"})
+    random.Random(7).shuffle(rows)
+    monkeypatch.setattr(R.providers, "_get_srp_json",
+                        lambda url, params: {"timeSeriesData": rows})
+
+    frame = R.fetch_srp_series(355, "expected", "20260828", "20260829")
+
+    assert frame["storage_af"].tolist() == [287.0, 575.0]
+
+
+def test_dense_source_history_merges_by_date():
+    old = pd.DataFrame({"date": pd.to_datetime(["2026-08-27", "2026-08-28"]),
+                        "storage_af": [9.0, 10.0]})
+    new = pd.DataFrame({"date": pd.to_datetime(["2026-08-28", "2026-08-29"]),
+                        "storage_af": [11.0, 12.0]})
+    merged = R.merge_source_series(old, new)
+    assert merged["storage_af"].tolist() == [9.0, 11.0, 12.0]
+
+
+def test_a_refetched_day_always_replaces_the_cached_one():
+    """The overlap is the whole point of re-requesting a tail.
+
+    A provider revises a provisional reading after publishing it, so the
+    refresh asks again for the last several days. Every overlapping date is a
+    tie between the cached frame and the fetched one, and a tie needs a rule:
+    the fetch wins. Three years of cache against a month of fetch is the size
+    that shows whether there is a rule, because two rows against two can
+    resolve either way and still look correct."""
+    days = pd.date_range("2023-08-29", periods=1097, freq="D")
+    cached = pd.DataFrame({"date": days, "storage_af": [1.0] * 1097})
+    overlap = days[-30:]
+    fetched = pd.DataFrame({"date": overlap, "storage_af": [2.0] * 30})
+
+    merged = R.merge_source_series(cached, fetched)
+
+    refetched = merged[merged["date"].isin(overlap)]["storage_af"].tolist()
+    assert refetched == [2.0] * 30
+    assert len(merged) == 1097
 
 
 # --- the monthly normal window (ADR-083) ---------------------------------

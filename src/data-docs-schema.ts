@@ -84,7 +84,10 @@ export const RESERVOIR_GROUPS: readonly ApiFieldGroup[] = [
       "Records from the California Department of Water Resources."),
     f("cdss", "reservoirs",
       "Records from the Colorado Division of Water Resources."),
-    f("usgs", "reservoirs", "Records from the U.S. Geological Survey.")
+    f("usgs", "reservoirs", "Records from the U.S. Geological Survey."),
+    f("srp", "reservoirs", "Records from the Salt River Project."),
+    f("dnrc", "reservoirs",
+      "Records from the Montana Department of Natural Resources and Conservation.")
   ]},
   { id: "reservoir-counties", title: "County summary", path: "counties", fields: [
     f("source", "text", "County boundary publisher."),
@@ -459,6 +462,11 @@ export const REFERENCE_GROUPS: readonly ApiFieldGroup[] = [
       "Reviewed Colorado admitted-reservoir source file."),
     f("admitted_usgs_reservoirs", "file name",
       "Reviewed U.S. Geological Survey admitted-reservoir source file."),
+    f("admitted_srp_reservoirs", "file name",
+      "Reviewed Salt River Project admitted-reservoir source file."),
+    f("admitted_dnrc_reservoirs", "file name",
+      "Reviewed Montana Department of Natural Resources and Conservation " +
+      "admitted-reservoir source file."),
     f("dam_points", "object", "Summary of reviewed dam coordinates."),
     f("denominator", "text", "Rule used to choose the published full level."),
     f("note", "text", "Capacity review warning."),

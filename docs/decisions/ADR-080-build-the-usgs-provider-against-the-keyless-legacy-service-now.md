@@ -1,6 +1,6 @@
 # ADR-080: Build the USGS provider against the keyless legacy service now
 
-- Status: Accepted
+- Status: Superseded by ADR-098
 - Date: 2026-08-22
 
 ## Context

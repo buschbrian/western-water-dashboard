@@ -1,5 +1,5 @@
 export type DataFrequency = "daily" | "monthly";
-export type SourceKey = "rise" | "awdb" | "cdec" | "cdss" | "usgs";
+export type SourceKey = "rise" | "awdb" | "cdec" | "cdss" | "usgs" | "srp" | "dnrc";
 export type NullableNumber = number | null;
 
 export interface MonthlyRecord {

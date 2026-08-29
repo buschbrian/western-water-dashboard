@@ -20,5 +20,6 @@ See docs/architecture/pipeline.md and pipeline/AGENTS.md.
 """
 
 from . import (  # noqa: F401
-    constants, freshness, geography, history, numbers, providers, roster, seasonal,
+    constants, freshness, geography, history, numbers, providers, roster,
+    seasonal, source_history,
 )

@@ -49,6 +49,7 @@ the test is right and the prose is the bug.
 | [Western source candidates](WESTERN-SOURCE-CANDIDATES.md) | Survey of non-federal and additional federal services, fetched live. |
 | [Colorado and California API review](CDSS-CDEC-API-REVIEW.md) | Measured source value, limits and integration cost. |
 | [Upstream trace scoping](UPSTREAM-TRACE-SCOPING.md) | What it would take to say what drains to a reservoir. Measured against the U.S. Geological Survey network index. Built as ADR-077, except the ordering slice. |
+| [Streamflow scoping](STREAMFLOW-SCOPING.md) | What a river-flow page would take, and what it would make this site. The data is the same service, key and collection the reservoir provider already reads; the obstacle is ADR-078, which says every water this site measures is a reservoir. Recommends nothing be built yet. |
 | [Water-body and navigation scoping](WATER-BODY-AND-NAVIGATION-SCOPING.md) | Name normalization, lake-versus-reservoir type, nested navigation, reopening the chooser, and the states still unsourced. Four of its five items are closed; the state survey is the one that is open. |
 
 ## Historical material
@@ -61,36 +62,32 @@ evidence about a date, never a description of the present.
 ## Current work
 
 The typed ArcGIS application, western geography, the opening choice and its
-reopen control, the five reservoir providers, the mountain snow network, the
+reopen control, the seven reservoir providers, the mountain snow network, the
 upstream sets, drought at four area sizes, accessibility gates and
 compatibility redirects are in production. What remains, in the order it
 should be worked:
 
-1. **The U.S. Geological Survey migration, before early 2027** (ADR-080). The
-   provider is built against the keyless legacy daily-values service, which is
-   documented to retire. Either register the free API key and amend ADR-004
-   for that one provider, or withdraw its seven reservoirs under ADR-056.
-   Nothing here will warn you: `check_reference_freshness.py` watches reviewed
-   inputs, not service retirements. This is the only remaining item with an
-   external deadline.
-2. **The human visual review** of every page and viewport. The ArcGIS canvas
+1. **The human visual review** of every page and viewport. The ArcGIS canvas
    is blank in headless Chromium, so colour balance, terrain, density and
    visual hierarchy have no automated evidence at all.
-3. **Settle the held candidates** — 21 California and 4 U.S. Geological Survey
+2. **Settle the held candidates** — 12 California and 4 U.S. Geological Survey
    candidates held for source disagreements, each named with its finding in
    its own roster file.
-4. **Keep the automatic late and withdrawn feed reports under review.**
-5. **The two vendor accessibility items and the content policy**, both due on
+3. **Keep the automatic late and withdrawn feed reports under review.**
+4. **The two vendor accessibility items and the content policy**, both due on
    the next SDK upgrade: the `aria-prohibited-attr` entry in `AXE_EXCEPTIONS`,
    the unnamed Calcite slider handle that `src/ui/slider-label.ts` works
    around, and the `script-src` measurement behind ADR-036.
-6. **The four published points with no water body in any askable source.**
-7. **The states still unsourced** — Idaho, Oregon and Wyoming outright, and
-   the rest of Arizona, Nevada and Washington beyond the seven admitted with
-   the fifth provider. Item 5 of
+5. **The four published points with no water body in any askable source.**
+6. **The remaining coverage gaps** — Idaho, Oregon and Wyoming outright, plus
+   further Nevada and Washington reservoirs. Both sources the 2026-08-28
+   follow-up found are now built: SRP's four additive Arizona reservoirs and
+   DNRC's one in-scope Montana reservoir are published, and DNRC's nine
+   remaining sensors drain to the Gulf of Mexico rather than being a gap.
+   Item 5 of
    [`WATER-BODY-AND-NAVIGATION-SCOPING.md`](WATER-BODY-AND-NAVIGATION-SCOPING.md)
    carries the survey.
-8. **Two deferred decisions, neither blocking.** Whether to order the upstream
+7. **Two deferred decisions, neither blocking.** Whether to order the upstream
    sets — the flowline-navigation slice
    [`UPSTREAM-TRACE-SCOPING.md`](UPSTREAM-TRACE-SCOPING.md) deliberately left
    out — and whether to give the first-visit chooser its counts, which needs
