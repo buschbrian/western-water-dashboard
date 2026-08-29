@@ -185,6 +185,27 @@ comparison the record asks for still needs one run of the parity tool with
 `USGS_API_KEY` set, and it has not been run. Recorded here rather than in a
 commit message so the gap is visible to whoever has the key.
 
+**Where the key comes from, because ADR-098 does not say.** The record
+decided that the pipeline holds a key and never says how one is obtained,
+which is how a documented dependency becomes tribal knowledge. It is issued
+by the service itself at <https://api.waterdata.usgs.gov>. It belongs in two
+places and nowhere else: the repository's `USGS_API_KEY` Actions secret,
+which the morning workflow reads, and the shell of whoever runs the parity
+tool by hand. It is never committed, never placed in a request URL, and
+never sent to a reader's browser.
+
+```bash
+gh secret set USGS_API_KEY --repo buschbrian/western-water-dashboard
+```
+
+**The repository had no such secret when this was written**, so the migrated
+provider had never run anywhere but on the machine that migrated it. A run
+without the key is not silent: each of the seven records carries the failure
+as its `fetch_error`, the refresh prints that text rather than the generic
+quiet-feed note, and the self-healing stale-feed issue opens once the
+two-day threshold passes. ADR-056's sixty days is the outer bound for
+withdrawal, not the time to notice.
+
 ## Review boundary
 
 This inventory records ownership and current behavior; it does not claim that
