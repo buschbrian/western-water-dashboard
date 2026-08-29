@@ -49,6 +49,7 @@ the test is right and the prose is the bug.
 | [Western source candidates](WESTERN-SOURCE-CANDIDATES.md) | Survey of non-federal and additional federal services, fetched live. |
 | [Colorado and California API review](CDSS-CDEC-API-REVIEW.md) | Measured source value, limits and integration cost. |
 | [Upstream trace scoping](UPSTREAM-TRACE-SCOPING.md) | What it would take to say what drains to a reservoir. Measured against the U.S. Geological Survey network index. Built as ADR-077, except the ordering slice. |
+| [Streamflow scoping](STREAMFLOW-SCOPING.md) | What a river-flow page would take, and what it would make this site. The data is the same service, key and collection the reservoir provider already reads; the obstacle is ADR-078, which says every water this site measures is a reservoir. Recommends nothing be built yet. |
 | [Water-body and navigation scoping](WATER-BODY-AND-NAVIGATION-SCOPING.md) | Name normalization, lake-versus-reservoir type, nested navigation, reopening the chooser, and the states still unsourced. Four of its five items are closed; the state survey is the one that is open. |
 
 ## Historical material
