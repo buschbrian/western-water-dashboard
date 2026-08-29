@@ -365,11 +365,31 @@ DNRC_SERIES_URL = f"{DNRC_STAGE_URL}/2/query"
 
 
 def _usgs_api_key() -> str:
-    """Return the pipeline-only API key or fail before making a request."""
+    """Return the pipeline-only API key or fail before making a request.
+
+    Checked for shape, not just for presence. A header value has to encode as
+    latin-1, so a key carrying anything else fails inside the HTTP client with
+    a `UnicodeEncodeError` and a stack trace ending in `putheader` -- which
+    names neither this provider nor the variable that is wrong. ADR-098 says a
+    key problem is visible as a provider failure; a traceback from the fourth
+    library down is not that.
+
+    The case that found this was a placeholder pasted verbatim into a shell,
+    so the value never has to be a plausible key for the refresh to hit it.
+    Never log the key itself: the message says what is wrong with it, and
+    nothing about what it is.
+    """
     api_key = os.environ.get(USGS_API_KEY_ENV, "").strip()
     if not api_key:
         raise RuntimeError(
             f"{USGS_API_KEY_ENV} is required for the USGS OGC daily service")
+    try:
+        api_key.encode("latin-1")
+    except UnicodeEncodeError:
+        raise RuntimeError(
+            f"{USGS_API_KEY_ENV} holds characters that cannot be sent in a "
+            "request header, so it is not the key. A placeholder pasted from "
+            "documentation is the usual cause.") from None
     return api_key
 
 

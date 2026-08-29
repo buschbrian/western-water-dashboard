@@ -1714,6 +1714,23 @@ def test_usgs_api_key_is_required_before_a_request(monkeypatch):
         R.providers._usgs_api_key()
 
 
+def test_a_key_that_cannot_be_a_header_is_refused_by_name(monkeypatch):
+    """A placeholder pasted from documentation is a key of the wrong shape.
+
+    Sent as-is it fails four libraries down, in `putheader`, with a
+    `UnicodeEncodeError` naming neither this provider nor the variable at
+    fault -- and ADR-098 says a key problem reads as a provider failure. The
+    refusal has to name the variable, and must not quote the value: a key of
+    the wrong shape is still a secret."""
+    monkeypatch.setenv("USGS_API_KEY", "\u2026")
+
+    with pytest.raises(RuntimeError, match="cannot be sent in a request header"):
+        R.providers._usgs_api_key()
+
+    monkeypatch.setenv("USGS_API_KEY", "an-ordinary-key")
+    assert R.providers._usgs_api_key() == "an-ordinary-key"
+
+
 def test_the_usgs_roster_pins_the_daily_statistic():
     assert {row["statistic_id"] for row in R.ADMITTED_USGS_RESERVOIRS.values()} \
         == {"30800", "32400"}
