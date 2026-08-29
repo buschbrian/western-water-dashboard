@@ -167,11 +167,18 @@ a published figure change with no decision behind it.
 **The comparison ADR-098 requires has been run at day level and agrees
 everywhere.** `tools/check_usgs_migration_parity.py` compares the two services
 directly and needs the key for its modern half. What has been measured without
-one is the published output against the retired service: for each of the seven
-stations, the day the payload reports and the three days its 7, 30 and
-365-day changes are measured from -- **28 comparisons spanning a year, all 28
-identical**, Weber Reservoir among them. That confirms site identity, the
-chosen statistic and the unit on real published values.
+one is the published output against the retired service, and it is repeatable
+by anyone on any morning:
+
+```bash
+.venv/bin/python tools/check_usgs_migration_parity.py --against-published
+```
+
+For each of the seven stations it takes the day the payload reports and the
+three days its 7, 30 and 365-day changes are measured from -- **28
+comparisons spanning a year, all 28 identical**, Weber Reservoir among them.
+That confirms site identity, the chosen statistic and the unit on real
+published values, and it exits non-zero if that ever stops being true.
 
 **What it does not confirm is every day of every series.** The full-series
 comparison the record asks for still needs one run of the parity tool with
