@@ -39,6 +39,11 @@ def committed_data_files() -> set[str]:
     return {
         path for path in listed
         if path not in NOT_DATA
+        # A TypeScript project's own config, wherever the project lives. The
+        # root one is named in NOT_DATA above; the question service brought a
+        # second, and a third would ask this question again. A tsconfig is
+        # never a measurement, so this answers it once.
+        and not path.endswith("/tsconfig.json")
         and not path.startswith("public/assets/")
         and not path.startswith("node_modules/")
     }
