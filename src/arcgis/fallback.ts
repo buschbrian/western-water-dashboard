@@ -56,6 +56,26 @@ export interface Resolution<T extends Loadable> {
 
 const DEFAULT_TIMEOUT_MS = 10000;
 
+/**
+ * The whole chain's budget, not one candidate's.
+ *
+ * Every candidate already had a deadline; the chain did not, and the chain is
+ * what a reader waits on. `loadMap` opens with `await resolveBasemap(...)` and
+ * the page's first paint sits behind it, so the wait a reader actually serves
+ * was the sum of the chain: four candidates for a light theme and five for a
+ * dark one, each allowed ten seconds to load and ten more to verify -- eighty
+ * to a hundred seconds of "Loading" with the reservoir data already fetched,
+ * validated and waiting behind a background image.
+ *
+ * Fifteen seconds is the whole chain now. Past it the resolution is the one
+ * this module already had words for -- `resource: null` -- which `loadMap`
+ * already handles and the browser suite already exercises as "kept local data
+ * when every basemap was refused". A reader gets the reservoirs on a plain
+ * background and can pick a background from the map's own gallery, which is
+ * a worse map and a far better page than a spinner that outlasts patience.
+ */
+const DEFAULT_BUDGET_MS = 15000;
+
 function withTimeout<T>(promise: Promise<T>, ms: number, name: string): Promise<T> {
   let timer: ReturnType<typeof setTimeout>;
   return Promise.race([
@@ -75,19 +95,34 @@ function withTimeout<T>(promise: Promise<T>, ms: number, name: string): Promise<
  */
 export async function resolveFirstLoadable<T extends Loadable>(
   candidates: readonly Candidate<T>[],
-  options: { timeoutMs?: number } = {}
+  options: { timeoutMs?: number; budgetMs?: number } = {}
 ): Promise<Resolution<T>> {
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
+  const budgetMs = options.budgetMs ?? DEFAULT_BUDGET_MS;
+  const startedAt = Date.now();
+  /* What a candidate may still spend: never more than its own deadline, and
+     never more than the chain has left. */
+  const allowance = (): number => Math.min(timeoutMs, budgetMs - (Date.now() - startedAt));
   const failures: Attempt[] = [];
 
   for (const candidate of candidates) {
+    if (allowance() <= 0) {
+      failures.push({
+        name: candidate.name,
+        error: new Error(
+          `the chain spent its ${budgetMs}ms before ${candidate.name} could be tried`)
+      });
+      break;
+    }
     try {
       const resource = candidate.create();
       // A candidate whose load hangs is as unusable as one that rejects, and
       // an unbounded wait here is exactly the failure the auth prompt caused.
-      await withTimeout(resource.load(), timeoutMs, candidate.name);
+      await withTimeout(resource.load(), allowance(), candidate.name);
       if (candidate.verify) {
-        await withTimeout(candidate.verify(resource), timeoutMs, candidate.name);
+        const left = allowance();
+        if (left <= 0) throw new Error(`${candidate.name} could not be verified in time`);
+        await withTimeout(candidate.verify(resource), left, candidate.name);
       }
       return {
         resource,

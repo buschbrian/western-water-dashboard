@@ -24,7 +24,7 @@ import { setAssetPath as setCalciteAssetPath } from "@esri/calcite-components";
 import { loadReservoirs } from "./data/load";
 import { sizeBasis } from "./data/rollup";
 import { stateName } from "./data/state-vocabulary";
-import type { Reservoir, ReservoirPayload } from "./types";
+import type { Reservoir, ReservoirPayload, SourceKey } from "./types";
 import { methodsMarkup } from "./ui/methods-template";
 import { setupPlaceChooser } from "./ui/opening-splash";
 import { wireTheme } from "./ui/theme";
@@ -49,13 +49,15 @@ void setupPlaceChooser();
  */
 function providerCounts(
   reservoirs: readonly Reservoir[]
-): { rise: number; awdb: number; cdec: number; cdss: number; usgs: number } {
+): Record<SourceKey, number> {
   return {
     rise: reservoirs.filter((reservoir) => reservoir.source_key === "rise").length,
     awdb: reservoirs.filter((reservoir) => reservoir.source_key === "awdb").length,
     cdec: reservoirs.filter((reservoir) => reservoir.source_key === "cdec").length,
     cdss: reservoirs.filter((reservoir) => reservoir.source_key === "cdss").length,
-    usgs: reservoirs.filter((reservoir) => reservoir.source_key === "usgs").length
+    usgs: reservoirs.filter((reservoir) => reservoir.source_key === "usgs").length,
+    srp: reservoirs.filter((reservoir) => reservoir.source_key === "srp").length,
+    dnrc: reservoirs.filter((reservoir) => reservoir.source_key === "dnrc").length
   };
 }
 

@@ -19,6 +19,8 @@ function preserveRuntimeDataAndRedirects(): Plugin {
       await mkdir(resolve(outDir, "maplibre"), { recursive: true });
       await cp(resolve(root, "data", "drought"), resolve(outDir, "data", "drought"),
         { recursive: true });
+      await cp(resolve(root, "data", "assistant"), resolve(outDir, "data", "assistant"),
+        { recursive: true });
 
       // Boundary GeoJSON joins the runtime data for the same reason as the
       // other files: it is fetched, never imported. It is also what lets the pages

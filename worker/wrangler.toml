@@ -1,0 +1,19 @@
+name = "western-water-dashboard-ask"
+main = "src/index.ts"
+compatibility_date = "2026-08-29"
+
+[vars]
+PUBLIC_DATA_BASE = "https://buschbrian.github.io/utah-reservoir-dashboard"
+PRODUCTION_ORIGIN = "https://buschbrian.github.io"
+
+[[ratelimits]]
+name = "RATE_LIMITER"
+namespace_id = "1001"
+
+  [ratelimits.simple]
+  limit = 6
+  period = 60
+
+# Set CLOUDFLARE_ACCOUNT_ID, AI_GATEWAY_ID and CLOUDFLARE_AI_TOKEN as
+# encrypted deployment variables. Configure the gateway with body logging
+# off, zero data retention on, prepaid Unified Billing and a $10 spend limit.

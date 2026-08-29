@@ -31,7 +31,9 @@ const PROVIDERS: Record<SourceKey, string> = {
   awdb: "Natural Resources Conservation Service",
   cdec: "California Department of Water Resources",
   cdss: "Colorado Division of Water Resources",
-  usgs: "U.S. Geological Survey"
+  usgs: "U.S. Geological Survey",
+  srp: "Salt River Project",
+  dnrc: "Montana Department of Natural Resources and Conservation"
 };
 
 export function reservoirProvider(reservoir: Reservoir): string {
@@ -51,6 +53,12 @@ export function capacitySource(reservoir: Reservoir): string {
   }
   if (reservoir.capacity_basis === "cdec_reservoir_report") {
     return "California Department of Water Resources daily reservoir report";
+  }
+  if (reservoir.capacity_basis === "srp_reservoir_metadata") {
+    return "Salt River Project reservoir record";
+  }
+  if (reservoir.capacity_basis === "dnrc_stage_metadata") {
+    return "Montana Department of Natural Resources and Conservation reservoir record";
   }
   if (reservoir.capacity_basis === null) return "Not available";
   return "U.S. Army Corps of Engineers National Inventory of Dams";

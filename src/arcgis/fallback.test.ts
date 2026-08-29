@@ -57,6 +57,53 @@ describe("first-loadable fallback", () => {
     expect(result.failures[0]?.error.message).toContain("did not load within 20ms");
   });
 
+  /* The chain is what a reader waits on, so the chain is what has to be
+   * bounded. Before this, every candidate had a deadline and their sum had
+   * none: four hanging candidates at ten seconds each held the first paint
+   * for forty, because `loadMap` awaits this before the page renders. */
+  it("stops the whole chain at its budget, not at each candidate's", async () => {
+    const started = Date.now();
+
+    const result = await resolveFirstLoadable(
+      [hangs("first"), hangs("second"), hangs("third"), hangs("fourth")],
+      { timeoutMs: 40, budgetMs: 60 });
+
+    const elapsed = Date.now() - started;
+    expect(result.resource).toBeNull();
+    /* Two candidates at 40ms each would be 80ms and four would be 160ms. The
+     * budget is what decides, so this lands near 60 and nowhere near either. */
+    expect(elapsed).toBeLessThan(140);
+    expect(result.failures.length).toBeLessThan(4);
+    expect(result.failures.at(-1)?.error.message).toContain("before");
+  });
+
+  it("still reaches a later candidate while the budget holds", async () => {
+    const result = await resolveFirstLoadable(
+      [hangs("slow-first"), ok("gray-vector")], { timeoutMs: 20, budgetMs: 5000 });
+
+    expect(result.name).toBe("gray-vector");
+    expect(result.degraded).toBe(true);
+  });
+
+  it("does not verify a candidate the budget can no longer pay for", async () => {
+    const verify = vi.fn(() => Promise.resolve("checked"));
+
+    const result = await resolveFirstLoadable([
+      {
+        name: "slow-to-load",
+        create: () => ({
+          load: () => new Promise((resolve) => { setTimeout(resolve, 40); })
+        }),
+        verify
+      }
+    ], { timeoutMs: 100, budgetMs: 25 });
+
+    /* The load overran the budget, so the verification is never asked for and
+     * the candidate is not returned as if it had passed one. */
+    expect(verify).not.toHaveBeenCalled();
+    expect(result.resource).toBeNull();
+  });
+
   it("takes the first choice and reports no degradation", async () => {
     const result = await resolveFirstLoadable([ok("topo-vector"), ok("gray-vector")]);
     expect(result.name).toBe("topo-vector");
