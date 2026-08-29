@@ -1,0 +1,42 @@
+{
+  "storage_source": "Salt River Project Watershed Connection public JSON service",
+  "storage_source_url": "https://streamflow.watershedconnection.com/api/watershedconnectiondata/",
+  "reviewed": "2026-08-29",
+  "selection": "Four additive, active SRP reservoirs with stable station, measurement and data identifiers. C.C. Cragin, Horseshoe and Bartlett remain on their existing providers.",
+  "keyed_by": "measurement_id",
+  "reservoirs": {
+    "355": {
+      "name": "Roosevelt Lake", "station": "355", "station_id": 8,
+      "measurement_id": 355, "data_id": "LS.Official@111094033401800",
+      "history_data_id": "Total Storage.Official@111094033401800",
+      "lat": 33.671593, "lon": -111.16124, "cadence": "daily",
+      "operator": "Salt River Project", "huc6": "150601",
+      "capacity": {"capacity_af": 1631532.0, "capacity_basis": "srp_reservoir_metadata", "nid_id": "AZ10317", "nid_dam_name": "Theodore Roosevelt Dam", "dam_lon": -111.16151085523255, "dam_lat": 33.671505195658035, "match_distance_km": 0.027, "match_confirmed_by": "position", "capacity_source_url": "https://streamflow.watershedconnection.com/dwr"}
+    },
+    "396": {
+      "name": "Apache Lake", "station": "396", "station_id": 23,
+      "measurement_id": 396, "data_id": "LS.Official@111203633352700",
+      "history_data_id": "Total Storage.Official@111203633352700",
+      "lat": 33.5907, "lon": -111.343468, "cadence": "daily",
+      "operator": "Salt River Project", "huc6": "150601",
+      "capacity": {"capacity_af": 245138.0, "capacity_basis": "srp_reservoir_metadata", "nid_id": "AZ10311", "nid_dam_name": "Horse Mesa Dam", "dam_lon": -111.34391088545658, "dam_lat": 33.5906051748335, "match_distance_km": 0.042, "match_confirmed_by": "position", "capacity_source_url": "https://streamflow.watershedconnection.com/dwr"}
+    },
+    "400": {
+      "name": "Canyon Lake", "station": "400", "station_id": 24,
+      "measurement_id": 400, "data_id": "LS.Official@111263433331300",
+      "history_data_id": "Total Storage.Official@111263433331300",
+      "lat": 33.553642, "lon": -111.442798, "cadence": "daily",
+      "operator": "Salt River Project", "huc6": "150601",
+      "capacity": {"capacity_af": 57852.0, "capacity_basis": "srp_reservoir_metadata", "nid_id": "AZ10313", "nid_dam_name": "Mormon Flat Dam", "dam_lon": -111.44291090231461, "dam_lat": 33.55340516449081, "match_distance_km": 0.028, "match_confirmed_by": "position", "capacity_source_url": "https://streamflow.watershedconnection.com/dwr"}
+    },
+    "406": {
+      "name": "Saguaro Lake", "station": "406", "station_id": 25,
+      "measurement_id": 406, "data_id": "LS.Official@111321133335900",
+      "history_data_id": "Total Storage.Official@111321133335900",
+      "lat": 33.566423, "lon": -111.536401, "cadence": "daily",
+      "operator": "Salt River Project", "huc6": "150601",
+      "capacity": {"capacity_af": 69765.0, "capacity_basis": "srp_reservoir_metadata", "nid_id": "AZ10318", "nid_dam_name": "Stewart Mountain Dam", "dam_lon": -111.53591092170454, "dam_lat": 33.566505161429305, "match_distance_km": 0.046, "match_confirmed_by": "position", "capacity_source_url": "https://streamflow.watershedconnection.com/dwr"}
+    }
+  },
+  "withheld": {}
+}

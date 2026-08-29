@@ -1,0 +1,22 @@
+{
+  "storage_source": "Montana DNRC Stream and Gage Explorer ArcGIS REST service",
+  "storage_source_url": "https://gis.dnrc.mt.gov/arcgis/rest/services/WRD/WMB_StAGE/MapServer",
+  "reviewed": "2026-08-29",
+  "selection": "East Fork Rock Creek is the only current DNRC total-storage sensor in the accepted western drainage scope. Nine Missouri-system sensors drain to the Gulf of Mexico and are excluded.",
+  "keyed_by": "sensor_id",
+  "reservoirs": {
+    "cdf80586ea15410ebee861ac51f924d3": {
+      "name": "East Fork Rock Creek Reservoir",
+      "station": "cdf80586ea15410ebee861ac51f924d3",
+      "sensor_id": "cdf80586ea15410ebee861ac51f924d3",
+      "location_id": "21abc4212acf434d8f55213310fe27c0",
+      "location_code": "76E 01900", "lat": 46.131, "lon": -113.38069,
+      "cadence": "daily", "operator": "Montana Department of Natural Resources and Conservation",
+      "huc6": "170102",
+      "capacity": {"capacity_af": 16040.0, "capacity_basis": "dnrc_stage_metadata", "nid_id": null, "nid_dam_name": null, "dam_lon": -113.38069, "dam_lat": 46.131, "match_distance_km": 0.0, "match_confirmed_by": "dnrc_stage_location", "capacity_source_url": "https://gis.dnrc.mt.gov/arcgis/rest/services/WRD/WMB_StAGE/MapServer/3"}
+    }
+  },
+  "withheld": {
+    "nid_match": {"name": "East Fork Rock Creek Reservoir", "finding": "No National Inventory of Dams record was found within the shared match radius; ADR-099 accepts the owner-operated DNRC location and full level for this admission."}
+  }
+}

@@ -6,9 +6,8 @@ sites new -- none of them within three kilometres of a published point.
 This tool gathers what admission needs for those eleven and decides each
 with the shared machinery in `admission.py`, unmodified:
 
-- the storage series since 2015, from the legacy daily-values service
-  (parameter 00054, acre-feet, keyless; see ADR-080 for the retirement
-  this build accepts);
+- the storage series since 2015, from the modern OGC daily-values service
+  (parameter 00054, acre-feet, with the pipeline-only key from ADR-098);
 - the National Inventory of Dams record for each state's dams, so the dam
   can be matched by position first and name second (ADR-015);
 - `admit` for the match and denominator, then `discrepancies` for the four
@@ -34,46 +33,43 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 sys.path.insert(0, str(ROOT / "tools"))
 
-import urllib.parse
-import urllib.request
-
 import admission
 from audit_candidate_capacity import dam_states, fetch_dams, find_dam_layer
+from pipeline.providers import MAX_PAGES, USGS_DV_URL, _get_usgs_json
 
 REVIEW_CSV = ROOT / "nwis-review.csv"
-NWIS_DV = "https://waterservices.usgs.gov/nwis/dv"
 PARAMETER = "00054"
 START_DATE = "2015-01-01"
-USER_AGENT = "western-water-dashboard/usgs-admission (+https://github.com/buschbrian)"
-TIMEOUT = 120
 
 
-def nwis_series(site_no: str) -> list[float]:
+def usgs_series(site_no: str) -> list[float]:
     """Every accepted 00054 value since 2015, oldest first."""
-    query = urllib.parse.urlencode({
-        "sites": site_no, "parameterCd": PARAMETER,
-        "startDT": START_DATE, "format": "json"})
-    request = urllib.request.Request(
-        f"{NWIS_DV}?{query}", headers={"User-Agent": USER_AGENT})
-    with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
-        payload = json.loads(response.read())
     values = []
-    for series in payload.get("value", {}).get("timeSeries", []):
-        # The reply nests twice: each entry of `values` is one method's block,
-        # and each block's `value` is the list of daily readings.
-        for block in series.get("values", []):
-            for reading in block.get("value", []):
-                value = reading.get("value")
-                if value in (None, ""):
-                    continue
-                try:
-                    number = float(value)
-                except (TypeError, ValueError):
-                    continue
-                # Provisional or approved, a negative storage is a sentinel,
-                # not a reading -- the same rule every other adapter applies.
-                if number >= 0:
-                    values.append(number)
+    next_url = USGS_DV_URL
+    params = {
+        "monitoring_location_id": f"USGS-{site_no}",
+        "parameter_code": PARAMETER,
+        "datetime": f"{START_DATE}/..", "limit": 10000, "f": "json",
+    }
+    pages = 0
+    while next_url and pages < MAX_PAGES:
+        payload = _get_usgs_json(next_url, params)
+        params = None
+        pages += 1
+        for feature in payload.get("features") or []:
+            reading = feature.get("properties") or {}
+            if reading.get("unit_of_measure") != "Acre-ft":
+                continue
+            try:
+                number = float(reading.get("value"))
+            except (TypeError, ValueError):
+                continue
+            if number >= 0:
+                values.append(number)
+        next_url = next((link.get("href") for link in payload.get("links") or []
+                         if link.get("rel") == "next" and link.get("href")), None)
+    if next_url:
+        raise RuntimeError(f"USGS OGC pagination exceeded {MAX_PAGES} pages")
     return values
 
 
@@ -97,7 +93,7 @@ def main() -> int:
 
     series = {}
     for site in wanted:
-        values = nwis_series(site["station"])
+        values = usgs_series(site["station"])
         series[site["station"]] = values
         site["observed_max_af"] = max(values) if values else None
         print(f"  {site['station']} {site['name'][:36]:<38} "

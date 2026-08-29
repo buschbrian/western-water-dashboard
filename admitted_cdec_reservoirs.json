@@ -3,13 +3,19 @@
   "storage_source_url": "https://cdec.water.ca.gov/",
   "capacity_source": "The service's own daily reservoir report where it publishes a full level (ADR-070), the U.S. Army Corps of Engineers National Inventory of Dams otherwise, with named reviewed corrections",
   "capacity_source_layer": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
-  "reviewed": "2026-08-20",
-  "selection": "Reservoir-storage stations reporting within the last year, inside the western drainage scope, not already represented by provider point, reviewed dam point or name, with a confirmed dam and no unresolved disagreement between sources -- and the named reviewed admissions below, each carrying the screen it was admitted against",
+  "reviewed": "2026-08-28",
+  "selection": "Reservoir-storage stations reporting within the last year, inside the western drainage scope, not already represented by provider point, reviewed dam point or name, with a confirmed dam and no unresolved disagreement between sources. Re-audited with tools/audit_cdec_stations.py on 2026-08-28 after applying ADR-072's denominator selection to the California audit; named reviewed admissions keep the screen and evidence they were admitted against.",
   "withheld": {
     "HVS": "Lake Havasu. Parker Dam's reviewed full level is 646,200 acre-feet (Bureau of Reclamation, https://www.usbr.gov/projects/index.php?id=207, checked 2026-08-20), against the inventory's 180,000. Held anyway: the series carries two readings near 5,913,000 acre-feet against a third highest of 601,300, roughly ten times the reservoir, and a reading this project cannot explain is not repaired.",
-    "ONF": "O'Neill Forebay, matched to B.F. Sisk Dam 1.18 km away and carrying San Luis Reservoir's 2,094,900 acre-feet -- thirty-seven times its own, reading 21% full at its fullest. The dam identity belongs to San Luis, which is admitted above.",
-    "FMT": "Fairmont. The inventory's 7,507 acre-feet against a regulating forebay its operator describes at about 500; the 423 acre-feet seen is the reservoir full, not 6% of it.",
-    "VIL": "Vail Lake. Its own sources disagree by 19% about the denominator -- 42,680 acre-feet in Rancho California Water District material against the inventory's 51,000 -- and the district's record is not in this pipeline. A reviewed figure would settle it.",
+    "CLA": "Clear Lake at Cache Creek. The service has reported 418,684 acre-feet, but the National Inventory of Dams has no dam close enough to confirm under the shared position-first screen. Held until a reviewed dam and capacity source outside the inventory are recorded.",
+    "SCC": "Success Dam. The provider's own full level is 82,300 acre-feet and the series has reported 91,530, 11% above it and just beyond the shared 10% surcharge allowance. Held because the accepted screens do not explain the excess.",
+    "BUC": "Buchanan Dam. The provider's own full level is 150,000 acre-feet and the series has reported 172,105, 15% above it. The operator-precedence rule chooses a denominator; it does not repair a series that exceeds that denominator.",
+    "ONF": "O'Neill Forebay. It matched B.F. Sisk Dam 1.18 km away and inherited San Luis Reservoir's 2,094,900 acre-feet, thirty-eight times the forebay's third-highest reading of 54,535. Its highest reading is an unstable 443,348 acre-feet. The dam identity and series both remain unresolved.",
+    "MAT": "Matilija Dam. The series has reported 2,030 acre-feet against the matched dam record's largest figure of 1,800, 13% above it and beyond the shared surcharge allowance. The capacity screen therefore does not confirm the match.",
+    "RLC": "Railroad Canyon. The series' highest reading is 58,508 acre-feet against a third highest of 13,123 and the matched dam record's largest figure of 11,586. Both the unstable maximum and the five-times-capacity result remain unexplained.",
+    "VIL": "Vail Lake. The series has reported 17,130 acre-feet against the inventory's 51,000, only 34% of the proposed denominator and below the shared low-water screen. Earlier Rancho California Water District material named 42,680 instead; a reviewed current operator record is still needed.",
+    "GNT": "Grant Lake. The series' highest reading is 82,410 acre-feet against a third highest of 49,082 and the matched dam record's largest figure of 47,525. The unstable maximum and 73% excess keep the dam match unconfirmed.",
+    "FMT": "Fairmont Reservoir. The inventory publishes 7,507 acre-feet against a regulating forebay whose series has reached only 423, 6% of that figure. Held until a reviewed full level for the forebay replaces the mismatched dam figure.",
     "BMP": "Bon Tempe. Five usable readings ever, the last in March 2023. Screened out by the audit's own recency rule rather than held here; named because it was publishable before that rule.",
     "GDR": "Guadalupe Reservoir. Held for a series whose highest reading is 1,762 acre-feet against a third highest of 402, and quiet since December 2021 besides."
   },
@@ -388,6 +394,29 @@
         "capacity_source": "California Data Exchange Center daily reservoir report",
         "capacity_source_url": "https://cdec.water.ca.gov/reportapp/javareports?name=RES",
         "capacity_source_checked": "2026-08-20"
+      }
+    },
+    "CFW": {
+      "name": "Bear River At Camp Far West Dam",
+      "station": "CFW",
+      "lat": 39.049858,
+      "lon": -121.315941,
+      "cadence": "daily",
+      "huc6": "180201",
+      "huc6_name": "Lower Sacramento",
+      "operator": "CA Dept of Water Resources/North Central Region Office",
+      "capacity": {
+        "capacity_af": 137280.0,
+        "capacity_basis": "max_storage",
+        "normal_storage_af": 93740.0,
+        "max_storage_af": 137280.0,
+        "nid_storage_af": 137280.0,
+        "nid_id": "CA00227",
+        "nid_dam_name": "Camp Far West",
+        "dam_lon": -121.3165132021453,
+        "dam_lat": 39.050105132659965,
+        "match_distance_km": 0.057,
+        "match_confirmed_by": "position"
       }
     },
     "CGS": {
@@ -1465,6 +1494,29 @@
         "capacity_source_checked": "2026-08-20"
       }
     },
+    "JCK": {
+      "name": "Jackson Meadows (Nevada Co Wd)",
+      "station": "JCK",
+      "lat": 39.509,
+      "lon": -120.552,
+      "cadence": "daily",
+      "huc6": "180201",
+      "huc6_name": "Lower Sacramento",
+      "operator": "Nevada County",
+      "capacity": {
+        "capacity_af": 69200.0,
+        "capacity_basis": "max_storage",
+        "normal_storage_af": 53100.0,
+        "max_storage_af": 69200.0,
+        "nid_storage_af": 69200.0,
+        "nid_id": "CA00254",
+        "nid_dam_name": "Jackson Meadows",
+        "dam_lon": -120.55601314154869,
+        "dam_lat": 39.50860523059303,
+        "match_distance_km": 0.347,
+        "match_confirmed_by": "position"
+      }
+    },
     "JNK": {
       "name": "Jenkinson Lake",
       "station": "JNK",
@@ -1850,6 +1902,29 @@
         "dam_lon": -122.07090460791073,
         "dam_lat": 41.131372233713,
         "match_distance_km": 0.48,
+        "match_confirmed_by": "name and position"
+      }
+    },
+    "MCS": {
+      "name": "Lake Mc Swain",
+      "station": "MCS",
+      "lat": 37.52,
+      "lon": -120.309,
+      "cadence": "daily",
+      "huc6": "180400",
+      "huc6_name": "San Joaquin",
+      "operator": "Merced Irrigation District",
+      "capacity": {
+        "capacity_af": 9730.0,
+        "capacity_basis": "max_storage",
+        "normal_storage_af": 8255.0,
+        "max_storage_af": 9730.0,
+        "nid_storage_af": 9730.0,
+        "nid_id": "CA00242",
+        "nid_dam_name": "Mcswain",
+        "dam_lon": -120.31091286026721,
+        "dam_lat": 37.52100507417398,
+        "match_distance_km": 0.202,
         "match_confirmed_by": "name and position"
       }
     },
@@ -2464,6 +2539,29 @@
         "match_confirmed_by": "name and position"
       }
     },
+    "RTD": {
+      "name": "Ruth Dam",
+      "station": "RTD",
+      "lat": 40.367,
+      "lon": -123.433,
+      "cadence": "monthly",
+      "huc6": "180101",
+      "huc6_name": "Northern California Coastal",
+      "operator": "Humboldt Bay Muncipal Water District",
+      "capacity": {
+        "capacity_af": 60200.0,
+        "capacity_basis": "max_storage",
+        "normal_storage_af": 48000.0,
+        "max_storage_af": 60200.0,
+        "nid_storage_af": 60200.0,
+        "nid_id": "CA00833",
+        "nid_dam_name": "R. W. Matthews",
+        "dam_lon": -123.43321370007226,
+        "dam_lat": 40.36850506302177,
+        "match_distance_km": 0.168,
+        "match_confirmed_by": "position"
+      }
+    },
     "SAT": {
       "name": "San Antonio Reservoir, Alameda Co",
       "station": "SAT",
@@ -2573,6 +2671,29 @@
         "dam_lat": 33.78630485540117,
         "match_distance_km": 0.149,
         "match_confirmed_by": "position"
+      }
+    },
+    "SGB": {
+      "name": "San Gabriel",
+      "station": "SGB",
+      "lat": 34.207,
+      "lon": -117.858,
+      "cadence": "daily",
+      "huc6": "180701",
+      "huc6_name": "Ventura-San Gabriel Coastal",
+      "operator": "Los Angeles County",
+      "capacity": {
+        "capacity_af": 45832.0,
+        "capacity_basis": "max_storage",
+        "normal_storage_af": 3378.0,
+        "max_storage_af": 45832.0,
+        "nid_storage_af": 45832.0,
+        "nid_id": "CA00200",
+        "nid_dam_name": "San Gabriel",
+        "dam_lon": -117.85921213501183,
+        "dam_lat": 34.206504894976284,
+        "match_distance_km": 0.124,
+        "match_confirmed_by": "name and position"
       }
     },
     "SHV": {

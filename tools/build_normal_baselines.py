@@ -66,7 +66,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from refresh_reservoirs import (  # noqa: E402
-    CANONICAL_YEAR_DAYS, SEASONAL_WINDOW_DAYS, annual_seasonal_values,
+    ADMITTED_USGS_RESERVOIRS, CANONICAL_YEAR_DAYS, DNRC_STAGE_URL,
+    SEASONAL_WINDOW_DAYS, annual_seasonal_values,
     fetch_awdb_series, fetch_cdss_series, fetch_cdec_series,
     fetch_usgs_series,
     fetch_rise_series, seasonal_window,
@@ -198,7 +199,9 @@ SOURCES = {
     "awdb": "https://wcc.sc.egov.usda.gov/awdbRestApi",
     "cdec": "https://cdec.water.ca.gov/",
     "cdss": "https://dwr.state.co.us/Rest/GET/api/v2/",
-    "usgs": "https://waterservices.usgs.gov/nwis/dv/",
+    "usgs": "https://api.waterdata.usgs.gov/",
+    "srp": "https://streamflow.watershedconnection.com/",
+    "dnrc": DNRC_STAGE_URL,
 }
 
 
@@ -221,7 +224,17 @@ def fetch_period(reservoir: dict) -> pd.DataFrame:
     if reservoir["source_key"] == "cdss":
         return fetch_cdss_series(reservoir["source_station_id"], start, end)
     if reservoir["source_key"] == "usgs":
-        return fetch_usgs_series(reservoir["source_station_id"], start, end)
+        row = ADMITTED_USGS_RESERVOIRS[reservoir["source_station_id"]]
+        return fetch_usgs_series(
+            reservoir["source_station_id"], row["statistic_id"], start, end)
+    # These reviewed sources begin after the closed 1991-2020 period. An
+    # explicit empty frame records that no climate normal exists without
+    # making a request the provider cannot answer or inventing a proxy.
+    if reservoir["source_key"] in {"srp", "dnrc"}:
+        return pd.DataFrame({
+            "date": pd.Series(dtype="datetime64[ns]"),
+            "storage_af": pd.Series(dtype="float64"),
+        })
     return fetch_awdb_series(
         reservoir["source_station_id"], reservoir["data_frequency"], start, end)
 

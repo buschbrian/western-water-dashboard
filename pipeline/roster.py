@@ -13,8 +13,10 @@ from pathlib import Path
 
 from .constants import (
     ADMITTED_CDEC_RESERVOIRS_PATH, ADMITTED_CDSS_RESERVOIRS_PATH,
+    ADMITTED_DNRC_RESERVOIRS_PATH,
     ADMITTED_RESERVOIRS_PATH, ADMITTED_RISE_RESERVOIRS_PATH,
-    ADMITTED_USGS_RESERVOIRS_PATH, BASE_AWDB_RESERVOIRS,
+    ADMITTED_SRP_RESERVOIRS_PATH, ADMITTED_USGS_RESERVOIRS_PATH,
+    BASE_AWDB_RESERVOIRS,
     BASE_RISE_RESERVOIRS, CAPACITY_PATH,
 )
 
@@ -46,6 +48,14 @@ def validate_capacity_evidence(name: str, capacity: object) -> None:
                     "https://cdec.water.ca.gov/"):
             raise ValueError(
                 f"{name}: a service-published capacity needs its owner-operated source")
+    if capacity.get("capacity_basis") == "srp_reservoir_metadata":
+        if not isinstance(capacity.get("capacity_source_url"), str) \
+                or "watershedconnection.com" not in capacity["capacity_source_url"]:
+            raise ValueError(f"{name}: SRP full level needs its source URL")
+    if capacity.get("capacity_basis") == "dnrc_stage_metadata":
+        if not isinstance(capacity.get("capacity_source_url"), str) \
+                or not capacity["capacity_source_url"].startswith("https://gis.dnrc.mt.gov/"):
+            raise ValueError(f"{name}: DNRC full level needs its source URL")
 
 
 def load_admitted_rise_reservoirs(
@@ -228,7 +238,14 @@ def load_admitted_usgs_reservoirs(
     every capacity here is the National Inventory of Dams' and ADR-070's
     preferred-figure rule never fires for it.
     """
-    return load_admitted_cdec_reservoirs(path)
+    rows = load_admitted_cdec_reservoirs(path)
+    for site_no, row in rows.items():
+        statistic_id = row.get("statistic_id")
+        if not isinstance(statistic_id, str) or not statistic_id.isdigit() \
+                or len(statistic_id) != 5:
+            raise ValueError(
+                f"{site_no}: a USGS reservoir needs a five-digit statistic_id")
+    return rows
 
 
 ADMITTED_USGS_RESERVOIRS = load_admitted_usgs_reservoirs()
@@ -238,6 +255,46 @@ USGS_RESERVOIRS = {
         row["capacity"]["capacity_af"], row["cadence"],
     )
     for site_no, row in ADMITTED_USGS_RESERVOIRS.items()
+}
+
+
+def load_admitted_srp_reservoirs(
+    path: Path = ADMITTED_SRP_RESERVOIRS_PATH,
+) -> dict[str, dict]:
+    rows = load_admitted_cdec_reservoirs(path)
+    for measurement_id, row in rows.items():
+        if str(row.get("measurement_id")) != measurement_id:
+            raise ValueError(f"{measurement_id}: SRP measurement identity differs")
+        if not isinstance(row.get("station_id"), int) or not row.get("data_id"):
+            raise ValueError(f"{measurement_id}: SRP station and data ids are required")
+    return rows
+
+
+ADMITTED_SRP_RESERVOIRS = load_admitted_srp_reservoirs()
+SRP_RESERVOIRS = {
+    measurement_id: (row["name"], row["lat"], row["lon"],
+                     row["capacity"]["capacity_af"], row["cadence"])
+    for measurement_id, row in ADMITTED_SRP_RESERVOIRS.items()
+}
+
+
+def load_admitted_dnrc_reservoirs(
+    path: Path = ADMITTED_DNRC_RESERVOIRS_PATH,
+) -> dict[str, dict]:
+    rows = load_admitted_cdec_reservoirs(path)
+    for sensor_id, row in rows.items():
+        if row.get("sensor_id") != sensor_id or not row.get("location_id"):
+            raise ValueError(f"{sensor_id}: DNRC sensor and location ids are required")
+        if row["capacity"].get("match_confirmed_by") != "dnrc_stage_location":
+            raise ValueError(f"{sensor_id}: DNRC no-NID finding must be explicit")
+    return rows
+
+
+ADMITTED_DNRC_RESERVOIRS = load_admitted_dnrc_reservoirs()
+DNRC_RESERVOIRS = {
+    sensor_id: (row["name"], row["lat"], row["lon"],
+                row["capacity"]["capacity_af"], row["cadence"])
+    for sensor_id, row in ADMITTED_DNRC_RESERVOIRS.items()
 }
 
 
@@ -260,7 +317,8 @@ AWDB_RESERVOIRS = {
 #: longer what the roster is keyed by, because two reservoirs may share one.
 ALL_RESERVOIR_IDS = (set(RESERVOIRS) | set(AWDB_RESERVOIRS)
                      | set(CDEC_RESERVOIRS) | set(CDSS_RESERVOIRS)
-                     | set(USGS_RESERVOIRS))
+                     | set(USGS_RESERVOIRS) | set(SRP_RESERVOIRS)
+                     | set(DNRC_RESERVOIRS))
 
 #: What each station is called, by that same identity. One place builds it, so
 #: a label and its station cannot come apart.
@@ -270,6 +328,8 @@ RESERVOIR_NAMES = {
     **{station: entry[0] for station, entry in CDEC_RESERVOIRS.items()},
     **{station: entry[0] for station, entry in CDSS_RESERVOIRS.items()},
     **{station: entry[0] for station, entry in USGS_RESERVOIRS.items()},
+    **{station: entry[0] for station, entry in SRP_RESERVOIRS.items()},
+    **{station: entry[0] for station, entry in DNRC_RESERVOIRS.items()},
 }
 
 ALL_RESERVOIR_NAMES = set(RESERVOIR_NAMES.values())
