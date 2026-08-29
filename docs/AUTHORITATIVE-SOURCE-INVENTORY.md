@@ -180,10 +180,18 @@ comparisons spanning a year, all 28 identical**, Weber Reservoir among them.
 That confirms site identity, the chosen statistic and the unit on real
 published values, and it exits non-zero if that ever stops being true.
 
-**What it does not confirm is every day of every series.** The full-series
-comparison the record asks for still needs one run of the parity tool with
-`USGS_API_KEY` set, and it has not been run. Recorded here rather than in a
-commit message so the gap is visible to whoever has the key.
+**The full-series comparison has now been run, and agrees everywhere.** With
+`USGS_API_KEY` set, `--days 365` compared both services day by day for all
+seven stations on 2026-08-29: **2,496 days on each side and nothing
+differing**. The day counts match station for station -- 365 where the record
+is complete, 362 for Alder Reservoir and 309 for Mud Mountain Lake -- so
+neither service omits a day the other returned, which is the second half of
+what the tool calls a pass.
+
+Mud Mountain Lake is measured on statistic `30800` where the other six use
+`32400`. That is the reason ADR-098 committed the statistic beside each
+station rather than taking whichever the service returned first, and the run
+is the evidence it was the right call.
 
 **Where the key comes from, because ADR-098 does not say.** The record
 decided that the pipeline holds a key and never says how one is obtained,

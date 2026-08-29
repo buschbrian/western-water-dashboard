@@ -313,11 +313,6 @@ means a line cannot hide the subject (ADR-061).
 
 Current product work is narrower, in the order it should be worked:
 
-- **run the U.S. Geological Survey parity comparison with the key** (ADR-098).
-  The published values agree with the retired service on 28 sampled days across
-  a year, which confirms the site, statistic and unit; the full-series run the
-  record asks for needs `USGS_API_KEY` and has not happened. The retired
-  service closes in early 2027, so the window is finite;
 - **complete a human visual review of every page and viewport.** Automated
   tests cannot judge colour balance, terrain, density, or visual hierarchy
   because the ArcGIS canvas is blank in headless Chromium;

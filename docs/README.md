@@ -66,25 +66,19 @@ upstream sets, drought at four area sizes, accessibility gates and
 compatibility redirects are in production. What remains, in the order it
 should be worked:
 
-1. **Run the Geological Survey parity comparison with the key.** ADR-098
-   requires the legacy and OGC series compared for all seven admitted
-   stations. The published values agree with the retired service on 28 sampled
-   days spanning a year, but the full-series run needs `USGS_API_KEY` and has
-   not happened: `tools/check_usgs_migration_parity.py`. The retired service is
-   documented to close in early 2027, so the window for running it is finite.
-2. **The human visual review** of every page and viewport. The ArcGIS canvas
+1. **The human visual review** of every page and viewport. The ArcGIS canvas
    is blank in headless Chromium, so colour balance, terrain, density and
    visual hierarchy have no automated evidence at all.
-3. **Settle the held candidates** — 12 California and 4 U.S. Geological Survey
+2. **Settle the held candidates** — 12 California and 4 U.S. Geological Survey
    candidates held for source disagreements, each named with its finding in
    its own roster file.
-4. **Keep the automatic late and withdrawn feed reports under review.**
-5. **The two vendor accessibility items and the content policy**, both due on
+3. **Keep the automatic late and withdrawn feed reports under review.**
+4. **The two vendor accessibility items and the content policy**, both due on
    the next SDK upgrade: the `aria-prohibited-attr` entry in `AXE_EXCEPTIONS`,
    the unnamed Calcite slider handle that `src/ui/slider-label.ts` works
    around, and the `script-src` measurement behind ADR-036.
-6. **The four published points with no water body in any askable source.**
-7. **The remaining coverage gaps** — Idaho, Oregon and Wyoming outright, plus
+5. **The four published points with no water body in any askable source.**
+6. **The remaining coverage gaps** — Idaho, Oregon and Wyoming outright, plus
    further Nevada and Washington reservoirs. Both sources the 2026-08-28
    follow-up found are now built: SRP's four additive Arizona reservoirs and
    DNRC's one in-scope Montana reservoir are published, and DNRC's nine
@@ -92,7 +86,7 @@ should be worked:
    Item 5 of
    [`WATER-BODY-AND-NAVIGATION-SCOPING.md`](WATER-BODY-AND-NAVIGATION-SCOPING.md)
    carries the survey.
-8. **Two deferred decisions, neither blocking.** Whether to order the upstream
+7. **Two deferred decisions, neither blocking.** Whether to order the upstream
    sets — the flowline-navigation slice
    [`UPSTREAM-TRACE-SCOPING.md`](UPSTREAM-TRACE-SCOPING.md) deliberately left
    out — and whether to give the first-visit chooser its counts, which needs
