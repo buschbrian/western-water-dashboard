@@ -1143,8 +1143,9 @@ def main() -> int:
         "stale_after_days_by_cadence": {"daily": STALE_AFTER_DAYS,
                                          "monthly": AWDB_MONTHLY_STALE_AFTER_DAYS},
         "source": ("Bureau of Reclamation RISE API, USDA NRCS AWDB, the "
-                   "California Data Exchange Center and the Colorado "
-                   "Division of Water Resources"),
+                   "California Data Exchange Center, the Colorado Division "
+                   "of Water Resources, the U.S. Geological Survey, the Salt "
+                   "River Project and Montana DNRC StAGE"),
         "sources": [
             {"key": "rise", "label": "Bureau of Reclamation RISE",
              "url": "https://data.usbr.gov/rise-api", "cadence": "daily"},

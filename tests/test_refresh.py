@@ -301,8 +301,9 @@ def test_committed_capacity_table_covers_every_reservoir():
     caps = payload["capacities"]
     assert set(R.BASE_RISE_RESERVOIRS) <= set(caps), (
         "capacity table does not cover every original RISE site")
-    assert set(R.RESERVOIRS) <= set(R.load_capacities()), (
-        "reviewed capacity evidence does not cover every RISE site")
+    reviewed_ids = (R.ALL_RESERVOIR_IDS - set(R.BASE_AWDB_RESERVOIRS))
+    assert reviewed_ids <= set(R.load_capacities()), (
+        "reviewed capacity evidence does not cover every reviewed reservoir")
     assert "National Inventory of Dams" in payload["source"]
 
     published = R.load_previous(R.OUTPUT_PATH)
@@ -1096,6 +1097,8 @@ def test_one_export_contains_capacity_and_every_visualization_geography():
     assert sections["capacity_catalog"]["capacities"]["290"]["nid_id"] == "UT10117"
     assert sections["capacity_catalog"]["capacities"]["290"]["name"] == "Deer Creek"
     assert sections["capacity_catalog"]["keyed_by"] == "source_station_id"
+    reviewed_ids = (R.ALL_RESERVOIR_IDS - set(R.BASE_AWDB_RESERVOIRS))
+    assert reviewed_ids <= set(sections["capacity_catalog"]["capacities"])
     geography = sections["geography"]
     # No state outline here (ADR-067): no map draws a mask from it any more,
     # so `geography` is watersheds and nothing else.

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "method_version": "storage-normal-annual-3",
-  "generated_at": "2026-08-29T13:32:01+00:00",
+  "generated_at": "2026-08-29T19:54:54+00:00",
   "start_date": "2015-01-01",
   "normal_period": {
     "start_year": 2015,
@@ -35,7 +35,7 @@
     "minimum_years": 10
   },
   "coverage": {
-    "reviewed": "2026-08-21",
+    "reviewed": "2026-08-29",
     "basis": "waterbody_states",
     "note": "These are the reservoirs this site tracks, not all the stored water in a state.",
     "states": {
@@ -46,11 +46,11 @@
         "monthly_count": 1,
         "current_count": 12,
         "climate_baseline_count": 8,
-        "status": "not machine readable",
-        "known_additional_source": "Salt River Project daily water report",
-        "known_additional_source_url": "https://streamflow.watershedconnection.com/dwr",
-        "known_additional_about": 6,
-        "note": "Six reservoirs are published as a web page only, and for several of them it is the only current source."
+        "status": "none found",
+        "known_additional_source": null,
+        "known_additional_source_url": null,
+        "known_additional_about": null,
+        "note": "Read since 2026-08-29 for the four additive Salt River Project reservoirs. Its other three storage stations are already read from existing providers; no other public source of current storage was found."
       },
       "CA": {
         "tracked_reservoir_count": 165,
@@ -102,7 +102,7 @@
         "known_additional_source": "U.S. Army Corps of Engineers water management",
         "known_additional_source_url": "https://water.usace.army.mil/",
         "known_additional_about": null,
-        "note": "Covers the large Missouri River reservoirs. The state's own 22 dams publish no combined feed."
+        "note": "Read since 2026-08-29 for East Fork Rock Creek, the one DNRC storage sensor inside the drawn drainages. The Corps covers large Missouri River reservoirs, and nine further DNRC sensors also drain east outside the drawn scope."
       },
       "NM": {
         "tracked_reservoir_count": 1,
@@ -189,7 +189,7 @@
     "daily": 2,
     "monthly": 45
   },
-  "source": "Bureau of Reclamation RISE API, USDA NRCS AWDB, the California Data Exchange Center and the Colorado Division of Water Resources",
+  "source": "Bureau of Reclamation RISE API, USDA NRCS AWDB, the California Data Exchange Center, the Colorado Division of Water Resources, the U.S. Geological Survey, the Salt River Project and Montana DNRC StAGE",
   "sources": [
     {
       "key": "rise",
@@ -257,7 +257,7 @@
     "unit_count": 75,
     "assigned": 392,
     "unassigned": 0,
-    "assigned_by_dam": 352,
+    "assigned_by_dam": 364,
     "in_utah": 58,
     "intersects_utah": 60,
     "subregions": [
@@ -4175,9 +4175,9 @@
       "days_stale": 0,
       "is_stale": false,
       "fetch_ok": true,
-      "current_storage_af": 588720.0,
+      "current_storage_af": 589021.0,
       "record_max_af": 1578052.0,
-      "record_min_af": 588720.0,
+      "record_min_af": 589021.0,
       "pct_of_record_max": 37.3,
       "capacity_af": 1631532.0,
       "capacity_basis": "srp_reservoir_metadata",
@@ -4199,21 +4199,21 @@
         "climate": null,
         "default": "recent"
       },
-      "change_7d_af": -9629.0,
+      "change_7d_af": -9328.0,
       "change_7d_pct": -1.6,
       "change_7d_reference_date": "2026-08-22",
       "change_7d_elapsed_days": 7,
-      "change_30d_af": -31971.0,
-      "change_30d_pct": -5.2,
+      "change_30d_af": -31670.0,
+      "change_30d_pct": -5.1,
       "change_30d_reference_date": "2026-07-30",
       "change_30d_elapsed_days": 30,
-      "change_365d_af": -190977.0,
+      "change_365d_af": -190676.0,
       "change_365d_pct": -24.5,
       "change_365d_reference_date": "2025-08-29",
       "change_365d_elapsed_days": 365,
       "peak_this_year_af": 777520.0,
       "peak_this_year_date": "2026-03-17",
-      "pct_of_peak_this_year": 75.7,
+      "pct_of_peak_this_year": 75.8,
       "monthly": [
         {
           "month": "2025-09",
@@ -4338,10 +4338,10 @@
         },
         {
           "month": "2026-08",
-          "mean_af": 604041.41,
-          "min_af": 588720.0,
+          "mean_af": 604051.79,
+          "min_af": 589021.0,
           "max_af": 618630.0,
-          "end_af": 588720.0,
+          "end_af": 589021.0,
           "days": 29,
           "normal_af": 1406839.8,
           "normal_years": 2,
@@ -4359,10 +4359,10 @@
         "AZ"
       ],
       "huc_assignment_point": [
-        -111.16124,
-        33.67159
+        -111.16151,
+        33.67151
       ],
-      "huc_assignment_source": "published_point",
+      "huc_assignment_source": "nid_dam_point",
       "county_fips": "04013",
       "county_name": "Maricopa County",
       "state": "AZ",
@@ -16349,23 +16349,23 @@
       "days_stale": 0,
       "is_stale": false,
       "fetch_ok": true,
-      "current_storage_af": 225914.0,
+      "current_storage_af": 226811.0,
       "record_max_af": 235632.0,
       "record_min_af": 219881.0,
-      "pct_of_record_max": 95.9,
+      "pct_of_record_max": 96.3,
       "capacity_af": 245138.0,
       "capacity_basis": "srp_reservoir_metadata",
-      "pct_of_capacity": 92.2,
-      "seasonal_percentile": 33.3,
-      "seasonal_rank": 2,
+      "pct_of_capacity": 92.5,
+      "seasonal_percentile": 66.7,
+      "seasonal_rank": 3,
       "seasonal_rank_of": 4,
       "seasonal_normal_af": 226062.5,
-      "pct_of_seasonal_normal": 99.9,
+      "pct_of_seasonal_normal": 100.3,
       "seasonal_sample_years": 3,
       "baselines": {
         "recent": {
           "normal_af": 226062.5,
-          "pct_of_normal": 99.9,
+          "pct_of_normal": 100.3,
           "sample_years": 3,
           "covers_full_period": true,
           "first_obs": "2023-08-29"
@@ -16373,21 +16373,21 @@
         "climate": null,
         "default": "recent"
       },
-      "change_7d_af": 211.0,
-      "change_7d_pct": 0.1,
+      "change_7d_af": 1108.0,
+      "change_7d_pct": 0.5,
       "change_7d_reference_date": "2026-08-22",
       "change_7d_elapsed_days": 7,
-      "change_30d_af": -1334.0,
-      "change_30d_pct": -0.6,
+      "change_30d_af": -437.0,
+      "change_30d_pct": -0.2,
       "change_30d_reference_date": "2026-07-30",
       "change_30d_elapsed_days": 30,
-      "change_365d_af": -1314.0,
-      "change_365d_pct": -0.6,
+      "change_365d_af": -417.0,
+      "change_365d_pct": -0.2,
       "change_365d_reference_date": "2025-08-29",
       "change_365d_elapsed_days": 365,
       "peak_this_year_af": 235632.0,
       "peak_this_year_date": "2026-04-02",
-      "pct_of_peak_this_year": 95.9,
+      "pct_of_peak_this_year": 96.3,
       "monthly": [
         {
           "month": "2025-09",
@@ -16512,10 +16512,10 @@
         },
         {
           "month": "2026-08",
-          "mean_af": 226075.76,
+          "mean_af": 226106.69,
           "min_af": 224381.0,
           "max_af": 228405.0,
-          "end_af": 225914.0,
+          "end_af": 226811.0,
           "days": 29,
           "normal_af": 225245.77,
           "normal_years": 2,
@@ -16533,10 +16533,10 @@
         "AZ"
       ],
       "huc_assignment_point": [
-        -111.34347,
-        33.5907
+        -111.34391,
+        33.59061
       ],
-      "huc_assignment_source": "published_point",
+      "huc_assignment_source": "nid_dam_point",
       "county_fips": "04013",
       "county_name": "Maricopa County",
       "state": "AZ",
@@ -18272,10 +18272,10 @@
         "WA"
       ],
       "huc_assignment_point": [
-        -122.31148,
-        46.80229
+        -122.31018,
+        46.80104
       ],
-      "huc_assignment_source": "published_point",
+      "huc_assignment_source": "nid_dam_point",
       "county_fips": "53067",
       "county_name": "Thurston County",
       "state": "WA",
@@ -21524,10 +21524,10 @@
         "AZ"
       ],
       "huc_assignment_point": [
-        -111.63181,
-        33.8181
+        -111.63171,
+        33.81811
       ],
-      "huc_assignment_source": "published_point",
+      "huc_assignment_source": "nid_dam_point",
       "county_fips": "04013",
       "county_name": "Maricopa County",
       "state": "AZ",
@@ -25863,10 +25863,10 @@
         "AZ"
       ],
       "huc_assignment_point": [
-        -111.71044,
-        33.98477
+        -111.71121,
+        33.98371
       ],
-      "huc_assignment_source": "published_point",
+      "huc_assignment_source": "nid_dam_point",
       "county_fips": "04013",
       "county_name": "Maricopa County",
       "state": "AZ",
@@ -28895,10 +28895,10 @@
         "WA"
       ],
       "huc_assignment_point": [
-        -121.93122,
-        47.14066
+        -121.93334,
+        47.14097
       ],
-      "huc_assignment_source": "published_point",
+      "huc_assignment_source": "nid_dam_point",
       "county_fips": "53053",
       "county_name": "Pierce County",
       "state": "WA",
@@ -35428,23 +35428,23 @@
       "days_stale": 0,
       "is_stale": false,
       "fetch_ok": true,
-      "current_storage_af": 66200.0,
+      "current_storage_af": 64931.0,
       "record_max_af": 68975.0,
       "record_min_af": 62451.0,
-      "pct_of_record_max": 96.0,
+      "pct_of_record_max": 94.1,
       "capacity_af": 69765.0,
       "capacity_basis": "srp_reservoir_metadata",
-      "pct_of_capacity": 94.9,
-      "seasonal_percentile": 100.0,
-      "seasonal_rank": 4,
+      "pct_of_capacity": 93.1,
+      "seasonal_percentile": 0.0,
+      "seasonal_rank": 1,
       "seasonal_rank_of": 4,
       "seasonal_normal_af": 65308.0,
-      "pct_of_seasonal_normal": 101.4,
+      "pct_of_seasonal_normal": 99.4,
       "seasonal_sample_years": 3,
       "baselines": {
         "recent": {
           "normal_af": 65308.0,
-          "pct_of_normal": 101.4,
+          "pct_of_normal": 99.4,
           "sample_years": 3,
           "covers_full_period": true,
           "first_obs": "2023-08-29"
@@ -35452,21 +35452,21 @@
         "climate": null,
         "default": "recent"
       },
-      "change_7d_af": 777.0,
-      "change_7d_pct": 1.2,
+      "change_7d_af": -492.0,
+      "change_7d_pct": -0.8,
       "change_7d_reference_date": "2026-08-22",
       "change_7d_elapsed_days": 7,
-      "change_30d_af": 1265.0,
-      "change_30d_pct": 1.9,
+      "change_30d_af": -4.0,
+      "change_30d_pct": -0.0,
       "change_30d_reference_date": "2026-07-30",
       "change_30d_elapsed_days": 30,
-      "change_365d_af": 698.0,
-      "change_365d_pct": 1.1,
+      "change_365d_af": -571.0,
+      "change_365d_pct": -0.9,
       "change_365d_reference_date": "2025-08-29",
       "change_365d_elapsed_days": 365,
       "peak_this_year_af": 67914.0,
       "peak_this_year_date": "2026-03-23",
-      "pct_of_peak_this_year": 97.5,
+      "pct_of_peak_this_year": 95.6,
       "monthly": [
         {
           "month": "2025-09",
@@ -35591,10 +35591,10 @@
         },
         {
           "month": "2026-08",
-          "mean_af": 65670.0,
+          "mean_af": 65626.24,
           "min_af": 64099.0,
           "max_af": 66646.0,
-          "end_af": 66200.0,
+          "end_af": 64931.0,
           "days": 29,
           "normal_af": 65708.55,
           "normal_years": 2,
@@ -35612,10 +35612,10 @@
         "AZ"
       ],
       "huc_assignment_point": [
-        -111.5364,
-        33.56642
+        -111.53591,
+        33.56651
       ],
-      "huc_assignment_source": "published_point",
+      "huc_assignment_source": "nid_dam_point",
       "county_fips": "04013",
       "county_name": "Maricopa County",
       "state": "AZ",
@@ -35830,10 +35830,10 @@
         "WA"
       ],
       "huc_assignment_point": [
-        -123.6057,
-        47.38534
+        -123.605,
+        47.38514
       ],
-      "huc_assignment_source": "published_point",
+      "huc_assignment_source": "nid_dam_point",
       "county_fips": "53027",
       "county_name": "Grays Harbor County",
       "state": "WA",
@@ -40587,23 +40587,23 @@
       "days_stale": 0,
       "is_stale": false,
       "fetch_ok": true,
-      "current_storage_af": 55061.0,
+      "current_storage_af": 54921.0,
       "record_max_af": 57139.0,
       "record_min_af": 52245.0,
-      "pct_of_record_max": 96.4,
+      "pct_of_record_max": 96.1,
       "capacity_af": 57852.0,
       "capacity_basis": "srp_reservoir_metadata",
-      "pct_of_capacity": 95.2,
+      "pct_of_capacity": 94.9,
       "seasonal_percentile": 100.0,
       "seasonal_rank": 4,
       "seasonal_rank_of": 4,
       "seasonal_normal_af": 54767.0,
-      "pct_of_seasonal_normal": 100.5,
+      "pct_of_seasonal_normal": 100.3,
       "seasonal_sample_years": 3,
       "baselines": {
         "recent": {
           "normal_af": 54767.0,
-          "pct_of_normal": 100.5,
+          "pct_of_normal": 100.3,
           "sample_years": 3,
           "covers_full_period": true,
           "first_obs": "2023-08-29"
@@ -40611,21 +40611,21 @@
         "climate": null,
         "default": "recent"
       },
-      "change_7d_af": -113.0,
-      "change_7d_pct": -0.2,
+      "change_7d_af": -253.0,
+      "change_7d_pct": -0.5,
       "change_7d_reference_date": "2026-08-22",
       "change_7d_elapsed_days": 7,
-      "change_30d_af": -101.0,
-      "change_30d_pct": -0.2,
+      "change_30d_af": -241.0,
+      "change_30d_pct": -0.4,
       "change_30d_reference_date": "2026-07-30",
       "change_30d_elapsed_days": 30,
-      "change_365d_af": 347.0,
-      "change_365d_pct": 0.6,
+      "change_365d_af": 207.0,
+      "change_365d_pct": 0.4,
       "change_365d_reference_date": "2025-08-29",
       "change_365d_elapsed_days": 365,
       "peak_this_year_af": 57139.0,
       "peak_this_year_date": "2026-04-03",
-      "pct_of_peak_this_year": 96.4,
+      "pct_of_peak_this_year": 96.1,
       "monthly": [
         {
           "month": "2025-09",
@@ -40750,10 +40750,10 @@
         },
         {
           "month": "2026-08",
-          "mean_af": 54931.21,
+          "mean_af": 54926.38,
           "min_af": 54562.0,
           "max_af": 55229.0,
-          "end_af": 55061.0,
+          "end_af": 54921.0,
           "days": 29,
           "normal_af": 54738.59,
           "normal_years": 2,
@@ -40771,10 +40771,10 @@
         "AZ"
       ],
       "huc_assignment_point": [
-        -111.4428,
-        33.55364
+        -111.44291,
+        33.55341
       ],
-      "huc_assignment_source": "published_point",
+      "huc_assignment_source": "nid_dam_point",
       "county_fips": "04013",
       "county_name": "Maricopa County",
       "state": "AZ",
@@ -45766,10 +45766,10 @@
         "WA"
       ],
       "huc_assignment_point": [
-        -122.19176,
-        47.24091
+        -122.18491,
+        47.24135
       ],
-      "huc_assignment_source": "published_point",
+      "huc_assignment_source": "nid_dam_point",
       "county_fips": "53053",
       "county_name": "Pierce County",
       "state": "WA",
@@ -64639,7 +64639,7 @@
         -113.38069,
         46.131
       ],
-      "huc_assignment_source": "published_point",
+      "huc_assignment_source": "nid_dam_point",
       "county_fips": "30039",
       "county_name": "Granite County",
       "state": "MT",
@@ -72666,10 +72666,10 @@
         "NV"
       ],
       "huc_assignment_point": [
-        -118.86015,
-        39.04464
+        -118.85931,
+        39.04581
       ],
-      "huc_assignment_source": "published_point",
+      "huc_assignment_source": "nid_dam_point",
       "county_fips": "32021",
       "county_name": "Mineral County",
       "state": "NV",

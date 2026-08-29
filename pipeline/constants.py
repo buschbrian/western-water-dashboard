@@ -69,7 +69,7 @@ AWDB_MONTHLY_STALE_AFTER_DAYS = 45
 #:   "none found"         the review looked for another source and found none
 #:
 #: "none found" is not "complete". It is the honest limit of a search.
-SOURCE_COVERAGE_REVIEWED = "2026-08-21"
+SOURCE_COVERAGE_REVIEWED = "2026-08-29"
 SOURCE_COVERAGE = {
     "CO": {"status": "more to add",
            "source": "Colorado Division of Water Resources",
@@ -90,14 +90,18 @@ SOURCE_COVERAGE = {
            "source": "U.S. Army Corps of Engineers water management",
            "url": "https://water.usace.army.mil/",
            "adds_about": None,
-           "note": "Covers the large Missouri River reservoirs. The state's "
-                   "own 22 dams publish no combined feed."},
-    "AZ": {"status": "not machine readable",
-           "source": "Salt River Project daily water report",
-           "url": "https://streamflow.watershedconnection.com/dwr",
-           "adds_about": 6,
-           "note": "Six reservoirs are published as a web page only, and for "
-                   "several of them it is the only current source."},
+           "note": "Read since 2026-08-29 for East Fork Rock Creek, the one "
+                   "DNRC storage sensor inside the drawn drainages. The Corps "
+                   "covers large Missouri River reservoirs, and nine further "
+                   "DNRC sensors also drain east outside the drawn scope."},
+    "AZ": {"status": "none found",
+           "source": None,
+           "url": None,
+           "adds_about": None,
+           "note": "Read since 2026-08-29 for the four additive Salt River "
+                   "Project reservoirs. Its other three storage stations are "
+                   "already read from existing providers; no other public "
+                   "source of current storage was found."},
     "UT": {"status": "none found", "source": None, "url": None,
            "adds_about": None,
            "note": "No other public source of current storage was found."},

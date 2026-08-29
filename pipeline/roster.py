@@ -362,4 +362,10 @@ def load_capacities() -> dict[str, dict]:
            for station, row in ADMITTED_CDEC_RESERVOIRS.items()},
         **{station: row["capacity"]
            for station, row in ADMITTED_CDSS_RESERVOIRS.items()},
+        **{station: row["capacity"]
+           for station, row in ADMITTED_USGS_RESERVOIRS.items()},
+        **{station: row["capacity"]
+           for station, row in ADMITTED_SRP_RESERVOIRS.items()},
+        **{station: row["capacity"]
+           for station, row in ADMITTED_DNRC_RESERVOIRS.items()},
     }
