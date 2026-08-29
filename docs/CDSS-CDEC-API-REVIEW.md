@@ -4,13 +4,21 @@ Status: Measured 2026-08-20. Every figure below came from a live request made
 in this session; nothing is carried over from documentation or from the
 earlier survey in `docs/WESTERN-SOURCE-CANDIDATES.md`.
 
-Current outcome, updated 2026-08-21: **both are published**. California
-joined the roster on 2026-08-20 -- 142 reservoirs, 25.7 million acre-feet of
+Current outcome, updated 2026-08-28: **both are published**. California
+joined the roster on 2026-08-20 and now carries 147 reservoirs. Five more
+joined on 2026-08-28 when the audit began applying ADR-072's accepted
+denominator selection to the inventory's larger pool, as the Colorado audit
+already did. The original 142 covered 25.7 million acre-feet of
 full level, and the denominator question this review raised settled as
 ADR-070: where the provider that publishes the readings also publishes a full
-level, that figure is what a percentage divides by. Twenty-one California
+level, that figure is what a percentage divides by. Twelve California
 candidates are held rather than published, each named with its finding in
-`admitted_cdec_reservoirs.json`. Colorado followed on 2026-08-21 with ten
+`admitted_cdec_reservoirs.json`. The old "21 held" label mixed an audit-pool
+count with later roster-era waivers: replaying the original pool found 20
+rows, five of which were already admitted by named review waivers and five of
+which now pass ADR-072's larger inventory-pool choice. Ten live disagreements
+remain, plus the two quiet-feed findings retained as BMP and GDR. Colorado
+followed on 2026-08-21 with ten
 reservoirs inside the drawn drainages; the projected 119 was never scoped to
 the drawn geography, and 91 of the state's storage stations sit east of it
 ([`COLORADO-ADMISSION-REVIEW.md`](COLORADO-ADMISSION-REVIEW.md)).

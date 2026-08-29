@@ -15,6 +15,7 @@ which checks a change requires.
 | A TypeScript module with unit tests | `npm run verify:fast` |
 | Anything the SDK bundle or `dist/` layout touches | `npm run verify:frontend` |
 | Python, a generated file, or a committed reference file | `npm run verify:pipeline` |
+| Anything under `worker/` | `npm run verify:worker` |
 | DOM, CSS, visible text, a layer, a URL contract | `npm run verify:browser` |
 | Two of the three areas, or a shared contract | `npm run verify:all` |
 

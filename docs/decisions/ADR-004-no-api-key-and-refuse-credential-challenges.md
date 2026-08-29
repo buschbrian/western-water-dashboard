@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted; narrowed by ADR-098 for pipeline-only source credentials
 
 ## Date
 

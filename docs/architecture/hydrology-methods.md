@@ -177,6 +177,22 @@ normally. The Conservation Service's month-end feed already stamps the last
 day, so there is one convention rather than two. **The calendar is corrected,
 never the reading.**
 
+**A day from a sub-daily provider is its last reading** (ADR-100). Two
+providers publish far more often than daily -- the Salt River Project every
+five minutes, Montana's Stream and Gage Explorer roughly every quarter hour --
+and the estimator reads one value per date. That value is the day's final
+observation: not a mean, which would put a derived statistic in a series of
+measured ones, and not the reading nearest midnight, which selects across a
+gap and lets a day borrow the day before's value.
+
+The reduction sorts on the observation time. Sorting on the calendar day gives
+every reading in a day the same key, and an unstable sort then returns an
+arbitrary one: that defect published an 08:10 reading as a day's storage for
+four reservoirs, across 4,348 of 4,388 committed days, and moved one history
+rank from 66.7 to 100.0. The same rule governs the committed daily history,
+where a refetched day must replace the cached one so a provider's own revision
+can reach a reader.
+
 ## What may not be done to these numbers
 
 **These reservoirs are not one population.** No fitted normal curve, no

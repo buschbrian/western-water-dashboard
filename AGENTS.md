@@ -85,6 +85,7 @@ Pick a target; do not reconstruct commands.
 npm run verify:fast       # typecheck + unit tests — the inner loop
 npm run verify:frontend   # + SDK budget + production build
 npm run verify:pipeline   # pytest + committed drought-pair check
+npm run verify:worker     # the question service's own typecheck and tests
 npm run verify:browser    # build, then both Playwright smoke suites
 npm run verify:all        # everything, before a cross-cutting merge
 ```

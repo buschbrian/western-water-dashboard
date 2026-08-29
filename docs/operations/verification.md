@@ -8,8 +8,9 @@ CI runs, so a green local target means a green job.
 | `npm run verify:fast` | typecheck + Vitest | any TypeScript edit, as the inner loop |
 | `npm run verify:frontend` | typecheck + Vitest + SDK budget + `vite build` | before finishing frontend work |
 | `npm run verify:pipeline` | the pytest suite, which includes the committed drought-pair check | any Python or generated-data work |
+| `npm run verify:worker` | the question service's own typecheck and tests | any edit under `worker/` |
 | `npm run verify:browser` | production build, then both smoke suites | anything a browser renders, or any layout change |
-| `npm run verify:all` | frontend, pipeline and browser in order | a cross-cutting change, before merge |
+| `npm run verify:all` | frontend, pipeline, worker and browser in order | a cross-cutting change, before merge |
 
 `verify:frontend` *is* `npm run build` — the four steps the Pages workflow
 runs — under a name an agent can pick without reconstructing them.
@@ -27,6 +28,9 @@ Run the smallest target that can fail on your change:
   `verify:frontend`.
 - Changed Python, a generated-data rule, or a committed reference file →
   `verify:pipeline`.
+- Changed anything under `worker/` → `verify:worker`. The worker has its own
+  TypeScript project and never enters the page bundle, so neither `verify:fast`
+  nor `verify:frontend` reads it.
 - Changed the DOM, CSS, visible text, a layer, or a URL contract →
   `verify:browser`. Nothing else can see those.
 - Touched two of the three areas, or moved a shared contract →

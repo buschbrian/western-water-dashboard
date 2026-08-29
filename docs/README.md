@@ -61,22 +61,21 @@ evidence about a date, never a description of the present.
 ## Current work
 
 The typed ArcGIS application, western geography, the opening choice and its
-reopen control, the five reservoir providers, the mountain snow network, the
+reopen control, the seven reservoir providers, the mountain snow network, the
 upstream sets, drought at four area sizes, accessibility gates and
 compatibility redirects are in production. What remains, in the order it
 should be worked:
 
-1. **The U.S. Geological Survey migration, before early 2027** (ADR-080). The
-   provider is built against the keyless legacy daily-values service, which is
-   documented to retire. Either register the free API key and amend ADR-004
-   for that one provider, or withdraw its seven reservoirs under ADR-056.
-   Nothing here will warn you: `check_reference_freshness.py` watches reviewed
-   inputs, not service retirements. This is the only remaining item with an
-   external deadline.
+1. **Run the Geological Survey parity comparison with the key.** ADR-098
+   requires the legacy and OGC series compared for all seven admitted
+   stations. The published values agree with the retired service on 28 sampled
+   days spanning a year, but the full-series run needs `USGS_API_KEY` and has
+   not happened: `tools/check_usgs_migration_parity.py`. The retired service is
+   documented to close in early 2027, so the window for running it is finite.
 2. **The human visual review** of every page and viewport. The ArcGIS canvas
    is blank in headless Chromium, so colour balance, terrain, density and
    visual hierarchy have no automated evidence at all.
-3. **Settle the held candidates** — 21 California and 4 U.S. Geological Survey
+3. **Settle the held candidates** — 12 California and 4 U.S. Geological Survey
    candidates held for source disagreements, each named with its finding in
    its own roster file.
 4. **Keep the automatic late and withdrawn feed reports under review.**
@@ -85,9 +84,12 @@ should be worked:
    the unnamed Calcite slider handle that `src/ui/slider-label.ts` works
    around, and the `script-src` measurement behind ADR-036.
 6. **The four published points with no water body in any askable source.**
-7. **The states still unsourced** — Idaho, Oregon and Wyoming outright, and
-   the rest of Arizona, Nevada and Washington beyond the seven admitted with
-   the fifth provider. Item 5 of
+7. **The remaining coverage gaps** — Idaho, Oregon and Wyoming outright, plus
+   further Nevada and Washington reservoirs. Both sources the 2026-08-28
+   follow-up found are now built: SRP's four additive Arizona reservoirs and
+   DNRC's one in-scope Montana reservoir are published, and DNRC's nine
+   remaining sensors drain to the Gulf of Mexico rather than being a gap.
+   Item 5 of
    [`WATER-BODY-AND-NAVIGATION-SCOPING.md`](WATER-BODY-AND-NAVIGATION-SCOPING.md)
    carries the survey.
 8. **Two deferred decisions, neither blocking.** Whether to order the upstream

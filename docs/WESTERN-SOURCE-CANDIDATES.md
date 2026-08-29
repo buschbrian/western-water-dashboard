@@ -1,12 +1,108 @@
 # Western reservoir source candidates
 
-Status: Research inventory, checked 2026-08-20. **Three of its candidates
+Status: Base research inventory checked 2026-08-20; Montana and Arizona
+follow-up checked 2026-08-28. **Three of its candidates
 were built since**: California (2026-08-20), Colorado (2026-08-21) and the
 U.S. Geological Survey (2026-08-22), which took the roster from two providers
 to five. Idaho, Oregon and Wyoming are the survey's remaining open ground. The
 survey below is as it was written on its date and is not rewritten to describe
 today; the current source list is
 [`AUTHORITATIVE-SOURCE-INVENTORY.md`](AUTHORITATIVE-SOURCE-INVENTORY.md).
+
+## Follow-up: Montana StAGE and Arizona SRP (2026-08-28)
+
+This follow-up supersedes the original survey's findings about Montana DNRC
+and SRP, while leaving that dated survey intact below. Both public sites have
+structured sources behind their pages.
+
+### Montana: one additive reservoir inside this product's scope
+
+DNRC's Stream and Gage Explorer is a public ArcGIS REST service:
+`https://gis.dnrc.mt.gov/arcgis/rest/services/WRD/WMB_StAGE/MapServer`.
+It needs no key and publishes stable `LocationID`, `LocationCode` and
+`SensorID` fields. Table 3 exposes ten published `LS` (total storage) sensors
+in `Acre-ft`; table 2 answers time-series requests by `SensorID`. All ten
+returned a provisional reading dated 2026-08-28:
+
+| Location code | Reservoir | Sensor ID |
+|---|---|---|
+| `40J 09000` | Beaver Creek Reservoir near Havre | `5b0718d9093b42d18fec517ab8ad7724` |
+| `42B 01900` | Tongue River Reservoir | `928adc9bb5274166be6f52b4220d421d` |
+| `41C 01900` | Ruby River Reservoir | `7a2ad1bbaa6c482e853dd9ab4823c647` |
+| `43D 07900` | Cooney Reservoir | `c5792b7a249d408eabaaacb77086bc2a` |
+| `40M 05000` | Lake Bowdoin near Malta | `3acb2ca1b0a347e4861157fb67abd588` |
+| `76E 01900` | East Fork Rock Creek Reservoir | `cdf80586ea15410ebee861ac51f924d3` |
+| `40B 07000` | Petrolia Reservoir near Winnett | `16897ac316ab43cbaf511fdc058501ce` |
+| `40A 01900` | Bair Reservoir | `771f2cee2bd6478ca8f86ebe8ada33de` |
+| `40A 08900` | Deadman's Basin Reservoir | `593b5ba824304909898b0e3a04614a39` |
+| `41H 01900` | Middle Creek Reservoir | `227096de7119474a9c089f0cef37ae27` |
+
+The same point-in-polygon assignment used by the admission tools puts only
+**East Fork Rock Creek Reservoir** in the drawn scope, HUC-6 `170102`
+(`Pend Oreille`). The other nine drain through the Missouri system and are
+outside regions 14 through 18 for the same reason the remaining Colorado
+stations are outside: they ultimately reach the Gulf of Mexico. None of the
+ten duplicates a published reservoir by name or point.
+
+East Fork Rock Creek is therefore the measured Montana opportunity: one new
+reservoir, not ten. DNRC publishes a 16,040-acre-foot capacity and current
+storage under a stable sensor ID, but no National Inventory of Dams record was
+found within the shared matching radius. A StAGE provider should first add a
+small audit that reuses `admission.py`; admission then needs an explicit
+decision allowing reviewed DNRC dam and capacity evidence where NID is absent.
+The other useful federal checks remain Reclamation RISE for its own Montana
+projects and USACE CDA for Missouri mainstem dams, but neither can add a point
+inside this product's accepted drainage scope unless that scope changes.
+
+### Arizona: the SRP page already has a usable JSON source
+
+The SRP application bundle calls these public, keyless endpoints:
+
+```
+GET /api/watershedconnectiondata/getstationlist?getLastReadings=true
+GET /api/watershedconnectiondata/getmeasurementdata
+    ?measurementId=355&units=Acre-ft&startDate=2026-08-20&endDate=2026-08-28
+```
+
+The station list returned 65 stations and stable numeric `stationId` and
+`measurementId` values. Seven reservoir stations publish current volume in
+acre-feet. Three already overlap the roster: C.C. Cragin through AWDB, and
+Horseshoe and Bartlett through USGS. Four are additive:
+
+| Station ID | Reservoir | Storage measurement ID | Provider data ID |
+|---:|---|---:|---|
+| 8 | Roosevelt Lake | 355 | `LS.Official@111094033401800` |
+| 23 | Apache Lake | 396 | `LS.Official@111203633352700` |
+| 24 | Canyon Lake | 400 | `LS.Official@111263433331300` |
+| 25 | Saguaro Lake | 406 | `LS.Official@111321133335900` |
+
+The history endpoint returned five-minute observations with timestamp, value,
+unit, approval and grade. It clips requests to a rolling three-year window
+(2023-08-28 on the review date), so a one-time backfill can seed a short
+standard comparison but cannot recreate the project's 2015 start or a
+1991-2020 climate normal. SRP's own data-request route is the clean path for
+an older reviewed archive. Reclamation's project pages and its Salt and Verde
+operations study publish capacity and National ID evidence for the four dams.
+
+No upstream webhook was found, and the JSON response explicitly disables
+caching and supplies no `ETag` or `Last-Modified` validator. The best first
+build is therefore ordinary polling inside the existing daily refresh: fetch
+the station list once, validate the four pinned station/measurement pairs,
+then request only the missing interval and reduce the five-minute series to
+one daily representative value. The HTML daily report remains a useful parity
+oracle because its current storage plus remaining storage states the full
+level independently.
+
+A webhook-shaped fallback is possible but adds no source evidence: an
+external monitor could hash the seven storage timestamps and send GitHub's
+`repository_dispatch` event only after the hash changes. That design needs an
+always-on third party and a GitHub credential, while the existing scheduled
+workflow already has to run once a day to refresh every other provider. It is
+only defensible for a future subdaily product. Scraping the HTML, deriving
+storage from lake elevation, or estimating storage from satellite area are
+lower-ranked fallbacks because the JSON feed already publishes the measured
+acre-foot value directly; any derived method would also need its own science
+decision and uncertainty contract.
 
 The production roster is now western and is still fed by two federal
 providers, the Bureau of Reclamation and the Natural Resources Conservation
