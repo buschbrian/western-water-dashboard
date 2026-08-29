@@ -1,0 +1,90 @@
+name: Hooks
+
+# Runs the same pre-commit hooks a contributor runs locally, plus a secret scan
+# that pre-commit structurally cannot perform.
+#
+# WHY GITLEAKS IS SKIPPED IN THE FIRST JOB AND RUN SEPARATELY IN THE SECOND
+#
+# The gitleaks pre-commit hook is defined upstream as
+#     gitleaks git --pre-commit --redact --staged --verbose
+# with --staged hardcoded and pass_filenames: false. CI checks out a clean tree
+# and stages nothing, so running it through pre-commit scans ZERO bytes and
+# reports "Passed". Measured 2026-08-29: a planted GitHub PAT sitting in the
+# working tree passed that way, while a direct scan caught it immediately.
+# A job like that is worse than no job -- it is a green badge over no coverage.
+#
+# So the secret scan runs gitleaks directly over FULL HISTORY instead. That
+# also covers commits made before the hooks existed, which no pre-commit run
+# can reach. gitleaks is pinned to the same version as .pre-commit-config.yaml
+# so local and CI cannot disagree about what counts as a secret.
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch: {}
+
+# Read-only: neither job writes anything back to the repository.
+permissions:
+  contents: read
+
+concurrency:
+  group: hooks-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  GITLEAKS_VERSION: "8.30.1"
+
+jobs:
+  pre-commit:
+    name: pre-commit hooks
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the repository
+        uses: actions/checkout@v5
+
+      - name: Use Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.12"
+
+      - name: Cache pre-commit environments
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pre-commit
+          key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
+
+      - name: Install pre-commit
+        run: pip install --disable-pip-version-check pre-commit
+
+      # SKIP=gitleaks -- see the header. The secret-scan job covers it properly.
+      - name: Run hooks
+        run: SKIP=gitleaks pre-commit run --all-files --show-diff-on-failure
+
+  secret-scan:
+    name: Secret scan (full history)
+    runs-on: ubuntu-latest
+    steps:
+      - name: Get the repository
+        uses: actions/checkout@v5
+        with:
+          # gitleaks scans commits; a shallow clone would hide most of them.
+          fetch-depth: 0
+
+      - name: Install gitleaks (pinned, checksum-verified)
+        run: |
+          set -euo pipefail
+          base="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}"
+          curl -sSfL -o gitleaks.tar.gz "$base/gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz"
+          curl -sSfL -o checksums.txt   "$base/gitleaks_${GITLEAKS_VERSION}_checksums.txt"
+          grep "gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz" checksums.txt \
+            | sed "s#gitleaks_${GITLEAKS_VERSION}_linux_x64.tar.gz#gitleaks.tar.gz#" \
+            | sha256sum -c -
+          tar -xzf gitleaks.tar.gz gitleaks
+          sudo install -m 0755 gitleaks /usr/local/bin/gitleaks
+          rm -f gitleaks gitleaks.tar.gz checksums.txt
+          gitleaks version
+
+      # Same command a contributor can run locally: gitleaks git --redact -v .
+      - name: Scan full history
+        run: gitleaks git --redact --verbose .
