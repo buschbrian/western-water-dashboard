@@ -1,6 +1,16 @@
 # Drainage filters and state labels: scoping
 
-**Status: scoping, nothing built.** Written 2026-08-22 while the upstream
+> **Status (2026-08-29): both pieces built.** The state labels shipped
+> separately, and the filter consolidation became
+> [ADR-084](decisions/ADR-084-two-place-menus-to-a-page.md), which
+> superseded ADR-071 as this document required and was itself later
+> superseded by
+> [ADR-095](decisions/ADR-095-order-storage-map-place-filters-from-state-to-area.md).
+> HUC-8 as an offered level remains a separate decision, taken for the
+> drought page only (ADR-088). Everything below is as it was written on
+> 2026-08-22; nothing has been rewritten to describe today.
+
+**Status when written: scoping, nothing built.** Written 2026-08-22 while the upstream
 trace is in flight. Nothing here touches the files that work is holding
 (`src/state/selection.ts`, `src/types.ts`, `src/overview-model.ts`).
 

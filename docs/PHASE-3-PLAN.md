@@ -273,7 +273,7 @@ primary application at all three widths, with the first basemap refused, with
 every basemap refused, with the payload refused, and with the payload never
 answering.
 
-The two questions under "Still to decide" are deliberately still open. They
-are about what the map is *of* rather than how it draws, they were never
-3.5's to answer, and they now sit in the modernization plan's open decisions
-where the phases that depend on them will meet them.
+The two questions under "Still to decide" were deliberately left open by
+3.5 itself. They are about what the map is *of* rather than how it draws and
+were never 3.5's to answer; both were decided the same day, after the
+increments closed, as the heading above records (ADR-020, ADR-021).

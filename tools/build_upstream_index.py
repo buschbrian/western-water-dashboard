@@ -322,12 +322,31 @@ def main() -> int:
                         help="trace these reservoirs by name; print and write nothing")
     parser.add_argument("--json", action="store_true",
                         help="print the report as JSON instead of a table")
+    parser.add_argument("--missing", action="store_true",
+                        help="trace only the published reservoirs the committed "
+                             "index does not already hold, and merge them into it")
     args = parser.parse_args()
 
     reservoirs, sites = load_roster_and_sites()
     print(f"{len(reservoirs)} published reservoirs, {len(sites)} snow sites",
           file=sys.stderr)
+    existing: dict[str, dict] = {}
+    if args.missing:
+        if args.only:
+            print("ERROR: --missing and --only ask for different things",
+                  file=sys.stderr)
+            return 1
+        if OUTPUT_PATH.exists():
+            existing = json.loads(
+                OUTPUT_PATH.read_text(encoding="utf-8")).get("traces", {})
     wanted = reservoirs
+    if args.missing:
+        wanted = [r for r in reservoirs if r["station"] not in existing]
+        print(f"{len(wanted)} not yet traced; {len(existing)} already in "
+              f"{OUTPUT_PATH.name}", file=sys.stderr)
+        if not wanted:
+            print("Nothing to trace.", file=sys.stderr)
+            return 0
     if args.only:
         lowered = {name.lower() for name in args.only}
         wanted = [r for r in reservoirs if r["name"].lower() in lowered]
@@ -367,6 +386,14 @@ def main() -> int:
         print(json.dumps(traces, indent=1))
         return 0
 
+    # Merged rather than replacing (`--missing`), the same way the normals
+    # builder merges: a reservoir already traced keeps the set it was traced
+    # with. What that does not do is recompute the reservoirs already in the
+    # file, and adding a reservoir can in principle change one of them --
+    # an existing reservoir downstream of a new one gains it as a member.
+    # Only a full run settles that, so `--missing` is for filling gaps and
+    # the full run stays the reconciling one.
+    traces = {**existing, **traces}
     screened = {station: record for station, record in traces.items()
                 if record.get("screen")}
     reviewed = {station: record for station, record in traces.items()
@@ -379,6 +406,7 @@ def main() -> int:
         "selection": ("every published reservoir, traced from its published "
                       "point against every other published reservoir and "
                       "snow-site point"),
+        "traced_this_run": len(wanted),
         "self_exclusion": "deliberate: a dam point lies inside its own basin",
         "area_method": ("spherical excess around the ring; approximate, for "
                         "screening rather than measurement"),

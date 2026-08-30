@@ -47,7 +47,8 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 from refresh_reservoirs import (  # noqa: E402
     ALL_RESERVOIR_IDS, AWDB_RESERVOIRS, CDEC_RESERVOIRS, CDSS_RESERVOIRS,
-    DNRC_RESERVOIRS, RESERVOIRS, SRP_RESERVOIRS, USGS_RESERVOIRS,
+    CAP_RESERVOIRS, CWMS_RESERVOIRS, DNRC_RESERVOIRS, RESERVOIRS, SRP_RESERVOIRS,
+    USGS_RESERVOIRS,
 )
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -70,22 +71,42 @@ FIELDS = "FIPS,NAME,STATE_ABBR,STATE_NAME"
 
 USER_AGENT = "western-water-dashboard/county-assignment (+https://github.com/buschbrian)"
 TIMEOUT = 60
+#: The same bounded retry every fetcher in this repository uses -- three
+#: attempts, two seconds doubling.
+#:
+#: This is one query per reservoir rather than one bulk fetch, so a single
+#: timeout used to cost exactly one reservoir its county, scattered at
+#: random through a run of four hundred. The run then refused to write at
+#: all, which is the right failure and an unreachable one on a flaky
+#: network: two consecutive runs failed on different reservoirs, none of
+#: which had anything wrong with its point.
+RETRY_ATTEMPTS = 3
+RETRY_BACKOFF_SECONDS = 2
 
 
 def get_json(url: str, params: dict) -> dict | None:
     request = urllib.request.Request(
         url, data=urllib.parse.urlencode(params).encode(),
         headers={"User-Agent": USER_AGENT})
-    try:
-        with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
-            payload = json.loads(response.read().decode("utf-8"))
-    except (urllib.error.URLError, TimeoutError, ValueError) as exc:
-        print(f"    !! {exc}", file=sys.stderr)
-        return None
-    if isinstance(payload, dict) and payload.get("error"):
-        print(f"    !! service error: {payload['error'].get('message')}", file=sys.stderr)
-        return None
-    return payload
+    for attempt in range(RETRY_ATTEMPTS):
+        try:
+            with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
+                payload = json.loads(response.read().decode("utf-8"))
+        except (urllib.error.URLError, TimeoutError, ValueError) as exc:
+            if attempt == RETRY_ATTEMPTS - 1:
+                print(f"    !! {exc}", file=sys.stderr)
+                return None
+            time.sleep(RETRY_BACKOFF_SECONDS * 2**attempt)
+            continue
+        if isinstance(payload, dict) and payload.get("error"):
+            # A service error is an answer, not a dropped connection: the
+            # query reached the service and it declined. Retrying would ask
+            # the same refused question again.
+            print(f"    !! service error: {payload['error'].get('message')}",
+                  file=sys.stderr)
+            return None
+        return payload
+    return None
 
 
 def county_at(lon: float, lat: float) -> dict | None:
@@ -138,7 +159,8 @@ def main() -> int:
         row = (RESERVOIRS.get(station) or AWDB_RESERVOIRS.get(station)
                or CDEC_RESERVOIRS.get(station) or CDSS_RESERVOIRS.get(station)
                or USGS_RESERVOIRS.get(station) or SRP_RESERVOIRS.get(station)
-               or DNRC_RESERVOIRS.get(station))
+               or DNRC_RESERVOIRS.get(station) or CWMS_RESERVOIRS.get(station)
+               or CAP_RESERVOIRS.get(station))
         if row is None:
             missing_config.append(station)
             continue
