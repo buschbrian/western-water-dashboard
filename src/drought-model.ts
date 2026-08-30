@@ -7,6 +7,7 @@
  * region living on savings. The join is by drainage area, the geography both
  * payloads already share.
  */
+import { drainageCodeAtLevel } from "./data/huc";
 import type { DroughtPreviousWeek, DroughtUnit, Reservoir } from "./types";
 import { DROUGHT_CLASSES, type DroughtClass } from "./viz/drought-classes";
 
@@ -125,7 +126,7 @@ export function regionWorst(units: readonly DroughtUnit[]): DroughtClass | null 
 /** The fields of a reservoir this page actually reads, so the tests can
  * build fixtures without fabricating forty unrelated fields. */
 export type StorageSource = Pick<
-  Reservoir, "huc6" | "current_storage_af" | "capacity_af" | "record_max_af"
+  Reservoir, "huc6" | "huc8" | "current_storage_af" | "capacity_af" | "record_max_af"
 >;
 
 export interface StorageContext {
@@ -157,7 +158,8 @@ export function storageByArea(
      * first four digits *are* its subregion and every reservoir lands in
      * exactly one of them at either level (ADR-064). It is a sum of
      * acre-feet in both cases, not an average of percentages. */
-    const key = reservoir.huc6.slice(0, level);
+    const key = drainageCodeAtLevel(reservoir.huc6, reservoir.huc8, level);
+    if (key === null) continue;
     const group = groups.get(key) ?? { storage: 0, capacity: 0, count: 0 };
     group.storage += reservoir.current_storage_af;
     group.capacity += capacity;

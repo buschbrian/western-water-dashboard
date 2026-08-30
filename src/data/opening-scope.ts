@@ -276,7 +276,8 @@ export function regionRosterFromReference(value: unknown): readonly DrainageArea
 
 /**
  * The four rosters `resolveOpeningScope` narrows between: the five regions,
- * published subregions and basins, and drought's published subbasins.
+ * published subregions and basins, and the published subbasins (every
+ * surface since ADR-103).
  *
  * `areas` is whatever `default_scope` names today -- 75 basins across the
  * west since ADR-063 -- not a literal `west-huc6`. The opening box this
@@ -332,7 +333,7 @@ export async function loadOpeningRosters(url?: string): Promise<OpeningRosters> 
   const value = await loadReference(url);
   const subregionGeography = referenceGeography(value, SUBREGION_LEVEL);
   const areaGeography = referenceGeography(value);
-  const subbasinGeography = referenceGeography(value, SUBBASIN_LEVEL, "drought");
+  const subbasinGeography = referenceGeography(value, SUBBASIN_LEVEL);
   const subregionLevel = subregionGeography?.level ?? 0;
   if (subregionLevel && subregionLevel !== SUBREGION_LEVEL) {
     console.warn(

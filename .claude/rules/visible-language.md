@@ -21,6 +21,7 @@ Never write, where a reader can see it:
 | `CDEC` | California Department of Water Resources |
 | `CDSS` | Colorado Division of Water Resources |
 | `USGS`, `NWIS` | U.S. Geological Survey |
+| `USACE`, `CWMS` | U.S. Army Corps of Engineers |
 
 Also: no `text-transform` in `src/styles/` or the pages — `innerText` returns
 what CSS transformed, so an uppercase label is what a screen reader says.

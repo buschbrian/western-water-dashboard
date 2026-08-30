@@ -36,6 +36,7 @@ import { offeredStates, type StateOption } from "../data/state-vocabulary";
 const REGION_WIDTH = 2;
 const SUBREGION_WIDTH = 4;
 const BASIN_WIDTH = 6;
+const SUBBASIN_WIDTH = 8;
 
 /**
  * The value every "not narrowed" option carries. Never written into the
@@ -244,7 +245,7 @@ export function drainageMenuView(
   rosters: OpeningRosters,
   selection: OpeningSelection,
   include?: (code: string) => boolean,
-  maxLevel = BASIN_WIDTH
+  maxLevel = SUBBASIN_WIDTH
 ): WhereAxis {
   const resolved = resolveOpeningScope(selection, rosters).selection.area;
 
@@ -301,9 +302,9 @@ export function drainageMenuView(
       : { value: area.huc6, label: area.name });
   }
 
-  /* HUC-8 is a drought-only fourth tier (ADR-088). Its parent basin is the
-   * group heading; storage and snow keep the default `maxLevel` of six and
-   * never expose these rows merely because their metadata shares the file. */
+  /* The fourth tier, offered on every surface since ADR-103 (drought had
+   * it first, ADR-088). Its parent basin is the group heading. A host that
+   * cannot honour an eight-digit pick still passes `maxLevel` of six. */
   const placedSubbasins = [...subbasins].sort((a, b) =>
     a.huc6.slice(0, BASIN_WIDTH).localeCompare(b.huc6.slice(0, BASIN_WIDTH)) ||
     a.name.localeCompare(b.name));

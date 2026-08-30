@@ -99,7 +99,8 @@ export function percentOfNormal(
 export function payloadAtLevel(
   payload: SnowpackPayload, level: number
 ): SnowpackPayload {
-  if (level >= 6) return payload;
+  if (level === 6) return payload;
+  if (level >= 8) return payloadAtSubbasins(payload);
   /* The table for *this* level, not a fixed one. A coarser name cannot be
    * derived from a finer table -- `subregions` holds "Colorado Headwaters"
    * for 1401 and says nothing about what 14 is called -- so reading the
@@ -119,6 +120,55 @@ export function payloadAtLevel(
   /* The pipeline's own floor, carried rather than chosen here: a coarser area
    * holds more stations, so the minimum that made a basin's mean publishable
    * cannot make a subregion's less so. */
+  const floor = payload.rollups.reduce(
+    (highest, rollup) => Math.max(highest, rollup.minimum_reporting_sites), 2);
+  const grouped = new Map<string, SnowSite[]>();
+  for (const site of sites) {
+    const bucket = grouped.get(site.huc6);
+    if (bucket) bucket.push(site);
+    else grouped.set(site.huc6, [site]);
+  }
+  const rollups: SnowRollup[] = [...grouped.entries()]
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([code, members]) => ({
+      huc6: code,
+      huc6_name: label(code),
+      site_count: members.length,
+      minimum_reporting_sites: floor,
+      series: seriesOverSites(members, floor)
+    }));
+  return { ...payload, sites, rollups };
+}
+
+/**
+ * The payload regrouped one level finer than it was published (ADR-103).
+ *
+ * The same rule as the coarser regrouping above, with one difference that
+ * is the whole reason the field exists: a subbasin code is a prefix of
+ * nothing, so it is read from each site's own `huc8` rather than sliced
+ * from `huc6`. A site the pipeline could not place in a subbasin is left
+ * out of this grouping rather than filed under its basin's code, because a
+ * six-digit code among eight-digit ones would draw as an area nothing on
+ * the map is named for. Names come from the payload's own `subbasins`
+ * table, and an area it does not name is labelled by its code.
+ *
+ * The reporting floor is carried, not lowered: a finer area holds fewer
+ * stations, and the pipeline's minimum is what made a mean publishable at
+ * all. Many subbasins will therefore read "not measured", which is the
+ * honest answer for one station's worth of snow (ADR-059).
+ */
+function payloadAtSubbasins(payload: SnowpackPayload): SnowpackPayload {
+  const names = new Map<string, string>(
+    (payload.subbasins ?? []).map((entry) => [entry.huc8, entry.name]));
+  const label = (code: string): string => {
+    const name = names.get(code);
+    return name !== undefined && name !== "" ? name : code;
+  };
+  const sites = payload.sites.flatMap((site) => {
+    const code = site.huc8;
+    if (typeof code !== "string" || code.length !== 8) return [];
+    return [{ ...site, huc6: code, huc6_name: site.huc8_name || label(code) }];
+  });
   const floor = payload.rollups.reduce(
     (highest, rollup) => Math.max(highest, rollup.minimum_reporting_sites), 2);
   const grouped = new Map<string, SnowSite[]>();

@@ -272,10 +272,12 @@ export interface DrainageScope {
  * puts shapes on the map whose hover cards come back empty, so a level that
  * is not on this list draws and says so out loud (ADR-050).
  */
-export const JOINABLE_LEVELS: readonly number[] = [2, 4, 6];
+export const JOINABLE_LEVELS: readonly number[] = [2, 4, 6, 8];
 
-/** Drought publishes the same coverage method for subbasins as well. */
-export const DROUGHT_JOINABLE_LEVELS: readonly number[] = [2, 4, 6, 8];
+/** Every surface offers the same four levels since ADR-103; the drought
+ * name is kept because `reference.json` still publishes `drought_scopes`
+ * as a field of its own and the drought page reads it by that name. */
+export const DROUGHT_JOINABLE_LEVELS: readonly number[] = JOINABLE_LEVELS;
 
 /** Where every map opens, and what a reader who chooses nothing gets. */
 export const DEFAULT_LEVEL = 6;

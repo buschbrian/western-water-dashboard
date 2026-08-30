@@ -69,6 +69,7 @@ from pipeline import (  # noqa: F401
 from pipeline.constants import (  # noqa: F401
     ADMITTED_CDEC_RESERVOIRS_PATH, ADMITTED_CDSS_RESERVOIRS_PATH,
     ADMITTED_RESERVOIRS_PATH, ADMITTED_RISE_RESERVOIRS_PATH,
+    ADMITTED_CAP_RESERVOIRS_PATH, ADMITTED_CWMS_RESERVOIRS_PATH,
     ADMITTED_DNRC_RESERVOIRS_PATH, ADMITTED_SRP_RESERVOIRS_PATH,
     ADMITTED_USGS_RESERVOIRS_PATH, AWDB_DATA_URL,
     AWDB_MONTHLY_STALE_AFTER_DAYS, BASE_AWDB_RESERVOIRS, BASE_RISE_RESERVOIRS,
@@ -81,11 +82,12 @@ from pipeline.constants import (  # noqa: F401
 )
 from pipeline.roster import (  # noqa: F401
     ADMITTED_CDEC_RESERVOIRS, ADMITTED_CDSS_RESERVOIRS,
-    ADMITTED_DNRC_RESERVOIRS, ADMITTED_RESERVOIRS,
+    ADMITTED_CAP_RESERVOIRS, ADMITTED_CWMS_RESERVOIRS, ADMITTED_DNRC_RESERVOIRS,
+    ADMITTED_RESERVOIRS,
     ADMITTED_RISE_RESERVOIRS, ADMITTED_SRP_RESERVOIRS,
     ADMITTED_USGS_RESERVOIRS, ALL_RESERVOIR_IDS,
     ALL_RESERVOIR_NAMES, AWDB_RESERVOIRS, CDEC_RESERVOIRS, CDSS_RESERVOIRS,
-    DNRC_RESERVOIRS,
+    CAP_RESERVOIRS, CWMS_RESERVOIRS, DNRC_RESERVOIRS,
     REQUIRED_CAPACITY_EVIDENCE, RESERVOIRS, RESERVOIR_NAMES,
     SRP_RESERVOIRS, USGS_RESERVOIRS, load_admitted_cdec_reservoirs,
     load_admitted_cdss_reservoirs, load_admitted_reservoirs,
@@ -94,12 +96,14 @@ from pipeline.roster import (  # noqa: F401
 )
 from pipeline.providers import (  # noqa: F401
     CDEC_DATA_URL, CDEC_MISSING_VALUE, CDEC_STORAGE_SENSOR, CDSS_BASE_URL,
+    CAP_BASE_URL, CAP_LAKE_PLEASANT_URL, CWMS_BASE_URL, CWMS_TIMESERIES_URL,
     CDSS_SERIES_URL, CDSS_STATIONS_URL, DNRC_SERIES_URL, DNRC_STAGE_URL,
     MAX_PAGES, RETRY_ATTEMPTS, RETRY_BACKOFF_SECONDS, SRP_BASE_URL,
     SRP_SERIES_URL, SRP_STATIONS_URL, USGS_DV_URL, USGS_LEGACY_DV_URL,
     _get_awdb_json, _get_cdss_json,
     _get_cdec_json, _get_json, _get_usgs_json, fetch_awdb_series,
-    fetch_cdss_series, fetch_cdec_series, fetch_dnrc_series,
+    fetch_cap_reading, fetch_cdss_series, fetch_cdec_series, fetch_cwms_series,
+    fetch_dnrc_series,
     fetch_rise_series, fetch_srp_series, fetch_srp_station_list,
     fetch_usgs_series, reduce_to_daily_last, validate_srp_station
 )
@@ -332,6 +336,8 @@ def load_capacity_catalog() -> dict:
     catalog["admitted_usgs_reservoirs"] = ADMITTED_USGS_RESERVOIRS_PATH.name
     catalog["admitted_srp_reservoirs"] = ADMITTED_SRP_RESERVOIRS_PATH.name
     catalog["admitted_dnrc_reservoirs"] = ADMITTED_DNRC_RESERVOIRS_PATH.name
+    catalog["admitted_cwms_reservoirs"] = ADMITTED_CWMS_RESERVOIRS_PATH.name
+    catalog["admitted_cap_reservoirs"] = ADMITTED_CAP_RESERVOIRS_PATH.name
     catalog["dam_points"]["count"] = sum(
         1 for entry in catalog["capacities"].values()
         if entry.get("dam_lon") is not None and entry.get("dam_lat") is not None)
@@ -711,7 +717,7 @@ def main() -> int:
                         help="compute everything but don't write reservoirs.json")
     parser.add_argument("--source",
                         choices=("all", "rise", "awdb", "cdec", "cdss", "usgs",
-                                 "srp", "dnrc"),
+                                 "srp", "dnrc", "cwms", "cap"),
                         default="all",
                         help="refresh one source and merge the other source's previously "
                              "published records (default: all)")
@@ -735,7 +741,9 @@ def main() -> int:
           f"{len(ADMITTED_CDSS_RESERVOIRS)} Colorado, "
           f"{len(ADMITTED_USGS_RESERVOIRS)} USGS, "
           f"{len(ADMITTED_SRP_RESERVOIRS)} SRP, "
-          f"{len(ADMITTED_DNRC_RESERVOIRS)} DNRC)")
+          f"{len(ADMITTED_DNRC_RESERVOIRS)} DNRC, "
+          f"{len(ADMITTED_CWMS_RESERVOIRS)} Corps, "
+          f"{len(ADMITTED_CAP_RESERVOIRS)} CAP)")
 
     rise_targets = RESERVOIRS if args.source in {"all", "rise"} else {}
     awdb_targets = AWDB_RESERVOIRS if args.source in {"all", "awdb"} else {}
@@ -744,6 +752,8 @@ def main() -> int:
     usgs_targets = USGS_RESERVOIRS if args.source in {"all", "usgs"} else {}
     srp_targets = SRP_RESERVOIRS if args.source in {"all", "srp"} else {}
     dnrc_targets = DNRC_RESERVOIRS if args.source in {"all", "dnrc"} else {}
+    cwms_targets = CWMS_RESERVOIRS if args.source in {"all", "cwms"} else {}
+    cap_targets = CAP_RESERVOIRS if args.source in {"all", "cap"} else {}
     if args.only:
         # Named, because a person types a name and not a station triplet. The
         # roster is keyed by station since ADR-066, so a name is resolved to
@@ -759,13 +769,17 @@ def main() -> int:
         usgs_targets = {k: v for k, v in USGS_RESERVOIRS.items() if k in chosen}
         srp_targets = {k: v for k, v in SRP_RESERVOIRS.items() if k in chosen}
         dnrc_targets = {k: v for k, v in DNRC_RESERVOIRS.items() if k in chosen}
+        cwms_targets = {k: v for k, v in CWMS_RESERVOIRS.items() if k in chosen}
+        cap_targets = {k: v for k, v in CAP_RESERVOIRS.items() if k in chosen}
         found = {RESERVOIR_NAMES.get(station, station)
                  for station in set(rise_targets) | set(awdb_targets)
                  | set(cdec_targets) | set(cdss_targets) | set(usgs_targets)
-                 | set(srp_targets) | set(dnrc_targets)}
+                 | set(srp_targets) | set(dnrc_targets) | set(cwms_targets)
+                 | set(cap_targets)}
         missing = (wanted - found - set(rise_targets) - set(awdb_targets)
                    - set(cdec_targets) - set(cdss_targets) - set(usgs_targets)
-                   - set(srp_targets) - set(dnrc_targets))
+                   - set(srp_targets) - set(dnrc_targets) - set(cwms_targets)
+                   - set(cap_targets))
         if missing:
             print(f"ERROR: unknown reservoir(s): {', '.join(sorted(missing))}", file=sys.stderr)
             return 2
@@ -1008,6 +1022,64 @@ def main() -> int:
             source_station_id=sensor_id, normals=normals,
             operator=row.get("operator")))
 
+    for location, (name, lat, lon, capacity_af, cadence) in cwms_targets.items():
+        row = ADMITTED_CWMS_RESERVOIRS[location]
+        try:
+            df = fetch_cwms_series(row["office"], row["timeseries"], START_DATE, end)
+        except Exception as exc:  # noqa: BLE001
+            reason = (f"CWMS fetch failed after {RETRY_ATTEMPTS} attempts: "
+                      f"{type(exc).__name__}: {exc}")
+            print(f"WARNING: {name} ({location}) -- {reason}")
+            if location in previous:
+                records.append(carry_forward(previous[location], today, reason))
+            continue
+        if df.empty:
+            reason = "CWMS returned no usable storage rows"
+            print(f"WARNING: {name} ({location}) -- {reason}")
+            if location in previous:
+                records.append(carry_forward(previous[location], today, reason))
+            continue
+        records.append(summarize(
+            name, None, lat, lon, df, today, row["capacity"],
+            source_key="cwms", source_label="U.S. Army Corps of Engineers CWMS",
+            source_url=CWMS_BASE_URL,
+            data_frequency="daily", stale_after_days=STALE_AFTER_DAYS,
+            source_station_id=location, normals=normals,
+            operator=row.get("operator")))
+        time.sleep(0.2)
+
+    for key, (name, lat, lon, capacity_af, cadence) in cap_targets.items():
+        row = ADMITTED_CAP_RESERVOIRS[key]
+        # The service answers today's reading and nothing else, so the
+        # series is what the cache holds plus today (ADR-104): the same
+        # merge the Salt River Project uses, without a history request.
+        history_key = f"cap:{key}"
+        cached = dense_history.get(history_key)
+        try:
+            incoming = fetch_cap_reading(row["endpoint_url"])
+            df = merge_source_series(cached, incoming)
+            dense_history[history_key] = df
+        except Exception as exc:  # noqa: BLE001
+            reason = (f"CAP fetch failed after {RETRY_ATTEMPTS} attempts: "
+                      f"{type(exc).__name__}: {exc}")
+            print(f"WARNING: {name} ({key}) -- {reason}")
+            if key in previous:
+                records.append(carry_forward(previous[key], today, reason))
+            continue
+        if df.empty:
+            reason = "CAP returned no usable storage reading"
+            print(f"WARNING: {name} ({key}) -- {reason}")
+            if key in previous:
+                records.append(carry_forward(previous[key], today, reason))
+            continue
+        records.append(summarize(
+            name, None, lat, lon, df, today, row["capacity"],
+            source_key="cap", source_label="Central Arizona Project",
+            source_url=row["endpoint_url"],
+            data_frequency="daily", stale_after_days=STALE_AFTER_DAYS,
+            source_station_id=key, normals=normals,
+            operator=row.get("operator")))
+
     if args.only:
         print(json.dumps(records, indent=2))
         return 0 if records else 1
@@ -1018,7 +1090,8 @@ def main() -> int:
     selected_stations = (set(rise_targets) | set(awdb_targets)
                          | set(cdec_targets) | set(cdss_targets)
                          | set(usgs_targets) | set(srp_targets)
-                         | set(dnrc_targets))
+                         | set(dnrc_targets) | set(cwms_targets)
+                         | set(cap_targets))
     refreshed_sources: set[str] = set()
     if args.source != "all":
         # Which feeds this run actually spoke to, read from what it fetched
@@ -1145,7 +1218,8 @@ def main() -> int:
         "source": ("Bureau of Reclamation RISE API, USDA NRCS AWDB, the "
                    "California Data Exchange Center, the Colorado Division "
                    "of Water Resources, the U.S. Geological Survey, the Salt "
-                   "River Project and Montana DNRC StAGE"),
+                   "River Project, Montana DNRC StAGE, the U.S. Army Corps "
+                   "of Engineers CWMS and the Central Arizona Project"),
         "sources": [
             {"key": "rise", "label": "Bureau of Reclamation RISE",
              "url": "https://data.usbr.gov/rise-api", "cadence": "daily"},
@@ -1167,6 +1241,12 @@ def main() -> int:
             {"key": "dnrc", "label": "Montana DNRC StAGE",
              "url": "https://gis.dnrc.mt.gov/arcgis/rest/services/WRD/WMB_StAGE/MapServer",
              "cadence": "daily"},
+            {"key": "cwms", "label": "U.S. Army Corps of Engineers CWMS",
+             "url": CWMS_BASE_URL,
+             "cadence": "daily"},
+            {"key": "cap", "label": "Central Arizona Project",
+             "url": CAP_LAKE_PLEASANT_URL,
+             "cadence": "daily"},
         ],
         "source_counts": {
             "rise": sum(1 for r in records if r.get("source_key", "rise") == "rise"),
@@ -1176,6 +1256,8 @@ def main() -> int:
             "usgs": sum(1 for r in records if r.get("source_key") == "usgs"),
             "srp": sum(1 for r in records if r.get("source_key") == "srp"),
             "dnrc": sum(1 for r in records if r.get("source_key") == "dnrc"),
+            "cwms": sum(1 for r in records if r.get("source_key") == "cwms"),
+            "cap": sum(1 for r in records if r.get("source_key") == "cap"),
         },
         "reservoir_count": len(records),
         "stale_count": sum(1 for r in records if r.get("is_stale")),
@@ -1214,6 +1296,10 @@ def main() -> int:
             # about what 14 is.
             "subregions": huc.subregion_roster(r.get("huc6") for r in records),
             "regions": huc.region_roster(r.get("huc6") for r in records),
+            # And the finer one (ADR-103), from each record's own `huc8`:
+            # a subbasin is not a prefix of anything, so it is the one
+            # roster that cannot be sliced out of the basin codes.
+            "subbasins": huc.subbasin_roster(r.get("huc8") for r in records),
         },
         # Counties are described in the envelope for the same reason, and
         # carry their assignment rule for the opposite one: it is deliberately

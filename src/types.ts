@@ -1,5 +1,6 @@
 export type DataFrequency = "daily" | "monthly";
-export type SourceKey = "rise" | "awdb" | "cdec" | "cdss" | "usgs" | "srp" | "dnrc";
+export type SourceKey =
+  "rise" | "awdb" | "cdec" | "cdss" | "usgs" | "srp" | "dnrc" | "cwms" | "cap";
 export type NullableNumber = number | null;
 
 export interface MonthlyRecord {
@@ -155,6 +156,11 @@ export interface Reservoir {
   intersects_utah: boolean;
   huc6?: string | null;
   huc6_name?: string | null;
+  /** The subbasin the same assignment point falls in (ADR-103). Absent in a
+   * payload written before every surface offered level 8; null when no
+   * subbasin outline held the point. Never a prefix of anything. */
+  huc8?: string | null;
+  huc8_name?: string | null;
   huc_assignment_point?: [number, number] | null;
   huc_assignment_source?: string | null;
 
@@ -240,6 +246,9 @@ export interface SnowSite {
   huc6_name: string;
   /** The provider's own drainage assignment, kept beside ours for review. */
   provider_huc6: string | null;
+  /** The site's subbasin (ADR-103); absent before level 8 was offered here. */
+  huc8?: string | null;
+  huc8_name?: string | null;
   latest_date: string;
   late: boolean;
   normal_timing: SnowNormalTiming;
@@ -287,6 +296,14 @@ export interface Subregion {
   name: string;
 }
 
+/** A subbasin's code and name, one level finer than the payload's own
+ * areas (ADR-103). The code is each record's own `huc8`, because a finer
+ * code is a prefix of nothing. */
+export interface Subbasin {
+  huc8: string;
+  name: string;
+}
+
 /** A region's code and name, the same thing one level coarser (ADR-073).
  * Its own type rather than a shared one keyed by a generic field, because
  * the field name is the level: a client reading `huc4` off a region would
@@ -328,6 +345,8 @@ export interface SnowpackPayload {
   subregions?: Subregion[];
   /** Absent in a payload written before the third level existed (ADR-073). */
   regions?: Region[];
+  /** Absent in a payload written before the fourth level existed (ADR-103). */
+  subbasins?: Subbasin[];
   sites: SnowSite[];
 }
 
@@ -509,6 +528,8 @@ export interface ReservoirPayload {
     subregions?: { huc4: string; name: string }[];
     /** HUC-2 regions they roll up into, named the same way (ADR-073). */
     regions?: { huc2: string; name: string }[];
+    /** HUC-8 subbasins the reservoirs' own `huc8` codes name (ADR-103). */
+    subbasins?: { huc8: string; name: string }[];
   };
   reservoirs: Reservoir[];
 }

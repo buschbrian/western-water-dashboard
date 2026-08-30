@@ -1,7 +1,7 @@
 {
   "source": "Esri Living Atlas, USA Census Counties (U.S. Census Bureau 2020 boundaries)",
   "source_layer": "https://services.arcgis.com/P3ePLMYs2RVChkJx/arcgis/rest/services/USA_Census_Counties/FeatureServer/0",
-  "retrieved": "2026-08-29",
+  "retrieved": "2026-08-30",
   "assignment_point": "published_point",
   "roster": "the refresh's own roster, not reservoirs.json -- a reservoir withdrawn for going quiet (ADR-056) has not moved county",
   "note": "The county holding each reservoir's published waterbody point. Deliberately not the dam point the drainage area is assigned from (ADR-058): Glen Canyon Dam is in Coconino County, Arizona, and Lake Powell is in San Juan County, Utah. Keyed on the five-digit FIPS code, because this roster holds two Summit Counties in different states.",
@@ -1464,6 +1464,12 @@
       "county_name": "Summit County",
       "state": "CO"
     },
+    "BOX": {
+      "name": "Box Canyon Reservoir",
+      "county_fips": "53051",
+      "county_name": "Pend Oreille County",
+      "state": "WA"
+    },
     "BQC": {
       "name": "Bouquet Canyon",
       "county_fips": "06037",
@@ -1506,6 +1512,12 @@
       "county_name": "Nevada County",
       "state": "CA"
     },
+    "CAB": {
+      "name": "Cabinet Gorge Reservoir",
+      "county_fips": "16017",
+      "county_name": "Bonner County",
+      "state": "ID"
+    },
     "CAS": {
       "name": "Castaic",
       "county_fips": "06037",
@@ -1535,6 +1547,12 @@
       "county_fips": "32013",
       "county_name": "Humboldt County",
       "state": "NV"
+    },
+    "CHJ": {
+      "name": "Rufus Woods Lake",
+      "county_fips": "53017",
+      "county_name": "Douglas County",
+      "state": "WA"
     },
     "CHV": {
       "name": "Cherry Valley Dam",
@@ -1716,6 +1734,12 @@
       "county_name": "Santa Barbara County",
       "state": "CA"
     },
+    "GCL": {
+      "name": "Franklin D. Roosevelt Lake",
+      "county_fips": "53047",
+      "county_name": "Okanogan County",
+      "state": "WA"
+    },
     "GLK": {
       "name": "Gem Lake",
       "county_fips": "06051",
@@ -1733,6 +1757,12 @@
       "county_fips": "08067",
       "county_name": "La Plata County",
       "state": "CO"
+    },
+    "HCD": {
+      "name": "Hells Canyon Reservoir",
+      "county_fips": "41063",
+      "county_name": "Wallowa County",
+      "state": "OR"
     },
     "HDG": {
       "name": "Lake Hodges",
@@ -1794,6 +1824,12 @@
       "county_name": "El Dorado County",
       "state": "CA"
     },
+    "IHR": {
+      "name": "Lake Sacajawea",
+      "county_fips": "53071",
+      "county_name": "Walla Walla County",
+      "state": "WA"
+    },
     "INV": {
       "name": "Indian Valley",
       "county_fips": "06033",
@@ -1817,6 +1853,12 @@
       "county_fips": "06091",
       "county_name": "Sierra County",
       "state": "CA"
+    },
+    "JDA": {
+      "name": "Lake Umatilla",
+      "county_fips": "53039",
+      "county_name": "Klickitat County",
+      "state": "WA"
     },
     "JNK": {
       "name": "Jenkinson Lake",
@@ -1842,11 +1884,23 @@
       "county_name": "Merced County",
       "state": "CA"
     },
+    "LGS": {
+      "name": "Lake Bryan",
+      "county_fips": "53013",
+      "county_name": "Columbia County",
+      "state": "WA"
+    },
     "LGV": {
       "name": "Little Grass Valley",
       "county_fips": "06063",
       "county_name": "Plumas County",
       "state": "CA"
+    },
+    "LMN": {
+      "name": "Lake Herbert G. West",
+      "county_fips": "53021",
+      "county_name": "Franklin County",
+      "state": "WA"
     },
     "LNG": {
       "name": "Lexington Reservoir",
@@ -1914,11 +1968,23 @@
       "county_name": "Amador County",
       "state": "CA"
     },
+    "LWG": {
+      "name": "Lower Granite Lake",
+      "county_fips": "53075",
+      "county_name": "Whitman County",
+      "state": "WA"
+    },
     "LYS": {
       "name": "Lyons Reservoir",
       "county_fips": "06109",
       "county_name": "Tuolumne County",
       "state": "CA"
+    },
+    "MCN": {
+      "name": "Lake Wallula",
+      "county_fips": "41059",
+      "county_name": "Umatilla County",
+      "state": "OR"
     },
     "MCO": {
       "name": "Lake Mccloud",
@@ -2274,6 +2340,12 @@
       "county_name": "Fresno County",
       "state": "CA"
     },
+    "TDA": {
+      "name": "Lake Celilo",
+      "county_fips": "41065",
+      "county_name": "Wasco County",
+      "state": "OR"
+    },
     "TFR": {
       "name": "Thermalito Forebay",
       "county_fips": "06007",
@@ -2357,6 +2429,12 @@
       "county_fips": "30039",
       "county_name": "Granite County",
       "state": "MT"
+    },
+    "opslakepleasant": {
+      "name": "Lake Pleasant",
+      "county_fips": "04013",
+      "county_name": "Maricopa County",
+      "state": "AZ"
     }
   },
   "keyed_by": "source_station_id"

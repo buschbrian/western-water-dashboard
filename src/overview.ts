@@ -272,6 +272,7 @@ async function renderOverview(
   allReservoirs: Reservoir[], generatedAt: string,
   regions: readonly { huc2: string; name: string }[],
   subregions: readonly { huc4: string; name: string }[],
+  subbasins: readonly { huc8: string; name: string }[],
   openingScope: OpeningScope, openingRosters: OpeningRosters,
   period: ComparisonPeriod
 ): Promise<void> {
@@ -549,10 +550,11 @@ async function renderOverview(
   };
   const menuRosters = openingRosters.areas.length > 0
     ? openingRosters
-    : overviewDrainageRosters(allReservoirs, regions, subregions);
+    : overviewDrainageRosters(allReservoirs, regions, subregions, subbasins);
   const drainageHasReservoir = (code: string, state = chosenState): boolean =>
     widestScope.some((reservoir) =>
-      reservoirInState(reservoir, state) && withinOpeningArea(reservoir.huc6, code));
+      reservoirInState(reservoir, state)
+        && withinOpeningArea(reservoir.huc8 ?? reservoir.huc6, code));
   const reflectDrainage = (): void => {
     drainageMenu?.set({ state: chosenState, area: chosenDrainage });
   };
@@ -736,7 +738,7 @@ async function renderOverview(
     /* One drainage axis at any of its three widths. Prefix matching is the
      * level contract: region, subregion and basin codes nest exactly. */
     const inChosenDrainage = (reservoir: Reservoir): boolean =>
-      withinOpeningArea(reservoir.huc6, chosenDrainage);
+      withinOpeningArea(reservoir.huc8 ?? reservoir.huc6, chosenDrainage);
     const scoped = overviewScope(allReservoirs, {
       lakePowell: lakePowell.checked ? "include" : "exclude",
       lakeMead: lakeMead.checked ? "include" : "exclude"
@@ -1107,7 +1109,8 @@ try {
   const preferred = payload.default_baseline ?? "recent";
   await renderOverview(payload.reservoirs, payload.generated_at,
     payload.watersheds?.regions ?? [],
-    payload.watersheds?.subregions ?? [], openingScope, openingRosters, {
+    payload.watersheds?.subregions ?? [],
+    payload.watersheds?.subbasins ?? [], openingScope, openingRosters, {
       id: choices.some((choice) => choice.id === preferred) ? preferred : "recent",
       choices,
       minimumYears: payload.climate_normals?.minimum_years ?? 0

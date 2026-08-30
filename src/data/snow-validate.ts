@@ -96,6 +96,9 @@ function isSnowSite(value: unknown): value is SnowSite {
     typeof value.huc6 === "string" && value.huc6.length === 6 &&
     typeof value.huc6_name === "string" &&
     (value.provider_huc6 === null || typeof value.provider_huc6 === "string") &&
+    (value.huc8 === undefined || value.huc8 === null || typeof value.huc8 === "string") &&
+    (value.huc8_name === undefined || value.huc8_name === null ||
+      typeof value.huc8_name === "string") &&
     typeof value.latest_date === "string" &&
     typeof value.late === "boolean" &&
     isNormalTiming(value.normal_timing);
@@ -223,13 +226,23 @@ export function validateSnowpackPayload(value: unknown): SnowpackPayload {
    * asks for the coarser grouping must not lose the snow over a name, and one
    * who does gets the code as its own label -- which is how
    * `parseDrainageUnits` already treats a missing name. */
+  let checked: Record<string, unknown> = value;
   if (value.subregions !== undefined) {
     if (!Array.isArray(value.subregions)) {
       throw new Error("snowpack.json carries a malformed subregion roster");
     }
     const subregions = value.subregions.filter((entry) =>
       isObject(entry) && typeof entry.huc4 === "string" && entry.huc4.length === 4);
-    return { ...value, subregions } as unknown as SnowpackPayload;
+    checked = { ...checked, subregions };
   }
-  return value as unknown as SnowpackPayload;
+  /* The subbasin roster the same way (ADR-103): eight digits, names only. */
+  if (value.subbasins !== undefined) {
+    if (!Array.isArray(value.subbasins)) {
+      throw new Error("snowpack.json carries a malformed subbasin roster");
+    }
+    const subbasins = value.subbasins.filter((entry) =>
+      isObject(entry) && typeof entry.huc8 === "string" && entry.huc8.length === 8);
+    checked = { ...checked, subbasins };
+  }
+  return checked as unknown as SnowpackPayload;
 }

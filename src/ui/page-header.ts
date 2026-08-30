@@ -179,15 +179,16 @@ export function brandMarkup(headingLevel: 1 | 2, current: PageId): string {
  * reader is told which one they are on rather than left to notice a gap.
  */
 export function pageLinksMarkup(current: PageId, search: string = ""): string {
-  const carriedFor = (page: PageLink): string =>
-    portableSearch(search, page.id === "drought" || page.id === "methods" ? 8 : 6);
+  /* Every page carries the whole place since ADR-103; nothing is cut to a
+   * coarser width for the page it is going to. */
+  const carried = portableSearch(search);
   const others = PAGES.filter((page) => page.id !== current);
   const items = PAGES.map((page) => `
-        <calcite-dropdown-item id="menu-${page.id}-link" href="${linkHref(page.href, carriedFor(page))}"
+        <calcite-dropdown-item id="menu-${page.id}-link" href="${linkHref(page.href, carried)}"
           icon-start="${page.icon}"${page.id === current ? ' selected aria-current="page"' : ""}
           >${page.menuText}</calcite-dropdown-item>`).join("");
   const buttons = others.map((page) => `
-    <calcite-button id="${page.id}-link" class="page-link" slot="content-end" href="${linkHref(page.href, carriedFor(page))}"
+    <calcite-button id="${page.id}-link" class="page-link" slot="content-end" href="${linkHref(page.href, carried)}"
       appearance="transparent" kind="neutral" icon-start="${page.icon}"
       label="${page.label}"><span class="page-link-text">${page.text}</span></calcite-button>`).join("");
 
@@ -223,8 +224,7 @@ export function pageLinksMarkup(current: PageId, search: string = ""): string {
  */
 export function updatePageLinks(search: string): void {
   for (const page of PAGES) {
-    const carried = portableSearch(
-      search, page.id === "drought" || page.id === "methods" ? 8 : 6);
+    const carried = portableSearch(search);
     for (const id of [`${page.id}-link`, `menu-${page.id}-link`]) {
       document.getElementById(id)?.setAttribute("href", linkHref(page.href, carried));
     }

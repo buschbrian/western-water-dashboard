@@ -47,7 +47,7 @@ const PORTABLE_ALIASES: Readonly<Record<string, string>> = { drainage: "area" };
  * follows, where a default is written as absence.
  */
 export function portableSearch(
-  search: string | null | undefined, maxAreaWidth = 6
+  search: string | null | undefined, maxAreaWidth = 8
 ): string {
   const params = new URLSearchParams(String(search ?? "").replace(/^\?/, ""));
   const carried = new Map<string, string>();

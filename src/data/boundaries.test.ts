@@ -134,11 +134,13 @@ describe("the drainage-area roster", () => {
   });
 
   /* Every figure on this site -- storage banked in an area, drought coverage,
-   * snow percent of normal -- exists at all three offered levels (ADR-064,
-   * ADR-073), and at no other. A scope drawn at a size no figure describes
-   * would put shapes on the map whose hover cards come back empty. */
+   * snow percent of normal -- exists at all four offered levels (ADR-064,
+   * ADR-073, ADR-088, ADR-103), and at no other. A scope drawn at a size no
+   * figure describes would put shapes on the map whose hover cards come back
+   * empty. Subbasins joined the shared offer once every reservoir and every
+   * snow site carried an eight-digit assignment of its own. */
   it("keys the figures at the levels the export offers", () => {
-    expect(JOINABLE_LEVELS).toEqual([2, 4, 6]);
+    expect(JOINABLE_LEVELS).toEqual([2, 4, 6, 8]);
     expect(DEFAULT_LEVEL).toBe(6);
 
     const reference = readReferenceExport();
@@ -147,7 +149,7 @@ describe("the drainage-area roster", () => {
     /* Every offered level is one the figures exist at, and the default is one
      * of them: a level offered with no figures behind it is a control that
      * empties the map. */
-    expect(geography?.levels).toEqual([2, 4, 6]);
+    expect(geography?.levels).toEqual([2, 4, 6, 8]);
     for (const level of geography?.levels ?? []) {
       expect(JOINABLE_LEVELS).toContain(level);
       expect(referenceGeography(reference, level)?.level).toBe(level);
@@ -172,18 +174,28 @@ describe("the drainage-area roster", () => {
 
   it("falls back to the default for a level it does not offer", () => {
     /* A saved link to a level this site has stopped offering opens the map it
-     * has, rather than an empty one. */
-    const geography = referenceGeography(readReferenceExport(), 8);
+     * has, rather than an empty one. Ten digits is the example because the
+     * drought engine's sampled share loses its published precision below
+     * eight, so no scope is drawn there and none is meant to be. */
+    const geography = referenceGeography(readReferenceExport(), 10);
     expect(geography?.level).toBe(DEFAULT_LEVEL);
   });
 
-  it("offers subbasins to drought without offering them to storage or snow", () => {
+  /* ADR-088 offered subbasins to drought first and ADR-103 offered them
+   * everywhere. `drought_scopes` is still published as a field of its own,
+   * and it no longer differs from the shared offer -- which is the thing to
+   * hold, because the two were separate for four days and a reader's level
+   * is one parameter across every map. */
+  it("offers subbasins on every surface, drought included", () => {
     const reference = readReferenceExport();
     const drought = referenceGeography(reference, 8, "drought");
-    expect(DROUGHT_JOINABLE_LEVELS).toEqual([2, 4, 6, 8]);
+    const shared = referenceGeography(reference, 8);
+    expect(DROUGHT_JOINABLE_LEVELS).toEqual(JOINABLE_LEVELS);
     expect(drought?.levels).toEqual([2, 4, 6, 8]);
+    expect(shared?.levels).toEqual([2, 4, 6, 8]);
     expect(drought?.level).toBe(8);
-    expect(parseDrainageUnits(drought?.drainage, 8)).toHaveLength(571);
+    expect(shared?.level).toBe(8);
+    expect(parseDrainageUnits(shared?.drainage, 8)).toHaveLength(571);
   });
 
   it("names an area after its code when the name is missing", () => {

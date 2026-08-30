@@ -39,6 +39,25 @@ import type { MonthlyRecord, NullableNumber } from "../types";
  */
 export const HUC_CODE = /^(?:\d{2}){1,6}$/;
 
+/**
+ * A record's drainage-area code at a drawn level (ADR-103).
+ *
+ * Coarser than the basin is a slice, because fixed-width codes nest
+ * (ADR-050). Finer than the basin is the record's own `huc8` -- a subbasin
+ * is a prefix of nothing, so it cannot be sliced out of `huc6` -- and null
+ * when the record carries none, so a caller leaves it out rather than
+ * filing a six-digit code among eight-digit ones.
+ */
+export function drainageCodeAtLevel(
+  huc6: string | null | undefined,
+  huc8: string | null | undefined,
+  level: number
+): string | null {
+  if (level >= 8) return typeof huc8 === "string" && huc8.length === 8 ? huc8 : null;
+  if (typeof huc6 !== "string" || huc6.length < level) return null;
+  return huc6.slice(0, level);
+}
+
 export type Point = readonly [number, number];
 
 /** A linear ring: the outer ring first, then any holes. */

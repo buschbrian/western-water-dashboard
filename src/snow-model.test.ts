@@ -55,6 +55,33 @@ describe("percent of normal", () => {
   });
 });
 
+describe("the payload regrouped into subbasins (ADR-103)", () => {
+  const fine = payloadAtLevel(payload, 8);
+  const placed = payload.sites.filter((site) => site.huc8);
+
+  it("groups by each site's own subbasin, never by slicing its basin", () => {
+    expect(placed.length).toBeGreaterThan(0);
+    expect(fine.sites).toHaveLength(placed.length);
+    expect(fine.rollups.length).toBe(new Set(placed.map((site) => site.huc8)).size);
+    expect(fine.rollups.length).toBeGreaterThan(payload.rollups.length);
+    for (const rollup of fine.rollups) expect(rollup.huc6).toHaveLength(8);
+    // A finer area holds fewer stations, and the pipeline's floor is carried
+    // rather than lowered: an area under it reads "not measured" (ADR-059).
+    for (const rollup of fine.rollups) {
+      expect(rollup.minimum_reporting_sites)
+        .toBeGreaterThanOrEqual(Math.max(...payload.rollups.map(
+          (entry) => entry.minimum_reporting_sites)));
+    }
+  });
+
+  it("recomputes each mean from its own sites", () => {
+    const rollup = fine.rollups.find((entry) =>
+      entry.series.some((day) => day.mean_percent_of_normal_median !== null))!;
+    const members = placed.filter((site) => site.huc8 === rollup.huc6);
+    expect(rollup.site_count).toBe(members.length);
+  });
+});
+
 describe("the payload regrouped into subregions", () => {
   const coarse = payloadAtLevel(payload, 4);
 

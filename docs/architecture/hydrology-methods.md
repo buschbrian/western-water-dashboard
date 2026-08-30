@@ -177,10 +177,11 @@ normally. The Conservation Service's month-end feed already stamps the last
 day, so there is one convention rather than two. **The calendar is corrected,
 never the reading.**
 
-**A day from a sub-daily provider is its last reading** (ADR-100). Two
+**A day from a sub-daily provider is its last reading** (ADR-100). Three
 providers publish far more often than daily -- the Salt River Project every
-five minutes, Montana's Stream and Gage Explorer roughly every quarter hour --
-and the estimator reads one value per date. That value is the day's final
+five minutes, Montana's Stream and Gage Explorer roughly every quarter hour,
+the Army Corps of Engineers hourly on most of its Columbia Basin series
+(ADR-102) -- and the estimator reads one value per date. That value is the day's final
 observation: not a mean, which would put a derived statistic in a series of
 measured ones, and not the reading nearest midnight, which selects across a
 gap and lets a day borrow the day before's value.

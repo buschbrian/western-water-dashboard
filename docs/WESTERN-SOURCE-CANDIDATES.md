@@ -1,13 +1,228 @@
 # Western reservoir source candidates
 
 Status: Base research inventory checked 2026-08-20; Montana and Arizona
-follow-up checked 2026-08-28. **Three of its candidates
+follow-up checked 2026-08-28; Columbia Basin and Nevada follow-up checked
+2026-08-29. **Three of its candidates
 were built since**: California (2026-08-20), Colorado (2026-08-21) and the
 U.S. Geological Survey (2026-08-22), which took the roster from two providers
-to five. Idaho, Oregon and Wyoming are the survey's remaining open ground. The
-survey below is as it was written on its date and is not rewritten to describe
-today; the current source list is
+to five. Idaho, Oregon and Wyoming were the survey's remaining open ground; the
+2026-08-29 follow-up found the Columbia Basin source the survey said did not
+exist. The survey below is as it was written on its date and is not rewritten
+to describe today; the current source list is
 [`AUTHORITATIVE-SOURCE-INVENTORY.md`](AUTHORITATIVE-SOURCE-INVENTORY.md).
+
+## Follow-up: the Columbia Basin and Nevada (2026-08-29)
+
+This follow-up supersedes the original survey's finding that the Columbia
+Basin is absent from the national CWMS Data API, and closes the Nevada entry
+that admitted it was not exhaustive. The dated survey below is left as
+written; the sentence it corrects is marked in place.
+
+### USACE: the Columbia Basin is in the national API, under the region
+
+The survey queried the three districts — `NWP` Portland, `NWS` Seattle,
+`NWW` Walla Walla — and found zero storage series under each. That is still
+true today, and it was the wrong question. The Northwestern Division
+publishes its Columbia Basin data under a **regional** office,
+**`NWDP` (Pacific Northwest Region, `type: MSCR`)**, the same way the
+Missouri side sits under `NWDM`. Checked live on 2026-08-29, unauthenticated
+throughout:
+
+```
+https://cwms-data.usace.army.mil/cwms-data/offices
+  -> NWD (MSC), NWDP "Pacific Northwest Region" (MSCR), NWDM "Missouri River Region" (MSCR),
+     NWP, NWS, NWW (DIS) ...
+https://cwms-data.usace.army.mil/cwms-data/catalog/timeseries?office=NWDP&like=.*Stor.*&page-size=500
+  -> total 595 series across 125 locations (Accept: application/json;version=2)
+https://cwms-data.usace.army.mil/cwms-data/locations?office=NWDP
+  -> 6,763 locations with state-initial, latitude, longitude, location-kind
+https://cwms-data.usace.army.mil/cwms-data/timeseries?office=NWDP&name=GCL.Stor.Inst.1Hour.0.CBT-REV&unit=ac-ft&begin=2026-08-15T00:00:00Z&end=2026-08-30T12:00:00Z
+  -> units "ac-ft", 362 values, last 2026-08-30T01:00Z = 8,121,220
+```
+
+So three of the survey's open questions close at once: **`unit=ac-ft` is
+accepted** and returns acre-feet directly; **reads need no credential**
+(every call above was bare); and the Northwestern Division's own portal
+does not matter any more — `www.nwd.usace.army.mil/CRWM/Water-Control-Data/`
+answers 403 from its edge cache and `www.nwd-wc.usace.army.mil` returns an
+error page for every path tried, with or without a browser user agent, so it
+is not machine-readable and does not need to be.
+
+**What the 125 locations are.** Joined to the location list and to the
+published roster by distance (3 km), the storage-bearing locations under
+`NWDP` divide as follows. "Already on the roster" means a published
+reservoir sits within 3 km, almost always the same dam through the Natural
+Resources Conservation Service; those add nothing and are counted only so
+the next reader does not count them again.
+
+| State | Locations with storage | Already on the roster within 3 km | New to the roster |
+|---|---:|---:|---:|
+| Oregon | 45 | 30 | 15, of which 7 are basin rollups (`Willamette`, `Rogue`, `Santiam`…) and not places |
+| Washington | 34 | 16 | 18 |
+| Idaho | 30 | 19 | 11 |
+| Montana (Columbia side) | 5 | 4 | 1 (`KER`, Flathead Lake at the dam — the roster's Flathead Lake gauge is the same water; ADR-069 review, not a candidate) |
+| Wyoming | 2 | 2 | 0 |
+| Nevada | 1 | 1 | 0 |
+| British Columbia | 3 | 0 | out of scope |
+
+The `NWDM` office holds another 74 storage locations, but they are the
+Missouri basin — Boysen, Glendo, Seminoe, Keyhole, Kortes, Canyon Ferry,
+Fort Peck, Yellowtail — and `data/watersheds/west-huc6.geojson` draws
+regions 14–18 only, so none of them is inside this product's geography.
+Wyoming's gap is not a source gap: its reservoirs on the Missouri side are
+outside the drawn scope by decision, and its Green River and Snake River
+reservoirs are already published.
+
+**The new-to-roster reservoirs that returned a current acre-foot reading
+in this session** (value and timestamp as returned, UTC):
+
+| Location | Public name | State | Series read | Last value |
+|---|---|---|---|---|
+| `GCL` | Grand Coulee Dam (Lake Roosevelt) | WA | `GCL.Stor.Inst.1Hour.0.CBT-REV` | 8,121,220 at 2026-08-30 01:00 |
+| `CHJ` | Chief Joseph Dam | WA | `CHJ.Stor.Inst.1Hour.0.CBT-REV` | 563,540 at 2026-08-30 01:00 |
+| `LWG` | Lower Granite Lock and Dam | WA | `LWG.Stor.Inst.1Hour.0.Best` | 461,564 at 2026-08-30 02:00 |
+| `JDA` | John Day Lock and Dam | OR | `JDA.Stor.Inst.1Hour.0.CBT-COMPUTED-REV` | 308,300 at 2026-08-30 00:00 |
+| `PRD` | Priest Rapids Dam | WA | `PRD.Stor.Inst.1Hour.0.CBT-REV` | 31,433 at 2026-08-30 01:00 |
+| `BOX` | Box Canyon Dam | WA | `BOX.Stor.Ave.~1Day.1Day.CBT-REV` | 42,270 at 2026-08-29 07:00 |
+| `MLL` | Mill Creek Dam | WA | `MLL.Stor.Inst.15Minutes.0.USGS-COMPUTED-REV` | 558 at 2026-08-30 01:45 |
+| `GSV` | Galesville Dam | OR | `GSV.Stor.Inst.0.0.MIXED-COMPUTED-REV` | 15,040 at 2026-08-22 01:45 |
+| `ALF` | Albeni Falls Dam (Lake Pend Oreille) | ID | `ALF.Stor-Lake.Inst.1Hour.0.IRIDIUM-COMPUTED-RAW` | 1,541,914 at 2026-08-30 00:00 |
+| `COEI` | Coeur d'Alene Lake | ID | `COEI.Stor.Inst.0.0.CBT-REV` | 211,530 at 2026-08-29 15:00 |
+| `CAB` | Cabinet Gorge Dam | ID | `CAB.Stor.Inst.1Hour.0.CBT-REV` | 32,743 at 2026-08-29 23:00 |
+| `HCD` | Hells Canyon Dam | OR/ID | `HCD.Stor.Inst.~1Day.0.IDP-COMPUTED-REV` | 165,220 at 2026-08-28 07:00 |
+| `MIL` | Milner Dam | ID | `MIL.Stor.Inst.0.0.USBR-RAW` | 37,708 at 2026-08-30 03:45 |
+| `HEN` | Henrys Lake | ID | `HEN.Stor.Ave.~1Day.1Day.USBR-RAW` | 69,201 at 2026-08-29 07:00 |
+| `MAN` | Mann Creek Reservoir | ID | `MAN.Stor.Inst.0.0.USBR-RAW` | 447 at 2026-08-30 03:15 |
+| `WAH` | Lake Waha | ID | `WAH.Stor.Inst.15Minutes.0.USBR-RAW` | 1,233 at 2026-08-30 01:45 |
+| `KER` | Flathead Lake at the dam | MT | `KER.Stor.Inst.~1Day.0.CBT-RAW` | 1,791,000 at 2026-08-28 06:00 |
+
+Bonneville, McNary and The Dalles (`CBT-COMPUTED-REV`), Ice Harbor, Little
+Goose and Lower Monumental (`Best`), and Rock Island, Rocky Reach, Wanapum
+and Wells (`CBT-REV`) carry the same series shapes as the rows above with
+catalog extents to 2026-08-30 and were not each read individually.
+
+**Four things the next reader needs to know before building against it.**
+
+1. **The catalog's extents are not proof of readable data.** Yale, Merwin
+   and Swift (`MIXED-COMPUTED-REV`), Big Cliff, Libby, Lake Pend Oreille at
+   Hope (`HOPI`) and Dworshak's plain `Stor` series all advertise
+   `latest-time` of 2026-08-29/30 and return `total: 0` for July and August
+   in every window tried; Dworshak answers only through
+   `DWR.Stor-Total.Inst.1Hour.0.Best` (2,509,042 at 2026-08-30 02:00). A
+   candidate is confirmed by a read, never by the catalog.
+2. **Forecast series pollute the extents.** `*-FCST` versions carry
+   `latest-time` into 2027; exclude them before choosing a series, or the
+   "freshest" pick is a forecast.
+3. **The version suffix says whose number it is.** `USBR-RAW` / `USBR-REV`
+   are Reclamation Hydromet readings republished by the Corps — Milner,
+   Henrys Lake, Mann Creek and Lake Waha above are that — and ADR-069's
+   one-dam-one-reservoir rule applies: check them against RISE before
+   treating the Corps as their source. `CBT-*` is the Columbia Basin Teletype network,
+   `IDP-*` is Idaho Power's computation, `CENWS-*` the Seattle District's
+   own. Milner is also the U.S. Geological Survey candidate held in
+   `admitted_usgs_reservoirs.json` because its matched dam record cannot
+   contain the observed series; a second feed does not change that finding.
+4. **Capacity is not published as storage.** `/pools?office=NWDP` returns
+   41 projects with named pools (Dworshak, Grand Coulee, Albeni Falls and
+   Hells Canyon each have a `Normal` pool) but every pool is defined by
+   **elevation** level ids, and `/levels?office=NWDP` with any mask returns
+   zero location levels, so there is no acre-foot full level to read.
+   Under ADR-072 every denominator would come from the dam inventory, the
+   same position the U.S. Geological Survey provider is in.
+
+**Two decisions this source needs before anything is admitted.** First, a
+product decision on the run-of-river Columbia and Snake pools — Bonneville,
+The Dalles, John Day, McNary, the four lower Snake projects, and the five
+mid-Columbia public-utility dams. They hold hundreds of thousands of
+acre-feet each and publish it, but a mainstem pool that swings a few feet
+for power is not what a reader means by reservoir storage, and ADR-078's
+dam rule admits them as written. Second, `SourceKey` is exhaustive across
+its providers, so a Corps adapter is a compile error until every table
+names it; the visible name would be "U.S. Army Corps of Engineers".
+
+**Terms and limits.** The API code is MIT-licensed
+(`github.com/USACE/cwms-data-api`); no rate limit and no terms-of-use page
+were found, and roughly 60 unauthenticated calls in this session drew no
+throttling.
+
+### Nevada, searched once
+
+The state entry below said its search was not exhaustive. It has now been
+done from four directions, and the answer is that Nevada is thin because it
+is thin, not because a source was missed.
+
+- **Natural Resources Conservation Service.** The reservoir-station list for
+  the state holds **eight** stations with a storage element. Five are
+  already published (Lahontan, Rye Patch, Wild Horse, Chimney Creek,
+  Marlette Lake). The other three are Topaz Lake — the same water the
+  U.S. Geological Survey audit holds under `10297000`, with the same missing
+  dam match — and two natural terminal lakes, **Pyramid Lake** and **Walker
+  Lake**, both monthly and semimonthly only, both needing the ADR-078
+  successor that Walker Lake's held finding already names.
+- **Truckee River Operating Agreement daily report**
+  (`troa.net/reports/dwmr/`, dated 2026-08-29). Eight reservoirs — Tahoe,
+  Boca, Stampede, Prosser, Donner, Independence, Martis, Lahontan. Seven are
+  on the roster already through the Natural Resources Conservation Service
+  and California; Martis is not, but the page is HTML only, carries no
+  download or API, and its footer claims all rights reserved. Not a source.
+- **Walker Basin Hydro Mapper** (`webapps.usgs.gov/walkerbasinhydromapper`).
+  Bridgeport, Topaz, Weber and Walker Lake — every one a U.S. Geological
+  Survey site this project already reads or holds. A republisher of a
+  provider we have.
+- **Nevada Division of Water Resources** (`data-ndwr.hub.arcgis.com`,
+  `water.nv.gov/index.php/data`). Well logs, spring and stream flow, water
+  levels, GIS layers. No reservoir-storage dataset.
+- The one Corps location in the state, `WLD`, is Wild Horse republished
+  from Reclamation (`USBR-RAW`), already on the roster.
+
+What is left in Nevada is Lake Mead's neighbours on the Colorado (Mohave and
+Havasu are Reclamation reservoirs already handled under the California and
+RISE reviews) and the terminal lakes, which are a roster-rule question and
+not a source question.
+
+### Arizona: the Central Arizona Project is machine-readable
+
+Lake Pleasant was Arizona's one remaining gap of consequence — about 812,000
+acre-feet of normal storage behind New Waddell Dam, operated by CAP and absent
+from every provider. CAP's public Lake Pleasant page fills its graphic from a
+JSON endpoint that answers a bare GET:
+
+```
+https://azr-prod-rsg-dmz-app-waterqualityweb.azurewebsites.net/api/opslakepleasant
+  -> {"RecordID":113000,"LP_Elev":"1649.1200","LP_Volume":"421560.0031",
+      "LP_PercentFull":"47.2686","LP_SurfaceArea":"6520.8630",
+      "PP_Flow":"-587.9121","RiverOutletFlow":"0.0000",
+      "RecordTime":"2026-08-29T21:16:03"}
+```
+
+- **Key:** none. **Units:** acre-feet, stated by the page that reads it.
+- **History:** none. `?start=`, `?days=`, `?recordid=`, `/history` and
+  `/{id}` all answer the same single record or 404; no swagger or
+  documentation exists. The series has to be accumulated by the reader.
+- **Identifier:** none but the endpoint; `RecordID` is a row counter.
+- **Full level:** `LP_PercentFull` is against the 1,702-foot maximum pool,
+  which back-computes to about 891,840 acre-feet; the dam inventory gives
+  811,784 normal and 1,063,163 maximum for New Waddell Dam (AZ82929). CAP
+  publishes the percentage, never the acre-foot figure.
+- **Terms:** none published. The host is an Azure application the public
+  page calls once per visitor. AquaPortal (`aquaportal.cap-az.com`) is an
+  Aquatic Informatics portal with a sign-in and a disclaimer, and was not
+  found to expose the lake level.
+- **Waddell pumping and generating** come from the same record (`PP_Flow`),
+  which is outside this site's subject.
+
+Admitted the same day as ADR-104: one record a day merged into the
+dense-history cache, denominator from the inventory, the operator's
+percentage recorded beside it as a finding.
+
+The one Corps reservoir in Arizona, **Alamo Lake**, is in the CWMS Data API
+under the Los Angeles District office (`SPL`, `Alamo.Stor.Inst.1Hour.0.GOES-rev`,
+hourly since 2004, current), not the office ADR-102 reads; Painted Rock,
+Whitlow Ranch and Tat Momolikot are there too and are dry flood-control
+basins. Admitting Alamo is one roster entry once the loader accepts a second
+office. **Lake Havasu** is readable through California and held with a spike
+finding in `admitted_cdec_reservoirs.json`.
+
 
 ## Follow-up: Montana StAGE and Arizona SRP (2026-08-28)
 
@@ -438,6 +653,8 @@ produced a 401 or 403.
     unconfirmed. **The Columbia Basin — the core of USACE's Oregon,
     Washington and Idaho presence — is not reachable through the national
     CWMS Data API today.**
+    *(Corrected 2026-08-29: it is reachable, under the regional office
+    `NWDP`, not the districts. See the follow-up at the top of this file.)*
   - Sacramento District separately runs a legacy HTML report site,
     `https://www.spk-wc.usace.army.mil/`, covering California, Colorado and
     Utah flood-control reservoirs including non-Corps "Section 7" dams

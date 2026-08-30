@@ -1,3 +1,4 @@
+import { drainageCodeAtLevel } from "./data/huc";
 import "@esri/calcite-components/main.css";
 import { setAssetPath as setCalciteAssetPath } from "@esri/calcite-components";
 
@@ -425,14 +426,17 @@ function storageCounties(): StorageCountyChoice[] {
 function placeHoldsArea(code: string): boolean {
   return placeReservoirs().some((reservoir) =>
     (filterState.county === null || reservoir.county_fips === filterState.county)
-      && reservoir.huc6?.startsWith(code));
+      && (reservoir.huc8 ?? reservoir.huc6)?.startsWith(code));
 }
 
 function storageAreaCodes(): Set<string> {
   return new Set(placeReservoirs()
     .filter((reservoir) =>
       filterState.county === null || reservoir.county_fips === filterState.county)
-    .flatMap((reservoir) => reservoir.huc6 ? [reservoir.huc6.slice(0, level)] : []));
+    .flatMap((reservoir) => {
+      const code = drainageCodeAtLevel(reservoir.huc6, reservoir.huc8, level);
+      return code === null ? [] : [code];
+    }));
 }
 
 function storageAreaSelection(): OpeningSelection {
@@ -937,7 +941,8 @@ function renderReservoirList(): void {
  */
 function locationRowsFor(reservoir: Reservoir): { label: string; value: string }[] {
   const path = hydrologicPath(
-    reservoir.huc6, reservoir.huc6_name, hydrologicRosters);
+    reservoir.huc6, reservoir.huc6_name, hydrologicRosters,
+    reservoir.huc8, reservoir.huc8_name);
   const rows = hydrologicPathRows(path);
   const point = coordinateText(reservoir.lat, reservoir.lon);
   return point

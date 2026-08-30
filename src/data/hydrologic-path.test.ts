@@ -29,3 +29,19 @@ describe("hydrologic path", () => {
     expect(hydrologicPath(null, null, ROSTERS)).toEqual([]);
   });
 });
+
+describe("the subbasin part (ADR-103)", () => {
+  it("adds a fourth part when the record carries a subbasin inside its basin", () => {
+    const rosters = { ...ROSTERS, subbasins: [{ huc8: "14010001", name: "Colorado Headwaters" }] };
+    const path = hydrologicPath("140100", "Colorado Headwaters", rosters, "14010001", null);
+    expect(path[3]).toEqual(
+      { level: 8, label: "Subbasin", code: "14010001", name: "Colorado Headwaters" });
+    expect(hydrologicPath("140100", null, undefined, "14010001", "Blue")[3]?.name).toBe("Blue");
+  });
+
+  it("refuses a subbasin that is not inside the basin, or is malformed", () => {
+    expect(hydrologicPath("140100", null, ROSTERS, "14020001", null)).toHaveLength(3);
+    expect(hydrologicPath("140100", null, ROSTERS, "1401000", null)).toHaveLength(3);
+    expect(hydrologicPath("140100", null, ROSTERS, null, null)).toHaveLength(3);
+  });
+});

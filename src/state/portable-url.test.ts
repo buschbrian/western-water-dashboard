@@ -66,10 +66,11 @@ describe("the parameters that travel", () => {
     expect(portableSearch("?areas=140100&leveling=4&stated=UT")).toBe("");
   });
 
-  it("keeps a drought subbasin only for a surface that supports it", () => {
-    const drought = "?state=CO&area=14020001&level=8";
-    expect(portableSearch(drought, 8)).toBe(drought);
-    expect(portableSearch(drought)).toBe("?state=CO&area=140200");
+  it("carries a subbasin and its level whole to every page (ADR-103)", () => {
+    const fine = "?state=CO&area=14020001&level=8";
+    expect(portableSearch(fine)).toBe(fine);
+    // A host that still caps the width coarsens the place and drops the level.
+    expect(portableSearch(fine, 6)).toBe("?state=CO&area=140200");
   });
 });
 

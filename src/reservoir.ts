@@ -142,7 +142,8 @@ async function renderFound(payload: ReservoirPayload,
   children.push(headline, definitionList(view.rows, "detail-rows"));
 
   const location = createLocationFacts(
-    hydrologicPath(reservoir.huc6, reservoir.huc6_name, payload.watersheds ?? {}),
+    hydrologicPath(reservoir.huc6, reservoir.huc6_name, payload.watersheds ?? {},
+      reservoir.huc8, reservoir.huc8_name),
     coordinateText(reservoir.lat, reservoir.lon));
   if (location) children.push(sectionHeading("Location"), location);
 

@@ -57,7 +57,9 @@ function providerCounts(
     cdss: reservoirs.filter((reservoir) => reservoir.source_key === "cdss").length,
     usgs: reservoirs.filter((reservoir) => reservoir.source_key === "usgs").length,
     srp: reservoirs.filter((reservoir) => reservoir.source_key === "srp").length,
-    dnrc: reservoirs.filter((reservoir) => reservoir.source_key === "dnrc").length
+    dnrc: reservoirs.filter((reservoir) => reservoir.source_key === "dnrc").length,
+    cwms: reservoirs.filter((reservoir) => reservoir.source_key === "cwms").length,
+    cap: reservoirs.filter((reservoir) => reservoir.source_key === "cap").length
   };
 }
 
@@ -190,6 +192,18 @@ async function showPublishedData(): Promise<void> {
         : "") +
       (counts.usgs > 0
         ? ` The U.S. Geological Survey measures ${counts.usgs}.`
+        : "") +
+      (counts.srp > 0
+        ? ` The Salt River Project measures ${counts.srp}.`
+        : "") +
+      (counts.dnrc > 0
+        ? ` The Montana Department of Natural Resources and Conservation measures ${counts.dnrc}.`
+        : "") +
+      (counts.cwms > 0
+        ? ` The U.S. Army Corps of Engineers measures ${counts.cwms}.`
+        : "") +
+      (counts.cap > 0
+        ? ` The Central Arizona Project measures ${counts.cap}.`
         : "");
   } catch (error) {
     console.warn("The published data could not be read for the methods page:", error);

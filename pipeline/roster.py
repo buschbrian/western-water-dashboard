@@ -13,6 +13,7 @@ from pathlib import Path
 
 from .constants import (
     ADMITTED_CDEC_RESERVOIRS_PATH, ADMITTED_CDSS_RESERVOIRS_PATH,
+    ADMITTED_CAP_RESERVOIRS_PATH, ADMITTED_CWMS_RESERVOIRS_PATH,
     ADMITTED_DNRC_RESERVOIRS_PATH,
     ADMITTED_RESERVOIRS_PATH, ADMITTED_RISE_RESERVOIRS_PATH,
     ADMITTED_SRP_RESERVOIRS_PATH, ADMITTED_USGS_RESERVOIRS_PATH,
@@ -298,6 +299,72 @@ DNRC_RESERVOIRS = {
 }
 
 
+def load_admitted_cwms_reservoirs(
+    path: Path = ADMITTED_CWMS_RESERVOIRS_PATH,
+) -> dict[str, dict]:
+    """Load the reviewed U.S. Army Corps of Engineers locations (ADR-102).
+
+    Keyed by the Corps' location id under its office, with the whole series
+    name committed beside it: `Location.Parameter.Type.Interval.Duration.
+    Version`. The version suffix says whose number a series is, so a
+    forecast (`FCST`) or a republished Reclamation reading (`USBR`) is
+    refused here rather than discovered on a map. The provider publishes no
+    full level in acre-feet, so every denominator is the dam inventory's
+    and ADR-070's preferred-figure rule never fires for it.
+    """
+    rows = load_admitted_cdec_reservoirs(path)
+    for location, row in rows.items():
+        office, timeseries = row.get("office"), row.get("timeseries")
+        if not isinstance(office, str) or not office \
+                or not isinstance(timeseries, str) \
+                or not timeseries.startswith(f"{location}.") \
+                or timeseries.count(".") != 5:
+            raise ValueError(
+                f"{location}: a Corps reservoir needs its office and a "
+                "six-part series named for its location")
+        version = timeseries.rsplit(".", 1)[1]
+        if "FCST" in version or "USBR" in version:
+            raise ValueError(
+                f"{location}: a forecast or a republished Reclamation series "
+                "is not this provider's own reading")
+    return rows
+
+
+def load_admitted_cap_reservoirs(
+    path: Path = ADMITTED_CAP_RESERVOIRS_PATH,
+) -> dict[str, dict]:
+    """Load the reviewed Central Arizona Project reservoir (ADR-104).
+
+    Keyed by the endpoint path, because the service has no station id and
+    the endpoint is the only identity it offers; the URL is pinned beside
+    it and must end in that key. The provider publishes no full level in
+    acre-feet, so every denominator is the dam inventory's.
+    """
+    rows = load_admitted_cdec_reservoirs(path)
+    for key, row in rows.items():
+        url = row.get("endpoint_url")
+        if not isinstance(url, str) or not url.startswith("https://") \
+                or not url.rstrip("/").endswith(f"/{key}"):
+            raise ValueError(f"{key}: a CAP reservoir needs an https endpoint named for its key")
+    return rows
+
+
+ADMITTED_CAP_RESERVOIRS = load_admitted_cap_reservoirs()
+CAP_RESERVOIRS = {
+    key: (row["name"], row["lat"], row["lon"],
+          row["capacity"]["capacity_af"], row["cadence"])
+    for key, row in ADMITTED_CAP_RESERVOIRS.items()
+}
+
+
+ADMITTED_CWMS_RESERVOIRS = load_admitted_cwms_reservoirs()
+CWMS_RESERVOIRS = {
+    location: (row["name"], row["lat"], row["lon"],
+               row["capacity"]["capacity_af"], row["cadence"])
+    for location, row in ADMITTED_CWMS_RESERVOIRS.items()
+}
+
+
 ADMITTED_RESERVOIRS = load_admitted_reservoirs()
 AWDB_RESERVOIRS = {
     **BASE_AWDB_RESERVOIRS,
@@ -318,7 +385,8 @@ AWDB_RESERVOIRS = {
 ALL_RESERVOIR_IDS = (set(RESERVOIRS) | set(AWDB_RESERVOIRS)
                      | set(CDEC_RESERVOIRS) | set(CDSS_RESERVOIRS)
                      | set(USGS_RESERVOIRS) | set(SRP_RESERVOIRS)
-                     | set(DNRC_RESERVOIRS))
+                     | set(DNRC_RESERVOIRS) | set(CWMS_RESERVOIRS)
+                     | set(CAP_RESERVOIRS))
 
 #: What each station is called, by that same identity. One place builds it, so
 #: a label and its station cannot come apart.
@@ -330,6 +398,8 @@ RESERVOIR_NAMES = {
     **{station: entry[0] for station, entry in USGS_RESERVOIRS.items()},
     **{station: entry[0] for station, entry in SRP_RESERVOIRS.items()},
     **{station: entry[0] for station, entry in DNRC_RESERVOIRS.items()},
+    **{station: entry[0] for station, entry in CWMS_RESERVOIRS.items()},
+    **{station: entry[0] for station, entry in CAP_RESERVOIRS.items()},
 }
 
 ALL_RESERVOIR_NAMES = set(RESERVOIR_NAMES.values())
@@ -368,4 +438,8 @@ def load_capacities() -> dict[str, dict]:
            for station, row in ADMITTED_SRP_RESERVOIRS.items()},
         **{station: row["capacity"]
            for station, row in ADMITTED_DNRC_RESERVOIRS.items()},
+        **{station: row["capacity"]
+           for station, row in ADMITTED_CWMS_RESERVOIRS.items()},
+        **{station: row["capacity"]
+           for station, row in ADMITTED_CAP_RESERVOIRS.items()},
     }

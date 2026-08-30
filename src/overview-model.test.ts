@@ -233,15 +233,20 @@ describe("modern overview model", () => {
     expect(trend[trend.length - 1]?.month).toBe("2026-08");
   });
 
+  /* Full-width codes because the level decides the width since ADR-103:
+   * `drainageCodeAtLevel` refuses a code shorter than the level it is asked
+   * for, rather than slicing a one-character code down to itself and
+   * offering it as a basin. The subject here is still deduplication and
+   * alphabetical order. */
   it("provides unique alphabetized watershed choices", () => {
     const reservoirs = [
-      reservoir({ huc6: "2", huc6_name: "Zion" }),
-      reservoir({ huc6: "1", huc6_name: "Bear" }),
-      reservoir({ huc6: "2", huc6_name: "Zion" }),
+      reservoir({ huc6: "160200", huc6_name: "Zion" }),
+      reservoir({ huc6: "160100", huc6_name: "Bear" }),
+      reservoir({ huc6: "160200", huc6_name: "Zion" }),
       reservoir({ huc6: null, huc6_name: null })
     ];
     expect(watershedOptions(reservoirs)).toEqual([
-      { code: "1", label: "Bear" }, { code: "2", label: "Zion" }
+      { code: "160100", label: "Bear" }, { code: "160200", label: "Zion" }
     ]);
   });
 });

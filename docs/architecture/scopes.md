@@ -43,15 +43,20 @@ reservoirs too small to point at. That literal equals the frozen oracle's own
 the opening view is carried by `src/data/opening-scope.ts` and the first-visit
 chooser instead — `unionOfAreaBoxes` over whatever place a reader picked.
 
-## Three shared levels, and a drought-only fourth (ADR-064, ADR-073, ADR-088)
+## Four shared levels (ADR-064, ADR-073, ADR-088, ADR-103)
 
-HUC-6 is the default; HUC-4 and HUC-2 are the shared alternatives. Storage,
-snow and drought publish figures at those three levels. Drought also publishes
-HUC-8 subbasins through its own `drought_scopes` offer. Storage and snow do not
-offer HUC-8 until each can put an honest figure and interface behind it.
-Drought coverage is computed per level; storage regroups on `huc6[:level]`,
-exact because codes nest; snow regroups from *sites* with the pipeline's rule,
-never by averaging the published basin means.
+HUC-6 is the default; HUC-4, HUC-2 and HUC-8 are the alternatives, and every
+surface offers all four. Drought had HUC-8 first (ADR-088) because its roster
+of measurable areas is the published roster itself; storage and snow followed
+(ADR-103) once every reservoir and every snow site carried its own eight-digit
+assignment, `huc8`, beside its `huc6`. Drought coverage is computed per level;
+storage regroups on `huc6[:level]` for anything coarser than the basin, exact
+because codes nest, and on each record's own `huc8` for subbasins, because a
+finer code is a prefix of nothing (`drainageCodeAtLevel` in `src/data/huc.ts`
+is the one place that answers it); snow regroups from *sites* with the
+pipeline's rule and its reporting floor, never by averaging the published
+basin means. `drought_scopes` is still published beside `drawn_scopes` and no
+longer differs from it.
 
 **A name is a figure too.** Each coarser level needs a roster published beside
 the numbers, or a picker labels its areas by code — the snow region picker read
@@ -70,9 +75,8 @@ states and `data.html` documents. Absent means basins; a link never carries
 `level=6`. Changing it is a **navigation**, not a re-render: the level changes
 which files a page fetches and every figure computed from them, so the control
 takes the path a shared link already takes — `location.replace`, never push.
-An HUC-8 drought link stays HUC-8 when it moves to drought or methods. A link
-to storage or snow coarsens an eight-digit place to its enclosing basin and
-drops the unsupported level. The control is appended when `reference.json` resolves rather than written into
+An eight-digit place and `?level=8` travel whole between every page since
+ADR-103; nothing coarsens them any more. The control is appended when `reference.json` resolves rather than written into
 a template, because which levels are on offer is the export's answer
 (`drawn_scopes`), and it is built at the Calcite scale of the controls beside it.
 

@@ -87,7 +87,9 @@ export const RESERVOIR_GROUPS: readonly ApiFieldGroup[] = [
     f("usgs", "reservoirs", "Records from the U.S. Geological Survey."),
     f("srp", "reservoirs", "Records from the Salt River Project."),
     f("dnrc", "reservoirs",
-      "Records from the Montana Department of Natural Resources and Conservation.")
+      "Records from the Montana Department of Natural Resources and Conservation."),
+    f("cwms", "reservoirs", "Records from the U.S. Army Corps of Engineers."),
+    f("cap", "reservoirs", "Records from the Central Arizona Project.")
   ]},
   { id: "reservoir-counties", title: "County summary", path: "counties", fields: [
     f("source", "text", "County boundary publisher."),
@@ -141,7 +143,9 @@ export const RESERVOIR_GROUPS: readonly ApiFieldGroup[] = [
     f("subregions", "array",
       "Four-digit subregions the drainage areas roll up into, with their names."),
     f("regions", "array",
-      "Two-digit regions they roll up into, with their names.")
+      "Two-digit regions they roll up into, with their names."),
+    f("subbasins", "array",
+      "Eight-digit subbasins the reservoirs' own subbasin codes name, with their names.")
   ]},
   { id: "reservoir-subregion", title: "Subregion", path: "watersheds.subregions[]",
     fields: [
@@ -229,6 +233,10 @@ export const RESERVOIR_GROUPS: readonly ApiFieldGroup[] = [
       + "area that fills the reservoir: water can arrive from many areas upstream, and "
       + "in some cases from another river system."),
     f("huc6_name", "text", "Name of the drainage area holding the dam or outlet."),
+    f("huc8", "identifier",
+      "Eight-digit code of the subbasin holding the same point. Null when no "
+      + "subbasin outline holds it; absent in a payload written before it was published.", true),
+    f("huc8_name", "text", "Name of that subbasin.", true),
     f("huc_assignment_point", "longitude, latitude", "Point used for drainage-area assignment."),
     f("huc_assignment_source", "text", "Evidence used for the assignment point."),
     f("state", "state code", "State holding the published point. One state."),
@@ -288,6 +296,9 @@ export const SNOW_GROUPS: readonly ApiFieldGroup[] = [
     f("regions", "array",
       "The same one size larger, for a reader who asks for regions. Codes " +
       "are the first two digits of each site's own drainage-area code."),
+    f("subbasins", "array",
+      "Names of the subbasins the sites fall in, for a reader who asks for " +
+      "that grouping. Codes are each site's own eight-digit subbasin code."),
     f("series_dates", "array", "The water-year calendar the sites index into, ascending, written once."),
     f("source", "web address", "Provider service address."),
     f("site_count", "sites", "Number of published monitoring sites."),
@@ -343,6 +354,8 @@ export const SNOW_GROUPS: readonly ApiFieldGroup[] = [
     f("huc6", "identifier", "Verified six-digit drainage-area code."),
     f("huc6_name", "text", "Verified six-digit drainage-area name."),
     f("provider_huc6", "identifier", "Drainage-area code reported by the provider."),
+    f("huc8", "identifier", "Eight-digit subbasin code holding the station, or null.", true),
+    f("huc8_name", "text", "Name of that subbasin.", true),
     f("latest_date", "date", "Newest published site reading."),
     f("late", "true or false", "Whether the newest reading is late."),
     f("normal_timing", "object", "Usual snow onset, high point and melt-out dates."),
@@ -467,6 +480,10 @@ export const REFERENCE_GROUPS: readonly ApiFieldGroup[] = [
     f("admitted_dnrc_reservoirs", "file name",
       "Reviewed Montana Department of Natural Resources and Conservation " +
       "admitted-reservoir source file."),
+    f("admitted_cwms_reservoirs", "file name",
+      "Reviewed U.S. Army Corps of Engineers admitted-reservoir source file."),
+    f("admitted_cap_reservoirs", "file name",
+      "Reviewed Central Arizona Project admitted-reservoir source file."),
     f("dam_points", "object", "Summary of reviewed dam coordinates."),
     f("denominator", "text", "Rule used to choose the published full level."),
     f("note", "text", "Capacity review warning."),

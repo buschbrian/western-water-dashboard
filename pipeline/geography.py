@@ -127,6 +127,16 @@ def attach_watersheds(records: list[dict]) -> dict:
               "publishing without HUC fields")
         return {"unit_count": 0, "assigned": 0, "unassigned": len(records)}
 
+    # The subbasins beside the basins (ADR-103). Their absence is the same
+    # non-fatal fault as the basins' absence above: the refresh publishes
+    # without the finer field rather than losing the day.
+    try:
+        fine_units = huc.load_units_at(8)
+    except (OSError, ValueError, KeyError) as exc:
+        print(f"WARNING: no subbasin boundaries ({type(exc).__name__}: {exc}); "
+              "publishing without huc8 fields")
+        fine_units = None
+
     dams = dam_points()
     unassigned = []
     for record in records:
@@ -143,7 +153,8 @@ def attach_watersheds(records: list[dict]) -> dict:
         record.update(huc.describe(
             lat, lon, units, station=str(record.get("source_station_id")),
             assignment_point=dam,
-            source="nid_dam_point" if dam else "published_point"))
+            source="nid_dam_point" if dam else "published_point",
+            fine_units=fine_units))
         if record["huc6"] is None:
             unassigned.append(record["name"])
 
@@ -154,6 +165,19 @@ def attach_watersheds(records: list[dict]) -> dict:
           f"assigned across {len(units)} drainage areas; "
           f"{intersects_utah} waterbodies intersect Utah; "
           f"{by_dam} assigned by their dam")
+    # The finer level is counted too (ADR-103). A point can sit inside a
+    # basin and outside every subbasin: the two boundary files are
+    # generalized separately, so two subbasins can fail to meet across a few
+    # hundred metres of a river the basin outline runs straight through.
+    # Nothing is guessed for those -- a reservoir with no subbasin is absent
+    # from every subbasin figure and present in every coarser one -- but the
+    # absence is said out loud rather than left for a reader to find.
+    without_subbasin = [r.get("name") for r in records if not r.get("huc8")]
+    fine_units = len({r["huc8"] for r in records if r.get("huc8")})
+    print(f"Subbasins:  {len(records) - len(without_subbasin)}/{len(records)} "
+          f"reservoirs assigned across {fine_units} subbasins")
+    if without_subbasin:
+        print("  no subbasin matched: " + ", ".join(sorted(without_subbasin)))
     if unassigned:
         # Not a failure. A reservoir outside every unit that touches Utah is
         # a real possibility as the inventory grows east, and the honest

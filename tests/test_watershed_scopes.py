@@ -71,15 +71,16 @@ def test_the_coarser_western_scope_is_published_beside_the_drawn_one():
     assert DEFAULT_SCOPE != "west-huc4"
 
 
-def test_the_finest_western_scope_is_published_for_drought_only():
-    """HUC-8 metadata travels once, while only drought offers figures at it."""
+def test_the_finest_western_scope_is_drawn_on_every_surface():
+    """HUC-8 metadata travels once, and every surface offers it (ADR-103)."""
     scope = get_scope("west-huc8")
 
     assert scope.level == 8
     assert scope.output == "data/watersheds/west-huc8.geojson"
     assert scope.published
-    assert 8 not in DRAWN_SCOPES
-    assert DROUGHT_DRAWN_SCOPES[8] == "west-huc8"
+    assert DRAWN_SCOPES[8] == "west-huc8"
+    # Kept as a published field of its own; it no longer differs.
+    assert DROUGHT_DRAWN_SCOPES == DRAWN_SCOPES
     # Banded rather than pinned: nine regions of the Watershed Boundary
     # Dataset are revised more often than one.
     assert scope.expected_count is None

@@ -652,3 +652,182 @@ def fetch_dnrc_series(sensor_id: str, start: str, end: str) -> pd.DataFrame:
     frame["date"] = frame["observed_at"].dt.normalize()
     frame = frame[(frame["storage_af"] >= 0) & (frame["date"] <= local_today())]
     return reduce_to_daily_last(frame)
+
+
+# --- U.S. Army Corps of Engineers: CWMS Data API -------------------------
+#
+# One national service, many offices. The Columbia Basin is published under
+# the Northwestern Division's Pacific Northwest *region* (`NWDP`), not its
+# districts, which is why the 2026-08-20 survey found it empty (see
+# docs/WESTERN-SOURCE-CANDIDATES.md, the 2026-08-29 follow-up). A series is
+# named `Location.Parameter.Type.Interval.Duration.Version`, and the roster
+# commits the whole name beside the office: the version suffix says whose
+# number it is, and choosing one by response order would let a published
+# figure change with nobody deciding it should.
+CWMS_BASE_URL = "https://cwms-data.usace.army.mil/cwms-data"
+CWMS_TIMESERIES_URL = f"{CWMS_BASE_URL}/timeseries"
+CWMS_CATALOG_URL = f"{CWMS_BASE_URL}/catalog/timeseries"
+CWMS_LOCATIONS_URL = f"{CWMS_BASE_URL}/locations"
+#: The API versions its JSON by the Accept header; version 2 is the shape
+#: with `values` as `[epoch_ms, value, quality]` rows and a `next-page` token.
+CWMS_ACCEPT = "application/json;version=2"
+CWMS_UNIT = "ac-ft"
+CWMS_PAGE_SIZE = 5000
+#: Years per request. The service answers an eleven-year hourly range in
+#: about three minutes and refuses a thirty-year one outright -- 408, 500
+#: and 400 across nine of the twelve Columbia Basin locations when the
+#: normals builder asked for 1991 through 2020, while the three locations
+#: whose chosen series is daily answered the same range without complaint.
+#: The limit is the number of readings, not the number of years, so the
+#: range is split rather than the request retried: a refusal that large is
+#: an answer about what the service will do, and asking again is asking the
+#: same impossible question.
+CWMS_WINDOW_YEARS = 5
+
+
+def _get_cwms_json(url: str, params: dict):
+    for attempt in range(RETRY_ATTEMPTS):
+        try:
+            response = requests.get(url, params=params, timeout=120,
+                                    headers={"Accept": CWMS_ACCEPT})
+            response.raise_for_status()
+            return response.json()
+        except (requests.exceptions.RequestException, ValueError):
+            if attempt == RETRY_ATTEMPTS - 1:
+                raise
+            time.sleep(RETRY_BACKOFF_SECONDS * 2**attempt)
+    raise AssertionError("unreachable")
+
+
+def fetch_cwms_series(office: str, timeseries: str, start: str, end: str) -> pd.DataFrame:
+    """Fetch one Corps storage series in acre-feet and keep each day's last reading.
+
+    The service stamps every value with an instant in UTC and names the
+    series' own time zone in the response. A day is the day the water was
+    measured where it stands (ADR-100 and the calendar rule in
+    `pipeline/AGENTS.md`), so the instant is converted to that zone before
+    the date is read from it; a reading at 23:00 Pacific belongs to that
+    evening, not to the next morning in Greenwich.
+
+    The range is asked for in windows of `CWMS_WINDOW_YEARS` rather than in
+    one request, because an hourly series will not answer a range as long as
+    the standard climate period.
+
+    Nulls are gaps and are dropped. A response whose office, name or unit is
+    not the one asked for is refused rather than read, because the roster
+    pins all three and a silent substitution would publish someone else's
+    number under this reservoir's name.
+    """
+    begin_day = dt.datetime.strptime(start, "%Y%m%d")
+    final_day = dt.datetime.strptime(end, "%Y%m%d")
+    rows: list[dict] = []
+    zone = None
+    window_start = begin_day
+    while window_start <= final_day:
+        window_end = min(
+            window_start + dt.timedelta(days=365 * CWMS_WINDOW_YEARS), final_day)
+        params: dict = {
+            "office": office, "name": timeseries, "unit": CWMS_UNIT,
+            "begin": window_start.strftime("%Y-%m-%dT00:00:00Z"),
+            "end": window_end.strftime("%Y-%m-%dT23:59:59Z"),
+            "page-size": CWMS_PAGE_SIZE,
+        }
+        pages = 0
+        while pages < MAX_PAGES:
+            payload = _get_cwms_json(CWMS_TIMESERIES_URL, params)
+            pages += 1
+            if payload.get("office-id") != office or payload.get("name") != timeseries:
+                raise ValueError(
+                    f"CWMS answered for a different series than {office}/{timeseries}")
+            if payload.get("units") != CWMS_UNIT:
+                raise ValueError(
+                    f"CWMS unit changed for {timeseries}: {payload.get('units')!r}")
+            zone = zone or payload.get("time-zone")
+            for value in payload.get("values") or []:
+                if not isinstance(value, list) or len(value) < 2 or value[1] is None:
+                    continue
+                rows.append({"epoch_ms": value[0], "storage_af": value[1]})
+            token = payload.get("next-page")
+            if not token:
+                break
+            params = {**params, "page": token}
+        else:
+            raise RuntimeError(f"CWMS pagination exceeded {MAX_PAGES} pages")
+        window_start = window_end + dt.timedelta(days=1)
+    if not rows:
+        return pd.DataFrame({"date": pd.Series(dtype="datetime64[ns]"),
+                             "storage_af": pd.Series(dtype="float64")})
+    frame = pd.DataFrame(rows)
+    observed = pd.to_datetime(frame["epoch_ms"], unit="ms", utc=True, errors="coerce")
+    if zone:
+        try:
+            observed = observed.dt.tz_convert(zone)
+        except (TypeError, ValueError):
+            pass
+    frame["observed_at"] = observed.dt.tz_localize(None)
+    frame["storage_af"] = pd.to_numeric(frame["storage_af"], errors="coerce")
+    frame = frame.dropna(subset=["observed_at", "storage_af"])
+    frame["date"] = frame["observed_at"].dt.normalize()
+    # Bounded by what the caller asked for, not by what the windows returned.
+    # The instants are stamped in UTC and read in the series' own zone, so
+    # the first reading of a requested range belongs to the evening before
+    # it: asking for 1991 through 2020 otherwise puts one reading from 1990
+    # into a standard-period normal.
+    frame = frame[(frame["date"] >= pd.Timestamp(begin_day))
+                  & (frame["date"] <= pd.Timestamp(final_day))
+                  & (frame["storage_af"] >= 0) & (frame["date"] <= local_today())]
+    return reduce_to_daily_last(frame)
+
+
+# --- Central Arizona Project: Lake Pleasant operations endpoint ------------
+#
+# One reservoir, one endpoint, one current record (ADR-104). The service
+# behind CAP's public Lake Pleasant graphic answers a bare GET with the
+# present elevation, volume in acre-feet, surface area and a record time; it
+# holds no history and addresses nothing by date or id, so the pipeline keeps
+# what it has read in the dense-history cache and the series grows from the
+# day of admission. Identity is the endpoint itself: the roster pins its
+# path, and a response missing the pinned fields is refused rather than read.
+CAP_BASE_URL = "https://azr-prod-rsg-dmz-app-waterqualityweb.azurewebsites.net"
+CAP_LAKE_PLEASANT_URL = f"{CAP_BASE_URL}/api/opslakepleasant"
+#: CAP stamps `RecordTime` in Arizona's own clock, which does not observe
+#: daylight saving; the zone name says exactly that.
+CAP_TIME_ZONE = "America/Phoenix"
+
+
+def _get_cap_json(url: str) -> dict:
+    for attempt in range(RETRY_ATTEMPTS):
+        try:
+            response = requests.get(url, timeout=60, headers={"Accept": "application/json"})
+            response.raise_for_status()
+            payload = response.json()
+            if not isinstance(payload, dict):
+                raise ValueError("CAP answered something other than one record")
+            return payload
+        except (requests.exceptions.RequestException, ValueError):
+            if attempt == RETRY_ATTEMPTS - 1:
+                raise
+            time.sleep(RETRY_BACKOFF_SECONDS * 2**attempt)
+    raise AssertionError("unreachable")
+
+
+def fetch_cap_reading(url: str = CAP_LAKE_PLEASANT_URL) -> pd.DataFrame:
+    """The one current CAP storage reading, as a one-row daily frame.
+
+    The volume field is the reading and the record time is its date, read
+    in Arizona's clock. A record with no volume, a volume that is not a
+    number, or a time that does not parse is a changed service rather than
+    a gap, and is refused so the roster's identity check fails loudly.
+    """
+    payload = _get_cap_json(url)
+    for field in ("LP_Volume", "RecordTime", "LP_Elev", "LP_PercentFull"):
+        if field not in payload:
+            raise ValueError(f"CAP record is missing {field}")
+    volume = pd.to_numeric(payload.get("LP_Volume"), errors="coerce")
+    observed = pd.to_datetime(payload.get("RecordTime"), errors="coerce")
+    if pd.isna(volume) or pd.isna(observed) or volume < 0:
+        raise ValueError("CAP record carries no usable volume or time")
+    frame = pd.DataFrame({"observed_at": [observed], "storage_af": [float(volume)]})
+    frame["date"] = frame["observed_at"].dt.normalize()
+    frame = frame[frame["date"] <= local_today()]
+    return reduce_to_daily_last(frame)

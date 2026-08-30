@@ -73,7 +73,9 @@ export function matchesFilter(reservoir: Reservoir, state: FilterState): boolean
    * disagree on a code of an odd width: the clause dropped it and greyed
    * nothing, while this prefix-matched five characters and dimmed the list. */
   const code = drainageAreaCode(state);
-  if (code !== null && !coversDrainageArea(code, reservoir.huc6 ?? "")) {
+  /* Against the finest code the record carries (ADR-103): a subbasin code
+   * begins with its basin's, so one prefix test answers every width. */
+  if (code !== null && !coversDrainageArea(code, reservoir.huc8 ?? reservoir.huc6 ?? "")) {
     return false;
   }
   if (state.storageClass === null) return true;

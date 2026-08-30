@@ -1,3 +1,4 @@
+import { drainageCodeAtLevel } from "./data/huc";
 import type { Reservoir } from "./types";
 import { monthKeys, monthLabel, monthlyRollup } from "./data/months";
 import type { OpeningRosters, OpeningSelection } from "./data/opening-scope";
@@ -360,16 +361,23 @@ export function watershedOptions(
      * record carries its basin's name and not its subregion's. That roster is
      * `watersheds.subregions` in the same payload (ADR-060, ADR-064); an area
      * it does not name is labelled by its code. */
-    const code = reservoir.huc6.slice(0, level);
+    const code = drainageCodeAtLevel(reservoir.huc6, reservoir.huc8, level);
+    if (code === null) continue;
     const label = code === reservoir.huc6
       ? reservoir.huc6_name ?? code
-      : names.get(code) ?? code;
-    /* At the finest level each basin is grouped under the subregion it
-     * belongs to, so the hierarchy shows in one control rather than being
-     * implied by a second select beside it. Only when the roster can name
-     * the subregion: a raw four-digit heading says nothing a reader reads. */
-    const subregion = level === 6 ? names.get(reservoir.huc6.slice(0, 4)) : undefined;
-    labels.set(code, subregion ? { label, group: subregion } : { label });
+      : code === reservoir.huc8
+        ? reservoir.huc8_name ?? names.get(code) ?? code
+        : names.get(code) ?? code;
+    /* At the finer levels each area is grouped under its parent, so the
+     * hierarchy shows in one control rather than being implied by a second
+     * select beside it. Only when the parent can be named: a raw four-digit
+     * heading says nothing a reader reads. Basins group under their
+     * subregion; subbasins (ADR-103) under their basin, whose name the
+     * record itself carries. */
+    const group = level === 6 ? names.get(reservoir.huc6.slice(0, 4))
+      : level === 8 ? reservoir.huc6_name ?? undefined
+        : undefined;
+    labels.set(code, group ? { label, group } : { label });
   }
   return [...labels].map(([code, choice]) => ({ code, ...choice }))
     .sort((a, b) =>
@@ -390,11 +398,16 @@ export function watershedOptions(
 export function overviewDrainageRosters(
   reservoirs: readonly Reservoir[],
   regions: readonly { huc2: string; name: string }[],
-  subregions: readonly { huc4: string; name: string }[]
+  subregions: readonly { huc4: string; name: string }[],
+  subbasinNames: readonly { huc8: string; name: string }[] = []
 ): OpeningRosters {
   const regionNames = new Map(regions.map((entry) => [entry.huc2, entry.name]));
   const subregionNames = new Map(subregions.map((entry) => [entry.huc4, entry.name]));
+  const subbasinRoster = new Map(subbasinNames.map((entry) => [entry.huc8, entry.name]));
   const basins = new Map<string, { name: string; states: Set<string> }>();
+  /* Occupied subbasins too (ADR-103), from each reservoir's own `huc8`:
+   * the one tier that cannot be rolled up from the basins below. */
+  const subbasins = new Map<string, { name: string; states: Set<string> }>();
 
   for (const reservoir of reservoirs) {
     if (!reservoir.huc6) continue;
@@ -412,6 +425,14 @@ export function overviewDrainageRosters(
         : reservoir.state ? [reservoir.state] : [];
     for (const state of states) entry.states.add(state);
     basins.set(reservoir.huc6, entry);
+    if (reservoir.huc8) {
+      const fine = subbasins.get(reservoir.huc8) ?? {
+        name: reservoir.huc8_name || subbasinRoster.get(reservoir.huc8) || reservoir.huc8,
+        states: new Set<string>()
+      };
+      for (const state of states) fine.states.add(state);
+      subbasins.set(reservoir.huc8, fine);
+    }
   }
 
   const areas = [...basins].sort(([a], [b]) => a.localeCompare(b))
@@ -440,7 +461,12 @@ export function overviewDrainageRosters(
     regions: rollup(2, regionNames),
     subregions: rollup(4, subregionNames),
     areas,
-    subbasins: []
+    subbasins: [...subbasins].sort(([a], [b]) => a.localeCompare(b))
+      .map(([huc6, entry]) => ({
+        huc6,
+        name: entry.name,
+        states: [...entry.states].sort().join(",")
+      }))
   };
 }
 

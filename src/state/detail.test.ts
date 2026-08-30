@@ -59,7 +59,9 @@ describe("the details a reader sees", () => {
       cdss: "Colorado Division of Water Resources",
       usgs: "U.S. Geological Survey",
       srp: "Salt River Project",
-      dnrc: "Montana Department of Natural Resources and Conservation"
+      dnrc: "Montana Department of Natural Resources and Conservation",
+      cwms: "U.S. Army Corps of Engineers",
+      cap: "Central Arizona Project"
     };
     for (const reservoir of reservoirs) {
       expect(providerName(reservoir)).toBe(agencies[reservoir.source_key]);

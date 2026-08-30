@@ -239,13 +239,16 @@ ROSTER_SCOPE = DEFAULT_SCOPE
 # fifteenth of the drawn outlines and a fifteenth of the drought rows, and
 # every figure behind them is a sum or a mean over a coarser key that the
 # codes already nest into.
-DRAWN_SCOPES = {6: "west-huc6", 4: "west-huc4", 2: "west-huc2"}
+DRAWN_SCOPES = {8: "west-huc8", 6: "west-huc6", 4: "west-huc4", 2: "west-huc2"}
 
-# Drought can publish the existing coverage method at HUC-8 without implying
-# that storage or snow can answer at the same level (ADR-088). Keeping this
-# separate is what lets `reference.json` publish the roster once while each
-# surface offers only levels with figures behind them.
-DROUGHT_DRAWN_SCOPES = {**DRAWN_SCOPES, 8: "west-huc8"}
+# HUC-8 joined the shared offer in ADR-103. Drought was first (ADR-088)
+# because its roster of measurable areas is the published roster itself;
+# storage and snow followed once every reservoir and every snow site carried
+# an eight-digit assignment of its own (`huc8`), so a subbasin figure is a
+# regrouping of records at their own finest key and never a slice of a
+# six-digit code. The drought map is kept as a name because the reference
+# export publishes it as a field of its own; it no longer differs.
+DROUGHT_DRAWN_SCOPES = dict(DRAWN_SCOPES)
 
 
 def get_scope(name: str) -> WatershedScope:

@@ -66,7 +66,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
 from refresh_reservoirs import (  # noqa: E402
-    ADMITTED_USGS_RESERVOIRS, CANONICAL_YEAR_DAYS, DNRC_STAGE_URL,
+    ADMITTED_CWMS_RESERVOIRS, ADMITTED_USGS_RESERVOIRS, CANONICAL_YEAR_DAYS,
+    CAP_BASE_URL, CWMS_BASE_URL, DNRC_STAGE_URL, fetch_cwms_series,
     SEASONAL_WINDOW_DAYS, annual_seasonal_values,
     fetch_awdb_series, fetch_cdss_series, fetch_cdec_series,
     fetch_usgs_series,
@@ -202,6 +203,8 @@ SOURCES = {
     "usgs": "https://api.waterdata.usgs.gov/",
     "srp": "https://streamflow.watershedconnection.com/",
     "dnrc": DNRC_STAGE_URL,
+    "cwms": CWMS_BASE_URL,
+    "cap": CAP_BASE_URL,
 }
 
 
@@ -227,10 +230,13 @@ def fetch_period(reservoir: dict) -> pd.DataFrame:
         row = ADMITTED_USGS_RESERVOIRS[reservoir["source_station_id"]]
         return fetch_usgs_series(
             reservoir["source_station_id"], row["statistic_id"], start, end)
+    if reservoir["source_key"] == "cwms":
+        row = ADMITTED_CWMS_RESERVOIRS[reservoir["source_station_id"]]
+        return fetch_cwms_series(row["office"], row["timeseries"], start, end)
     # These reviewed sources begin after the closed 1991-2020 period. An
     # explicit empty frame records that no climate normal exists without
     # making a request the provider cannot answer or inventing a proxy.
-    if reservoir["source_key"] in {"srp", "dnrc"}:
+    if reservoir["source_key"] in {"srp", "dnrc", "cap"}:
         return pd.DataFrame({
             "date": pd.Series(dtype="datetime64[ns]"),
             "storage_af": pd.Series(dtype="float64"),

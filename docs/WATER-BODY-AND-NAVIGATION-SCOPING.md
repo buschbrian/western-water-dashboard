@@ -6,8 +6,17 @@
 > and current architecture is [`docs/architecture/`](architecture/README.md).
 > See [`docs/history/README.md`](history/README.md).
 
-Status: Scoping, written 2026-08-21. **Four of the five items are closed;
-item 5 remains open.** Item 3, the nested drainage and county menus, shipped
+Status: Scoping, written 2026-08-21. **All five items are now closed.**
+Item 5's six-step next pass was worked on 2026-08-29 and 2026-08-30 and is
+recorded where this document said it should be, in
+[`WESTERN-SOURCE-CANDIDATES.md`](WESTERN-SOURCE-CANDIDATES.md): the count was
+measured, the deduplication ran by dam identity, the capacity question was
+answered from the dam inventory for every candidate, the legacy-service
+retirement was settled by ADR-098, Nevada was searched properly once, and the
+Corps of Engineers admission that closes Idaho, Oregon and Washington is
+ADR-102. What is left in those states is named with its finding in
+`admitted_cwms_reservoirs.json` rather than being an unsearched gap. The four
+items below closed earlier, as recorded here. Item 3, the nested drainage and county menus, shipped
 the same day, together with the cheap fix this document asked for first --
 narrowing the county list by the chosen state. That presentation was itself
 superseded on 2026-08-23, when

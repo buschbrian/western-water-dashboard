@@ -372,11 +372,13 @@ def test_awdb_inventory_has_traceable_capacity_and_cadence():
     assert set(usgs_document["withheld"]) == {
         "10288500", "10297000", "10348800", "13087900",
     }, "every unresolved USGS candidate must keep its finding"
-    # 387 after the California re-audit, then four additive SRP reservoirs
-    # and one in-scope DNRC reservoir.
-    assert len(R.ALL_RESERVOIR_IDS) == 392
+    # 387 after the California re-audit, then four additive SRP reservoirs,
+    # one in-scope DNRC reservoir, twelve Columbia Basin locations from the
+    # Corps of Engineers (ADR-102) and Lake Pleasant from the Central
+    # Arizona Project (ADR-104).
+    assert len(R.ALL_RESERVOIR_IDS) == 405
     assert not (set(R.RESERVOIRS) & set(R.AWDB_RESERVOIRS))
-    # Seven providers, seven disjoint sets of station ids. An id in two of
+    # Nine providers, nine disjoint sets of station ids. An id in two of
     # them is one reservoir fetched twice and summed twice (ADR-069).
     assert not (set(R.CDEC_RESERVOIRS)
                 & (set(R.RESERVOIRS) | set(R.AWDB_RESERVOIRS)))
@@ -385,10 +387,19 @@ def test_awdb_inventory_has_traceable_capacity_and_cadence():
                    | set(R.CDEC_RESERVOIRS)))
     assert len(R.SRP_RESERVOIRS) == 4
     assert len(R.DNRC_RESERVOIRS) == 1
+    assert len(R.CWMS_RESERVOIRS) == 12
+    assert len(R.CAP_RESERVOIRS) == 1
+    # Every Corps location the audit kept out names its finding, and the
+    # ones already published through another provider are listed as
+    # deduplicated rather than silently dropped (ADR-069).
+    cwms_document = json.loads(R.ADMITTED_CWMS_RESERVOIRS_PATH.read_text())
+    assert len(cwms_document["withheld"]) == 24
+    assert all(entry["finding"] for entry in cwms_document["withheld"].values())
+    assert len(cwms_document["deduplicated"]) == 73
     provider_ids = [set(rows) for rows in (
         R.RESERVOIRS, R.AWDB_RESERVOIRS, R.CDEC_RESERVOIRS,
         R.CDSS_RESERVOIRS, R.USGS_RESERVOIRS, R.SRP_RESERVOIRS,
-        R.DNRC_RESERVOIRS)]
+        R.DNRC_RESERVOIRS, R.CWMS_RESERVOIRS, R.CAP_RESERVOIRS)]
     assert sum(map(len, provider_ids)) == len(set().union(*provider_ids))
     for triplet, (name, lat, lon, capacity, cadence) in R.AWDB_RESERVOIRS.items():
         assert name
@@ -1114,10 +1125,9 @@ def test_one_export_contains_capacity_and_every_visualization_geography():
     assert watersheds["scopes"]["utah-connected"]["unit_count"] == 14
     assert watersheds["scopes"]["upper-colorado"]["unit_count"] == 10
     assert watersheds["drawn_scopes"] == {
-        "2": "west-huc2", "4": "west-huc4", "6": "west-huc6"}
-    assert watersheds["drought_scopes"] == {
         "2": "west-huc2", "4": "west-huc4", "6": "west-huc6",
         "8": "west-huc8"}
+    assert watersheds["drought_scopes"] == watersheds["drawn_scopes"]
 
 
 def test_the_committed_reference_export_matches_the_files_it_is_built_from():
@@ -1950,3 +1960,126 @@ def test_monthly_history_counts_the_years_behind_each_normal():
     # A December normal draws on December 2019 alone.
     assert june["normal_years"] == 1
     assert june["normal_af"] == 2019.0
+
+
+def test_cwms_reads_each_days_last_reading_in_the_series_own_zone(monkeypatch):
+    """The service stamps instants in UTC and names the series' zone. A
+    reading at 23:00 Pacific on the 28th is the 28th's last reading, not the
+    29th's first (ADR-100; the calendar rule in pipeline/AGENTS.md)."""
+    def stamp(text):
+        return int(pd.Timestamp(text).timestamp() * 1000)
+    payload = {
+        "office-id": "NWDP", "name": "GCL.Stor.Inst.1Hour.0.CBT-REV",
+        "units": "ac-ft", "time-zone": "US/Pacific",
+        "values": [[stamp("2026-08-28T12:00:00Z"), 100.0, 0],
+                   [stamp("2026-08-29T06:00:00Z"), 101.0, 0],   # 23:00 Pacific, 28th
+                   [stamp("2026-08-29T08:00:00Z"), None, 5],    # a gap, dropped
+                   [stamp("2026-08-29T09:00:00Z"), 102.0, 0]],  # 02:00 Pacific, 29th
+    }
+    monkeypatch.setattr(R.providers, "_get_cwms_json", lambda url, params: payload)
+    frame = R.fetch_cwms_series("NWDP", "GCL.Stor.Inst.1Hour.0.CBT-REV",
+                                "20260828", "20260830")
+    assert frame["date"].dt.strftime("%Y-%m-%d").tolist() == ["2026-08-28", "2026-08-29"]
+    assert frame["storage_af"].tolist() == [101.0, 102.0]
+
+
+def test_cwms_refuses_another_series_or_another_unit(monkeypatch):
+    base = {"office-id": "NWDP", "name": "GCL.Stor.Inst.1Hour.0.CBT-REV",
+            "units": "ac-ft", "values": [[1_700_000_000_000, 1.0, 0]]}
+    for change in ({"units": "m3"}, {"name": "CHJ.Stor.Inst.1Hour.0.CBT-REV"},
+                   {"office-id": "NWDM"}):
+        monkeypatch.setattr(R.providers, "_get_cwms_json",
+                            lambda url, params, c=change: {**base, **c})
+        with pytest.raises(ValueError):
+            R.fetch_cwms_series("NWDP", "GCL.Stor.Inst.1Hour.0.CBT-REV",
+                                "20230101", "20230102")
+
+
+def test_cwms_follows_next_page_tokens_and_stops_without_one(monkeypatch):
+    calls = []
+    def answer(url, params):
+        calls.append(params.get("page"))
+        if params.get("page") is None:
+            return {"office-id": "NWDP", "name": "X.Stor.Inst.1Hour.0.Best",
+                    "units": "ac-ft", "next-page": "t2",
+                    "values": [[1_700_000_000_000, 1.0, 0]]}
+        return {"office-id": "NWDP", "name": "X.Stor.Inst.1Hour.0.Best",
+                "units": "ac-ft", "values": [[1_700_086_400_000, 2.0, 0]]}
+    monkeypatch.setattr(R.providers, "_get_cwms_json", answer)
+    frame = R.fetch_cwms_series("NWDP", "X.Stor.Inst.1Hour.0.Best", "20230101", "20231231")
+    assert calls == [None, "t2"]
+    assert frame["storage_af"].tolist() == [1.0, 2.0]
+
+
+def test_cwms_roster_refuses_forecast_and_republished_series(tmp_path):
+    row = dict(next(iter(R.ADMITTED_CWMS_RESERVOIRS.values())))
+    for bad in ("FCST", "USBR-RAW"):
+        broken = {**row, "timeseries": f"{row['station']}.Stor.Inst.1Hour.0.{bad}"}
+        path = tmp_path / f"{bad}.json"
+        path.write_text(json.dumps({"reservoirs": {row["station"]: broken}}))
+        with pytest.raises(ValueError):
+            R.roster.load_admitted_cwms_reservoirs(path)
+    mismatched = {**row, "timeseries": "OTHER.Stor.Inst.1Hour.0.Best"}
+    path = tmp_path / "other.json"
+    path.write_text(json.dumps({"reservoirs": {row["station"]: mismatched}}))
+    with pytest.raises(ValueError):
+        R.roster.load_admitted_cwms_reservoirs(path)
+
+
+def test_cap_reads_the_one_current_record_in_arizonas_clock(monkeypatch):
+    monkeypatch.setattr(R.providers, "_get_cap_json", lambda url: {
+        "RecordID": 1, "LP_Elev": "1649.12", "LP_Volume": "421560.0031",
+        "LP_PercentFull": "47.27", "RecordTime": "2026-08-29T21:16:03"})
+    frame = R.fetch_cap_reading("https://example.test/api/opslakepleasant")
+    assert frame["date"].dt.strftime("%Y-%m-%d").tolist() == ["2026-08-29"]
+    assert frame["storage_af"].tolist() == [421560.0031]
+
+
+def test_cap_refuses_a_record_missing_its_pinned_fields(monkeypatch):
+    for broken in ({"LP_Volume": "1", "RecordTime": "2026-08-29T00:00:00"},
+                   {"LP_Volume": "x", "RecordTime": "2026-08-29T00:00:00",
+                    "LP_Elev": "1", "LP_PercentFull": "1"},
+                   {"LP_Volume": "1", "RecordTime": "not a time",
+                    "LP_Elev": "1", "LP_PercentFull": "1"}):
+        monkeypatch.setattr(R.providers, "_get_cap_json", lambda url, b=broken: b)
+        with pytest.raises(ValueError):
+            R.fetch_cap_reading("https://example.test/api/opslakepleasant")
+
+
+def test_cap_roster_pins_an_endpoint_named_for_its_key(tmp_path):
+    row = dict(next(iter(R.ADMITTED_CAP_RESERVOIRS.values())))
+    broken = {**row, "endpoint_url": "https://example.test/api/other"}
+    path = tmp_path / "cap.json"
+    path.write_text(json.dumps({"reservoirs": {row["station"]: broken}}))
+    with pytest.raises(ValueError):
+        R.roster.load_admitted_cap_reservoirs(path)
+
+
+def test_cwms_splits_a_long_range_and_keeps_only_what_was_asked_for(monkeypatch):
+    """A thirty-year hourly request is refused by the service, so the range
+    is split; and the first reading of a range belongs to the evening before
+    it once the UTC instant is read in the series' own zone, so the frame is
+    bounded by what the caller asked for rather than by what came back."""
+    asked = []
+
+    def answer(url, params):
+        asked.append((params["begin"][:10], params["end"][:10]))
+        stamp = int(pd.Timestamp(params["begin"]).timestamp() * 1000)
+        return {"office-id": "NWDP", "name": "X.Stor.Inst.1Hour.0.Best",
+                "units": "ac-ft", "time-zone": "US/Pacific",
+                "values": [[stamp, 10.0, 0]]}
+
+    monkeypatch.setattr(R.providers, "_get_cwms_json", answer)
+    frame = R.fetch_cwms_series("NWDP", "X.Stor.Inst.1Hour.0.Best",
+                                "19910101", "20210101")
+
+    assert len(asked) == 7, f"a thirty-year range asked in one window: {asked}"
+    assert asked[0][0] == "1991-01-01" and asked[-1][1] == "2021-01-01"
+    # Each window begins the day after the last one ended, so no reading is
+    # asked for twice and none is skipped between them.
+    for (_, previous_end), (next_begin, _) in zip(asked, asked[1:]):
+        assert pd.Timestamp(next_begin) == pd.Timestamp(previous_end) + pd.Timedelta(days=1)
+    # Every window's first instant reads as the evening before in Pacific
+    # time; only the ones inside the requested range survive.
+    assert frame["date"].min() >= pd.Timestamp("1991-01-01")
+    assert frame["date"].max() <= pd.Timestamp("2021-01-01")

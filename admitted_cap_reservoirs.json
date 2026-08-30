@@ -1,0 +1,33 @@
+{
+  "storage_source": "Central Arizona Project Lake Pleasant operations endpoint, the service behind the public Lake Pleasant graphic",
+  "storage_source_url": "https://azr-prod-rsg-dmz-app-waterqualityweb.azurewebsites.net/api/opslakepleasant",
+  "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams. CAP publishes a percent of its 1,702-foot maximum and no full level in acre-feet, so ADR-070 does not fire and ADR-003's inventory rule decides the denominator (ADR-104).",
+  "reviewed": "2026-08-29",
+  "selection": "One reservoir: Lake Pleasant behind New Waddell Dam, the only Central Arizona Project storage reservoir. The endpoint answers a single current record and holds no history, so the published series begins on the day of admission and grows in the dense-history cache (ADR-104).",
+  "keyed_by": "cap_endpoint",
+  "reservoirs": {
+    "opslakepleasant": {
+      "name": "Lake Pleasant",
+      "station": "opslakepleasant",
+      "endpoint_url": "https://azr-prod-rsg-dmz-app-waterqualityweb.azurewebsites.net/api/opslakepleasant",
+      "lat": 33.8464, "lon": -112.2663, "cadence": "daily",
+      "operator": "Central Arizona Project",
+      "huc6": "150701", "huc6_name": "Lower Gila-Agua Fria",
+      "por_start": "2026-08-29",
+      "capacity": {
+        "capacity_af": 811784.0, "capacity_basis": "normal_storage",
+        "normal_storage_af": 811784.0, "max_storage_af": 1063163.0, "nid_storage_af": 1063163.0,
+        "nid_id": "AZ82929", "nid_dam_name": "New Waddell Dam",
+        "dam_lon": -112.2663, "dam_lat": 33.8464, "match_distance_km": 0.0, "match_confirmed_by": "position",
+        "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
+        "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
+        "capacity_source_checked": "2026-08-29"
+      },
+      "review": {
+        "waived": "full_level_disagreement",
+        "why": "CAP's LP_PercentFull is measured against the 1,702-foot maximum pool, which back-computes to about 891,840 acre-feet; the inventory's normal storage is 811,784 and its maximum 1,063,163. CAP publishes the percentage and not the acre-foot figure, so there is no operator full level to prefer under ADR-070, and the inventory's normal storage is the denominator. The 891,840 figure is recorded here so a reader of the two percentages knows why they differ (ADR-104)."
+      }
+    }
+  },
+  "withheld": {}
+}

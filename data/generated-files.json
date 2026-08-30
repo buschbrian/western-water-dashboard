@@ -219,6 +219,20 @@
       "note": "Reviewed Montana DNRC admission and explicit no-NID finding (ADR-099)."
     },
     {
+      "path": "admitted_cwms_reservoirs.json",
+      "class": "reviewed-by-hand",
+      "writer": null,
+      "staged_by_refresh": false,
+      "note": "Reviewed U.S. Army Corps of Engineers admissions for the Columbia Basin (ADR-102), with the withheld block naming every location kept out and why."
+    },
+    {
+      "path": "admitted_cap_reservoirs.json",
+      "class": "reviewed-by-hand",
+      "writer": null,
+      "staged_by_refresh": false,
+      "note": "Reviewed Central Arizona Project admission of Lake Pleasant, with the reviewed full-level finding (ADR-104)."
+    },
+    {
       "path": "data/reservoir-source-history.json",
       "class": "generated-daily",
       "writer": "refresh_reservoirs.py",

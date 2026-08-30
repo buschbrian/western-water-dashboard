@@ -145,13 +145,16 @@ Stable public paths are documented on the [data page](data.html):
 | `/api/reference.json` | Reviewed capacity evidence and the drainage-area roster, without polygon geometry. |
 | `/data/upstream_index.json` | For each reservoir, the published reservoirs and snow sites on land that drains to it (ADR-077). |
 
-The daily pipeline reads observations from seven providers: the Bureau of
+The daily pipeline reads observations from nine providers: the Bureau of
 Reclamation, the Natural Resources Conservation Service, the U.S. Geological
 Survey, the California Department of Water Resources, the Colorado Division
-of Water Resources, the Salt River Project and the Montana Department of
-Natural Resources and Conservation. The last two are operators publishing
-readings for water they run themselves, rather than agencies publishing for
-everyone. Dam evidence comes from the U.S. Army Corps of Engineers
+of Water Resources, the Salt River Project, the Montana Department of
+Natural Resources and Conservation, the U.S. Army Corps of Engineers and the
+Central Arizona Project. The Salt River Project, Montana and the Central
+Arizona Project are operators publishing readings for water they run
+themselves, rather than agencies publishing for everyone; the
+Corps' water-management service carries the Columbia Basin, its own projects
+and the public-utility dams on the mainstem alike (ADR-102). Dam evidence comes from the U.S. Army Corps of Engineers
 National Inventory of Dams. Drainage areas come from the U.S. Geological
 Survey Watershed Boundary Dataset, and what drains to each reservoir from the
 same agency's Network-Linked Data Index (ADR-077). Drought data comes from the
@@ -190,6 +193,25 @@ figure (ADR-070). East Fork Rock Creek is the one reservoir on the roster with
 no dam inventory record behind it at all; ADR-099 admits it on the operator's
 own location and full level, and its roster file states the absence as a
 finding rather than leaving a blank field.
+
+The U.S. Army Corps of Engineers became the eighth provider on 2026-08-29
+(ADR-102), reading the Columbia Basin under the Northwestern Division's
+Pacific Northwest region office — the Corps' own projects and the
+public-utility dams on the mainstem in Idaho, Oregon, Washington and western
+Montana. Each roster entry pins the office and the whole series name, because
+the series' version suffix says whose number it is: forecasts and readings
+republished from the Bureau of Reclamation are refused, and every denominator
+comes from the dam inventory. The admitted locations and every one held back,
+with its finding, are in
+[`admitted_cwms_reservoirs.json`](admitted_cwms_reservoirs.json).
+
+The Central Arizona Project followed the same day (ADR-104) with Lake
+Pleasant, Arizona's largest reservoir with no feed until then. Its endpoint
+publishes one current record and no history, so the series grows in the
+dense-history cache from the day of admission; its percent of full is measured
+against the dam inventory's normal storage, and the operator's own percentage
+of the maximum pool is recorded beside it as a finding in
+[`admitted_cap_reservoirs.json`](admitted_cap_reservoirs.json).
 
 ### Storage metrics
 
@@ -303,8 +325,8 @@ The original modernization phases are complete. ArcGIS 5.1 is the production
 runtime; the MapLibre rebuild was superseded by the decision to keep retired
 paths as redirects. The western geography, reader-chosen opening scope, the
 first-visit place chooser and the remembered place behind it, the mountain
-snow network, the five-provider western reservoir roster, the upstream sets,
-drought measurements at four area sizes, accessibility gates, and transfer
+snow network, the nine-provider western reservoir roster, the upstream sets,
+drought measurements and every other map at four area sizes, accessibility gates, and transfer
 policy have all shipped. The Utah state
 mask is retired and the state boundary is no longer published (ADR-067);
 state outlines a reader can see come from Esri's Living Atlas, built from
@@ -325,12 +347,19 @@ Current product work is narrower, in the order it should be worked:
   the measured `script-src`;
 - resolve the four published points that have no water body in any source that
   can be asked;
-- source the remaining coverage gaps — Idaho, Oregon and Wyoming outright,
-  plus further Nevada and Washington reservoirs. The two sources the
-  2026-08-28 follow-up found are now built: SRP's four additive Arizona
-  reservoirs and DNRC's one in-scope Montana reservoir are published, and
-  DNRC's nine remaining sensors drain to the Gulf of Mexico rather than being
-  a coverage gap. The survey is item 5 of
+- source what is left of the coverage gaps, which is now much narrower. The
+  Corps of Engineers' Columbia Basin service (ADR-102) covers Idaho, Oregon
+  and Washington, and the Central Arizona Project (ADR-104) closed Arizona's
+  largest hole. What remains is not a missing survey in any of them:
+  Wyoming's other large reservoirs are on the Missouri side, which drains
+  east outside the drawn areas by decision; Nevada's remainder is terminal
+  lakes, a roster-rule question rather than a source one; Washington keeps
+  several utility-owned reservoirs whose operators publish nothing a program
+  can read, three of which the Corps' own service lists and answers nothing
+  for; and Alamo Lake sits under a Corps district office this site does not
+  yet read. Every location kept out names its finding in
+  [`admitted_cwms_reservoirs.json`](admitted_cwms_reservoirs.json). The
+  survey is item 5 of
   [`docs/WATER-BODY-AND-NAVIGATION-SCOPING.md`](docs/WATER-BODY-AND-NAVIGATION-SCOPING.md),
   whose other four items are closed; and
 - two deferred decisions, neither of them blocking: whether to order the

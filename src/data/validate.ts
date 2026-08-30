@@ -110,7 +110,7 @@ function isReservoirSource(value: unknown): value is ReservoirSource {
   return isObject(value) &&
     (value.key === "rise" || value.key === "awdb" || value.key === "cdec" ||
       value.key === "cdss" || value.key === "usgs" || value.key === "srp" ||
-      value.key === "dnrc") &&
+      value.key === "dnrc" || value.key === "cwms" || value.key === "cap") &&
     typeof value.label === "string" &&
     typeof value.url === "string" &&
     typeof value.cadence === "string";
@@ -133,7 +133,8 @@ function isReservoir(value: unknown): value is Reservoir {
     (value.source_key === "rise" || value.source_key === "awdb" ||
       value.source_key === "cdec" || value.source_key === "cdss" ||
       value.source_key === "usgs" || value.source_key === "srp" ||
-      value.source_key === "dnrc") &&
+      value.source_key === "dnrc" || value.source_key === "cwms" ||
+      value.source_key === "cap") &&
     (value.data_frequency === "daily" || value.data_frequency === "monthly") &&
     hasNumber(value.stale_after_days) &&
     hasNumber(value.days_stale) &&
@@ -182,6 +183,8 @@ function isReservoir(value: unknown): value is Reservoir {
     typeof value.intersects_utah === "boolean" &&
     (value.huc6 === undefined || hasNullableString(value.huc6)) &&
     (value.huc6_name === undefined || hasNullableString(value.huc6_name)) &&
+    (value.huc8 === undefined || hasNullableString(value.huc8)) &&
+    (value.huc8_name === undefined || hasNullableString(value.huc8_name)) &&
     isOptionalPoint(value.huc_assignment_point) &&
     (value.huc_assignment_source === undefined ||
       hasNullableString(value.huc_assignment_source)) &&
@@ -259,7 +262,9 @@ export function validateReservoirPayload(value: unknown): ReservoirPayload {
       !hasNumber(sourceCounts.cdss) ||
       !hasNumber(sourceCounts.usgs) ||
       !hasNumber(sourceCounts.srp) ||
-      !hasNumber(sourceCounts.dnrc)) {
+      !hasNumber(sourceCounts.dnrc) ||
+      !hasNumber(sourceCounts.cwms) ||
+      !hasNumber(sourceCounts.cap)) {
     throw new Error("reservoirs.json is missing source metadata");
   }
   if (!hasNumber(value.stale_count) || !hasNumber(value.capacity_count)) {
@@ -311,6 +316,16 @@ export function validateReservoirPayload(value: unknown): ReservoirPayload {
            HUC_CODE.test(entry.huc4) && entry.huc4.length === 4 &&
            typeof entry.name === "string" && entry.name.length > 0))) {
       throw new Error("reservoirs.json has an invalid subregion roster");
+    }
+    const subbasinRoster = value.watersheds.subbasins;
+    if (subbasinRoster !== undefined &&
+        (!Array.isArray(subbasinRoster) ||
+         !subbasinRoster.every((entry) =>
+           isObject(entry) &&
+           typeof entry.huc8 === "string" &&
+           HUC_CODE.test(entry.huc8) && entry.huc8.length === 8 &&
+           typeof entry.name === "string"))) {
+      throw new Error("reservoirs.json has an invalid subbasin roster");
     }
   }
   return value as unknown as ReservoirPayload;

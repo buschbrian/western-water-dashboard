@@ -7,14 +7,24 @@ this is the detail behind it. The candidate evidence itself lives in
 `docs/WESTERN-SOURCE-CANDIDATES.md`, `docs/CDSS-CDEC-API-REVIEW.md` and the
 admission reviews indexed by [`docs/README.md`](../README.md).
 
-## Five providers, and a provider is named by its agency
+## Nine providers, and a provider is named by its agency
 
-`SourceKey` is `rise | awdb | cdec | cdss | usgs` and every table keyed by it is
-exhaustive, so a sixth provider is a compile error rather than an `undefined`
-reaching a reader. Visible text names the agency and never the system: "Bureau
-of Reclamation", "Natural Resources Conservation Service", "California
-Department of Water Resources", "Colorado Division of Water Resources", "U.S.
-Geological Survey" (ADR-006).
+`SourceKey` is `rise | awdb | cdec | cdss | usgs | srp | dnrc | cwms | cap` and
+every table keyed by it is exhaustive, so a tenth provider is a compile error
+rather than an `undefined` reaching a reader. Visible text names the agency and never
+the system: "Bureau of Reclamation", "Natural Resources Conservation Service",
+"California Department of Water Resources", "Colorado Division of Water
+Resources", "U.S. Geological Survey", "Salt River Project", "Montana Department
+of Natural Resources and Conservation", "U.S. Army Corps of Engineers",
+"Central Arizona Project" (ADR-006).
+
+The Corps is keyed by its location id under its office, with the whole
+six-part series name committed beside it; the loader refuses a forecast or a
+republished Reclamation (`USBR`) version, because the version suffix is what
+says whose number a series is (ADR-102). `tools/audit_cwms_stations.py` is
+its audit. The Central Arizona Project is one reservoir behind one endpoint
+that holds no history; its series grows in the dense-history cache from the
+day of admission (ADR-104).
 
 ## A reservoir is keyed by its station, not its name (ADR-066)
 

@@ -38,6 +38,8 @@ ADMITTED_CDSS_RESERVOIRS_PATH = ROOT / "admitted_cdss_reservoirs.json"
 ADMITTED_USGS_RESERVOIRS_PATH = ROOT / "admitted_usgs_reservoirs.json"
 ADMITTED_SRP_RESERVOIRS_PATH = ROOT / "admitted_srp_reservoirs.json"
 ADMITTED_DNRC_RESERVOIRS_PATH = ROOT / "admitted_dnrc_reservoirs.json"
+ADMITTED_CWMS_RESERVOIRS_PATH = ROOT / "admitted_cwms_reservoirs.json"
+ADMITTED_CAP_RESERVOIRS_PATH = ROOT / "admitted_cap_reservoirs.json"
 SOURCE_HISTORY_PATH = ROOT / "data" / "reservoir-source-history.json"
 NORMALS_PATH = ROOT / "normals.json"
 COUNTIES_PATH = ROOT / "counties.json"
@@ -69,7 +71,7 @@ AWDB_MONTHLY_STALE_AFTER_DAYS = 45
 #:   "none found"         the review looked for another source and found none
 #:
 #: "none found" is not "complete". It is the honest limit of a search.
-SOURCE_COVERAGE_REVIEWED = "2026-08-29"
+SOURCE_COVERAGE_REVIEWED = "2026-08-30"
 SOURCE_COVERAGE = {
     "CO": {"status": "more to add",
            "source": "Colorado Division of Water Resources",
@@ -91,39 +93,64 @@ SOURCE_COVERAGE = {
            "url": "https://water.usace.army.mil/",
            "adds_about": None,
            "note": "Read since 2026-08-29 for East Fork Rock Creek, the one "
-                   "DNRC storage sensor inside the drawn drainages. The Corps "
-                   "covers large Missouri River reservoirs, and nine further "
-                   "DNRC sensors also drain east outside the drawn scope."},
-    "AZ": {"status": "none found",
+                   "storage sensor of the state department inside the drawn "
+                   "drainages, and the Corps of Engineers is read for the "
+                   "Columbia side since 2026-08-30. The Corps also covers "
+                   "large Missouri River reservoirs, and nine further state "
+                   "sensors drain east outside the drawn areas."},
+    "AZ": {"status": "more to add",
            "source": None,
            "url": None,
            "adds_about": None,
            "note": "Read since 2026-08-29 for the four additive Salt River "
-                   "Project reservoirs. Its other three storage stations are "
-                   "already read from existing providers; no other public "
-                   "source of current storage was found."},
+                   "Project reservoirs, and since 2026-08-30 for Lake "
+                   "Pleasant from the Central Arizona Project. Alamo Lake "
+                   "is published by the Corps of Engineers under a district "
+                   "office this site does not yet read."},
     "UT": {"status": "none found", "source": None, "url": None,
            "adds_about": None,
            "note": "No other public source of current storage was found."},
     "WY": {"status": "none found", "source": None, "url": None,
            "adds_about": None,
            "note": "The state water service was found to republish federal "
-                   "readings rather than add its own."},
-    "ID": {"status": "none found", "source": None, "url": None,
+                   "readings rather than add its own. The Corps of Engineers "
+                   "carries this state's other large reservoirs on the "
+                   "Missouri side, which drains east outside the drawn "
+                   "areas."},
+    "ID": {"status": "none found",
+           "source": "U.S. Army Corps of Engineers water management",
+           "url": "https://cwms-data.usace.army.mil/cwms-data/",
            "adds_about": None,
            "note": "The state water department points every reservoir at a "
-                   "federal source."},
-    "OR": {"status": "none found", "source": None, "url": None,
+                   "federal source. The Corps' Columbia Basin service is "
+                   "read since 2026-08-30; every location it holds that is "
+                   "not published is named with its finding in "
+                   "admitted_cwms_reservoirs.json."},
+    "OR": {"status": "none found",
+           "source": "U.S. Army Corps of Engineers water management",
+           "url": "https://cwms-data.usace.army.mil/cwms-data/",
            "adds_about": None,
            "note": "The state water department publishes no feed a program "
-                   "can read."},
-    "WA": {"status": "none found", "source": None, "url": None,
+                   "can read. The Corps' Columbia Basin service is read "
+                   "since 2026-08-30, and most of its Oregon locations were "
+                   "already published through the Conservation Service."},
+    "WA": {"status": "more to add",
+           "source": "U.S. Army Corps of Engineers water management",
+           "url": "https://cwms-data.usace.army.mil/cwms-data/",
            "adds_about": None,
-           "note": "No independent state source was found."},
+           "note": "No independent state source was found. The Corps' "
+                   "Columbia Basin service is read since 2026-08-30 and "
+                   "brings the largest reservoir in the state. Several "
+                   "utility-owned reservoirs remain: three answer nothing "
+                   "through that service and others are published by their "
+                   "operators in no form a program can read."},
     "NV": {"status": "none found", "source": None, "url": None,
            "adds_about": None,
            "note": "No state source of reservoir storage was found. The "
-                   "search was not exhaustive."},
+                   "search was made properly once on 2026-08-29 and is "
+                   "recorded in docs/WESTERN-SOURCE-CANDIDATES.md: what "
+                   "remains in this state is terminal lakes, which are a "
+                   "roster-rule question rather than a source question."},
     "NM": {"status": "none found", "source": None, "url": None,
            "adds_about": None,
            "note": "The state water office publishes stream measurements "

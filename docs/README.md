@@ -62,8 +62,8 @@ evidence about a date, never a description of the present.
 ## Current work
 
 The typed ArcGIS application, western geography, the opening choice and its
-reopen control, the seven reservoir providers, the mountain snow network, the
-upstream sets, drought at four area sizes, accessibility gates and
+reopen control, the nine reservoir providers, the mountain snow network, the
+upstream sets, four area sizes on every map, accessibility gates and
 compatibility redirects are in production. What remains, in the order it
 should be worked:
 
@@ -79,14 +79,18 @@ should be worked:
    the unnamed Calcite slider handle that `src/ui/slider-label.ts` works
    around, and the `script-src` measurement behind ADR-036.
 5. **The four published points with no water body in any askable source.**
-6. **The remaining coverage gaps** — Idaho, Oregon and Wyoming outright, plus
-   further Nevada and Washington reservoirs. Both sources the 2026-08-28
-   follow-up found are now built: SRP's four additive Arizona reservoirs and
-   DNRC's one in-scope Montana reservoir are published, and DNRC's nine
-   remaining sensors drain to the Gulf of Mexico rather than being a gap.
-   Item 5 of
+6. **The remaining coverage gaps, now much narrower.** The Corps of
+   Engineers' Columbia Basin service (ADR-102) covers Idaho, Oregon and
+   Washington, and the Central Arizona Project (ADR-104) closed Arizona's
+   largest hole. What is left is not a missing survey: Wyoming's other large
+   reservoirs are on the Missouri side, outside the drawn areas by decision;
+   Nevada's remainder is terminal lakes, a roster-rule question rather than a
+   source one; Washington keeps several utility-owned reservoirs whose
+   operators publish nothing a program can read; and Alamo Lake sits under a
+   Corps district office this site does not yet read. Item 5 of
    [`WATER-BODY-AND-NAVIGATION-SCOPING.md`](WATER-BODY-AND-NAVIGATION-SCOPING.md)
-   carries the survey.
+   carries the survey, and every location kept out names its finding in
+   [`admitted_cwms_reservoirs.json`](../admitted_cwms_reservoirs.json).
 7. **Two deferred decisions, neither blocking.** Whether to order the upstream
    sets — the flowline-navigation slice
    [`UPSTREAM-TRACE-SCOPING.md`](UPSTREAM-TRACE-SCOPING.md) deliberately left

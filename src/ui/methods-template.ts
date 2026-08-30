@@ -115,13 +115,39 @@ export function methodsMarkup(search: string): string {
           daily-values service. Read the source at
           <a href="https://waterservices.usgs.gov/" target="_blank"
             rel="noreferrer">waterservices.usgs.gov</a>.</dd>
+        <dt>Salt River Project</dt>
+        <dd>Storage every five minutes for the four Salt River reservoirs the
+          operator runs, reduced to each day's last reading. Read the source at
+          <a href="https://streamflow.watershedconnection.com/dwr" target="_blank"
+            rel="noreferrer">the Salt River Project water report</a>.</dd>
+        <dt>Montana Department of Natural Resources and Conservation</dt>
+        <dd>Storage about every quarter hour for East Fork Rock Creek, a reservoir
+          the department operates, reduced to each day's last reading. Read the source at
+          <a href="https://gis.dnrc.mt.gov/apps/stage/" target="_blank"
+            rel="noreferrer">the Stream and Gage Explorer</a>.</dd>
+        <dt>U.S. Army Corps of Engineers</dt>
+        <dd>Hourly and daily storage for the Columbia Basin reservoirs, through the
+          Corps' water-management data service, reduced to each day's last reading.
+          The service carries the Corps' own projects and the public-utility dams
+          on the mainstem. Readings it republishes from the Bureau of Reclamation
+          are read from the Bureau instead. Read the source at
+          <a href="https://cwms-data.usace.army.mil/cwms-data/" target="_blank"
+            rel="noreferrer">the water-management data service</a>.</dd>
+        <dt>Central Arizona Project</dt>
+        <dd>Today's storage for Lake Pleasant, the reservoir the project operates,
+          from the service behind its public lake page. The service publishes one
+          current reading and no history, so this site's record of it begins on the
+          day it was added. Read the source at
+          <a href="https://www.cap-az.com/cap-system/water-operations/lake-pleasant/"
+            target="_blank" rel="noreferrer">cap-az.com</a>.</dd>
         <dt>Full level, for most reservoirs</dt>
         <dd>The U.S. Army Corps of Engineers National Inventory of Dams. The repository holds these figures rather than requesting them each morning. A
         full level is a property of the dam and does not change daily. Read the source at
           <a href="https://nid.sec.usace.army.mil/" target="_blank"
             rel="noreferrer">the National Inventory of Dams</a>.
-          <br />This is the only full level the U.S. Geological Survey sites have. That
-          service publishes storage and no full level of its own.</dd>
+          <br />This is the only full level the U.S. Geological Survey, the U.S.
+          Army Corps of Engineers and the Central Arizona Project reservoirs have.
+          Those services publish storage and no full level of their own in acre-feet.</dd>
         <dt>Full level, where the provider publishes one</dt>
         <dd>That figure is used in place of the inventory. The operator is the authority
           on what full means for its own reservoir. The California Data Exchange Center
@@ -171,8 +197,10 @@ export function methodsMarkup(search: string): string {
           <a href="https://droughtmonitor.unl.edu/" target="_blank"
             rel="noreferrer">droughtmonitor.unl.edu</a>.</dd>
         <dt>Drainage areas</dt>
-        <dd>The U.S. Geological Survey Watershed Boundary Dataset, at the six-digit level.
-          Read the source at
+        <dd>The U.S. Geological Survey Watershed Boundary Dataset. Every map offers
+          four area sizes: regions, subregions, basins and subbasins. Each figure is
+          rebuilt from the records inside the areas of the size you choose. Smaller
+          areas' percentages are never averaged together. Read the source at
           <a href="https://www.usgs.gov/national-hydrography/watershed-boundary-dataset"
             target="_blank" rel="noreferrer">the Watershed Boundary Dataset</a>.</dd>
         <dt>State outlines</dt>
@@ -472,12 +500,24 @@ export function methodsMarkup(search: string): string {
         <li><a href="https://wcc.sc.egov.usda.gov/" target="_blank"
           rel="noreferrer">Natural Resources Conservation Service</a>, for the statewide
           storage inventory and the snow measurements.</li>
+        <li><a href="https://cdec.water.ca.gov/" target="_blank"
+          rel="noreferrer">California Department of Water Resources</a> and
+          <a href="https://dwr.state.co.us/" target="_blank"
+          rel="noreferrer">Colorado Division of Water Resources</a>, for their
+          states' reservoir storage records.</li>
+        <li><a href="https://www.srpnet.com/" target="_blank" rel="noreferrer">Salt
+          River Project</a>, the <a href="https://dnrc.mt.gov/" target="_blank"
+          rel="noreferrer">Montana Department of Natural Resources and
+          Conservation</a> and the <a href="https://www.cap-az.com/" target="_blank"
+          rel="noreferrer">Central Arizona Project</a>, for the storage records of
+          the reservoirs they operate.</li>
         <li><a href="https://nid.sec.usace.army.mil/" target="_blank"
           rel="noreferrer">U.S. Army Corps of Engineers</a>, for the National Inventory
-          of Dams.</li>
+          of Dams and for the Columbia Basin storage records of its water-management
+          data service.</li>
         <li><a href="https://www.usgs.gov/national-hydrography/watershed-boundary-dataset"
           target="_blank" rel="noreferrer">U.S. Geological Survey</a>, for the Watershed
-          Boundary Dataset.</li>
+          Boundary Dataset and its reservoir storage records.</li>
         <li><a href="https://droughtmonitor.unl.edu/" target="_blank"
           rel="noreferrer">The National Drought Mitigation Center</a>, with the
           U.S. Department of Agriculture and the National Oceanic and Atmospheric

@@ -43,7 +43,9 @@ denominator. **Start with ADR-070, then ADR-072, then ADR-003.**
   [ADR-072](ADR-072-divide-by-a-figure-the-water-has-not-been-seen-above.md),
   [ADR-077](ADR-077-publish-what-drains-to-a-reservoir-as-an-upstream-set.md),
   [ADR-097](ADR-097-filter-snow-by-the-committed-upstream-set.md),
-  [ADR-099](ADR-099-admit-an-operator-measured-reservoir-with-no-dam-inventory-record.md)
+  [ADR-099](ADR-099-admit-an-operator-measured-reservoir-with-no-dam-inventory-record.md),
+  [ADR-102](ADR-102-admit-the-army-corps-of-engineers-as-a-provider.md),
+  [ADR-104](ADR-104-admit-lake-pleasant-from-the-central-arizona-projects-endpoint.md)
 - Freshness and withdrawal:
   [ADR-056](ADR-056-withdraw-a-reading-that-belongs-to-another-season.md)
 - Procedure: [`docs/operations/source-admission.md`](../operations/source-admission.md)
@@ -71,6 +73,7 @@ The four different scopes, the hydrologic level, and what a link carries.
   [ADR-086](ADR-086-open-the-place-chooser-from-every-page-header.md),
   [ADR-087](ADR-087-retire-the-utah-reservoir-scope.md),
   [ADR-088](ADR-088-offer-huc-8-on-drought-first.md),
+  [ADR-103](ADR-103-offer-huc-8-on-every-surface.md),
   [ADR-090](ADR-090-remove-retired-readiness-fields-with-the-controls.md),
   [ADR-091](ADR-091-order-drought-place-filters-from-state-to-area.md),
   [ADR-092](ADR-092-separate-drought-place-controls-from-presentation-controls.md),
@@ -239,7 +242,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-085](ADR-085-gate-snows-drainage-rows-to-the-drawn-tier.md) | Gate snow's drainage rows to the drawn tier and coarser | Accepted; coarser-row presentation superseded by ADR-094, publishability gate retained |
 | [ADR-086](ADR-086-open-the-place-chooser-from-every-page-header.md) | Open the place chooser from every page header | Accepted |
 | [ADR-087](ADR-087-retire-the-utah-reservoir-scope.md) | Retire the Utah reservoir scope | Accepted; browser-readiness compatibility clause superseded by ADR-090 |
-| [ADR-088](ADR-088-offer-huc-8-on-drought-first.md) | Offer HUC-8 on drought first | Accepted; its across-level drought menu presentation is superseded by ADR-091 |
+| [ADR-088](ADR-088-offer-huc-8-on-drought-first.md) | Offer HUC-8 on drought first | Accepted; its across-level drought menu presentation is superseded by ADR-091; extended to storage and snow by ADR-103 |
 | [ADR-089](ADR-089-put-reservoir-state-facts-in-their-own-csv-columns.md) | Put reservoir state facts in their own CSV columns | Accepted |
 | [ADR-090](ADR-090-remove-retired-readiness-fields-with-the-controls.md) | Remove retired readiness fields with their controls | Accepted; supersedes one clause of ADR-087 |
 | [ADR-091](ADR-091-order-drought-place-filters-from-state-to-area.md) | Order drought place filters from state to area | Accepted; map-options grouping superseded by ADR-092 |
@@ -253,6 +256,9 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-099](ADR-099-admit-an-operator-measured-reservoir-with-no-dam-inventory-record.md) | Admit an operator-measured reservoir with no dam inventory record | Accepted; extends ADR-003 and ADR-015 for one admission, screens unchanged elsewhere |
 | [ADR-100](ADR-100-a-sub-daily-providers-day-is-its-last-reading.md) | A sub-daily provider's day is its last reading | Accepted; no method version bump, the method is unchanged and the code now performs it |
 | [ADR-101](ADR-101-bound-the-basemap-chain-and-draw-the-data-without-it.md) | Bound the basemap chain, and draw the data without it | Accepted; the chain gets one 15s budget, an exhausted budget draws the reservoirs on a plain background |
+| [ADR-102](ADR-102-admit-the-army-corps-of-engineers-as-a-provider.md) | Admit the Army Corps of Engineers as a provider | Accepted; eighth provider, the Columbia Basin under the `NWDP` office, republished and forecast series refused |
+| [ADR-103](ADR-103-offer-huc-8-on-every-surface.md) | Offer HUC-8 on every surface | Accepted; extends ADR-088 to storage and snow, every record carries its own `huc8` |
+| [ADR-104](ADR-104-admit-lake-pleasant-from-the-central-arizona-projects-endpoint.md) | Admit Lake Pleasant from the Central Arizona Project's endpoint | Accepted; ninth provider, one current record a day grown in the dense-history cache, inventory denominator with the operator's percentage recorded as a finding |
 
 ## Relationship to the historical journal
 

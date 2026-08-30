@@ -64,6 +64,10 @@ EXPECTED_UNITS = {
     "150200": "Little Colorado",
     "150301": "Lower Colorado",
     "150501": "Middle Gila",
+    # Lake Pleasant, the Central Arizona Project's storage reservoir behind
+    # New Waddell Dam (ADR-104). The first reservoir this roster has held in
+    # this area, and the area was already one the map draws.
+    "150701": "Lower Gila-Agua Fria",
     "150601": "Salt",
     "150602": "Verde",
     "160101": "Upper Bear",
@@ -178,6 +182,17 @@ BOUNDARY_MARGIN_EXCEPTIONS = {
     "Coyote Lake",
     # 1.78 km and 1.70 km, both in Mono-Owens Lakes.
     "Gem Lake",
+    # The San Carlos shape, and the sharpest example of it on the roster:
+    # Hells Canyon Dam is 51 m from the Middle Snake-Powder / Lower Snake
+    # line because it *is* the pour point between them, which is why the
+    # subbasin on the downstream side is itself named Hells Canyon. There is
+    # no second point to corroborate it with and none is wanted: the Corps
+    # publishes this location as the dam, the inventory's dam stands 77 m
+    # away, and the reservoir is assigned from its outlet by rule (ADR-058),
+    # not from the water body that reaches upstream past the line. The
+    # divide fallback declines it for the same reason it declines Haiwee --
+    # every point this reservoir has is on the divide.
+    "Hells Canyon Reservoir",
     # R3's Colorado additions, both reviewed the same way: the provider point
     # and the reviewed dam point were measured separately and agree on the
     # area, which is what makes them close calls rather than doubtful
@@ -449,3 +464,30 @@ class TestStateMembership:
         assert hyrum["connected_states"] == ["ID", "UT"]
         # Hyrum's own water never leaves Utah, which is the distinction.
         assert waterbody_states("439", "UT") == ["UT"]
+
+
+def test_the_subbasin_roster_reads_the_drawn_level_8_scope():
+    """ADR-103: eight-digit codes are each record's own and are named from
+    the committed level-8 scope, the same names file every map draws."""
+    from huc import load_units_at, subbasin_roster
+
+    units = load_units_at(8)
+    assert len(units) == 571
+    assert all(len(unit["huc6"]) == 8 for unit in units)
+    sample = sorted(unit["huc6"] for unit in units)[:2]
+    roster = subbasin_roster(sample + [None, sample[0]])
+    assert [row["huc8"] for row in roster] == sample
+    assert all(row["name"] for row in roster)
+
+
+def test_describe_places_the_subbasin_by_the_same_point_as_the_basin():
+    from huc import describe, load_units, load_units_at
+
+    units, fine = load_units(), load_units_at(8)
+    # Lake Powell's dam, the case ADR-060's assignment study was written on.
+    fields = describe(36.9375, -111.4839, units, station="x", fine_units=fine)
+    assert fields["huc6"] and fields["huc8"]
+    assert fields["huc8"].startswith(fields["huc6"])
+    assert fields["huc8_name"]
+    without = describe(36.9375, -111.4839, units, station="x")
+    assert without["huc8"] is None and without["huc8_name"] is None

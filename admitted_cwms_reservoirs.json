@@ -1,0 +1,539 @@
+{
+  "storage_source": "U.S. Army Corps of Engineers CWMS Data API, Pacific Northwest Region office (NWDP)",
+  "storage_source_url": "https://cwms-data.usace.army.mil/cwms-data/",
+  "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams. This provider publishes no full level in acre-feet -- its pools are defined by elevation -- so ADR-070 never fires and ADR-003 with ADR-072 decides every denominator (ADR-102).",
+  "reviewed": "2026-08-30",
+  "selection": "Every storage-bearing location under the NWDP office, audited with tools/audit_cwms_stations.py on 2026-08-30: one series chosen per location by the stated preference and confirmed by a read, then the shared screens in admission.py. 12 admitted on confirmed dam matches, 24 withheld with the finding behind each. 73 further locations are already published within 3 km through another provider and are deduplicated rather than withheld (ADR-069); their location ids are listed below. Names are reviewed display names, not the service's gauge labels (ADR-079).",
+  "keyed_by": "cwms_location",
+  "reservoirs": {
+    "BOX": {
+      "name": "Box Canyon Reservoir",
+      "station": "BOX",
+      "office": "NWDP",
+      "timeseries": "BOX.Stor.Ave.~1Day.1Day.CBT-REV",
+      "lat": 48.780278,
+      "lon": -117.4125,
+      "cadence": "daily",
+      "operator": "Pend Oreille County Public Utility District",
+      "huc6": "170102",
+      "huc6_name": "Pend Oreille",
+      "por_start": "2015-01-01",
+      "capacity": {
+        "capacity_af": 69800.0,
+        "capacity_basis": "normal_storage",
+        "normal_storage_af": 69800.0,
+        "max_storage_af": null,
+        "nid_storage_af": 36.0,
+        "nid_id": "WA00013",
+        "nid_dam_name": "Box Canyon",
+        "dam_lon": -117.41061432077609,
+        "dam_lat": 48.780406225121254,
+        "match_distance_km": 0.139,
+        "match_confirmed_by": "name and position",
+        "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
+        "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
+        "capacity_source_checked": "2026-08-30"
+      }
+    },
+    "CAB": {
+      "name": "Cabinet Gorge Reservoir",
+      "station": "CAB",
+      "office": "NWDP",
+      "timeseries": "CAB.Stor.Inst.1Hour.0.CBT-REV",
+      "lat": 48.086667,
+      "lon": -116.064444,
+      "cadence": "daily",
+      "operator": "Avista",
+      "huc6": "170102",
+      "huc6_name": "Pend Oreille",
+      "por_start": "2014-12-31",
+      "capacity": {
+        "capacity_af": 104600.0,
+        "capacity_basis": "normal_storage",
+        "normal_storage_af": 104600.0,
+        "max_storage_af": 104600.0,
+        "nid_storage_af": 104600.0,
+        "nid_id": "ID00222",
+        "nid_dam_name": "Cabinet Gorge",
+        "dam_lon": -116.05725289183036,
+        "dam_lat": 48.08568432338472,
+        "match_distance_km": 0.545,
+        "match_confirmed_by": "name and position",
+        "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
+        "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
+        "capacity_source_checked": "2026-08-30"
+      }
+    },
+    "CHJ": {
+      "name": "Rufus Woods Lake",
+      "station": "CHJ",
+      "office": "NWDP",
+      "timeseries": "CHJ.Stor.Inst.~1Day.0.CBT-REV",
+      "lat": 47.9951139,
+      "lon": -119.6410787,
+      "cadence": "daily",
+      "operator": "U.S. Army Corps of Engineers",
+      "huc6": "170200",
+      "huc6_name": "Upper Columbia",
+      "por_start": "2015-01-01",
+      "capacity": {
+        "capacity_af": 593000.0,
+        "capacity_basis": "max_storage",
+        "normal_storage_af": 516000.0,
+        "max_storage_af": 593000.0,
+        "nid_storage_af": 593000.0,
+        "nid_id": "WA00299",
+        "nid_dam_name": "Chief Joseph Dam",
+        "dam_lon": -119.63744167825381,
+        "dam_lat": 47.99536499401011,
+        "match_distance_km": 0.272,
+        "match_confirmed_by": "name and position",
+        "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
+        "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
+        "capacity_source_checked": "2026-08-30"
+      },
+      "review": {
+        "waived": "conservation pool below the observed record",
+        "why": "The water has stood at 589,200 acre-feet, above the 516,000 conservation pool, so ADR-072 divides by the 593,000 maximum pool instead -- a figure the record fits inside. The conservation pool is not wrong about the pool; it is the wrong figure to divide a gross reading by."
+      }
+    },
+    "GCL": {
+      "name": "Franklin D. Roosevelt Lake",
+      "station": "GCL",
+      "office": "NWDP",
+      "timeseries": "GCL.Stor.Inst.1Hour.0.CBT-REV",
+      "lat": 47.95667,
+      "lon": -118.9805,
+      "cadence": "daily",
+      "operator": "Bureau of Reclamation",
+      "huc6": "170200",
+      "huc6_name": "Upper Columbia",
+      "por_start": "2014-12-31",
+      "capacity": {
+        "capacity_af": 9562000.0,
+        "capacity_basis": "normal_storage",
+        "normal_storage_af": 9562000.0,
+        "max_storage_af": 9715346.0,
+        "nid_storage_af": 9562000.0,
+        "nid_id": "WA00262",
+        "nid_dam_name": "Grand Coulee Dam",
+        "dam_lon": -118.98051440829836,
+        "dam_lat": 47.956606001890535,
+        "match_distance_km": 0.007,
+        "match_confirmed_by": "name and position",
+        "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
+        "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
+        "capacity_source_checked": "2026-08-30"
+      }
+    },
+    "HCD": {
+      "name": "Hells Canyon Reservoir",
+      "station": "HCD",
+      "office": "NWDP",
+      "timeseries": "HCD.Stor.Inst.~1Day.0.IDP-COMPUTED-REV",
+      "lat": 45.242916,
+      "lon": -116.701458,
+      "cadence": "daily",
+      "operator": "Idaho Power",
+      "huc6": "170502",
+      "huc6_name": "Middle Snake-Powder",
+      "por_start": "2014-12-31",
+      "capacity": {
+        "capacity_af": 170000.0,
+        "capacity_basis": "normal_storage",
+        "normal_storage_af": 170000.0,
+        "max_storage_af": 188000.0,
+        "nid_storage_af": 188000.0,
+        "nid_id": "ID00055",
+        "nid_dam_name": "Hells Canyon",
+        "dam_lon": -116.70051340420207,
+        "dam_lat": 45.24310604337234,
+        "match_distance_km": 0.077,
+        "match_confirmed_by": "name and position",
+        "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
+        "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
+        "capacity_source_checked": "2026-08-30"
+      }
+    },
+    "IHR": {
+      "name": "Lake Sacajawea",
+      "station": "IHR",
+      "office": "NWDP",
+      "timeseries": "IHR.Stor.Ave.~1Day.1Day.CBT-COMPUTED-REV",
+      "lat": 46.250073,
+      "lon": -118.879947,
+      "cadence": "daily",
+      "operator": "U.S. Army Corps of Engineers",
+      "huc6": "170601",
+      "huc6_name": "Lower Snake",
+      "por_start": "2015-01-01",
+      "capacity": {
+        "capacity_af": 406500.0,
+        "capacity_basis": "normal_storage",
+        "normal_storage_af": 406500.0,
+        "max_storage_af": null,
+        "nid_storage_af": 406500.0,
+        "nid_id": "WA00347",
+        "nid_dam_name": "Ice Harbor Lock and Dam",
+        "dam_lon": -118.87951400450702,
+        "dam_lat": 46.24876590043466,
+        "match_distance_km": 0.149,
+        "match_confirmed_by": "name and position",
+        "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
+        "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
+        "capacity_source_checked": "2026-08-30"
+      }
+    },
+    "JDA": {
+      "name": "Lake Umatilla",
+      "station": "JDA",
+      "office": "NWDP",
+      "timeseries": "JDA.Stor.Inst.1Hour.0.CBT-COMPUTED-REV",
+      "lat": 45.71485,
+      "lon": -120.69367,
+      "cadence": "daily",
+      "operator": "U.S. Army Corps of Engineers",
+      "huc6": "170701",
+      "huc6_name": "Middle Columbia",
+      "por_start": "2014-12-31",
+      "capacity": {
+        "capacity_af": 530000.0,
+        "capacity_basis": "normal_storage",
+        "normal_storage_af": 530000.0,
+        "max_storage_af": 2530000.0,
+        "nid_storage_af": 2530000.0,
+        "nid_id": "OR00011",
+        "nid_dam_name": "John Day Lock and Dam",
+        "dam_lon": -120.69540978435984,
+        "dam_lat": 45.71795332963817,
+        "match_distance_km": 0.371,
+        "match_confirmed_by": "name and position",
+        "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
+        "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
+        "capacity_source_checked": "2026-08-30"
+      }
+    },
+    "LGS": {
+      "name": "Lake Bryan",
+      "station": "LGS",
+      "office": "NWDP",
+      "timeseries": "LGS.Stor.Inst.1Hour.0.CBT-COMPUTED-REV",
+      "lat": 46.58563,
+      "lon": -118.027375,
+      "cadence": "daily",
+      "operator": "U.S. Army Corps of Engineers",
+      "huc6": "170601",
+      "huc6_name": "Lower Snake",
+      "por_start": "2014-12-31",
+      "capacity": {
+        "capacity_af": 565200.0,
+        "capacity_basis": "normal_storage",
+        "normal_storage_af": 565200.0,
+        "max_storage_af": 565200.0,
+        "nid_storage_af": 565200.0,
+        "nid_id": "WA00331",
+        "nid_dam_name": "Little Goose Lock and Dam",
+        "dam_lon": -118.02691392362404,
+        "dam_lat": 46.5842460112187,
+        "match_distance_km": 0.158,
+        "match_confirmed_by": "name and position",
+        "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
+        "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
+        "capacity_source_checked": "2026-08-30"
+      }
+    },
+    "LMN": {
+      "name": "Lake Herbert G. West",
+      "station": "LMN",
+      "office": "NWDP",
+      "timeseries": "LMN.Stor.Inst.1Hour.0.CBT-COMPUTED-REV",
+      "lat": 46.562693,
+      "lon": -118.538371,
+      "cadence": "daily",
+      "operator": "U.S. Army Corps of Engineers",
+      "huc6": "170601",
+      "huc6_name": "Lower Snake",
+      "por_start": "2014-12-31",
+      "capacity": {
+        "capacity_af": 377000.0,
+        "capacity_basis": "normal_storage",
+        "normal_storage_af": 377000.0,
+        "max_storage_af": 432000.0,
+        "nid_storage_af": 432000.0,
+        "nid_id": "WA00270",
+        "nid_dam_name": "Lower Monumental Lock and Dam",
+        "dam_lon": -118.5377043260036,
+        "dam_lat": 46.56219506609436,
+        "match_distance_km": 0.075,
+        "match_confirmed_by": "name and position",
+        "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
+        "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
+        "capacity_source_checked": "2026-08-30"
+      }
+    },
+    "LWG": {
+      "name": "Lower Granite Lake",
+      "station": "LWG",
+      "office": "NWDP",
+      "timeseries": "LWG.Stor.Inst.1Hour.0.CBT-COMPUTED-REV",
+      "lat": 46.660326,
+      "lon": -117.42848,
+      "cadence": "daily",
+      "operator": "U.S. Army Corps of Engineers",
+      "huc6": "170601",
+      "huc6_name": "Lower Snake",
+      "por_start": "2014-12-31",
+      "capacity": {
+        "capacity_af": 485000.0,
+        "capacity_basis": "normal_storage",
+        "normal_storage_af": 485000.0,
+        "max_storage_af": null,
+        "nid_storage_af": 485000.0,
+        "nid_id": "WA00349",
+        "nid_dam_name": "Lower Granite Lock and Dam",
+        "dam_lon": -117.42831383033865,
+        "dam_lat": 46.660536078100805,
+        "match_distance_km": 0.027,
+        "match_confirmed_by": "name and position",
+        "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
+        "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
+        "capacity_source_checked": "2026-08-30"
+      }
+    },
+    "MCN": {
+      "name": "Lake Wallula",
+      "station": "MCN",
+      "office": "NWDP",
+      "timeseries": "MCN.Stor.Inst.1Hour.0.CBT-COMPUTED-REV",
+      "lat": 45.935633,
+      "lon": -119.297667,
+      "cadence": "daily",
+      "operator": "U.S. Army Corps of Engineers",
+      "huc6": "170701",
+      "huc6_name": "Middle Columbia",
+      "por_start": "2014-12-31",
+      "capacity": {
+        "capacity_af": 1350000.0,
+        "capacity_basis": "normal_storage",
+        "normal_storage_af": 1350000.0,
+        "max_storage_af": null,
+        "nid_storage_af": 1350000.0,
+        "nid_id": "OR00616",
+        "nid_dam_name": "Mcnary Lock and Dam",
+        "dam_lon": -119.29778209196125,
+        "dam_lat": 45.93604288635519,
+        "match_distance_km": 0.046,
+        "match_confirmed_by": "name and position",
+        "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
+        "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
+        "capacity_source_checked": "2026-08-30"
+      }
+    },
+    "TDA": {
+      "name": "Lake Celilo",
+      "station": "TDA",
+      "office": "NWDP",
+      "timeseries": "TDA.Stor.Inst.1Hour.0.CBT-COMPUTED-REV",
+      "lat": 45.61,
+      "lon": -121.13,
+      "cadence": "daily",
+      "operator": "U.S. Army Corps of Engineers",
+      "huc6": "170701",
+      "huc6_name": "Middle Columbia",
+      "por_start": "2014-12-31",
+      "capacity": {
+        "capacity_af": 330000.0,
+        "capacity_basis": "max_storage",
+        "normal_storage_af": 277000.0,
+        "max_storage_af": 330000.0,
+        "nid_storage_af": 330000.0,
+        "nid_id": "OR00002",
+        "nid_dam_name": "The Dalles Lock and Dam",
+        "dam_lon": -121.13574065565818,
+        "dam_lat": 45.61483738820347,
+        "match_distance_km": 0.699,
+        "match_confirmed_by": "name and position",
+        "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
+        "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
+        "capacity_source_checked": "2026-08-30"
+      },
+      "review": {
+        "waived": "conservation pool below the observed record",
+        "why": "The water has stood at 309,450 acre-feet, above the 277,000 conservation pool, so ADR-072 divides by the 330,000 maximum pool instead -- a figure the record fits inside. The conservation pool is not wrong about the pool; it is the wrong figure to divide a gross reading by."
+      }
+    }
+  },
+  "withheld": {
+    "ALF": {
+      "name": "Lake Pend Oreille",
+      "finding": "The series is total lake storage for Lake Pend Oreille, a natural lake whose last few feet Albeni Falls Dam regulates: 1,557,900 acre-feet observed against the dam's 1,153,000 conservation pool and 1,155,000 maximum. The reading is the lake, not the storage the dam holds, so dividing one by the other would publish a percentage of the wrong quantity. Needs a usable-storage series, or the successor ADR-078 anticipates for a water measured as a lake."
+    },
+    "BCL": {
+      "name": "Big Cliff Dam",
+      "finding": "No storage series answered inside the last thirty days, so it would be withdrawn for late data the morning it joined the map. Tried: BCL.Stor.Inst.1Hour.0.CBT-COMPUTED-REV, BCL.Stor.Inst.0.0.MIXED-COMPUTED-REV, BCL.Stor.Inst.~1Day.0.CBT-REV, BCL.Stor.Inst.~1Day.0.CBT-RAW, BCL.Stor.Ave.~1Day.1Day.CBT-COMPUTED-REV, BCL.Stor.Inst.~1Day.0.MIXED-COMPUTED-REV."
+    },
+    "BDDI": {
+      "name": "Boise R Blw  Dvrsn Dam nr Boise",
+      "finding": "No storage series answered inside the last thirty days, so it would be withdrawn for late data the morning it joined the map. Tried: BDDI.Stor.Inst.15Minutes.0.Best."
+    },
+    "BON": {
+      "name": "Bonneville Pool",
+      "finding": "745,300 acre-feet observed against Bonneville's 277,000 conservation pool and 537,000 maximum -- 39% above the largest figure the inventory names. The reported storage is the whole reach behind the dam rather than a pool the record describes. Held under the no-repair rule: no source here says which figure to believe."
+    },
+    "COEI": {
+      "name": "Coeur d'Alene Lake",
+      "finding": "Coeur d'Alene Lake, a natural lake whose outlet is regulated by Post Falls Dam about 20 km downstream; no dam stands within the matching radius, and the inventory publishes no storage figure this series could be divided by. ADR-078 admits a water on its dam, and this one needs the successor that record anticipates."
+    },
+    "DIA": {
+      "name": "Diablo Reservoir nr Newhalem 6NE",
+      "finding": "No storage series answered inside the last thirty days, so it would be withdrawn for late data the morning it joined the map. Tried: DIA.Stor.Inst.1Hour.0.USGS-REV."
+    },
+    "GSV": {
+      "name": "Galesville Dam",
+      "finding": "The catalog advertises a current extent and every window tried returns no values. A candidate is confirmed by a read, never by the catalog (ADR-102). Tried: GSV.Stor.Inst.0.0.MIXED-COMPUTED-REV."
+    },
+    "HCDI": {
+      "name": "Snake R@Hells Canyon Dam",
+      "finding": "The catalog advertises a current extent and every window tried returns no values. A candidate is confirmed by a read, never by the catalog (ADR-102). Tried: ."
+    },
+    "HEN": {
+      "name": "Henrys Lk Dm Henrys Fk nr Mks In",
+      "finding": "No storage series answered inside the last thirty days, so it would be withdrawn for late data the morning it joined the map. Tried: HEN.Stor.Inst.15Minutes.0.Best."
+    },
+    "HOPI": {
+      "name": "Pend Oreille Lake nr Hope",
+      "finding": "No storage series answered inside the last thirty days, so it would be withdrawn for late data the morning it joined the map. Tried: HOPI.Stor-Lake.Inst.0.0.CBT-REV, HOPI.Stor-Lake.Inst.0.0.CBT-RAW."
+    },
+    "KER": {
+      "name": "Flathead Lake",
+      "finding": "Flathead Lake, matched to Polson Sewage Lagoon 1.19 km away holding 84 acre-feet against 1,865,340 observed -- the wrong structure, and Seli\u0161 Ksanka Q\u0142ispe Dam (formerly Kerr) is not in the inventory set the match could reach. It is also a regulated natural lake, so the ADR-078 question applies here too."
+    },
+    "LLK": {
+      "name": "Long Lake Dam",
+      "finding": "No storage series answered inside the last thirty days, so it would be withdrawn for late data the morning it joined the map. Tried: LLK.Stor.Inst.~1Day.0.CBT-REV."
+    },
+    "MAN": {
+      "name": "Mann Creek Dam nr Weiser",
+      "finding": "No storage series answered inside the last thirty days, so it would be withdrawn for late data the morning it joined the map. Tried: MAN.Stor.Inst.15Minutes.0.Best."
+    },
+    "MER": {
+      "name": "Lake Merwin near Chelatchie",
+      "finding": "No storage series answered inside the last thirty days, so it would be withdrawn for late data the morning it joined the map. Tried: MER.Stor.Inst.0.0.MIXED-COMPUTED-REV, MER.Stor.Ave.~1Day.1Day.MIXED-COMPUTED-REV, MER.Stor.Inst.1Hour.0.MIXED-COMPUTED-REV."
+    },
+    "MIL": {
+      "name": "Snake R@Milner Dam nr Burley",
+      "finding": "No storage series answered inside the last thirty days, so it would be withdrawn for late data the morning it joined the map. Tried: MIL.Stor.Inst.15Minutes.0.Best."
+    },
+    "MLL": {
+      "name": "Mill Creek Dam",
+      "finding": "The catalog advertises a current extent and every window tried returns no values. A candidate is confirmed by a read, never by the catalog (ADR-102). Tried: MLL.Stor.Inst.15Minutes.0.USGS-COMPUTED-REV."
+    },
+    "PRD": {
+      "name": "Priest Rapids Lake",
+      "finding": "A mid-Columbia run-of-river pool operated within a few feet. The inventory's pool figure describes the reach behind the dam while the pool itself swings a small fraction of it, so a percent of full would be true and useless -- which is the finding the never-filled screen exists to make (ADR-102). Measured: never seen a third full: 43,561 acre-feet observed against 191,000, 23%."
+    },
+    "RIS": {
+      "name": "Rock Island Pool",
+      "finding": "A mid-Columbia run-of-river pool operated within a few feet. The inventory's pool figure describes the reach behind the dam while the pool itself swings a small fraction of it, so a percent of full would be true and useless -- which is the finding the never-filled screen exists to make (ADR-102). Measured: never seen a third full: 11,600 acre-feet observed against 113,700, 10%."
+    },
+    "RRH": {
+      "name": "Lake Entiat",
+      "finding": "A mid-Columbia run-of-river pool operated within a few feet. The inventory's pool figure describes the reach behind the dam while the pool itself swings a small fraction of it, so a percent of full would be true and useless -- which is the finding the never-filled screen exists to make (ADR-102). Measured: never seen a third full: 36,990 acre-feet observed against 382,000, 10%."
+    },
+    "SWF": {
+      "name": "Swift Reservoir",
+      "finding": "No storage series answered inside the last thirty days, so it would be withdrawn for late data the morning it joined the map. Tried: SWF.Stor.Inst.0.0.MIXED-COMPUTED-REV, SWF.Stor.Ave.~1Day.1Day.MIXED-COMPUTED-REV."
+    },
+    "WAH": {
+      "name": "Lake Waha",
+      "finding": "Every storage series here is a Bureau of Reclamation Hydromet reading republished by the Corps (WAH.Stor.Inst.15Minutes.0.USBR-RAW). The Corps is not its source, and ADR-069 keeps one reservoir to one provider."
+    },
+    "WAN": {
+      "name": "Lake Wanapum",
+      "finding": "A mid-Columbia run-of-river pool operated within a few feet. The inventory's pool figure describes the reach behind the dam while the pool itself swings a small fraction of it, so a percent of full would be true and useless -- which is the finding the never-filled screen exists to make (ADR-102). Measured: never seen a third full: 162,800 acre-feet observed against 590,000, 28%."
+    },
+    "WEL": {
+      "name": "Lake Pateros",
+      "finding": "A mid-Columbia run-of-river pool operated within a few feet. The inventory's pool figure describes the reach behind the dam while the pool itself swings a small fraction of it, so a percent of full would be true and useless -- which is the finding the never-filled screen exists to make (ADR-102). Measured: never seen a third full: 98,980 acre-feet observed against 331,000, 30%."
+    },
+    "YAL": {
+      "name": "Yale Reservoir",
+      "finding": "No storage series answered inside the last thirty days, so it would be withdrawn for late data the morning it joined the map. Tried: YAL.Stor.Inst.0.0.MIXED-COMPUTED-REV, YAL.Stor.Ave.~1Day.1Day.MIXED-COMPUTED-REV."
+    }
+  },
+  "deduplicated": [
+    "AMF",
+    "AND",
+    "APP",
+    "ARK",
+    "BEU",
+    "BLU",
+    "BOIS3",
+    "BOIS3-Lower",
+    "BRN",
+    "BUL",
+    "BUM",
+    "CGR",
+    "CHL",
+    "CLE",
+    "CLS",
+    "CMO",
+    "COT",
+    "CSC",
+    "DED",
+    "DET",
+    "DEX",
+    "DOR",
+    "DWR",
+    "EMI",
+    "EMM",
+    "FAL",
+    "FCSO",
+    "FOS",
+    "FRN",
+    "GPR",
+    "GRS",
+    "HAH",
+    "HCR",
+    "HGH",
+    "ISL",
+    "JCK",
+    "KAC",
+    "KEE",
+    "LIB",
+    "LOP",
+    "LOS",
+    "LOW",
+    "LUC",
+    "MACI",
+    "MAG",
+    "MAY",
+    "MCK",
+    "MIN",
+    "MMD",
+    "MMD-896,0ft",
+    "MOS",
+    "NOX",
+    "OCH",
+    "OWY",
+    "PAL",
+    "PAY",
+    "PHL",
+    "PRV",
+    "RIM",
+    "RIR",
+    "ROS",
+    "RSA",
+    "SCO",
+    "SHA",
+    "SOL",
+    "THF",
+    "UBK",
+    "UNY",
+    "WAR",
+    "WIL",
+    "WLD",
+    "WOD",
+    "WYN"
+  ]
+}

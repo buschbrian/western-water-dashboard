@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted; drought menu presentation superseded by ADR-091
+Accepted; drought menu presentation superseded by ADR-091; extended to storage and snow by ADR-103
 
 ## Date
 

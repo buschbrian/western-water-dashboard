@@ -507,9 +507,9 @@ const VIEWPORTS = [
  * and every provider's name arrives from a payload field that spells it the
  * short way. `CDEC` was already named in the visible-language rule and had
  * nothing enforcing it; `NWIS`, `CDSS` and `USGS` joined the roster with the
- * fifth provider. */
+ * fifth provider; `USACE` and `CWMS` with the eighth (ADR-102). */
 const RETIRED_TERMS =
-  /\bcadence\b|stale feed|period-of-record|seasonal percentile|\baf\b|\bRISE\b|\bAWDB\b|\bCDEC\b|\bCDSS\b|\bUSGS\b|\bNWIS\b/i;
+  /\bcadence\b|stale feed|period-of-record|seasonal percentile|\baf\b|\bRISE\b|\bAWDB\b|\bCDEC\b|\bCDSS\b|\bUSGS\b|\bNWIS\b|\bUSACE\b|\bCWMS\b/i;
 
 /* Text a reader can see, including inside every open shadow root. Calcite
  * and the ArcGIS components render their own labels in shadow DOM, so the
@@ -4066,7 +4066,7 @@ for (const failure of [
       label: "Storage map at subregions",
       url: `${URL}?level=4`,
       signal: "__dashboardReady",
-      levelsOffered: 3,
+      levelsOffered: 4,
       /* The storage map publishes its readiness once, with the map already
        * drawn, so the signal appearing is enough here. */
       drawn: "drainageAreas",
@@ -4093,7 +4093,7 @@ for (const failure of [
       label: "Snowpack at subregions",
       url: `${URL}snow.html?level=4`,
       signal: "__snowReady",
-      levelsOffered: 3,
+      levelsOffered: 4,
       /* The map starts after the figures are on screen by design, so its own
        * fields arrive on a later publish than the page's. */
       drawn: "mapBasins",
@@ -4205,9 +4205,10 @@ for (const failure of [
       `${scenario.label}: the bar drops the level: ${state.navHrefs.join(", ")}`);
   }
 
-  /* ADR-088: drought alone offers the fourth tier. The figures, outlines,
-   * level control and Drainage menu all have to agree on it; storage and
-   * snow links coarsen rather than opening an unsupported level. */
+  /* ADR-088 offered the fourth tier on drought and ADR-103 offered it
+   * everywhere. The figures, outlines, level control and Drainage menu all
+   * have to agree on it, and an eight-digit place now travels whole to
+   * every page rather than being coarsened on the way. */
   const fine = JSON.parse(
     await readFile(path.join(REPO_ROOT, "data/drought/usdm-huc8.json"), "utf8"));
   await tab.goto(`${URL}drought.html?level=8`,
@@ -4234,14 +4235,32 @@ for (const failure of [
     `Drought at subbasins: ${fineState.ready?.mapChangeAreas} areas make an unarchived change claim`);
   check(fineState.subbasinRows === fine.unit_count,
     `Drought at subbasins: menu offers ${fineState.subbasinRows} of ${fine.unit_count}`);
-  for (const id of ["map", "overview", "snow"]) {
-    check(!/[?&]level=8(?:&|$)/.test(fineState.hrefs[id] ?? ""),
-      `Drought at subbasins: ${id} link keeps unsupported level 8`);
-  }
-  for (const id of ["drought", "methods"]) {
+  for (const id of ["map", "overview", "snow", "drought", "methods"]) {
     check(/[?&]level=8(?:&|$)/.test(fineState.hrefs[id] ?? ""),
-      `Drought at subbasins: ${id} link drops level 8`);
+      `Drought at subbasins: ${id} link drops level 8 (ADR-103)`);
   }
+
+  /* The storage map at the same size: the level control offers it, the
+   * control shows it, and the Drainage menu offers eight-digit rows. This
+   * is the half ADR-103 added, and nothing else here could catch it. */
+  await tab.goto(`${URL}?level=8`, { waitUntil: "domcontentloaded", timeout: 60000 });
+  await tab.waitForFunction(() =>
+    window.__dashboardReady?.levelsOffered !== undefined
+      && window.__dashboardReady?.drainageAreas !== undefined, { timeout: 90000 });
+  const fineStorage = await tab.evaluate(() => ({
+    ready: window.__dashboardReady,
+    chosen: document.querySelector(".level-control calcite-select")?.value ?? null,
+    areaValues: [...document.querySelectorAll(".storage-drainage-menu calcite-option")]
+      .map((option) => option.getAttribute("value")).filter((value) => value !== "all")
+  }));
+  check(fineStorage.ready?.level === 8 && fineStorage.chosen === "8",
+    `Storage map at subbasins: level is ${fineStorage.ready?.level} `
+    + `and the control shows ${fineStorage.chosen}`);
+  check(fineStorage.ready?.levelsOffered === 4,
+    `Storage map at subbasins: ${fineStorage.ready?.levelsOffered} area sizes on offer`);
+  check(fineStorage.areaValues.length > 0
+      && fineStorage.areaValues.every((value) => value?.length === 8),
+  `Storage map at subbasins: the area control mixes tiers`);
 
   /* The default is the absence of the parameter, so a page with no `?level=`
    * must be the basins page it always was. */
@@ -4657,7 +4676,11 @@ for (const failure of [
           + "the reservoir's name on it");
         check(state.text.includes("acre-feet"),
           `Reservoir page (${viewport.name}): a found page with no reading on it`);
-        check(state.pathRows === 3,
+        /* Four since ADR-103: region, subregion, basin and the subbasin the
+         * record carries its own code for. A reservoir the finer boundaries
+         * do not hold shows the three it can prove, which is why this reads
+         * the path of one that has all four. */
+        check(state.pathRows === 4,
           `Reservoir page (${viewport.name}): has ${state.pathRows} hydrologic path rows`);
         check(state.coordinateText.includes("Published point")
           && state.coordinateText.includes("°") && state.coordinateCopy,

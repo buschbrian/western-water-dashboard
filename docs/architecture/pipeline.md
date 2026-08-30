@@ -15,7 +15,7 @@ modules in `pipeline/`:
 |---|---|
 | `pipeline/constants.py` | Paths, thresholds, schema and method versions, source-coverage review. |
 | `pipeline/roster.py` | The committed rosters, capacity evidence and the full-level precedence rule. |
-| `pipeline/providers.py` | One adapter per provider: Reclamation, the Conservation Service, the Geological Survey, California, Colorado, Salt River Project and Montana DNRC. The Geological Survey adapter uses its modern OGC daily collection and a pipeline-only key. |
+| `pipeline/providers.py` | One adapter per provider: Reclamation, the Conservation Service, the Geological Survey, California, Colorado, Salt River Project, Montana DNRC, the Army Corps of Engineers and the Central Arizona Project (Lake Pleasant, one current record a day; ADR-104). The Geological Survey adapter uses its modern OGC daily collection and a pipeline-only key; the Corps adapter reads the CWMS Data API under the Northwestern Division's Pacific Northwest region office (ADR-102). |
 | `pipeline/seasonal.py` | The seasonal estimator: window, annual votes, normals, rank, percentile. |
 | `pipeline/freshness.py` | Carry-forward, the withdrawal threshold and the withdrawal notice. |
 | `pipeline/geography.py` | County and drainage-area assignment onto finished records. |

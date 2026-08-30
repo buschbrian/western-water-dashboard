@@ -130,6 +130,16 @@ def coarser_roster(codes, level: int) -> list[dict]:
             for code in sorted({str(c)[:level] for c in codes if c})]
 
 
+def subbasin_roster(codes) -> list[dict]:
+    """The eight-digit subbasins a set of `huc8` codes names (ADR-103).
+
+    Unlike the two coarser rosters this one cannot be derived from `huc6`:
+    a finer code is not a prefix of a coarser one, so the codes handed in
+    are each record's own `huc8` assignment. Same names file, same shape.
+    """
+    return coarser_roster(codes, 8)
+
+
 def subregion_roster(codes) -> list[dict]:
     """The HUC-4 subregions a set of finer codes belongs to, named."""
     return coarser_roster(codes, 4)
@@ -351,6 +361,17 @@ def load_units(path: Path | None = None) -> list[dict]:
     return units_from_collection(payload)
 
 
+def load_units_at(level: int) -> list[dict]:
+    """The committed units of the drawn scope at `level` (ADR-103).
+
+    Read through `DRAWN_SCOPES` rather than a path, for ADR-063's reason:
+    which file holds which geography has moved before. Each unit's code is
+    under the `huc6` key whatever its width, as every unit list here is.
+    """
+    scope_name = watershed_scopes.DRAWN_SCOPES[level]
+    return load_units(watershed_scopes.ROOT / watershed_scopes.get_scope(scope_name).output)
+
+
 def assign_huc(point: Point, units) -> dict | None:
     """The unit containing this point, or None.
 
@@ -431,7 +452,8 @@ def haversine_km(a: Point, b: Point) -> float:
 
 def describe(lat: float, lon: float, units, *, station: str | None,
              assignment_point: Point | None = None,
-             source: str = "published_point") -> dict:
+             source: str = "published_point",
+             fine_units=None) -> dict:
     """The watershed fields for one reservoir record.
 
     `station` is the id the roster keys the reservoir by (ADR-066); it is
@@ -451,6 +473,11 @@ def describe(lat: float, lon: float, units, *, station: str | None,
     into Utah, so the moment the dam points land, computing `in_utah` from the
     assignment point would drop the single largest reservoir on this
     dashboard out of its own default view.
+
+    `fine_units` are the subbasins (ADR-103). The same point that chose the
+    basin chooses the subbasin, divide fallback included, so the two codes
+    cannot disagree about which side of a ridge the water leaves on; the
+    subbasin's code is published beside the basin's, never in its place.
 
     `source` records what kind of point produced the assignment, because the
     answer is going to improve. The published coordinates are lake points, a
@@ -472,10 +499,13 @@ def describe(lat: float, lon: float, units, *, station: str | None,
                 and distance_to_boundary_km(site, from_site) >= MIN_ASSIGNMENT_MARGIN_KM):
             point, unit = site, from_site
             source = "published_point_dam_on_divide"
+    fine = assign_huc(point, fine_units) if fine_units else None
     return {
         **location_fields(station, lat, lon),
         "huc6": unit["huc6"] if unit else None,
         "huc6_name": unit["name"] if unit else None,
+        "huc8": fine["huc6"] if fine else None,
+        "huc8_name": fine["name"] if fine else None,
         # Every state the drainage area reaches, which is a different question
         # from where the reservoir is (ADR-060). Lake Powell sits in Utah and
         # its water arrives from Wyoming and Colorado; a reader asking "what

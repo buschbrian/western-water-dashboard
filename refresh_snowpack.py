@@ -292,6 +292,31 @@ def build_payload(inventory: dict, records: list[dict], as_of: date,
         print(f"  {len(missing_sites)} station(s) contributed no reading and are "
               f"left out of today's file: {', '.join(missing_sites)}")
     normalized.sort(key=lambda site: (site["huc6"], site["name"], site["station"]))
+    # Each site's subbasin beside its basin (ADR-103), assigned from the
+    # committed drawn scope at level 8 by the site's own point. The basin
+    # came from the reviewed inventory; this is the same question one level
+    # finer, and it is answered at refresh time so an inventory written
+    # before the field existed still publishes it.
+    try:
+        fine_units = huc.load_units_at(8)
+    except (OSError, ValueError, KeyError) as exc:
+        print(f"WARNING: no subbasin boundaries ({type(exc).__name__}: {exc}); "
+              "publishing sites without huc8 fields")
+        fine_units = None
+    for site in normalized:
+        fine = (huc.assign_huc((site["lon"], site["lat"]), fine_units)
+                if fine_units else None)
+        site["huc8"] = fine["huc6"] if fine else None
+        site["huc8_name"] = fine["name"] if fine else None
+    if fine_units:
+        # Counted the way the reservoir refresh counts it (ADR-103): a site
+        # the finer boundaries do not hold is left out of every subbasin
+        # figure rather than filed under a guess, and the count says so.
+        placed = sum(1 for site in normalized if site["huc8"])
+        print(f"  {placed}/{len(normalized)} sites assigned to a subbasin")
+        for site in normalized:
+            if not site["huc8"]:
+                print(f"    no subbasin matched: {site['name']} ({site['station']})")
     huc_names = {site["huc6"]: site["huc6_name"] for site in inventory["sites"]}
     rollups = build_rollups(normalized, huc_names)
     # The full water year is about 70,000 observations, and the date is the
@@ -369,6 +394,8 @@ def build_payload(inventory: dict, records: list[dict], as_of: date,
         # published to prevent.
         "subregions": huc.subregion_roster(site["huc6"] for site in normalized),
         "regions": huc.region_roster(site["huc6"] for site in normalized),
+        # The finer table too (ADR-103), from each site's own `huc8`.
+        "subbasins": huc.subbasin_roster(site.get("huc8") for site in normalized),
         "sites": compact_sites,
     }
 

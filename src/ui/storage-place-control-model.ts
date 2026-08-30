@@ -33,7 +33,8 @@ export interface StoragePlaceAxis {
 const LEVEL_WORDS: Readonly<Record<number, { singular: string; plural: string }>> = {
   2: { singular: "Region", plural: "regions" },
   4: { singular: "Subregion", plural: "subregions" },
-  6: { singular: "Basin", plural: "basins" }
+  6: { singular: "Basin", plural: "basins" },
+  8: { singular: "Subbasin", plural: "subbasins" }
 };
 
 export function storageAreaWords(level: number): { singular: string; plural: string } {
@@ -78,7 +79,8 @@ export function storageDrainageAxis(
   const scope = resolveOpeningScope({ state: selection.state, area: null }, rosters);
   const candidates = level === 2 ? scope.regions
     : level === 4 ? scope.subregions
-      : scope.areas;
+      : level === 8 ? scope.subbasins
+        : scope.areas;
   const offered = candidates.filter((candidate) => include.has(candidate.huc6));
   const held = selection.area !== null && selection.area.length === level
     && offered.some((candidate) => candidate.huc6 === selection.area)

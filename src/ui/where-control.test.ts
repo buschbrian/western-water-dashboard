@@ -76,7 +76,7 @@ describe("drainageMenuView: one menu across levels", () => {
     expect(view.value).toBe(ALL_VALUE);
   });
 
-  it("adds subbasins only when the host offers level 8", () => {
+  it("adds subbasins on every host unless the host caps the level (ADR-103)", () => {
     const rosters: OpeningRosters = {
       ...ROSTERS,
       subbasins: [
@@ -85,12 +85,12 @@ describe("drainageMenuView: one menu across levels", () => {
       ]
     };
     const shared = drainageMenuView(rosters, ALL);
-    const drought = drainageMenuView(rosters, ALL, undefined, 8);
-    expect(values(shared.options)).not.toContain("14010101");
-    expect(values(drought.options)).toContain("14010101");
-    expect(values(drought.options)).toContain("14010102");
-    expect(drought.options.find((option) => option.value === "14010101")?.group)
+    const capped = drainageMenuView(rosters, ALL, undefined, 6);
+    expect(values(shared.options)).toContain("14010101");
+    expect(values(shared.options)).toContain("14010102");
+    expect(shared.options.find((option) => option.value === "14010101")?.group)
       .toBe("Colorado Headwaters");
+    expect(values(capped.options)).not.toContain("14010101");
   });
 
   it("narrows by the chosen state but never by the chosen area", () => {
