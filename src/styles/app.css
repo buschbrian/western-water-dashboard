@@ -1230,7 +1230,19 @@ arcgis-map > [slot="bottom-right"] {
 }
 .splash-subjects input:focus-visible { outline: 0; }
 
-/* The only part that scrolls. */
+/* The only part that scrolls, and it says so when it does.
+ *
+ * The two groups are one scrolling column on purpose -- a tab would hide half
+ * the answers behind an interaction a reader has to guess is there -- but at
+ * 390 pixels the states alone fill the box, and the region tier sat 196
+ * pixels below a clean bottom edge with nothing to suggest it existed. That
+ * is the same failure the tabs were refused for, arrived at by accident.
+ *
+ * The shadow is painted only while there is something below it: the cover
+ * layer scrolls with the content (`local`) and the shadow does not
+ * (`scroll`), so the cover hides the shadow at the bottom of the scroll and
+ * uncovers it anywhere above. No script, no scroll listener, and nothing to
+ * show when the whole list already fits. */
 .splash-places {
   flex: 1 1 auto;
   overflow-y: auto;
@@ -1238,7 +1250,18 @@ arcgis-map > [slot="bottom-right"] {
   border: 1px solid var(--app-border);
   border-radius: .5rem;
   padding: .75rem;
-  background: color-mix(in srgb, var(--app-surface) 58%, transparent);
+  background:
+    linear-gradient(
+      to top,
+      color-mix(in srgb, var(--app-surface) 58%, transparent),
+      color-mix(in srgb, var(--app-surface) 58%, transparent)
+    ) bottom / 100% 1.5rem no-repeat local,
+    radial-gradient(
+      farthest-side at 50% 100%,
+      color-mix(in srgb, var(--app-text) 22%, transparent),
+      transparent
+    ) bottom / 100% .75rem no-repeat scroll,
+    color-mix(in srgb, var(--app-surface) 58%, transparent);
 }
 .splash-places h3 {
   margin: .85rem 0 .5rem;
