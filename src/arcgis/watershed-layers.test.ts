@@ -12,6 +12,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   DRAWABLE_LEVELS,
+  createWatershedLayer,
   watershedCodeField,
   watershedScopeClause,
   watershedServiceUrl
@@ -80,5 +81,21 @@ describe("scoping the layer to the published units", () => {
    * rather than none of them, and it would arrive looking like a working map. */
   it("draws nothing when the scope is empty, rather than everything", () => {
     expect(watershedScopeClause(6, [])).toBe("1=0");
+  });
+});
+
+describe("the scale a scoped watershed layer draws at", () => {
+  it("states no lower limit, so a publisher's threshold cannot pick the level", () => {
+    /* Esri's HUC-8 layer publishes minScale 1,000,000 and the other three
+     * publish 0. Inherited, that would suspend level 8 at every scale these
+     * maps open at -- the drawn level would follow the view's zoom, which
+     * ADR-050 refuses. */
+    expect(createWatershedLayer({ level: 8, codes: ["17020005"] }).minScale).toBe(0);
+    expect(createWatershedLayer({ level: 6, codes: ["170200"] }).minScale).toBe(0);
+  });
+
+  it("still lets a caller set one deliberately", () => {
+    expect(createWatershedLayer({ level: 6, codes: ["170200"], minScale: 500_000 }).minScale)
+      .toBe(500_000);
   });
 });

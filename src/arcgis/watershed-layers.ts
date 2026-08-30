@@ -159,7 +159,23 @@ export function createWatershedLayer(options: WatershedLayerOptions): FeatureLay
   } else if (options.labelsVisible !== undefined) {
     properties["labelsVisible"] = options.labelsVisible;
   }
-  if (options.minScale !== undefined) properties["minScale"] = options.minScale;
+  /* Always stated, and 0 -- "no limit" -- unless a caller asks otherwise.
+   *
+   * Not a default worth skipping: Esri publishes the HUC-8 layer with its
+   * own `minScale` of 1,000,000 while HUC-2, HUC-4 and HUC-6 all publish 0.
+   * Inherited, that threshold suspends the layer view at every scale wider
+   * than about 1:1,000,000 -- which is every scale these maps open at -- so
+   * the drainage areas simply did not draw at level 8, on the drought map
+   * since it began offering that level and on the storage and snow maps
+   * from the day they did. Each map went on reporting the roster it had
+   * handed the layer, so nothing failed and the outlines were absent.
+   *
+   * Overriding it is what ADR-050 asks for rather than a workaround: the
+   * drawn level is the scope's and "deliberately not driven by view scale",
+   * and a publisher's threshold deciding it is exactly that coupling. What
+   * is drawn is 571 outlines the definition expression already narrows to,
+   * against the 75 the same maps draw at level 6. */
+  properties["minScale"] = options.minScale ?? 0;
   if (options.maxScale !== undefined) properties["maxScale"] = options.maxScale;
   return new FeatureLayer(properties as never);
 }
