@@ -58,6 +58,7 @@ import {
 } from "./hover-content";
 import {
   createReservoirReferenceLayer,
+  drainageLabelMinScale,
   RESERVOIR_REFERENCE_LAYER_ID,
   type ReservoirReference
 } from "./layers";
@@ -304,6 +305,13 @@ export async function createDroughtMap(
       labelExpressionInfo: { expression: `$feature.${WATERSHED_NAME_FIELD}` },
       labelPlacement: "always-horizontal",
       deconflictionStrategy: "dynamic",
+      /* The same gate the other two maps use. This map had none, which was
+       * invisible while the finest level drew nothing at all: 571 names over
+       * a five-class pattern is the map's loudest element burying its
+       * quietest question, which is the objection the halo above was already
+       * tuned against. */
+      minScale: drainageLabelMinScale(level),
+      maxScale: 0,
       /*
        * Cased like the boundary, and for the same reason -- dark letters
        * read on the pale classes, the halo reads on the dark ones -- but

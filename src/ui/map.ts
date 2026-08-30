@@ -771,7 +771,7 @@ export async function loadMap(
         level,
         codes: areas.map((area) => area.huc6),
         renderer: drainageRenderer(),
-        labelingInfo: drainageLabelingInfo(WATERSHED_NAME_FIELD),
+        labelingInfo: drainageLabelingInfo(WATERSHED_NAME_FIELD, level),
         labelsVisible: true
       });
       drainageCodeField = watershedCodeField(level);

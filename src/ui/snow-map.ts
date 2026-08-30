@@ -213,7 +213,7 @@ export async function createSnowMap(
     codes: areas.map((area) => area.huc6),
     renderer: basinRenderer(codeField, areas, null, null),
     labelsVisible: true,
-    labelingInfo: drainageLabelingInfo(WATERSHED_NAME_FIELD)
+    labelingInfo: drainageLabelingInfo(WATERSHED_NAME_FIELD, level)
   });
 
   const siteByStation = new Map(sites.map((site) => [site.station, site]));

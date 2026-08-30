@@ -42,6 +42,29 @@ export const OBJECT_ID_FIELD = "objectid";
 export const SYMBOL_KEY_FIELD = "symbol_key";
 
 export const DRAINAGE_LABEL_MIN_SCALE = 25_000_000;
+
+/**
+ * The same threshold for the level whose areas are eight times smaller.
+ *
+ * 25,000,000 was set when the map drew fourteen areas and kept when it drew
+ * 75, and it is a statement about how big an area has to be on screen before
+ * its name is worth the ink. Subbasins are 571 areas over the same ground:
+ * at the scale the maps open on, that threshold puts every one of those
+ * names on at once and the map disappears under its own labels.
+ *
+ * Roughly 571 areas against 75 is 7.6 times the count, so about 2.8 times
+ * smaller across -- which is the number this divides by. It lands just
+ * inside the scale the western view opens at, so the subbasin names arrive
+ * on the reader's first zoom rather than on arrival. The outlines are not
+ * gated: they are the level the reader chose, and ADR-050 keeps that the
+ * scope's answer rather than the view's.
+ */
+export const SUBBASIN_LABEL_MIN_SCALE = 9_000_000;
+
+/** What a level's names cost, so the finest one does not bury the map. */
+export function drainageLabelMinScale(level: number): number {
+  return level >= 8 ? SUBBASIN_LABEL_MIN_SCALE : DRAINAGE_LABEL_MIN_SCALE;
+}
 export const DRAINAGE_LABEL_HALO_PX = 2;
 export const DRAINAGE_LABEL_HALO_COLOR = "rgba(255,255,255,0.5)";
 
@@ -131,11 +154,11 @@ function areaSymbol(fill: string, line: string): Fill {
  * they look like -- and the halo stays at ADR-027's two pixels and ADR-030's
  * 50% opacity.
  */
-export function drainageLabelingInfo(nameField: string): unknown[] {
+export function drainageLabelingInfo(nameField: string, level = 6): unknown[] {
   return [{
     labelExpressionInfo: { expression: `$feature.${nameField}` },
     labelPlacement: "always-horizontal",
-    minScale: DRAINAGE_LABEL_MIN_SCALE,
+    minScale: drainageLabelMinScale(level),
     maxScale: 0,
     /* The engine's whole reason for being here: at fourteen names a fixed
      * position was fine, and past that a name that cannot be placed has to
