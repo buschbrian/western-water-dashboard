@@ -497,6 +497,12 @@ export async function loadMap(
    * reservoirs answers with drainage polygons the reader cannot select. */
   wireMapHover(element, {
     card: elementById<HTMLElement>("map-hover"),
+    /* This map already answers a tap: `wirePointerSelection` above selects
+     * the reservoir, which opens the details sheet. That sheet says
+     * everything the docked card would and eleven more fields besides, so
+     * the card would only arrive behind its scrim and outlive it. Hover on
+     * a fine pointer is untouched. */
+    tapAnsweredElsewhere: true,
     /* Both layers, reservoirs first, so a reservoir standing on a boundary
      * answers as a reservoir. Limited to these two: without an include, a
      * hit test also answers with the basemap, and the reader would get a

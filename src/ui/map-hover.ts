@@ -74,6 +74,18 @@ export interface MapHoverOptions {
   resolve(results: readonly GraphicHit[]): HoverResolution | null;
   /** The layer view that draws the emphasis, when the map has one. */
   layerView?(): HighlightView | null;
+  /**
+   * Set when the map already answers a tap by another route, so this wiring
+   * does not answer it a second time.
+   *
+   * The storage map opens a details sheet on a tap, and the sheet says
+   * everything the card would and eleven more fields besides. Answering both
+   * put the card behind the sheet's scrim with its dismiss control
+   * unreachable, and left it on the map afterwards -- one tap, two surfaces,
+   * two dismissals. Hover on a fine pointer is unaffected: there is no sheet
+   * on a hover, which is why the card exists at all.
+   */
+  tapAnsweredElsewhere?: boolean;
 }
 
 /** The card element a map hovers into. Empty, hidden, and out of the
@@ -231,14 +243,19 @@ export function wireMapHover(
   /*
    * Touch answers by tap, because it has no pointer to hover with.
    *
-   * Every map used to answer a phone with nothing at all: the drought map
-   * had no tap path of its own, and the storage and snow maps answered into
-   * a surface below the fold. The same hit test and the same `resolve` the
-   * pointer path uses run here, so a tap says exactly what a hover says.
-   * What differs is the card: docked and dismissible, rather than following
-   * a pointer that is not there.
+   * The drought map answered a phone with nothing at all -- it had no tap
+   * path of its own -- and the snow map answered into a surface below the
+   * fold, which on a narrow viewport reads the same as nothing happening.
+   * The same hit test and the same `resolve` the pointer path uses run here,
+   * so a tap says exactly what a hover says. What differs is the card:
+   * docked and dismissible, rather than following a pointer that is not
+   * there.
+   *
+   * A map that already answers a tap says so and is left alone, because two
+   * answers to one tap is worse than the one it had.
    */
   if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+    if (options.tapAnsweredElsewhere) return { clear };
     element.addEventListener("arcgisViewImmediateClick", (event) => {
       const point = eventPoint(event);
       if (!point) return;
