@@ -21,3 +21,8 @@ npx vite build
 mkdir -p screenshots
 node tests/smoke.mjs
 node tests/smoke-modern.mjs
+# The two suites above exercise whatever the network gave them that morning.
+# This one refuses the hosted data services on purpose, so the fallback every
+# page promises is proved on every run rather than only on the runs that
+# happened to lose them.
+node tests/hosted-outage.mjs
