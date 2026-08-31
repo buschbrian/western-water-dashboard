@@ -16,6 +16,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 import pytest
+import requests
 
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import huc  # noqa: E402
@@ -2136,6 +2137,57 @@ class TestTheSharedProviderSession:
 
         assert R.providers._retry_unreadable_body(read) == {"ok": True}
         assert calls["n"] == R.providers.RETRY_ATTEMPTS
+
+    def test_a_transport_failure_is_not_retried_a_second_time(self, monkeypatch):
+        """The two retry budgets layer; they must not multiply.
+
+        The adapter already retries connections, read timeouts and every
+        status in `RETRY_STATUSES`. While this loop also caught
+        `RequestException` it asked again after the adapter had given up --
+        so a provider answering 429 got three transport attempts, then three
+        more, and the outer three ignored the `Retry-After` the adapter
+        exists to obey.
+        """
+        monkeypatch.setattr(R.providers.time, "sleep", lambda _seconds: None)
+        calls = {"n": 0}
+
+        def read():
+            calls["n"] += 1
+            raise requests.exceptions.HTTPError("429 Too Many Requests")
+
+        with pytest.raises(requests.exceptions.HTTPError):
+            R.providers._retry_unreadable_body(read)
+        assert calls["n"] == 1
+
+    def test_a_refused_connection_is_left_to_the_adapter_too(self, monkeypatch):
+        monkeypatch.setattr(R.providers.time, "sleep", lambda _seconds: None)
+        calls = {"n": 0}
+
+        def read():
+            calls["n"] += 1
+            raise requests.exceptions.ConnectionError("refused")
+
+        with pytest.raises(requests.exceptions.ConnectionError):
+            R.providers._retry_unreadable_body(read)
+        assert calls["n"] == 1
+
+    def test_the_empty_body_that_stopped_a_run_is_still_retried(self):
+        """The narrowing must not drop the fault it was written for.
+
+        `resp.json()` on an empty 2xx raises `requests.exceptions.
+        JSONDecodeError`, which subclasses `json.JSONDecodeError` and so
+        `ValueError` -- the 2026-08-03 fault stays inside the one exception
+        this loop still catches. Asserted rather than assumed, because it is
+        a detail of the library that this narrowing rests on entirely.
+        """
+        assert issubclass(requests.exceptions.JSONDecodeError, ValueError)
+        assert not issubclass(requests.exceptions.HTTPError, ValueError)
+        assert not issubclass(requests.exceptions.ConnectionError, ValueError)
+        empty = requests.Response()
+        empty._content = b""
+        empty.status_code = 200
+        with pytest.raises(ValueError):
+            empty.json()
 
     def test_an_unreadable_body_that_never_parses_still_raises(self, monkeypatch):
         monkeypatch.setattr(R.providers.time, "sleep", lambda _seconds: None)

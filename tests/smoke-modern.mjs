@@ -505,21 +505,41 @@ async function checkAccessibility(tab, check, label) {
     }, AXE_TAGS);
   };
 
+  /*
+   * Both passes always run, including when the first is clean.
+   *
+   * The first version of this returned early on a clean first pass, which
+   * made the two looks asymmetric in a way that could hide the more serious
+   * of the two cases. A finding present only in the first pass is a state
+   * the page passed through on its way to settling. A finding present only
+   * in the second is the opposite -- it is the *settled* page, which is the
+   * page a reader actually gets -- and returning early meant nobody ever
+   * looked for it. Neither one fails the run, because the rule is that a
+   * finding counts when it survives a second look and a finding seen once
+   * has not; but both are printed, and a finding that keeps appearing in
+   * the late pass is evidence worth having.
+   */
   const first = axeViolations(await score());
-  if (first.length === 0) {
-    console.log("  axe: clean");
-    return;
-  }
   await tab.waitForTimeout(1000);
   const second = axeViolations(await score());
   const persistent = second.filter((violation) =>
     first.some((earlier) => earlier.id === violation.id));
-  for (const violation of first) {
-    if (persistent.some((kept) => kept.id === violation.id)) continue;
-    console.log(`  axe: ${violation.id} appeared once and was gone a second `
-      + `later, on ${violation.nodes.length} node(s) -- not counted, but real `
-      + `enough to print: ${violation.nodes[0]?.target.join(" ")} `
+  const kept = (violation) => persistent.some((held) => held.id === violation.id);
+  const fleeting = (violation, when) => {
+    console.log(`  axe: ${violation.id} appeared ${when}, on `
+      + `${violation.nodes.length} node(s) -- not counted, but real enough to `
+      + `print: ${violation.nodes[0]?.target.join(" ")} `
       + `${violation.nodes[0]?.html}`);
+  };
+  for (const violation of first) {
+    if (!kept(violation)) fleeting(violation, "and was gone a second later");
+  }
+  for (const violation of second) {
+    if (!kept(violation)) fleeting(violation, "only once the page had settled");
+  }
+  if (first.length === 0 && second.length === 0) {
+    console.log("  axe: clean");
+    return;
   }
   const violations = persistent;
   check(violations.length === 0,

@@ -96,11 +96,27 @@ def _retry_unreadable_body(read):
     The request itself must be inside the try. On 2026-08-08 a bare read
     timeout raised before the try block was entered and the retry never
     engaged, so `read` covers the call as well as the parse.
+
+    **Only `ValueError`.** This caught `RequestException` too while the
+    retry loops were hand-written and there was no adapter underneath. There
+    is one now, and it retries connections, read timeouts and the statuses in
+    `RETRY_STATUSES` itself -- so catching them again here multiplied the two
+    budgets instead of layering them. A provider answering 429 got three
+    transport attempts, then `raise_for_status()` raised, then this loop
+    asked for three more: nine requests where the policy says three, and the
+    outer three ignored the `Retry-After` the adapter exists to obey. A
+    provider that says "come back in a minute" should not be told it will be
+    asked nine times on our schedule.
+
+    `ValueError` still covers both faults above. `resp.json()` raises
+    `requests.exceptions.JSONDecodeError`, which subclasses
+    `json.JSONDecodeError` and so `ValueError`, and Montana's and the
+    Central Arizona Project's own checks raise `ValueError` directly.
     """
     for attempt in range(RETRY_ATTEMPTS):
         try:
             return read()
-        except (requests.exceptions.RequestException, ValueError):
+        except ValueError:
             if attempt == RETRY_ATTEMPTS - 1:
                 raise
             time.sleep(RETRY_BACKOFF_SECONDS * 2**attempt)
