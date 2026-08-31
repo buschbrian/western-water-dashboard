@@ -162,6 +162,40 @@ export const MAP_BOUNDS: readonly [readonly [number, number], readonly [number, 
 export const DRAWN_BOUNDS: readonly [readonly [number, number], readonly [number, number]] =
   [[-124.903, 29.838], [-105.626, 52.881]];
 
+/**
+ * Where a map opens for a reader who has chosen no place at all.
+ *
+ * Its own constant because it is its own question. `MAP_BOUNDS` above
+ * answered it until now, and `MAP_BOUNDS` is pinned to the frozen module as
+ * a contract with the saved links the retired routes translate (ADR-044) --
+ * so the opening view could not be corrected without moving a contract that
+ * has nothing to do with framing. Splitting them is the same split ADR-068
+ * made between the drawn and roster scopes, applied to the last constant
+ * that was still answering two questions.
+ *
+ * The correction it exists for: `MAP_BOUNDS` is the fourteen Utah-connected
+ * areas of ADR-063, expanded one zoom level. The roster moved west (R1) and
+ * that box did not, so every map opened centred four degrees east of the
+ * reservoirs it draws. Measured on the committed roster, opening a phone at
+ * 390 by 778 put **182 of 404 reservoirs off screen**, the whole California
+ * coast among them, and spent the canvas it saved on empty plains. At 768 by
+ * 958 it was 254. The reader was shown a box named for the west with the
+ * west's densest cluster outside it.
+ *
+ * So the opening view is the areas the maps actually draw. Numerically this
+ * is `DRAWN_BOUNDS` today, and it is written out rather than aliased to it:
+ * "which areas are drawn" and "where does a page open" are two questions,
+ * they have one answer at the moment, and the second must stay free to move
+ * -- a margin, a different subject -- without dragging the first with it.
+ *
+ * Not expanded. A margin is what a wide viewport already gets for free: an
+ * extent is a minimum, so the shorter dimension is widened to the canvas's
+ * shape whatever this box says. Expanding it as well would only push the
+ * geography further away on every screen.
+ */
+export const OPENING_BOUNDS: readonly [readonly [number, number], readonly [number, number]] =
+  [[-124.903, 29.838], [-105.626, 52.881]];
+
 /** The smallest box containing both. */
 function unionBoxes(
   left: readonly [readonly [number, number], readonly [number, number]],
@@ -271,8 +305,25 @@ export function mapExtentFromBox(
   return { type: "extent", ...extentFromBox(box) };
 }
 
+/**
+ * The region the retired routes' saved links still translate into, and the
+ * floor `NAVIGABLE_BOUNDS` is unioned with. No longer where a map opens --
+ * `openingExtent` is, and `OPENING_BOUNDS` says why.
+ */
 export function regionExtent(): Extent {
   return extentFromBox(MAP_BOUNDS);
+}
+
+/**
+ * Where the storage map opens for a reader who has chosen no place.
+ *
+ * The snow and drought cards open on `drainageExtent` below, which is the
+ * roster scope's box rather than the drawn scope's. The two are the same
+ * geography today and answer different questions, so each surface keeps
+ * naming the one it means.
+ */
+export function openingExtent(): Extent {
+  return extentFromBox(OPENING_BOUNDS);
 }
 
 /**

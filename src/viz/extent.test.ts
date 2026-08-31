@@ -11,11 +11,13 @@ import { readPayload } from "../data/payload-fixture";
 import {
   HUC6_BOUNDS,
   MAP_BOUNDS,
+  OPENING_BOUNDS,
   MAP_CENTER,
   MAP_MAX_ZOOM,
   MAP_MIN_ZOOM,
   expandBounds,
   SELECTION_ZOOM,
+  openingExtent,
   regionExtent,
   selectionTarget,
   unionOfAreaBoxes,
@@ -86,6 +88,69 @@ describe("the navigable region", () => {
   it("does not contain somewhere the reader should never end up", () => {
     expect(withinRegion(0, 0)).toBe(false);
     expect(withinRegion(-160, 20)).toBe(false);
+  });
+});
+
+/*
+ * Where a map opens, which stopped being the same question as where a saved
+ * link may land. `MAP_BOUNDS` answered both until the roster moved west and
+ * only one of the two answers was free to follow it -- the other is pinned
+ * to the frozen module (ADR-044). These hold the split.
+ */
+describe("the opening box", () => {
+  const contains = (
+    box: readonly [readonly [number, number], readonly [number, number]],
+    lon: number, lat: number
+  ): boolean =>
+    lon >= box[0][0] && lon <= box[1][0] && lat >= box[0][1] && lat <= box[1][1];
+
+  it("contains every reservoir the map draws", () => {
+    /* The failure this exists for: a reader who has chosen nothing is shown
+     * a box that does not hold the roster, and reads the west's storage off
+     * a map with the west's densest cluster outside the frame. */
+    for (const reservoir of reservoirs) {
+      expect(contains(OPENING_BOUNDS, reservoir.lon, reservoir.lat), reservoir.name)
+        .toBe(true);
+    }
+  });
+
+  it("is centred on the reservoirs rather than east of them", () => {
+    /* What went wrong before: MAP_BOUNDS' centre sat about four degrees east
+     * of the roster's, so the opening view spent its canvas on empty plains
+     * and cut the coast.
+     *
+     * Not zero, and it should not be. This box is the drainage areas, and an
+     * area reaches past the reservoirs inside it -- the westernmost drainage
+     * boundary is about half a degree west of the westernmost reservoir, so
+     * half a degree of the miss is the shape of the geography rather than a
+     * framing error. One degree is a quarter of the miss this replaced and
+     * comfortably above what the areas themselves explain. */
+    const lons = reservoirs.map((reservoir) => reservoir.lon);
+    const dataCentre = (Math.min(...lons) + Math.max(...lons)) / 2;
+    const boxCentre = (OPENING_BOUNDS[0][0] + OPENING_BOUNDS[1][0]) / 2;
+    expect(Math.abs(boxCentre - dataCentre)).toBeLessThan(1);
+  });
+
+  it("is somewhere the reader is allowed to be", () => {
+    // An opening view outside the navigation constraint is a map that snaps
+    // away from where it was asked to open.
+    for (const [lon, lat] of OPENING_BOUNDS) {
+      expect(withinRegion(lon, lat)).toBe(true);
+    }
+  });
+
+  it("describes the same box as an extent", () => {
+    const extent = openingExtent();
+    expect([[extent.xmin, extent.ymin], [extent.xmax, extent.ymax]])
+      .toEqual(OPENING_BOUNDS.map((corner) => [...corner]));
+    expect(extent.spatialReference.wkid).toBe(4326);
+  });
+
+  it("is not MAP_BOUNDS, which keeps its own contract", () => {
+    /* The point of the split. If these ever become equal again, one of the
+     * two questions has quietly lost its own answer. */
+    expect(OPENING_BOUNDS.map((corner) => [...corner]))
+      .not.toEqual(MAP_BOUNDS.map((corner) => [...corner]));
   });
 });
 

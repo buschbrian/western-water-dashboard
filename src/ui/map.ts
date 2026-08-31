@@ -28,7 +28,7 @@ import {
   MAP_MAX_ZOOM,
   MAP_MIN_ZOOM,
   navigableExtent,
-  regionExtent,
+  openingExtent,
   selectionTarget,
   mapExtentFromBox
 } from "../viz/extent";
@@ -128,7 +128,7 @@ export interface MapController {
   setPercents(percentOf: (reservoir: Reservoir) => NullableNumber): void;
   /**
    * Overrides the opening extent this map was constructed with
-   * (`regionExtent()`, set internally below) -- for a reader who has chosen
+   * (`openingExtent()`, set internally below) -- for a reader who has chosen
    * an opening scope (`?state=`/`?area=`,
    * docs/OPENING-SCOPE-AND-THE-WESTERN-ROSTER.md, S3a). `main.ts` is the
    * only caller: `loadMap` has no other one, so this stays the one place
@@ -137,7 +137,7 @@ export interface MapController {
    *
    * Call this before anything asynchronous has had a chance to let the view
    * start resolving -- the same "set before the view resolves" contract
-   * `regionExtent()` itself already fulfills, stated in full on this
+   * `openingExtent()` itself already fulfills, stated in full on this
    * function's caller.
    */
   setOpeningExtent(box: DrainageAreaBox): void;
@@ -369,12 +369,15 @@ export async function loadMap(
   const openingPadding = panelPadding();
   element.padding = openingPadding;
   setMapStageInsets(openingPadding);
-  /* The opening view is the derived region: one zoom level out from the
-   * drainage-area polygons, the same box the two production pages open at.
-   * Set here rather than eased into after the layer loads -- the target is a
-   * fixed box, not something that has to be measured from the data, so
-   * there is nothing to wait for and no race to lose. */
-  element.extent = { type: "extent", ...regionExtent() };
+  /* The opening view is the areas this map draws, centred on them
+   * (`OPENING_BOUNDS`). It was `regionExtent()` -- the Utah-connected box of
+   * ADR-063 expanded a level -- which stayed put when the roster moved west,
+   * so the map opened four degrees east of its own subject and left 182 of
+   * 404 reservoirs off a phone screen. Set here rather than eased into after
+   * the layer loads: the target is a fixed box, not something that has to be
+   * measured from the data, so there is nothing to wait for and no race to
+   * lose. */
+  element.extent = { type: "extent", ...openingExtent() };
   /* Both production maps already refuse to leave this region. Without it a
    * reader could pan a Utah dashboard into the middle of the Pacific and
    * find an empty basemap with no way back except reloading. `snapToZoom`
@@ -790,7 +793,7 @@ export async function loadMap(
       syncDrainageLabelOrder();
     },
     setOpeningExtent(box) {
-      // The same conversion `regionExtent()`'s own assignment above went
+      // The same conversion `openingExtent()`'s own assignment above went
       // through, so the corner order and spatial reference cannot drift
       // between the fixed default and a reader's chosen override.
       element.extent = mapExtentFromBox(box);

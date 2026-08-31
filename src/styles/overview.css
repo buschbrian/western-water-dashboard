@@ -878,8 +878,18 @@ body {
   .mobile-table-card:not(.mobile-table-open) > .table-scroll {
     display: none;
   }
-  /* The headline gets its own line on a phone; the rest pair up. */
-  .overview-kpi { flex-basis: 9rem; }
+  /* The headline gets its own line on a phone; the rest pair up.
+   *
+   * Tighter here than the strip's own padding because this block is the
+   * tallest thing between a reader and the first chart on both data pages
+   * -- 456 pixels of it on a 390-pixel phone, against a fold at 844. The
+   * pairing above is what makes it three rows rather than six; this is the
+   * rest of what density can honestly give back. */
+  .overview-kpis { gap: .5rem; }
+  .overview-kpi { flex-basis: 9rem; padding: .65rem .8rem; }
+  /* The value is the one line that cannot wrap, so on a half-width card it
+     is the one that can overflow its box. Its siblings already clip. */
+  .overview-kpi strong { overflow: hidden; text-overflow: ellipsis; }
   .overview-kpi-primary { flex-basis: 100%; }
   /* Drought has exactly four peer summaries. Keeping all four at the same
      width avoids a lone full-width Map age card under two half-width peers. */

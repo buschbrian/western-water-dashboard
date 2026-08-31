@@ -100,7 +100,8 @@ prove are in [`docs/operations/verification.md`](docs/operations/verification.md
 - `shared/reservoir-viz.js` — frozen oracle; source-only.
 - `huc6.geojson`, `utah-boundary.geojson` — frozen historical geography.
 - `OPENING_SCOPE_HUC6_BOUNDS` in `src/viz/extent.ts` — a contract with saved
-  links (ADR-044).
+  links (ADR-044). It answers *where a reader may go*, not where a page opens;
+  that is `OPENING_BOUNDS` beside it (ADR-105), which is free to move.
 - The `admitted_*.json` rosters — reviewed evidence; each entry names the screen
   it passed or the finding that held it.
 - Accepted ADR bodies, and the daily payloads.

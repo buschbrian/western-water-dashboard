@@ -81,7 +81,8 @@ The four different scopes, the hydrologic level, and what a link carries.
   [ADR-094](ADR-094-order-snowpack-place-controls-and-separate-site-options.md),
   [ADR-095](ADR-095-order-storage-map-place-filters-from-state-to-area.md),
   [ADR-096](ADR-096-publish-point-location-without-publishing-new-geography.md),
-  [ADR-097](ADR-097-filter-snow-by-the-committed-upstream-set.md)
+  [ADR-097](ADR-097-filter-snow-by-the-committed-upstream-set.md),
+  [ADR-105](ADR-105-open-on-the-areas-the-map-draws.md)
 - Boundary sourcing: [ADR-024](ADR-024-use-full-resolution-watersheds-for-snow-sites.md),
   [ADR-034](ADR-034-hosted-boundary-layers-with-a-deadline.md),
   [ADR-037](ADR-037-refetch-the-boundaries-at-the-resolution-the-source-stops-adding.md)
@@ -259,6 +260,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-102](ADR-102-admit-the-army-corps-of-engineers-as-a-provider.md) | Admit the Army Corps of Engineers as a provider | Accepted; eighth provider, the Columbia Basin under the `NWDP` office, republished and forecast series refused |
 | [ADR-103](ADR-103-offer-huc-8-on-every-surface.md) | Offer HUC-8 on every surface | Accepted; extends ADR-088 to storage and snow, every record carries its own `huc8` |
 | [ADR-104](ADR-104-admit-lake-pleasant-from-the-central-arizona-projects-endpoint.md) | Admit Lake Pleasant from the Central Arizona Project's endpoint | Accepted; ninth provider, one current record a day grown in the dense-history cache, inventory denominator with the operator's percentage recorded as a finding |
+| [ADR-105](ADR-105-open-on-the-areas-the-map-draws.md) | Open on the areas the map draws, not on the box saved links resolve to | Accepted |
 
 ## Relationship to the historical journal
 

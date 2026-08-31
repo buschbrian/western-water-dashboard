@@ -22,7 +22,7 @@ for the opening box.
 |---|---|---|
 | Drawn | `DEFAULT_SCOPE` / `default_scope` | Which areas do the maps draw? |
 | Roster | `ROSTER_SCOPE` / `roster_scope` | Which geography were reservoirs admitted from? |
-| Opening | `OPENING_SCOPE_HUC6_BOUNDS`, `src/data/opening-scope.ts` | Where does a page open with no choice made? |
+| Opening | `OPENING_BOUNDS`, `src/data/opening-scope.ts` | Where does a page open with no choice made? |
 | Selected | `?state=`, `?area=`, `?level=`, the stored place | Where has this reader asked to be? |
 
 They currently coincide in places. **Never answer two of them with one
@@ -57,7 +57,9 @@ constant** — that coupling is what ADR-068 was written to break.
 
 ## Do not
 
-- move `OPENING_SCOPE_HUC6_BOUNDS` — it is a contract with saved links;
+- move `OPENING_SCOPE_HUC6_BOUNDS` or `MAP_BOUNDS` — they are the contract
+  with saved links, and answer where a reader may *go*. Where a page *opens*
+  is `OPENING_BOUNDS` (ADR-105), which is free to move;
 - name a boundary file directly in a test, tool or fixture;
 - write `/^\d{6}$/` — use `HUC_CODE`;
 - delete `?state=all`, which is how "everywhere" is said out loud.
