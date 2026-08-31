@@ -20,13 +20,15 @@
  *   than a subtree replacement, which is what made the old card flicker on
  *   the frames its text was rebuilt identically.
  *
- * Hover is a pointer affordance and nothing on any map depends on it: the
- * keyboard and screen-reader path to every value here is the list, table or
- * chart beside the map. It is skipped entirely on touch, and it is one of
- * the things that cannot run in a hidden pane, where `hitTest` never settles
- * because the render loop that resolves it never runs.
+ * Nothing on any map depends on either path: the keyboard and screen-reader
+ * route to every value here is the list, table or chart beside the map. Both
+ * are among the things that cannot run in a hidden pane, where `hitTest`
+ * never settles because the render loop that resolves it never runs.
+ *
+ * A coarse pointer takes the tap path at the end of this file instead of the
+ * frame loop above: same hit test, same words, a docked card.
  */
-import { hoverPosition } from "./hover";
+import { dockedEdge, hoverPosition } from "./hover";
 import type { GraphicHit, HitGraphic } from "./hit";
 
 /** What a card says: one name, then short lines under it. */
@@ -158,25 +160,62 @@ export function wireMapHover(
     shownKey = null;
     card.setAttribute("aria-hidden", "true");
     card.hidden = true;
+    card.classList.remove("is-docked", "is-docked-end");
     card.replaceChildren();
   };
 
-  const show = (content: HoverContent, point: ScreenPoint): void => {
+  const render = (content: HoverContent, dismissible: boolean): void => {
     const key = contentKey(content);
-    if (key !== shownKey) {
-      const heading = document.createElement("strong");
-      heading.textContent = content.heading;
-      const lines = content.lines.map((line) => {
-        const span = document.createElement("span");
-        span.textContent = line;
-        return span;
+    if (key === shownKey) return;
+    const heading = document.createElement("strong");
+    heading.textContent = content.heading;
+    const lines = content.lines.map((line) => {
+      const span = document.createElement("span");
+      span.textContent = line;
+      return span;
+    });
+    const nodes: Node[] = [heading, ...lines];
+    /* A tapped card stays until it is dismissed, so it carries the control
+     * that dismisses it. A pointer card needs none: it leaves with the
+     * pointer that opened it. */
+    if (dismissible) {
+      const close = document.createElement("button");
+      close.type = "button";
+      close.className = "map-hover-close";
+      close.textContent = "Close";
+      close.addEventListener("click", () => {
+        emphasize(undefined);
+        hide();
       });
-      card.replaceChildren(heading, ...lines);
-      card.setAttribute("aria-hidden", "false");
-      card.hidden = false;
-      shownKey = key;
+      nodes.push(close);
     }
+    card.replaceChildren(...nodes);
+    card.setAttribute("aria-hidden", "false");
+    card.hidden = false;
+    shownKey = key;
+  };
+
+  const show = (content: HoverContent, point: ScreenPoint): void => {
+    render(content, false);
     positionCard(card, point);
+  };
+
+  /* The tap answer, docked to an edge of the stage rather than placed at the
+   * tap: a card at the finger is a card under the finger, and what it
+   * describes is what the finger is already covering. It takes the top edge,
+   * and moves to the bottom only for a tap in the top third, so it never
+   * covers the thing that was just tapped. */
+  const showDocked = (content: HoverContent, point: ScreenPoint): void => {
+    render(content, true);
+    const stage = card.parentElement;
+    const edge = dockedEdge(point, {
+      width: stage?.clientWidth ?? 0,
+      height: stage?.clientHeight ?? 0
+    });
+    card.style.left = "";
+    card.style.top = "";
+    card.classList.add("is-docked");
+    card.classList.toggle("is-docked-end", edge === "end");
   };
 
   const clear = (): void => {
@@ -189,10 +228,36 @@ export function wireMapHover(
     hide();
   };
 
-  /* Touch and coarse pointers never get here. A hover card on a phone is a
-   * card that appears under the finger already covering what it describes,
-   * and stays there because there is no pointer to leave with. */
+  /*
+   * Touch answers by tap, because it has no pointer to hover with.
+   *
+   * Every map used to answer a phone with nothing at all: the drought map
+   * had no tap path of its own, and the storage and snow maps answered into
+   * a surface below the fold. The same hit test and the same `resolve` the
+   * pointer path uses run here, so a tap says exactly what a hover says.
+   * What differs is the card: docked and dismissible, rather than following
+   * a pointer that is not there.
+   */
   if (!window.matchMedia("(hover: hover) and (pointer: fine)").matches) {
+    element.addEventListener("arcgisViewImmediateClick", (event) => {
+      const point = eventPoint(event);
+      if (!point) return;
+      const include = options.include();
+      if (!include) {
+        clear();
+        return;
+      }
+      const current = ++request;
+      void element.hitTest(point, { include }).then((response) => {
+        if (current !== request) return;
+        const hit = options.resolve(response.results);
+        emphasize(hit?.graphic);
+        /* A tap on the background dismisses the card, the way a tap outside
+         * any other temporary surface does. */
+        if (hit) showDocked(hit.content, point);
+        else hide();
+      }).catch(() => clear());
+    });
     return { clear };
   }
 

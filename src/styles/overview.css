@@ -754,6 +754,42 @@ body {
   line-height: 1.35;
 }
 
+/* The tap answer on a touch device. Docked to an edge of the map rather than
+   placed at the tap, and dismissible, because there is no pointer to leave
+   with. The attribution strip has a fallback height here: only the storage
+   map's stylesheet declares the variable, and this rule is shared. */
+.view-map-host .map-hover.is-docked {
+  inset-block-start: .75rem;
+  inset-block-end: auto;
+  inset-inline: .75rem;
+  width: auto;
+  inline-size: auto;
+  max-width: none;
+  max-inline-size: none;
+  padding-inline-end: 5.25rem;
+  pointer-events: auto;
+}
+.view-map-host .map-hover.is-docked-end {
+  inset-block-start: auto;
+  inset-block-end: calc(.75rem + var(--map-attribution-height, 16px));
+}
+.view-map-host .map-hover .map-hover-close {
+  position: absolute;
+  inset-block-start: .4rem;
+  inset-inline-end: .4rem;
+  min-block-size: 2.75rem;
+  min-inline-size: 2.75rem;
+  padding: .25rem .55rem;
+  font: inherit;
+  font-size: .75rem;
+  color: var(--app-text);
+  background: var(--app-surface-raised);
+  border: 1px solid var(--app-border);
+  border-radius: .2rem;
+  cursor: pointer;
+}
+
+
 .view-map-host .chart-empty {
   position: absolute;
   inset-block-start: 50%;
