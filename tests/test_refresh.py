@@ -1628,7 +1628,7 @@ def test_cdss_reads_an_empty_window_as_an_answer_not_a_failure(monkeypatch):
         def raise_for_status(self):
             raise AssertionError("a zero-records 404 must not raise")
 
-    monkeypatch.setattr(R.providers.requests, "get",
+    monkeypatch.setattr(R.providers.SESSION, "get",
                         lambda url, params=None, timeout=None: Response())
     rows = R.providers._get_cdss_json(R.providers.CDSS_SERIES_URL,
                                       {"abbrev": "GROSRECO"})
@@ -1713,7 +1713,7 @@ def test_usgs_api_key_is_a_header_and_never_a_query_parameter(monkeypatch):
             return {"features": [], "links": []}
 
     monkeypatch.setenv("USGS_API_KEY", "secret-value")
-    monkeypatch.setattr(R.providers.requests, "get",
+    monkeypatch.setattr(R.providers.SESSION, "get",
                         lambda url, **kwargs: seen.update(url=url, **kwargs) or Response())
     R.providers._get_usgs_json(R.USGS_DV_URL, {"limit": 1})
     assert seen["headers"]["X-Api-Key"] == "secret-value"
@@ -2083,3 +2083,65 @@ def test_cwms_splits_a_long_range_and_keeps_only_what_was_asked_for(monkeypatch)
     # time; only the ones inside the requested range survive.
     assert frame["date"].min() >= pd.Timestamp("1991-01-01")
     assert frame["date"].max() <= pd.Timestamp("2021-01-01")
+
+
+class TestTheSharedProviderSession:
+    """One pooled session and one retry policy, in place of nine copies.
+
+    The saving that motivated this is a handshake per reading: measured
+    against the Conservation Service's station endpoint, 0.675 s median
+    without a session against 0.338 s with one. That is not something a test
+    can assert without going to the network, so what is pinned here is the
+    arrangement that produces it.
+    """
+
+    def test_every_provider_reads_through_the_one_session(self):
+        """A provider that opens its own connection is the bug coming back."""
+        source = (Path(__file__).resolve().parent.parent
+                  / "pipeline" / "providers.py").read_text(encoding="utf-8")
+        body = "\n".join(line for line in source.splitlines()
+                          if not line.lstrip().startswith("#"))
+        assert "requests.get(" not in body.replace("`requests.get()`", "")
+
+    def test_the_transport_retry_is_mounted_on_both_schemes(self):
+        for prefix in ("https://", "http://"):
+            adapter = R.providers.SESSION.get_adapter(prefix + "example.gov")
+            assert adapter.max_retries.total == R.providers.RETRY_ATTEMPTS - 1
+
+    def test_a_provider_that_says_when_to_come_back_is_obeyed(self):
+        """The whole point of moving this to the adapter: nine hand-written
+        loops all ignored `Retry-After`, so a provider asking for a pause got
+        our schedule instead of its own."""
+        retry = R.providers.SESSION.get_adapter("https://example.gov").max_retries
+        assert retry.respect_retry_after_header is True
+        assert 429 in retry.status_forcelist
+
+    def test_a_station_with_no_rows_is_not_a_retryable_status(self):
+        """Colorado answers 404 for an empty series. Retrying it would turn
+        an empty answer into three requests and a raise."""
+        retry = R.providers.SESSION.get_adapter("https://example.gov").max_retries
+        assert 404 not in retry.status_forcelist
+
+    def test_an_unreadable_body_is_still_retried(self, monkeypatch):
+        """The adapter cannot see this: a 2xx whose body will not parse is a
+        successful request to the transport, and it stopped a run once."""
+        monkeypatch.setattr(R.providers.time, "sleep", lambda _seconds: None)
+        calls = {"n": 0}
+
+        def read():
+            calls["n"] += 1
+            if calls["n"] < R.providers.RETRY_ATTEMPTS:
+                raise ValueError("empty body")
+            return {"ok": True}
+
+        assert R.providers._retry_unreadable_body(read) == {"ok": True}
+        assert calls["n"] == R.providers.RETRY_ATTEMPTS
+
+    def test_an_unreadable_body_that_never_parses_still_raises(self, monkeypatch):
+        monkeypatch.setattr(R.providers.time, "sleep", lambda _seconds: None)
+
+        def read():
+            raise ValueError("empty body")
+
+        with pytest.raises(ValueError):
+            R.providers._retry_unreadable_body(read)
