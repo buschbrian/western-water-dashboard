@@ -7,7 +7,7 @@ them with one constant is the mistake this document exists to prevent.
 |---|---|---|
 | Drawn scope | `watershed_scopes.DEFAULT_SCOPE`, published as `default_scope` | Which drainage areas do the maps draw? |
 | Roster scope | `watershed_scopes.ROSTER_SCOPE`, published as `roster_scope` | Which geography were the published reservoirs admitted from? |
-| Opening scope | `OPENING_SCOPE_HUC6_BOUNDS` in `src/viz/extent.ts`, `src/data/opening-scope.ts` | Where does a page open when the reader has chosen nothing? |
+| Opening scope | `OPENING_BOUNDS` in `src/viz/extent.ts`, `src/data/opening-scope.ts` | Where does a page open when the reader has chosen nothing? |
 | Selected scope | `?state=`, `?area=`, `?level=`, the stored place | Where has *this* reader asked to be? |
 | Snow station set | Snowpack's page-local `?upstream=` | Which current snow stations sit upstream of one reservoir? |
 
@@ -30,18 +30,34 @@ context around its subject. The two committed boundary files must agree area for
 area — fetched at different generalizations they did not, and two drought
 figures moved by a rounding step with no weather behind them.
 
-## Where the map opens is a third question, and it is pinned
+## Where the map opens is a third question (ADR-105)
 
-`HUC6_BOUNDS` in `src/viz/extent.ts` is the roster scope's box and moved west
-with it — 19 degrees of longitude. `MAP_BOUNDS` is **not** built from it: it is
+`OPENING_BOUNDS` in `src/viz/extent.ts` answers it: the box of the drainage
+areas the maps draw, `[[-124.903, 29.838], [-105.626, 52.881]]`, used
+unexpanded because an extent is a minimum and a wide canvas adds its own
+margin. `openingExtent()` is what the storage map is constructed with.
+
+**It is not `MAP_BOUNDS`, and the difference is the point.** `MAP_BOUNDS` is
 built from `OPENING_SCOPE_HUC6_BOUNDS`, a private literal frozen at the box of
-the fourteen areas the original roster was admitted from, which is what keeps a
-reader who has chosen nothing from opening on the whole west with the
-reservoirs too small to point at. That literal equals the frozen oracle's own
-`HUC6_BOUNDS` and is ADR-044's contract with the retired routes' saved links;
-`extent.test.ts` holds it there. The load the wider box would otherwise put on
-the opening view is carried by `src/data/opening-scope.ts` and the first-visit
-chooser instead — `unionOfAreaBoxes` over whatever place a reader picked.
+the fourteen areas the original roster was admitted from, equal to the frozen
+oracle's own `HUC6_BOUNDS`. That is ADR-044's contract with the retired
+routes' saved links, and `extent.test.ts` holds it there. It answers *where a
+reader may go* — it is what `NAVIGABLE_BOUNDS` is unioned with, so that
+contract can only ever widen — and it stopped answering *where a page opens*
+when ADR-105 measured what the two had drifted into: an opening view centred
+four degrees east of the roster, with 182 of 404 reservoirs off a portrait
+phone screen and 254 off a portrait tablet.
+
+`HUC6_BOUNDS` is a fourth box again: the roster scope's, which moved west with
+it — 19 degrees of longitude — and is what the snow and drought cards open on
+through `drainageExtent()`. It and `OPENING_BOUNDS` describe the same
+geography today and answer different questions, so each surface names the one
+it means.
+
+A reader who *has* chosen a place does not reach any of these: the load is
+carried by `src/data/opening-scope.ts` and the first-visit chooser —
+`unionOfAreaBoxes` over whatever place they picked, falling back to
+`MAP_BOUNDS` only when none of the chosen areas published a box.
 
 ## Four shared levels (ADR-064, ADR-073, ADR-088, ADR-103)
 

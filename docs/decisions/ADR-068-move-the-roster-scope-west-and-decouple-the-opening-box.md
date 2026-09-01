@@ -1,6 +1,6 @@
 # ADR-068: Move the roster scope west, and decouple the opening box from it
 
-- Status: Accepted
+- Status: Accepted; the clause keeping `MAP_BOUNDS` as the opening box superseded by ADR-105
 - Date: 2026-08-19
 - Supersedes: the part of ADR-063 that pinned `ROSTER_SCOPE` to
   `utah-connected` and derived `MAP_BOUNDS` from `HUC6_BOUNDS`

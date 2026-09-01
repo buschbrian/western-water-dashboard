@@ -31,7 +31,7 @@ import {
 import type { ReservoirPageState } from "./reservoir-model";
 import type { ReservoirPayload, Reservoir, UpstreamTrace } from "./types";
 import { renderTrendChart, renderTrendTable } from "./viz/trend";
-import { formatAcreFeet } from "./viz/format";
+import { formatAcreFeet, formatDate } from "./viz/format";
 import { storageColor } from "./viz/classes";
 import { headlinePercent } from "./viz/symbols";
 import {
@@ -185,7 +185,12 @@ async function renderFound(payload: ReservoirPayload,
 
   // Where the numbers come from, plus the record itself.
   const record = [
-    { label: "Record starts", value: reservoir.first_obs },
+    /* Through the same formatter every other date on this page goes
+     * through. It was printed raw, so one line of the Source list read
+     * "2015-01-01" while "Reading date" a screen above read "Aug 29, 2026"
+     * -- the machine form of a date, in front of a reader, on a page where
+     * the reader form was already in use. */
+    { label: "Record starts", value: formatDate(reservoir.first_obs) },
     {
       label: "Readings held",
       value: `${reservoir.n_obs} readings over ${reservoir.years_of_record} years`
@@ -329,10 +334,15 @@ function renderWithdrawn(
   const children: HTMLElement[] = [
     note("Reservoir details", "eyebrow"),
     heading,
+    /* The date goes through the same formatter as every other date a reader
+     * sees. It was interpolated raw, so the one sentence a withdrawn
+     * reservoir has read "It was last read 2024-03-15." -- a machine date in
+     * the middle of a plain-English sentence. */
     note("This reservoir is not in the current published data. Its feed went "
       + "quiet for longer than the publication window, so the site stopped "
       + `showing it. It was last read ${
-        state.lastRead ?? "at an unknown date"}.`, "reservoir-withdrawn")
+        state.lastRead ? formatDate(state.lastRead) : "at an unknown date"
+      }.`, "reservoir-withdrawn")
   ];
   if (state.sourceLabel) {
     children.push(note(`Its readings came from the ${state.sourceLabel}.`,

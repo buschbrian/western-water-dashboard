@@ -21,12 +21,20 @@ export function hoverPosition(
  *
  * A tap has no pointer to trail, so the card takes an edge instead of the
  * touch point -- a card at the finger is a card under the finger, and what it
- * describes is what the finger is already covering. The top edge is the
- * default because a map is usually tapped below it. A tap in the top third
- * sends the card to the bottom instead, which is the one band where the top
- * edge would cover the thing that was just tapped.
+ * describes is what the finger is already covering.
+ *
+ * The bottom edge is the default, because the top is where the controls are.
+ * Measured on a 390-pixel viewport, a card docked to the top covered zoom,
+ * home, fullscreen and the expand control at once, and the card takes pointer
+ * events -- so answering a tap took the map's controls away until the answer
+ * was dismissed. The bottom edge carries only the scale bar and the
+ * attribution strip, and `is-docked-end` already clears the second.
+ *
+ * A tap in the bottom third sends the card to the top instead, which is the
+ * one band where the bottom edge would cover the thing that was just tapped.
+ * The controls lose to the reader's own finger in that band, and only there.
  */
 export function dockedEdge(point: HoverPoint, stage: HoverSize): "start" | "end" {
-  if (!(stage.height > 0)) return "start";
-  return point.y < stage.height / 3 ? "end" : "start";
+  if (!(stage.height > 0)) return "end";
+  return point.y > (stage.height * 2) / 3 ? "start" : "end";
 }

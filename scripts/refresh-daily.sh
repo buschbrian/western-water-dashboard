@@ -29,12 +29,27 @@ dry_run=0
 # that is computed every morning and committed on none of them is invisible
 # until a reader lands on it: usdm-huc4.json spent its first week that way.
 published_files() {
-  "$python_bin" - "$manifest" <<'PY'
-import json, sys
+  "$python_bin" - "$manifest" "${1:-all}" <<'PY'
+import json, os, sys
 manifest = json.load(open(sys.argv[1], encoding="utf-8"))
+mode = sys.argv[2]
 for entry in manifest["files"]:
-    if entry["staged_by_refresh"]:
-        print(entry["path"])
+    if not entry["staged_by_refresh"]:
+        continue
+    # Staging a pathspec that matches nothing fails the whole run, and staging
+    # happens before the commit -- so one absent path means no data commit at
+    # all that morning. A path carrying `appears_when` is written only when its
+    # condition happens (the drought archive waits for the monitor to publish
+    # a new week), so it is left out until it does. Every other path must be
+    # there, and still fails loudly when it is not.
+    waiting = "appears_when" in entry and not os.path.exists(entry["path"])
+    if mode == "stageable" and waiting:
+        continue
+    if mode == "plan" and waiting:
+        print(f"{entry['path']}  -- not staged yet, waiting until "
+              f"{entry['appears_when']}")
+        continue
+    print(entry["path"])
 PY
 }
 
@@ -58,7 +73,7 @@ if [ "$dry_run" = 1 ]; then
   note "  5. snow             $python_bin refresh_snowpack.py"
   note "  6. assistant indexes $python_bin tools/build_assistant_indexes.py (keeps the last accepted set on failure)"
   note "  7. commit the published set:"
-  published_files | sed 's/^/       /'
+  published_files plan | sed 's/^/       /'
   exit 0
 fi
 
@@ -159,7 +174,7 @@ git config user.name "github-actions[bot]"
 git config user.email "github-actions[bot]@users.noreply.github.com"
 
 # shellcheck disable=SC2046  # deliberate word splitting: one path per line
-git add $(published_files | tr '\n' ' ')
+git add $(published_files stageable | tr '\n' ' ')
 
 if git diff --cached --quiet; then
   note "No data changes today."

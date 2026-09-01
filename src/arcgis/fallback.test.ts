@@ -62,19 +62,34 @@ describe("first-loadable fallback", () => {
    * none: four hanging candidates at ten seconds each held the first paint
    * for forty, because `loadMap` awaits this before the page renders. */
   it("stops the whole chain at its budget, not at each candidate's", async () => {
-    const started = Date.now();
+    /* Fake clocks, not wall time. On a busy runner a 40ms timer and
+     * `Date.now()` drift apart by a millisecond or two, which was enough to
+     * let a fourth candidate in under the budget and fail this on timing
+     * alone (one PR run in two of the same commit). What is asserted is the
+     * arithmetic, and the arithmetic is exact once the clock is. */
+    vi.useFakeTimers();
+    try {
+      const started = Date.now();
+      // Read the clock when the chain answers, not after the timers are run
+      // out: the run-out is what makes every pending timer fire.
+      const pending = resolveFirstLoadable(
+        [hangs("first"), hangs("second"), hangs("third"), hangs("fourth")],
+        { timeoutMs: 40, budgetMs: 60 }
+      ).then((result) => ({ result, elapsed: Date.now() - started }));
+      await vi.advanceTimersByTimeAsync(200);
+      const { result, elapsed } = await pending;
 
-    const result = await resolveFirstLoadable(
-      [hangs("first"), hangs("second"), hangs("third"), hangs("fourth")],
-      { timeoutMs: 40, budgetMs: 60 });
-
-    const elapsed = Date.now() - started;
-    expect(result.resource).toBeNull();
-    /* Two candidates at 40ms each would be 80ms and four would be 160ms. The
-     * budget is what decides, so this lands near 60 and nowhere near either. */
-    expect(elapsed).toBeLessThan(140);
-    expect(result.failures.length).toBeLessThan(4);
-    expect(result.failures.at(-1)?.error.message).toContain("before");
+      expect(result.resource).toBeNull();
+      /* Two candidates at 40ms each would be 80ms and four would be 160ms.
+       * The budget is what decides: the first spends its 40, the second is
+       * cut to the 20 that remain, and the third is never tried. */
+      expect(elapsed).toBe(60);
+      expect(result.failures.map((failure) => failure.name))
+        .toEqual(["first", "second", "third"]);
+      expect(result.failures.at(-1)?.error.message).toContain("before");
+    } finally {
+      vi.useRealTimers();
+    }
   });
 
   it("still reaches a later candidate while the budget holds", async () => {

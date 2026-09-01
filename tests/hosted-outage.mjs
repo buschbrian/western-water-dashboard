@@ -80,6 +80,10 @@ const problems = [];
 const say = (ok, message) => { console.log(`${ok ? "  ok  " : "  FAIL"} ${message}`); if (!ok) problems.push(message); };
 
 console.log(`\nblocked ${blocked} hosted request(s)\n`);
+/* Without this the suite passes loudest when it is testing nothing: a host
+ * that moves, or a glob that stops matching, leaves every assertion below
+ * true because no outage was ever simulated. */
+say(blocked > 0, `the hosted services were actually refused (${blocked} request(s))`);
 say(result.ready, "the page still reached readiness with every hosted service refused");
 say(result.reservoirsDrawn > 0,
   `it still drew its own reservoirs (${result.reservoirsDrawn})`);

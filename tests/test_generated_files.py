@@ -152,3 +152,29 @@ class TestTheRefreshScript:
             ["bash", str(self.SCRIPT), "--dry-run"],
             cwd=ROOT, capture_output=True, text=True, check=True)
         assert path in result.stdout
+
+    def test_the_commit_does_not_stage_a_path_that_may_not_exist(self):
+        """Staging a pathspec that matches nothing fails on the spot, and
+        staging runs before the commit -- so one absent path is not a missing
+        file, it is no data commit at all that morning. A path that waits for
+        a condition has to be left out of the staging list until the condition
+        happens, which is what the `stageable` mode does."""
+        source = self.SCRIPT.read_text(encoding="utf-8")
+        assert "git add $(published_files stageable" in source
+
+    def test_the_plan_says_which_paths_are_still_waiting(self):
+        """The dry run keeps naming every published path, including one not
+        written yet, and says what it is waiting for rather than dropping it
+        from the plan."""
+        waiting = [e for e in FILES
+                   if e["staged_by_refresh"] and "appears_when" in e
+                   and not (ROOT / e["path"]).exists()]
+        if not waiting:
+            pytest.skip("every conditional path has appeared")
+        result = subprocess.run(
+            ["bash", str(self.SCRIPT), "--dry-run"],
+            cwd=ROOT, capture_output=True, text=True, check=True)
+        for entry in waiting:
+            line = next(l for l in result.stdout.splitlines()
+                        if entry["path"] in l)
+            assert "not staged yet" in line, line
