@@ -11,7 +11,12 @@
     "`staged_by_refresh` is the list scripts/refresh-daily.sh commits. It is",
     "read from this file rather than retyped into a workflow, which is how",
     "data/drought/usdm-huc4.json came to be recomputed every morning and",
-    "committed on none of them."
+    "committed on none of them.",
+    "",
+    "`appears_when` marks a path whose writer creates it only under a stated",
+    "condition, so it is owned and classified from the day the writer learns",
+    "to write it rather than from the day it first appears. Everything else",
+    "in this table still has to exist."
   ],
   "classes": {
     "generated-daily": "Rewritten by the scheduled refresh. Never hand-edit; change the writer and run it.",
@@ -47,6 +52,14 @@
       "writer": "tools/fetch_drought_monitor.py",
       "staged_by_refresh": true,
       "note": "Verified exclusive polygons. Reverted rather than published alone when coverage fails."
+    },
+    {
+      "path": "data/drought/usdm-previous.geojson",
+      "class": "generated-weekly",
+      "writer": "tools/fetch_drought_monitor.py",
+      "staged_by_refresh": true,
+      "note": "The week usdm-current.geojson replaced, kept so a change between two weeks can be measured from the polygons rather than from basin shares. Rotated only when the map date actually moves. No page fetches it and the build does not publish it.",
+      "appears_when": "the monitor publishes a week after the one held in usdm-current.geojson"
     },
     {
       "path": "data/drought/usdm-huc6.json",

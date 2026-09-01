@@ -29,6 +29,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 OUTPUT_PATH = ROOT / "data" / "drought" / "usdm-current.geojson"
+PREVIOUS_PATH = ROOT / "data" / "drought" / "usdm-previous.geojson"
 LAYER_URL = (
     "https://services5.arcgis.com/0OTVzJS4K09zlixn/arcgis/rest/services/"
     "USDM_current/FeatureServer/0"
@@ -187,6 +188,39 @@ def fetch_current() -> dict:
     return assemble_geojson(features, object_ids, oid_field)
 
 
+def retain_previous(current: Path, previous: Path, map_date: str | None) -> str | None:
+    """Keep the week being replaced, so two weeks of polygons are on hand.
+
+    The per-drainage-area history files answer "how did this basin move" and
+    are all the published pages need. They cannot answer "which ground
+    changed", because a basin share is a number and the change is a shape.
+    That question needs the polygons of both weeks, and the download only ever
+    held one -- by the time anyone asks, last week has been overwritten.
+
+    So the file being replaced is kept beside the new one. Nothing reads it
+    yet: it is committed for the same reason `normals.json` is, and it is
+    deliberately not copied into the deploy, because a megabyte nobody fetches
+    is a megabyte every reader pays for.
+
+    A rewrite of the same week is not a new week and must not overwrite the
+    real previous one -- that is how an archive quietly becomes two copies of
+    today. The retained file is replaced only when the week actually moves.
+    """
+    if not current.exists():
+        return None
+    try:
+        held = json.loads(current.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        # An unreadable current file is not worth failing a download over, and
+        # there is nothing in it worth keeping.
+        return None
+    held_date = held.get("map_date")
+    if held_date is None or held_date == map_date:
+        return None
+    write_atomic(previous, held)
+    return str(held_date)
+
+
 def write_atomic(path: Path, payload: dict) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile(
@@ -203,6 +237,8 @@ def write_atomic(path: Path, payload: dict) -> None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--output", type=Path, default=OUTPUT_PATH)
+    parser.add_argument("--previous", type=Path, default=PREVIOUS_PATH,
+                        help="where the week being replaced is kept")
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
 
@@ -217,8 +253,11 @@ def main() -> int:
     if args.dry_run:
         print("Dry run: nothing written.")
         return 0
+    retained = retain_previous(args.output, args.previous, payload.get("map_date"))
     write_atomic(args.output, payload)
     print(f"Wrote {args.output}")
+    if retained:
+        print(f"Kept the {retained} week as {args.previous}")
     return 0
 
 

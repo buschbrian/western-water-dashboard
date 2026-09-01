@@ -17,8 +17,17 @@ function preserveRuntimeDataAndRedirects(): Plugin {
       await mkdir(resolve(outDir, "api"), { recursive: true });
       await mkdir(resolve(outDir, "legacy"), { recursive: true });
       await mkdir(resolve(outDir, "maplibre"), { recursive: true });
+      // Every drought file the pages fetch, and not the one they do not.
+      // `usdm-previous.geojson` is last week's polygons, kept so a change
+      // between two weeks can be measured from shapes rather than from basin
+      // shares. Nothing fetches it, and it is about two megabytes: publishing
+      // it would put that in every deploy for nobody, which is the same
+      // reason no boundary polygon is here (ADR-048).
       await cp(resolve(root, "data", "drought"), resolve(outDir, "data", "drought"),
-        { recursive: true });
+        {
+          recursive: true,
+          filter: (source) => !source.endsWith("usdm-previous.geojson")
+        });
       await cp(resolve(root, "data", "assistant"), resolve(outDir, "data", "assistant"),
         { recursive: true });
 

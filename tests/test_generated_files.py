@@ -56,8 +56,27 @@ class TestTheTableItself:
         assert used <= declared, f"undeclared class: {sorted(used - declared)}"
 
     def test_every_listed_file_exists(self):
-        missing = [e["path"] for e in FILES if not (ROOT / e["path"]).exists()]
+        """Absent means unowned, with one stated exception.
+
+        A path carrying `appears_when` is written only when its condition
+        happens -- the drought archive waits for the monitor to publish a new
+        week -- so it is owned and classified from the day its writer learns
+        to write it. The condition is prose for a person; what this holds is
+        that claiming one is deliberate, because the alternative is a table
+        where any absent path can be explained away.
+        """
+        missing = [
+            e["path"] for e in FILES
+            if not (ROOT / e["path"]).exists() and "appears_when" not in e
+        ]
         assert missing == [], f"listed but absent: {missing}"
+
+    def test_a_file_that_waits_for_a_condition_says_what_it_waits_for(self):
+        for entry in FILES:
+            if "appears_when" not in entry:
+                continue
+            assert entry["writer"] is not None, entry["path"]
+            assert entry["appears_when"].strip(), entry["path"]
 
     def test_every_writer_exists(self):
         """A writer that has been renamed is worse than no writer at all: it

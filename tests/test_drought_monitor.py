@@ -12,6 +12,7 @@ from tools.fetch_drought_monitor import (  # noqa: E402
     MAX_ALLOWABLE_OFFSET,
     assemble_geojson,
     object_id_field,
+    retain_previous,
     validate_metadata,
 )
 
@@ -92,3 +93,49 @@ def test_geojson_refuses_partial_duplicate_or_mixed_week_results():
     with pytest.raises(ValueError, match="common map"):
         assemble_geojson([feature(7, 0), feature(8, 1, map_date=0)],
                          [7, 8], "OBJECTID")
+
+
+class TestRetainingThePreviousWeek:
+    """The download holds one week. Measuring what changed needs two."""
+
+    def week(self, tmp_path, name, map_date):
+        path = tmp_path / name
+        path.write_text(json.dumps({
+            "type": "FeatureCollection",
+            "map_date": map_date,
+            "features": []
+        }), encoding="utf-8")
+        return path
+
+    def test_a_new_week_keeps_the_one_it_replaces(self, tmp_path):
+        current = self.week(tmp_path, "current.geojson", "2026-08-25")
+        previous = tmp_path / "previous.geojson"
+        kept = retain_previous(current, previous, "2026-09-01")
+        assert kept == "2026-08-25"
+        assert json.loads(previous.read_text())["map_date"] == "2026-08-25"
+
+    def test_the_same_week_does_not_overwrite_the_retained_one(self, tmp_path):
+        """A rewrite of today is not a new week. Retaining it would turn the
+        archive into a second copy of the current file, which is the failure
+        this guards: it looks like it worked."""
+        current = self.week(tmp_path, "current.geojson", "2026-08-25")
+        previous = self.week(tmp_path, "previous.geojson", "2026-08-18")
+        assert retain_previous(current, previous, "2026-08-25") is None
+        assert json.loads(previous.read_text())["map_date"] == "2026-08-18"
+
+    def test_a_first_run_has_nothing_to_keep(self, tmp_path):
+        assert retain_previous(
+            tmp_path / "absent.geojson", tmp_path / "previous.geojson",
+            "2026-08-25") is None
+
+    def test_an_unreadable_current_file_is_not_worth_failing_over(self, tmp_path):
+        current = tmp_path / "current.geojson"
+        current.write_text("{ not json", encoding="utf-8")
+        assert retain_previous(
+            current, tmp_path / "previous.geojson", "2026-08-25") is None
+
+    def test_the_build_does_not_publish_the_retained_week(self):
+        """Two megabytes nobody fetches is two megabytes every reader pays
+        for, which is the same reason no boundary polygon is published."""
+        config = (ROOT / "vite.config.ts").read_text(encoding="utf-8")
+        assert "usdm-previous.geojson" in config
