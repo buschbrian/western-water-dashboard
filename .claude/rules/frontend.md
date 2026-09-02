@@ -14,4 +14,8 @@ deadline and clears `aria-busy`; a readiness field is added and never
 removed while the behaviour it reports survives, and is retired with its
 control when that behaviour does not (ADR-090).
 
+Before touching a component's props, read the `arcgis-dashboard-ui` skill's
+`references/component-api-gotchas.md` — the renamed props, the `.d.ts` lookup
+and the type-derivation workaround for the banned `widgets/*` specifier.
+
 Anything a browser renders is verified with `npm run verify:browser`.
