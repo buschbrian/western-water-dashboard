@@ -7,6 +7,10 @@ globs: ["src/**/*.ts", "*.html", "src/styles/**", "docs/**"]
 copy, button labels, `aria-label`s, live-region messages and chart titles —
 everything the smoke suite reads.
 
+The habits, the generic ArcGIS jargon and the keep-list are the
+`arcgis-dashboard-ui` skill's `references/simplified-technical-english.md`.
+The table below is this project's own.
+
 Never write, where a reader can see it:
 
 | Never | Write |
