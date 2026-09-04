@@ -17,6 +17,39 @@ from .constants import COUNTIES_PATH
 from .roster import load_capacities
 
 
+def rebuild_published_points(payload: dict, points: dict[str, tuple[float, float]]) -> None:
+    """Apply selected reviewed (lat, lon) pairs without refreshing observations.
+
+    County assignments must already have been reviewed/rebuilt for the new
+    points. The committed outlet points still own drainage assignment.
+    """
+    records = payload["reservoirs"]
+    published = {str(r["source_station_id"]) for r in records}
+    missing = set(points) - published
+    if missing:
+        raise ValueError("not currently published: " + ", ".join(sorted(missing)))
+    # The daily refresh tolerates missing geography. A deliberate coordinate
+    # correction must instead fail before writing an incomplete assignment.
+    if not huc.load_units() or not huc.load_units_at(8):
+        raise ValueError("committed watershed boundaries are required")
+    counties = json.loads(COUNTIES_PATH.read_text(encoding="utf-8"))["counties"]
+    if set(points) - counties.keys():
+        raise ValueError("selected points need committed county assignments")
+    for record in records:
+        point = points.get(str(record["source_station_id"]))
+        if point is not None:
+            record["lat"], record["lon"] = point
+    payload["watersheds"].update(attach_watersheds(records))
+    payload["watersheds"].update({
+        "in_utah": sum(1 for r in records if r.get("in_utah")),
+        "intersects_utah": sum(1 for r in records if r.get("intersects_utah")),
+        "subregions": huc.subregion_roster(r.get("huc6") for r in records),
+        "regions": huc.region_roster(r.get("huc6") for r in records),
+        "subbasins": huc.subbasin_roster(r.get("huc8") for r in records),
+    })
+    payload["counties"].update(attach_counties(records))
+
+
 def dam_points() -> dict[str, tuple[float, float]]:
     """Dam coordinates by station id, from capacities.json.
 

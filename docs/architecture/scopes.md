@@ -315,6 +315,12 @@ county geometry is ever committed; the service resolves the point and answers
 with a code, and the *detailed* Living Atlas layer is required rather than
 preferred, because the generalized one puts Lost Lake outside Wasatch County.
 
+Scofield's reviewed published waterbody point is **39.76315, -111.15614**
+(RISE station 727; ADR-107), owned by `BASE_RISE_RESERVOIRS`. Its independent
+dam/outlet point remains **39.78681, -111.11991** in `capacities.json` and
+continues to determine its hydrologic assignment. Its waterbody point remains
+in Carbon County, Utah. This is a correction for Scofield only.
+
 ## A state is three questions (ADR-060)
 
 `state` is the one state holding the published point, `waterbody_states` every

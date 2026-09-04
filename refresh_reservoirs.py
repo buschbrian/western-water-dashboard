@@ -715,6 +715,9 @@ def main() -> int:
                              "since a partial run would drop every other reservoir.")
     parser.add_argument("--dry-run", action="store_true",
                         help="compute everything but don't write reservoirs.json")
+    parser.add_argument("--rebuild-points", nargs="+", metavar="STATION_ID",
+                        help="apply selected roster coordinates and committed geography "
+                             "to the current payload without fetching storage readings")
     parser.add_argument("--source",
                         choices=("all", "rise", "awdb", "cdec", "cdss", "usgs",
                                  "srp", "dnrc", "cwms", "cap"),
@@ -722,6 +725,28 @@ def main() -> int:
                         help="refresh one source and merge the other source's previously "
                              "published records (default: all)")
     args = parser.parse_args()
+
+    if args.rebuild_points:
+        if args.only is not None or args.source != "all":
+            parser.error("--rebuild-points cannot be combined with --only or --source")
+        configured = {}
+        for table in (RESERVOIRS, AWDB_RESERVOIRS, CDEC_RESERVOIRS, CDSS_RESERVOIRS,
+                      USGS_RESERVOIRS, SRP_RESERVOIRS, DNRC_RESERVOIRS,
+                      CWMS_RESERVOIRS, CAP_RESERVOIRS):
+            configured.update(table)
+        missing = set(args.rebuild_points) - configured.keys()
+        if missing:
+            parser.error("unknown station id(s): " + ", ".join(sorted(missing)))
+        payload = json.loads(OUTPUT_PATH.read_text(encoding="utf-8"))
+        geography.rebuild_published_points(payload, {
+            station: (configured[station][1], configured[station][2])
+            for station in args.rebuild_points
+        })
+        if not args.dry_run:
+            OUTPUT_PATH.write_text(json.dumps(payload, indent=2) + "\n")
+        print(f"Rebuilt {len(set(args.rebuild_points))} published point(s)"
+              + (" (dry run)" if args.dry_run else ""))
+        return 0
 
     today = local_today()
     end = (today + pd.Timedelta(days=1)).strftime("%Y%m%d")
