@@ -315,6 +315,12 @@ county geometry is ever committed; the service resolves the point and answers
 with a code, and the *detailed* Living Atlas layer is required rather than
 preferred, because the generalized one puts Lost Lake outside Wasatch County.
 
+ADR-108 records six reviewed waterbody-point corrections. Their separate
+outlet points still determine drainage. Folsom Lake's published point is
+38.72149, -121.13295 in El Dorado County (06017); county filtering follows
+that point. French Lake, Lake Crowley, Frenchman Dam, Kolob Reservoir and
+Pleasant Valley Reservoir retain their existing county assignments.
+
 ## A state is three questions (ADR-060)
 
 `state` is the one state holding the published point, `waterbody_states` every

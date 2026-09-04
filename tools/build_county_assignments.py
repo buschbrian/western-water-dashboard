@@ -146,7 +146,13 @@ def county_at(lon: float, lat: float) -> dict | None:
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--only", nargs="+", metavar="STATION_ID",
+                        help="merge selected roster assignments into the committed file")
     args = parser.parse_args()
+    if args.only and set(args.only) - set(ALL_RESERVOIR_IDS):
+        parser.error("unknown station id(s): " + ", ".join(
+            sorted(set(args.only) - set(ALL_RESERVOIR_IDS))))
+    previous = json.loads(OUTPUT_PATH.read_text()) if args.only else None
     missing_config: list[str] = []
 
     # `ALL_RESERVOIR_IDS` is the roster the refresh itself works from -- the
@@ -156,6 +162,8 @@ def main() -> int:
     # tuples are different lengths and only their first three fields line up.
     roster: dict[str, tuple[str, float, float]] = {}
     for station in ALL_RESERVOIR_IDS:
+        if args.only and station not in args.only:
+            continue
         row = (RESERVOIRS.get(station) or AWDB_RESERVOIRS.get(station)
                or CDEC_RESERVOIRS.get(station) or CDSS_RESERVOIRS.get(station)
                or USGS_RESERVOIRS.get(station) or SRP_RESERVOIRS.get(station)
@@ -219,6 +227,15 @@ def main() -> int:
         # file the way capacities.json states it.
         "keyed_by": "source_station_id",
     }
+
+    if previous is not None:
+        # A partial check must not claim that every county was rechecked today.
+        # Keep the full-run timestamp and stamp only the selected assignments.
+        for entry in assignments.values():
+            entry["retrieved"] = payload["retrieved"]
+        previous["counties"].update(assignments)
+        previous["counties"] = dict(sorted(previous["counties"].items()))
+        payload = previous
 
     if args.dry_run:
         print("\nDry run: nothing written.")
