@@ -7,9 +7,9 @@ export type NullableNumber = number | null;
  * One full level and the dates it was the answer (ADR-111).
  *
  * The versions are contiguous: each runs from `effective_from` until the next
- * one starts, so an observation falls in exactly one. `effective_from` is null
- * on the earliest, which covers the record before it, and `effective_to` is
- * null on the one in force.
+ * one starts, so an observation falls in exactly one. The earliest either
+ * opens the record with a null start or names the date it really began, which
+ * may predate the readings; `effective_to` is null on the one in force.
  */
 export interface CapacityVersion {
   capacity_af: number;

@@ -112,17 +112,34 @@ describe("reservoir payload validation", () => {
     expect(read?.physical_capacity_af).toBe(200);
   });
 
+  it("accepts a restriction older than the readings", () => {
+    /* Tinemaha has been restricted since 1993 and publishes from 2015, so
+     * its one version carries a date the payload's readings never reach
+     * back to (ADR-111). The pipeline checks the coverage; the client takes
+     * the versions as given. */
+    const payload = validPayload();
+    const [record] = payload.reservoirs as Record<string, unknown>[];
+    if (!record) throw new Error("the fixture has no reservoir");
+    record.physical_capacity_af = 200;
+    record.capacity_history = [
+      { capacity_af: 100, capacity_basis: "operating_restriction",
+        effective_from: "1993-03-03", effective_to: null,
+        authority: "California Division of Safety of Dams",
+        source_url: "https://water.ca.gov/example.pdf", source_checked: "2026-09-04" }
+    ];
+    const [read] = validateReservoirPayload(payload).reservoirs;
+    expect(read?.capacity_history?.length).toBe(1);
+  });
+
   /* A version divides a reading. Accepting a malformed one would move a
    * percentage to a neighbouring version's denominator, which is the failure
    * the dated representation exists to prevent (ADR-111). */
   it("rejects a full-level history that cannot answer for every reading", () => {
     for (const history of [
-      // One version is `capacity_af` written twice, not a history.
+      // A lone version with no date is `capacity_af` written twice.
       [{ capacity_af: 100, capacity_basis: "max_storage", effective_from: null }],
-      // Nothing covers a reading taken before the first version starts.
-      [{ capacity_af: 200, capacity_basis: "max_storage", effective_from: "2019-01-01" },
-        { capacity_af: 100, capacity_basis: "operating_restriction",
-          effective_from: "2021-01-01" }],
+      // An empty history is not a history.
+      [],
       // A level of zero or less is not a denominator.
       [{ capacity_af: 0, capacity_basis: "max_storage", effective_from: null },
         { capacity_af: 100, capacity_basis: "max_storage", effective_from: "2021-01-01" }],

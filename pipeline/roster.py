@@ -145,8 +145,15 @@ def validate_capacity_versions(name: str, capacity: dict) -> None:
     of its predecessor, so the intervals cannot overlap or leave a gap for an
     observation to fall into. `effective_to` repeats that boundary where a
     reviewer knows it and is checked against the successor rather than
-    trusted, and the earliest version opens the record so that no reading
-    predates a denominator.
+    trusted.
+
+    The earliest version either opens the record with a null start or names
+    the date it really began, which may be years before the first reading:
+    Tinemaha has been restricted since 1993 and Calero since 2013, and both
+    publish readings only from 2015. A reviewed date is not discarded to fit
+    a rule, so the file records what happened. What the null once guaranteed
+    -- that no reading falls outside a version -- is checked instead by
+    `check_capacity_versions_cover`, at the one place the readings are known.
 
     A restriction is not a correction of an earlier figure. The physical
     capacity stays on the record beside it, so ending a restriction restores
@@ -165,10 +172,16 @@ def validate_capacity_versions(name: str, capacity: dict) -> None:
                 f"{name}: a physical capacity beside a single undated full "
                 "level says the two differ without saying when")
         return
-    if not isinstance(versions, list) or len(versions) < 2:
+    if not isinstance(versions, list) or not versions:
+        raise ValueError(f"{name}: capacity_versions must hold at least one full level")
+    # One version is a history only when it says when it began. Without a
+    # date it is `capacity_af` written a second time, and a second way to
+    # write one figure is a second figure to keep in agreement.
+    if len(versions) == 1 and (not isinstance(versions[0], dict)
+                               or versions[0].get("effective_from") is None):
         raise ValueError(
-            f"{name}: capacity_versions records a full level that changed, "
-            "so it needs the version before the change and the one after")
+            f"{name}: a single capacity version has to name the date it began, "
+            "or it is the headline full level written twice")
 
     restricted = False
     latest_start = None
@@ -185,11 +198,9 @@ def validate_capacity_versions(name: str, capacity: dict) -> None:
         last = index == len(versions) - 1
 
         start = version.get("effective_from")
-        if first:
-            if start is not None:
-                raise ValueError(
-                    f"{name}: the earliest full level covers the record before "
-                    "it, so its effective_from is null")
+        if first and start is None:
+            # Opens the record: nothing is known to come before it.
+            pass
         else:
             start_date = _reviewed_date(name, "effective_from", start)
             if latest_start is not None and start_date <= latest_start:
@@ -213,7 +224,10 @@ def validate_capacity_versions(name: str, capacity: dict) -> None:
 
         if basis == RESTRICTED_BASIS:
             restricted = True
-            if first:
+            # A limit begins on a date and says so, whether or not this
+            # project was reading the reservoir yet (ADR-111). What it may
+            # never do is open the record with no date at all.
+            if start is None:
                 raise ValueError(
                     f"{name}: an operating limit starts on a date, so it cannot "
                     "be the level the record opens with")
@@ -246,6 +260,31 @@ def validate_capacity_versions(name: str, capacity: dict) -> None:
             raise ValueError(
                 f"{name}: physical capacity cannot be below a level the "
                 "reservoir has been operated to")
+
+
+def check_capacity_versions_cover(name: str, capacity: dict | None, first_obs: str) -> None:
+    """Refuse a reading older than the earliest full level that could divide it.
+
+    The roster is validated at import, before a single series has been
+    fetched, so it cannot know when a reservoir's readings begin. This can,
+    and it is the other half of letting the earliest version carry a real
+    date: a version list starting in 2017 and a series starting in 2015
+    leaves two years of readings with no denominator, and the honest answer
+    is to fail rather than to divide them by the nearest figure to hand.
+
+    It also catches the case that arrives on its own -- a provider backfills
+    history, or `START_DATE` moves, and evidence that was complete when it
+    was reviewed silently stops covering the record.
+    """
+    versions = (capacity or {}).get("capacity_versions")
+    if not versions:
+        return
+    opens = versions[0].get("effective_from")
+    if opens is not None and first_obs < opens:
+        raise ValueError(
+            f"{name}: readings begin {first_obs}, before the earliest full "
+            f"level takes effect on {opens}; the record needs the figure that "
+            "was in force first")
 
 
 def effective_capacity(capacity: dict | None, on: str) -> dict:

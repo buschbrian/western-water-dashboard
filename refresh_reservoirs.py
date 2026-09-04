@@ -92,7 +92,8 @@ from pipeline.roster import (  # noqa: F401
     SRP_RESERVOIRS, USGS_RESERVOIRS, load_admitted_cdec_reservoirs,
     load_admitted_cdss_reservoirs, load_admitted_reservoirs,
     load_admitted_rise_reservoirs, load_admitted_usgs_reservoirs,
-    load_capacities, effective_capacity, published_capacity_history,
+    load_capacities, check_capacity_versions_cover, effective_capacity,
+    published_capacity_history,
     validate_capacity_evidence, validate_capacity_versions
 )
 from pipeline.providers import (  # noqa: F401
@@ -228,6 +229,11 @@ def summarize(name: str, item_id: int | None, lat: float, lon: float,
     # an operating restriction or an enlargement dated it, the reading is
     # divided by the version in force rather than by today's.
     as_of = last_date.date().isoformat()
+    # The roster could not know when this reservoir's readings begin; here
+    # they are in hand, so this is where a full level that starts after the
+    # first of them is caught rather than quietly applied to it (ADR-111).
+    check_capacity_versions_cover(
+        name, capacity, series.index[0].date().isoformat())
     in_force = effective_capacity(capacity, as_of)
     capacity_af = in_force["capacity_af"]
     capacity_history = published_capacity_history(capacity)

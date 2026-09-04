@@ -27,9 +27,10 @@ export function capacityOn(reservoir: Reservoir, on: string): NullableNumber {
   const versions = reservoir.capacity_history;
   const first = versions?.[0];
   if (!versions || first === undefined) return reservoir.capacity_af;
-  /* The versions are contiguous and ordered, and the first one opens the
-   * record, so the last version to have started is the one in force. ISO
-   * dates compare as text, which is why the payload writes them that way. */
+  /* The versions are contiguous and ordered, and the pipeline has checked
+   * that the earliest one is in force by the first reading, so the last
+   * version to have started is the one in force. ISO dates compare as text,
+   * which is why the payload writes them that way. */
   let found = first;
   for (const version of versions) {
     if (version.effective_from !== null && version.effective_from > on) break;

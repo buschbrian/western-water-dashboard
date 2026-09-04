@@ -72,15 +72,20 @@ function isCapacityVersion(value: unknown): value is CapacityVersion {
     (value.source_checked === undefined || typeof value.source_checked === "string");
 }
 
-/* Absent, or at least two versions the first of which opens the record.
+/* Absent, or a list of versions that says when each began.
  *
- * One version is not a history: it is `capacity_af` written twice, and a
- * single version starting on a date would leave every earlier reading with no
- * denominator at all. */
+ * A lone version is a history only when it carries a start date -- Tinemaha
+ * has been restricted since 1993 and publishes readings only from 2015, so
+ * its one version is the restriction and its date. Without a date a single
+ * version is `capacity_af` written a second time. The pipeline checks that
+ * the versions actually cover the readings, which the client cannot: it sees
+ * twelve months and the payload holds years. */
 function isOptionalCapacityHistory(value: unknown): boolean {
-  return value === undefined ||
-    (Array.isArray(value) && value.length > 1 && value.every(isCapacityVersion) &&
-      (value[0] as CapacityVersion).effective_from === null);
+  if (value === undefined) return true;
+  if (!Array.isArray(value) || value.length === 0) return false;
+  if (!value.every(isCapacityVersion)) return false;
+  const first = value[0] as CapacityVersion;
+  return value.length > 1 || first.effective_from !== null;
 }
 
 function isMonthlyRecord(value: unknown): value is MonthlyRecord {

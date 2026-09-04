@@ -394,7 +394,7 @@ def test_an_unchanged_full_level_carries_no_history():
          "authority": "a", "source_url": "https://x.example", "source_checked": "2026-09-04"}]),
      "cannot be the level the record opens with"),
     (dated_capacity(capacity_versions=[restricted_evidence(effective_from=None)]),
-     "the version before the change"),
+     "name the date it began"),
     (dated_capacity(capacity_af=45207.0, capacity_basis="max_storage"),
      "must be the version in force"),
     (dated_capacity(capacity_versions=[
@@ -414,6 +414,62 @@ def test_incomplete_dated_evidence_is_refused(capacity, complaint):
     """Each refusal names the evidence a reviewer has to supply."""
     with pytest.raises(ValueError, match=complaint):
         R.validate_capacity_versions("Vail", capacity)
+
+
+def test_a_restriction_older_than_the_record_keeps_its_real_date():
+    """Tinemaha has been restricted since 1993 and reports only from 2015.
+
+    The reviewed date is not rounded to the first reading to satisfy a rule;
+    the file says when the limit began and the coverage check confirms every
+    reading falls inside it (ADR-111).
+    """
+    capacity = {
+        "capacity_af": 12000.0,
+        "capacity_basis": R.RESTRICTED_BASIS,
+        "physical_capacity_af": 16405.0,
+        "capacity_versions": [restricted_evidence(
+            capacity_af=12000.0, effective_from="1993-03-03",
+            authority="California Division of Safety of Dams",
+            source_url="https://water.ca.gov/example.pdf")],
+    }
+    R.validate_capacity_versions("Tinemaha", capacity)
+    assert R.effective_capacity(capacity, "2015-01-01")["capacity_af"] == 12000.0
+    assert R.effective_capacity(capacity, "2026-09-04")["capacity_af"] == 12000.0
+    # Every published reading is inside it, which is what makes one version
+    # a history rather than a duplicate of the headline figure.
+    R.check_capacity_versions_cover("Tinemaha", capacity, "2015-01-01")
+
+
+def test_a_reading_older_than_every_full_level_is_refused():
+    """The other half of letting a version carry a date before the record."""
+    capacity = {
+        "capacity_af": 12000.0,
+        "capacity_basis": R.RESTRICTED_BASIS,
+        "physical_capacity_af": 16405.0,
+        "capacity_versions": [restricted_evidence(
+            capacity_af=12000.0, effective_from="2017-05-08")],
+    }
+    R.check_capacity_versions_cover("Anderson", capacity, "2017-05-08")
+    with pytest.raises(ValueError, match="readings begin 2015-01-01"):
+        R.check_capacity_versions_cover("Anderson", capacity, "2015-01-01")
+    # An undated reservoir has nothing to fall outside of.
+    R.check_capacity_versions_cover(
+        "Plain", {"capacity_af": 100.0, "capacity_basis": "normal_storage"}, "2015-01-01")
+
+
+def test_the_refresh_refuses_a_series_its_full_levels_do_not_cover():
+    """Committed evidence that stops covering the record fails the run."""
+    capacity = {
+        "capacity_af": 12000.0,
+        "capacity_basis": R.RESTRICTED_BASIS,
+        "physical_capacity_af": 16405.0,
+        "capacity_versions": [restricted_evidence(
+            capacity_af=12000.0, effective_from="2017-05-08")],
+    }
+    idx = pd.date_range("2015-01-01", TODAY, freq="D")
+    df = pd.DataFrame({"date": idx, "storage_af": np.full(len(idx), 6000.0)})
+    with pytest.raises(ValueError, match="before the earliest full level"):
+        R.summarize("Anderson", 1, 37.1, -121.6, df, TODAY, capacity)
 
 
 def test_no_published_reservoir_has_a_dated_full_level_yet():
