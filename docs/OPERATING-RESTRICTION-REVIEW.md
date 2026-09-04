@@ -163,6 +163,41 @@ This is the general shape of the remaining work rather than a fact about three
 reservoirs. An operator publishes what a reservoir is limited to today, and
 ADR-111 needs what it was limited to on each observation date.
 
+## What the operator research found, 2026-09-04
+
+**Anderson's restricted level moved at least twice**, which is what the series
+was saying. Valley Water restricted storage to about 55 feet below the dam
+crest -- **52,553 acre-feet** -- exceeding the 45-foot restriction its
+regulators approved. FERC then directed the reservoir lowered to elevation 488
+feet beginning **1 October 2020**, and by mid-December 2020 it held roughly
+2,700 acre-feet. The January 2026 figure of 3,159 belongs to that final stage
+and to no earlier one. Valley Water also gives the full operating capacity the
+retrofit is meant to restore as **90,373 acre-feet**, against the 89,073 this
+site publishes from the dam inventory's normal storage -- a separate
+disagreement worth its own look.
+
+The 48,547 acre-feet observed after August 2021 is therefore not evidence
+against the restriction. It is a reservoir under a drawdown order taking more
+inflow through a wet winter than its low-level outlet could pass. A dated
+version has to be able to say that, and one current figure cannot.
+
+**San Diego's restrictions are elevations, not volumes.** Murray is held to 90
+feet, El Capitan to 50 feet or more below the spillway crest, and Hodges to
+elevation 280 feet, each in coordination with the Division of Safety of Dams.
+None is published as a storage figure.
+
+**So the remaining research is two sources per reservoir, not one.** A
+restriction is imposed as a water surface elevation, so converting it to the
+acre-foot limit ADR-111 divides by needs that reservoir's own elevation-storage
+relation from an authoritative area-capacity table. Where an operator has
+already done that conversion -- as Valley Water has -- one source is enough.
+Where it has not, a reviewed area-capacity table is required before any
+denominator moves, and inventing the conversion is not available to this
+project.
+
+The state's jurisdictional dams GIS service, which might have carried these as
+attributes, answered `500 Service not started` when probed on 2026-09-04.
+
 ## Evidence still required
 
 The state report identifies affected dams, restriction dates and reasons but
@@ -198,4 +233,8 @@ to be committed with the implementation.
 - [California jurisdictional dams GIS service](https://gis.water.ca.gov/arcgis/rest/services/Structure/i17_California_Jurisdictional_Dams/MapServer/0)
 - [Valley Water January 2026 implementation-plan packet](https://assets.valleywater.org/files/2026-03/03122026%20SPOC%20Agenda%20Packetv2.pdf)
 - [Rancho Water Vail operating chart](https://www.ranchowater.com/DocumentCenter/View/1869)
+- [Valley Water, Anderson Dam and Reservoir](https://www.valleywater.org/accordion/anderson-dam-and-reservoir)
+- [Valley Water, Anderson Dam Seismic Retrofit project updates](https://www.valleywater.org/project-updates/c1-anderson-dam-seismic-retrofit)
+- [City of San Diego, Murray Reservoir](https://www.sandiego.gov/reservoirs-lakes/murray-reservoir)
+- [City of San Diego, reservoirs and lakes](https://www.sandiego.gov/reservoirs-lakes)
 - [USACE Success Lake completion report](https://www.dvidshub.net/news/500088/success-lake-capacity-increased-with-completion-critical-flood-risk-management-project)
