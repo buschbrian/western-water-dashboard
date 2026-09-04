@@ -198,6 +198,33 @@ project.
 The state's jurisdictional dams GIS service, which might have carried these as
 attributes, answered `500 Service not started` when probed on 2026-09-04.
 
+## Whether the conversion can be automated: measured, 2026-09-04
+
+Because a restriction is an elevation, the obvious shortcut is the service's
+own paired readings: CDEC publishes a reservoir-elevation sensor (6) beside
+storage (15), so where both report, the series is an empirical elevation-storage
+relation for that reservoir. Measured across the fifteen restricted stations
+over August 2026:
+
+| Elevation reports | Sensor listed, every value `-9999` |
+|---|---|
+| `CNV` Crane Valley, `CRO` Calero, `CYC` Coyote, `ELC` El Capitan, `LPY` Lake Pillsbury, `MCO` Lake McCloud, `RLF` Relief, `SNN` San Andreas | `GLK` Gem Lake, `HDG` Lake Hodges, `HWE` Haiwee, `MOR` Morena, `MRR` Murray, `SGC` Irvine Lake, `TNM` Tinemaha |
+
+**Eight of fifteen.** And the seven silent ones include the reservoirs whose
+restrictions are stated purely as elevations by their owners, which is where a
+conversion would have been most useful.
+
+**The pairing may check a conversion and may not be one.** Deriving a restricted
+volume from observed elevation-storage pairs is the move ADR-070 refused when it
+declined to let the denominator depend on how wet the last decade was, and the
+move ADR-104 refused when it declined to back-compute Lake Pleasant's acre-feet
+from a published percentage. Where an operator publishes both the restricted
+elevation and its own conversion, these eight series can confirm it. Where the
+operator publishes neither, this project does not supply the arithmetic.
+
+So the remaining work is document research, one operator at a time, with a
+cross-check available for eight of them and none for the other seven.
+
 ## Evidence still required
 
 The state report identifies affected dams, restriction dates and reasons but
