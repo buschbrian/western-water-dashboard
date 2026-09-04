@@ -96,3 +96,34 @@ def test_the_committed_table_credits_the_owner_operated_inventory():
     assert owner in document["source_layer"]
     assert owner in document["dam_points"]["source"]
     assert "services2.arcgis.com" not in json.dumps(document)
+
+
+@pytest.mark.parametrize("dry_run", [False, True])
+def test_rejected_point_rebuild_preserves_capacities_and_never_fetches(tmp_path, monkeypatch, dry_run):
+    from tools import build_capacity_table as builder
+    from pipeline.roster import apply_dam_point_reviews
+    path = tmp_path / "capacities.json"
+    before = {"retrieved": "2020-01-01", "dam_points": {"count": 2}, "capacities": {
+        "727": {"name": "Scofield", "capacity_af": 73600, "nid_id": "UT10133",
+                "dam_lon": -111.11991, "dam_lat": 39.78681},
+        "other": {"capacity_af": 1000, "dam_lon": -110, "dam_lat": 40},
+    }}
+    original = json.dumps(before)
+    path.write_text(original)
+    monkeypatch.setattr(builder, "CAPACITY_PATH", path)
+    monkeypatch.setattr(builder, "resolve_nid_layer", lambda: pytest.fail("unexpected fetch"))
+    monkeypatch.setattr("sys.argv", ["build_capacity_table.py", "--apply-point-reviews"]
+                        + (["--dry-run"] if dry_run else []))
+    assert builder.main() == 0
+    if dry_run:
+        assert path.read_text() == original
+        return
+    after = json.loads(path.read_text())
+    entry = after["capacities"]["727"]
+    assert "dam_lon" not in entry and "dam_lat" not in entry
+    assert entry["capacity_af"] == 73600 and entry["nid_id"] == "UT10133"
+    assert entry["dam_point_review"]["status"] == "rejected"
+    assert after["capacities"]["other"] == before["capacities"]["other"]
+    assert after["retrieved"] == before["retrieved"]
+    assert after["dam_points"]["count"] == 1
+    assert apply_dam_point_reviews(after["capacities"]) == after["capacities"]

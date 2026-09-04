@@ -111,8 +111,12 @@
       "nid_storage_af": 87900.0,
       "nid_id": "UT10133",
       "nid_dam_name": "Scofield Dam",
-      "dam_lon": -111.11991,
-      "dam_lat": 39.78681
+      "dam_point_review": {
+        "status": "rejected",
+        "reviewed": "2026-09-04",
+        "reason": "Reviewer rejected Scofield's dam point; use the approved waterbody point until an outlet is reviewed.",
+        "decision": "ADR-109"
+      }
     },
     "764": {
       "name": "Starvation",

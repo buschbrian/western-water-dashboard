@@ -271,7 +271,7 @@
     "unit_count": 75,
     "assigned": 405,
     "unassigned": 0,
-    "assigned_by_dam": 377,
+    "assigned_by_dam": 376,
     "in_utah": 58,
     "intersects_utah": 60,
     "subregions": [
@@ -38191,8 +38191,8 @@
       "operator": null,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "lat": 39.77656,
-      "lon": -111.05074,
+      "lat": 39.76315,
+      "lon": -111.15614,
       "as_of": "2026-09-03",
       "days_stale": 1,
       "is_stale": false,
@@ -38390,10 +38390,10 @@
         "UT"
       ],
       "huc_assignment_point": [
-        -111.11991,
-        39.78681
+        -111.15614,
+        39.76315
       ],
-      "huc_assignment_source": "nid_dam_point",
+      "huc_assignment_source": "published_point",
       "county_fips": "49007",
       "county_name": "Carbon County",
       "state": "UT",

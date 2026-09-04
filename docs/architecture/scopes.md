@@ -321,6 +321,12 @@ outlet points still determine drainage. Folsom Lake's published point is
 that point. French Lake, Lake Crowley, Frenchman Dam, Kolob Reservoir and
 Pleasant Valley Reservoir retain their existing county assignments.
 
+Scofield’s approved waterbody point is 39.76315, -111.15614 (ADR-109). Its
+rejected dam point is removed. HUC assignment uses the published point and
+retains 140600 / 14060007; the county remains Carbon County (49007). Its
+upstream trace is screened as `unreviewed_outlet` until an outlet is reviewed,
+because snapping the lake interior returned only a partial basin.
+
 ## A state is three questions (ADR-060)
 
 `state` is the one state holding the published point, `waterbody_states` every

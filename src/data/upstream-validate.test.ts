@@ -29,6 +29,26 @@ const valid = {
 };
 
 describe("validateUpstreamIndex", () => {
+  it("accepts a screened trace without inventing upstream sets", () => {
+    const index = validateUpstreamIndex({ ...valid, traces: { ...valid.traces,
+      "727": { name: "Scofield", screen: "unreviewed_outlet", detail: "Outlet needs review." }
+    } });
+    expect(index.traces["727"]?.screen).toBe("unreviewed_outlet");
+    expect(index.traces["727"]?.upstream_snow_sites).toBeUndefined();
+    expect(index.traces["337"]?.upstream_reservoirs).toEqual(valid.traces["337"].upstream_reservoirs);
+  });
+
+  it.each(["", " ", 7])("refuses an invalid screen %j", (screen) => {
+    expect(() => validateUpstreamIndex({ ...valid, traces: {
+      "727": { name: "Scofield", screen }
+    } })).toThrow(/station 727/);
+  });
+
+  it("refuses malformed lists even when the trace is screened", () => {
+    expect(() => validateUpstreamIndex({ ...valid, traces: {
+      "727": { name: "Scofield", screen: "unreviewed_outlet", upstream_snow_sites: [7] }
+    } })).toThrow(/station 727/);
+  });
   it("accepts a well-formed index and keeps the evidence fields", () => {
     const index = validateUpstreamIndex(valid);
     expect(index.traces["337"]?.comid).toBe("10040912");

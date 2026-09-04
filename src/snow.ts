@@ -1385,7 +1385,7 @@ try {
       indexedSites: indexed.length,
       missingSites: missingStationCount(indexed, reporting)
     };
-    if (!trace || trace.screen) {
+    if (!trace || trace.screen != null) {
       upstreamView = { ...facts, currentSites: null, status: "unavailable" };
     } else {
       const linkedSite = wantedSite ? siteByStation(levelPayload, wantedSite) : null;

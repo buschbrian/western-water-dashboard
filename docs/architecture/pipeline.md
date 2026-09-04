@@ -39,6 +39,12 @@ It uses committed county and outlet assignments, so county changes must be
 reviewed and rebuilt first. It preserves the storage observations and refresh
 timestamp, and refuses IDs that are unknown or absent from the current payload.
 
+Committed dam-point rejections in `pipeline.roster` apply to the capacity
+builder, its legacy point-repair tool and the runtime loader (ADR-109). They
+remove coordinate fields while retaining capacity evidence. The upstream
+builder records an explicitly rejected outlet as `unreviewed_outlet`; it does
+not infer the whole reservoir basin from a snap inside the lake.
+
 **Data is fetched at runtime, never imported** (ADR-002). `reservoirs.json` is
 rewritten every morning and that commit *is* the deploy. The build copies it;
 nothing imports it. *Enforced:* `src/deploy.test.ts` and a `dist/assets` grep

@@ -36,6 +36,7 @@ import requests
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import admission  # noqa: E402
 from refresh_reservoirs import RESERVOIRS, load_previous, OUTPUT_PATH  # noqa: E402
+from pipeline.roster import apply_dam_point_reviews  # noqa: E402
 
 CAPACITY_PATH = Path(__file__).resolve().parent.parent / "capacities.json"
 
@@ -209,7 +210,20 @@ def pick(value):
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--dry-run", action="store_true")
+    parser.add_argument("--apply-point-reviews", action="store_true",
+                        help="apply committed dam-point reviews without fetching capacity data")
     args = parser.parse_args()
+
+    if args.apply_point_reviews:
+        document = json.loads(CAPACITY_PATH.read_text())
+        document["capacities"] = apply_dam_point_reviews(document["capacities"])
+        document["dam_points"]["count"] = sum(
+            entry.get("dam_lon") is not None and entry.get("dam_lat") is not None
+            for entry in document["capacities"].values())
+        if not args.dry_run:
+            CAPACITY_PATH.write_text(json.dumps(document, indent=2) + "\n")
+        print("Applied committed dam-point reviews" + (" (dry run)" if args.dry_run else ""))
+        return 0
 
     layer_url, resolved, where, _state_value = resolve_nid_layer()
     if not layer_url:
@@ -372,6 +386,7 @@ def main() -> int:
     for problem in problems:
         print(f"    !! {problem}")
 
+    table = apply_dam_point_reviews(table)
     payload = {
         "source": "U.S. Army Corps of Engineers, National Inventory of Dams",
         "source_layer": layer_url,

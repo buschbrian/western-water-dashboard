@@ -560,7 +560,7 @@ export interface WithdrawnReservoir {
  * is a different question this file does not answer -- and it is about
  * water, not operations: upstream of, never feeds.
  */
-export interface UpstreamTrace {
+interface UpstreamTraceEvidence {
   name: string;
   /** Where the trace started: the reviewed dam point or the published point. */
   trace_point?: string;
@@ -568,14 +568,16 @@ export interface UpstreamTrace {
   comid?: string;
   basin_vertices?: number;
   basin_area_sq_mi?: number;
-  upstream_reservoirs: string[];
-  upstream_snow_sites: string[];
-  /** Why no set could be produced, when none could. */
-  screen?: string;
   detail?: string;
   /** Set when the basin measures past the review threshold and needs a look. */
   review?: string;
 }
+
+/** A screened trace has no known upstream set (ADR-109), not an empty one. */
+export type UpstreamTrace = UpstreamTraceEvidence & (
+  | { screen?: null; upstream_reservoirs: string[]; upstream_snow_sites: string[] }
+  | { screen: string; upstream_reservoirs?: string[]; upstream_snow_sites?: string[] }
+);
 
 /**
  * The committed upstream index, published verbatim as `upstream_index.json`.

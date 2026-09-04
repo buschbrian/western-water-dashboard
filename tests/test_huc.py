@@ -388,6 +388,24 @@ def test_an_unassigned_point_reports_no_source(units):
     assert fields["intersects_utah"] is False
 
 
+def test_scofield_uses_the_approved_waterbody_point_without_the_rejected_outlet():
+    """ADR-109 removes the rejected outlet and uses the published-point fallback."""
+    from pipeline.constants import BASE_RISE_RESERVOIRS
+    from pipeline.geography import attach_counties, attach_watersheds
+
+    name, lat, lon = BASE_RISE_RESERVOIRS["727"]
+    assert (lat, lon) == (39.76315, -111.15614)
+    record = {"name": name, "source_station_id": "727", "lat": lat, "lon": lon}
+    attach_watersheds([record])
+    attach_counties([record])
+    assert record["huc_assignment_point"] == [lon, lat]
+    assert record["huc_assignment_source"] == "published_point"
+    assert record["huc6"] == "140600"
+    assert record["huc8"] == "14060007"
+    assert record["county_fips"] == "49007"
+    assert (record["lat"], record["lon"]) == (lat, lon)
+
+
 def test_boundary_distance_is_zero_on_the_edge_and_grows_inward():
     square = {"polygons": [[[[0, 0], [1, 0], [1, 1], [0, 1], [0, 0]]]]}
     on_edge = distance_to_boundary_km((0.5, 0.0), square)

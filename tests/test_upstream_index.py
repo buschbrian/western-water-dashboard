@@ -105,6 +105,52 @@ def reservoir_record(**overrides):
     return record
 
 
+def test_rejected_outlet_has_no_invented_upstream_set(monkeypatch):
+    monkeypatch.setattr("tools.build_upstream_index.comid_for",
+                        lambda *args: pytest.fail("rejected outlet must not be snapped"))
+    found = trace_one(reservoir_record(outlet_rejected=True, trace_point="published point"), [], [])
+    assert found["screen"] == "unreviewed_outlet"
+    assert "comid" not in found
+    assert "upstream_reservoirs" not in found
+    assert "upstream_snow_sites" not in found
+
+
+@pytest.mark.parametrize("screen", ["unreviewed_outlet", "service_unavailable"])
+def test_selected_update_preserves_other_traces_and_refuses_service_failures(tmp_path, monkeypatch, screen):
+    import json
+    from tools import build_upstream_index as builder
+    path = tmp_path / "upstream_index.json"
+    before = {"retrieved": "2020-01-01", "traces": {
+        "727": {"name": "Scofield", "comid": "old", "upstream_snow_sites": ["site"]},
+        "other": {"name": "Other", "comid": "unchanged"},
+    }}
+    original = json.dumps(before)
+    path.write_text(original)
+    monkeypatch.setattr(builder, "OUTPUT_PATH", path)
+    monkeypatch.setattr(builder, "load_roster_and_sites", lambda: (
+        [{"station": "727", "name": "Scofield"}, {"station": "other", "name": "Other"}], []))
+    calls = []
+
+    def trace(record, others, sites):
+        calls.append(record["station"])
+        return {"name": record["name"], "screen": screen}
+
+    monkeypatch.setattr(builder, "trace_one", trace)
+    monkeypatch.setattr(builder.time, "sleep", lambda _: None)
+    monkeypatch.setattr("sys.argv", ["build_upstream_index.py", "--update", "727"])
+    assert builder.main() == (1 if screen == "service_unavailable" else 0)
+    assert calls == ["727"]
+    if screen == "service_unavailable":
+        assert path.read_text() == original
+    else:
+        after = json.loads(path.read_text())
+        assert after["traces"]["other"] == before["traces"]["other"]
+        assert after["retrieved"] == before["retrieved"]
+        assert after["traces"]["727"]["screen"] == "unreviewed_outlet"
+        assert "comid" not in after["traces"]["727"]
+        assert "retrieved" in after["traces"]["727"]
+
+
 def test_no_flowline_is_screened_not_an_empty_set(monkeypatch):
     """A station whose point answers no flowline has no answer at all.
     Recording it as zero upstream stations would read as 'nothing drains

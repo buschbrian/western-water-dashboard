@@ -279,7 +279,10 @@ set as a Snowpack-local selection (ADR-097). It intersects an explicit State
 or Area and every rollup is rebuilt from the current matching station series
 with ADR-081's ratio-of-sums rule. A valid `?site=` link is more specific and
 prevents a conflicting upstream set from being applied. A missing or screened
-trace keeps the resolved place instead of manufacturing an empty answer. The
+trace keeps the resolved place instead of manufacturing an empty answer.
+The runtime validator accepts a nonempty screen with no station lists;
+unscreened traces require both string arrays (ADR-109). Types and consumers
+keep these cases distinct. The
 active summary names the reservoir, current matching count and any indexed
 stations absent from the current snow payload.
 
