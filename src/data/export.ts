@@ -65,6 +65,16 @@ export function capacitySource(reservoir: Reservoir): string {
   if (reservoir.capacity_basis === "authoritative_water_report") {
     return "Reviewed government or operator water report";
   }
+  if (reservoir.capacity_basis === "operating_restriction") {
+    /* A limit belongs to the authority that set it, and which authority that
+     * is changes with the reservoir, so the row names it (ADR-111). The
+     * version in force is the last one; the pipeline publishes the headline
+     * figure from it. */
+    const versions = reservoir.capacity_history ?? [];
+    const authority = versions[versions.length - 1]?.authority;
+    return authority ? `Current operating limit set by ${authority}`
+      : "Current operating limit";
+  }
   if (reservoir.capacity_basis === null) return "Not available";
   return "U.S. Army Corps of Engineers National Inventory of Dams";
 }

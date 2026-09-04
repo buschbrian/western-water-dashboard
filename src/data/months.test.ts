@@ -8,6 +8,7 @@ import { loadLegacyApi } from "./legacy-harness";
 import { readPayload } from "./payload-fixture";
 import { monthKeys, monthLabel, monthPercent, monthlyRollup } from "./months";
 import { sizeBasis } from "./rollup";
+import type { Reservoir } from "../types";
 
 const legacy = loadLegacyApi();
 const reservoirs = readPayload().reservoirs;
@@ -166,5 +167,65 @@ describe("the population behind each month", () => {
       expect(rollup.capacityAf, month)
         .toBeCloseTo(reporting.reduce((total, row) => total + sizeBasis(row), 0), 6);
     }
+  });
+});
+
+/* A reservoir limited to less than it holds, part way through the months the
+ * payload carries. Synthetic: no published reservoir has a dated full level
+ * yet, and the moment one does, this is the behaviour it gets (ADR-111). */
+describe("a month whose full level was not today's", () => {
+  function restrictedFrom(month: string): Reservoir | null {
+    const [first] = reservoirs;
+    if (!first) return null;
+    const reported = first.monthly.filter((entry) => entry.mean_af !== null);
+    if (reported.length < 2) return null;
+    return {
+      ...first,
+      capacity_af: 50000,
+      capacity_basis: "operating_restriction",
+      physical_capacity_af: 100000,
+      capacity_history: [
+        { capacity_af: 100000, capacity_basis: "max_storage",
+          effective_from: null, effective_to: `${month}-14` },
+        /* Part way through the month, so the month end is what decides which
+         * denominator the whole month is divided by. */
+        { capacity_af: 50000, capacity_basis: "operating_restriction",
+          effective_from: `${month}-15`, effective_to: null,
+          authority: "A state dam safety office",
+          source_url: "https://example.gov/restriction",
+          source_checked: "2026-09-04" }
+      ]
+    };
+  }
+
+  it("divides each month by the level in force at that month's end", () => {
+    const later = months[months.length - 1];
+    const earlier = months[0];
+    expect(later).toBeDefined();
+    expect(earlier).toBeDefined();
+    if (!later || !earlier) return;
+    const reservoir = restrictedFrom(later);
+    if (!reservoir) return;
+    const entryEarlier = reservoir.monthly.find((row) => row.month === earlier);
+    const entryLater = reservoir.monthly.find((row) => row.month === later);
+    if (!entryEarlier?.mean_af || !entryLater?.mean_af) return;
+    // The earlier month predates the limit and keeps the larger denominator.
+    expect(monthPercent(reservoir, earlier))
+      .toBeCloseTo(entryEarlier.mean_af / 100000 * 100, 9);
+    expect(monthPercent(reservoir, later))
+      .toBeCloseTo(entryLater.mean_af / 50000 * 100, 9);
+  });
+
+  it("totals a month against the same date on both sides of the ratio", () => {
+    const later = months[months.length - 1];
+    if (!later) return;
+    const reservoir = restrictedFrom(later);
+    if (!reservoir) return;
+    const entry = reservoir.monthly.find((row) => row.month === later);
+    if (!entry?.mean_af) return;
+    const rollup = monthlyRollup([reservoir], later);
+    expect(rollup.capacityAf).toBe(50000);
+    expect(rollup.scopeCapacityAf).toBe(50000);
+    expect(rollup.percentFull).toBeCloseTo(entry.mean_af / 50000 * 100, 9);
   });
 });

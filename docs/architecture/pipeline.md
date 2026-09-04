@@ -45,6 +45,21 @@ remove coordinate fields while retaining capacity evidence. The upstream
 builder records an explicitly rejected outlet as `unreviewed_outlet`; it does
 not infer the whole reservoir basin from a snap inside the lake.
 
+A full level that changed is committed as `capacity_versions` on the
+reservoir's capacity evidence, oldest first (ADR-111). Each version runs from
+its own `effective_from` until the next one begins, so an observation falls in
+exactly one and no reading is left without a denominator; the earliest opens
+the record with a null start, and `effective_to` repeats a boundary the
+successor already sets. `pipeline.roster.effective_capacity` picks the version
+in force on the reading date, which is what the record's flat `capacity_af`,
+`capacity_basis` and `pct_of_capacity` publish, and
+`published_capacity_history` emits the array as `capacity_history` beside
+`physical_capacity_af` — only for a reservoir whose level changed, because a
+history repeating one figure is `capacity_af` written twice. The
+`operating_restriction` basis is the one that cannot stand alone: a limit
+applies from a date, names the authority that set it and where that was read,
+and never replaces the physical capacity beside it.
+
 **Data is fetched at runtime, never imported** (ADR-002). `reservoirs.json` is
 rewritten every morning and that commit *is* the deploy. The build copies it;
 nothing imports it. *Enforced:* `src/deploy.test.ts` and a `dist/assets` grep

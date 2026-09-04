@@ -68,7 +68,10 @@ const BASIS_LABELS: Record<string, string> = {
   reclamation_project_record: "Full level published by the reservoir operator",
   awdb_reservoir_metadata: "Level published with the readings",
   cdec_reservoir_report: "Full level published by the reservoir operator",
-  authoritative_water_report: "Full level in a reviewed water report"
+  authoritative_water_report: "Full level in a reviewed water report",
+  /* A denominator that says what the reservoir is allowed to hold now rather
+     than what it was built to hold (ADR-111). */
+  operating_restriction: "Current operating limit"
 };
 /** The key `basisShares` reports the fallback under. */
 export const RECORD_MAX_BASIS = "record_max";
@@ -192,6 +195,14 @@ export function reservoirInScope(
   return true;
 }
 
+/**
+ * What a current reading divides by.
+ *
+ * `capacity_af` is already the full level in force on the reading's own date
+ * (ADR-111), so a current total needs no date of its own. A figure for an
+ * earlier month does: `sizeBasisOn` in `./capacity` is the same rule asked
+ * about a date.
+ */
 export function sizeBasis(reservoir: Reservoir): number {
   return reservoir.capacity_af ?? reservoir.record_max_af;
 }

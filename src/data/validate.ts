@@ -1,6 +1,7 @@
 import type {
   Baseline,
   BaselineChoice,
+  CapacityVersion,
   MonthlyRecord,
   Reservoir,
   ReservoirBaselines,
@@ -50,6 +51,36 @@ function hasNullableString(value: unknown): value is string | null {
  * details panel formats into visible words. */
 function optionalNullableString(value: unknown): value is string | null | undefined {
   return value === undefined || hasNullableString(value);
+}
+
+/* One dated full level (ADR-111).
+ *
+ * A version divides a reading, so a malformed one is refused rather than
+ * skipped: dropping it would silently move a percentage to a neighbouring
+ * version's denominator, which is the one failure this representation exists
+ * to prevent. `effective_from` is null on the earliest version only, and the
+ * ordering is the pipeline's -- the client reads the array as given.
+ */
+function isCapacityVersion(value: unknown): value is CapacityVersion {
+  return isObject(value) &&
+    hasNumber(value.capacity_af) && value.capacity_af > 0 &&
+    typeof value.capacity_basis === "string" &&
+    hasNullableString(value.effective_from) &&
+    optionalNullableString(value.effective_to) &&
+    (value.authority === undefined || typeof value.authority === "string") &&
+    (value.source_url === undefined || typeof value.source_url === "string") &&
+    (value.source_checked === undefined || typeof value.source_checked === "string");
+}
+
+/* Absent, or at least two versions the first of which opens the record.
+ *
+ * One version is not a history: it is `capacity_af` written twice, and a
+ * single version starting on a date would leave every earlier reading with no
+ * denominator at all. */
+function isOptionalCapacityHistory(value: unknown): boolean {
+  return value === undefined ||
+    (Array.isArray(value) && value.length > 1 && value.every(isCapacityVersion) &&
+      (value[0] as CapacityVersion).effective_from === null);
 }
 
 function isMonthlyRecord(value: unknown): value is MonthlyRecord {
@@ -147,6 +178,8 @@ function isReservoir(value: unknown): value is Reservoir {
     hasNullableNumber(value.capacity_af) &&
     hasNullableString(value.capacity_basis) &&
     hasNullableNumber(value.pct_of_capacity) &&
+    isOptionalCapacityHistory(value.capacity_history) &&
+    optionalNullableNumber(value.physical_capacity_af) &&
     hasNullableNumber(value.seasonal_percentile) &&
     /* Optional: they arrive from the pipeline, and a payload written before
      * they did is still a valid payload. `undefined` passes, a wrong type

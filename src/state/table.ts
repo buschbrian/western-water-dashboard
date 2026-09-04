@@ -19,6 +19,7 @@
  * Recorded as ADR-029.
  */
 
+import { capacityOn, monthEndDate } from "../data/capacity";
 import { isLate } from "../data/rollup";
 import { reservoirLabel } from "./selection";
 import { matchesFilter, type FilterState } from "./filters";
@@ -153,7 +154,10 @@ export function tableRows(input: TableInput): TableRow[] {
       lon: reservoir.lon,
       percent: percentOf(reservoir),
       storageAf: month === null ? reservoir.current_storage_af : monthlyMean(reservoir, month),
-      capacityAf: reservoir.capacity_af,
+      /* The full level in force on the row's own date, so a month's storage
+       * and the figure beside it describe the same month (ADR-111). */
+      capacityAf: capacityOn(
+        reservoir, month === null ? reservoir.as_of : monthEndDate(month)),
       areaName: reservoir.huc6_name ?? "",
       late: isLate(reservoir),
       reading: month ?? reservoir.as_of

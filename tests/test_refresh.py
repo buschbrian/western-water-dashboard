@@ -295,6 +295,140 @@ def test_missing_capacity_is_null_not_guessed():
     json.dumps(rec)
 
 
+# --- dated full levels (ADR-111) ------------------------------------------
+
+def restricted_evidence(**overrides) -> dict:
+    """A full level an owner currently operates to, with its citation."""
+    version = {
+        "capacity_af": 31395.0,
+        "capacity_basis": R.RESTRICTED_BASIS,
+        "effective_from": "2019-07-01",
+        "effective_to": None,
+        "authority": "Rancho California Water District",
+        "source_url": "https://www.ranchowater.com/DocumentCenter/View/1869",
+        "source_checked": "2026-09-04",
+    }
+    version.update(overrides)
+    return version
+
+
+def dated_capacity(**overrides) -> dict:
+    """Capacity evidence whose full level changed once, restriction-style."""
+    capacity = {
+        "capacity_af": 31395.0,
+        "capacity_basis": R.RESTRICTED_BASIS,
+        "physical_capacity_af": 45207.0,
+        "capacity_versions": [
+            {"capacity_af": 45207.0, "capacity_basis": "max_storage",
+             "effective_from": None, "effective_to": "2019-06-30"},
+            restricted_evidence(),
+        ],
+    }
+    capacity.update(overrides)
+    return capacity
+
+
+def test_a_reading_is_divided_by_what_full_meant_when_it_was_taken():
+    """The point of ADR-111: a restriction does not rewrite earlier months."""
+    capacity = dated_capacity()
+    before = R.effective_capacity(capacity, "2019-06-30")
+    after = R.effective_capacity(capacity, "2019-07-01")
+    assert before["capacity_af"] == 45207.0
+    assert before["capacity_basis"] == "max_storage"
+    # The day the limit takes effect is inside it, not before it.
+    assert after["capacity_af"] == 31395.0
+    assert after["capacity_basis"] == R.RESTRICTED_BASIS
+    assert R.effective_capacity(capacity, "2015-01-01")["capacity_af"] == 45207.0
+    assert R.effective_capacity(capacity, TODAY.date().isoformat())["capacity_af"] == 31395.0
+
+
+def test_one_undated_full_level_is_still_the_answer():
+    """Every reservoir published so far has exactly one, and keeps it."""
+    capacity = {"capacity_af": 200000.0, "capacity_basis": "normal_storage"}
+    assert R.effective_capacity(capacity, "2015-01-01") == capacity
+    assert R.effective_capacity(None, "2015-01-01") == {
+        "capacity_af": None, "capacity_basis": None}
+
+
+def test_a_restricted_reservoir_publishes_its_limit_and_keeps_its_capacity():
+    idx = pd.date_range("2015-01-01", TODAY, freq="D")
+    df = pd.DataFrame({"date": idx, "storage_af": np.full(len(idx), 15697.5)})
+    rec = R.summarize("Restricted", 1, 33.5, -117.0, df, TODAY, dated_capacity())
+    assert rec["capacity_af"] == 31395.0
+    assert rec["capacity_basis"] == R.RESTRICTED_BASIS
+    assert rec["pct_of_capacity"] == 50.0
+    # The structure's own figure survives the restriction it is under.
+    assert rec["physical_capacity_af"] == 45207.0
+    assert [version["capacity_af"] for version in rec["capacity_history"]] \
+        == [45207.0, 31395.0]
+    assert rec["capacity_history"][1]["authority"] == "Rancho California Water District"
+    json.dumps(rec)
+
+
+def test_an_unchanged_full_level_carries_no_history():
+    """A history repeating one figure is a second way to write capacity_af."""
+    capacity = {"capacity_af": 200000.0, "capacity_basis": "normal_storage"}
+    idx = pd.date_range("2015-01-01", TODAY, freq="D")
+    df = pd.DataFrame({"date": idx, "storage_af": np.full(len(idx), 100000.0)})
+    rec = R.summarize("Steady", 1, 40.0, -111.0, df, TODAY, capacity)
+    assert "capacity_history" not in rec
+    assert "physical_capacity_af" not in rec
+    assert R.published_capacity_history(capacity) is None
+
+
+@pytest.mark.parametrize("capacity, complaint", [
+    (dated_capacity(capacity_versions=[
+        {"capacity_af": 45207.0, "capacity_basis": "max_storage",
+         "effective_from": None, "effective_to": "2019-06-30"},
+        restricted_evidence(source_url=None)]),
+     "names the authority"),
+    (dated_capacity(capacity_versions=[
+        {"capacity_af": 45207.0, "capacity_basis": "max_storage",
+         "effective_from": None, "effective_to": "2019-06-30"},
+        restricted_evidence(source_url="http://www.ranchowater.com/x")]),
+     "HTTPS source"),
+    (dated_capacity(capacity_versions=[
+        restricted_evidence(effective_from=None, effective_to="2019-06-30"),
+        {"capacity_af": 31395.0, "capacity_basis": R.RESTRICTED_BASIS,
+         "effective_from": "2019-07-01", "effective_to": None,
+         "authority": "a", "source_url": "https://x.example", "source_checked": "2026-09-04"}]),
+     "cannot be the level the record opens with"),
+    (dated_capacity(capacity_versions=[restricted_evidence(effective_from=None)]),
+     "the version before the change"),
+    (dated_capacity(capacity_af=45207.0, capacity_basis="max_storage"),
+     "must be the version in force"),
+    (dated_capacity(capacity_versions=[
+        {"capacity_af": 45207.0, "capacity_basis": "max_storage",
+         "effective_from": None, "effective_to": "2019-06-29"},
+        restricted_evidence()]),
+     "ends the day before the next begins"),
+    (dated_capacity(physical_capacity_af=None), "keeps what it can physically hold"),
+    (dated_capacity(physical_capacity_af=20000.0), "cannot be below a level"),
+    ({"capacity_af": 31395.0, "capacity_basis": R.RESTRICTED_BASIS},
+     "needs the dated versions around it"),
+    ({"capacity_af": 45207.0, "capacity_basis": "max_storage",
+      "physical_capacity_af": 45207.0},
+     "without saying when"),
+])
+def test_incomplete_dated_evidence_is_refused(capacity, complaint):
+    """Each refusal names the evidence a reviewer has to supply."""
+    with pytest.raises(ValueError, match=complaint):
+        R.validate_capacity_versions("Vail", capacity)
+
+
+def test_no_published_reservoir_has_a_dated_full_level_yet():
+    """ADR-111 changes no current denominator: the representation lands first.
+
+    A reviewed operating limit arrives with its own admission evidence. Until
+    one does, this holds the implementation to what the record decided -- and
+    it is the line to delete, not edit, when the first restricted reservoir is
+    admitted.
+    """
+    dated = {name: entry for name, entry in R.load_capacities().items()
+             if entry.get("capacity_versions") or entry.get("physical_capacity_af")}
+    assert dated == {}
+
+
 def test_committed_capacity_table_covers_every_reservoir():
     """Guards the table the dashboards divide by."""
     path = Path(__file__).resolve().parent.parent / "capacities.json"

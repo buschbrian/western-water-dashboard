@@ -8,6 +8,8 @@ import {
 } from "./detail";
 import { createSelectionStore, findReservoir, normalizeSelectionValue } from "./selection";
 import { loadLegacyApi } from "../data/legacy-harness";
+import { monthPercent } from "../data/months";
+import type { Reservoir } from "../types";
 
 const legacy = loadLegacyApi();
 const reservoirs = readPayload().reservoirs;
@@ -276,6 +278,42 @@ describe("the details a reader sees", () => {
         expect(month.percent).toBe(legacy.monthPct(reservoir, month.key));
       }
     }
+  });
+
+  /* And once a full level is dated, both follow it: the map's month colour
+   * comes from `monthPercent`, so the chart has to divide the same way or the
+   * chart and the circle over it disagree across a restriction (ADR-111). */
+  it("divides each month by the full level in force that month", () => {
+    const [first] = reservoirs;
+    expect(first).toBeDefined();
+    if (!first) return;
+    const reported = first.monthly.filter((entry) => entry.mean_af !== null);
+    if (reported.length < 2) return;
+    const last = reported[reported.length - 1];
+    const earliest = reported[0];
+    if (!last || !earliest) return;
+    const restricted: Reservoir = {
+      ...first,
+      capacity_af: 40000,
+      capacity_basis: "operating_restriction",
+      physical_capacity_af: 80000,
+      capacity_history: [
+        { capacity_af: 80000, capacity_basis: "max_storage",
+          effective_from: null, effective_to: `${last.month}-14` },
+        { capacity_af: 40000, capacity_basis: "operating_restriction",
+          effective_from: `${last.month}-15`, effective_to: null,
+          authority: "A state dam safety office",
+          source_url: "https://example.gov/restriction",
+          source_checked: "2026-09-04" }
+      ]
+    };
+    const months = monthlyDetail(restricted);
+    const before = months.find((month) => month.key === earliest.month);
+    const after = months.find((month) => month.key === last.month);
+    expect(before?.percent).toBeCloseTo((earliest.mean_af ?? 0) / 80000 * 100, 9);
+    expect(after?.percent).toBeCloseTo((last.mean_af ?? 0) / 40000 * 100, 9);
+    // The chart and the map still agree, now on the dated denominator.
+    expect(after?.percent).toBeCloseTo(monthPercent(restricted, last.month) ?? 0, 9);
   });
 });
 

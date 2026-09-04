@@ -97,6 +97,18 @@ authority, effective dates and source. Historical observations use the version
 effective on their own date. A restriction notice without an acre-foot limit
 is a lead for operator research, not a denominator.
 
+What that looks like in the roster entry's `capacity` block: `capacity_af` and
+`capacity_basis` stay the figure in force today, `physical_capacity_af` holds
+what the structure takes, and `capacity_versions` lists every full level
+oldest first. Each version carries `capacity_af`, `capacity_basis` and
+`effective_from` — null on the earliest, which covers the record before the
+change — plus `effective_to` where the end is known, which has to be the day
+before the next version starts. A version whose basis is
+`operating_restriction` also names `authority`, `source_url` and
+`source_checked`, and cannot be the earliest, because a limit begins on a
+date. The loader refuses any of this that is incomplete or contradictory, so
+a reviewer finds out at import rather than in a published percentage.
+
 **Do not introduce another capacity precedence rule without a decision record.**
 
 ## A natural terminal lake is a separate admission path
