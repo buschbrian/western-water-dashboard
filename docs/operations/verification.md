@@ -44,12 +44,14 @@ that never compiled.
 ## Browser prerequisites
 
 **Playwright is not in `package.json` on purpose, so `npm install` deletes
-it.** CI installs it with `--no-save --no-package-lock` to keep the lockfile
-exactly what `npm ci` produced, which means any ordinary `npm install` prunes
-it as extraneous. Put it back the same way:
+it.** The installer uses a separate dependency directory under `node_modules`
+and links Playwright into the test runner's import path. This avoids resolving
+the application graph again, which made npm crash with `edgesOut` during CI
+setup. The application lockfile stays exactly what `npm ci` produced. Put the
+browser tool back with the same installer CI runs:
 
 ```bash
-npm install --no-save --no-package-lock playwright
+bash scripts/install-playwright.sh
 ```
 
 All three browser tools take `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. A machine

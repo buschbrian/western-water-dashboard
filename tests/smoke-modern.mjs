@@ -26,12 +26,9 @@ import path from "node:path";
 import { createContext, runInContext } from "node:vm";
 
 /*
- * Playwright is deliberately not in `package.json` (see issue #18): CI
- * installs it with `--no-save --no-package-lock` so the lockfile stays
- * exactly what `npm ci` produced. The consequence is that any ordinary
- * `npm install` prunes it as extraneous and this file stops resolving --
- * with a module-resolution stack trace that looks nothing like the action
- * that caused it. Adding `axe-core` once deleted the test runner.
+ * Playwright is deliberately not in `package.json` (see issue #18).
+ * scripts/install-playwright.sh installs it separately and links it into
+ * node_modules, so application installs can still prune the browser tool.
  *
  * So the failure is caught here and answered with the command that fixes it.
  */
@@ -44,7 +41,7 @@ try {
     "Playwright is not installed. It is deliberately not a dependency, so an",
     "ordinary `npm install` removes it. Put it back with:",
     "",
-    "  npm install --no-save --no-package-lock playwright",
+    "  bash scripts/install-playwright.sh",
     ""
   ].join("\n"));
   process.exit(1);
