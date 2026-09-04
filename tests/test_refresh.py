@@ -349,7 +349,8 @@ def test_awdb_inventory_has_traceable_capacity_and_cadence():
     # applying ADR-072 to the inventory's own larger pool, as the Colorado
     # audit already did. Each reviewed exception carries the screen it was
     # admitted against in the file itself.
-    assert len(R.ADMITTED_CDEC_RESERVOIRS) == 147
+    # 146 since ADR-113 withheld Leroy Anderson for irreconcilable full levels.
+    assert len(R.ADMITTED_CDEC_RESERVOIRS) == 146
     assert len(R.CDEC_RESERVOIRS) == 147
     assert sum(1 for row in R.ADMITTED_CDEC_RESERVOIRS.values()
                if row.get("review")) == 5
