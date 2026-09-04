@@ -127,6 +127,42 @@ Protection District). That does not settle the `MAT` hold, whose finding is a
 series *above* the matched record's largest figure rather than below it, but it
 is a fact about the same dam and belongs beside it.
 
+## A current limit is not the limit that was in force
+
+The three Valley Water figures above are dated January 2026 and describe the
+level each reservoir is operated to **now**. Read against the committed series
+they cannot be applied to the whole record, and the readings say so plainly:
+
+| Reservoir | Record begins | Highest since | Stated current limit | Highest as a share of it |
+|---|---|---:|---:|---:|
+| Leroy Anderson | 2021-08-29 | 48,547 af | 3,159 af | **1,537%** |
+| Calero | 2021-09-06 | 5,542 af | 4,472 af | 124% |
+| Coyote | 2021-08-29 | 24,335 af | 11,843 af | 205% |
+
+Anderson is conclusive. Its restriction has been in force since 2017-05-08 and
+its series begins in 2021, so every reading is inside the restricted period --
+and it held 48,547 acre-feet inside that period, fifteen times the figure
+Valley Water publishes for today. The reservoir has been drawn down in stages
+for its seismic retrofit, so the restricted level itself changed over time.
+One 2026 figure divided into a 2021 reading is exactly what ADR-111 forbids:
+"a restriction that starts or ends must not rewrite what full meant on the
+earlier observation date."
+
+Anderson's present reading of 3,497 acre-feet is also **110.7% of 3,159**,
+beyond the surcharge allowance, and it has sat between 3,481 and 3,789 every
+month for a year. A denominator the water stands above every single month is
+not the denominator (ADR-072).
+
+**So none of the three is publishable on the evidence in hand.** What each
+needs is not one number but the dated series of levels its operator held it
+to: the restriction as imposed, each subsequent reduction or release, and the
+date of each. Valley Water's board packets carry that history; the January
+2026 plan is one row of it.
+
+This is the general shape of the remaining work rather than a fact about three
+reservoirs. An operator publishes what a reservoir is limited to today, and
+ADR-111 needs what it was limited to on each observation date.
+
 ## Evidence still required
 
 The state report identifies affected dams, restriction dates and reasons but
