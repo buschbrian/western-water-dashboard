@@ -48,7 +48,8 @@ denominator. **Start with ADR-070, then ADR-072, then ADR-003.**
   [ADR-106](ADR-106-confirm-a-point-by-dam-position-and-never-by-a-dams-name.md),
   [ADR-110](ADR-110-accept-reviewed-water-reports-without-a-dam-inventory-record.md),
   [ADR-111](ADR-111-use-the-current-operating-limit-as-full.md),
-  [ADR-113](ADR-113-withhold-a-reservoir-whose-full-levels-cannot-be-reconciled.md)
+  [ADR-113](ADR-113-withhold-a-reservoir-whose-full-levels-cannot-be-reconciled.md),
+  [ADR-114](ADR-114-publish-a-water-type-and-an-operating-character.md)
 - Freshness and withdrawal:
   [ADR-056](ADR-056-withdraw-a-reading-that-belongs-to-another-season.md)
 - Superseded, read only for history: ADR-099
@@ -120,6 +121,7 @@ ADR-041.**
   [ADR-036](ADR-036-accessibility-is-a-gate-and-a-measured-content-policy.md),
   [ADR-045](ADR-045-name-the-site-for-the-water-and-each-page-for-its-subject.md),
   [ADR-112](ADR-112-publish-terminal-lakes-as-a-separate-water-type.md),
+  [ADR-114](ADR-114-publish-a-water-type-and-an-operating-character.md),
   [ADR-079](ADR-079-rename-through-a-former-name-table-and-publish-the-operator.md),
   [ADR-089](ADR-089-put-reservoir-state-facts-in-their-own-csv-columns.md)
 
@@ -275,6 +277,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-111](ADR-111-use-the-current-operating-limit-as-full.md) | Use the current operating limit as full | Accepted; qualifies ADR-070 and requires dated capacity versions before denominator changes |
 | [ADR-112](ADR-112-publish-terminal-lakes-as-a-separate-water-type.md) | Publish terminal lakes as a separate water type | Accepted; supersedes ADR-078 |
 | [ADR-113](ADR-113-withhold-a-reservoir-whose-full-levels-cannot-be-reconciled.md) | Withhold a reservoir whose full levels cannot be reconciled | Accepted; qualifies ADR-070, ADR-072 and ADR-111; Leroy Anderson is the first case |
+| [ADR-114](ADR-114-publish-a-water-type-and-an-operating-character.md) | Publish a water type and an operating character | Accepted; extends ADR-112 and qualifies ADR-072 and ADR-111; labels first, each numeric consequence its own decision |
 
 ## Relationship to the historical journal
 

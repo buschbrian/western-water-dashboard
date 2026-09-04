@@ -28,6 +28,10 @@ const userTextFiles = [
   "shared/reservoir-viz.js",
   "src/main.ts",
   "src/data/export.ts",
+  // The words for each kind of full level. They are read out in the storage
+  // charts' basis sentence and in the details panel, so they are visible
+  // text living in a data module.
+  "src/data/rollup.ts",
   // The shell's own visible text, and the words the details panel puts
   // around a reservoir -- the provider names in the payload are written as
   // acronyms, so this is where one is most likely to reach a reader.
@@ -108,7 +112,18 @@ const oldUnexplainedTerms = [
   "monitored reservoirs",
   "Dashboard failed to render",
   "Overview failed to render",
-  "Reclamation RISE + NRCS AWDB"
+  "Reclamation RISE + NRCS AWDB",
+  // The water manager's vocabulary for how a reservoir is run (ADR-114).
+  // Each one is precise and none of them reaches a reader who is not one.
+  // "stage" is deliberately absent: "percentage" contains it, so the rule
+  // lives in the vocabulary table where a person applies it.
+  "Current operating limit",
+  "operating restriction",
+  "run-of-river",
+  "conservation pool",
+  "flood control pool",
+  "spillway crest",
+  "dead pool"
 ];
 
 describe("user text", () => {

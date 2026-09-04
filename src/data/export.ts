@@ -72,8 +72,8 @@ export function capacitySource(reservoir: Reservoir): string {
      * figure from it. */
     const versions = reservoir.capacity_history ?? [];
     const authority = versions[versions.length - 1]?.authority;
-    return authority ? `Current operating limit set by ${authority}`
-      : "Current operating limit";
+    return authority ? `Full level allowed now, set by ${authority}`
+      : "Full level allowed now";
   }
   if (reservoir.capacity_basis === null) return "Not available";
   return "U.S. Army Corps of Engineers National Inventory of Dams";

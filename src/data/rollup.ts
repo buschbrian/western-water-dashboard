@@ -70,8 +70,9 @@ const BASIS_LABELS: Record<string, string> = {
   cdec_reservoir_report: "Full level published by the reservoir operator",
   authoritative_water_report: "Full level in a reviewed water report",
   /* A denominator that says what the reservoir is allowed to hold now rather
-     than what it was built to hold (ADR-111). */
-  operating_restriction: "Current operating limit"
+     than what it was built to hold (ADR-111). "Operating limit" is the
+     manager's phrase and does not reach a reader (ADR-006). */
+  operating_restriction: "Full level allowed now"
 };
 /** The key `basisShares` reports the fallback under. */
 export const RECORD_MAX_BASIS = "record_max";

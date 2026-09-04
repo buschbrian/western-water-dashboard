@@ -194,8 +194,8 @@ export const RESERVOIR_GROUPS: readonly ApiFieldGroup[] = [
       + "version in force on the reading date, so a reader who wants only "
       + "today's percentage does not need this.", true),
     f("physical_capacity_af", "acre-feet",
-      "What the reservoir holds when it is currently operated to less. "
-      + "Present with an operating limit, and never a replacement for it.", true),
+      "What the reservoir can hold when a safety order allows less. Present "
+      + "with the allowed level, and never a replacement for it.", true),
     f("seasonal_percentile", "percent",
       "Rank against one value from each earlier year near the same date."),
     f("seasonal_rank", "position",
@@ -260,16 +260,16 @@ export const RESERVOIR_GROUPS: readonly ApiFieldGroup[] = [
     path: "reservoirs[].capacity_history[]", fields: [
       f("capacity_af", "acre-feet", "The full level this version publishes."),
       f("capacity_basis", "identifier",
-        "Where the figure came from. operating_restriction means a limit an "
-        + "owner or regulator currently applies, rather than a level the "
-        + "structure was built to."),
+        "Where the figure came from. operating_restriction means the full "
+        + "level a safety order allows now, rather than the level the "
+        + "structure was built for."),
       f("effective_from", "date",
         "First date this full level applies to. Null on the earliest version, "
         + "which covers the record before the change."),
       f("effective_to", "date",
         "Last date it applies to, where a reviewer recorded one. The version "
         + "that follows sets the same boundary.", true),
-      f("authority", "text", "Who set an operating limit.", true),
+      f("authority", "text", "Who set the allowed level.", true),
       f("source_url", "web address", "Where that limit is published.", true),
       f("source_checked", "date", "Date that source was read.", true)
     ]},
@@ -550,7 +550,7 @@ export const REFERENCE_GROUPS: readonly ApiFieldGroup[] = [
     f("capacity_versions", "array",
       "Dated full levels for a reservoir whose full level changed.", true),
     f("physical_capacity_af", "acre-feet",
-      "What the reservoir holds when an operating limit is lower.", true)
+      "What the reservoir can hold when a safety order allows less.", true)
   ]},
   { id: "reference-dam-points", title: "Dam-point summary", path: "capacity_catalog.dam_points", fields: [
     f("count", "dams", "Reviewed dam-point count."),
