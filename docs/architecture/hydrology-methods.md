@@ -76,6 +76,32 @@ to be published at 223.7% full.
 three** (ADR-070), and the rule above is never reached. `capacity_basis` names
 which source every published denominator came from, per reservoir.
 
+NID is the default evidence, not a completeness gate. Where it has no
+corresponding structure, a reviewed government water report or owner-operated
+record may provide identity and full level when it defines the reported series
+on the same storage basis (ADR-110). The evidence records the unsuccessful NID
+search as well as the replacement authority.
+
+An active operating restriction is the reservoir's current full level
+(ADR-111). Physical capacity remains a separate fact. Full levels are dated:
+current figures and rollups use the version effective on the observation date,
+and a historical observation uses the version that was effective then. This
+keeps the start or end of a restriction, and a physical enlargement such as
+Success Lake's, from rewriting earlier percentages.
+
+## Natural terminal lakes
+
+A natural terminal lake is a separate water type (ADR-112). It may publish
+elevation, volume, change and same-date seasonal rank where those measurements
+are traceable. It has no dam point, capacity or percent full and is excluded
+from every reservoir rollup. A restoration level is labelled as a target with
+its authority and date rather than represented as capacity.
+
+The first lake has not yet been added. Walker Lake is the implementation
+candidate because USGS publishes both elevation and volume and documents the
+stage-capacity relation. Great Salt Lake requires an arm-aware representation;
+one point and one total would collapse separately measured waters.
+
 **Never subtract two shares with different denominators** (ADR-046) — see the
 drought section below for the case this exists for.
 

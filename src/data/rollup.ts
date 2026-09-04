@@ -67,7 +67,8 @@ const BASIS_LABELS: Record<string, string> = {
   max_storage: "Maximum level",
   reclamation_project_record: "Full level published by the reservoir operator",
   awdb_reservoir_metadata: "Level published with the readings",
-  cdec_reservoir_report: "Full level published by the reservoir operator"
+  cdec_reservoir_report: "Full level published by the reservoir operator",
+  authoritative_water_report: "Full level in a reviewed water report"
 };
 /** The key `basisShares` reports the fallback under. */
 export const RECORD_MAX_BASIS = "record_max";

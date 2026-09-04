@@ -8,7 +8,7 @@ except to change its status. When a decision changes, add a new record that
 supersedes the old one — the history is the point. The procedure is
 [`.claude/skills/adr/SKILL.md`](../../.claude/skills/adr/SKILL.md).
 
-Index checked 2026-08-27. Current architecture is described in
+Index checked 2026-09-04. Current architecture is described in
 [`docs/architecture/`](../architecture/README.md); these records say why it is
 that way. Read the **start here** record for your domain first, then only the
 records it points at — the full numeric table is at the bottom and is not
@@ -43,12 +43,14 @@ denominator. **Start with ADR-070, then ADR-072, then ADR-003.**
   [ADR-072](ADR-072-divide-by-a-figure-the-water-has-not-been-seen-above.md),
   [ADR-077](ADR-077-publish-what-drains-to-a-reservoir-as-an-upstream-set.md),
   [ADR-097](ADR-097-filter-snow-by-the-committed-upstream-set.md),
-  [ADR-099](ADR-099-admit-an-operator-measured-reservoir-with-no-dam-inventory-record.md),
   [ADR-102](ADR-102-admit-the-army-corps-of-engineers-as-a-provider.md),
   [ADR-104](ADR-104-admit-lake-pleasant-from-the-central-arizona-projects-endpoint.md),
-  [ADR-106](ADR-106-confirm-a-point-by-dam-position-and-never-by-a-dams-name.md)
+  [ADR-106](ADR-106-confirm-a-point-by-dam-position-and-never-by-a-dams-name.md),
+  [ADR-110](ADR-110-accept-reviewed-water-reports-without-a-dam-inventory-record.md),
+  [ADR-111](ADR-111-use-the-current-operating-limit-as-full.md)
 - Freshness and withdrawal:
   [ADR-056](ADR-056-withdraw-a-reading-that-belongs-to-another-season.md)
+- Superseded, read only for history: ADR-099
 - Procedure: [`docs/operations/source-admission.md`](../operations/source-admission.md)
 
 ### Scope, geography, levels and URL state
@@ -90,7 +92,7 @@ The four different scopes, the hydrologic level, and what a link carries.
   [ADR-034](ADR-034-hosted-boundary-layers-with-a-deadline.md),
   [ADR-037](ADR-037-refetch-the-boundaries-at-the-resolution-the-source-stops-adding.md)
 - Superseded, read only for history: ADR-107, ADR-005, ADR-009, ADR-011, ADR-014,
-  ADR-084
+  ADR-078, ADR-084
 - Current architecture: [`docs/architecture/scopes.md`](../architecture/scopes.md)
 
 ### Measurement method and statistical honesty
@@ -116,7 +118,7 @@ ADR-041.**
   [ADR-026](ADR-026-quote-machine-identifiers-in-api-documentation.md),
   [ADR-036](ADR-036-accessibility-is-a-gate-and-a-measured-content-policy.md),
   [ADR-045](ADR-045-name-the-site-for-the-water-and-each-page-for-its-subject.md),
-  [ADR-078](ADR-078-every-water-this-site-measures-is-a-reservoir.md),
+  [ADR-112](ADR-112-publish-terminal-lakes-as-a-separate-water-type.md),
   [ADR-079](ADR-079-rename-through-a-former-name-table-and-publish-the-operator.md),
   [ADR-089](ADR-089-put-reservoir-state-facts-in-their-own-csv-columns.md)
 
@@ -236,7 +238,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-075](ADR-075-draw-the-spread-chart-rather-than-configure-it.md) | Draw the spread chart rather than configure it | Accepted |
 | [ADR-076](ADR-076-nest-the-place-menus-and-let-the-heading-carry-the-state.md) | Nest the place menus and let the heading carry the state | Accepted; amends ADR-058's reader-facing-label clause |
 | [ADR-077](ADR-077-publish-what-drains-to-a-reservoir-as-an-upstream-set.md) | Publish what drains to a reservoir as an unordered upstream set | Accepted; precomputed against NLDI, keyed per ADR-066, geometry never published |
-| [ADR-078](ADR-078-every-water-this-site-measures-is-a-reservoir.md) | Every water this site measures is a reservoir | Accepted; type follows roster membership, no per-record field, natural lakes keep their names |
+| [ADR-078](ADR-078-every-water-this-site-measures-is-a-reservoir.md) | Every water this site measures is a reservoir | Superseded by ADR-112 |
 | [ADR-079](ADR-079-rename-through-a-former-name-table-and-publish-the-operator.md) | Rename through a former-name table, and publish the operator | Accepted; 26 provider names normalized, old spellings resolve forever, operator searchable |
 | [ADR-080](ADR-080-build-the-usgs-provider-against-the-keyless-legacy-service-now.md) | Build the USGS provider against the keyless legacy service now | Superseded by ADR-098 |
 | [ADR-081](ADR-081-divide-snows-summed-water-by-summed-normals-once.md) | Divide snow's summed water by summed normals, once, and floor the curve's denominator at the drawing | Accepted; supersedes the snow rollups' mean of ratios, adds a method version to `snowpack.json` |
@@ -257,7 +259,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-096](ADR-096-publish-point-location-without-publishing-new-geography.md) | Publish point location without publishing new geography | Accepted; HUC path from payload rosters, visible table rows exported as WGS84 points |
 | [ADR-097](ADR-097-filter-snow-by-the-committed-upstream-set.md) | Filter snow by the committed upstream set | Accepted; extends ADR-077 and keeps ADR-081's estimator |
 | [ADR-098](ADR-098-use-a-pipeline-only-key-for-the-usgs-ogc-service.md) | Use a pipeline-only key for the USGS OGC service | Accepted; supersedes ADR-080 and narrows ADR-004 |
-| [ADR-099](ADR-099-admit-an-operator-measured-reservoir-with-no-dam-inventory-record.md) | Admit an operator-measured reservoir with no dam inventory record | Accepted; extends ADR-003 and ADR-015 for one admission, screens unchanged elsewhere |
+| [ADR-099](ADR-099-admit-an-operator-measured-reservoir-with-no-dam-inventory-record.md) | Admit an operator-measured reservoir with no dam inventory record | Superseded by ADR-110 |
 | [ADR-100](ADR-100-a-sub-daily-providers-day-is-its-last-reading.md) | A sub-daily provider's day is its last reading | Accepted; no method version bump, the method is unchanged and the code now performs it |
 | [ADR-101](ADR-101-bound-the-basemap-chain-and-draw-the-data-without-it.md) | Bound the basemap chain, and draw the data without it | Accepted; the chain gets one 15s budget, an exhausted budget draws the reservoirs on a plain background |
 | [ADR-102](ADR-102-admit-the-army-corps-of-engineers-as-a-provider.md) | Admit the Army Corps of Engineers as a provider | Accepted; eighth provider, the Columbia Basin under the `NWDP` office, republished and forecast series refused |
@@ -268,6 +270,9 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-107](ADR-107-publish-scofield-at-its-reviewed-waterbody-point.md) | Publish Scofield at its reviewed waterbody point | Superseded by ADR-109 |
 | [ADR-108](ADR-108-apply-reviewed-waterbody-points-without-refreshing-readings.md) | Apply six reviewed waterbody points without refreshing readings | Accepted; separate outlet points retained |
 | [ADR-109](ADR-109-remove-scofields-rejected-dam-point.md) | Remove Scofield’s rejected dam point and withhold its unreviewed upstream trace | Accepted |
+| [ADR-110](ADR-110-accept-reviewed-water-reports-without-a-dam-inventory-record.md) | Accept reviewed water reports without a dam inventory record | Accepted; supersedes ADR-099 and qualifies ADR-003 and ADR-015 |
+| [ADR-111](ADR-111-use-the-current-operating-limit-as-full.md) | Use the current operating limit as full | Accepted; qualifies ADR-070 and requires dated capacity versions before denominator changes |
+| [ADR-112](ADR-112-publish-terminal-lakes-as-a-separate-water-type.md) | Publish terminal lakes as a separate water type | Accepted; supersedes ADR-078 |
 
 ## Relationship to the historical journal
 

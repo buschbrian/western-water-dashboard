@@ -1,6 +1,6 @@
 # ADR-099: Admit an operator-measured reservoir with no dam inventory record
 
-- Status: Accepted
+- Status: Superseded by ADR-110
 - Date: 2026-08-29
 
 ## Context

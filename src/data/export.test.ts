@@ -29,6 +29,16 @@ describe("CSV serialization", () => {
     expect(overviewCsv([reservoir!])).toContain("Bureau of Reclamation project record");
   });
 
+  it("names a reviewed water report used when NID has no matching dam", () => {
+    const reservoir = {
+      ...readPayload().reservoirs[0]!,
+      capacity_basis: "authoritative_water_report"
+    };
+
+    expect(capacitySource(reservoir))
+      .toBe("Reviewed government or operator water report");
+  });
+
   it("keeps the declared header order and raw numeric values", () => {
     const reservoir = readPayload().reservoirs[0];
     expect(reservoir).toBeDefined();

@@ -62,6 +62,9 @@ export function capacitySource(reservoir: Reservoir): string {
   if (reservoir.capacity_basis === "dnrc_stage_metadata") {
     return "Montana Department of Natural Resources and Conservation reservoir record";
   }
+  if (reservoir.capacity_basis === "authoritative_water_report") {
+    return "Reviewed government or operator water report";
+  }
   if (reservoir.capacity_basis === null) return "Not available";
   return "U.S. Army Corps of Engineers National Inventory of Dams";
 }

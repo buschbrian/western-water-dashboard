@@ -499,13 +499,21 @@ export const REFERENCE_GROUPS: readonly ApiFieldGroup[] = [
       "Source field selected as the full level, or the reservoir owner's own "
       + "published figure where there is one: reclamation_project_record for a "
       + "reviewed Bureau of Reclamation record, cdec_reservoir_report for the "
-      + "California daily reservoir report."),
+      + "California daily reservoir report, and authoritative_water_report "
+      + "when NID has no corresponding dam and a reviewed government or owner "
+      + "report defines the same storage series."),
     f("capacity_source", "text",
       "Named owner record when it replaces the inventory full level.", true),
     f("capacity_source_url", "web address",
       "Owner-operated source for that replacement full level.", true),
     f("capacity_source_checked", "date",
       "Date the replacement full level was reviewed.", true),
+    f("capacity_semantics", "text",
+      "Meaning of a full level taken from a reviewed water report.", true),
+    f("nid_match_finding", "text",
+      "Result of the documented NID search when no dam record corresponds.", true),
+    f("controlled_works", "text",
+      "Control structure evidence for a reservoir absent from NID.", true),
     f("dam_lat", "decimal degrees", "Reviewed dam latitude."),
     f("dam_lon", "decimal degrees", "Reviewed dam longitude."),
     f("max_storage_af", "acre-feet", "Inventory maximum-storage value."),

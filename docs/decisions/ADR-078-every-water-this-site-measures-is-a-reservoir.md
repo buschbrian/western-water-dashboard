@@ -1,6 +1,6 @@
 # ADR-078: Every water this site measures is a reservoir
 
-- Status: Accepted
+- Status: Superseded by ADR-112
 - Date: 2026-08-22
 
 ## Context

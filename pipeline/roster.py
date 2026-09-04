@@ -8,6 +8,7 @@ west holds two Lost Creeks 946 km apart.
 Procedure for changing any of this: docs/operations/source-admission.md.
 """
 
+import datetime as dt
 import json
 from pathlib import Path
 
@@ -79,6 +80,28 @@ def validate_capacity_evidence(name: str, capacity: object) -> None:
         if not isinstance(capacity.get("capacity_source_url"), str) \
                 or not capacity["capacity_source_url"].startswith("https://gis.dnrc.mt.gov/"):
             raise ValueError(f"{name}: DNRC full level needs its source URL")
+    if capacity.get("capacity_basis") == "authoritative_water_report":
+        required = (
+            "capacity_source", "capacity_source_url", "capacity_source_checked",
+            "capacity_semantics", "nid_match_finding", "controlled_works",
+        )
+        if any(not isinstance(capacity.get(field), str) or not capacity[field].strip()
+               for field in required):
+            raise ValueError(
+                f"{name}: a reviewed water report needs complete source and semantic evidence")
+        if not capacity["capacity_source_url"].startswith("https://"):
+            raise ValueError(f"{name}: a reviewed water report needs an HTTPS source URL")
+        try:
+            dt.date.fromisoformat(capacity["capacity_source_checked"])
+        except ValueError as error:
+            raise ValueError(
+                f"{name}: reviewed water report date must be YYYY-MM-DD") from error
+        if capacity.get("nid_id") is not None or capacity.get("nid_dam_name") is not None:
+            raise ValueError(
+                f"{name}: authoritative_water_report is only for a documented missing NID record")
+        if capacity.get("match_confirmed_by") != "authoritative_water_report":
+            raise ValueError(
+                f"{name}: reviewed water report must state how identity was confirmed")
 
 
 def load_admitted_rise_reservoirs(

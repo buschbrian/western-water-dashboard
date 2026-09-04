@@ -453,6 +453,35 @@ def test_awdb_inventory_has_traceable_capacity_and_cadence():
         assert evidence["capacity_source_checked"] == "2026-08-20"
 
 
+def test_reviewed_water_report_requires_missing_inventory_and_semantics():
+    evidence = {
+        "capacity_af": 59440,
+        "capacity_basis": "authoritative_water_report",
+        "nid_id": None,
+        "nid_dam_name": None,
+        "dam_lon": None,
+        "dam_lat": None,
+        "match_distance_km": 0,
+        "match_confirmed_by": "authoritative_water_report",
+        "capacity_source": "U.S. Geological Survey water-data report",
+        "capacity_source_url": "https://wdr.water.usgs.gov/example.pdf",
+        "capacity_source_checked": "2026-09-04",
+        "capacity_semantics": "Usable storage above the outlet tunnel.",
+        "nid_match_finding": "No corresponding NID record was found.",
+        "controlled_works": "Outlet tunnel and earthfill levee.",
+    }
+
+    R.validate_capacity_evidence("Topaz Lake", evidence)
+
+    for field in ("capacity_semantics", "nid_match_finding", "controlled_works"):
+        incomplete = {**evidence, field: ""}
+        with pytest.raises(ValueError, match="complete source and semantic evidence"):
+            R.validate_capacity_evidence("Topaz Lake", incomplete)
+
+    with pytest.raises(ValueError, match="documented missing NID"):
+        R.validate_capacity_evidence("Topaz Lake", {**evidence, "nid_id": "NV00000"})
+
+
 def test_admitted_inventory_lands_at_its_reviewed_dam_point():
     """Every admitted station's stored drainage area has to match where its
     reviewed dam point actually sits -- a roster entry with the wrong huc6
