@@ -57,11 +57,81 @@ These changes would raise each reservoir's percent full and reduce the
 combined full level of its drainage area. They do not change storage in
 acre-feet, seasonal medians or storage changes.
 
+## Restriction dates, from the state report
+
+The September 2025 report carries 49 entries and gives each one a **Dam Number,
+Owner Name, Condition Assessment, Downstream Hazard Potential Classification,
+Effective Date of Restriction, Reason for Restriction** and the owner's
+reported planned actions. Two of the 49 are debris basins -- Santa Anita and
+Sawpit, both restricted 1995-06-07 -- which is where the 47 restricted
+reservoirs counted at the top of this page comes from. Both counts are right
+about different things. The effective date settles what the operator
+charts do not publish, and ADR-111 requires it before a restricted full level
+may divide a reading.
+
+Read against the reviewed mapping above, by owner as well as by name:
+
+| Published reservoir | Restricted dam | Effective | Reason |
+|---|---|---|---|
+| Tinemaha Reservoir | Tinemaha | 1993-03-03 | Seismic |
+| Haiwee | Haiwee | 2002-07-23 | Seismic |
+| Calero Reservoir | Calero | 2013-02-08 | Seismic |
+| Gem Lake | Gem Lake | 2013-02-14 | Seismic |
+| El Capitan Dam | El Capitan | 2015-05-27 | Seismic |
+| Leroy Anderson | Leroy Anderson | 2017-05-08 | Seismic |
+| Lake McCloud | McCloud | 2020-01-09 | Other |
+| Irvine Lake | Santiago Creek | 2020-05-08 | Other |
+| San Andreas | San Andreas | 2020-08-03 | Other |
+| Morena Dam | Morena | 2021-11-10 | Hydraulic |
+| Lake Hodges | Lake Hodges | 2023-02-02 | Seismic |
+| Lake Pillsbury | Scott | 2023-04-12 | Seismic |
+| Murray Reservoir | Murray | 2023-07-19 | Seismic |
+| Relief | Relief | 2024-06-02 | Other |
+| Crane Valley | Crane Valley Storage | 2024-10-06 | Other |
+
+And for the two off-roster cases the earlier pass named: **Vail** is restricted
+from **2015-06-02** (seismic, Rancho California Water District), and
+**Guadalupe** from **2012-04-25** (seismic, Santa Clara Valley Water District).
+
+**Coyote is not in the state list at all**, so its operator-published
+restriction still needs a date from Valley Water.
+
+**Four of these predate the published record.** Tinemaha, Haiwee, Calero and
+Gem Lake were restricted before 2015, so they have no pre-restriction reading
+and their capacity history is one dated version rather than two. Vail's
+restriction begins inside the record, five months after its first reading,
+so it takes the ordinary two-version shape.
+
+**The report gives no restricted level in any form.** It has no elevation
+column and no volume column; DSOD restricts a reservoir by directing an owner
+to hold it below a stated water surface elevation, and the report describes
+that in prose about planned actions rather than as a figure. So the state list
+answers the date and never the denominator, which is why the operator research
+below is still required for every row.
+
+## Two name matches that are not evidence
+
+A mechanical comparison of all 49 dam names against the published roster
+proposes two matches that the owner column refuses, and they are recorded here
+so the next pass does not re-propose them:
+
+- **Bear Gulch** is California Water Service Company's dam on the San Francisco
+  peninsula. It is not **Bear Lake**, which is PacifiCorp's on the Utah-Idaho
+  line. The names are close and the waters are 1,100 km apart (ADR-066).
+- **Round Valley** and **Lake Valley Reservoir** are both Pacific Gas and
+  Electric Company's, in Plumas and Placer counties respectively. Shared
+  ownership is not identity, and no reviewed source connects them.
+
+**Matilija is restricted from 2025-06-09** (seismic, Ventura County Watershed
+Protection District). That does not settle the `MAT` hold, whose finding is a
+series *above* the matched record's largest figure rather than below it, but it
+is a fact about the same dam and belongs beside it.
+
 ## Evidence still required
 
 The state report identifies affected dams, restriction dates and reasons but
-usually does not give the restricted acre-foot volume. Each remaining row
-therefore needs an owner or regulator source that supplies:
+does not give the restricted acre-foot volume. Each remaining row therefore
+needs an owner or regulator source that supplies:
 
 - the restricted elevation and an authoritative elevation-storage table, or
   the restricted volume directly;
