@@ -84,7 +84,28 @@ Two keys, one reader-facing phrase: `basisShares` groups by label, because
 "published by the reservoir operator 4, published by the reservoir operator 33"
 is one fact printed twice.
 
-**Do not introduce a new capacity precedence rule without a decision record.**
+**A missing inventory record is not an automatic refusal** (ADR-110). A
+reviewed government water report or owner-operated record may replace it when
+the evidence identifies the facility and controlled works, defines the storage
+series, and gives a full level on the same basis. The roster states that the
+inventory search ran and found no corresponding record; a blank identifier is
+not enough.
+
+**An active operating restriction is the current full level** (ADR-111). Keep
+the physical capacity separately and retain each full-level version with its
+authority, effective dates and source. Historical observations use the version
+effective on their own date. A restriction notice without an acre-foot limit
+is a lead for operator research, not a denominator.
+
+**Do not introduce another capacity precedence rule without a decision record.**
+
+## A natural terminal lake is a separate admission path
+
+ADR-112 permits a `natural_terminal_lake`, but it is not a reservoir with a
+missing capacity. Review its waterbody point, closed-basin assignment, vertical
+datum and any stage-volume relation. It receives no dam or outlet point, no
+percent full and no membership in reservoir rollups. A target level stays a
+named restoration or regulatory target and never becomes capacity.
 
 ## A reviewed admission names the screen it was admitted against
 

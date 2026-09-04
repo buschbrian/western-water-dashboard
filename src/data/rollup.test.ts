@@ -349,6 +349,11 @@ describe("what a combined figure is made of", () => {
       .toBe("Full level published by the reservoir operator");
   });
 
+  it("names a reviewed water report as a full-level source", () => {
+    expect(basisLabel("authoritative_water_report"))
+      .toBe("Full level in a reviewed water report");
+  });
+
   /*
    * A reservoir with no traceable capacity falls back to its highest recorded
    * storage, which is a floor and not a capacity. `sizeBasis` has always made
