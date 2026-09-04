@@ -187,6 +187,15 @@ export const RESERVOIR_GROUPS: readonly ApiFieldGroup[] = [
       + "Where the provider that publishes the readings also publishes a full "
       + "level, that figure is preferred over the dam inventory's."),
     f("pct_of_capacity", "percent", "Current storage divided by the reviewed full level."),
+    f("capacity_history", "array",
+      "Dated full levels, oldest first. Present only where the full level "
+      + "changed: an owner or regulator limited the reservoir to less than it "
+      + "holds, or the structure was enlarged. The fields above carry the "
+      + "version in force on the reading date, so a reader who wants only "
+      + "today's percentage does not need this.", true),
+    f("physical_capacity_af", "acre-feet",
+      "What the reservoir holds when it is currently operated to less. "
+      + "Present with an operating limit, and never a replacement for it.", true),
     f("seasonal_percentile", "percent",
       "Rank against one value from each earlier year near the same date."),
     f("seasonal_rank", "position",
@@ -247,6 +256,23 @@ export const RESERVOIR_GROUPS: readonly ApiFieldGroup[] = [
     f("county_fips", "identifier", "Five-digit county code holding the published point."),
     f("county_name", "text", "County name. Read it with the state: several names repeat.")
   ]},
+  { id: "reservoir-capacity-version", title: "Full-level version",
+    path: "reservoirs[].capacity_history[]", fields: [
+      f("capacity_af", "acre-feet", "The full level this version publishes."),
+      f("capacity_basis", "identifier",
+        "Where the figure came from. operating_restriction means a limit an "
+        + "owner or regulator currently applies, rather than a level the "
+        + "structure was built to."),
+      f("effective_from", "date",
+        "First date this full level applies to. Null on the earliest version, "
+        + "which covers the record before the change."),
+      f("effective_to", "date",
+        "Last date it applies to, where a reviewer recorded one. The version "
+        + "that follows sets the same boundary.", true),
+      f("authority", "text", "Who set an operating limit.", true),
+      f("source_url", "web address", "Where that limit is published.", true),
+      f("source_checked", "date", "Date that source was read.", true)
+    ]},
   { id: "reservoir-month", title: "Monthly history entry", path: "reservoirs[].monthly[]", fields: [
     f("month", "year and month", "Month represented by the entry."),
     f("mean_af", "acre-feet", "Average storage during the month."),
@@ -520,7 +546,11 @@ export const REFERENCE_GROUPS: readonly ApiFieldGroup[] = [
     f("nid_dam_name", "text", "Dam name in the National Inventory of Dams."),
     f("nid_id", "identifier", "National Inventory of Dams identifier."),
     f("nid_storage_af", "acre-feet", "Inventory storage value."),
-    f("normal_storage_af", "acre-feet", "Inventory normal-storage value.")
+    f("normal_storage_af", "acre-feet", "Inventory normal-storage value."),
+    f("capacity_versions", "array",
+      "Dated full levels for a reservoir whose full level changed.", true),
+    f("physical_capacity_af", "acre-feet",
+      "What the reservoir holds when an operating limit is lower.", true)
   ]},
   { id: "reference-dam-points", title: "Dam-point summary", path: "capacity_catalog.dam_points", fields: [
     f("count", "dams", "Reviewed dam-point count."),

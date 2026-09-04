@@ -39,6 +39,29 @@ describe("CSV serialization", () => {
       .toBe("Reviewed government or operator water report");
   });
 
+  it("names the authority behind a current operating limit", () => {
+    /* A limit is the authority's rather than the provider's, so the published
+     * row says whose it is (ADR-111). */
+    const reservoir = {
+      ...readPayload().reservoirs[0]!,
+      capacity_basis: "operating_restriction",
+      capacity_history: [
+        { capacity_af: 200, capacity_basis: "max_storage",
+          effective_from: null, effective_to: "2020-12-31" },
+        { capacity_af: 100, capacity_basis: "operating_restriction",
+          effective_from: "2021-01-01", effective_to: null,
+          authority: "Rancho California Water District",
+          source_url: "https://example.gov/limit", source_checked: "2026-09-04" }
+      ]
+    };
+
+    expect(capacitySource(reservoir))
+      .toBe("Current operating limit set by Rancho California Water District");
+    const unattributed = { ...reservoir };
+    delete (unattributed as { capacity_history?: unknown }).capacity_history;
+    expect(capacitySource(unattributed)).toBe("Current operating limit");
+  });
+
   it("keeps the declared header order and raw numeric values", () => {
     const reservoir = readPayload().reservoirs[0];
     expect(reservoir).toBeDefined();

@@ -45,6 +45,28 @@ remove coordinate fields while retaining capacity evidence. The upstream
 builder records an explicitly rejected outlet as `unreviewed_outlet`; it does
 not infer the whole reservoir basin from a snap inside the lake.
 
+A full level that changed is committed as `capacity_versions` on the
+reservoir's capacity evidence, oldest first (ADR-111). Each version runs from
+its own `effective_from` until the next one begins, so an observation falls in
+exactly one; `effective_to` repeats a boundary the successor already sets. The
+earliest version either opens the record with a null start or names the date it
+really began, which may be years before the first reading — Tinemaha has been
+restricted since 1993 and reports from 2015. A reviewed date is not discarded
+to fit a rule, so `check_capacity_versions_cover` proves the other half at
+refresh time, where the readings are known: a series that begins before the
+earliest full level takes effect fails the run rather than being divided by the
+nearest figure to hand. That is also what catches evidence which was complete
+when reviewed and stopped covering the record after a backfill. A lone version
+must carry a start date, or it is the headline figure written twice. `pipeline.roster.effective_capacity` picks the version
+in force on the reading date, which is what the record's flat `capacity_af`,
+`capacity_basis` and `pct_of_capacity` publish, and
+`published_capacity_history` emits the array as `capacity_history` beside
+`physical_capacity_af` — only for a reservoir whose level changed, because a
+history repeating one figure is `capacity_af` written twice. The
+`operating_restriction` basis is the one that cannot stand alone: a limit
+applies from a date, names the authority that set it and where that was read,
+and never replaces the physical capacity beside it.
+
 **Data is fetched at runtime, never imported** (ADR-002). `reservoirs.json` is
 rewritten every morning and that commit *is* the deploy. The build copies it;
 nothing imports it. *Enforced:* `src/deploy.test.ts` and a `dist/assets` grep

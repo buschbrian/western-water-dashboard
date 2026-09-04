@@ -9,8 +9,9 @@
  * key, never from the label the payload carries.
  */
 
+import { monthEndDate, sizeBasisOn } from "../data/capacity";
 import { monthLabel } from "../data/months";
-import { isLate, sizeBasis } from "../data/rollup";
+import { isLate } from "../data/rollup";
 import type {
   BaselineChoice,
   BaselineId,
@@ -181,7 +182,12 @@ const CAPACITY_BASIS_NAMES: Record<string, string> = {
      authority; the phrase does not have to say so, because it already names
      who published it. */
   srp_reservoir_metadata: "the full level published by the reservoir operator",
-  dnrc_stage_metadata: "the full level published by the reservoir operator"
+  dnrc_stage_metadata: "the full level published by the reservoir operator",
+  /* Not a property of the structure but of how it is run today: an owner or
+     regulator limits the reservoir to less than it can hold, and the panel
+     has to say so, or a reservoir at its allowed limit reads as short of full
+     for a reason the reader cannot see (ADR-111). */
+  operating_restriction: "the current operating limit, which is lower than the level the reservoir can hold"
 };
 
 /** The words for a basis, or null when the provider named none. */
@@ -280,16 +286,20 @@ export function upstreamRows(trace: UpstreamTrace): DetailRow[] {
 /**
  * The twelve months, with the same denominator the map colours by.
  *
- * `sizeBasis` rather than `record_max_af` directly: the map sizes and colours
+ * A size basis rather than `record_max_af` directly: the map sizes and colours
  * a reservoir against its capacity where one is known, and a chart under a
  * circle that used a different denominator would be a second answer to the
- * question the circle already answered.
+ * question the circle already answered. Per month rather than once for the
+ * chart, for the same reason -- the map's month colours come from
+ * `monthPercent`, which divides each month by the full level in force at that
+ * month's end (ADR-111), and a chart holding one denominator across a
+ * restriction would disagree with the circle above it.
  */
 export function monthlyDetail(
   reservoir: Reservoir, baseline: BaselineId = "recent"
 ): DetailMonth[] {
-  const basis = sizeBasis(reservoir);
   return reservoir.monthly.map((entry) => {
+    const basis = sizeBasisOn(reservoir, monthEndDate(entry.month));
     const storage = entry.mean_af !== null && Number.isFinite(entry.mean_af)
       ? entry.mean_af : null;
     const percent = storage !== null && basis ? (storage / basis) * 100 : null;
