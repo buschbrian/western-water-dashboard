@@ -39,6 +39,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from huc import assign_huc, haversine_km, load_units  # noqa: E402
+from pipeline.roster import apply_dam_point_reviews  # noqa: E402
 
 CAPACITIES_PATH = ROOT / "capacities.json"
 RESERVOIRS_PATH = ROOT / "reservoirs.json"
@@ -200,12 +201,14 @@ def main() -> int:
     if args.dry_run:
         print("\nDry run: nothing written.")
         return 0
+    document["capacities"] = apply_dam_point_reviews(capacities)
     document["dam_points"] = {
         "source": NID_LAYER,
         "note": ("Dam coordinates, queried by NID id. Used as the watershed "
                  "assignment point: the drainage area is where the stored "
                  "water leaves, not where the middle of the lake is."),
-        "count": updated,
+        "count": sum(entry.get("dam_lon") is not None and entry.get("dam_lat") is not None
+                     for entry in document["capacities"].values()),
     }
     CAPACITIES_PATH.write_text(json.dumps(document, indent=2) + "\n")
     print(f"\nWrote {CAPACITIES_PATH.name}.")

@@ -265,7 +265,7 @@ BASE_RISE_RESERVOIRS = {
     "310": ("East Canyon", 40.91017, -111.59293),
     "652": ("Pineview", 41.26543, -111.80998),
     "866": ("Willard Bay", 41.37738, -112.08339),
-    # Reviewed waterbody point, approved 2026-09-04 (ADR-107): USGS NHDPlus
+    # Reviewed waterbody point, approved 2026-09-04 (ADR-109): USGS NHDPlus
     # HR waterbody 37983005. The independent outlet stays in capacities.json.
     "727": ("Scofield", 39.76315, -111.15614),
     "764": ("Starvation", 40.19324, -110.44722),

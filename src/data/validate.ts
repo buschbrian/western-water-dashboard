@@ -332,13 +332,16 @@ export function validateReservoirPayload(value: unknown): ReservoirPayload {
 }
 
 function isUpstreamTrace(value: unknown): value is UpstreamTrace {
-  return isObject(value) &&
-    typeof value.name === "string" &&
-    Array.isArray(value.upstream_reservoirs) &&
-    value.upstream_reservoirs.every((id) => typeof id === "string") &&
-    Array.isArray(value.upstream_snow_sites) &&
-    value.upstream_snow_sites.every((id) => typeof id === "string") &&
-    optionalNullableString(value.screen) &&
+  if (!isObject(value) || typeof value.name !== "string") return false;
+  const reservoirsValid = Array.isArray(value.upstream_reservoirs) &&
+    value.upstream_reservoirs.every((id) => typeof id === "string");
+  const snowValid = Array.isArray(value.upstream_snow_sites) &&
+    value.upstream_snow_sites.every((id) => typeof id === "string");
+  const screened = typeof value.screen === "string" && value.screen.trim().length > 0;
+  return (screened
+    ? (value.upstream_reservoirs === undefined || reservoirsValid) &&
+      (value.upstream_snow_sites === undefined || snowValid)
+    : value.screen == null && reservoirsValid && snowValid) &&
     optionalNullableString(value.detail) &&
     optionalNullableString(value.review);
 }

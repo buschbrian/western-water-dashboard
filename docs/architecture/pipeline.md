@@ -34,10 +34,16 @@ computation, normals).
 
 For an approved point correction, `refresh_reservoirs.py --rebuild-points
 STATION_ID` takes selected coordinates from the reviewed roster and rebuilds
-geography through `pipeline.geography.rebuild_published_points` (ADR-107).
+geography through `pipeline.geography.rebuild_published_points` (ADR-108).
 It uses committed county and outlet assignments, so county changes must be
 reviewed and rebuilt first. It preserves the storage observations and refresh
 timestamp, and refuses IDs that are unknown or absent from the current payload.
+
+Committed dam-point rejections in `pipeline.roster` apply to the capacity
+builder, its legacy point-repair tool and the runtime loader (ADR-109). They
+remove coordinate fields while retaining capacity evidence. The upstream
+builder records an explicitly rejected outlet as `unreviewed_outlet`; it does
+not infer the whole reservoir basin from a snap inside the lake.
 
 **Data is fetched at runtime, never imported** (ADR-002). `reservoirs.json` is
 rewritten every morning and that commit *is* the deploy. The build copies it;

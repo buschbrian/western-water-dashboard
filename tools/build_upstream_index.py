@@ -241,6 +241,7 @@ def load_roster_and_sites() -> tuple[list[dict], list[dict]]:
             "trace_lat": entry["dam_lat"] if has_dam else r["lat"],
             "trace_point": "reviewed dam point" if has_dam
             else "published point",
+            "outlet_rejected": (entry.get("dam_point_review") or {}).get("status") == "rejected",
         })
     sites_doc = json.loads((ROOT / "snow_sites.json").read_text(encoding="utf-8"))
     sites = [
@@ -254,6 +255,9 @@ def trace_one(reservoir: dict, others: list[dict], sites: list[dict]) -> dict:
     """One reservoir's upstream set, or the screen that refused it."""
     record: dict = {"name": reservoir["name"],
                     "trace_point": reservoir["trace_point"]}
+    if reservoir.get("outlet_rejected"):
+        return {**record, "screen": "unreviewed_outlet",
+                "detail": "The dam point was rejected; no replacement outlet has been reviewed."}
     try:
         comid = comid_for(reservoir["trace_lon"], reservoir["trace_lat"])
     except urllib.error.HTTPError as error:
@@ -325,12 +329,24 @@ def main() -> int:
     parser.add_argument("--missing", action="store_true",
                         help="trace only the published reservoirs the committed "
                              "index does not already hold, and merge them into it")
+    parser.add_argument("--update", nargs="+", metavar="STATION_ID",
+                        help="retrace selected station IDs and merge into the committed index")
     args = parser.parse_args()
+
+    if args.update and (args.only or args.missing):
+        parser.error("--update cannot be combined with --only or --missing")
 
     reservoirs, sites = load_roster_and_sites()
     print(f"{len(reservoirs)} published reservoirs, {len(sites)} snow sites",
           file=sys.stderr)
     existing: dict[str, dict] = {}
+    previous = None
+    if args.update:
+        previous = json.loads(OUTPUT_PATH.read_text(encoding="utf-8"))
+        existing = previous["traces"]
+        unknown = set(args.update) - {r["station"] for r in reservoirs}
+        if unknown:
+            parser.error("unpublished station id(s): " + ", ".join(sorted(unknown)))
     if args.missing:
         if args.only:
             print("ERROR: --missing and --only ask for different things",
@@ -340,6 +356,8 @@ def main() -> int:
             existing = json.loads(
                 OUTPUT_PATH.read_text(encoding="utf-8")).get("traces", {})
     wanted = reservoirs
+    if args.update:
+        wanted = [r for r in reservoirs if r["station"] in args.update]
     if args.missing:
         wanted = [r for r in reservoirs if r["station"] not in existing]
         print(f"{len(wanted)} not yet traced; {len(existing)} already in "
@@ -386,6 +404,14 @@ def main() -> int:
         print(json.dumps(traces, indent=1))
         return 0
 
+    if args.update:
+        if any(record.get("screen") in {"service_error", "service_unavailable", "no_basin"}
+               for record in traces.values()):
+            print("ERROR: retrace did not resolve; nothing written", file=sys.stderr)
+            return 1
+        for record in traces.values():
+            record["retrieved"] = time.strftime("%Y-%m-%d")
+
     # Merged rather than replacing (`--missing`), the same way the normals
     # builder merges: a reservoir already traced keeps the set it was traced
     # with. What that does not do is recompute the reservoirs already in the
@@ -416,6 +442,10 @@ def main() -> int:
         "review_count": len(reviewed),
         "traces": dict(sorted(traces.items())),
     }
+    if previous is not None:
+        for key in ("traces", "traced_this_run", "traced_count", "screened_count", "review_count"):
+            previous[key] = document[key]
+        document = previous
     OUTPUT_PATH.write_text(json.dumps(document, indent=1,
                                       sort_keys=False) + "\n")
     print(f"\nwrote {OUTPUT_PATH.name}: {len(traces)} traced, "

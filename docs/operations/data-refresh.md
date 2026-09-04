@@ -71,14 +71,34 @@ changes. Then apply only the approved station IDs and rebuild the assistant
 indexes:
 
 ```bash
-.venv/bin/python refresh_reservoirs.py --rebuild-points 727
+.venv/bin/python tools/build_county_assignments.py --only 10774
+.venv/bin/python refresh_reservoirs.py --rebuild-points 10774 FRL CRW FRD 09UTKOLB:UT:BOR PVR
 .venv/bin/python tools/build_assistant_indexes.py
 ```
+
+The county builder merges selected assignments and stamps their retrieval dates;
+it preserves unselected records and the full-run retrieval date.
 
 The point rebuild uses committed geography and does not fetch observations or
 advance their refresh timestamp. It supports `--dry-run`, refuses unknown or
 unpublished IDs, and cannot be combined with `--source` or `--only`. Verify
 the generated diff and run `verify:pipeline` and `verify:browser`.
+
+For a reviewed dam-point removal, record the rejection in
+`pipeline.roster.REJECTED_DAM_POINTS`, then run the owning generators:
+
+```bash
+.venv/bin/python tools/build_capacity_table.py --apply-point-reviews
+.venv/bin/python refresh_reservoirs.py --rebuild-points 727
+.venv/bin/python tools/build_upstream_index.py --update 727
+.venv/bin/python tools/build_reference_export.py
+.venv/bin/python tools/build_assistant_indexes.py
+```
+
+The capacity review mode supports `--dry-run` and fetches no data. The upstream
+update merges selected station IDs, stamps their retrieval dates and preserves
+other traces; an explicitly rejected outlet is screened without a network
+trace until a replacement is reviewed.
 
 These are **not** part of the daily run:
 

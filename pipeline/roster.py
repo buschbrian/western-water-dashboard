@@ -27,6 +27,28 @@ REQUIRED_CAPACITY_EVIDENCE = {
     "dam_lon", "dam_lat", "match_distance_km", "match_confirmed_by",
 }
 
+# A rejected outlet must not return on the next inventory rebuild (ADR-109).
+# The capacity evidence remains valid; this review concerns its point only.
+REJECTED_DAM_POINTS = {
+    "727": {
+        "status": "rejected",
+        "reviewed": "2026-09-04",
+        "reason": "Reviewer rejected Scofield's dam point; use the approved waterbody point until an outlet is reviewed.",
+        "decision": "ADR-109",
+    },
+}
+
+
+def apply_dam_point_reviews(capacities: dict[str, dict]) -> dict[str, dict]:
+    """Remove rejected point fields without changing capacity evidence."""
+    result = {station: dict(entry) for station, entry in capacities.items()}
+    for station, review in REJECTED_DAM_POINTS.items():
+        if station in result:
+            result[station].pop("dam_lon", None)
+            result[station].pop("dam_lat", None)
+            result[station]["dam_point_review"] = dict(review)
+    return result
+
 
 def validate_capacity_evidence(name: str, capacity: object) -> None:
     if not isinstance(capacity, dict) or not REQUIRED_CAPACITY_EVIDENCE <= capacity.keys():
@@ -423,7 +445,7 @@ def load_capacities() -> dict[str, dict]:
     except (ValueError, AttributeError):
         print(f"WARNING: {CAPACITY_PATH.name} is unreadable; "
               "its percent-full values will be omitted")
-    return {
+    return apply_dam_point_reviews({
         **capacities,
         **{station: row["capacity"]
            for station, row in ADMITTED_RISE_RESERVOIRS.items()},
@@ -442,4 +464,4 @@ def load_capacities() -> dict[str, dict]:
            for station, row in ADMITTED_CWMS_RESERVOIRS.items()},
         **{station: row["capacity"]
            for station, row in ADMITTED_CAP_RESERVOIRS.items()},
-    }
+    })

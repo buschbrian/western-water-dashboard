@@ -4,12 +4,12 @@
  "retrieved": "2026-08-30",
  "keyed_by": "source_station_id",
  "selection": "every published reservoir, traced from its published point against every other published reservoir and snow-site point",
- "traced_this_run": 404,
+ "traced_this_run": 1,
  "self_exclusion": "deliberate: a dam point lies inside its own basin",
  "area_method": "spherical excess around the ring; approximate, for screening rather than measurement",
  "review_area_sq_mi": 300000.0,
  "traced_count": 404,
- "screened_count": 0,
+ "screened_count": 1,
  "review_count": 0,
  "traces": {
   "09009010:CO:BOR": {
@@ -3631,14 +3631,10 @@
   },
   "727": {
    "name": "Scofield",
-   "trace_point": "reviewed dam point",
-   "comid": "3907377",
-   "basin_vertices": 224,
-   "basin_area_sq_mi": 156,
-   "upstream_reservoirs": [],
-   "upstream_snow_sites": [
-    "1216:UT:SNTL"
-   ]
+   "trace_point": "published point",
+   "screen": "unreviewed_outlet",
+   "detail": "The dam point was rejected; no replacement outlet has been reviewed.",
+   "retrieved": "2026-09-04"
   },
   "764": {
    "name": "Starvation",

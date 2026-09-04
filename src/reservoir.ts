@@ -262,7 +262,7 @@ function upstreamSection(
   roster: readonly Reservoir[],
   station: string
 ): HTMLElement[] {
-  if (trace.screen) {
+  if (trace.screen != null) {
     return [
       sectionHeading("What is above it"),
       note("The contributing area above this reservoir could not be traced "

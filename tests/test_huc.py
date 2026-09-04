@@ -388,8 +388,8 @@ def test_an_unassigned_point_reports_no_source(units):
     assert fields["intersects_utah"] is False
 
 
-def test_scofield_uses_the_approved_waterbody_point_and_keeps_its_outlet():
-    """ADR-107 moves the waterbody marker, never the drainage assignment point."""
+def test_scofield_uses_the_approved_waterbody_point_without_the_rejected_outlet():
+    """ADR-109 removes the rejected outlet and uses the published-point fallback."""
     from pipeline.constants import BASE_RISE_RESERVOIRS
     from pipeline.geography import attach_counties, attach_watersheds
 
@@ -398,8 +398,8 @@ def test_scofield_uses_the_approved_waterbody_point_and_keeps_its_outlet():
     record = {"name": name, "source_station_id": "727", "lat": lat, "lon": lon}
     attach_watersheds([record])
     attach_counties([record])
-    assert record["huc_assignment_point"] == [-111.11991, 39.78681]
-    assert record["huc_assignment_source"] == "nid_dam_point"
+    assert record["huc_assignment_point"] == [lon, lat]
+    assert record["huc_assignment_source"] == "published_point"
     assert record["huc6"] == "140600"
     assert record["huc8"] == "14060007"
     assert record["county_fips"] == "49007"

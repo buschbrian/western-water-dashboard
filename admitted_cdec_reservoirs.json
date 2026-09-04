@@ -611,8 +611,8 @@
     "CRW": {
       "name": "Lake Crowley",
       "station": "CRW",
-      "lat": 37.604,
-      "lon": -118.707,
+      "lat": 37.60286,
+      "lon": -118.74425,
       "cadence": "daily",
       "huc6": "180901",
       "huc6_name": "Mono-Owens Lakes",
@@ -1097,8 +1097,8 @@
     "FRD": {
       "name": "Frenchman Dam",
       "station": "FRD",
-      "lat": 39.883,
-      "lon": -120.183,
+      "lat": 39.90711,
+      "lon": -120.18462,
       "cadence": "daily",
       "huc6": "180201",
       "huc6_name": "Lower Sacramento",
@@ -1122,8 +1122,8 @@
     "FRL": {
       "name": "French Lake",
       "station": "FRL",
-      "lat": 39.44,
-      "lon": -120.544,
+      "lat": 39.41268,
+      "lon": -120.53357,
       "cadence": "daily",
       "huc6": "180201",
       "huc6_name": "Lower Sacramento",
@@ -2425,8 +2425,8 @@
     "PVR": {
       "name": "Pleasant Valley Reservoir",
       "station": "PVR",
-      "lat": 37.423578,
-      "lon": -118.583576,
+      "lat": 37.42555,
+      "lon": -118.54362,
       "cadence": "monthly",
       "huc6": "180901",
       "huc6_name": "Mono-Owens Lakes",

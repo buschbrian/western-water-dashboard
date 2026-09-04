@@ -440,9 +440,10 @@
     },
     "10774": {
       "name": "Folsom Lake",
-      "county_fips": "06067",
-      "county_name": "Sacramento County",
-      "state": "CA"
+      "county_fips": "06017",
+      "county_name": "El Dorado County",
+      "state": "CA",
+      "retrieved": "2026-09-04"
     },
     "10782": {
       "name": "Lake Berryessa",

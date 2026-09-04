@@ -84,11 +84,12 @@ The four different scopes, the hydrologic level, and what a link carries.
   [ADR-096](ADR-096-publish-point-location-without-publishing-new-geography.md),
   [ADR-097](ADR-097-filter-snow-by-the-committed-upstream-set.md),
   [ADR-105](ADR-105-open-on-the-areas-the-map-draws.md),
-  [ADR-107](ADR-107-publish-scofield-at-its-reviewed-waterbody-point.md)
+  [ADR-108](ADR-108-apply-reviewed-waterbody-points-without-refreshing-readings.md),
+  [ADR-109](ADR-109-remove-scofields-rejected-dam-point.md)
 - Boundary sourcing: [ADR-024](ADR-024-use-full-resolution-watersheds-for-snow-sites.md),
   [ADR-034](ADR-034-hosted-boundary-layers-with-a-deadline.md),
   [ADR-037](ADR-037-refetch-the-boundaries-at-the-resolution-the-source-stops-adding.md)
-- Superseded, read only for history: ADR-005, ADR-009, ADR-011, ADR-014,
+- Superseded, read only for history: ADR-107, ADR-005, ADR-009, ADR-011, ADR-014,
   ADR-084
 - Current architecture: [`docs/architecture/scopes.md`](../architecture/scopes.md)
 
@@ -264,7 +265,9 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-104](ADR-104-admit-lake-pleasant-from-the-central-arizona-projects-endpoint.md) | Admit Lake Pleasant from the Central Arizona Project's endpoint | Accepted; ninth provider, one current record a day grown in the dense-history cache, inventory denominator with the operator's percentage recorded as a finding |
 | [ADR-105](ADR-105-open-on-the-areas-the-map-draws.md) | Open on the areas the map draws, not on the box saved links resolve to | Accepted |
 | [ADR-106](ADR-106-confirm-a-point-by-dam-position-and-never-by-a-dams-name.md) | Confirm a published point by dam position, and never take a dam's name for the water's | Accepted; sixth source in point review, four rows settled, Scofield's wrong coordinate stated rather than hidden |
-| [ADR-107](ADR-107-publish-scofield-at-its-reviewed-waterbody-point.md) | Publish Scofield at its reviewed waterbody point | Accepted; user-approved coordinate for RISE station 727, independent outlet retained |
+| [ADR-107](ADR-107-publish-scofield-at-its-reviewed-waterbody-point.md) | Publish Scofield at its reviewed waterbody point | Superseded by ADR-109 |
+| [ADR-108](ADR-108-apply-reviewed-waterbody-points-without-refreshing-readings.md) | Apply six reviewed waterbody points without refreshing readings | Accepted; separate outlet points retained |
+| [ADR-109](ADR-109-remove-scofields-rejected-dam-point.md) | Remove Scofield’s rejected dam point and withhold its unreviewed upstream trace | Accepted |
 
 ## Relationship to the historical journal
 

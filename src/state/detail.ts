@@ -265,7 +265,7 @@ const SCHEDULE_NAMES: Record<string, string> = {
  * stated rather than shown as an empty count.
  */
 export function upstreamRows(trace: UpstreamTrace): DetailRow[] {
-  if (trace.screen) {
+  if (trace.screen != null) {
     return [{ label: "Upstream of it", value: "Not traced." }];
   }
   const reservoirs = trace.upstream_reservoirs.length;
