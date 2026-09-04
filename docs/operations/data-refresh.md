@@ -65,6 +65,25 @@ into the issue, and four leading spaces is a Markdown code block.
 
 ## Rebuilding the long-lived derived files
 
+For an approved published-point correction, edit its owning roster first.
+Verify the new point's county; rebuild `counties.json` if the assignment
+changes. Then apply only the approved station IDs and rebuild the assistant
+indexes:
+
+```bash
+.venv/bin/python tools/build_county_assignments.py --only 10774
+.venv/bin/python refresh_reservoirs.py --rebuild-points 10774 FRL CRW FRD 09UTKOLB:UT:BOR PVR
+.venv/bin/python tools/build_assistant_indexes.py
+```
+
+The county builder merges selected assignments and stamps their retrieval dates;
+it preserves unselected records and the full-run retrieval date.
+
+The point rebuild uses committed geography and does not fetch observations or
+advance their refresh timestamp. It supports `--dry-run`, refuses unknown or
+unpublished IDs, and cannot be combined with `--source` or `--only`. Verify
+the generated diff and run `verify:pipeline` and `verify:browser`.
+
 These are **not** part of the daily run:
 
 ```bash

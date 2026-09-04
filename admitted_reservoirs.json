@@ -812,8 +812,8 @@
     "09UTKOLB:UT:BOR": {
       "name": "Kolob Reservoir",
       "station_triplet": "09UTKOLB:UT:BOR",
-      "lat": 37.43333,
-      "lon": -113.03583,
+      "lat": 37.43699,
+      "lon": -113.04763,
       "cadence": "monthly",
       "huc6": "150100",
       "huc6_name": "Lower Colorado-Lake Mead",
