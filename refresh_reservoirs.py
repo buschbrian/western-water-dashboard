@@ -88,11 +88,13 @@ from pipeline.roster import (  # noqa: F401
     ADMITTED_USGS_RESERVOIRS, ALL_RESERVOIR_IDS,
     ALL_RESERVOIR_NAMES, AWDB_RESERVOIRS, CDEC_RESERVOIRS, CDSS_RESERVOIRS,
     CAP_RESERVOIRS, CWMS_RESERVOIRS, DNRC_RESERVOIRS,
-    REQUIRED_CAPACITY_EVIDENCE, RESERVOIRS, RESERVOIR_NAMES,
+    REQUIRED_CAPACITY_EVIDENCE, RESERVOIRS, RESERVOIR_NAMES, RESTRICTED_BASIS,
     SRP_RESERVOIRS, USGS_RESERVOIRS, load_admitted_cdec_reservoirs,
     load_admitted_cdss_reservoirs, load_admitted_reservoirs,
     load_admitted_rise_reservoirs, load_admitted_usgs_reservoirs,
-    load_capacities, validate_capacity_evidence
+    load_capacities, check_capacity_versions_cover, effective_capacity,
+    published_capacity_history,
+    validate_capacity_evidence, validate_capacity_versions
 )
 from pipeline.providers import (  # noqa: F401
     CDEC_DATA_URL, CDEC_MISSING_VALUE, CDEC_STORAGE_SENSOR, CDSS_BASE_URL,
@@ -223,7 +225,19 @@ def summarize(name: str, item_id: int | None, lat: float, lon: float,
             None if past_date is None else int((last_date - past_date).days))
 
     capacity = capacity or {}
-    capacity_af = capacity.get("capacity_af")
+    # What full meant on the day this reading was taken (ADR-111). For every
+    # reservoir published so far that is the reservoir's one full level; where
+    # an operating restriction or an enlargement dated it, the reading is
+    # divided by the version in force rather than by today's.
+    as_of = last_date.date().isoformat()
+    # The roster could not know when this reservoir's readings begin; here
+    # they are in hand, so this is where a full level that starts after the
+    # first of them is caught rather than quietly applied to it (ADR-111).
+    check_capacity_versions_cover(
+        name, capacity, series.index[0].date().isoformat())
+    in_force = effective_capacity(capacity, as_of)
+    capacity_af = in_force["capacity_af"]
+    capacity_history = published_capacity_history(capacity)
 
     return {
         "name": name,
@@ -243,7 +257,7 @@ def summarize(name: str, item_id: int | None, lat: float, lon: float,
         "lon": lon,
 
         # --- freshness ---
-        "as_of": last_date.date().isoformat(),
+        "as_of": as_of,
         "days_stale": days_stale,
         "is_stale": days_stale > stale_after_days,
         "fetch_ok": True,
@@ -260,8 +274,17 @@ def summarize(name: str, item_id: int | None, lat: float, lon: float,
         # percentage. Capacity is a fixed physical property; where we have it,
         # it is the honest denominator.
         "capacity_af": capacity_af,
-        "capacity_basis": capacity.get("capacity_basis"),
+        "capacity_basis": in_force["capacity_basis"],
         "pct_of_capacity": _pct(current, capacity_af),
+        # Only where a full level changed. A history repeating one figure
+        # would be a second way to write `capacity_af`, and the payload is
+        # fetched by every reader on every visit (ADR-051).
+        **({"capacity_history": capacity_history} if capacity_history else {}),
+        # What the structure holds when an operating limit is lower. Kept
+        # beside the limit rather than replaced by it: a restriction is a
+        # condition, not a correction (ADR-111).
+        **({"physical_capacity_af": capacity["physical_capacity_af"]}
+           if capacity.get("physical_capacity_af") is not None else {}),
         "seasonal_percentile": _round(seasonal_percentile(series, last_date, current), 1),
         # The same comparison as an ordinal, which carries its own sample size.
         # "Third-lowest of eleven" cannot be read as more precise than it is;

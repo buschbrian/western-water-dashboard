@@ -1,6 +1,7 @@
 import type {
   Baseline,
   BaselineChoice,
+  CapacityVersion,
   MonthlyRecord,
   Reservoir,
   ReservoirBaselines,
@@ -50,6 +51,41 @@ function hasNullableString(value: unknown): value is string | null {
  * details panel formats into visible words. */
 function optionalNullableString(value: unknown): value is string | null | undefined {
   return value === undefined || hasNullableString(value);
+}
+
+/* One dated full level (ADR-111).
+ *
+ * A version divides a reading, so a malformed one is refused rather than
+ * skipped: dropping it would silently move a percentage to a neighbouring
+ * version's denominator, which is the one failure this representation exists
+ * to prevent. `effective_from` is null on the earliest version only, and the
+ * ordering is the pipeline's -- the client reads the array as given.
+ */
+function isCapacityVersion(value: unknown): value is CapacityVersion {
+  return isObject(value) &&
+    hasNumber(value.capacity_af) && value.capacity_af > 0 &&
+    typeof value.capacity_basis === "string" &&
+    hasNullableString(value.effective_from) &&
+    optionalNullableString(value.effective_to) &&
+    (value.authority === undefined || typeof value.authority === "string") &&
+    (value.source_url === undefined || typeof value.source_url === "string") &&
+    (value.source_checked === undefined || typeof value.source_checked === "string");
+}
+
+/* Absent, or a list of versions that says when each began.
+ *
+ * A lone version is a history only when it carries a start date -- Tinemaha
+ * has been restricted since 1993 and publishes readings only from 2015, so
+ * its one version is the restriction and its date. Without a date a single
+ * version is `capacity_af` written a second time. The pipeline checks that
+ * the versions actually cover the readings, which the client cannot: it sees
+ * twelve months and the payload holds years. */
+function isOptionalCapacityHistory(value: unknown): boolean {
+  if (value === undefined) return true;
+  if (!Array.isArray(value) || value.length === 0) return false;
+  if (!value.every(isCapacityVersion)) return false;
+  const first = value[0] as CapacityVersion;
+  return value.length > 1 || first.effective_from !== null;
 }
 
 function isMonthlyRecord(value: unknown): value is MonthlyRecord {
@@ -147,6 +183,8 @@ function isReservoir(value: unknown): value is Reservoir {
     hasNullableNumber(value.capacity_af) &&
     hasNullableString(value.capacity_basis) &&
     hasNullableNumber(value.pct_of_capacity) &&
+    isOptionalCapacityHistory(value.capacity_history) &&
+    optionalNullableNumber(value.physical_capacity_af) &&
     hasNullableNumber(value.seasonal_percentile) &&
     /* Optional: they arrive from the pipeline, and a payload written before
      * they did is still a valid payload. `undefined` passes, a wrong type

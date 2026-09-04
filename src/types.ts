@@ -3,6 +3,26 @@ export type SourceKey =
   "rise" | "awdb" | "cdec" | "cdss" | "usgs" | "srp" | "dnrc" | "cwms" | "cap";
 export type NullableNumber = number | null;
 
+/**
+ * One full level and the dates it was the answer (ADR-111).
+ *
+ * The versions are contiguous: each runs from `effective_from` until the next
+ * one starts, so an observation falls in exactly one. The earliest either
+ * opens the record with a null start or names the date it really began, which
+ * may predate the readings; `effective_to` is null on the one in force.
+ */
+export interface CapacityVersion {
+  capacity_af: number;
+  /** `operating_restriction` for a level an owner or regulator sets. */
+  capacity_basis: string;
+  effective_from: string | null;
+  effective_to?: string | null;
+  /** Who set an operating limit, and where that was published and read. */
+  authority?: string;
+  source_url?: string;
+  source_checked?: string;
+}
+
 export interface MonthlyRecord {
   month: string;
   mean_af: NullableNumber;
@@ -94,6 +114,23 @@ export interface Reservoir {
   capacity_af: NullableNumber;
   capacity_basis: string | null;
   pct_of_capacity: NullableNumber;
+  /**
+   * The reservoir's full level over time, oldest first (ADR-111).
+   *
+   * Present only where the level changed -- an operating restriction, or a
+   * physical enlargement. The flat `capacity_af` above stays the version in
+   * force on `as_of`, so a reader who never looks here divides by the right
+   * figure for today; a reader drawing an earlier month needs the version
+   * that was in force then, which is what this is for.
+   */
+  capacity_history?: CapacityVersion[];
+  /**
+   * What the structure holds when it is currently operated to less.
+   *
+   * A restriction is a condition rather than a correction, so the physical
+   * figure is kept beside the limit and never replaced by it (ADR-111).
+   */
+  physical_capacity_af?: NullableNumber;
   seasonal_percentile: NullableNumber;
   /**
    * The same comparison as a position among the earlier years.

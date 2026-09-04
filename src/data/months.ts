@@ -10,9 +10,16 @@
  * mean something subtly different from the colours it starts on. Ported from
  * `monthPct` in `shared/reservoir-viz.js` and held against it in
  * `months.test.ts`, so the three engines animate the same drawdown.
+ *
+ * The basis is the one in force at that month's end, which is the same figure
+ * for every reservoir published so far and stops being so the moment one is
+ * restricted or enlarged (ADR-111). The frozen oracle divides by today's, so
+ * the two agree exactly while a reservoir's full level has one value and are
+ * meant to differ once it has two: a dated reservoir is where the port stops
+ * being a port.
  */
 
-import { sizeBasis } from "./rollup";
+import { monthEndDate, sizeBasisOn } from "./capacity";
 import type { NullableNumber, Reservoir } from "../types";
 
 /** A month key as the payload writes it. */
@@ -46,7 +53,7 @@ export function monthKeys(reservoirs: readonly Reservoir[]): MonthKey[] {
 export function monthPercent(reservoir: Reservoir, month: MonthKey): NullableNumber {
   const entry = reservoir.monthly.find((record) => record.month === month);
   if (!entry || entry.mean_af === null || !Number.isFinite(entry.mean_af)) return null;
-  const basis = sizeBasis(reservoir);
+  const basis = sizeBasisOn(reservoir, monthEndDate(month));
   if (!basis) return null;
   return (entry.mean_af / basis) * 100;
 }
@@ -90,12 +97,15 @@ export function monthlyRollup(
   let capacityAf = 0;
   let reporting = 0;
   let scopeCapacityAf = 0;
+  /* One date for every figure in the month, so the denominator and the
+   * numerator describe the same month (ADR-111). */
+  const on = monthEndDate(month);
   for (const reservoir of reservoirs) {
-    scopeCapacityAf += sizeBasis(reservoir);
+    scopeCapacityAf += sizeBasisOn(reservoir, on);
     const entry = reservoir.monthly.find((record) => record.month === month);
     const mean = entry?.mean_af;
     if (mean === null || mean === undefined || !Number.isFinite(mean)) continue;
-    const basis = sizeBasis(reservoir);
+    const basis = sizeBasisOn(reservoir, on);
     if (!basis) continue;
     storageAf += mean;
     capacityAf += basis;

@@ -28,6 +28,26 @@ REQUIRED_CAPACITY_EVIDENCE = {
     "dam_lon", "dam_lat", "match_distance_km", "match_confirmed_by",
 }
 
+#: The `capacity_basis` of a full level an owner or regulator currently
+#: operates to, rather than one the structure was built for (ADR-111). It is a
+#: basis like the others -- it names where the figure came from -- and it is
+#: the one basis that cannot stand alone: a limit is in force from a date, so
+#: a reservoir published under it carries `capacity_versions` as well.
+RESTRICTED_BASIS = "operating_restriction"
+
+#: What a restricted full level names before it may divide a reading. A
+#: restriction notice without an acre-foot limit is a lead for research; this
+#: is the evidence that makes one publishable.
+RESTRICTION_EVIDENCE = ("authority", "source_url", "source_checked")
+
+#: The dated full-level fields the payload publishes. Provenance stays in one
+#: place -- the version -- rather than being copied onto every reading it
+#: divides (ADR-111).
+PUBLISHED_VERSION_FIELDS = (
+    "capacity_af", "capacity_basis", "effective_from", "effective_to",
+    "authority", "source_url", "source_checked",
+)
+
 # A rejected outlet must not return on the next inventory rebuild (ADR-109).
 # The capacity evidence remains valid; this review concerns its point only.
 REJECTED_DAM_POINTS = {
@@ -102,6 +122,203 @@ def validate_capacity_evidence(name: str, capacity: object) -> None:
         if capacity.get("match_confirmed_by") != "authoritative_water_report":
             raise ValueError(
                 f"{name}: reviewed water report must state how identity was confirmed")
+    validate_capacity_versions(name, capacity)
+
+
+def _reviewed_date(name: str, field: str, value: object) -> dt.date:
+    """A date a reviewer wrote, refused rather than guessed at."""
+    if not isinstance(value, str):
+        raise ValueError(f"{name}: {field} must be a YYYY-MM-DD date")
+    try:
+        return dt.date.fromisoformat(value)
+    except ValueError as error:
+        raise ValueError(f"{name}: {field} must be a YYYY-MM-DD date") from error
+
+
+def validate_capacity_versions(name: str, capacity: dict) -> None:
+    """Check a reservoir's dated full levels (ADR-111).
+
+    A reservoir whose full level never changed carries one figure and no
+    array; this runs on the ones where it did. The versions are that
+    reservoir's full-level history, oldest first, and each runs from its own
+    `effective_from` until the next one begins -- the successor *is* the end
+    of its predecessor, so the intervals cannot overlap or leave a gap for an
+    observation to fall into. `effective_to` repeats that boundary where a
+    reviewer knows it and is checked against the successor rather than
+    trusted.
+
+    The earliest version either opens the record with a null start or names
+    the date it really began, which may be years before the first reading:
+    Tinemaha has been restricted since 1993 and Calero since 2013, and both
+    publish readings only from 2015. A reviewed date is not discarded to fit
+    a rule, so the file records what happened. What the null once guaranteed
+    -- that no reading falls outside a version -- is checked instead by
+    `check_capacity_versions_cover`, at the one place the readings are known.
+
+    A restriction is not a correction of an earlier figure. The physical
+    capacity stays on the record beside it, so ending a restriction restores
+    a fact that was never discarded, and the reading taken while the limit
+    was in force keeps the percentage it was published with.
+    """
+    versions = capacity.get("capacity_versions")
+    physical = capacity.get("physical_capacity_af")
+    if versions is None:
+        if capacity.get("capacity_basis") == RESTRICTED_BASIS:
+            raise ValueError(
+                f"{name}: an operating limit is in force from a date, so it "
+                "needs the dated versions around it")
+        if physical is not None:
+            raise ValueError(
+                f"{name}: a physical capacity beside a single undated full "
+                "level says the two differ without saying when")
+        return
+    if not isinstance(versions, list) or not versions:
+        raise ValueError(f"{name}: capacity_versions must hold at least one full level")
+    # One version is a history only when it says when it began. Without a
+    # date it is `capacity_af` written a second time, and a second way to
+    # write one figure is a second figure to keep in agreement.
+    if len(versions) == 1 and (not isinstance(versions[0], dict)
+                               or versions[0].get("effective_from") is None):
+        raise ValueError(
+            f"{name}: a single capacity version has to name the date it began, "
+            "or it is the headline full level written twice")
+
+    restricted = False
+    latest_start = None
+    for index, version in enumerate(versions):
+        if not isinstance(version, dict):
+            raise ValueError(f"{name}: every capacity version is a record")
+        if not isinstance(version.get("capacity_af"), (int, float)) \
+                or version["capacity_af"] <= 0:
+            raise ValueError(f"{name}: every capacity version needs a positive full level")
+        basis = version.get("capacity_basis")
+        if not isinstance(basis, str) or not basis.strip():
+            raise ValueError(f"{name}: every capacity version names what its figure is")
+        first = index == 0
+        last = index == len(versions) - 1
+
+        start = version.get("effective_from")
+        if first and start is None:
+            # Opens the record: nothing is known to come before it.
+            pass
+        else:
+            start_date = _reviewed_date(name, "effective_from", start)
+            if latest_start is not None and start_date <= latest_start:
+                raise ValueError(
+                    f"{name}: capacity versions run oldest first and no two "
+                    "start on the same day")
+            latest_start = start_date
+
+        end = version.get("effective_to")
+        if last:
+            if end is not None:
+                raise ValueError(
+                    f"{name}: the full level in force has no end date; ending "
+                    "it adds the version that follows")
+        elif end is not None:
+            successor = _reviewed_date(
+                name, "effective_from", versions[index + 1].get("effective_from"))
+            if _reviewed_date(name, "effective_to", end) != successor - dt.timedelta(days=1):
+                raise ValueError(
+                    f"{name}: a full level ends the day before the next begins")
+
+        if basis == RESTRICTED_BASIS:
+            restricted = True
+            # A limit begins on a date and says so, whether or not this
+            # project was reading the reservoir yet (ADR-111). What it may
+            # never do is open the record with no date at all.
+            if start is None:
+                raise ValueError(
+                    f"{name}: an operating limit starts on a date, so it cannot "
+                    "be the level the record opens with")
+            if any(not isinstance(version.get(field), str) or not version[field].strip()
+                   for field in RESTRICTION_EVIDENCE):
+                raise ValueError(
+                    f"{name}: an operating limit names the authority that set "
+                    "it, its source and when that source was read")
+            if not version["source_url"].startswith("https://"):
+                raise ValueError(f"{name}: an operating limit needs an HTTPS source URL")
+            _reviewed_date(name, "source_checked", version["source_checked"])
+
+    # The headline figure is the one in force, so every screen that reads it
+    # -- the low-water audit, the surcharge allowance, the published
+    # denominator -- sees the same full level the map divides by today.
+    current = versions[-1]
+    if float(capacity["capacity_af"]) != float(current["capacity_af"]) \
+            or capacity.get("capacity_basis") != current["capacity_basis"]:
+        raise ValueError(
+            f"{name}: the headline full level must be the version in force")
+
+    if restricted:
+        if not isinstance(physical, (int, float)) or physical <= 0:
+            raise ValueError(
+                f"{name}: a restricted reservoir keeps what it can physically hold")
+    if physical is not None:
+        if not isinstance(physical, (int, float)) or physical <= 0:
+            raise ValueError(f"{name}: physical capacity must be positive")
+        if any(physical < float(version["capacity_af"]) for version in versions):
+            raise ValueError(
+                f"{name}: physical capacity cannot be below a level the "
+                "reservoir has been operated to")
+
+
+def check_capacity_versions_cover(name: str, capacity: dict | None, first_obs: str) -> None:
+    """Refuse a reading older than the earliest full level that could divide it.
+
+    The roster is validated at import, before a single series has been
+    fetched, so it cannot know when a reservoir's readings begin. This can,
+    and it is the other half of letting the earliest version carry a real
+    date: a version list starting in 2017 and a series starting in 2015
+    leaves two years of readings with no denominator, and the honest answer
+    is to fail rather than to divide them by the nearest figure to hand.
+
+    It also catches the case that arrives on its own -- a provider backfills
+    history, or `START_DATE` moves, and evidence that was complete when it
+    was reviewed silently stops covering the record.
+    """
+    versions = (capacity or {}).get("capacity_versions")
+    if not versions:
+        return
+    opens = versions[0].get("effective_from")
+    if opens is not None and first_obs < opens:
+        raise ValueError(
+            f"{name}: readings begin {first_obs}, before the earliest full "
+            f"level takes effect on {opens}; the record needs the figure that "
+            "was in force first")
+
+
+def effective_capacity(capacity: dict | None, on: str) -> dict:
+    """The full level in force on an observation date (ADR-111).
+
+    A reading is divided by what full meant when it was taken. Without dated
+    versions that is the one figure the roster carries, which is what every
+    reservoir published so far has.
+    """
+    capacity = capacity or {}
+    versions = capacity.get("capacity_versions")
+    if not versions:
+        return {"capacity_af": capacity.get("capacity_af"),
+                "capacity_basis": capacity.get("capacity_basis")}
+    # Validation guarantees the first version opens the record and that the
+    # starts ascend, so the last one to have begun is the one in force.
+    chosen = versions[0]
+    for version in versions[1:]:
+        if version["effective_from"] > on:
+            break
+        chosen = version
+    return {"capacity_af": chosen["capacity_af"],
+            "capacity_basis": chosen["capacity_basis"]}
+
+
+def published_capacity_history(capacity: dict | None) -> list[dict] | None:
+    """The dated full levels, for a reader who needs to check a percentage."""
+    versions = (capacity or {}).get("capacity_versions")
+    if not versions:
+        return None
+    return [
+        {field: version[field] for field in PUBLISHED_VERSION_FIELDS if field in version}
+        for version in versions
+    ]
 
 
 def load_admitted_rise_reservoirs(

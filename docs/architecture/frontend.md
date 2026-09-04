@@ -147,6 +147,21 @@ under a chart as it does in the details panel, and both modules sit in the
 language scan's file list. A new hover row reaches for an existing helper
 before writing its own sentence.
 
+**A percentage divides by what full meant on its own date** (ADR-111).
+`sizeBasis` in `src/data/rollup.ts` answers for a current reading, because the
+payload's `capacity_af` is already the version in force on `as_of`. Anything
+drawing an earlier month asks `sizeBasisOn` in `src/data/capacity.ts` instead,
+with that month's end date — `monthPercent` and `monthlyRollup` both do, so a
+month's storage and the full level it is divided by describe the same month.
+`capacity_history` is absent for every reservoir published so far, and the two
+answers are the same figure until one is restricted or enlarged. The frozen
+oracle in `shared/reservoir-viz.js` divides by today's, so it is a parity
+check while that holds and deliberately not one afterwards. Where a limit is
+in force, `operating_restriction` is the basis, and the words for it — "the
+current operating limit, which is lower than the level the reservoir can
+hold" — say the operating condition rather than leaving a reservoir at its
+allowed limit looking short of full.
+
 ## Failure, readiness and accessibility
 
 **Anything that can wait forever needs a deadline.** A promise that never

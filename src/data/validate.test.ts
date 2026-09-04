@@ -94,6 +94,68 @@ describe("reservoir payload validation", () => {
     expect(payload.normal_window_days).toBe(7);
   });
 
+  it("accepts a full level that changed, and reads it back", () => {
+    const payload = validPayload();
+    const [record] = payload.reservoirs as Record<string, unknown>[];
+    if (!record) throw new Error("the fixture has no reservoir");
+    record.physical_capacity_af = 200;
+    record.capacity_history = [
+      { capacity_af: 200, capacity_basis: "max_storage",
+        effective_from: null, effective_to: "2020-12-31" },
+      { capacity_af: 100, capacity_basis: "operating_restriction",
+        effective_from: "2021-01-01", effective_to: null,
+        authority: "A state dam safety office",
+        source_url: "https://example.gov/restriction", source_checked: "2026-09-04" }
+    ];
+    const [read] = validateReservoirPayload(payload).reservoirs;
+    expect(read?.capacity_history?.length).toBe(2);
+    expect(read?.physical_capacity_af).toBe(200);
+  });
+
+  it("accepts a restriction older than the readings", () => {
+    /* Tinemaha has been restricted since 1993 and publishes from 2015, so
+     * its one version carries a date the payload's readings never reach
+     * back to (ADR-111). The pipeline checks the coverage; the client takes
+     * the versions as given. */
+    const payload = validPayload();
+    const [record] = payload.reservoirs as Record<string, unknown>[];
+    if (!record) throw new Error("the fixture has no reservoir");
+    record.physical_capacity_af = 200;
+    record.capacity_history = [
+      { capacity_af: 100, capacity_basis: "operating_restriction",
+        effective_from: "1993-03-03", effective_to: null,
+        authority: "California Division of Safety of Dams",
+        source_url: "https://water.ca.gov/example.pdf", source_checked: "2026-09-04" }
+    ];
+    const [read] = validateReservoirPayload(payload).reservoirs;
+    expect(read?.capacity_history?.length).toBe(1);
+  });
+
+  /* A version divides a reading. Accepting a malformed one would move a
+   * percentage to a neighbouring version's denominator, which is the failure
+   * the dated representation exists to prevent (ADR-111). */
+  it("rejects a full-level history that cannot answer for every reading", () => {
+    for (const history of [
+      // A lone version with no date is `capacity_af` written twice.
+      [{ capacity_af: 100, capacity_basis: "max_storage", effective_from: null }],
+      // An empty history is not a history.
+      [],
+      // A level of zero or less is not a denominator.
+      [{ capacity_af: 0, capacity_basis: "max_storage", effective_from: null },
+        { capacity_af: 100, capacity_basis: "max_storage", effective_from: "2021-01-01" }],
+      // A date the client would compare as text and get wrong.
+      [{ capacity_af: 200, capacity_basis: "max_storage", effective_from: null },
+        { capacity_af: 100, capacity_basis: "max_storage", effective_from: 20210101 }]
+    ]) {
+      const payload = validPayload();
+      const [record] = payload.reservoirs as Record<string, unknown>[];
+      if (!record) throw new Error("the fixture has no reservoir");
+      record.capacity_history = history;
+      expect(() => validateReservoirPayload(payload))
+        .toThrow("Invalid reservoir record at index 0 (Testwater)");
+    }
+  });
+
   it("accepts a payload generated before comparison metadata was added", () => {
     const payload = validPayload();
     delete payload.normal_period;

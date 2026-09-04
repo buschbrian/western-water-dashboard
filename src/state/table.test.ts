@@ -180,3 +180,44 @@ describe("what the table says it is showing", () => {
     expect(describeTable(51, 51, "2025-11", "November 2025")).toContain("November 2025");
   });
 });
+
+/* A row for a month is a row about that month, on both sides of the ratio
+ * (ADR-111). No published reservoir has a dated full level yet; this is what
+ * the first one gets. */
+describe("a row for a month whose full level was not today's", () => {
+  it("shows the full level that was in force then", () => {
+    const [first] = reservoirs;
+    expect(first).toBeDefined();
+    if (!first) return;
+    const reported = first.monthly.filter((entry) => entry.mean_af !== null);
+    const last = reported[reported.length - 1];
+    const earliest = reported[0];
+    /* The limit starts inside the second reported month, so the earliest
+     * month predates it and both the last month and today follow it. */
+    const boundary = reported[1];
+    if (!last || !earliest || !boundary) return;
+    const restricted: Reservoir = {
+      ...first,
+      capacity_af: 40000,
+      capacity_basis: "operating_restriction",
+      physical_capacity_af: 80000,
+      capacity_history: [
+        { capacity_af: 80000, capacity_basis: "max_storage",
+          effective_from: null, effective_to: `${boundary.month}-14` },
+        { capacity_af: 40000, capacity_basis: "operating_restriction",
+          effective_from: `${boundary.month}-15`, effective_to: null,
+          authority: "A state dam safety office",
+          source_url: "https://example.gov/restriction",
+          source_checked: "2026-09-04" }
+      ]
+    };
+    const rowFor = (month: string | null): TableRow | undefined => tableRows({
+      reservoirs: [restricted], filter: ALL_RESERVOIRS, sort: DEFAULT_SORT,
+      month, percentOf: headlinePercent
+    })[0];
+    expect(rowFor(earliest.month)?.capacityAf).toBe(80000);
+    expect(rowFor(last.month)?.capacityAf).toBe(40000);
+    // With no month chosen the row is about today, which is the limit.
+    expect(rowFor(null)?.capacityAf).toBe(40000);
+  });
+});
