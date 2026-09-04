@@ -11,6 +11,8 @@ held, never what the water is called.
 import csv
 import json
 
+import pytest
+
 import tools.verify_dam_position as dam_position
 from tools.classify_water_body_points import claimed_name, judge
 from tools.verify_dam_position import evidence
@@ -78,8 +80,12 @@ def test_a_water_publication_outranks_the_dam_inventory():
     assert verdict["agreeing_sources"] == "gnis_1km"
 
 
+@pytest.mark.parametrize("answer", [
+    None, {}, ["unexpected response"],
+    {"features": [], "exceededTransferLimit": True},
+])
 def test_a_service_that_does_not_answer_keeps_the_evidence_it_cannot_replace(
-        tmp_path, monkeypatch):
+        tmp_path, monkeypatch, answer):
     """An outage must not read as "no dam is there".
 
     The tool re-asks the rows it settled, so a run against a silent service
@@ -100,7 +106,7 @@ def test_a_service_that_does_not_answer_keeps_the_evidence_it_cannot_replace(
                          "dam_1km": settled, "dam_beyond_1km": ""})
 
     monkeypatch.setattr(dam_position, "ROOT", tmp_path)
-    monkeypatch.setattr(dam_position, "get_json", lambda url, params: None)
+    monkeypatch.setattr(dam_position, "get_json", lambda url, params: answer)
     assert dam_position.main() == 1, "a partial run must not exit clean"
 
     after = list(csv.DictReader(verification.open(encoding="utf-8")))

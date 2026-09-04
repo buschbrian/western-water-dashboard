@@ -76,8 +76,8 @@ jobs:
         run: |
           # Browser-only test dependency; the application dependency graph
           # remains exactly what npm ci installed from the lockfile.
-          npm install --no-save --no-package-lock playwright
-          npx playwright install --with-deps chromium
+          bash scripts/install-playwright.sh
+          node node_modules/playwright/cli.js install --with-deps chromium
       - name: Check retired route redirects in a real browser
         run: |
           mkdir -p screenshots

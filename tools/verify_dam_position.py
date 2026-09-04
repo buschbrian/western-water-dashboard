@@ -123,9 +123,9 @@ def dams_near(lat: float, lon: float) -> list[tuple[float, str, str]] | None:
         "resultRecordCount": PAGE_SIZE,
     })
     time.sleep(POLITENESS_SECONDS)
-    if not isinstance(payload, dict) or payload.get("error"):
-        message = (payload or {}).get("error", {}).get("message", "no answer")
-        print(f"    !! service error: {message}", file=sys.stderr)
+    if (not isinstance(payload, dict) or payload.get("error")
+            or not isinstance(payload.get("features"), list)):
+        print("    !! service did not return a feature list", file=sys.stderr)
         return None
     if payload.get("exceededTransferLimit"):
         # More dams than one answer carries, and the service does not sort by
@@ -133,6 +133,7 @@ def dams_near(lat: float, lon: float) -> list[tuple[float, str, str]] | None:
         print(f"    !! more than {PAGE_SIZE} dams within "
               f"{REPORT_METRES / 1000:.0f} km; answer truncated",
               file=sys.stderr)
+        return None
     found = []
     for feature in payload.get("features", []):
         point = feature.get("geometry") or {}
@@ -168,6 +169,7 @@ def main() -> int:
             # that was looked for and not found.
             print(f"  {number:2}/{len(asked)} {row['reservoir'][:28]:28} "
                   "not in today's payload; not asked", file=sys.stderr)
+            unanswered.append(row["reservoir"])
             continue
         found = dams_near(reservoir["lat"], reservoir["lon"])
         if found is None:

@@ -13,7 +13,7 @@ cd "$repo_root"
 if [ ! -d node_modules/playwright ]; then
   echo "playwright is not installed. It is deliberately not a package" >&2
   echo "dependency, so an ordinary 'npm install' prunes it. Restore it with:" >&2
-  echo "  npm install --no-save --no-package-lock playwright" >&2
+  echo "  bash scripts/install-playwright.sh" >&2
   exit 1
 fi
 
