@@ -8,7 +8,12 @@ not a name -- it is a register of structures, so it says where the water is
 held, never what the water is called.
 """
 
+import csv
+import json
+
+import tools.verify_dam_position as dam_position
 from tools.classify_water_body_points import claimed_name, judge
+from tools.verify_dam_position import evidence
 
 
 def row(**answers):
@@ -39,7 +44,8 @@ def test_a_rename_survives_even_when_it_shares_no_word_with_the_reservoir():
 
 
 def test_a_dam_of_the_claimed_name_inside_the_threshold_confirms_the_position():
-    verdict = judge(row(dam_1km="Long Hollow (CO03021) at 0.01 km"),
+    # Built by the tool that writes the column, so the two cannot drift apart.
+    verdict = judge(row(dam_1km=evidence(0.01, "Long Hollow", "CO03021")),
                     "Long Hollow Reservoir")
     assert verdict["verdict"] == "confirmed by dam position"
     # A dam's name is not a water body's name; nothing here has named the water.
@@ -49,23 +55,69 @@ def test_a_dam_of_the_claimed_name_inside_the_threshold_confirms_the_position():
 
 
 def test_a_dam_beyond_the_threshold_settles_nothing_and_is_reported():
-    verdict = judge(row(dam_beyond_1km="Scofield Dam (UT10133) at 6.02 km"),
+    verdict = judge(row(dam_beyond_1km=evidence(6.02, "Scofield Dam", "UT10133")),
                     "Scofield")
     assert verdict["verdict"] == "human review"
     assert "Scofield Dam" in verdict["why"]
 
 
 def test_a_subsidiary_structure_does_not_confirm_the_reservoir():
-    verdict = judge(row(dam_1km="Grantsville Regulating Pond (UT00577) at 0.4 km"),
-                    "Grantsville")
+    verdict = judge(
+        row(dam_1km=evidence(0.4, "Grantsville Regulating Pond", "UT00577")),
+        "Grantsville")
     assert verdict["verdict"] == "human review"
 
 
 def test_a_water_publication_outranks_the_dam_inventory():
     """Both name the claimed water; the publication that names *water* wins."""
     verdict = judge(row(gnis_1km="Bass Lake",
-                        dam_1km="Bass (CA00341) at 0.10 km",
+                        dam_1km=evidence(0.10, "Bass", "CA00341"),
                         sources_within_1km="gnis"), "Bass Lake")
     assert verdict["verdict"] == "confirmed"
     assert verdict["proposed_name"] == "Bass Lake"
     assert verdict["agreeing_sources"] == "gnis_1km"
+
+
+def test_a_service_that_does_not_answer_keeps_the_evidence_it_cannot_replace(
+        tmp_path, monkeypatch):
+    """An outage must not read as "no dam is there".
+
+    The tool re-asks the rows it settled, so a run against a silent service
+    would otherwise blank the columns and demote every dam confirmation back
+    to human review the next time the classifier runs.
+    """
+    settled = evidence(0.19, "Los Vaqueros", "CA01396")
+    (tmp_path / "reservoirs.json").write_text(json.dumps(
+        {"reservoirs": [{"name": "Los Vaqueros Reservoir",
+                         "lat": 37.838, "lon": -121.726}]}))
+    verification = tmp_path / "point-verification.csv"
+    with verification.open("w", newline="", encoding="utf-8") as handle:
+        writer = csv.DictWriter(handle, fieldnames=["reservoir", "verdict",
+                                                    "dam_1km", "dam_beyond_1km"])
+        writer.writeheader()
+        writer.writerow({"reservoir": "Los Vaqueros Reservoir",
+                         "verdict": "confirmed by dam position",
+                         "dam_1km": settled, "dam_beyond_1km": ""})
+
+    monkeypatch.setattr(dam_position, "ROOT", tmp_path)
+    monkeypatch.setattr(dam_position, "get_json", lambda url, params: None)
+    assert dam_position.main() == 1, "a partial run must not exit clean"
+
+    after = list(csv.DictReader(verification.open(encoding="utf-8")))
+    assert after[0]["dam_1km"] == settled
+
+
+def test_an_answer_of_no_dams_is_not_the_same_fact_as_no_answer(monkeypatch):
+    """`None` is "the service did not answer"; `[]` is "it answered, nothing there"."""
+    monkeypatch.setattr(dam_position.time, "sleep", lambda _: None)
+
+    monkeypatch.setattr(dam_position, "get_json", lambda url, params: None)
+    assert dam_position.dams_near(40.0, -111.0) is None
+
+    monkeypatch.setattr(dam_position, "get_json",
+                        lambda url, params: {"error": {"message": "refused"}})
+    assert dam_position.dams_near(40.0, -111.0) is None
+
+    monkeypatch.setattr(dam_position, "get_json",
+                        lambda url, params: {"features": []})
+    assert dam_position.dams_near(40.0, -111.0) == []

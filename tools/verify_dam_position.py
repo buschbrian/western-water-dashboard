@@ -33,7 +33,10 @@ inside the threshold is recorded and the name test is left to the classifier,
 which already knows that a subsidiary word on one side names different water.
 
 This tool merges: it fills two columns for the rows it asked about and
-touches nothing else. Run it after `verify_water_body_points.py`, which
+touches nothing else. A row the service did not answer for keeps the evidence
+an earlier run recorded, and the run exits non-zero, because writing nothing
+into those columns would read as "no dam is there" and would demote a row this
+tool has already settled. Run it after `verify_water_body_points.py`, which
 rebuilds the file, and before `classify_water_body_points.py`, which reads
 what this wrote.
 
@@ -61,7 +64,9 @@ TIMEOUT = 120
 POLITENESS_SECONDS = 0.25
 
 #: The reviewer's threshold, and the wider radius that is reported only.
-SETTLE_METRES, REPORT_METRES = 1000, 10000
+SETTLE_KM, REPORT_METRES = 1.0, 10000
+#: Dams per answer. The service truncates silently, so the flag is checked.
+PAGE_SIZE = 25
 
 NAME_FIELD, ID_FIELD = "NAME", "NIDID"
 #: The verdicts that mean a water publication already named this water.
@@ -102,20 +107,32 @@ def evidence(distance: float, name: str, identifier: str) -> str:
     return f"{name} ({identifier}) at {distance:.2f} km"
 
 
-def dams_near(lat: float, lon: float) -> list[tuple[float, str, str]]:
-    """Every dam within the reporting radius, nearest first."""
+def dams_near(lat: float, lon: float) -> list[tuple[float, str, str]] | None:
+    """Every dam within the reporting radius, nearest first.
+
+    `None` means the service did not answer, which is not the same fact as an
+    empty list. A refusal that means "not looked for" must not read like a
+    refusal that means "looked for and not found".
+    """
     payload = get_json(f"{NID_LAYER}/query", {
         "f": "json", "geometry": f"{lon},{lat}",
         "geometryType": "esriGeometryPoint", "inSR": "4326",
         "spatialRel": "esriSpatialRelIntersects", "distance": REPORT_METRES,
         "units": "esriSRUnit_Meter", "outFields": f"{NAME_FIELD},{ID_FIELD}",
-        "returnGeometry": "true", "outSR": 4326, "resultRecordCount": 25,
+        "returnGeometry": "true", "outSR": 4326,
+        "resultRecordCount": PAGE_SIZE,
     })
     time.sleep(POLITENESS_SECONDS)
     if not isinstance(payload, dict) or payload.get("error"):
         message = (payload or {}).get("error", {}).get("message", "no answer")
         print(f"    !! service error: {message}", file=sys.stderr)
-        return []
+        return None
+    if payload.get("exceededTransferLimit"):
+        # More dams than one answer carries, and the service does not sort by
+        # distance, so the nearest may not be among them.
+        print(f"    !! more than {PAGE_SIZE} dams within "
+              f"{REPORT_METRES / 1000:.0f} km; answer truncated",
+              file=sys.stderr)
     found = []
     for feature in payload.get("features", []):
         point = feature.get("geometry") or {}
@@ -143,6 +160,7 @@ def main() -> int:
         row.setdefault("dam_beyond_1km", "")
 
     asked = [r for r in rows if r["verdict"] not in SETTLED_BY_WATER]
+    unanswered: list[str] = []
     for number, row in enumerate(asked, 1):
         reservoir = index.get(row["reservoir"].strip().lower())
         if not reservoir:
@@ -152,8 +170,16 @@ def main() -> int:
                   "not in today's payload; not asked", file=sys.stderr)
             continue
         found = dams_near(reservoir["lat"], reservoir["lon"])
-        inside = [f for f in found if f[0] * 1000 <= SETTLE_METRES]
-        outside = [f for f in found if f[0] * 1000 > SETTLE_METRES]
+        if found is None:
+            # The service did not answer. Keep what an earlier run recorded:
+            # overwriting it with nothing would read as "no dam is there" and
+            # would demote a row this tool has already settled.
+            unanswered.append(row["reservoir"])
+            print(f"  {number:2}/{len(asked)} {row['reservoir'][:28]:28} "
+                  "no answer; evidence left as it was", file=sys.stderr)
+            continue
+        inside = [f for f in found if f[0] <= SETTLE_KM]
+        outside = [f for f in found if f[0] > SETTLE_KM]
         # The name, the inventory identifier and the distance: the evidence
         # ADR-015 requires be recorded for any decision made from a dam.
         row["dam_1km"] = "; ".join(evidence(d, n, i) for d, n, i in inside)
@@ -169,6 +195,11 @@ def main() -> int:
         writer.writeheader()
         writer.writerows(rows)
     print(f"\nwrote {source}", file=sys.stderr)
+    if unanswered:
+        # A partial run must not look like a clean one.
+        print(f"{len(unanswered)} of {len(asked)} unanswered: "
+              f"{', '.join(unanswered)}", file=sys.stderr)
+        return 1
     return 0
 
 

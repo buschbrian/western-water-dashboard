@@ -123,6 +123,13 @@ is stated in each tool's docstring. The dam probe merges and asks only about
 unsettled rows, so re-running it after the water probe is a handful of requests
 to a public service this project does not pay for.
 
+Because the dam probe re-asks the rows it already settled, a run against a
+silent service could blank the evidence and demote every dam confirmation on
+the next classify. It does not: an unanswered ask leaves the row's columns as
+they were and the run exits non-zero. An outage is a fact about the service,
+not a finding about a dam, and the two must not look alike —
+`tests/test_water_body_verdicts.py` holds that apart.
+
 The `reviewer_note` column in `point-verification.csv` is now older than
 `nhd-review.csv`, whose notes were revised after the file was last rebuilt.
 Nothing reads that column; the claim is computed from `nhd-review.csv` on every
