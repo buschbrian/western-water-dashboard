@@ -45,7 +45,8 @@ denominator. **Start with ADR-070, then ADR-072, then ADR-003.**
   [ADR-097](ADR-097-filter-snow-by-the-committed-upstream-set.md),
   [ADR-099](ADR-099-admit-an-operator-measured-reservoir-with-no-dam-inventory-record.md),
   [ADR-102](ADR-102-admit-the-army-corps-of-engineers-as-a-provider.md),
-  [ADR-104](ADR-104-admit-lake-pleasant-from-the-central-arizona-projects-endpoint.md)
+  [ADR-104](ADR-104-admit-lake-pleasant-from-the-central-arizona-projects-endpoint.md),
+  [ADR-106](ADR-106-confirm-a-point-by-dam-position-and-never-by-a-dams-name.md)
 - Freshness and withdrawal:
   [ADR-056](ADR-056-withdraw-a-reading-that-belongs-to-another-season.md)
 - Procedure: [`docs/operations/source-admission.md`](../operations/source-admission.md)
@@ -261,6 +262,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-103](ADR-103-offer-huc-8-on-every-surface.md) | Offer HUC-8 on every surface | Accepted; extends ADR-088 to storage and snow, every record carries its own `huc8` |
 | [ADR-104](ADR-104-admit-lake-pleasant-from-the-central-arizona-projects-endpoint.md) | Admit Lake Pleasant from the Central Arizona Project's endpoint | Accepted; ninth provider, one current record a day grown in the dense-history cache, inventory denominator with the operator's percentage recorded as a finding |
 | [ADR-105](ADR-105-open-on-the-areas-the-map-draws.md) | Open on the areas the map draws, not on the box saved links resolve to | Accepted |
+| [ADR-106](ADR-106-confirm-a-point-by-dam-position-and-never-by-a-dams-name.md) | Confirm a published point by dam position, and never take a dam's name for the water's | Accepted; sixth source in point review, four rows settled, Scofield's wrong coordinate stated rather than hidden |
 
 ## Relationship to the historical journal
 
