@@ -619,9 +619,12 @@ def test_awdb_inventory_has_traceable_capacity_and_cadence():
         "BMP", "BUC", "CLA", "FMT", "GDR",
         "HVS", "LRA", "MAT", "ONF", "RLC", "SCC", "VIL",
     }, "every unresolved California candidate must keep its finding"
-    # An exclusion is not an admission (ADR-116): every station with a
-    # reviewed reading removed is still one this project does not publish.
-    assert set(cdec_document["excluded_readings"]) <= set(cdec_document["withheld"])
+    # An exclusion is not an admission (ADR-116): removing a reading answers
+    # one screen and nothing else, so an excluded station is either still
+    # withheld or was admitted afterwards on its own review -- Grant Lake was,
+    # once the excluded reading turned out to be the only thing holding it.
+    assert set(cdec_document["excluded_readings"]) <= (
+        set(cdec_document["withheld"]) | set(cdec_document["reservoirs"]))
     # R3's second state source: ten of the thirteen in-scope candidates the
     # Colorado audit screened -- three held with findings in the file itself
     # (Ivanhoe and Trout Lake above their own record's largest pool; Garnet
@@ -1335,7 +1338,8 @@ def exclusion_file(tmp_path, records, station="GNT", withheld=True) -> Path:
 def test_the_four_reviewed_readings_are_committed_with_their_evidence():
     """ADR-116 keeps the raw value, not a replacement for it.
 
-    The four stations stay withheld; these five readings are the whole of
+    Three of the four stay withheld and Grant Lake was admitted on its own
+    review once the exclusion answered its only screen; these five readings are the whole of
     what the exclusion removes, and each names the issue the provider is
     still being asked on.
     """
@@ -1352,11 +1356,13 @@ def test_the_four_reviewed_readings_are_committed_with_their_evidence():
     }
     document = json.loads(R.ADMITTED_CDEC_RESERVOIRS_PATH.read_text(encoding="utf-8"))
     for station, records in R.CDEC_EXCLUDED_READINGS.items():
-        assert station in document["withheld"], \
-            "an exclusion is not an admission; all four stay withheld"
-        assert station not in R.CDEC_RESERVOIRS
-        assert "ADR-116" in document["withheld"][station], \
-            "the withheld note must say the reading is excluded and why it is still held"
+        withheld = station in document["withheld"]
+        admitted = station in R.CDEC_RESERVOIRS
+        assert withheld != admitted, \
+            "an excluded station is exactly one of withheld or admitted"
+        if withheld:
+            assert "ADR-116" in document["withheld"][station], \
+                "the withheld note must say the reading is excluded and why it is still held"
         for record in records:
             assert record["issue_url"].startswith("https://github.com/")
             assert "replacement" not in record
