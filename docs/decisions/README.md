@@ -49,7 +49,8 @@ denominator. **Start with ADR-070, then ADR-072, then ADR-003.**
   [ADR-110](ADR-110-accept-reviewed-water-reports-without-a-dam-inventory-record.md),
   [ADR-111](ADR-111-use-the-current-operating-limit-as-full.md),
   [ADR-113](ADR-113-withhold-a-reservoir-whose-full-levels-cannot-be-reconciled.md),
-  [ADR-114](ADR-114-publish-a-water-type-and-an-operating-character.md)
+  [ADR-114](ADR-114-publish-a-water-type-and-an-operating-character.md),
+  [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md)
 - Freshness and withdrawal:
   [ADR-056](ADR-056-withdraw-a-reading-that-belongs-to-another-season.md),
   [ADR-115](ADR-115-state-a-reviewed-hold-where-the-reservoir-used-to-be.md)
@@ -111,7 +112,8 @@ ADR-041.**
   [ADR-081](ADR-081-divide-snows-summed-water-by-summed-normals-once.md),
   [ADR-082](ADR-082-publish-a-drought-severity-and-coverage-index.md),
   [ADR-083](ADR-083-anchor-the-monthly-normal-window-once-per-chart.md),
-  [ADR-100](ADR-100-a-sub-daily-providers-day-is-its-last-reading.md)
+  [ADR-100](ADR-100-a-sub-daily-providers-day-is-its-last-reading.md),
+  [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md)
 - Current architecture: [`docs/architecture/hydrology-methods.md`](../architecture/hydrology-methods.md)
 
 ### Visible language, accessibility and naming
@@ -280,6 +282,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-113](ADR-113-withhold-a-reservoir-whose-full-levels-cannot-be-reconciled.md) | Withhold a reservoir whose full levels cannot be reconciled | Accepted; qualifies ADR-070, ADR-072 and ADR-111; Leroy Anderson is the first case |
 | [ADR-114](ADR-114-publish-a-water-type-and-an-operating-character.md) | Publish a water type and an operating character | Accepted; extends ADR-112 and qualifies ADR-072 and ADR-111; labels first, each numeric consequence its own decision |
 | [ADR-115](ADR-115-state-a-reviewed-hold-where-the-reservoir-used-to-be.md) | State a reviewed hold where the reservoir used to be | Accepted; extends ADR-056 and qualifies ADR-020; a hold is a four-field notice, never a measurement |
+| [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md) | Exclude a reviewed reading, and never repair one | Accepted; extends ADR-072's no-repair rule; five readings named across four withheld California stations, the issues stay open |
 
 ## Relationship to the historical journal
 

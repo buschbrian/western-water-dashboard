@@ -618,6 +618,9 @@ def test_awdb_inventory_has_traceable_capacity_and_cadence():
         "BMP", "BUC", "CLA", "FMT", "GDR", "GNT",
         "HVS", "LRA", "MAT", "ONF", "RLC", "SCC", "VIL",
     }, "every unresolved California candidate must keep its finding"
+    # An exclusion is not an admission (ADR-116): every station with a
+    # reviewed reading removed is still one this project does not publish.
+    assert set(cdec_document["excluded_readings"]) <= set(cdec_document["withheld"])
     # R3's second state source: ten of the thirteen in-scope candidates the
     # Colorado audit screened -- three held with findings in the file itself
     # (Ivanhoe and Trout Lake above their own record's largest pool; Garnet
@@ -1298,6 +1301,174 @@ def test_a_cdec_daily_reading_keeps_its_own_day(monkeypatch):
     ])
     frame = R.fetch_cdec_series("SHA", "daily", "20260801", "20260821")
     assert frame["date"].dt.strftime("%Y-%m-%d").tolist() == ["2026-08-10"]
+
+
+# --- reviewed reading exclusions (ADR-116) --------------------------------
+
+def exclusion(**overrides) -> dict:
+    """One reviewed exclusion, with every field a loader requires."""
+    record = {
+        "sensor": R.CDEC_STORAGE_SENSOR,
+        "stamp": "2023-3-1 00:00",
+        "value": 82410,
+        "reason": "About 1.7 times the capacity two publishers agree on.",
+        "source_url": "https://wsoweb.ladwp.com/aqueduct/operations/reservoir.htm",
+        "reviewed_on": "2026-09-04",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/47",
+    }
+    record.update(overrides)
+    return record
+
+
+def exclusion_file(tmp_path, records, station="GNT", withheld=True) -> Path:
+    document = {
+        "reservoirs": {} if withheld else {station: {"name": "Test"}},
+        "withheld": {station: "Test finding"} if withheld else {},
+        "excluded_readings": {station: records},
+    }
+    path = tmp_path / "roster.json"
+    path.write_text(json.dumps(document), encoding="utf-8")
+    return path
+
+
+def test_the_four_reviewed_readings_are_committed_with_their_evidence():
+    """ADR-116 keeps the raw value, not a replacement for it.
+
+    The four stations stay withheld; these five readings are the whole of
+    what the exclusion removes, and each names the issue the provider is
+    still being asked on.
+    """
+    named = {
+        station: sorted((record["stamp"], record["value"])
+                        for record in records)
+        for station, records in R.CDEC_EXCLUDED_READINGS.items()
+    }
+    assert named == {
+        "GNT": [("2023-3-1 00:00", 82410)],
+        "HVS": [("2024-11-1 00:00", 5775421), ("2025-5-1 00:00", 5913000)],
+        "ONF": [("2017-5-1 00:00", 443348)],
+        "RLC": [("2026-2-1 00:00", 58508)],
+    }
+    document = json.loads(R.ADMITTED_CDEC_RESERVOIRS_PATH.read_text(encoding="utf-8"))
+    for station, records in R.CDEC_EXCLUDED_READINGS.items():
+        assert station in document["withheld"], \
+            "an exclusion is not an admission; all four stay withheld"
+        assert station not in R.CDEC_RESERVOIRS
+        assert "ADR-116" in document["withheld"][station], \
+            "the withheld note must say the reading is excluded and why it is still held"
+        for record in records:
+            assert record["issue_url"].startswith("https://github.com/")
+            assert "replacement" not in record
+
+
+def test_an_exclusion_may_not_carry_a_replacement_value(tmp_path):
+    """The refusal ADR-056 makes of a measurement, for the same reason.
+
+    A reading this project cannot explain is dropped and named. A repair
+    would be a number no gauge produced, summing and ranking like one.
+    """
+    path = exclusion_file(tmp_path, [dict(exclusion(), corrected_value=9157)])
+    with pytest.raises(ValueError, match="never a replacement value"):
+        R.load_excluded_readings(path, R.CDEC_STORAGE_SENSOR)
+
+
+@pytest.mark.parametrize("record, message", [
+    ({"stamp": None}, "the stamp the provider writes"),
+    ({"stamp": "  "}, "the stamp the provider writes"),
+    ({"value": "82410"}, "the raw value it carried"),
+    ({"reason": ""}, "needs a reason"),
+    ({"sensor": 6}, "must name sensor 15"),
+    ({"source_url": "http://wsoweb.ladwp.com/"}, "source_url must be an HTTPS URL"),
+    ({"issue_url": "github.com/buschbrian"}, "issue_url must be an HTTPS URL"),
+    ({"reviewed_on": "2026-9-4"}, "must be a YYYY-MM-DD date"),
+    ({"reviewed_on": "2026-02-30"}, "must be a YYYY-MM-DD date"),
+])
+def test_an_incomplete_exclusion_is_refused(tmp_path, record, message):
+    path = exclusion_file(tmp_path, [exclusion(**record)])
+    with pytest.raises(ValueError, match=message):
+        R.load_excluded_readings(path, R.CDEC_STORAGE_SENSOR)
+
+
+def test_a_missing_field_is_refused(tmp_path):
+    incomplete = exclusion()
+    del incomplete["reason"]
+    path = exclusion_file(tmp_path, [incomplete])
+    with pytest.raises(ValueError, match="never a replacement value"):
+        R.load_excluded_readings(path, R.CDEC_STORAGE_SENSOR)
+
+
+def test_an_exclusion_for_an_unknown_station_is_refused(tmp_path):
+    """A rule that can never fire reads exactly like a rule that is working."""
+    path = tmp_path / "roster.json"
+    path.write_text(json.dumps({
+        "reservoirs": {}, "withheld": {},
+        "excluded_readings": {"XXX": [exclusion()]},
+    }), encoding="utf-8")
+    with pytest.raises(ValueError, match="a station this file knows"):
+        R.load_excluded_readings(path, R.CDEC_STORAGE_SENSOR)
+
+
+def test_an_empty_exclusion_list_is_refused(tmp_path):
+    path = exclusion_file(tmp_path, [])
+    with pytest.raises(ValueError, match="non-empty list"):
+        R.load_excluded_readings(path, R.CDEC_STORAGE_SENSOR)
+
+
+def test_a_file_with_no_exclusions_loads_as_none(tmp_path):
+    path = tmp_path / "roster.json"
+    path.write_text(json.dumps({"reservoirs": {}, "withheld": {}}), encoding="utf-8")
+    assert R.load_excluded_readings(path, R.CDEC_STORAGE_SENSOR) == {}
+
+
+def test_the_adapter_drops_exactly_the_stamped_readings(monkeypatch, capsys):
+    """Both Lake Havasu readings, and nothing that merely resembles them.
+
+    Three near misses in the same fetch: the same day carrying a different
+    value, the same value under another station's stamp, and an ordinary
+    month. Each must survive, or the exclusion is a filter on the series
+    rather than on five named readings.
+    """
+    monkeypatch.setattr(R.providers, "_get_cdec_json", lambda params: [
+        cdec_row("2019-11-1 00:00", 601300, "M"),
+        cdec_row("2024-11-1 00:00", 5775421, "M"),
+        cdec_row("2025-5-1 00:00", 5913000, "M"),
+        cdec_row("2025-6-1 00:00", 597200, "M"),
+        cdec_row("2023-3-1 00:00", 82410, "M"),
+    ])
+    frame = R.fetch_cdec_series("HVS", "monthly", "20150101", "20260801")
+    assert frame["storage_af"].tolist() == [601300.0, 82410.0, 597200.0]
+    assert frame["date"].dt.strftime("%Y-%m-%d").tolist() == [
+        "2019-11-30", "2023-03-31", "2025-06-30"], \
+        "Grant Lake's excluded stamp is not Lake Havasu's reading"
+
+    printed = capsys.readouterr().out
+    assert "HVS: 2 reviewed reading(s) excluded (ADR-116)" in printed
+    assert "2025-5-1 00:00" in printed and "5,913,000 acre-feet" in printed
+    assert "2024-11-1 00:00" in printed and "5,775,421 acre-feet" in printed
+    assert "issues/44" in printed
+
+
+def test_a_corrected_reading_at_an_excluded_stamp_is_published(monkeypatch):
+    """The raw value is part of the reading's identity (ADR-116).
+
+    Every one of the four issues asks the provider to correct the record.
+    When one does, the corrected figure is a different reading and must not
+    go on being dropped by an exclusion nobody has revisited.
+    """
+    monkeypatch.setattr(R.providers, "_get_cdec_json", lambda params: [
+        cdec_row("2025-5-1 00:00", 591300, "M"),
+    ])
+    frame = R.fetch_cdec_series("HVS", "monthly", "20250101", "20250801")
+    assert frame["storage_af"].tolist() == [591300.0]
+
+
+def test_a_station_with_no_exclusion_is_untouched(monkeypatch, capsys):
+    monkeypatch.setattr(R.providers, "_get_cdec_json", lambda params: [
+        cdec_row("2025-5-1 00:00", 5913000, "M"),
+    ])
+    frame = R.fetch_cdec_series("SHA", "monthly", "20250101", "20250801")
+    assert frame["storage_af"].tolist() == [5913000.0]
+    assert "ADR-116" not in capsys.readouterr().out
 
 
 def test_a_cdec_month_still_in_progress_is_not_dated_in_the_future(monkeypatch):

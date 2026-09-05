@@ -673,6 +673,81 @@ RESERVOIR_NAMES = {
 
 ALL_RESERVOIR_NAMES = set(RESERVOIR_NAMES.values())
 
+#: What one reviewed reading exclusion names, and nothing else (ADR-116).
+#:
+#: The provider's sensor, the reading's own stamp as the provider writes it,
+#: the raw value it carried, why it cannot be true, an independent figure that
+#: says so, the day a person checked, and the issue the provider is being
+#: asked on. Together they identify one reading; none of them replaces it.
+EXCLUDED_READING_FIELDS = {
+    "sensor", "stamp", "value", "reason", "source_url", "reviewed_on",
+    "issue_url",
+}
+
+
+def load_excluded_readings(path: Path, sensor: int) -> dict[str, list[dict]]:
+    """Reviewed exclusions of single provider readings, by station (ADR-116).
+
+    A confirmed provider anomaly is dropped from the series, named, and left
+    open with the provider. This is deliberately not a repair: an exclusion
+    says *this reading, at this stamp, carrying this value, cannot be true*,
+    and a repair would say what the reading should have been instead. Nothing
+    here guesses a replacement, and the loader refuses a record that offers
+    one -- the same refusal ADR-056's withdrawal notices make of a
+    measurement, for the same reason.
+
+    Keyed by the provider's own station identifier like everything else in
+    these files (ADR-066), and every station named has to be one the file
+    already knows: an exclusion for a station this roster never fetches is a
+    typed identifier nothing will ever apply, which reads exactly like a rule
+    that is working.
+
+    `sensor` is the caller's own storage sensor, so an exclusion cannot
+    silently name a different measurement of the same station.
+
+    Returns `{station: [exclusion, ...]}`, empty when the file carries none.
+    """
+    document = json.loads(path.read_text(encoding="utf-8"))
+    excluded = document.get("excluded_readings", {})
+    if not isinstance(excluded, dict):
+        raise ValueError(f"{path.name}: excluded_readings must be keyed by station")
+    known = set(document.get("reservoirs", {})) | set(document.get("withheld", {}))
+    loaded: dict[str, list[dict]] = {}
+    for station, records in excluded.items():
+        if station not in known:
+            raise ValueError(
+                f"{station}: an excluded reading must name a station this "
+                f"file knows")
+        if not isinstance(records, list) or not records:
+            raise ValueError(f"{station}: excluded readings are a non-empty list")
+        for record in records:
+            if not isinstance(record, dict) or set(record) != EXCLUDED_READING_FIELDS:
+                raise ValueError(
+                    f"{station}: an excluded reading carries the reading and "
+                    f"the evidence against it, and never a replacement value")
+            if record["sensor"] != sensor:
+                raise ValueError(
+                    f"{station}: an excluded reading must name sensor {sensor}")
+            if not isinstance(record["stamp"], str) or not record["stamp"].strip():
+                raise ValueError(
+                    f"{station}: an excluded reading needs the stamp the "
+                    f"provider writes")
+            if isinstance(record["value"], bool) or not isinstance(
+                    record["value"], (int, float)):
+                raise ValueError(
+                    f"{station}: an excluded reading needs the raw value it carried")
+            if not isinstance(record["reason"], str) or not record["reason"].strip():
+                raise ValueError(f"{station}: an excluded reading needs a reason")
+            for field in ("source_url", "issue_url"):
+                if not isinstance(record[field], str) \
+                        or not record[field].startswith("https://"):
+                    raise ValueError(
+                        f"{station}: {field} must be an HTTPS URL")
+            _reviewed_date(station, "reviewed_on", record["reviewed_on"])
+        loaded[station] = [dict(record) for record in records]
+    return loaded
+
+
 def reviewed_hold_notices(paths: dict[str, Path] | None = None) -> list[dict]:
     """Public, measurement-free explanations from reviewed admission sources."""
     if paths is None:
