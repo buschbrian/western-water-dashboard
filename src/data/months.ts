@@ -19,7 +19,7 @@
  * being a port.
  */
 
-import { monthEndDate, sizeBasisOn } from "./capacity";
+import { monthObservationDate, sizeBasisOn } from "./capacity";
 import type { NullableNumber, Reservoir } from "../types";
 
 /** A month key as the payload writes it. */
@@ -53,7 +53,7 @@ export function monthKeys(reservoirs: readonly Reservoir[]): MonthKey[] {
 export function monthPercent(reservoir: Reservoir, month: MonthKey): NullableNumber {
   const entry = reservoir.monthly.find((record) => record.month === month);
   if (!entry || entry.mean_af === null || !Number.isFinite(entry.mean_af)) return null;
-  const basis = sizeBasisOn(reservoir, monthEndDate(month));
+  const basis = sizeBasisOn(reservoir, monthObservationDate(reservoir, month));
   if (!basis) return null;
   return (entry.mean_af / basis) * 100;
 }
@@ -99,9 +99,9 @@ export function monthlyRollup(
   let scopeCapacityAf = 0;
   /* One date for every figure in the month, so the denominator and the
    * numerator describe the same month (ADR-111). */
-  const on = monthEndDate(month);
   for (const reservoir of reservoirs) {
-    scopeCapacityAf += sizeBasisOn(reservoir, on);
+    const on = monthObservationDate(reservoir, month);
+    scopeCapacityAf += sizeBasisOn(reservoir, on) ?? 0;
     const entry = reservoir.monthly.find((record) => record.month === month);
     const mean = entry?.mean_af;
     if (mean === null || mean === undefined || !Number.isFinite(mean)) continue;

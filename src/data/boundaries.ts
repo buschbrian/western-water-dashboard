@@ -200,7 +200,13 @@ const inFlight = new Map<string, Promise<unknown>>();
 export function loadReference(url = REFERENCE_URL): Promise<unknown> {
   let request = inFlight.get(url);
   if (!request) {
-    request = fetchWithin(url).then((response) => response.json() as Promise<unknown>);
+    request = fetchWithin(url).then((response) => response.json() as Promise<unknown>)
+      .catch((error: unknown) => {
+        // Share a successful reference, but permit a later chooser/retry to
+        // recover after a failed request or malformed JSON.
+        inFlight.delete(url);
+        throw error;
+      });
     inFlight.set(url, request);
   }
   return request;

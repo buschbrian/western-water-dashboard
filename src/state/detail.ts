@@ -9,7 +9,7 @@
  * key, never from the label the payload carries.
  */
 
-import { monthEndDate, sizeBasisOn } from "../data/capacity";
+import { monthObservationDate, sizeBasisOn } from "../data/capacity";
 import { monthLabel } from "../data/months";
 import { isLate } from "../data/rollup";
 import type {
@@ -189,7 +189,7 @@ const CAPACITY_BASIS_NAMES: Record<string, string> = {
      reason the reader cannot see (ADR-111). The fact that the allowed level
      is the lower one belongs in its own sentence rather than stapled to a
      phrase this appears inside (ADR-006). */
-  operating_restriction: "the full level a safety order allows now"
+  operating_restriction: "the full level a safety order allows"
 };
 
 /** The words for a basis, or null when the provider named none. */
@@ -301,7 +301,7 @@ export function monthlyDetail(
   reservoir: Reservoir, baseline: BaselineId = "recent"
 ): DetailMonth[] {
   return reservoir.monthly.map((entry) => {
-    const basis = sizeBasisOn(reservoir, monthEndDate(entry.month));
+    const basis = sizeBasisOn(reservoir, monthObservationDate(reservoir, entry.month));
     const storage = entry.mean_af !== null && Number.isFinite(entry.mean_af)
       ? entry.mean_af : null;
     const percent = storage !== null && basis ? (storage / basis) * 100 : null;
@@ -368,6 +368,10 @@ export function describeReservoir(
             ? `, measured as ${capacityBasisName(reservoir.capacity_basis)}`
             : ""}`
       },
+      ...(reservoir.physical_capacity_af != null ? [{
+        label: "What the reservoir can hold",
+        value: `${formatAcreFeet(reservoir.physical_capacity_af)} acre-feet`
+      }] : []),
       { label: comparison.label, value: comparison.value },
       {
         label: changeLabel("Change in 30 days", reservoir.change_30d_elapsed_days),

@@ -56,10 +56,10 @@ describe("CSV serialization", () => {
     };
 
     expect(capacitySource(reservoir))
-      .toBe("Full level allowed now, set by Rancho California Water District");
+      .toBe("Full level a safety order allows, set by Rancho California Water District");
     const unattributed = { ...reservoir };
     delete (unattributed as { capacity_history?: unknown }).capacity_history;
-    expect(capacitySource(unattributed)).toBe("Full level allowed now");
+    expect(capacitySource(unattributed)).toBe("Full level a safety order allows");
   });
 
   it("keeps the declared header order and raw numeric values", () => {

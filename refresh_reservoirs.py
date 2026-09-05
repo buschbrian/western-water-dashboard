@@ -93,7 +93,7 @@ from pipeline.roster import (  # noqa: F401
     load_admitted_cdss_reservoirs, load_admitted_reservoirs,
     load_admitted_rise_reservoirs, load_admitted_usgs_reservoirs,
     load_capacities, check_capacity_versions_cover, effective_capacity,
-    published_capacity_history,
+    published_capacity_history, reviewed_hold_notices,
     validate_capacity_evidence, validate_capacity_versions
 )
 from pipeline.providers import (  # noqa: F401
@@ -742,6 +742,8 @@ def main() -> int:
     parser.add_argument("--rebuild-points", nargs="+", metavar="STATION_ID",
                         help="apply selected roster coordinates and committed geography "
                              "to the current payload without fetching storage readings")
+    parser.add_argument("--rebuild-notices", action="store_true",
+                        help="rebuild reviewed hold notices without changing observation data")
     parser.add_argument("--source",
                         choices=("all", "rise", "awdb", "cdec", "cdss", "usgs",
                                  "srp", "dnrc", "cwms", "cap"),
@@ -749,6 +751,21 @@ def main() -> int:
                         help="refresh one source and merge the other source's previously "
                              "published records (default: all)")
     args = parser.parse_args()
+
+    if args.rebuild_notices:
+        if args.only is not None or args.source != "all" or args.rebuild_points:
+            parser.error("--rebuild-notices cannot be combined with other refresh selections")
+        payload = json.loads(OUTPUT_PATH.read_text(encoding="utf-8"))
+        notices = reviewed_hold_notices()
+        published = {(r["source_key"], r["source_station_id"]) for r in payload["reservoirs"]}
+        if any((n["source_key"], n["source_station_id"]) in published for n in notices):
+            parser.error("a held reservoir is still published; run its source refresh first")
+        payload["reviewed_holds"] = notices
+        payload["schema_version"] = RESERVOIR_SCHEMA_VERSION
+        if not args.dry_run:
+            OUTPUT_PATH.write_text(json.dumps(payload, indent=2) + "\n")
+        print(f"Rebuilt {len(notices)} reviewed hold notice(s)")
+        return 0
 
     if args.rebuild_points:
         if args.only is not None or args.source != "all":
@@ -1359,6 +1376,7 @@ def main() -> int:
             **counties,
         },
         "reservoirs": records,
+        "reviewed_holds": reviewed_hold_notices(),
     }
 
     print(f"\nFreshness report ({today.date()}):")

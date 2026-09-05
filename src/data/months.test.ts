@@ -181,6 +181,7 @@ describe("a month whose full level was not today's", () => {
     if (reported.length < 2) return null;
     return {
       ...first,
+      as_of: `${month}-28`,
       capacity_af: 50000,
       capacity_basis: "operating_restriction",
       physical_capacity_af: 100000,

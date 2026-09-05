@@ -101,6 +101,19 @@ describe("requestedName", () => {
 });
 
 describe("resolveReservoirPage", () => {
+  it("preserves name and station links for a reviewed hold without measurements", () => {
+    const payload = payloadWith([]);
+    payload.reviewed_holds = [{ name: "Test Reservoir", source_key: "cdec",
+      source_station_id: "TEST", reason: "The full level needs review.",
+      reviewed_on: "2026-09-04", source_url: "https://example.gov/review" }];
+    for (const search of ["?name=TEST", "?name=Test%20Reservoir"]) {
+      expect(resolveReservoirPage(payload, search)).toMatchObject({
+        status: "held", notice: { name: "Test Reservoir" }
+      });
+    }
+    payload.reservoirs = [reservoir({ name: "Test Reservoir", source_station_id: "TEST" })];
+    expect(resolveReservoirPage(payload, "?name=TEST").status).toBe("found");
+  });
   const payload = payloadWith([UTAH, OREGON]);
 
   it("resolves a station identifier before anything else", () => {

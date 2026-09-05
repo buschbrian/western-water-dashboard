@@ -521,7 +521,18 @@ export interface SourceCoverage {
   states: Record<string, StateCoverage>;
 }
 
+/** A reviewed removal, separate from a quiet feed and never a measurement. */
+export interface ReviewedHold {
+  name: string;
+  source_key: SourceKey;
+  source_station_id: string;
+  reviewed_on: string;
+  reason: string;
+  source_url: string;
+}
+
 export interface ReservoirPayload {
+  reviewed_holds?: ReviewedHold[];
   schema_version?: number;
   /** The calculations behind the derived values, separate from the shape. */
   method_version?: string;

@@ -1,4 +1,5 @@
 import type { TableRow } from "../state/table";
+import { capacityVersionOn } from "./capacity";
 import type { SiteRow } from "../snow-model";
 import type { MonthlyRecord, Reservoir, SourceKey } from "../types";
 
@@ -70,10 +71,9 @@ export function capacitySource(reservoir: Reservoir): string {
      * is changes with the reservoir, so the row names it (ADR-111). The
      * version in force is the last one; the pipeline publishes the headline
      * figure from it. */
-    const versions = reservoir.capacity_history ?? [];
-    const authority = versions[versions.length - 1]?.authority;
-    return authority ? `Full level allowed now, set by ${authority}`
-      : "Full level allowed now";
+    const authority = capacityVersionOn(reservoir, reservoir.as_of)?.authority;
+    return authority ? `Full level a safety order allows, set by ${authority}`
+      : "Full level a safety order allows";
   }
   if (reservoir.capacity_basis === null) return "Not available";
   return "U.S. Army Corps of Engineers National Inventory of Dams";

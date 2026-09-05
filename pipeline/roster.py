@@ -10,6 +10,7 @@ Procedure for changing any of this: docs/operations/source-admission.md.
 
 import datetime as dt
 import json
+import math
 from pathlib import Path
 
 from .constants import (
@@ -130,7 +131,10 @@ def _reviewed_date(name: str, field: str, value: object) -> dt.date:
     if not isinstance(value, str):
         raise ValueError(f"{name}: {field} must be a YYYY-MM-DD date")
     try:
-        return dt.date.fromisoformat(value)
+        parsed = dt.date.fromisoformat(value)
+        if parsed.isoformat() != value:
+            raise ValueError("not an ISO calendar date")
+        return parsed
     except ValueError as error:
         raise ValueError(f"{name}: {field} must be a YYYY-MM-DD date") from error
 
@@ -189,7 +193,8 @@ def validate_capacity_versions(name: str, capacity: dict) -> None:
         if not isinstance(version, dict):
             raise ValueError(f"{name}: every capacity version is a record")
         if not isinstance(version.get("capacity_af"), (int, float)) \
-                or version["capacity_af"] <= 0:
+                or isinstance(version["capacity_af"], bool) \
+                or not math.isfinite(version["capacity_af"]) or version["capacity_af"] <= 0:
             raise ValueError(f"{name}: every capacity version needs a positive full level")
         basis = version.get("capacity_basis")
         if not isinstance(basis, str) or not basis.strip():
@@ -254,7 +259,8 @@ def validate_capacity_versions(name: str, capacity: dict) -> None:
             raise ValueError(
                 f"{name}: a restricted reservoir keeps what it can physically hold")
     if physical is not None:
-        if not isinstance(physical, (int, float)) or physical <= 0:
+        if not isinstance(physical, (int, float)) or isinstance(physical, bool) \
+                or not math.isfinite(physical) or physical <= 0:
             raise ValueError(f"{name}: physical capacity must be positive")
         if any(physical < float(version["capacity_af"]) for version in versions):
             raise ValueError(
@@ -299,6 +305,7 @@ def effective_capacity(capacity: dict | None, on: str) -> dict:
     if not versions:
         return {"capacity_af": capacity.get("capacity_af"),
                 "capacity_basis": capacity.get("capacity_basis")}
+    check_capacity_versions_cover("capacity lookup", capacity, on)
     # Validation guarantees the first version opens the record and that the
     # starts ascend, so the last one to have begun is the one in force.
     chosen = versions[0]
@@ -666,6 +673,33 @@ RESERVOIR_NAMES = {
 
 ALL_RESERVOIR_NAMES = set(RESERVOIR_NAMES.values())
 
+def reviewed_hold_notices(paths: dict[str, Path] | None = None) -> list[dict]:
+    """Public, measurement-free explanations from reviewed admission sources."""
+    if paths is None:
+        paths = {
+            "rise": ADMITTED_RISE_RESERVOIRS_PATH, "awdb": ADMITTED_RESERVOIRS_PATH,
+            "cdec": ADMITTED_CDEC_RESERVOIRS_PATH, "cdss": ADMITTED_CDSS_RESERVOIRS_PATH,
+            "usgs": ADMITTED_USGS_RESERVOIRS_PATH, "srp": ADMITTED_SRP_RESERVOIRS_PATH,
+            "dnrc": ADMITTED_DNRC_RESERVOIRS_PATH, "cwms": ADMITTED_CWMS_RESERVOIRS_PATH,
+            "cap": ADMITTED_CAP_RESERVOIRS_PATH,
+        }
+    notices = []
+    fields = {"name", "reason", "source_url", "reviewed_on"}
+    for source, path in paths.items():
+        document = json.loads(path.read_text(encoding="utf-8"))
+        for station, notice in document.get("publication_holds", {}).items():
+            if station in document.get("reservoirs", {}) or station not in document.get("withheld", {}):
+                raise ValueError(f"{station}: a public hold must name a withheld reservoir")
+            if not isinstance(notice, dict) or set(notice) != fields \
+                    or any(not isinstance(notice[field], str) or not notice[field].strip() for field in fields):
+                raise ValueError(f"{station}: a public hold carries only identity, reason and review evidence")
+            _reviewed_date(station, "reviewed_on", notice["reviewed_on"])
+            if not notice["source_url"].startswith("https://"):
+                raise ValueError(f"{station}: public hold evidence needs an HTTPS URL")
+            notices.append({**notice, "source_key": source, "source_station_id": station})
+    return sorted(notices, key=lambda notice: (notice["source_key"], notice["source_station_id"]))
+
+
 def load_capacities() -> dict[str, dict]:
     """Committed National Inventory of Dams capacity records by station id.
 
@@ -685,7 +719,7 @@ def load_capacities() -> dict[str, dict]:
     except (ValueError, AttributeError):
         print(f"WARNING: {CAPACITY_PATH.name} is unreadable; "
               "its percent-full values will be omitted")
-    return apply_dam_point_reviews({
+    loaded = apply_dam_point_reviews({
         **capacities,
         **{station: row["capacity"]
            for station, row in ADMITTED_RISE_RESERVOIRS.items()},
@@ -705,3 +739,6 @@ def load_capacities() -> dict[str, dict]:
         **{station: row["capacity"]
            for station, row in ADMITTED_CAP_RESERVOIRS.items()},
     })
+    for station, capacity in loaded.items():
+        validate_capacity_versions(station, capacity)
+    return loaded

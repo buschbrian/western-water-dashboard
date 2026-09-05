@@ -215,6 +215,9 @@ MIN_BASELINE_YEARS = 10
 # any more, and a reader still expecting the field should be told rather than
 # handed a payload that silently stopped carrying one.
 EXPORT_SCHEMA_VERSION = 4
+# Still 1 after `reviewed_holds` (ADR-115): the array is optional and
+# additive, as every field added to this payload has been, and a bump is
+# how a consumer is told something it reads has changed shape.
 RESERVOIR_SCHEMA_VERSION = 1
 
 #: The estimator behind the derived numbers, separate from the shape of the

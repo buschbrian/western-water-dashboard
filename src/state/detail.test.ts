@@ -294,6 +294,7 @@ describe("the details a reader sees", () => {
     if (!last || !earliest) return;
     const restricted: Reservoir = {
       ...first,
+      as_of: `${last.month}-28`,
       capacity_af: 40000,
       capacity_basis: "operating_restriction",
       physical_capacity_af: 80000,

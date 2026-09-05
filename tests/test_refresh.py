@@ -338,6 +338,30 @@ def test_leroy_anderson_is_withheld_with_its_evidence_stated():
     for figure in ("89,073", "90,373", "52,553", "3,159", "48,547", "2017-05-08"):
         assert figure in reason, f"the withheld reason should name {figure}"
     assert "ADR-113" in reason
+    assert "3,485" in reason
+    assert "does not by itself disprove" in reason
+
+
+def test_public_hold_notices_contain_no_measurements(tmp_path):
+    path = tmp_path / "roster.json"
+    notice = {"name": "Test", "reason": "The full level needs review.",
+              "reviewed_on": "2026-09-04", "source_url": "https://example.gov/review"}
+    document = {"reservoirs": {}, "withheld": {"TEST": "Review"},
+                "publication_holds": {"TEST": notice}}
+    path.write_text(json.dumps(document))
+    assert R.reviewed_hold_notices({"cdec": path}) == [
+        {**notice, "source_key": "cdec", "source_station_id": "TEST"}]
+    notice["current_storage_af"] = 123
+    path.write_text(json.dumps(document))
+    with pytest.raises(ValueError, match="only identity"):
+        R.reviewed_hold_notices({"cdec": path})
+
+
+def test_capacity_lookup_refuses_dates_before_known_history():
+    with pytest.raises(ValueError, match="before the earliest"):
+        R.effective_capacity({"capacity_versions": [
+            {"capacity_af": 100, "capacity_basis": "normal_storage", "effective_from": "2026-01-01"}
+        ]}, "2025-12-31")
 
 
 # --- dated full levels (ADR-111) ------------------------------------------

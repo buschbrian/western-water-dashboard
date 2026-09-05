@@ -51,7 +51,8 @@ denominator. **Start with ADR-070, then ADR-072, then ADR-003.**
   [ADR-113](ADR-113-withhold-a-reservoir-whose-full-levels-cannot-be-reconciled.md),
   [ADR-114](ADR-114-publish-a-water-type-and-an-operating-character.md)
 - Freshness and withdrawal:
-  [ADR-056](ADR-056-withdraw-a-reading-that-belongs-to-another-season.md)
+  [ADR-056](ADR-056-withdraw-a-reading-that-belongs-to-another-season.md),
+  [ADR-115](ADR-115-state-a-reviewed-hold-where-the-reservoir-used-to-be.md)
 - Superseded, read only for history: ADR-099
 - Procedure: [`docs/operations/source-admission.md`](../operations/source-admission.md)
 
@@ -278,6 +279,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-112](ADR-112-publish-terminal-lakes-as-a-separate-water-type.md) | Publish terminal lakes as a separate water type | Accepted; supersedes ADR-078 |
 | [ADR-113](ADR-113-withhold-a-reservoir-whose-full-levels-cannot-be-reconciled.md) | Withhold a reservoir whose full levels cannot be reconciled | Accepted; qualifies ADR-070, ADR-072 and ADR-111; Leroy Anderson is the first case |
 | [ADR-114](ADR-114-publish-a-water-type-and-an-operating-character.md) | Publish a water type and an operating character | Accepted; extends ADR-112 and qualifies ADR-072 and ADR-111; labels first, each numeric consequence its own decision |
+| [ADR-115](ADR-115-state-a-reviewed-hold-where-the-reservoir-used-to-be.md) | State a reviewed hold where the reservoir used to be | Accepted; extends ADR-056 and qualifies ADR-020; a hold is a four-field notice, never a measurement |
 
 ## Relationship to the historical journal
 

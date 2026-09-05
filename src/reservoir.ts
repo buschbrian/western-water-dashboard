@@ -26,7 +26,7 @@ import {
 } from "./data/export";
 import { loadReservoirs, loadUpstreamIndex } from "./data/load";
 import {
-  baselineRows, provenanceRows, resolveReservoirPage
+  baselineRows, provenanceRows, requestedName, resolveReservoirPage
 } from "./reservoir-model";
 import type { ReservoirPageState } from "./reservoir-model";
 import type { ReservoirPayload, Reservoir, UpstreamTrace } from "./types";
@@ -220,7 +220,7 @@ async function renderFound(payload: ReservoirPayload,
   children.push(exportButton);
 
   main.replaceChildren(...children);
-  try {
+  const imageryReady = (async () => { try {
     const imagery = await import("./ui/reservoir-imagery");
     await imagery.mountReservoirImagery(imageryHost, {
       label, lon: reservoir.lon, lat: reservoir.lat
@@ -231,11 +231,11 @@ async function renderFound(payload: ReservoirPayload,
     imageryHost.replaceChildren(note(
       "The aerial image could not be loaded just now.", "chart-empty"));
     imageryHost.removeAttribute("aria-busy");
-  }
+  } })();
   // What the committed trace says sits above this reservoir (ADR-077). A
   // missing index costs this section and nothing else; a screen inside it
   // is stated as what it is rather than shown as an empty count.
-  try {
+  const upstreamReady = (async () => { try {
     const index = await loadUpstreamIndex();
     const station = reservoir.source_station_id;
     const trace = station === null ? null : index.traces[station];
@@ -244,7 +244,8 @@ async function renderFound(payload: ReservoirPayload,
     }
   } catch {
     console.error("The upstream index could not be read:");
-  }
+  } })();
+  await Promise.all([imageryReady, upstreamReady]);
   finish("found");
 }
 
@@ -354,6 +355,23 @@ function renderWithdrawn(
   finish("withdrawn");
 }
 
+/** A reviewed hold names the issue without displaying the old measurement. */
+function renderHeld(state: Extract<ReservoirPageState, { status: "held" }>): void {
+  const { notice } = state;
+  document.title = `${notice.name} — Western Water Dashboard`;
+  const heading = sectionHeading(notice.name);
+  const title = document.createElement("h1");
+  title.className = "reservoir-name";
+  title.textContent = heading.textContent;
+  const evidence = document.createElement("a");
+  evidence.href = notice.source_url;
+  evidence.textContent = "Read the source for this review";
+  main.replaceChildren(note("Reservoir details", "eyebrow"), title,
+    note("This reservoir is not in the current published data."), note(notice.reason),
+    note(`Reviewed ${formatDate(notice.reviewed_on)}.`), evidence);
+  finish("held");
+}
+
 /** No such name, and no withdrawal either. */
 function renderUnknown(
   state: Extract<ReservoirPageState, { status: "unknown" }>): void {
@@ -390,12 +408,14 @@ function renderLanding(): void {
 }
 
 async function run(): Promise<void> {
+  if (requestedName(window.location.search) === null) return renderLanding();
   try {
     const payload = await loadReservoirs();
     const state = resolveReservoirPage(payload, window.location.search);
     switch (state.status) {
       case "found": return renderFound(payload, state);
       case "withdrawn": return renderWithdrawn(state);
+      case "held": return renderHeld(state);
       case "unknown": return renderUnknown(state);
       case "none": return renderLanding();
     }
