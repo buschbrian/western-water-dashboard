@@ -17,6 +17,8 @@ pinned to worked examples rather than to whatever the code returns today.
 import sys
 from pathlib import Path
 
+import pytest
+
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
@@ -586,3 +588,26 @@ def test_a_water_no_polygon_is_named_for_falls_back_to_the_largest():
          _feature(None, 202.5, POOL_B)], 1.5, 0.5, "Lake Wallula")
     assert chosen["attributes"]["areasqkm"] == 202.5
     assert "name is the reservoir's" not in how
+
+
+@pytest.mark.parametrize("failed_service", ["nid", "nhd_waterbody", "nhd_flowline"])
+def test_a_failed_service_cannot_replace_the_saved_census(
+        monkeypatch, tmp_path, failed_service):
+    from tools import build_operating_character_census as census
+
+    output = tmp_path / "census.json"
+    original = '{"rows": [{"name": "Previously reviewed reservoir"}]}\n'
+    output.write_text(original)
+    report = {
+        "rows": [],
+        "services": [{"service": name, "failed": int(name == failed_service)}
+                     for name in ["nid", "nhd_waterbody", "nhd_flowline"]],
+    }
+    monkeypatch.setattr(census, "ROOT", tmp_path)
+    monkeypatch.setattr(census, "OUTPUT_PATH", output)
+    monkeypatch.setattr(census, "build", lambda args: report)
+    monkeypatch.setattr(census, "summarize", lambda report: None)
+    monkeypatch.setattr(sys, "argv", ["census", "--refresh"])
+
+    assert census.main() == 1
+    assert output.read_text() == original

@@ -1365,6 +1365,12 @@ def main() -> int:
 
     report = build(args)
     summarize(report)
+    if any(service["failed"] for service in report["services"]):
+        # A failed lookup is not evidence that a dam, pool or river is absent.
+        # Keep the previous complete sweep so an outage cannot erase it.
+        print("\nService requests failed; the saved census was not changed.",
+              file=sys.stderr)
+        return 1
     if args.dry_run:
         print(f"\n(dry run: {OUTPUT_PATH.relative_to(ROOT)} not written)")
         return 0
