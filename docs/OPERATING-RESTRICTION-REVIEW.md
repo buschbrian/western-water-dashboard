@@ -50,6 +50,17 @@ reservoirs:
 | Coyote | 22,541 af | 11,843 af | -10,698 af (-47%) |
 | **Combined** | **121,464 af** | **19,474 af** | **-101,990 af (-84%)** |
 
+**The plan's Anderson row does not agree with the plan's own text, and the
+table above carries the row.** The row reads `Anderson  1950  89,278
+3,159 /4%`: a capacity of 89,278 acre-feet, which is not the 89,073 this
+dashboard publishes, and a restricted level of 3,159. The packet's text says
+something else: "Per the FERC Order, reservoir storage at Anderson Reservoir
+was restricted to the deadpool storage as of October 1, 2020. An amendment to
+the Order was issued by FERC on April 4, 2024, that permitted Valley Water to
+maintain Anderson Reservoir storage at 2 feet above deadpool (3,485 AF)." So
+3,159 is deadpool, and **3,485 acre-feet is the level permitted since
+2024-04-04** and in force now. The row above is left as the plan states it.
+
 Vail would use 31,395 acre-feet while its restriction is active and retain
 45,207 acre-feet as physical capacity.
 
@@ -135,23 +146,31 @@ they cannot be applied to the whole record, and the readings say so plainly:
 
 | Reservoir | Record begins | Highest since | Stated current limit | Highest as a share of it |
 |---|---|---:|---:|---:|
-| Leroy Anderson | 2021-08-29 | 48,547 af | 3,159 af | **1,537%** |
+| Leroy Anderson | 2021-08-29 | 48,547 af | 3,485 af | **1,393%** |
 | Calero | 2021-09-06 | 5,542 af | 4,472 af | 124% |
 | Coyote | 2021-08-29 | 24,335 af | 11,843 af | 205% |
 
-Anderson is conclusive. Its restriction has been in force since 2017-05-08 and
+Anderson's row uses the 3,485 acre-feet its operator's text permits rather
+than the 3,159 in the same document's table; against either figure the
+conclusion is the same. Its restriction has been in force since 2017-05-08 and
 its series begins in 2021, so every reading is inside the restricted period --
-and it held 48,547 acre-feet inside that period, fifteen times the figure
-Valley Water publishes for today. The reservoir has been drawn down in stages
-for its seismic retrofit, so the restricted level itself changed over time.
-One 2026 figure divided into a 2021 reading is exactly what ADR-111 forbids:
-"a restriction that starts or ends must not rewrite what full meant on the
-earlier observation date."
+and it held 48,547 acre-feet inside that period, fourteen times the level
+permitted today. The reservoir has been drawn down in stages for its seismic
+retrofit, so the restricted level itself changed over time. One 2026 figure
+divided into a 2021 reading is exactly what ADR-111 forbids: "a restriction
+that starts or ends must not rewrite what full meant on the earlier
+observation date."
 
-Anderson's present reading of 3,497 acre-feet is also **110.7% of 3,159**,
-beyond the surcharge allowance, and it has sat between 3,481 and 3,789 every
-month for a year. A denominator the water stands above every single month is
-not the denominator (ADR-072).
+**The present reading is not the problem.** Anderson holds 3,497 acre-feet,
+which is **100.3% of 3,485** and inside the surcharge allowance: the reservoir
+is sitting at the level FERC permits, and ADR-072's objection to a denominator
+the water stands above does not apply to the limit in force. What disqualifies
+Anderson is the history and the operator document. The level held between
+2020-10-01 and 2024-04-04 is published as "deadpool" rather than as an
+acre-foot figure, and the plan that might have supplied one gives 3,159 in its
+table and 3,485 in its text, both presented as current. Two current figures
+and an unpublished intermediate one do not assemble into ADR-111's dated
+versions.
 
 **So none of the three is publishable on the evidence in hand.** What each
 needs is not one number but the dated series of levels its operator held it
@@ -170,11 +189,21 @@ was saying. Valley Water restricted storage to about 55 feet below the dam
 crest -- **52,553 acre-feet** -- exceeding the 45-foot restriction its
 regulators approved. FERC then directed the reservoir lowered to elevation 488
 feet beginning **1 October 2020**, and by mid-December 2020 it held roughly
-2,700 acre-feet. The January 2026 figure of 3,159 belongs to that final stage
-and to no earlier one. Valley Water also gives the full operating capacity the
-retrofit is meant to restore as **90,373 acre-feet**, against the 89,073 this
-site publishes from the dam inventory's normal storage -- a separate
-disagreement worth its own look.
+2,700 acre-feet. A FERC amendment of **4 April 2024** permits storage two feet
+above deadpool, **3,485 acre-feet**, and that is the stage in force now. The
+January 2026 plan's 3,159 is the deadpool figure its table carries, not the
+permitted level its own text states; neither belongs to an earlier stage, and
+the level held between October 2020 and April 2024 is described as deadpool
+and never published as a number.
+
+**Valley Water publishes three capacity figures and no operating one.** Its
+reservoir page gives **89,073 acre-feet**, the same as the dam inventory's
+normal storage that this site publishes. Its seismic retrofit project page
+gives **90,373 acre-feet** as the full operating capacity the retrofit is
+meant to restore in future. Its January 2026 plan table gives **89,278
+acre-feet**. The spread is a few hundred acre-feet, none of the three
+contradicts the inventory materially, and none of them is a level the
+reservoir is operated to.
 
 The 48,547 acre-feet observed after August 2021 is therefore not evidence
 against the restriction. It is a reservoir under a drawdown order taking more
