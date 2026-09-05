@@ -5,7 +5,11 @@ prints and writes nothing; a builder rewrites a committed file and must merge
 rather than replace.
 
 - Audits and probes (`audit_*.py`, `probe_*.py`, `check_*.py`,
-  `measure_*.py`) never write repository data. Keep it that way.
+  `measure_*.py`) never write repository data. Keep it that way. One audit
+  writes one file and it is not repository data the site reads:
+  `audit_operating_character.py` writes `data/reviews/`, which holds proposals
+  for a reviewer and is fetched by no page. An audit that wants to write
+  anywhere else is a builder wearing the wrong name.
 - Builders (`build_*.py`, `fetch_*.py`, `compute_drought_coverage.py`) own the
   files listed in [`data/generated-files.json`](../data/generated-files.json).
   **Every run merges; none replaces** — `--only` and `--missing` must not drop
