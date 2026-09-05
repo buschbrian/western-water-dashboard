@@ -1,0 +1,70 @@
+name: Build normal baselines
+
+# Manual only. normals.json is committed and changes only when a reservoir is
+# admitted or the estimator moves (METHOD_VERSION), so this exists to build
+# the missing records for a named reservoir where the secret lives -- the
+# U.S. Geological Survey's daily service needs USGS_API_KEY (ADR-098), which
+# a contributor's machine does not hold. It runs the same command a
+# contributor with the key would run locally, and commits the result.
+#
+# Note: workflow_dispatch can only target a workflow that already exists on
+# the default branch. Until this lands on main, add a temporary `push:`
+# trigger on your branch to run it.
+on:
+  workflow_dispatch:
+    inputs:
+      names:
+        description: "Reservoir names to build, space-separated and quoted as the tool expects (empty builds every missing record)"
+        required: false
+        default: ""
+
+permissions:
+  contents: write
+
+concurrency:
+  group: normals-build-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+      - run: pip install -r requirements-pipeline.txt
+      - name: Build the missing normal baselines
+        env:
+          PYTHONUNBUFFERED: "1"
+          USGS_API_KEY: ${{ secrets.USGS_API_KEY }}
+          NAMES: ${{ inputs.names }}
+        # The names reach the tool through the environment rather than
+        # ${{ }} interpolation, for the same reason the refresh does it: a
+        # reservoir name carrying a quote would otherwise be pasted into the
+        # command line.
+        run: |
+          python - <<'PYTHON'
+          import os
+          import shlex
+          import subprocess
+          import sys
+
+          names = shlex.split(os.environ.get("NAMES", ""))
+          arguments = ["--only", *names] if names else ["--missing"]
+          subprocess.run(
+              [sys.executable, "tools/build_normal_baselines.py", *arguments],
+              check=True,
+          )
+          PYTHON
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add normals.json
+          if git diff --cached --quiet; then
+            echo "No normals changes."
+            exit 0
+          fi
+          git commit -m "Build normal baselines for the named reservoirs"
+          git push
