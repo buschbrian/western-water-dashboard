@@ -84,11 +84,13 @@ search as well as the replacement authority.
 
 Where no figure survives those rules, the reservoir is withheld and the
 disagreement is stated rather than settled (ADR-113). Leroy Anderson is the
-case: the inventory publishes 89,073 acre-feet, its operator publishes 90,373
-as the capacity a retrofit will restore, and a restriction in force since 2017
-has moved from about 52,553 to 3,159 while the series holds 48,547 inside the
-restricted period. This project records that two agencies disagree; it does not
-decide which is right about a physical pool.
+case. The inventory and the operator agree on a physical capacity near 89,000
+acre-feet, but a dam-safety order in force since 2017 has held the reservoir
+to a level that moved -- about 52,553 acre-feet, then deadpool from 2020, then
+3,485 from April 2024 -- and the level held between 2020 and 2024 is published
+as a word, never as a figure. The operator's own current document gives two
+current levels. This project records that the sources do not assemble into a
+dated history; it does not choose the number that would make them.
 
 An active operating restriction is the reservoir's current full level
 (ADR-111). Physical capacity remains a separate fact. Full levels are dated:
