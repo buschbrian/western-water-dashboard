@@ -97,16 +97,3 @@ describe("the date a month is divided by", () => {
     expect(monthEndDate("later")).toBe("later");
   });
 });
-
-describe("the committed payload", () => {
-  it("has no reservoir whose full level has changed yet", () => {
-    /* ADR-111 moves no current denominator: the representation lands first
-     * and a reviewed operating limit arrives with its own admission. While
-     * this holds, every percentage on the site divides by exactly what it
-     * divided by before. */
-    const changed = reservoirs.filter((reservoir) =>
-      reservoir.capacity_history !== undefined
-      || reservoir.physical_capacity_af !== undefined);
-    expect(changed.map((reservoir) => reservoir.name)).toEqual([]);
-  });
-});

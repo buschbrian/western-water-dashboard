@@ -158,8 +158,11 @@ payload's `capacity_af` is already the version in force on `as_of`. Anything
 drawing an earlier month asks `sizeBasisOn` in `src/data/capacity.ts` instead,
 with that month's end date — `monthPercent` and `monthlyRollup` both do, so a
 month's storage and the full level it is divided by describe the same month.
-`capacity_history` is absent for every reservoir published so far, and the two
-answers are the same figure until one is restricted or enlarged. The frozen
+Vail Lake is the first reservoir published with a `capacity_history`: one
+dated version, the level a dam-safety order has held it to since 2015-06-02,
+with the inventory's figure kept as what it can hold. For every other
+reservoir the two answers are the same figure until one is restricted or
+enlarged. The frozen
 oracle in `shared/reservoir-viz.js` divides by today's, so it is a parity
 check while that holds and deliberately not one afterwards. Where a limit is
 in force, `operating_restriction` is the basis, and the words for it — "the

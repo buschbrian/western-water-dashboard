@@ -541,19 +541,6 @@ def test_the_refresh_refuses_a_series_its_full_levels_do_not_cover():
         R.summarize("Anderson", 1, 37.1, -121.6, df, TODAY, capacity)
 
 
-def test_no_published_reservoir_has_a_dated_full_level_yet():
-    """ADR-111 changes no current denominator: the representation lands first.
-
-    A reviewed operating limit arrives with its own admission evidence. Until
-    one does, this holds the implementation to what the record decided -- and
-    it is the line to delete, not edit, when the first restricted reservoir is
-    admitted.
-    """
-    dated = {name: entry for name, entry in R.load_capacities().items()
-             if entry.get("capacity_versions") or entry.get("physical_capacity_af")}
-    assert dated == {}
-
-
 def test_committed_capacity_table_covers_every_reservoir():
     """Guards the table the dashboards divide by."""
     path = Path(__file__).resolve().parent.parent / "capacities.json"
@@ -608,15 +595,16 @@ def test_awdb_inventory_has_traceable_capacity_and_cadence():
     # applying ADR-072 to the inventory's own larger pool, as the Colorado
     # audit already did. Each reviewed exception carries the screen it was
     # admitted against in the file itself.
-    # 146 since ADR-113 withheld Leroy Anderson for irreconcilable full levels.
-    assert len(R.ADMITTED_CDEC_RESERVOIRS) == 146
-    assert len(R.CDEC_RESERVOIRS) == 146
+    # 146 since ADR-113 withheld Leroy Anderson, 147 since Vail was admitted
+    # under ADR-111 as the first reservoir published against a dated limit.
+    assert len(R.ADMITTED_CDEC_RESERVOIRS) == 147
+    assert len(R.CDEC_RESERVOIRS) == 147
     assert sum(1 for row in R.ADMITTED_CDEC_RESERVOIRS.values()
-               if row.get("review")) == 5
+               if row.get("review")) == 6
     cdec_document = json.loads(R.ADMITTED_CDEC_RESERVOIRS_PATH.read_text())
     assert set(cdec_document["withheld"]) == {
         "BMP", "BUC", "CLA", "FMT", "GDR", "GNT",
-        "HVS", "LRA", "MAT", "ONF", "RLC", "SCC", "VIL",
+        "HVS", "LRA", "MAT", "ONF", "RLC", "SCC",
     }, "every unresolved California candidate must keep its finding"
     # R3's second state source: ten of the thirteen in-scope candidates the
     # Colorado audit screened -- three held with findings in the file itself
@@ -637,8 +625,8 @@ def test_awdb_inventory_has_traceable_capacity_and_cadence():
     # one in-scope DNRC reservoir, twelve Columbia Basin locations from the
     # Corps of Engineers (ADR-102) and Lake Pleasant from the Central
     # Arizona Project (ADR-104), less Leroy Anderson, withheld for
-    # irreconcilable full levels (ADR-113).
-    assert len(R.ALL_RESERVOIR_IDS) == 404
+    # irreconcilable full levels (ADR-113), plus Vail under ADR-111.
+    assert len(R.ALL_RESERVOIR_IDS) == 405
     assert not (set(R.RESERVOIRS) & set(R.AWDB_RESERVOIRS))
     # Nine providers, nine disjoint sets of station ids. An id in two of
     # them is one reservoir fetched twice and summed twice (ADR-069).
