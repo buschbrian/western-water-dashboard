@@ -33,6 +33,12 @@ Three things about this service that the two federal ones did not require:
     different thing from ADR-056's carry-forward: that is for a feed that has
     gone quiet, not for one that never spoke.
 
+**A reviewed exclusion is applied to the series here as well** (ADR-116), out
+of the same committed file and through the same matcher the refresh uses, so
+the verdict this tool prints is the verdict the published pipeline would reach.
+Every excluded reading is printed and carried into `--json`: the point of an
+exclusion is that a reviewer can still see what was left out.
+
 The observed maximum used by the admission screen is read at monthly
 resolution. Thirty times fewer rows than daily, and the screen only asks how
 much water has ever been seen -- a monthly maximum answers that.
@@ -54,6 +60,7 @@ from admission import (  # noqa: E402
     preferred_capacity,
 )
 from huc import assign_huc, load_units  # noqa: E402
+from pipeline.providers import excluded_reading  # noqa: E402
 from tools.audit_candidate_capacity import (  # noqa: E402
     dam_states, fetch_dams, find_dam_layer,
 )
@@ -262,7 +269,17 @@ def storage_history(stations: list[dict]) -> dict[str, dict]:
             if value is None:
                 continue
             found = readings.setdefault(row["stationId"],
-                                        {"values": [], "last": ""})
+                                        {"values": [], "last": "",
+                                         "excluded": []})
+            # The same reviewed exclusions the refresh applies, out of the
+            # same committed file (ADR-116). A screen run against a series
+            # the pipeline would not publish answers a question nobody asked.
+            # The reading is kept here as evidence and never as a value: it
+            # is not summed, not counted and never sets `last`.
+            gone = excluded_reading(row["stationId"], row.get("date"), value)
+            if gone is not None:
+                found["excluded"].append(gone)
+                continue
             found["values"].append(value)
             # Dates arrive unpadded (`2026-8-1 00:00`), so this is a
             # comparison of the parsed day and not of the string.
@@ -423,17 +440,26 @@ def find_candidates(units=None) -> tuple[list[dict], dict]:
             # a hundred and thirty numbers per station saying nothing.
             "highest_readings": sorted(seen, reverse=True)[:3],
             "readings": len(seen),
+            # Named on every candidate that has one, so the reviewer reading
+            # a verdict can see what the verdict was reached without.
+            "excluded_readings": found["excluded"],
         })
 
     candidates.sort(key=lambda c: (c["huc6"], c["name"]))
+    excluded = sorted(
+        ((station, record) for station, found in readings.items()
+         for record in found["excluded"]),
+        key=lambda pair: (pair[0], pair[1]["stamp"]))
     return candidates, {
         "stations": len(stations),
+        "reviewed_readings_excluded": len(excluded),
         "dormant": len(dormant),
         "quiet_for_over_a_year": len(quiet),
         "looks_like_an_aggregate": len(aggregates),
         "already_tracked": len(already),
         "outside_the_drawn_areas": len(outside),
         "_already": already,
+        "_excluded": excluded,
         "_aggregates": aggregates,
         "_quiet": quiet,
     }
@@ -498,6 +524,9 @@ def review(candidate: dict, decision, service_capacity_af: float | None) -> dict
     if "capacity_af" in evidence:
         evidence["capacity_af"] = capacity
         evidence["capacity_basis"] = basis
+    # Kept beside the verdict rather than only in the log: an exclusion that
+    # is invisible in the evidence file is a silent edit of the series.
+    evidence["excluded_readings"] = candidate.get("excluded_readings") or []
     evidence["discrepancies"] = [
         {"screen": screen, "detail": detail}
         for screen, detail in discrepancies(
@@ -533,6 +562,13 @@ def main() -> int:
     for station in info["_already"]:
         print(f"    tracked     {station['station']:<4} {station['name']}"
               f"  (by {station['matched_by']})", file=sys.stderr)
+    # Every reading this tool screened without. Printed whatever the output
+    # format is, because the reviewer who has to judge the verdict is the one
+    # reading this stream.
+    for station, record in info["_excluded"]:
+        print(f"    excluded    {station:<4} {record['stamp']}  "
+              f"{record['value']:,.0f} acre-feet  {record['issue_url']}",
+              file=sys.stderr)
     print(f"  candidates: {len(candidates)}\n", file=sys.stderr)
     if not candidates:
         print("No candidates.", file=sys.stderr)
