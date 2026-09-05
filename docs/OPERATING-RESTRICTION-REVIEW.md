@@ -254,6 +254,19 @@ operator publishes neither, this project does not supply the arithmetic.
 So the remaining work is document research, one operator at a time, with a
 cross-check available for eight of them and none for the other seven.
 
+## Decision, 4 September 2026: Anderson is left out
+
+The reviewer chose not to pursue the deadpool figure. The operator's current
+document gives two current levels; the level held from October 2020 to April
+2024 is published as a word and never as a number; and a series that would
+publish fifteen months above the level allowed, with April 2023 near 1,450%,
+needs a sentence beside every one of them explaining a flood over a drawdown
+order. That is more inconsistency than this project carries for one
+reservoir. Anderson stays withheld under ADR-113 with its ADR-115 notice. The
+roster's re-review condition stands: if the operator itself publishes the
+dated series of levels it held the reservoir to, or a single restored full
+level, the question reopens.
+
 ## Evidence still required
 
 The state report identifies affected dams, restriction dates and reasons but

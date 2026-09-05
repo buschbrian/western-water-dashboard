@@ -8,12 +8,11 @@
   "withheld": {
     "HVS": "Lake Havasu. Parker Dam's reviewed full level is 646,200 acre-feet (Bureau of Reclamation, https://www.usbr.gov/projects/index.php?id=207, checked 2026-08-20), against the inventory's 180,000. The series carried 5,913,000 acre-feet at its May 2025 stamp and 5,775,421 at November 2024 against a third highest of 601,300; both readings are excluded under ADR-116, with their raw values and evidence in this file's excluded_readings block. The spike screen no longer fires. Still withheld: screened on an observed maximum of 601,300 acre-feet the audit finds no dam close enough to confirm, because the inventory's 180,000 for Parker Dam cannot hold what the lake has been seen holding, so admission would need Reclamation's 646,200 taken as a reviewed capacity by hand the way Lake Mead's was. CDEC confirmation is tracked in https://github.com/buschbrian/western-water-dashboard/issues/44.",
     "CLA": "Clear Lake at Cache Creek. The service has reported 418,684 acre-feet, but the National Inventory of Dams has no dam close enough to confirm under the shared position-first screen. Held until a reviewed dam and capacity source outside the inventory are recorded.",
-    "SCC": "Success Dam. USACE states that its completed March 2025 spillway enlargement raised total capacity to 112,000 acre-feet (https://www.dvidshub.net/news/500088/success-lake-capacity-increased-with-completion-critical-flood-risk-management-project, checked 2026-09-04). Held until ADR-111's dated capacity versions retain the earlier full level for the 91,530-acre-foot June 2019 reading and use 112,000 only after the enlargement.",
+    "SCC": "Success Dam. USACE states that its completed March 2025 spillway enlargement raised total capacity to 112,000 acre-feet (https://www.dvidshub.net/news/500088/success-lake-capacity-increased-with-completion-critical-flood-risk-management-project, checked 2026-09-04); that is a dated version under ADR-111 and is not what holds this station. The June 2019 reading of 91,530 acre-feet is 111% of the Corps' own 82,300-acre-foot gross pool, the same edge ADR-065 refused Lake Mohave at, and research on 2026-09-04 found no citable Corps figure between that pool and the inventory's 230,000-acre-foot maximum: an 84,095 figure appears only in unsourced summaries and is not used. Wikipedia, citing the 2006 CEQA notice for the seismic remediation, records a long-term storage limit of 28,800 acre-feet from 2006; the 2019 reading shows it was not in force then, and its end is not published. Held until the Corps publishes a surcharge pool the record fits inside, or the allowance is revisited by decision.",
     "BUC": "Buchanan Dam. The provider's own full level is 150,000 acre-feet and the series has reported 172,105, 15% above it. The operator-precedence rule chooses a denominator; it does not repair a series that exceeds that denominator.",
     "ONF": "O'Neill Forebay. Reclamation identifies O'Neill Dam and Forebay as a separate 56,400-acre-foot facility downstream of B.F. Sisk Dam. The identity and full level are resolved, and CDEC's isolated 443,348 acre-feet at its May 2017 stamp -- against every other leading value near 54,000 to 55,000 -- is excluded under ADR-116, with its raw value and evidence in this file's excluded_readings block. Still withheld: screened on an observed maximum of 55,049 acre-feet the audit matches the station by position to B.F. Sisk Dam 1.18 km away and divides by San Luis Reservoir's 2,094,900, which reads as never seen a third full at 3%. Admission would need the forebay's own 56,400 taken as a reviewed capacity. Provider confirmation is tracked in https://github.com/buschbrian/western-water-dashboard/issues/45.",
     "MAT": "Matilija Dam. The series has reported 2,030 acre-feet against the matched dam record's largest figure of 1,800, 13% above it and beyond the shared surcharge allowance. The capacity screen therefore does not confirm the match.",
     "RLC": "Railroad Canyon. EVMWD describes Canyon Lake as holding nearly 12,000 acre-feet, and CDEC's isolated 58,508 acre-feet at its February 2026 stamp -- against a third highest of 13,123 -- is excluded under ADR-116, with its raw value and evidence in this file's excluded_readings block. Still withheld, and not by the spike screen: the next highest month, 16,626 acre-feet in January 2016, is itself 44% above the inventory's 11,586 for Railroad Canyon Dam, so the audit refuses the match as holding more water than the dam can contain and reports the reservoir seen above the capacity it would be divided by. Provider confirmation is tracked in https://github.com/buschbrian/western-water-dashboard/issues/46.",
-    "VIL": "Vail Lake. Rancho California Water District publishes a current 31,395-acre-foot limit under its operating restriction and 45,207 acre-feet at the physical spillway (https://www.ranchowater.com/DocumentCenter/View/1869, checked 2026-09-04). Eligible under ADR-111 after dated capacity versions and physical-capacity metadata are implemented.",
     "FMT": "Fairmont Reservoir. LADWP's operations table publishes 491 acre-feet for Fairmont No. 2, consistent with the CDEC series maximum of 423; CDEC's linked 7,507-acre-foot dam profile is a different facility 2.8 km south. Held until an LADWP map or owner confirmation establishes the No. 2 coordinates.",
     "BMP": "Bon Tempe. Five usable readings ever, the last in March 2023. Screened out by the audit's own recency rule rather than held here; named because it was publishable before that rule.",
     "GDR": "Guadalupe Reservoir. Held for a series whose highest reading is 1,762 acre-feet against a third highest of 402, and quiet since December 2021 besides.",
@@ -3459,6 +3458,51 @@
         "dam_lat": 37.06420493585715,
         "match_distance_km": 0.372,
         "match_confirmed_by": "name and position"
+      }
+    },
+    "VIL": {
+      "name": "Vail Lake",
+      "station": "VIL",
+      "lat": 33.496,
+      "lon": -116.976,
+      "cadence": "daily",
+      "huc6": "180703",
+      "huc6_name": "Laguna-San Diego Coastal",
+      "operator": "Rancho California Water District",
+      "review": {
+        "waived": [
+          "never seen a third full"
+        ],
+        "why": "The audit screens the highest reading, 17,130 acre-feet, against the inventory's 51,000 and finds 34%. The published denominator is not 51,000: a dam-safety order has held Vail below its full level since 2015-06-02 (California Division of Safety of Dams, September 2025 report, reason seismic), and Rancho California Water District publishes the level it may hold as 31,395 acre-feet, against which the highest reading is 55% (ADR-111). The daily record begins 2021-09-06, after the order, so one dated version covers every reading. The district also publishes 45,207 acre-feet at the spillway, and earlier material named 42,680; the inventory's 51,000 is kept as what the reservoir can hold, with the district's figures recorded here as a finding (ADR-104), because no reviewed basis yet carries an owner's physical figure for a reservoir the inventory holds.",
+        "reviewed": "2026-09-04"
+      },
+      "capacity": {
+        "capacity_af": 31395.0,
+        "capacity_basis": "operating_restriction",
+        "physical_capacity_af": 51000.0,
+        "normal_storage_af": null,
+        "max_storage_af": 51000.0,
+        "nid_storage_af": 51000.0,
+        "nid_id": "CA00770",
+        "nid_dam_name": "Vail",
+        "dam_lon": -116.97761192715804,
+        "dam_lat": 33.496804862740845,
+        "match_distance_km": 0.174,
+        "match_confirmed_by": "name and position",
+        "capacity_source": "Rancho California Water District operating chart, under a California Division of Safety of Dams restriction",
+        "capacity_source_url": "https://www.ranchowater.com/DocumentCenter/View/1869",
+        "capacity_source_checked": "2026-09-04",
+        "capacity_versions": [
+          {
+            "capacity_af": 31395.0,
+            "capacity_basis": "operating_restriction",
+            "effective_from": "2015-06-02",
+            "effective_to": null,
+            "authority": "California Division of Safety of Dams",
+            "source_url": "https://www.ranchowater.com/DocumentCenter/View/1869",
+            "source_checked": "2026-09-04"
+          }
+        ]
       }
     },
     "WHR": {

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "method_version": "storage-normal-annual-3",
-  "generated_at": "2026-09-05T02:45:11+00:00",
+  "generated_at": "2026-09-05T03:44:39+00:00",
   "start_date": "2015-01-01",
   "normal_period": {
     "start_year": 2015,
@@ -28,7 +28,7 @@
   ],
   "default_baseline": "climate",
   "climate_normals": {
-    "built": "2026-08-30",
+    "built": "2026-09-04",
     "file": "normals.json",
     "method_version": "storage-normal-annual-3",
     "available_count": 340,
@@ -249,7 +249,7 @@
   "source_counts": {
     "rise": 55,
     "awdb": 168,
-    "cdec": 147,
+    "cdec": 148,
     "cdss": 10,
     "usgs": 7,
     "srp": 4,
@@ -257,9 +257,9 @@
     "cwms": 12,
     "cap": 1
   },
-  "reservoir_count": 405,
+  "reservoir_count": 406,
   "stale_count": 18,
-  "capacity_count": 405,
+  "capacity_count": 406,
   "withdraw_after_days": 60,
   "withdrawn_count": 0,
   "withdrawn": [],
@@ -269,9 +269,9 @@
     "boundaries": "west-huc6.geojson",
     "assignment_rule": "the dam or outlet point, not the middle of the water",
     "unit_count": 75,
-    "assigned": 405,
+    "assigned": 406,
     "unassigned": 0,
-    "assigned_by_dam": 376,
+    "assigned_by_dam": 377,
     "in_utah": 58,
     "intersects_utah": 60,
     "subregions": [
@@ -1245,7 +1245,7 @@
     "source": "Esri Living Atlas, USA Census Counties",
     "assignment_rule": "the published waterbody point, not the dam",
     "assigned": 404,
-    "unassigned": 1,
+    "unassigned": 2,
     "county_count": 170,
     "state_count": 11
   },
@@ -58275,6 +58275,226 @@
       "waterbody_states": [
         "UT"
       ]
+    },
+    {
+      "name": "Vail Lake",
+      "rise_item_id": null,
+      "source_key": "cdec",
+      "source_label": "California Data Exchange Center",
+      "source_url": "https://cdec.water.ca.gov/",
+      "source_station_id": "VIL",
+      "operator": "Rancho California Water District",
+      "data_frequency": "daily",
+      "stale_after_days": 2,
+      "lat": 33.496,
+      "lon": -116.976,
+      "as_of": "2026-09-03",
+      "days_stale": 1,
+      "is_stale": false,
+      "fetch_ok": true,
+      "current_storage_af": 10508.0,
+      "record_max_af": 17182.0,
+      "record_min_af": 7686.0,
+      "pct_of_record_max": 61.2,
+      "capacity_af": 31395.0,
+      "capacity_basis": "operating_restriction",
+      "pct_of_capacity": 33.5,
+      "capacity_history": [
+        {
+          "capacity_af": 31395.0,
+          "capacity_basis": "operating_restriction",
+          "effective_from": "2015-06-02",
+          "effective_to": null,
+          "authority": "California Division of Safety of Dams",
+          "source_url": "https://www.ranchowater.com/DocumentCenter/View/1869",
+          "source_checked": "2026-09-04"
+        }
+      ],
+      "physical_capacity_af": 51000.0,
+      "seasonal_percentile": 40.0,
+      "seasonal_rank": 3,
+      "seasonal_rank_of": 6,
+      "seasonal_normal_af": 12720.0,
+      "pct_of_seasonal_normal": 82.6,
+      "seasonal_sample_years": 5,
+      "baselines": {
+        "recent": {
+          "normal_af": 12720.0,
+          "pct_of_normal": 82.6,
+          "sample_years": 5,
+          "covers_full_period": true,
+          "first_obs": "2021-09-06"
+        },
+        "climate": null,
+        "default": "recent"
+      },
+      "change_7d_af": -91.0,
+      "change_7d_pct": -0.9,
+      "change_7d_reference_date": "2026-08-27",
+      "change_7d_elapsed_days": 7,
+      "change_30d_af": -408.0,
+      "change_30d_pct": -3.7,
+      "change_30d_reference_date": "2026-08-04",
+      "change_30d_elapsed_days": 30,
+      "change_365d_af": -2212.0,
+      "change_365d_pct": -17.4,
+      "change_365d_reference_date": "2025-09-03",
+      "change_365d_elapsed_days": 365,
+      "peak_this_year_af": 12248.0,
+      "peak_this_year_date": "2026-02-20",
+      "pct_of_peak_this_year": 85.8,
+      "monthly": [
+        {
+          "month": "2025-10",
+          "mean_af": 12336.97,
+          "min_af": 12199.0,
+          "max_af": 12454.0,
+          "end_af": 12199.0,
+          "days": 31,
+          "normal_af": 12257.82,
+          "normal_years": 4,
+          "climate_normal_af": null
+        },
+        {
+          "month": "2025-11",
+          "mean_af": 12162.33,
+          "min_af": 12119.0,
+          "max_af": 12194.0,
+          "end_af": 12141.0,
+          "days": 30,
+          "normal_af": 12033.75,
+          "normal_years": 4,
+          "climate_normal_af": null
+        },
+        {
+          "month": "2025-12",
+          "mean_af": 12116.61,
+          "min_af": 12093.0,
+          "max_af": 12146.0,
+          "end_af": 12132.0,
+          "days": 31,
+          "normal_af": 11960.06,
+          "normal_years": 4,
+          "climate_normal_af": null
+        },
+        {
+          "month": "2026-01",
+          "mean_af": 12190.45,
+          "min_af": 12168.0,
+          "max_af": 12239.0,
+          "end_af": 12168.0,
+          "days": 31,
+          "normal_af": 9640.9,
+          "normal_years": 3,
+          "climate_normal_af": null
+        },
+        {
+          "month": "2026-02",
+          "mean_af": 12194.56,
+          "min_af": 12154.0,
+          "max_af": 12248.0,
+          "end_af": 12243.0,
+          "days": 27,
+          "normal_af": 9596.0,
+          "normal_years": 3,
+          "climate_normal_af": null
+        },
+        {
+          "month": "2026-03",
+          "mean_af": 12191.52,
+          "min_af": 12124.0,
+          "max_af": 12243.0,
+          "end_af": 12128.0,
+          "days": 31,
+          "normal_af": 12668.06,
+          "normal_years": 3,
+          "climate_normal_af": null
+        },
+        {
+          "month": "2026-04",
+          "mean_af": 12048.0,
+          "min_af": 11966.0,
+          "max_af": 12124.0,
+          "end_af": 11966.0,
+          "days": 30,
+          "normal_af": 16715.7,
+          "normal_years": 3,
+          "climate_normal_af": null
+        },
+        {
+          "month": "2026-05",
+          "mean_af": 11819.73,
+          "min_af": 11677.0,
+          "max_af": 11961.0,
+          "end_af": 11677.0,
+          "days": 30,
+          "normal_af": 16682.68,
+          "normal_years": 3,
+          "climate_normal_af": null
+        },
+        {
+          "month": "2026-06",
+          "mean_af": 11513.22,
+          "min_af": 11353.0,
+          "max_af": 11669.0,
+          "end_af": 11353.0,
+          "days": 27,
+          "normal_af": 16335.83,
+          "normal_years": 3,
+          "climate_normal_af": null
+        },
+        {
+          "month": "2026-07",
+          "mean_af": 11168.0,
+          "min_af": 10965.0,
+          "max_af": 11344.0,
+          "end_af": 10965.0,
+          "days": 30,
+          "normal_af": 15861.35,
+          "normal_years": 3,
+          "climate_normal_af": null
+        },
+        {
+          "month": "2026-08",
+          "mean_af": 10757.87,
+          "min_af": 10551.0,
+          "max_af": 10956.0,
+          "end_af": 10551.0,
+          "days": 30,
+          "normal_af": 15349.29,
+          "normal_years": 3,
+          "climate_normal_af": null
+        },
+        {
+          "month": "2026-09",
+          "mean_af": 10522.33,
+          "min_af": 10508.0,
+          "max_af": 10538.0,
+          "end_af": 10508.0,
+          "days": 3,
+          "normal_af": 12546.68,
+          "normal_years": 4,
+          "climate_normal_af": null
+        }
+      ],
+      "first_obs": "2021-09-06",
+      "n_obs": 1801,
+      "years_of_record": 5.0,
+      "in_utah": false,
+      "intersects_utah": false,
+      "huc6": "180703",
+      "huc6_name": "Laguna-San Diego Coastal",
+      "huc8": "18070302",
+      "huc8_name": "Santa Margarita",
+      "connected_states": [
+        "CA",
+        "MX"
+      ],
+      "huc_assignment_point": [
+        -116.97761,
+        33.4968
+      ],
+      "huc_assignment_source": "nid_dam_point"
     },
     {
       "name": "Georgetown Lake",
