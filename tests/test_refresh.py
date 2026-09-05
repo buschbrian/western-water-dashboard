@@ -619,14 +619,15 @@ def test_awdb_inventory_has_traceable_capacity_and_cadence():
     # Horseshoe, Bartlett, Weber, Wynoochee, Alder, Mud Mountain, Lake Tapps.
     usgs_document = json.loads(R.ADMITTED_USGS_RESERVOIRS_PATH.read_text())
     assert set(usgs_document["withheld"]) == {
-        "10288500", "10297000", "10348800", "13087900",
+        "10288500", "10348800", "13087900",
     }, "every unresolved USGS candidate must keep its finding"
     # 387 after the California re-audit, then four additive SRP reservoirs,
     # one in-scope DNRC reservoir, twelve Columbia Basin locations from the
     # Corps of Engineers (ADR-102) and Lake Pleasant from the Central
     # Arizona Project (ADR-104), less Leroy Anderson, withheld for
-    # irreconcilable full levels (ADR-113), plus Vail under ADR-111.
-    assert len(R.ALL_RESERVOIR_IDS) == 405
+    # irreconcilable full levels (ADR-113), plus Vail under ADR-111 and Topaz
+    # under ADR-110.
+    assert len(R.ALL_RESERVOIR_IDS) == 406
     assert not (set(R.RESERVOIRS) & set(R.AWDB_RESERVOIRS))
     # Nine providers, nine disjoint sets of station ids. An id in two of
     # them is one reservoir fetched twice and summed twice (ADR-069).
