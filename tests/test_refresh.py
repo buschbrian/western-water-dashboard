@@ -295,6 +295,51 @@ def test_missing_capacity_is_null_not_guessed():
     json.dumps(rec)
 
 
+# --- a partial refresh and a removed reservoir (ADR-113) -------------------
+
+def previous_payload() -> dict:
+    return {
+        "LRA": {"name": "Leroy Anderson", "source_key": "cdec", "source_station_id": "LRA"},
+        "SHA": {"name": "Shasta", "source_key": "cdec", "source_station_id": "SHA"},
+        "509": {"name": "Lake Powell", "source_key": "rise", "source_station_id": "509"},
+        "old": {"name": "Legacy row", "source_station_id": "old"},
+    }
+
+
+def test_a_partial_refresh_keeps_the_sources_it_did_not_read():
+    """The reason the merge exists: one slow feed must not empty the map."""
+    kept = R.carry_unrefreshed(previous_payload(), {"SHA"}, "cdec")
+    assert sorted(r["name"] for r in kept) == ["Lake Powell", "Legacy row"]
+
+
+def test_a_partial_refresh_does_not_republish_a_withheld_reservoir():
+    """A reviewed removal must not depend on which command someone ran.
+
+    `--source cdec` never fetches a station the California roster no longer
+    names, so without this the reservoir republishes itself out of the last
+    payload and a withholding under ADR-113 silently does nothing.
+    """
+    kept = R.carry_unrefreshed(previous_payload(), {"SHA"}, "cdec")
+    assert "Leroy Anderson" not in [r["name"] for r in kept]
+
+
+def test_a_record_older_than_mixed_source_provenance_is_reclamations():
+    """No `source_key` means RISE, the same default the envelope applies."""
+    kept = R.carry_unrefreshed(previous_payload(), {"509"}, "rise")
+    assert sorted(r["name"] for r in kept) == ["Leroy Anderson", "Shasta"]
+
+
+def test_leroy_anderson_is_withheld_with_its_evidence_stated():
+    """ADR-113 requires the disagreement stated, not a bare flag."""
+    document = json.loads(R.ADMITTED_CDEC_RESERVOIRS_PATH.read_text(encoding="utf-8"))
+    assert "LRA" not in document["reservoirs"]
+    assert "LRA" not in R.ADMITTED_CDEC_RESERVOIRS
+    reason = document["withheld"]["LRA"]
+    for figure in ("89,073", "90,373", "52,553", "3,159", "48,547", "2017-05-08"):
+        assert figure in reason, f"the withheld reason should name {figure}"
+    assert "ADR-113" in reason
+
+
 # --- dated full levels (ADR-111) ------------------------------------------
 
 def restricted_evidence(**overrides) -> dict:
@@ -539,14 +584,15 @@ def test_awdb_inventory_has_traceable_capacity_and_cadence():
     # applying ADR-072 to the inventory's own larger pool, as the Colorado
     # audit already did. Each reviewed exception carries the screen it was
     # admitted against in the file itself.
-    assert len(R.ADMITTED_CDEC_RESERVOIRS) == 147
-    assert len(R.CDEC_RESERVOIRS) == 147
+    # 146 since ADR-113 withheld Leroy Anderson for irreconcilable full levels.
+    assert len(R.ADMITTED_CDEC_RESERVOIRS) == 146
+    assert len(R.CDEC_RESERVOIRS) == 146
     assert sum(1 for row in R.ADMITTED_CDEC_RESERVOIRS.values()
                if row.get("review")) == 5
     cdec_document = json.loads(R.ADMITTED_CDEC_RESERVOIRS_PATH.read_text())
     assert set(cdec_document["withheld"]) == {
         "BMP", "BUC", "CLA", "FMT", "GDR", "GNT",
-        "HVS", "MAT", "ONF", "RLC", "SCC", "VIL",
+        "HVS", "LRA", "MAT", "ONF", "RLC", "SCC", "VIL",
     }, "every unresolved California candidate must keep its finding"
     # R3's second state source: ten of the thirteen in-scope candidates the
     # Colorado audit screened -- three held with findings in the file itself
@@ -566,8 +612,9 @@ def test_awdb_inventory_has_traceable_capacity_and_cadence():
     # 387 after the California re-audit, then four additive SRP reservoirs,
     # one in-scope DNRC reservoir, twelve Columbia Basin locations from the
     # Corps of Engineers (ADR-102) and Lake Pleasant from the Central
-    # Arizona Project (ADR-104).
-    assert len(R.ALL_RESERVOIR_IDS) == 405
+    # Arizona Project (ADR-104), less Leroy Anderson, withheld for
+    # irreconcilable full levels (ADR-113).
+    assert len(R.ALL_RESERVOIR_IDS) == 404
     assert not (set(R.RESERVOIRS) & set(R.AWDB_RESERVOIRS))
     # Nine providers, nine disjoint sets of station ids. An id in two of
     # them is one reservoir fetched twice and summed twice (ADR-069).

@@ -125,7 +125,8 @@ from pipeline.history import (  # noqa: F401
     monthly_history, value_asof
 )
 from pipeline.freshness import (  # noqa: F401
-    carry_forward, carry_withdrawals, partition_by_age, withdrawal_notice
+    carry_forward, carry_unrefreshed, carry_withdrawals, partition_by_age,
+    withdrawal_notice
 )
 from pipeline.geography import (  # noqa: F401
     attach_counties, attach_watersheds, dam_points
@@ -1148,8 +1149,7 @@ def main() -> int:
         # fourth would need no change here.
         refreshed_sources = {r["source_label"] for r in records
                              if r.get("source_label")}
-        records.extend(record for station, record in previous.items()
-                       if station not in selected_stations)
+        records.extend(carry_unrefreshed(previous, selected_stations, args.source))
 
     if not records:
         print("ERROR: no reservoir data at all -- refusing to overwrite reservoirs.json",

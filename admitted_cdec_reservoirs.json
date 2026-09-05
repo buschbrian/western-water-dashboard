@@ -17,7 +17,8 @@
     "GNT": "Grant Lake. LADWP publishes 47,575 acre-feet and NID publishes 47,525, while CDEC reports an isolated 82,410 acre-feet at its March 2023 stamp against a third highest of 49,082. Provider confirmation is tracked in https://github.com/buschbrian/western-water-dashboard/issues/47.",
     "FMT": "Fairmont Reservoir. LADWP's operations table publishes 491 acre-feet for Fairmont No. 2, consistent with the CDEC series maximum of 423; CDEC's linked 7,507-acre-foot dam profile is a different facility 2.8 km south. Held until an LADWP map or owner confirmation establishes the No. 2 coordinates.",
     "BMP": "Bon Tempe. Five usable readings ever, the last in March 2023. Screened out by the audit's own recency rule rather than held here; named because it was publishable before that rule.",
-    "GDR": "Guadalupe Reservoir. Held for a series whose highest reading is 1,762 acre-feet against a third highest of 402, and quiet since December 2021 besides."
+    "GDR": "Guadalupe Reservoir. Held for a series whose highest reading is 1,762 acre-feet against a third highest of 402, and quiet since December 2021 besides.",
+    "LRA": "Leroy Anderson. Withheld on irreconcilable full levels, not on its readings, which are current and plausible. The dam inventory publishes 89,073 acre-feet as normal, maximum and headline storage alike; Valley Water publishes 90,373 as the capacity its seismic retrofit is meant to restore (https://www.valleywater.org/accordion/anderson-dam-and-reservoir, checked 2026-09-04); and the reservoir has been restricted since 2017-05-08 under a limit that itself moved, from about 52,553 acre-feet to a FERC-directed drawdown to elevation 488 feet beginning 2020-10-01, and standing at 3,159 today. The series holds 48,547 acre-feet inside the restricted period and has sat above 3,159 every month for a year. No figure this project holds is the level this water is measured against, and picking one would be this project settling a disagreement between two agencies (ADR-113). Re-review when the retrofit restores a single published full level."
   },
   "keyed_by": "source_station_id",
   "reservoirs": {
@@ -1744,29 +1745,6 @@
         "dam_lon": -122.95908749796885,
         "dam_lat": 39.40732903165017,
         "match_distance_km": 0.127,
-        "match_confirmed_by": "position"
-      }
-    },
-    "LRA": {
-      "name": "Leroy Anderson",
-      "station": "LRA",
-      "lat": 37.165,
-      "lon": -121.632,
-      "cadence": "daily",
-      "huc6": "180500",
-      "huc6_name": "San Francisco Bay",
-      "operator": "Santa Clara Valley Water District",
-      "capacity": {
-        "capacity_af": 89073.0,
-        "capacity_basis": "normal_storage",
-        "normal_storage_af": 89073.0,
-        "max_storage_af": 89073.0,
-        "nid_storage_af": 89073.0,
-        "nid_id": "CA00294",
-        "nid_dam_name": "Anderson",
-        "dam_lon": -121.63081302743348,
-        "dam_lat": 37.167604949199145,
-        "match_distance_km": 0.308,
         "match_confirmed_by": "position"
       }
     },

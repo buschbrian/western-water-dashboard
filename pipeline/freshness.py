@@ -80,6 +80,38 @@ def withdrawal_notice(record: dict) -> dict:
     }
 
 
+def carry_unrefreshed(previous: dict[str, dict], selected_stations: set[str],
+                      source: str) -> list[dict]:
+    """The last payload's records that a single-source run must republish.
+
+    A run that refreshes one feed keeps the others rather than turning a
+    partial refresh into a partial dashboard. What it must not keep is a
+    reservoir the refreshed source's own roster no longer names: that station
+    is never fetched, so "not refreshed this run" and "deliberately removed"
+    look identical from the station id alone, and the reservoir republishes
+    itself out of the previous payload forever.
+
+    Withholding Leroy Anderson is where this showed (ADR-113). The roster lost
+    the station, `--source cdec` did not fetch it, and the merge put it back
+    with 405 reservoirs published as though nothing had changed. Only a full
+    refresh dropped it, which made a reviewed removal depend on which command
+    someone happened to run.
+
+    So the refreshed source's roster is authoritative for that source, and
+    every other source is carried whole. A record written before mixed-source
+    provenance carries no `source_key` and is Reclamation's, which is the same
+    default the envelope applies further down.
+    """
+    kept = []
+    for station, record in previous.items():
+        if station in selected_stations:
+            continue
+        if (record.get("source_key") or "rise") == source:
+            continue
+        kept.append(record)
+    return kept
+
+
 def carry_withdrawals(notices: list[dict], refreshed: set[str],
                       today: pd.Timestamp) -> list[dict]:
     """Keep the notices belonging to the sources this run did not refresh.
