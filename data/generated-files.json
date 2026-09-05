@@ -144,6 +144,13 @@
       "note": "What drains to each published reservoir, traced once against NLDI and committed with its COMID evidence (ADR-077). Rebuild when the roster or snow network changes; published verbatim in dist."
     },
     {
+      "path": "data/reviews/operating-character-census.json",
+      "class": "derived-on-demand",
+      "writer": "tools/build_operating_character_census.py",
+      "staged_by_refresh": false,
+      "note": "Proposed operating characters (ADR-114) and natural-lake flags for every published reservoir, with the inventory and hydrography evidence behind each. Candidates for a reviewer: nothing here is applied to a roster or a payload, and no page fetches it. Rebuild when the roster changes or a service is asked again."
+    },
+    {
       "path": "data/us-land.geojson",
       "class": "derived-on-demand",
       "writer": "tools/fetch_us_land_mask.py",
