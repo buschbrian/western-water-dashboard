@@ -14,7 +14,6 @@
     "MAT": "Matilija Dam. The series has reported 2,030 acre-feet against the matched dam record's largest figure of 1,800, 13% above it and beyond the shared surcharge allowance. The capacity screen therefore does not confirm the match.",
     "RLC": "Railroad Canyon. EVMWD describes Canyon Lake as holding nearly 12,000 acre-feet, and CDEC's isolated 58,508 acre-feet at its February 2026 stamp -- against a third highest of 13,123 -- is excluded under ADR-116, with its raw value and evidence in this file's excluded_readings block. Still withheld, and not by the spike screen: the next highest month, 16,626 acre-feet in January 2016, is itself 44% above the inventory's 11,586 for Railroad Canyon Dam, so the audit refuses the match as holding more water than the dam can contain and reports the reservoir seen above the capacity it would be divided by. Provider confirmation is tracked in https://github.com/buschbrian/western-water-dashboard/issues/46.",
     "VIL": "Vail Lake. Rancho California Water District publishes a current 31,395-acre-foot limit under its operating restriction and 45,207 acre-feet at the physical spillway (https://www.ranchowater.com/DocumentCenter/View/1869, checked 2026-09-04). Eligible under ADR-111 after dated capacity versions and physical-capacity metadata are implemented.",
-    "GNT": "Grant Lake. LADWP publishes 47,575 acre-feet and NID publishes 47,525, and CDEC's isolated 82,410 acre-feet at its March 2023 stamp -- against a third highest of 49,082 -- is excluded under ADR-116, with its raw value and evidence in this file's excluded_readings block. With the exclusion applied every screen is quiet: the dam is confirmed by name and position at 0.055 km, and the observed maximum of 49,380 acre-feet sits 3.9% above the 47,525 it would be divided by, inside the surcharge allowance. Nothing holds this station but the absence of a reviewed admission, which is its own decision and is not taken here. Provider confirmation is tracked in https://github.com/buschbrian/western-water-dashboard/issues/47.",
     "FMT": "Fairmont Reservoir. LADWP's operations table publishes 491 acre-feet for Fairmont No. 2, consistent with the CDEC series maximum of 423; CDEC's linked 7,507-acre-foot dam profile is a different facility 2.8 km south. Held until an LADWP map or owner confirmation establishes the No. 2 coordinates.",
     "BMP": "Bon Tempe. Five usable readings ever, the last in March 2023. Screened out by the audit's own recency rule rather than held here; named because it was publishable before that rule.",
     "GDR": "Guadalupe Reservoir. Held for a series whose highest reading is 1,762 acre-feet against a third highest of 402, and quiet since December 2021 besides.",
@@ -1248,6 +1247,29 @@
         "dam_lon": -119.14141269601964,
         "dam_lat": 37.75110517916727,
         "match_distance_km": 0.159,
+        "match_confirmed_by": "name and position"
+      }
+    },
+    "GNT": {
+      "name": "Grant Lake",
+      "station": "GNT",
+      "lat": 37.862,
+      "lon": -119.102,
+      "cadence": "daily",
+      "huc6": "180901",
+      "huc6_name": "Mono-Owens Lakes",
+      "operator": "Los Angeles Department of Water and Power",
+      "capacity": {
+        "capacity_af": 47525.0,
+        "capacity_basis": "max_storage",
+        "normal_storage_af": null,
+        "max_storage_af": 47525.0,
+        "nid_storage_af": 47525.0,
+        "nid_id": "CA00089",
+        "nid_dam_name": "Grant Lake",
+        "dam_lon": -119.10261270224935,
+        "dam_lat": 37.862105192529214,
+        "match_distance_km": 0.055,
         "match_confirmed_by": "name and position"
       }
     },
@@ -2692,28 +2714,6 @@
         "match_confirmed_by": "name and position"
       }
     },
-    "SGC": {
-      "name": "Irvine Lake",
-      "station": "SGC",
-      "lat": 33.785,
-      "lon": -117.723,
-      "cadence": "monthly",
-      "huc6": "180702",
-      "huc6_name": "Santa Ana",
-      "operator": "Serrano Irrigation Dist and Irvine Ranch Water Dist",
-      "capacity": {
-        "capacity_af": 25000.0,
-        "capacity_basis": "max_storage",
-        "max_storage_af": 25000.0,
-        "nid_storage_af": 25000.0,
-        "nid_id": "CA00298",
-        "nid_dam_name": "Santiago Creek",
-        "dam_lon": -117.72261207775192,
-        "dam_lat": 33.78630485540117,
-        "match_distance_km": 0.149,
-        "match_confirmed_by": "position"
-      }
-    },
     "SGB": {
       "name": "San Gabriel",
       "station": "SGB",
@@ -2735,6 +2735,28 @@
         "dam_lat": 34.206504894976284,
         "match_distance_km": 0.124,
         "match_confirmed_by": "name and position"
+      }
+    },
+    "SGC": {
+      "name": "Irvine Lake",
+      "station": "SGC",
+      "lat": 33.785,
+      "lon": -117.723,
+      "cadence": "monthly",
+      "huc6": "180702",
+      "huc6_name": "Santa Ana",
+      "operator": "Serrano Irrigation Dist and Irvine Ranch Water Dist",
+      "capacity": {
+        "capacity_af": 25000.0,
+        "capacity_basis": "max_storage",
+        "max_storage_af": 25000.0,
+        "nid_storage_af": 25000.0,
+        "nid_id": "CA00298",
+        "nid_dam_name": "Santiago Creek",
+        "dam_lon": -117.72261207775192,
+        "dam_lat": 33.78630485540117,
+        "match_distance_km": 0.149,
+        "match_confirmed_by": "position"
       }
     },
     "SHV": {

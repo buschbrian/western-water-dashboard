@@ -608,14 +608,15 @@ def test_awdb_inventory_has_traceable_capacity_and_cadence():
     # applying ADR-072 to the inventory's own larger pool, as the Colorado
     # audit already did. Each reviewed exception carries the screen it was
     # admitted against in the file itself.
-    # 146 since ADR-113 withheld Leroy Anderson for irreconcilable full levels.
-    assert len(R.ADMITTED_CDEC_RESERVOIRS) == 146
-    assert len(R.CDEC_RESERVOIRS) == 146
+    # 146 since ADR-113 withheld Leroy Anderson, 147 since Grant Lake was admitted
+    # once ADR-116 excluded the one reading that had held it.
+    assert len(R.ADMITTED_CDEC_RESERVOIRS) == 147
+    assert len(R.CDEC_RESERVOIRS) == 147
     assert sum(1 for row in R.ADMITTED_CDEC_RESERVOIRS.values()
                if row.get("review")) == 5
     cdec_document = json.loads(R.ADMITTED_CDEC_RESERVOIRS_PATH.read_text())
     assert set(cdec_document["withheld"]) == {
-        "BMP", "BUC", "CLA", "FMT", "GDR", "GNT",
+        "BMP", "BUC", "CLA", "FMT", "GDR",
         "HVS", "LRA", "MAT", "ONF", "RLC", "SCC", "VIL",
     }, "every unresolved California candidate must keep its finding"
     # An exclusion is not an admission (ADR-116): every station with a
@@ -640,8 +641,8 @@ def test_awdb_inventory_has_traceable_capacity_and_cadence():
     # one in-scope DNRC reservoir, twelve Columbia Basin locations from the
     # Corps of Engineers (ADR-102) and Lake Pleasant from the Central
     # Arizona Project (ADR-104), less Leroy Anderson, withheld for
-    # irreconcilable full levels (ADR-113).
-    assert len(R.ALL_RESERVOIR_IDS) == 404
+    # irreconcilable full levels (ADR-113), plus Grant Lake under ADR-116.
+    assert len(R.ALL_RESERVOIR_IDS) == 405
     assert not (set(R.RESERVOIRS) & set(R.AWDB_RESERVOIRS))
     # Nine providers, nine disjoint sets of station ids. An id in two of
     # them is one reservoir fetched twice and summed twice (ADR-069).
