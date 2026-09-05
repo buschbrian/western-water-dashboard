@@ -44,12 +44,19 @@ jobs:
         # reservoir name carrying a quote would otherwise be pasted into the
         # command line.
         run: |
-          if [ -n "$NAMES" ]; then
-            eval set -- $NAMES
-            python tools/build_normal_baselines.py --only "$@"
-          else
-            python tools/build_normal_baselines.py --missing
-          fi
+          python - <<'PYTHON'
+          import os
+          import shlex
+          import subprocess
+          import sys
+
+          names = shlex.split(os.environ.get("NAMES", ""))
+          arguments = ["--only", *names] if names else ["--missing"]
+          subprocess.run(
+              [sys.executable, "tools/build_normal_baselines.py", *arguments],
+              check=True,
+          )
+          PYTHON
       - name: Commit if changed
         run: |
           git config user.name "github-actions[bot]"
