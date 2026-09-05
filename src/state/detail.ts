@@ -183,11 +183,13 @@ const CAPACITY_BASIS_NAMES: Record<string, string> = {
      who published it. */
   srp_reservoir_metadata: "the full level published by the reservoir operator",
   dnrc_stage_metadata: "the full level published by the reservoir operator",
-  /* Not a property of the structure but of how it is run today: an owner or
-     regulator limits the reservoir to less than it can hold, and the panel
-     has to say so, or a reservoir at its allowed limit reads as short of full
-     for a reason the reader cannot see (ADR-111). */
-  operating_restriction: "the current operating limit, which is lower than the level the reservoir can hold"
+  /* Not a property of the structure but of how it is run today: a safety
+     order holds the reservoir below what it can take, and the panel has to
+     say so, or a reservoir at its allowed level reads as short of full for a
+     reason the reader cannot see (ADR-111). The fact that the allowed level
+     is the lower one belongs in its own sentence rather than stapled to a
+     phrase this appears inside (ADR-006). */
+  operating_restriction: "the full level a safety order allows now"
 };
 
 /** The words for a basis, or null when the provider named none. */

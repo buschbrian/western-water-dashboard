@@ -99,6 +99,22 @@ and a historical observation uses the version that was effective then. This
 keeps the start or end of a restriction, and a physical enlargement such as
 Success Lake's, from rewriting earlier percentages.
 
+## How a water is run
+
+A reservoir carries an `operating_character` when it is not ordinary
+target-filled storage (ADR-114): `restricted` where a dam safety order holds it
+below its full level, `run_of_river` where an operator keeps it at a steady
+level all year, `flood_space` where it keeps room empty to catch floods.
+Ordinary storage carries no value, and the roster's own `reviewed` date is what
+makes that absence mean reviewed rather than unexamined.
+
+The character labels and does not calculate. Every published figure is what it
+was, and whether a steady-level pool belongs in a drainage area's combined full
+level is a separate decision with its own measurement. It matters because two
+published areas are almost entirely such pools -- Lower Snake at 97.6% of its
+combined full level and Middle Columbia at 94.9% -- so a combined percentage
+for either is close to a constant and reads as a drought signal.
+
 ## Natural terminal lakes
 
 A natural terminal lake is a separate water type (ADR-112). It may publish
