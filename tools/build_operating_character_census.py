@@ -8,11 +8,11 @@ own. What it does allow is evidence *toward* a reviewed character. This tool
 assembles that evidence for all 404 published reservoirs and proposes a
 character for each. It proposes; a person decides.
 
-Nothing here is applied. The output is one review file under `data/reviews/`,
-and no roster, payload, capacity or normal is touched by it. That is the whole
-of the writing this audit does, and it is why an `audit_*` tool writes a file
-at all: the deliverable is reviewed-evidence candidates, not repository data
-the site reads.
+Nothing here is applied. This is a builder because it owns a committed file --
+`data/reviews/operating-character-census.json`, listed in
+`data/generated-files.json` -- and every run rewrites that file and only that
+file. No roster, payload, capacity or normal is touched, and no page fetches
+what it writes: the deliverable is reviewed-evidence candidates for a person.
 
 What is asked of which service, per reservoir:
 
@@ -56,10 +56,10 @@ row carries the percent-full range over its twelve monthly records and its
 365-day change beside the proposal, marked as agreeing or disagreeing with it.
 No rule reads them.
 
-    python tools/audit_operating_character.py             # fetch, propose, write
-    python tools/audit_operating_character.py --dry-run   # write nothing
-    python tools/audit_operating_character.py --only "Lake Wallula"
-    python tools/audit_operating_character.py --cache-dir /tmp/census-cache
+    python tools/build_operating_character_census.py             # fetch, propose, write
+    python tools/build_operating_character_census.py --dry-run   # write nothing
+    python tools/build_operating_character_census.py --only "Lake Wallula"
+    python tools/build_operating_character_census.py --cache-dir /tmp/census-cache
 """
 
 from __future__ import annotations
@@ -1282,7 +1282,7 @@ def build(args) -> dict:
             "agreement or disagreement, and no rule reads it (ADR-114).",
         ],
         "generated_at": dt.date.today().isoformat(),
-        "generated_by": "tools/audit_operating_character.py",
+        "generated_by": "tools/build_operating_character_census.py",
         "published_payload": {
             "generated_at": payload.get("generated_at"),
             "reservoir_count": payload.get("reservoir_count"),
@@ -1355,8 +1355,10 @@ def main() -> int:
                         help="where raw service responses are kept")
     parser.add_argument("--refresh", action="store_true",
                         help="ask the services again rather than reading the cache")
-    parser.add_argument("--only", nargs="*", help="published names to census")
-    parser.add_argument("--limit", type=int, help="first N reservoirs only")
+    parser.add_argument("--only", nargs="*",
+                        help="published names to census; prints, never writes")
+    parser.add_argument("--limit", type=int,
+                        help="first N reservoirs only; prints, never writes")
     parser.add_argument("--dry-run", action="store_true",
                         help="print the summary and write nothing")
     args = parser.parse_args()
@@ -1365,6 +1367,15 @@ def main() -> int:
     summarize(report)
     if args.dry_run:
         print(f"\n(dry run: {OUTPUT_PATH.relative_to(ROOT)} not written)")
+        return 0
+    if args.only or args.limit:
+        # A builder's run may not replace its file with less than the file
+        # holds (tools/AGENTS.md). This one has nothing to merge into -- a
+        # census is one dated sweep of the whole roster, and half a sweep
+        # under one date would read as a roster that shrank -- so a narrowed
+        # run prints and stops.
+        print(f"\n(--only/--limit is a look, not a build: "
+              f"{OUTPUT_PATH.relative_to(ROOT)} not written)")
         return 0
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT_PATH.write_text(json.dumps(report, indent=1) + "\n", encoding="utf-8")

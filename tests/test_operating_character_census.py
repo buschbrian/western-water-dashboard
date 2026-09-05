@@ -20,7 +20,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
-from tools.audit_operating_character import (  # noqa: E402
+from tools.build_operating_character_census import (  # noqa: E402
     AF_PER_CFS_DAY, agreement, convex_hull, elongation_from_bbox,
     elongation_from_rings, natural_lake_flag, observed_signature,
     oriented_extent, point_in_rings, principal_structure, propose,
@@ -298,7 +298,7 @@ def test_a_polygon_that_missed_the_reservoir_never_raises_confidence():
 
 
 def test_the_mapped_pool_share_is_the_two_agencies_divided():
-    from tools.audit_operating_character import mapped_pool_share
+    from tools.build_operating_character_census import mapped_pool_share
     share = mapped_pool_share(
         {"area_sq_km": 0.251, "contains_the_point": False,
          "candidates_within_tolerance": 1}, {"surface_area_acres": 768.0})
@@ -312,7 +312,7 @@ def test_a_dam_point_outside_its_own_pool_is_still_a_usable_match():
     """124 of the 356 polygons this census found do not hold the published
     point, because a dam point is on the dam. One candidate inside the
     tolerance is what makes the match usable, not containment."""
-    from tools.audit_operating_character import mapped_pool_share
+    from tools.build_operating_character_census import mapped_pool_share
     ambiguous = mapped_pool_share(
         {"area_sq_km": 0.251, "contains_the_point": False,
          "candidates_within_tolerance": 2}, {"surface_area_acres": 768.0})
@@ -320,7 +320,7 @@ def test_a_dam_point_outside_its_own_pool_is_still_a_usable_match():
 
 
 def test_a_polygon_a_hundredth_of_the_pool_is_not_the_pool():
-    from tools.audit_operating_character import mapped_pool_share
+    from tools.build_operating_character_census import mapped_pool_share
     tiny = mapped_pool_share(
         {"area_sq_km": 0.002, "contains_the_point": False,
          "candidates_within_tolerance": 1}, {"surface_area_acres": 6900.0})
@@ -506,7 +506,7 @@ def test_a_reservoir_with_no_inventory_record_still_gets_its_map_links():
 def test_the_minor_path_of_a_divergence_does_not_speak_for_the_river():
     """Little Goose: two flowlines claim the same 212,415 sq km, one carries
     57,640 cubic feet per second and the other carries 0.004."""
-    from tools.audit_operating_character import choose_mainstem
+    from tools.build_operating_character_census import choose_mainstem
     chosen = choose_mainstem([
         {"gnis_name": None, "totdasqkm": 212_415.4, "qama": 0.004393},
         {"gnis_name": "Snake River", "totdasqkm": 212_415.0, "qama": 57_639.7},
@@ -516,7 +516,7 @@ def test_the_minor_path_of_a_divergence_does_not_speak_for_the_river():
 
 
 def test_a_smaller_river_never_wins_on_flow_alone():
-    from tools.audit_operating_character import choose_mainstem
+    from tools.build_operating_character_census import choose_mainstem
     chosen = choose_mainstem([
         {"gnis_name": "Columbia River", "totdasqkm": 500_000.0, "qama": 180_000.0},
         {"gnis_name": "Fifteenmile Creek", "totdasqkm": 945.0, "qama": 900_000.0},
@@ -529,7 +529,7 @@ def test_a_smaller_river_never_wins_on_flow_alone():
 def test_a_tributary_at_the_dam_fails_the_inventorys_drainage_area():
     """The Dalles drains 237,000 square miles; Fifteenmile Creek drains 945
     square kilometres, and the disagreement is what widens the search."""
-    from tools.audit_operating_character import flowline_carries_the_dams_drainage
+    from tools.build_operating_character_census import flowline_carries_the_dams_drainage
     dam = {"drainage_area_sq_mi": 237_000.0}
     assert flowline_carries_the_dams_drainage({"totdasqkm": 945.0}, dam) is False
     assert flowline_carries_the_dams_drainage({"totdasqkm": 613_000.0}, dam) is True
@@ -550,7 +550,7 @@ POOL_B = [[[2.0, 0.0], [4.0, 0.0], [4.0, 2.0], [2.0, 2.0], [2.0, 0.0]]]
 
 
 def test_the_polygon_holding_the_point_wins_over_a_bigger_neighbour():
-    from tools.audit_operating_character import choose_waterbody
+    from tools.build_operating_character_census import choose_waterbody
     chosen, how = choose_waterbody(
         [_feature("Lake Wallula", 106.6, POOL_A),
          _feature("Lake Umatilla", 202.5, POOL_B)], 0.5, 0.5, "Lake Wallula")
@@ -561,7 +561,7 @@ def test_the_polygon_holding_the_point_wins_over_a_bigger_neighbour():
 def test_a_dam_between_two_pools_is_given_the_pool_it_is_named_for():
     """McNary's point is inside neither Wallula nor Umatilla and beside both.
     Taking the larger hands Lake Wallula its neighbour's shape."""
-    from tools.audit_operating_character import choose_waterbody
+    from tools.build_operating_character_census import choose_waterbody
     chosen, how = choose_waterbody(
         [_feature("Lake Wallula", 106.6, POOL_A),
          _feature("Lake Umatilla", 202.5, POOL_B)], 1.5, 0.5, "Lake Wallula")
@@ -572,7 +572,7 @@ def test_a_dam_between_two_pools_is_given_the_pool_it_is_named_for():
 def test_position_decides_before_the_name_is_asked():
     """The name is the weak evidence `admission.py` treats it as: it is only
     asked between polygons the point is already beside."""
-    from tools.audit_operating_character import choose_waterbody
+    from tools.build_operating_character_census import choose_waterbody
     chosen, _ = choose_waterbody(
         [_feature("Lake Wallula", 1.0, POOL_A),
          _feature("Lake Wallula", 202.5, POOL_B)], 3.0, 1.0, "Lake Wallula")
@@ -580,7 +580,7 @@ def test_position_decides_before_the_name_is_asked():
 
 
 def test_a_water_no_polygon_is_named_for_falls_back_to_the_largest():
-    from tools.audit_operating_character import choose_waterbody
+    from tools.build_operating_character_census import choose_waterbody
     chosen, how = choose_waterbody(
         [_feature("Some Other Water", 1.0, POOL_A),
          _feature(None, 202.5, POOL_B)], 1.5, 0.5, "Lake Wallula")

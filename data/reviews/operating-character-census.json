@@ -4,7 +4,7 @@
   "The observed series is recorded beside each proposal as agreement or disagreement, and no rule reads it (ADR-114)."
  ],
  "generated_at": "2026-09-04",
- "generated_by": "tools/audit_operating_character.py",
+ "generated_by": "tools/build_operating_character_census.py",
  "published_payload": {
   "generated_at": "2026-09-04T21:19:18+00:00",
   "reservoir_count": 404,

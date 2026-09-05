@@ -146,7 +146,7 @@
     {
       "path": "data/reviews/operating-character-census.json",
       "class": "derived-on-demand",
-      "writer": "tools/audit_operating_character.py",
+      "writer": "tools/build_operating_character_census.py",
       "staged_by_refresh": false,
       "note": "Proposed operating characters (ADR-114) and natural-lake flags for every published reservoir, with the inventory and hydrography evidence behind each. Candidates for a reviewer: nothing here is applied to a roster or a payload, and no page fetches it. Rebuild when the roster changes or a service is asked again."
     },

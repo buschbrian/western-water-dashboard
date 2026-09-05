@@ -1,7 +1,7 @@
 # Operating-character census
 
 **Reviewed:** 2026-09-04
-**Tool:** `tools/audit_operating_character.py`
+**Tool:** `tools/build_operating_character_census.py`
 **Output:** [`data/reviews/operating-character-census.json`](../data/reviews/operating-character-census.json)
 **Purpose:** propose an `operating_character` (ADR-114) for every published
 reservoir from geospatial and inventory evidence, so the sole reviewer decides
@@ -331,10 +331,10 @@ and only the agreement line moves.
 ## Rerunning it
 
 ```bash
-python tools/audit_operating_character.py                    # fetch, propose, write
-python tools/audit_operating_character.py --dry-run          # write nothing
-python tools/audit_operating_character.py --only "Lake Wallula"
-python tools/audit_operating_character.py --cache-dir DIR --refresh
+python tools/build_operating_character_census.py                    # fetch, propose, write
+python tools/build_operating_character_census.py --dry-run          # write nothing
+python tools/build_operating_character_census.py --only "Lake Wallula"
+python tools/build_operating_character_census.py --cache-dir DIR --refresh
 ```
 
 Raw service responses are cached by request, so a rerun that changes a rule
