@@ -57,6 +57,30 @@ source is wrong, so the screen reports and a person decides
 `publishable` is the field a roster builder reads and it is deliberately
 narrower than `admitted`, which still states that the dam match itself stands.
 
+**A confirmed anomaly may be excluded, one named reading at a time**
+(ADR-116). This extends the no-repair rule rather than breaking it: an
+exclusion says which reading cannot be true and against what, and a repair
+would say what the reading should have been. It is committed in the provider's
+admission file under `excluded_readings`, keyed by station, and each record is
+exactly the sensor, the stamp as the provider writes it, the raw value, the
+reason in plain words, an HTTPS source for the independent figure, the review
+date and the tracking issue. `load_excluded_readings` refuses a station the
+file does not know, a missing or extra field, a foreign sensor, a non-HTTPS
+URL, a malformed date, and any replacement value. The match is on station,
+sensor, day **and** raw value, so a corrected reading returns by itself.
+
+Five readings are excluded today, all California and all on stations that stay
+withheld: Lake Havasu's 5,913,000 and 5,775,421 acre-feet against a lake whose
+reviewed full level is 646,200, O'Neill Forebay's 443,348 against a 56,400
+acre-foot facility, Railroad Canyon's 58,508 against nearly 12,000, and Grant
+Lake's 82,410 against 47,575. The issues stay open
+([#44](https://github.com/buschbrian/western-water-dashboard/issues/44)
+to [#47](https://github.com/buschbrian/western-water-dashboard/issues/47)):
+an exclusion says what this project did in the meantime, not what the provider
+answered. **An exclusion is not an admission** -- removing the reading answers
+the spike screen and nothing else, and the audit is re-run afterwards to see
+what the remaining screens say.
+
 **Being listed is not reporting.** The candidate screen asks whether a station
 has answered **within the year**. Bon Tempe is why — five usable readings ever,
 the last in March 2023 — and admitting it would have put a name on the roster
@@ -130,7 +154,8 @@ each — the loader refuses a waiver with no reason, because a waiver with no
 reason is a screen turned off. The same file's `withheld` block names every
 candidate kept out and the finding behind it, so the next reader meets the work
 rather than repeating it: Lake Havasu's reviewed 646,200 acre-feet is recorded
-there beside the spike that keeps it unpublished.
+there beside the readings excluded under ADR-116 and the finding that keeps it
+unpublished without them.
 
 ## A roster addition needs a refresh in the same change
 
@@ -153,7 +178,9 @@ absent from the payload is what a silently failed fetch looks like.
 3. Read the closest existing adapter in `pipeline/providers.py`.
 4. Discover candidates with the matching `tools/audit_*_stations.py`.
 5. Run the admission and discrepancy screens; record every withheld candidate
-   with its finding.
+   with its finding. Where a reading is confirmed impossible against an
+   independent figure, exclude that one reading with its evidence (ADR-116)
+   and re-run the screens; never repair it.
 6. Add the roster entries **and** run the refresh in the same change.
 7. Build the missing normals: `tools/build_normal_baselines.py --missing`.
 8. Re-run the dam-versus-waterbody check; it is what found Lake Powell.

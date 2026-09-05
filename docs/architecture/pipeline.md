@@ -133,6 +133,18 @@ without touching a reading, and refuses to run while a held reservoir is still
 in the payload. Nothing here reverses on its own: a hold ends with a roster
 edit, not with a morning's data.
 
+**A confirmed provider anomaly is a fourth fault, and it is one reading rather
+than a reservoir** (ADR-116). `excluded_readings` in the admission file names
+the sensor, the provider's own stamp, the raw value, the reason, an HTTPS
+source for the independent figure, the review date and the open issue;
+`load_excluded_readings` refuses an unknown station, a missing or extra field,
+a foreign sensor, a non-HTTPS URL, a malformed date -- and a replacement value,
+the way a withdrawal notice refuses a measurement. `fetch_cdec_series` applies
+them where readings are read and names each dropped reading on the console, and
+`tools/audit_cdec_stations.py` screens the same filtered series so its verdict
+is the pipeline's. Matching is on station, sensor, day **and** raw value, so a
+corrected reading is a different reading and returns on its own.
+
 ## Drought coverage
 
 Coverage is computed per level into `data/drought/usdm-huc{level}.json` from

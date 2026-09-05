@@ -18,7 +18,11 @@ import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
-from .constants import AWDB_DATA_URL, RISE_RESULT_URL, local_today
+from .constants import (
+    ADMITTED_CDEC_RESERVOIRS_PATH, AWDB_DATA_URL, RISE_RESULT_URL,
+    local_today,
+)
+from .roster import load_excluded_readings
 
 
 RETRY_ATTEMPTS = 3
@@ -260,6 +264,51 @@ CDEC_STORAGE_SENSOR = 15
 CDEC_MISSING_VALUE = -9999
 
 
+#: Readings a reviewer has excluded, by station (ADR-116).
+#:
+#: Loaded and validated once, from the same committed file the California
+#: roster is read from, and applied in `fetch_cdec_series` -- the one place a
+#: reading of this service is read. Anywhere downstream would be a second
+#: definition of what the series is.
+#:
+#: The sensor is named here rather than in the roster because the sensor is
+#: this adapter's fact: an exclusion that named some other measurement of the
+#: same station would be refused at load.
+CDEC_EXCLUDED_READINGS = load_excluded_readings(
+    ADMITTED_CDEC_RESERVOIRS_PATH, CDEC_STORAGE_SENSOR)
+
+
+def _reading_day(stamp):
+    """One stamp's own calendar day, or None where it does not parse.
+
+    The service writes `2026-8-10 00:00` -- unpadded, so two spellings of one
+    day do not compare as strings. Both sides of an exclusion go through this,
+    so a reviewed stamp matches the reading it names however the service pads
+    it.
+    """
+    parsed = pd.to_datetime(stamp, errors="coerce")
+    return None if pd.isna(parsed) else parsed.normalize()
+
+
+def excluded_reading(station_id: str, stamp, reading) -> dict | None:
+    """The reviewed exclusion this reading is, or None (ADR-116).
+
+    A reading is excluded only where the station, the day and the **raw
+    value** all match the reviewed record. The value is part of the identity
+    on purpose: an exclusion names one reading that cannot be true, so a
+    corrected figure at the same stamp is a different reading and flows
+    through untouched. Nothing here substitutes a value for another.
+    """
+    day = _reading_day(stamp)
+    if day is None:
+        return None
+    for record in CDEC_EXCLUDED_READINGS.get(station_id, ()):
+        if _reading_day(record["stamp"]) == day \
+                and float(record["value"]) == float(reading):
+            return record
+    return None
+
+
 def _get_cdec_json(params: dict):
     """GET CDEC JSON with the same transient-failure policy as the others."""
     def read():
@@ -281,6 +330,11 @@ def fetch_cdec_series(station_id: str, cadence: str,
 
     **`-9999` means no reading** and is dropped here (`CDEC_MISSING_VALUE`).
     This is the only place `value` is read.
+
+    **A reviewed exclusion is applied here too** (ADR-116), for the same
+    reason: this is the one place a reading of this service is read. An
+    excluded reading is dropped from the series and named on the console; it
+    is never replaced by a calmer one.
 
     **The dates are not ISO.** They arrive as `2026-8-10 00:00`, unpadded, and
     there are two of them -- `date` is the reading's own day and `obsDate` is
@@ -312,6 +366,7 @@ def fetch_cdec_series(station_id: str, cadence: str,
         "End": dt.datetime.strptime(end, "%Y%m%d").date().isoformat(),
     })
     rows = []
+    dropped = []
     for value in (payload if isinstance(payload, list) else []):
         reading = value.get("value")
         # Dropped, never converted: see CDEC_MISSING_VALUE.
@@ -319,7 +374,24 @@ def fetch_cdec_series(station_id: str, cadence: str,
             continue
         if reading == CDEC_MISSING_VALUE or reading < 0:
             continue
+        # The one place a reviewed exclusion is applied (ADR-116). It is here
+        # rather than downstream because this is the one place a reading of
+        # this service is read, and a series that is filtered in two places
+        # has two definitions.
+        found = excluded_reading(station_id, value.get("date"), reading)
+        if found is not None:
+            dropped.append(found)
+            continue
         rows.append({"date": value.get("date"), "storage_af": float(reading)})
+
+    if dropped:
+        # Named, not counted alone: a reader of the morning's log has to be
+        # able to see which readings this project decided not to publish.
+        print(f"  {station_id}: {len(dropped)} reviewed reading(s) excluded "
+              f"(ADR-116)")
+        for record in dropped:
+            print(f"    {record['stamp']}  {record['value']:,.0f} acre-feet  "
+                  f"{record['issue_url']}")
 
     if not rows:
         return pd.DataFrame({"date": pd.Series(dtype="datetime64[ns]"),

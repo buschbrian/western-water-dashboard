@@ -94,10 +94,12 @@ from pipeline.roster import (  # noqa: F401
     load_admitted_rise_reservoirs, load_admitted_usgs_reservoirs,
     load_capacities, check_capacity_versions_cover, effective_capacity,
     published_capacity_history, reviewed_hold_notices,
+    EXCLUDED_READING_FIELDS, load_excluded_readings,
     validate_capacity_evidence, validate_capacity_versions
 )
 from pipeline.providers import (  # noqa: F401
-    CDEC_DATA_URL, CDEC_MISSING_VALUE, CDEC_STORAGE_SENSOR, CDSS_BASE_URL,
+    CDEC_DATA_URL, CDEC_EXCLUDED_READINGS, CDEC_MISSING_VALUE,
+    CDEC_STORAGE_SENSOR, CDSS_BASE_URL,
     CAP_BASE_URL, CAP_LAKE_PLEASANT_URL, CWMS_BASE_URL, CWMS_TIMESERIES_URL,
     CDSS_SERIES_URL, CDSS_STATIONS_URL, DNRC_SERIES_URL, DNRC_STAGE_URL,
     MAX_PAGES, RETRY_ATTEMPTS, RETRY_BACKOFF_SECONDS, SRP_BASE_URL,
@@ -107,7 +109,8 @@ from pipeline.providers import (  # noqa: F401
     fetch_cap_reading, fetch_cdss_series, fetch_cdec_series, fetch_cwms_series,
     fetch_dnrc_series,
     fetch_rise_series, fetch_srp_series, fetch_srp_station_list,
-    fetch_usgs_series, reduce_to_daily_last, validate_srp_station
+    fetch_usgs_series, excluded_reading, reduce_to_daily_last,
+    validate_srp_station
 )
 from pipeline.source_history import (  # noqa: F401
     load_source_history, merge_source_series, source_history_document,

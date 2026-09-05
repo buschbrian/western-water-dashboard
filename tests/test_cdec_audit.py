@@ -18,10 +18,13 @@ import pytest
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 
+import json  # noqa: E402
+
 from admission import Decision, Match  # noqa: E402
+from tools import audit_cdec_stations  # noqa: E402
 from tools.audit_cdec_stations import (  # noqa: E402
     AGGREGATE_NAME, already_tracked, parse_station_table, quiet_cutoff,
-    reading_day, review, simple_name, usable,
+    reading_day, review, simple_name, storage_history, usable,
 )
 
 
@@ -305,3 +308,88 @@ def test_bon_tempe_is_the_station_the_cutoff_exists_for():
     cutoff = quiet_cutoff(_time.struct_time((2026, 8, 20, 0, 0, 0, 0, 0, 0)))
     assert reading_day("2023-3-1 00:00") < cutoff
     assert reading_day("2026-8-1 00:00") > cutoff
+
+
+# --- a reviewed exclusion, and the screens either side of it (ADR-116) ----
+
+#: Grant Lake's own monthly series, shortened to what the screens read: the
+#: reading a reviewer excluded, and the four highest months around it. The
+#: figures are the service's own and are what issue #47 was written from.
+GRANT_LAKE_MONTHS = [
+    ("2023-3-1 00:00", 82410),
+    ("2017-6-1 00:00", 49380),
+    ("2023-6-1 00:00", 49082),
+    ("2023-7-1 00:00", 48376),
+    ("2024-5-1 00:00", 48146),
+]
+
+
+def cdec_rows(station, months):
+    return json.dumps([
+        {"stationId": station, "durCode": "M", "SENSOR_NUM": 15,
+         "sensorType": "STORAGE", "date": stamp, "obsDate": stamp,
+         "value": value, "dataFlag": " ", "units": "AF"}
+        for stamp, value in months]).encode("utf-8")
+
+
+def screened(monkeypatch, station, months):
+    """What the audit reads for one station, without touching the network."""
+    monkeypatch.setattr(audit_cdec_stations, "get",
+                        lambda url, params=None: cdec_rows(station, months))
+    monkeypatch.setattr(audit_cdec_stations.time, "sleep", lambda seconds: None)
+    return storage_history([{"station": station}])[station]
+
+
+def test_the_audit_screens_the_series_the_pipeline_would_publish(monkeypatch):
+    """The excluded reading is kept as evidence and never as a value.
+
+    Without this the tool answers a question nobody asked: it screens a
+    series the refresh would not publish, and reports a spike the pipeline
+    has already dropped.
+    """
+    found = screened(monkeypatch, "GNT", GRANT_LAKE_MONTHS)
+    assert found["values"] == [49380.0, 49082.0, 48376.0, 48146.0]
+    assert [record["stamp"] for record in found["excluded"]] == ["2023-3-1 00:00"]
+    assert found["excluded"][0]["value"] == 82410
+    assert found["last"] == "2024-05-01", \
+        "an excluded reading must not date the series either"
+
+    decision = Decision("Grant Lake", True, "confirmed by name and position",
+                        None, 47525.0, "max_storage")
+    row = review(dict(candidate("GNT", "Grant Lake",
+                                sorted(found["values"], reverse=True)[:3],
+                                observed=max(found["values"])),
+                      excluded_readings=found["excluded"]), decision, None)
+    assert row["discrepancies"] == []
+    assert row["publishable"] is True
+    assert [record["stamp"] for record in row["excluded_readings"]] == \
+        ["2023-3-1 00:00"], "the verdict must be readable beside what it left out"
+
+
+def test_without_the_exclusion_the_same_series_is_held_for_a_spike(monkeypatch):
+    """The screen ADR-116 answers, on the same synthetic series.
+
+    82,410 acre-feet against a third highest of 49,082 is 1.68 times, over
+    `SPIKE_RATIO`, and it is the whole reason Grant Lake was withheld.
+    """
+    monkeypatch.setattr(audit_cdec_stations, "excluded_reading",
+                        lambda station, stamp, value: None)
+    found = screened(monkeypatch, "GNT", GRANT_LAKE_MONTHS)
+    assert found["excluded"] == []
+    assert max(found["values"]) == 82410.0
+
+    decision = Decision("Grant Lake", True, "confirmed by name and position",
+                        None, 47525.0, "max_storage")
+    row = review(candidate("GNT", "Grant Lake",
+                           sorted(found["values"], reverse=True)[:3],
+                           observed=max(found["values"])), decision, None)
+    assert [screen["screen"] for screen in row["discrepancies"]] == [
+        "unstable maximum", "seen above the capacity it would be divided by"]
+    assert row["publishable"] is False
+
+
+def test_a_station_the_reviewer_named_nothing_for_keeps_every_reading(monkeypatch):
+    """The exclusion is five named readings, not a filter on the shape."""
+    found = screened(monkeypatch, "SHA", GRANT_LAKE_MONTHS)
+    assert found["excluded"] == []
+    assert max(found["values"]) == 82410.0

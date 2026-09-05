@@ -82,6 +82,18 @@ record may provide identity and full level when it defines the reported series
 on the same storage basis (ADR-110). The evidence records the unsuccessful NID
 search as well as the replacement authority.
 
+**A reading a reviewer has shown cannot be true is excluded from the series,
+and never repaired** (ADR-116). The exclusion names one reading -- the
+provider's sensor, the stamp as the provider writes it, the raw value, the
+reason, an independent figure, the review date and the open issue -- and the
+adapter drops exactly that reading where readings are read. The raw value is
+part of the identity, so a corrected figure at the same stamp flows through
+untouched. Nothing is substituted: no interpolation, no scaled value, no
+automatic spike removal, and the loader refuses an exclusion carrying a
+replacement. Five readings across four withheld California stations are
+excluded today and none of them has ever been published; the seasonal
+estimator is unchanged, so no method version moves.
+
 Where no figure survives those rules, the reservoir is withheld and the
 disagreement is stated rather than settled (ADR-113). Leroy Anderson is the
 case. The inventory and the operator agree on a physical capacity near 89,000

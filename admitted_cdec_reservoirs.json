@@ -6,14 +6,14 @@
   "reviewed": "2026-09-04",
   "selection": "Reservoir-storage stations reporting within the last year, inside the western drainage scope, not already represented by provider point, reviewed dam point or name, with a confirmed dam and no unresolved disagreement between sources. Re-audited with tools/audit_cdec_stations.py on 2026-08-28 after applying ADR-072's denominator selection to the California audit; named reviewed admissions keep the screen and evidence they were admitted against.",
   "withheld": {
-    "HVS": "Lake Havasu. Parker Dam's reviewed full level is 646,200 acre-feet (Bureau of Reclamation, https://www.usbr.gov/projects/index.php?id=207, checked 2026-08-20), against the inventory's 180,000. Held anyway: the series carries 5,913,000 acre-feet at its May 2025 stamp and 5,775,421 at November 2024 against a third highest of 601,300. CDEC confirmation is tracked in https://github.com/buschbrian/western-water-dashboard/issues/44.",
+    "HVS": "Lake Havasu. Parker Dam's reviewed full level is 646,200 acre-feet (Bureau of Reclamation, https://www.usbr.gov/projects/index.php?id=207, checked 2026-08-20), against the inventory's 180,000. The series carried 5,913,000 acre-feet at its May 2025 stamp and 5,775,421 at November 2024 against a third highest of 601,300; both readings are excluded under ADR-116, with their raw values and evidence in this file's excluded_readings block. The spike screen no longer fires. Still withheld: screened on an observed maximum of 601,300 acre-feet the audit finds no dam close enough to confirm, because the inventory's 180,000 for Parker Dam cannot hold what the lake has been seen holding, so admission would need Reclamation's 646,200 taken as a reviewed capacity by hand the way Lake Mead's was. CDEC confirmation is tracked in https://github.com/buschbrian/western-water-dashboard/issues/44.",
     "CLA": "Clear Lake at Cache Creek. The service has reported 418,684 acre-feet, but the National Inventory of Dams has no dam close enough to confirm under the shared position-first screen. Held until a reviewed dam and capacity source outside the inventory are recorded.",
     "SCC": "Success Dam. USACE states that its completed March 2025 spillway enlargement raised total capacity to 112,000 acre-feet (https://www.dvidshub.net/news/500088/success-lake-capacity-increased-with-completion-critical-flood-risk-management-project, checked 2026-09-04); that is a dated version under ADR-111 and is not what holds this station. The June 2019 reading of 91,530 acre-feet is 111% of the Corps' own 82,300-acre-foot gross pool, the same edge ADR-065 refused Lake Mohave at, and research on 2026-09-04 found no citable Corps figure between that pool and the inventory's 230,000-acre-foot maximum: an 84,095 figure appears only in unsourced summaries and is not used. Wikipedia, citing the 2006 CEQA notice for the seismic remediation, records a long-term storage limit of 28,800 acre-feet from 2006; the 2019 reading shows it was not in force then, and its end is not published. Held until the Corps publishes a surcharge pool the record fits inside, or the allowance is revisited by decision.",
     "BUC": "Buchanan Dam. The provider's own full level is 150,000 acre-feet and the series has reported 172,105, 15% above it. The operator-precedence rule chooses a denominator; it does not repair a series that exceeds that denominator.",
-    "ONF": "O'Neill Forebay. Reclamation identifies O'Neill Dam and Forebay as a separate 56,400-acre-foot facility downstream of B.F. Sisk Dam. The identity and full level are resolved, but CDEC reports an isolated 443,348 acre-feet at its May 2017 stamp against every other leading value near 54,000 to 55,000. Provider confirmation is tracked in https://github.com/buschbrian/western-water-dashboard/issues/45.",
+    "ONF": "O'Neill Forebay. Reclamation identifies O'Neill Dam and Forebay as a separate 56,400-acre-foot facility downstream of B.F. Sisk Dam. The identity and full level are resolved, and CDEC's isolated 443,348 acre-feet at its May 2017 stamp -- against every other leading value near 54,000 to 55,000 -- is excluded under ADR-116, with its raw value and evidence in this file's excluded_readings block. Still withheld: screened on an observed maximum of 55,049 acre-feet the audit matches the station by position to B.F. Sisk Dam 1.18 km away and divides by San Luis Reservoir's 2,094,900, which reads as never seen a third full at 3%. Admission would need the forebay's own 56,400 taken as a reviewed capacity. Provider confirmation is tracked in https://github.com/buschbrian/western-water-dashboard/issues/45.",
     "MAT": "Matilija Dam. The series has reported 2,030 acre-feet against the matched dam record's largest figure of 1,800, 13% above it and beyond the shared surcharge allowance. The capacity screen therefore does not confirm the match.",
-    "RLC": "Railroad Canyon. EVMWD describes Canyon Lake as holding nearly 12,000 acre-feet, while CDEC reports an isolated 58,508 acre-feet at its February 2026 stamp against a third highest of 13,123. Provider confirmation is tracked in https://github.com/buschbrian/western-water-dashboard/issues/46.",
-    "GNT": "Grant Lake. LADWP publishes 47,575 acre-feet and NID publishes 47,525, while CDEC reports an isolated 82,410 acre-feet at its March 2023 stamp against a third highest of 49,082. Provider confirmation is tracked in https://github.com/buschbrian/western-water-dashboard/issues/47.",
+    "RLC": "Railroad Canyon. EVMWD describes Canyon Lake as holding nearly 12,000 acre-feet, and CDEC's isolated 58,508 acre-feet at its February 2026 stamp -- against a third highest of 13,123 -- is excluded under ADR-116, with its raw value and evidence in this file's excluded_readings block. Still withheld, and not by the spike screen: the next highest month, 16,626 acre-feet in January 2016, is itself 44% above the inventory's 11,586 for Railroad Canyon Dam, so the audit refuses the match as holding more water than the dam can contain and reports the reservoir seen above the capacity it would be divided by. Provider confirmation is tracked in https://github.com/buschbrian/western-water-dashboard/issues/46.",
+    "GNT": "Grant Lake. LADWP publishes 47,575 acre-feet and NID publishes 47,525, and CDEC's isolated 82,410 acre-feet at its March 2023 stamp -- against a third highest of 49,082 -- is excluded under ADR-116, with its raw value and evidence in this file's excluded_readings block. With the exclusion applied every screen is quiet: the dam is confirmed by name and position at 0.055 km, and the observed maximum of 49,380 acre-feet sits 3.9% above the 47,525 it would be divided by, inside the surcharge allowance. Nothing holds this station but the absence of a reviewed admission, which is its own decision and is not taken here. Provider confirmation is tracked in https://github.com/buschbrian/western-water-dashboard/issues/47.",
     "FMT": "Fairmont Reservoir. LADWP's operations table publishes 491 acre-feet for Fairmont No. 2, consistent with the CDEC series maximum of 423; CDEC's linked 7,507-acre-foot dam profile is a different facility 2.8 km south. Held until an LADWP map or owner confirmation establishes the No. 2 coordinates.",
     "BMP": "Bon Tempe. Five usable readings ever, the last in March 2023. Screened out by the audit's own recency rule rather than held here; named because it was publishable before that rule.",
     "GDR": "Guadalupe Reservoir. Held for a series whose highest reading is 1,762 acre-feet against a third highest of 402, and quiet since December 2021 besides.",
@@ -26,6 +26,61 @@
       "reason": "The sources that publish this reservoir's full level do not agree about the level in force for each part of its record. The site does not show its storage until those levels are checked. Its readings still arrive on schedule.",
       "source_url": "https://assets.valleywater.org/files/2026-03/03122026%20SPOC%20Agenda%20Packetv2.pdf"
     }
+  },
+  "excluded_readings": {
+    "GNT": [
+      {
+        "sensor": 15,
+        "stamp": "2023-3-1 00:00",
+        "value": 82410,
+        "reason": "About 1.7 times Grant Lake's published capacity of 47,575 acre-feet, which the dam inventory's 47,525 agrees with to within 50 acre-feet, and 1.7 times the next highest month in this series, 49,380 acre-feet.",
+        "source_url": "https://wsoweb.ladwp.com/aqueduct/operations/reservoir.htm",
+        "reviewed_on": "2026-09-04",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/47"
+      }
+    ],
+    "HVS": [
+      {
+        "sensor": 15,
+        "stamp": "2024-11-1 00:00",
+        "value": 5775421,
+        "reason": "About nine times Lake Havasu's reviewed full level of 646,200 acre-feet behind Parker Dam, and about nine times the next highest month in this series, 601,300 acre-feet.",
+        "source_url": "https://www.usbr.gov/projects/index.php?id=207",
+        "reviewed_on": "2026-09-04",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/44"
+      },
+      {
+        "sensor": 15,
+        "stamp": "2025-5-1 00:00",
+        "value": 5913000,
+        "reason": "About nine times Lake Havasu's reviewed full level of 646,200 acre-feet behind Parker Dam, and about nine times the next highest month in this series, 601,300 acre-feet.",
+        "source_url": "https://www.usbr.gov/projects/index.php?id=207",
+        "reviewed_on": "2026-09-04",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/44"
+      }
+    ],
+    "ONF": [
+      {
+        "sensor": 15,
+        "stamp": "2017-5-1 00:00",
+        "value": 443348,
+        "reason": "About eight times the 56,400 acre-feet Reclamation gives O'Neill Dam and Forebay, and about eight times the next highest month in this series, 55,049 acre-feet.",
+        "source_url": "https://www.usbr.gov/budget/2006/WRR/MP/allMP.pdf",
+        "reviewed_on": "2026-09-04",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/45"
+      }
+    ],
+    "RLC": [
+      {
+        "sensor": 15,
+        "stamp": "2026-2-1 00:00",
+        "value": 58508,
+        "reason": "Almost five times the nearly 12,000 acre-feet Elsinore Valley Municipal Water District describes Canyon Lake as holding, and more than three times the next highest month in this series, 16,626 acre-feet.",
+        "source_url": "https://evmwd.com/who-we-are/water-resources/",
+        "reviewed_on": "2026-09-04",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/46"
+      }
+    ]
   },
   "keyed_by": "source_station_id",
   "reservoirs": {
