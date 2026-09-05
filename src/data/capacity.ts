@@ -14,7 +14,19 @@
  * the only module that picks between them.
  */
 
-import type { NullableNumber, Reservoir } from "../types";
+import type { CapacityVersion, NullableNumber, Reservoir } from "../types";
+
+/** Select the number and its provenance together, without extrapolating. */
+export function capacityVersionOn(
+  reservoir: Pick<Reservoir, "capacity_history">, on: string
+): CapacityVersion | null {
+  let found: CapacityVersion | null = null;
+  for (const version of reservoir.capacity_history ?? []) {
+    if (version.effective_from !== null && version.effective_from > on) break;
+    found = version;
+  }
+  return found && (!found.effective_to || on <= found.effective_to) ? found : null;
+}
 
 /**
  * The full level in force on `on` (an ISO date), or null where none is known.
@@ -24,19 +36,8 @@ import type { NullableNumber, Reservoir } from "../types";
  * history it does not have.
  */
 export function capacityOn(reservoir: Reservoir, on: string): NullableNumber {
-  const versions = reservoir.capacity_history;
-  const first = versions?.[0];
-  if (!versions || first === undefined) return reservoir.capacity_af;
-  /* The versions are contiguous and ordered, and the pipeline has checked
-   * that the earliest one is in force by the first reading, so the last
-   * version to have started is the one in force. ISO dates compare as text,
-   * which is why the payload writes them that way. */
-  let found = first;
-  for (const version of versions) {
-    if (version.effective_from !== null && version.effective_from > on) break;
-    found = version;
-  }
-  return found.capacity_af;
+  if (reservoir.capacity_history === undefined) return reservoir.capacity_af;
+  return capacityVersionOn(reservoir, on)?.capacity_af ?? null;
 }
 
 /**
@@ -46,17 +47,29 @@ export function capacityOn(reservoir: Reservoir, on: string): NullableNumber {
  * storage exactly as it does today: that substitution is about the reservoir
  * rather than the date, so it is the same answer for every date.
  */
-export function sizeBasisOn(reservoir: Reservoir, on: string): number {
-  return capacityOn(reservoir, on) ?? reservoir.record_max_af;
+export function sizeBasisOn(reservoir: Reservoir, on: string): NullableNumber {
+  const capacity = capacityOn(reservoir, on);
+  return reservoir.capacity_history === undefined
+    ? capacity ?? reservoir.record_max_af : capacity;
+}
+
+/** The current month contains no readings after the latest observation. */
+export function monthObservationDate(reservoir: Reservoir, month: string): string {
+  const end = monthEndDate(month);
+  return month === reservoir.as_of.slice(0, 7) && end > reservoir.as_of
+    ? reservoir.as_of : end;
 }
 
 /**
  * The last day of a payload month, which is the date its summary describes.
  *
- * A month's storage is a whole month of readings, and a restriction that
- * began inside that month applies to the end of it. ADR-111 puts the month in
- * the interval its month end falls in, so one month is never split between
- * two denominators.
+ * A month's storage is a whole month of readings, and a month in which the
+ * full level changed is divided by the level in force at its end: one month,
+ * one denominator, and the one that the month's last reading was taken under.
+ * The alternative, publishing no percentage for that month, draws it as a
+ * month the reservoir never reported, which is a different fact. The current
+ * partial month has no readings after `as_of`, so `monthObservationDate`
+ * stops there instead of at a month end that has not happened yet.
  */
 export function monthEndDate(month: string): string {
   const [year, index] = month.split("-");

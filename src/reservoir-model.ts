@@ -23,7 +23,7 @@
 
 import { findReservoir, reservoirLabel } from "./state/selection";
 import type {
-  Baseline, Reservoir, ReservoirPayload
+  Baseline, Reservoir, ReservoirPayload, ReviewedHold
 } from "./types";
 import { capacitySource } from "./data/export";
 import { providerName } from "./state/detail";
@@ -43,6 +43,7 @@ export type ReservoirPageState =
   | { status: "found"; reservoir: Reservoir; label: string }
   | { status: "withdrawn"; name: string; lastRead: string | null;
       sourceLabel: string | null }
+  | { status: "held"; notice: ReviewedHold }
   | { status: "unknown"; requested: string };
 
 export function resolveReservoirPage(
@@ -64,6 +65,12 @@ export function resolveReservoirPage(
   // roster withdrew it: a permanent URL for a quiet feed has to land on an
   // explanation rather than an error, or the permanence was never real.
   const lowered = requested.toLowerCase();
+  const holds = payload.reviewed_holds ?? [];
+  const byStation = holds.filter((entry) => entry.source_station_id.toLowerCase() === lowered);
+  const candidates = byStation.length ? byStation
+    : holds.filter((entry) => entry.name.toLowerCase() === lowered);
+  if (candidates.length === 1 && candidates[0]) return { status: "held", notice: candidates[0] };
+  if (candidates.length > 1) return { status: "unknown", requested };
   const notice = (payload.withdrawn ?? []).find(
     (entry) => entry.name.toLowerCase() === lowered);
   if (notice) {

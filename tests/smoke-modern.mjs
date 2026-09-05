@@ -4827,9 +4827,10 @@ for (const failure of [
  * The one-reservoir page, at every width and in every state a link can
  * produce.
  *
- * A shared link lands here directly, so each of the four outcomes is a page
+ * A shared link lands here directly, so each of the five outcomes is a page
  * a reader can arrive on: a published reservoir, a withdrawn one (ADR-056's
- * notice, no measurement), an unknown name, and a bare link. What is checked
+ * notice, no measurement), a held one (ADR-115's notice, a reviewer's reason
+ * and no measurement), an unknown name, and a bare link. What is checked
  * is the contract rather than the numbers: the readiness signal names the
  * state, aria-busy has cleared on every exit including the unhappy ones, the
  * reservoir's name is what the page says when it says "found", and nothing
@@ -4838,6 +4839,9 @@ for (const failure of [
 {
   const cases = [
     ["found", "reservoir.html?name=Flaming%20Gorge", "Flaming Gorge"],
+    /* Leroy Anderson is the first reviewed hold (ADR-113); a link by its
+     * station id must land on the notice, not on "no reservoir by that name". */
+    ["held", "reservoir.html?name=LRA", "Leroy Anderson"],
     ["unknown", "reservoir.html?name=Not%20A%20Reservoir", null],
     ["none", "reservoir.html", null]
   ];
@@ -4891,6 +4895,15 @@ for (const failure of [
         `Reservoir page (${viewport.name}): does not show both coordinate forms `
           + "and a copy action");
       }
+      if (label === "held") {
+        check(state.ready === "held" && state.text.includes("Leroy Anderson")
+          && state.text.includes("not in the current published data")
+          && state.text.includes("Read the source for this review"),
+        `Reservoir page (${viewport.name}): a held reservoir rendered as `
+          + `"${state.ready}" rather than its notice`);
+        check(!state.text.includes("acre-feet"),
+          `Reservoir page (${viewport.name}): a held page published a measurement`);
+      }
       if (label === "unknown") {
         check(state.text.includes("No reservoir by that name"),
           `Reservoir page (${viewport.name}): an unknown name rendered as `
@@ -4904,7 +4917,7 @@ for (const failure of [
     }
     await context.close();
   }
-  console.log("\n=== Reservoir page: four link states at "
+  console.log("\n=== Reservoir page: five link states at "
     + `${VIEWPORTS.length} widths`);
 }
 

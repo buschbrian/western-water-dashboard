@@ -121,6 +121,18 @@ asks whether it has answered **within the year**. This is deliberately not
 `WITHDRAW_AFTER_DAYS`: 60 days is about a published reservoir going quiet, a
 year is about never admitting one that already has.
 
+
+**A reviewed hold is a third fault** (ADR-113, ADR-115). The feed is healthy
+and a person has taken the reservoir off the roster because no figure it can
+be divided by survives review. The admission file states it in
+`publication_holds` -- name, reason, HTTPS source and review date, and the
+loader refuses a fifth field or a hold naming a station still published -- and
+`reviewed_hold_notices` publishes them as `reviewed_holds`, beside the
+withdrawals and never among them. `--rebuild-notices` rewrites that array
+without touching a reading, and refuses to run while a held reservoir is still
+in the payload. Nothing here reverses on its own: a hold ends with a roster
+edit, not with a morning's data.
+
 ## Drought coverage
 
 Coverage is computed per level into `data/drought/usdm-huc{level}.json` from

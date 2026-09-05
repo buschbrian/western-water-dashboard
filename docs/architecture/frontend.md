@@ -37,7 +37,12 @@ reservoir the way every other surface does (`findReservoir`: station id,
 then qualified label, then unique bare name; an ambiguous bare name resolves
 to neither). A name the roster withdrew lands on the withdrawal notice --
 name, last reading date, publisher, and no measurement, because the notice
-carries none to publish. Readiness is `window.__reservoirReady.status`.
+carries none to publish. A name a reviewer held (ADR-113) lands on the hold
+notice instead (ADR-115): the name, that the reservoir is not in the current
+published data, the reason in a reader's words, the review date and a link to
+the source -- again with nothing a rollup could add up. Readiness is
+`window.__reservoirReady.status`, one of found, withdrawn, held, unknown and
+none, and the browser suite visits every one.
 
 ### Point location and downloads
 

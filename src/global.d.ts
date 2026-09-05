@@ -293,9 +293,11 @@ interface Window {
   __dataDocsReady?: { files: number; groups: number };
   /** The one-reservoir page settled. `status` is what the link resolved to:
    * "found" (the page shows a published reservoir), "withdrawn" (the roster
-   * withdrew the name; the page says so, ADR-056), "unknown" (no such name),
-   * or "none" (a bare `reservoir.html` link, which explains itself). */
+   * withdrew the name; the page says so, ADR-056), "held" (a reviewed hold
+   * took the reservoir off the roster and the page says why, ADR-115),
+   * "unknown" (no such name), or "none" (a bare `reservoir.html` link, which
+   * explains itself). */
   __reservoirReady?: {
-    status: "found" | "withdrawn" | "unknown" | "none";
+    status: "found" | "withdrawn" | "held" | "unknown" | "none";
   };
 }

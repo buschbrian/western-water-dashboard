@@ -89472,5 +89472,15 @@
         "CO"
       ]
     }
+  ],
+  "reviewed_holds": [
+    {
+      "name": "Leroy Anderson",
+      "reviewed_on": "2026-09-04",
+      "reason": "The sources that publish this reservoir's full level do not agree about the level in force for each part of its record. The site does not show its storage until those levels are checked. Its readings still arrive on schedule.",
+      "source_url": "https://assets.valleywater.org/files/2026-03/03122026%20SPOC%20Agenda%20Packetv2.pdf",
+      "source_key": "cdec",
+      "source_station_id": "LRA"
+    }
   ]
 }

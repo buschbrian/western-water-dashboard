@@ -18,7 +18,15 @@
     "FMT": "Fairmont Reservoir. LADWP's operations table publishes 491 acre-feet for Fairmont No. 2, consistent with the CDEC series maximum of 423; CDEC's linked 7,507-acre-foot dam profile is a different facility 2.8 km south. Held until an LADWP map or owner confirmation establishes the No. 2 coordinates.",
     "BMP": "Bon Tempe. Five usable readings ever, the last in March 2023. Screened out by the audit's own recency rule rather than held here; named because it was publishable before that rule.",
     "GDR": "Guadalupe Reservoir. Held for a series whose highest reading is 1,762 acre-feet against a third highest of 402, and quiet since December 2021 besides.",
-    "LRA": "Leroy Anderson. Withheld on irreconcilable full levels, not on its readings, which are current and plausible. The dam inventory publishes 89,073 acre-feet as normal, maximum and headline storage alike; Valley Water publishes 90,373 as the capacity its seismic retrofit is meant to restore (https://www.valleywater.org/accordion/anderson-dam-and-reservoir, checked 2026-09-04); and the reservoir has been restricted since 2017-05-08 under a limit that itself moved, from about 52,553 acre-feet to a FERC-directed drawdown to elevation 488 feet beginning 2020-10-01, and standing at 3,159 today. The series holds 48,547 acre-feet inside the restricted period and has sat above 3,159 every month for a year. No figure this project holds is the level this water is measured against, and picking one would be this project settling a disagreement between two agencies (ADR-113). Re-review when the retrofit restores a single published full level."
+    "LRA": "Leroy Anderson. Withheld while its dated operating full levels remain unresolved (ADR-113; its public notice is ADR-115's); its storage readings remain current and plausible. NID and Valley Water's general reservoir page both state 89,073 acre-feet (https://www.valleywater.org/accordion/anderson-dam-and-reservoir). The retrofit project page describes a future restoration objective of 90,373 (https://www.valleywater.org/project-updates/c1-anderson-dam-seismic-retrofit). An earlier owner restriction was about 52,553 acre-feet; the state list dates the restriction to 2017-05-08 and a later drawdown began 2020-10-01. The January 2026 draft plan tables show 3,159, but its text describes an April 4, 2024 amendment allowing 3,485 (https://assets.valleywater.org/files/2026-03/03122026%20SPOC%20Agenda%20Packetv2.pdf). Historical storage of 48,547 inside a drawdown period does not by itself disprove an operating limit. Checked 2026-09-04. Re-review when the operator's applicable dated limits can be verified, or a single restored full level is established. No replacement denominator is selected here."
+  },
+  "publication_holds": {
+    "LRA": {
+      "name": "Leroy Anderson",
+      "reviewed_on": "2026-09-04",
+      "reason": "The sources that publish this reservoir's full level do not agree about the level in force for each part of its record. The site does not show its storage until those levels are checked. Its readings still arrive on schedule.",
+      "source_url": "https://assets.valleywater.org/files/2026-03/03122026%20SPOC%20Agenda%20Packetv2.pdf"
+    }
   },
   "keyed_by": "source_station_id",
   "reservoirs": {

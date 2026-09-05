@@ -19,7 +19,7 @@
  * Recorded as ADR-029.
  */
 
-import { capacityOn, monthEndDate } from "../data/capacity";
+import { capacityOn, monthObservationDate } from "../data/capacity";
 import { isLate } from "../data/rollup";
 import { reservoirLabel } from "./selection";
 import { matchesFilter, type FilterState } from "./filters";
@@ -157,7 +157,7 @@ export function tableRows(input: TableInput): TableRow[] {
       /* The full level in force on the row's own date, so a month's storage
        * and the figure beside it describe the same month (ADR-111). */
       capacityAf: capacityOn(
-        reservoir, month === null ? reservoir.as_of : monthEndDate(month)),
+        reservoir, month === null ? reservoir.as_of : monthObservationDate(reservoir, month)),
       areaName: reservoir.huc6_name ?? "",
       late: isLate(reservoir),
       reading: month ?? reservoir.as_of

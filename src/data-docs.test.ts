@@ -52,6 +52,11 @@ describe("public API field documentation", () => {
       expectFields(RESERVOIR_GROUPS, "reservoir-coverage-state",
         merged(Object.values(data.coverage.states as Record<string, never>)));
     }
+    /* A hold is a reviewer's act, so the committed payload may carry none;
+     * checked whenever it carries any. */
+    if (Array.isArray(data.reviewed_holds) && data.reviewed_holds.length > 0) {
+      expectFields(RESERVOIR_GROUPS, "reservoir-reviewed-holds", merged(data.reviewed_holds));
+    }
     expectFields(RESERVOIR_GROUPS, "reservoir-record", merged(data.reservoirs));
     expectFields(RESERVOIR_GROUPS, "reservoir-month",
       merged(data.reservoirs.flatMap((record: Record<string, any>) => record.monthly)));

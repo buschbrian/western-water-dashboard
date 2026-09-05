@@ -16,8 +16,20 @@ const f = (key: string, units: string, meaning: string, optional = false): ApiFi
   ({ key, units, meaning, optional });
 
 export const RESERVOIR_GROUPS: readonly ApiFieldGroup[] = [
+  { id: "reservoir-reviewed-holds", title: "Reviewed removals", path: "reviewed_holds[]", fields: [
+    f("name", "text", "Name of a previously published reservoir."),
+    f("source_key", "identifier", "Provider key."),
+    f("source_station_id", "identifier", "Stable provider identifier."),
+    f("reviewed_on", "date", "Date the source review was recorded."),
+    f("reason", "text", "Why the site paused publication. Contains no measurement."),
+    f("source_url", "web address", "HTTPS source supporting the review.")
+  ]},
   { id: "reservoir-header", title: "File header", path: "root", fields: [
     f("schema_version", "version number", "Version of this JSON structure."),
+    f("reviewed_holds", "array",
+      "Reservoirs a review took off the roster, each with the reason in plain "
+      + "words and a link to the source. Separate from withdrawn, which is a "
+      + "feed that stopped. Absent when no reservoir is held.", true),
     f("method_version", "identifier",
       "Version of the calculations behind the derived values. A field can keep "
       + "its name, type and units while the calculation under it changes, which "

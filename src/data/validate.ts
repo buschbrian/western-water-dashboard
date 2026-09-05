@@ -11,6 +11,13 @@ import type {
   UpstreamTrace
 } from "../types";
 import { HUC_CODE } from "./huc";
+import { capacityVersionOn } from "./capacity";
+
+function isDate(value: unknown): value is string {
+  if (typeof value !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isFinite(date.getTime()) && date.toISOString().slice(0, 10) === value;
+}
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -80,12 +87,41 @@ function isCapacityVersion(value: unknown): value is CapacityVersion {
  * version is `capacity_af` written a second time. The pipeline checks that
  * the versions actually cover the readings, which the client cannot: it sees
  * twelve months and the payload holds years. */
-function isOptionalCapacityHistory(value: unknown): boolean {
-  if (value === undefined) return true;
+function isOptionalCapacityHistory(record: Record<string, unknown>): boolean {
+  const value = record.capacity_history;
+  if (value === undefined) return record.capacity_basis !== "operating_restriction"
+    && record.physical_capacity_af == null;
   if (!Array.isArray(value) || value.length === 0) return false;
   if (!value.every(isCapacityVersion)) return false;
   const first = value[0] as CapacityVersion;
-  return value.length > 1 || first.effective_from !== null;
+  if (value.length === 1 && first.effective_from === null) return false;
+  for (let i = 0; i < value.length; i += 1) {
+    const version = value[i] as CapacityVersion;
+    if (!version.capacity_basis.trim()) return false;
+    if (version.effective_from === null) {
+      if (i !== 0 || version.capacity_basis === "operating_restriction") return false;
+    } else if (!isDate(version.effective_from)) return false;
+    const prior = value[i - 1] as CapacityVersion | undefined;
+    if (prior?.effective_from != null && version.effective_from !== null
+      && prior.effective_from >= version.effective_from) return false;
+    if (version.effective_to != null) {
+      if (!isDate(version.effective_to)) return false;
+      const next = value[i + 1] as CapacityVersion | undefined;
+      if (!next || !isDate(next.effective_from)) return false;
+      if (Date.parse(next.effective_from) - Date.parse(version.effective_to) !== 86400000) return false;
+    }
+    if (version.capacity_basis === "operating_restriction") {
+      if (!version.authority?.trim() || !version.source_url?.startsWith("https://")
+        || !isDate(version.source_checked)) return false;
+      if (!hasNumber(record.physical_capacity_af) || record.physical_capacity_af <= 0) return false;
+    }
+  }
+  if (!isDate(record.first_obs) || !isDate(record.as_of)) return false;
+  const history = { capacity_history: value as CapacityVersion[] };
+  if (!capacityVersionOn(history, record.first_obs)) return false;
+  const current = capacityVersionOn(history, record.as_of);
+  return current !== null && current.capacity_af === record.capacity_af
+    && current.capacity_basis === record.capacity_basis;
 }
 
 function isMonthlyRecord(value: unknown): value is MonthlyRecord {
@@ -183,7 +219,7 @@ function isReservoir(value: unknown): value is Reservoir {
     hasNullableNumber(value.capacity_af) &&
     hasNullableString(value.capacity_basis) &&
     hasNullableNumber(value.pct_of_capacity) &&
-    isOptionalCapacityHistory(value.capacity_history) &&
+    isOptionalCapacityHistory(value) &&
     optionalNullableNumber(value.physical_capacity_af) &&
     hasNullableNumber(value.seasonal_percentile) &&
     /* Optional: they arrive from the pipeline, and a payload written before
@@ -247,6 +283,21 @@ export function validateReservoirPayload(value: unknown): ReservoirPayload {
   }
   if (!hasNumber(value.reservoir_count) || value.reservoir_count !== value.reservoirs.length) {
     throw new Error("reservoir_count does not match the reservoirs array");
+  }
+  if (value.reviewed_holds !== undefined) {
+    const fields = ["name", "reason", "reviewed_on", "source_key", "source_station_id", "source_url"];
+    const identities = new Set<string>();
+    if (!Array.isArray(value.reviewed_holds) || !value.reviewed_holds.every((notice: unknown) => {
+      if (!isObject(notice) || Object.keys(notice).length !== fields.length
+        || !fields.every((field) => typeof notice[field] === "string" && (notice[field] as string).trim())) return false;
+      if (!isDate(notice.reviewed_on) || !(notice.source_url as string).startsWith("https://")
+        || !["rise", "awdb", "cdec", "cdss", "usgs", "srp", "dnrc", "cwms", "cap"].includes(notice.source_key as string)) return false;
+      const identity = `${notice.source_key}:${notice.source_station_id}`;
+      if (identities.has(identity)) return false;
+      identities.add(identity);
+      return !(value.reservoirs as Reservoir[]).some((r) =>
+        r.source_key === notice.source_key && r.source_station_id === notice.source_station_id);
+    })) throw new Error("reservoirs.json has invalid reviewed hold notices");
   }
   if (typeof value.generated_at !== "string" || typeof value.start_date !== "string") {
     throw new Error("reservoirs.json is missing generation metadata");

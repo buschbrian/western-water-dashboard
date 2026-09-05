@@ -72,6 +72,18 @@ function validPayload(): Record<string, unknown> {
 }
 
 describe("reservoir payload validation", () => {
+  it("accepts measurement-free holds and rejects injected measurement fields", () => {
+    const payload = validPayload();
+    const notice = { name: "Held", source_key: "cdec", source_station_id: "HELD",
+      reason: "The full level needs review.", reviewed_on: "2026-09-04",
+      source_url: "https://example.gov/review" };
+    payload.reviewed_holds = [notice];
+    expect(validateReservoirPayload(payload).reviewed_holds).toEqual([notice]);
+    payload.reviewed_holds = [{ ...notice, current_storage_af: 100 }];
+    expect(() => validateReservoirPayload(payload)).toThrow(/reviewed hold/);
+    payload.reviewed_holds = [{ ...notice, source_url: "javascript:alert(1)" }];
+    expect(() => validateReservoirPayload(payload)).toThrow(/reviewed hold/);
+  });
   it("rejects a missing reservoirs array with a useful message", () => {
     expect(() => validateReservoirPayload({ generated_at: "2026-08-09" }))
       .toThrow("reservoirs array");
@@ -99,6 +111,7 @@ describe("reservoir payload validation", () => {
     const [record] = payload.reservoirs as Record<string, unknown>[];
     if (!record) throw new Error("the fixture has no reservoir");
     record.physical_capacity_af = 200;
+    record.capacity_basis = "operating_restriction";
     record.capacity_history = [
       { capacity_af: 200, capacity_basis: "max_storage",
         effective_from: null, effective_to: "2020-12-31" },
@@ -121,6 +134,7 @@ describe("reservoir payload validation", () => {
     const [record] = payload.reservoirs as Record<string, unknown>[];
     if (!record) throw new Error("the fixture has no reservoir");
     record.physical_capacity_af = 200;
+    record.capacity_basis = "operating_restriction";
     record.capacity_history = [
       { capacity_af: 100, capacity_basis: "operating_restriction",
         effective_from: "1993-03-03", effective_to: null,
