@@ -19,13 +19,15 @@ modules in `pipeline/`:
 | `pipeline/seasonal.py` | The seasonal estimator: window, annual votes, normals, rank, percentile. |
 | `pipeline/freshness.py` | Carry-forward, the withdrawal threshold and the withdrawal notice. |
 | `pipeline/geography.py` | County and drainage-area assignment onto finished records. |
+| `pipeline/lakes.py` | The natural terminal lakes (ADR-112, ADR-117): a record of elevation and volume with no full level, its validator, and the lake payload envelope. |
 | `refresh_reservoirs.py` | Fetch, summarize, assemble, validate, write, and report to CI. |
 
 `refresh_reservoirs` re-exports every public name from those modules, so
 `import refresh_reservoirs as R` still reaches all of them and no tool or test
 had to learn a new import path.
 
-Other entry points: `refresh_snowpack.py` (snow payload), `watershed_scopes.py`
+Other entry points: `refresh_snowpack.py` (snow payload), `refresh_lakes.py`
+(the terminal-lake payload, `lakes.json`), `watershed_scopes.py`
 and `huc.py` (named scopes, drainage assignment, grouping), `admission.py`
 (candidate screening), `tools/` (audits, boundary fetches, drought
 computation, normals).
@@ -95,6 +97,27 @@ zero.
 
 `docs/data-transfer.md` holds the measurements and is the file to update when
 they change.
+
+**A terminal lake is published from its own roster to its own payload**
+(ADR-117). `admitted_terminal_lakes.json` is loaded by
+`pipeline.roster.load_admitted_terminal_lakes`, which refuses any
+capacity-shaped field and requires the evidence ADR-112 asks for: a reviewed
+waterbody point, a reviewed closed-basin assignment, the elevation's vertical
+datum and the volume's published elevation-volume relation. `refresh_lakes.py`
+reads both daily series from the Geological Survey's OGC collection through
+`fetch_usgs_parameter_series` — the storage fetcher is the same function with
+parameter 00054 filled in — and writes `lakes.json` under `LAKE_SCHEMA_VERSION`.
+Each record carries an `elevation` block and a `volume` block, each with its
+current value, dated record extremes, dated changes and the same-date seasonal
+rank from the unchanged reservoir estimator; volume also carries a percentage
+change and the twelve-month history, elevation no percentage of anything. The
+record's `as_of` is the earlier of the two series' last dates. Freshness is
+ADR-056's: carried forward marked late, then withdrawn to a notice with no
+measurement. `pipeline.lakes.validate_payload` refuses a lake record carrying a
+reservoir-only field, a notice carrying a measurement, and a roster lake absent
+from both lists. The file is generated and committed by the refresh; no page
+fetches it yet, and it is not copied into the build until the lake surface
+lands.
 
 ## Freshness: late and withdrawn are different faults
 

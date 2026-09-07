@@ -47,6 +47,14 @@
       "staged_by_refresh": true
     },
     {
+      "path": "lakes.json",
+      "class": "generated-daily",
+      "writer": "refresh_lakes.py",
+      "staged_by_refresh": true,
+      "appears_when": "the first daily refresh after refresh_lakes.py lands writes it from admitted_terminal_lakes.json",
+      "note": "The natural terminal lakes payload (ADR-112): elevation and volume, no capacity or percent full. Separate from reservoirs.json on purpose; a lake joins no reservoir rollup."
+    },
+    {
       "path": "data/drought/usdm-current.geojson",
       "class": "generated-weekly",
       "writer": "tools/fetch_drought_monitor.py",
@@ -251,6 +259,13 @@
       "writer": null,
       "staged_by_refresh": false,
       "note": "Reviewed Central Arizona Project admission of Lake Pleasant, with the reviewed full-level finding (ADR-104)."
+    },
+    {
+      "path": "admitted_terminal_lakes.json",
+      "class": "reviewed-by-hand",
+      "writer": null,
+      "staged_by_refresh": false,
+      "note": "The reviewed natural terminal lakes (ADR-112): a waterbody point, a closed-basin assignment and two measured series with the volume's relation named. No capacity is recorded for any lake; the loader refuses one."
     },
     {
       "path": "data/reservoir-source-history.json",

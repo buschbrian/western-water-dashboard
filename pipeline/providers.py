@@ -504,6 +504,9 @@ USGS_DV_URL = "https://api.waterdata.usgs.gov/ogcapi/v0/collections/daily/items"
 USGS_LEGACY_DV_URL = "https://waterservices.usgs.gov/nwis/dv"
 USGS_API_KEY_ENV = "USGS_API_KEY"
 USGS_STORAGE_PARAMETER = "00054"
+#: 00062 is reservoir (or lake) surface elevation above the site datum, in
+#: feet. Read only for the terminal lakes (ADR-112).
+USGS_ELEVATION_PARAMETER = "00062"
 USGS_PAGE_LIMIT = 10000
 
 SRP_BASE_URL = "https://streamflow.watershedconnection.com/api/watershedconnectiondata"
@@ -577,11 +580,36 @@ def fetch_usgs_series(site_no: str, statistic_id: str,
     no readings, an empty frame -- the same "no usable rows" state every
     other adapter produces.
     """
+    return fetch_usgs_parameter_series(
+        site_no, USGS_STORAGE_PARAMETER, statistic_id, "Acre-ft",
+        start, end, column="storage_af")
+
+
+def fetch_usgs_parameter_series(site_no: str, parameter_code: str,
+                                statistic_id: str, unit: str,
+                                start: str, end: str, *,
+                                column: str) -> pd.DataFrame:
+    """One USGS daily series of any parameter, normalized to [date, column].
+
+    `fetch_usgs_series` is this with the storage parameter filled in; the
+    terminal-lake path (ADR-112) asks the same collection for a lake's surface
+    elevation (parameter 00062, in feet) beside its volume, and the two
+    requests must screen their rows the same way. Every accepted row repeats
+    the site, parameter, statistic *and* unit it was asked for, so a response
+    that answers with another series -- or the right series in another unit
+    -- contributes nothing rather than a wrong number.
+
+    Values below zero are refused for storage, which cannot be negative. An
+    elevation is a level above the site's datum and could in principle read
+    below it; none of the admitted lakes' datums allow it, and a negative
+    level would be a fault worth refusing rather than publishing, so the same
+    screen applies to every parameter.
+    """
     cleaned = []
     next_url: str | None = USGS_DV_URL
     params: dict | None = {
         "monitoring_location_id": f"USGS-{site_no}",
-        "parameter_code": USGS_STORAGE_PARAMETER,
+        "parameter_code": parameter_code,
         "statistic_id": statistic_id,
         "datetime": (
             f"{dt.datetime.strptime(start, '%Y%m%d').date().isoformat()}/"
@@ -598,9 +626,9 @@ def fetch_usgs_series(site_no: str, statistic_id: str,
         for feature in payload.get("features") or []:
             reading = feature.get("properties") or {}
             if reading.get("monitoring_location_id") != f"USGS-{site_no}" \
-                    or reading.get("parameter_code") != USGS_STORAGE_PARAMETER \
+                    or reading.get("parameter_code") != parameter_code \
                     or reading.get("statistic_id") != statistic_id \
-                    or reading.get("unit_of_measure") != "Acre-ft":
+                    or reading.get("unit_of_measure") != unit:
                 continue
             raw = reading.get("value")
             try:
@@ -608,22 +636,21 @@ def fetch_usgs_series(site_no: str, statistic_id: str,
             except (TypeError, ValueError):
                 continue
             if number >= 0:
-                cleaned.append({"date": reading.get("time"),
-                                "storage_af": number})
+                cleaned.append({"date": reading.get("time"), column: number})
         next_url = next((link.get("href") for link in payload.get("links") or []
                          if link.get("rel") == "next" and link.get("href")), None)
     if next_url:
         raise RuntimeError(f"USGS OGC pagination exceeded {MAX_PAGES} pages")
     if not cleaned:
         return pd.DataFrame({"date": pd.Series(dtype="datetime64[ns]"),
-                             "storage_af": pd.Series(dtype="float64")})
+                             column: pd.Series(dtype="float64")})
     df = pd.DataFrame(cleaned)
     df["date"] = pd.to_datetime(df["date"], errors="coerce").dt.normalize()
-    df["storage_af"] = pd.to_numeric(df["storage_af"], errors="coerce")
-    df = df.dropna(subset=["date", "storage_af"])
+    df[column] = pd.to_numeric(df[column], errors="coerce")
+    df = df.dropna(subset=["date", column])
     df = df[df["date"] <= local_today()]
     return (df.sort_values("date").drop_duplicates(subset="date", keep="last")
-              [["date", "storage_af"]].reset_index(drop=True))
+              [["date", column]].reset_index(drop=True))
 
 
 def reduce_to_daily_last(frame: pd.DataFrame) -> pd.DataFrame:

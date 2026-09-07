@@ -146,6 +146,24 @@ datum and any stage-volume relation. It receives no dam or outlet point, no
 percent full and no membership in reservoir rollups. A target level stays a
 named restoration or regulatory target and never becomes capacity.
 
+The path is built (ADR-117). A lake is admitted in
+`admitted_terminal_lakes.json`, never in a reservoir roster, and
+`refresh_lakes.py` publishes it to `lakes.json`. The loader refuses any
+capacity-shaped field and requires: a `waterbody` block naming the NHDPlus HR
+identifier the point resolves to, with its probe date; a `closed_basin` block
+with `huc6`, `huc8`, the evidence and a review date; an `elevation` block with
+the survey's parameter, statistic, unit and vertical datum; a `volume` block
+with the same and the published elevation-volume relation named beside it; and
+a `targets` list, empty when there are none, where each entry is a named
+elevation with its authority, source and date. The probe is
+`tools/probe_nhd_waterbody.query_layer` against the point at 100 metres; the
+assignment is `huc.assign_huc` against the committed geometry, made from the
+lake point because a closed basin has no outlet to assign from. Walker Lake is
+the record to copy. The candidates ADR-112 named and kept out are in the same
+file's `withheld` block with their findings. As with a reservoir, the refresh
+lands in the same change: `pipeline.lakes.validate_payload` fails the run if a
+roster lake is neither published nor withdrawn.
+
 ## A reviewed admission names the screen it was admitted against
 
 Five California reservoirs are on the roster over a screen that held them, and
