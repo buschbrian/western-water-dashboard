@@ -37,8 +37,9 @@ describe("the table's rows", () => {
     const expected = reservoirs.filter((reservoir) => matchesFilter(reservoir, filter));
 
     expect(rows).toHaveLength(expected.length);
-    expect([...rows.map((row) => row.name)].sort())
-      .toEqual([...expected.map((reservoir) => reservoir.name)].sort());
+    // Membership follows station identity, even when a shared name is qualified.
+    expect(rows.map((row) => row.sourceIdentifier).sort())
+      .toEqual(expected.map((reservoir) => reservoir.source_station_id ?? reservoir.rise_item_id).sort());
   });
 
   it("takes its percentage from the same function the map draws from", () => {
