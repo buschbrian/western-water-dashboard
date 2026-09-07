@@ -7,7 +7,7 @@ table and `tests/test_generated_files.py` holds it to the repository.
 
 | Class | Examples | Rule |
 |---|---|---|
-| Generated daily | `reservoirs.json`, `snowpack.json`, `snow_sites.json`, `reference.json`, `data/drought/usdm-huc{4,6}.json` | Change the writer, run it, commit the output. |
+| Generated daily | `reservoirs.json`, `lakes.json`, `snowpack.json`, `snow_sites.json`, `reference.json`, `data/drought/usdm-huc{4,6}.json` | Change the writer, run it, commit the output. |
 | Generated weekly | `data/drought/usdm-current.geojson` | Fetched by `tools/fetch_drought_monitor.py`. |
 | Generated archive | `data/drought/usdm-huc6-history.json` | Append-only, one level, capped at ten years. |
 | Long-lived derived | `normals.json`, `counties.json`, `capacities.json`, `data/watersheds/*.geojson`, `data/us-land.geojson` | Rebuilt on demand by a named tool; every run merges. |

@@ -1,0 +1,76 @@
+{
+  "water_type": "natural_terminal_lake",
+  "storage_source": "U.S. Geological Survey",
+  "storage_source_url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/daily/items",
+  "reviewed": "2026-09-06",
+  "selection": "Natural terminal lakes that ADR-112 permits as a separate water type: a closed basin with no dam and no engineered full pool, an owner-operated daily series of both surface elevation and volume, a published elevation-volume relation, and a reviewed waterbody point that resolves to exactly one NHDPlus HR waterbody at the project's 100-metre tolerance. No capacity, percent full, dam point or reservoir-rollup membership is recorded for any lake here, and a restoration or regulatory level is only ever a named target with its authority and date. Walker Lake is the first admission; the candidates ADR-112 named and kept out are in the withheld block with their findings.",
+  "keyed_by": "usgs_site_no",
+  "lakes": {
+    "10288500": {
+      "name": "Walker Lake",
+      "station": "10288500",
+      "state": "NV",
+      "lat": 38.67658636,
+      "lon": -118.7720849,
+      "cadence": "daily",
+      "por_start": "2015-01-01",
+      "point": {
+        "source": "USGS monitoring location USGS-10288500, WALKER LAKE NR HAWTHORNE, NV, in decimal degrees on NAD83 (the site record's coordinate datum is NAD27; the decimal coordinates are the survey's NAD83 conversion)",
+        "source_url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items/USGS-10288500",
+        "checked": "2026-09-06"
+      },
+      "waterbody": {
+        "gnis_name": "Walker Lake",
+        "nhdplus_hr_permanent_identifier": "67906791",
+        "ftype": 390,
+        "ftype_name": "LakePond",
+        "esri_water_bodies_agree": true,
+        "tolerance_metres": 100,
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/9",
+        "probed": "2026-09-06",
+        "note": "The site point resolves to exactly one NHDPlus HR waterbody within 100 metres, and Esri's USA Detailed Water Bodies names the same lake -- the probe's strongest outcome (ADR-106). The point is a gauge on the shore and stands for the whole lake; no outlet or dam point exists to record."
+      },
+      "closed_basin": {
+        "huc6": "160503",
+        "huc6_name": "Walker",
+        "huc8": "16050304",
+        "huc8_name": "Walker Lake",
+        "usgs_hydrologic_unit": "160503040500",
+        "evidence": "The Walker River ends in the lake and water leaves the basin by evaporation; the lake has no outlet (Lopes and Smith, 2007, SIR 2007-5012). The committed west-huc8 geometry places the site point in subbasin 16050304 Walker Lake inside basin 160503 Walker, and the survey's own hydrologic unit for the site agrees. The assignment is made from the published lake point, never from a synthetic outlet (ADR-112).",
+        "reviewed": "2026-09-06"
+      },
+      "elevation": {
+        "parameter_code": "00062",
+        "statistic_id": "32400",
+        "unit": "ft",
+        "vertical_datum": "NGVD29",
+        "series_begins": "2004-10-01",
+        "source_url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/time-series-metadata/items?monitoring_location_id=USGS-10288500",
+        "checked": "2026-09-06",
+        "note": "Reservoir elevation, the daily observation at 24:00, in feet above the site's vertical datum. The survey records the datum as NGVD29 with a site altitude of 3,900 feet. An elevation is published as a level and never as a percentage of any datum (ADR-112)."
+      },
+      "volume": {
+        "parameter_code": "00054",
+        "statistic_id": "32400",
+        "unit": "Acre-ft",
+        "series_begins": "2004-10-01",
+        "source_url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/time-series-metadata/items?monitoring_location_id=USGS-10288500",
+        "checked": "2026-09-06",
+        "relation": {
+          "name": "Lopes and Smith (2007), Bathymetry of Walker Lake, West-Central Nevada, U.S. Geological Survey Scientific Investigations Report 2007-5012",
+          "source_url": "https://doi.org/10.3133/sir20075012",
+          "altitude_range_ft": [3851.5, 4120.0],
+          "in_use_from": "2014-10-01",
+          "previous": "Rush (1970)",
+          "note": "The survey computes storage from the lake stage with this relation from 1 October 2014; the relation used before that date was Rush (1970). Recorded from ADR-112's review of 2026-09-04; the water-year summaries that state the change were not reachable on 2026-09-06. The published record starts on 2015-01-01, inside the current relation, so every published volume is on one relation and no reading is recomputed or repaired."
+        }
+      },
+      "targets": []
+    }
+  },
+  "withheld": {
+    "Pyramid Lake": "ADR-112's second candidate. The survey publishes a strong elevation series and no reviewed modern volume relation in this project; an elevation-only lake record needs the volume block to be optional, which this roster's loader does not yet permit. Held until the relation is reviewed or the contract admits elevation alone by decision.",
+    "Great Salt Lake": "Separately measured arms (ADR-112). One point and one volume would collapse waters that the survey measures apart; held until an arm-aware representation exists.",
+    "Mono Lake": "Its regulatory restoration level is a target set by the California State Water Resources Control Board and not a physical capacity (ADR-112). A target may be published only as a named target with its authority and date; held until the measurement series and the target's citation are reviewed together."
+  }
+}

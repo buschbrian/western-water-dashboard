@@ -16,6 +16,7 @@ the module that owns the concern, not in the orchestrator.
 | `seasonal.py` | The estimator: window, annual votes, normals, rank, percentile. |
 | `freshness.py` | Carry-forward, withdrawal threshold, withdrawal notice. |
 | `geography.py` | County and drainage-area assignment onto finished records. |
+| `lakes.py` | Natural terminal lakes (ADR-112, ADR-117): a record with no full level, its validator and payload. Written by `refresh_lakes.py`, never by the reservoir orchestrator. |
 
 - **A method version is not a schema version.** Changing an estimator means
   `METHOD_VERSION`, a normals rebuild and an ADR — use the
