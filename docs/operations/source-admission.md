@@ -69,9 +69,10 @@ file does not know, a missing or extra field, a foreign sensor, a non-HTTPS
 URL, a malformed date, and any replacement value. The match is on station,
 sensor, day **and** raw value, so a corrected reading returns by itself.
 
-Five readings are excluded today, all California and all on stations that stay
-withheld: Lake Havasu's 5,913,000 and 5,775,421 acre-feet against a lake whose
-reviewed full level is 646,200, O'Neill Forebay's 443,348 against a 56,400
+Five readings are excluded today, all California: Lake Havasu's 5,913,000 and
+5,775,421 acre-feet against the then-reviewed total capacity of 646,200
+(the current denominator remains held; see the HVS review below),
+O'Neill Forebay's 443,348 against a 56,400
 acre-foot facility, Railroad Canyon's 58,508 against nearly 12,000, and Grant
 Lake's 82,410 against 47,575. The issues stay open
 ([#44](https://github.com/buschbrian/western-water-dashboard/issues/44)
@@ -79,7 +80,8 @@ to [#47](https://github.com/buschbrian/western-water-dashboard/issues/47)):
 an exclusion says what this project did in the meantime, not what the provider
 answered. **An exclusion is not an admission** -- removing the reading answers
 the spike screen and nothing else, and the audit is re-run afterwards to see
-what the remaining screens say.
+what the remaining screens say. Grant Lake subsequently passed its admission;
+Havasu, O'Neill Forebay and Railroad Canyon remain withheld.
 
 **Being listed is not reporting.** The candidate screen asks whether a station
 has answered **within the year**. Bon Tempe is why — five usable readings ever,
@@ -153,9 +155,56 @@ Five California reservoirs are on the roster over a screen that held them, and
 each — the loader refuses a waiver with no reason, because a waiver with no
 reason is a screen turned off. The same file's `withheld` block names every
 candidate kept out and the finding behind it, so the next reader meets the work
-rather than repeating it: Lake Havasu's reviewed 646,200 acre-feet is recorded
+rather than repeating it: Lake Havasu's candidate full levels are recorded
 there beside the readings excluded under ADR-116 and the finding that keeps it
-unpublished without them.
+unpublished while its storage basis is unresolved.
+
+### Lake Havasu (HVS) capacity review
+
+**Decision on 2026-09-06: retain the admission hold.** The two exclusions are
+valid under ADR-116, but 646,200 acre-feet is not established as the full level
+on the basis of the current storage series. The roster and generated payloads,
+including the normal baseline, remain unchanged. The exact current hold
+is in `admitted_cdec_reservoirs.json`; issue #44 remains open for the original
+provider anomalies.
+
+The live [CDEC station metadata](https://cdec.water.ca.gov/dynamicapp/staMeta?station_id=HVS)
+identifies Lake Havasu, Bureau of Reclamation operation, and monthly sensor 15
+storage in acre-feet. Its [reservoir profile](https://cdec.water.ca.gov/dynamicapp/profile?s=HVS&type=res)
+names Parker Dam but gives 648,000 acre-feet without defining total versus live
+storage. The [Reclamation project record](https://www.usbr.gov/projects/index.php?id=207)
+still gives 646,200 total acre-feet at elevation 450 feet and identifies Parker
+Dam as AZ10312. A live NID query within 15 km of CDEC's point
+(-114.156, 34.317) returns Parker Dam at (-114.139211, 34.296605), with
+180,000 in all three storage fields, plus Gene Wash and Copper Basin.
+Facility identity is supported; those inventory volumes do not describe the
+reported series.
+
+Read with `pipeline.providers.fetch_cdec_series('HVS', 'monthly', '20150101',
+'20260906')`, the series retains 137 readings through 2026-07-31 after excluding
+the two exact stamp/value pairs. Its three largest readings are 601,300,
+600,100 and 599,900 acre-feet. `admission.admit` still returns "no dam close
+enough to confirm" against the nearby inventory records. A hypothetical
+reviewed capacity of 646,200 clears `admission.discrepancies`; so do 590,262
+and 570,253. The numerical screens cannot distinguish their storage bases.
+
+The newer [Reclamation allocation sheet](https://www.usbr.gov/lc/region/g4000/Mohave-Havasu_ReservoirCapacityAllocations_2026.pdf),
+page 3, gives total capacity 590,262, live capacity 570,253, active capacity
+176,837 and dead storage 20,009 acre-feet. Its summary explicitly supersedes
+previous allocation sheets. Its approval date is not evidence of when CDEC
+changed its measurement table. The [current operations report](https://www.usbr.gov/lc/region/g4000/hourly/levels.html)
+also uses 570,253 available acre-feet at elevation 450 feet.
+
+**To release the hold:** establish whether CDEC sensor 15 reports total or live
+storage; identify the elevation-capacity table and its effective dates in the
+CDEC observations, including whether earlier observations were recomputed;
+then record matching full levels and determine whether the 1991-2020 readings
+are comparable with the current series. The
+[2026 survey implementation study](https://www.usbr.gov/main/qoi/docs/Mohave-Havasu-ACAPS-Study.pdf)
+supports new area-capacity tables in operational record-keeping but does not
+establish that CDEC transition. Do not choose a date from a change in the
+numbers or repair observations to fit a capacity. Once resolved, complete the
+geography review, refresh and normal build in the admission change.
 
 ## A roster addition needs a refresh in the same change
 
