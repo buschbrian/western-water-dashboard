@@ -3,8 +3,8 @@ import { readPayload } from "../data/payload-fixture";
 import { storageColor } from "../viz/classes";
 import { headlinePercent } from "../viz/symbols";
 import {
-  changeLabel, describeReservoir, lateMessage, monthlyDetail, providerName,
-  rankWithYears
+  capacityBasisName, changeLabel, describeReservoir, lateMessage, monthlyDetail,
+  providerName, rankWithYears
 } from "./detail";
 import { createSelectionStore, findReservoir, normalizeSelectionValue } from "./selection";
 import { loadLegacyApi } from "../data/legacy-harness";
@@ -315,6 +315,16 @@ describe("the details a reader sees", () => {
     expect(after?.percent).toBeCloseTo((last.mean_af ?? 0) / 40000 * 100, 9);
     // The chart and the map still agree, now on the dated denominator.
     expect(after?.percent).toBeCloseTo(monthPercent(restricted, last.month) ?? 0, 9);
+  });
+});
+
+describe("the words for each kind of full level", () => {
+  it("has words for a reviewed water report, the ADR-110 basis", () => {
+    /* Topaz Lake is published against a USGS water-data report because the
+     * inventory has no record; a null here would leave its panel silent about
+     * what its percentage divides by. */
+    expect(capacityBasisName("authoritative_water_report")).toBe(
+      "the full level in a reviewed water report");
   });
 });
 
