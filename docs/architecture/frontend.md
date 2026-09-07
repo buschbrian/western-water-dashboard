@@ -20,6 +20,7 @@ module that owns the behaviour and read the entry point only for the sequence.
 | Drought | `src/drought.ts` | `src/drought-model.ts`, `src/ui/drought-map.ts`, `src/viz/drought-*.ts`, `src/state/drought-url.ts` |
 | One reservoir | `src/reservoir.ts` | `src/reservoir-model.ts` (link resolution, both baselines, provenance), `src/ui/reservoir-template.ts`; the reading itself is `describeReservoir`, shared with the map's details panel so the two cannot drift |
 | Methods, data, terms | `src/methods.ts`, `src/data-docs.ts` | `src/data-docs-schema.ts` is the field-by-field contract |
+| Terminal lakes | `src/lakes.ts` | `src/lakes-model.ts` (every sentence and row), `src/data/lakes-validate.ts`, `src/ui/lakes-template.ts`; reached from the methods and data pages, not the bar (ADR-118) |
 
 Shared by all of them: `src/data/` (fetch, validate, scope, rollup),
 `src/state/` (URL, filters, preferences), `src/viz/` (colour, symbols,
@@ -43,6 +44,22 @@ published data, the reason in a reader's words, the review date and a link to
 the source -- again with nothing a rollup could add up. Readiness is
 `window.__reservoirReady.status`, one of found, withdrawn, held, unknown and
 none, and the browser suite visits every one.
+
+### The terminal-lakes page
+
+One reading page, `lakes.html`, for every published natural terminal lake
+(ADR-118). It fetches `lakes.json` through `loadLakes`, whose validator
+refuses a lake record carrying a reservoir-only field, a level carrying a
+percentage change, a target spelled as a capacity and a notice carrying a
+measurement -- the browser holds ADR-112's rules as the pipeline does. Each
+lake shows two measurement cards, surface level above a datum named in full
+and volume on a named table, with dated record readings, dated changes and a
+history rank that reads as a position only ("3rd-lowest of 12"), then the
+twelve months of volume through the shared trend chart in one neutral colour.
+Readiness is `window.__lakesReady`: `lakes` is what the payload published,
+`rendered` what the page drew, `withdrawn` the notices, `failed` a fetch that
+did not answer. The page is linked from the methods glossary and the data
+page and deliberately not from the navigation bar yet.
 
 ### Point location and downloads
 

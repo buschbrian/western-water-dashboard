@@ -83,14 +83,13 @@ should be worked:
    the next SDK upgrade: the `aria-prohibited-attr` entry in `AXE_EXCEPTIONS`,
    the unnamed Calcite slider handle that `src/ui/slider-label.ts` works
    around, and the `script-src` measurement behind ADR-036.
-5. **Show the first terminal lake.** The pipeline half of ADR-112 is built
-   (ADR-117): Walker Lake is admitted in `admitted_terminal_lakes.json` and
-   `refresh_lakes.py` publishes `lakes.json` with elevation, volume, changes and
-   rank and no full level. What remains is the reader surface: where a lake
-   appears, how it is drawn beside reservoirs without joining their totals,
-   the data page's description of the payload and the glossary change. Great
-   Salt Lake needs an arm-aware model before it can follow; Pyramid Lake needs
-   the volume block to become optional by decision.
+5. **The next terminal lakes.** Walker Lake is published end to end: the
+   roster and payload (ADR-117) and its own page, reached from the methods and
+   data pages (ADR-118). What remains is contract work before it is page work:
+   Pyramid Lake needs the volume block to become optional by decision, Great
+   Salt Lake needs an arm-aware record, and whether a lake earns a place in the
+   navigation bar waits for a second lake. `docs/data-transfer.md` needs the
+   new payload measured on the wire.
 6. **The remaining reservoir coverage gaps, now much narrower.** The Corps of
    Engineers' Columbia Basin service (ADR-102) covers Idaho, Oregon and
    Washington, and the Central Arizona Project (ADR-104) closed Arizona's

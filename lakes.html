@@ -1,0 +1,17 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- The same policy the other reading pages carry, shared rather than
+       tuned per page (see reservoir.html). -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'none'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://*.arcgis.com https://*.arcgisonline.com; worker-src 'self' blob: https://*.arcgis.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.arcgis.com https://*.arcgisonline.com; font-src 'self' data: https://*.arcgis.com; connect-src 'self' https://*.arcgis.com https://*.arcgisonline.com https://hydro.nationalmap.gov" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <meta name="description" content="Natural terminal lakes: surface level and volume, with no dam and no full level." />
+  <title>Terminal Lakes — Western Water Dashboard</title>
+</head>
+<body>
+  <div id="lakes-app"><p class="initial-loading">Loading lake readings&hellip;</p></div>
+  <script type="module" src="/src/lakes.ts"></script>
+</body>
+</html>

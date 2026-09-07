@@ -57,6 +57,12 @@ const userTextFiles = [
   // surrounding explanations on the page still follow ADR-006.
   "src/data-docs.ts",
   "src/ui/page-header.ts",
+  // The terminal-lakes page (ADR-118): its frame, its entry point and the
+  // model that words every row, including the datum names and the rank.
+  "lakes.html",
+  "src/lakes.ts",
+  "src/lakes-model.ts",
+  "src/ui/lakes-template.ts",
   // The snowpack view writes all of its own visible text, including the
   // seasonal caveat and the axis words on the curve.
   "snow.html",
@@ -131,7 +137,7 @@ describe("user text", () => {
     const publishedPages = [
       "index.html", "modern.html", "overview.html", "snow.html", "drought.html",
       "methods.html", "data.html", "reservoir.html", "terms.html", "explore.html",
-      "legacy/index.html", "maplibre/index.html"
+      "lakes.html", "legacy/index.html", "maplibre/index.html"
     ];
     const styleFiles = (await readdir(resolve(root, "src/styles")))
       .filter((file) => file.endsWith(".css"))

@@ -54,7 +54,7 @@ function preserveRuntimeDataAndRedirects(): Plugin {
       // committed for Python's point-in-state classification and stops
       // being copied here.
       for (const file of [
-        "reservoirs.json", "snow_sites.json", "snowpack.json",
+        "reservoirs.json", "lakes.json", "snow_sites.json", "snowpack.json",
         "reference.json", "capacities.json", "upstream_index.json"
       ]) {
         await copyFile(resolve(root, file), resolve(outDir, file));
@@ -62,7 +62,7 @@ function preserveRuntimeDataAndRedirects(): Plugin {
       }
       // Stable public API aliases. These are second copies of the same
       // runtime files, never imports and never a second source of truth.
-      for (const file of ["reservoirs.json", "snowpack.json", "reference.json"]) {
+      for (const file of ["reservoirs.json", "lakes.json", "snowpack.json", "reference.json"]) {
         await copyFile(resolve(root, file), resolve(outDir, "api", file));
       }
       await copyFile(resolve(root, "legacy", "index.html"),
@@ -94,6 +94,7 @@ export default defineConfig({
         methods: resolve(root, "methods.html"),
         data: resolve(root, "data.html"),
         reservoir: resolve(root, "reservoir.html"),
+        lakes: resolve(root, "lakes.html"),
         explore: resolve(root, "explore.html"),
         terms: resolve(root, "terms.html")
       }

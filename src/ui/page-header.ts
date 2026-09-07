@@ -20,7 +20,7 @@ import { linkHref, portableSearch } from "../state/portable-url";
 
 export type PageId =
   | "map" | "overview" | "snow" | "drought" | "methods" | "data"
-  | "reservoir";
+  | "reservoir" | "lakes";
 
 interface PageLink {
   id: PageId;
@@ -60,7 +60,11 @@ const PAGE_SUBJECTS: Record<PageId, string> = {
    * link, like the data docs above, and deliberately not in the bar: it is
    * reached from a reservoir, not from the navigation. The entry point
    * replaces the tab title with the reservoir's name once it resolves. */
-  reservoir: "Reservoir Details"
+  reservoir: "Reservoir Details",
+  /* The natural terminal lakes (ADR-118). Reached from the methods and data
+   * pages rather than from the bar: the bar clips rather than scrolls, and
+   * whether one lake earns a place in it is a decision not yet made. */
+  lakes: "Terminal Lakes"
 };
 
 /**

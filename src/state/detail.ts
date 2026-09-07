@@ -253,7 +253,7 @@ export function rankWithYears(
  * "3rd", "11th", "21st". Written out rather than reached for from a library:
  * this is the only place the site needs one, and the rule is four lines.
  */
-function ordinal(value: number): string {
+export function ordinal(value: number): string {
   const tens = value % 100;
   if (tens >= 11 && tens <= 13) return `${value}th`;
   return `${value}${["th", "st", "nd", "rd"][value % 10] ?? "th"}`;

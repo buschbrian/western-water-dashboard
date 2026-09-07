@@ -2706,12 +2706,14 @@ for (const viewport of VIEWPORTS) {
       scroll: document.documentElement.scrollWidth
     }));
     console.log("  ready:", JSON.stringify(state.ready));
-    check(state.ready?.files === 5 && state.files === 5,
+    check(state.ready?.files === 6 && state.files === 6,
       `${label}: rendered ${state.files} file cards, readiness reported ${state.ready?.files}`);
     check(state.ready?.groups === state.groups && state.groups >= 20,
       `${label}: rendered ${state.groups} field groups, readiness reported ${state.ready?.groups}`);
     check(JSON.stringify(state.links) === JSON.stringify([
       "./api/reservoirs.json", "./",
+      // The terminal lakes (ADR-117, ADR-118): their own file and page.
+      "./api/lakes.json", "./lakes.html",
       "./api/snowpack.json", "./snow.html",
       "./data/drought/usdm-huc6.json", "./drought.html",
       "./data/drought/usdm-current.geojson",
@@ -4920,6 +4922,68 @@ for (const failure of [
   console.log("\n=== Reservoir page: five link states at "
     + `${VIEWPORTS.length} widths`);
 }
+
+/*
+ * The terminal-lakes page (ADR-118), at every width.
+ *
+ * One page for every published lake, so the contract is the readiness
+ * signal's: what the payload published is what the page drew, aria-busy has
+ * cleared, the page names its lake and its two units, says no percent full
+ * anywhere, and does not scroll sideways. The vocabulary check catches the
+ * datum's initials or the provider's on their way to a reader.
+ */
+for (const viewport of VIEWPORTS) {
+  const context = await newPageContext(browser,
+    { width: viewport.width, height: viewport.height });
+  const tab = await context.newPage();
+  const errors = [];
+  tab.on("pageerror", (error) => errors.push(String(error)));
+  watchConsoleErrors(tab, errors);
+  await tab.goto(`${URL}lakes.html`, { waitUntil: "load", timeout: 90000 });
+  await tab.waitForFunction(() => window.__lakesReady !== undefined,
+    null, { timeout: 90000 }).catch(() => {});
+  const state = await tab.evaluate(() => ({
+    ready: window.__lakesReady ?? null,
+    busy: document.querySelector("#lakes-main")?.getAttribute("aria-busy"),
+    text: document.body.innerText,
+    cards: document.querySelectorAll("#lakes-main .lake-measurements > section").length,
+    pathRows: document.querySelectorAll("#lakes-main .hydrologic-path li").length,
+    scroll: document.documentElement.scrollWidth,
+    viewport: document.documentElement.clientWidth
+  }));
+  check(state.ready !== null && state.busy === "false",
+    `Lakes page (${viewport.name}): readiness ${JSON.stringify(state.ready)} `
+    + `with aria-busy="${state.busy}" -- every exit clears it`);
+  check(state.ready?.failed === false && state.ready?.lakes > 0
+    && state.ready?.rendered === state.ready?.lakes,
+  `Lakes page (${viewport.name}): published ${state.ready?.lakes} lake(s) and drew `
+    + `${state.ready?.rendered}`);
+  check(state.cards === 2 * (state.ready?.rendered ?? 0),
+    `Lakes page (${viewport.name}): ${state.cards} measurement cards for `
+    + `${state.ready?.rendered} lake(s)`);
+  check(state.text.includes("Walker Lake") && state.text.includes("acre-feet")
+    && state.text.includes("feet"),
+  `Lakes page (${viewport.name}): the page does not name its lake and both units`);
+  check(!/percent full|% full|full level/i.test(
+    state.text.replace(/no percent full|no full level|not as a full level|never a percent full/gi, "")),
+  `Lakes page (${viewport.name}): a terminal lake was given a full level`);
+  check(state.pathRows === 4,
+    `Lakes page (${viewport.name}): has ${state.pathRows} hydrologic path rows`);
+  check(state.scroll <= state.viewport + 1,
+    `Lakes page (${viewport.name}): scrolls sideways (${state.scroll} > ${state.viewport})`);
+  const visible = await tab.evaluate(COLLECT_SHADOW_TEXT);
+  const retired = RETIRED_TERMS.exec(visible);
+  check(retired === null,
+    `Lakes page (${viewport.name}): visible text uses a retired term: "${retired?.[0]}"`);
+  check(!/\bNGVD29\b|\bNAVD88\b/.test(state.text),
+    `Lakes page (${viewport.name}): the datum reaches a reader as its initials`);
+  await checkAccessibility(tab, check, `Lakes page (${viewport.name})`);
+  for (const message of errors) {
+    failures.push(`Lakes page (${viewport.name}): ${message}`);
+  }
+  await context.close();
+}
+console.log(`\n=== Lakes page: ${VIEWPORTS.length} widths`);
 
 /*
  * Simplified Technical English, measured on what a reader actually sees.

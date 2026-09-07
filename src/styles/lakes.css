@@ -1,0 +1,35 @@
+@import "./reservoir.css";
+
+/* One reading page, the reservoir page's frame, with two measurement cards
+ * per lake side by side where there is room and stacked where there is not.
+ * The cards reuse the details panel's row classes (app.css) so a lake's rows
+ * cannot drift visually from a reservoir's. */
+.lake {
+  margin-block-start: 2rem;
+  padding-block-start: 1.25rem;
+  border-block-start: 1px solid var(--app-border);
+}
+.lake:first-child { margin-block-start: 1.5rem; border-block-start: 0; padding-block-start: 0; }
+.lake-name { font-size: clamp(1.35rem, 3vw, 1.8rem); line-height: 1.15; margin-block: 0.25rem 0.75rem; }
+
+.lake-measurements {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: 1rem;
+  margin-block: 1rem 0;
+}
+.lake-measurements > section {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--app-border);
+  border-radius: 0.5rem;
+  background: var(--app-surface-raised);
+}
+.lake-measurements h3 {
+  margin: 0 0 0.5rem;
+  font-size: var(--app-section-heading);
+}
+.lake-measurements .detail-headline { margin-block: 0 0.75rem; }
+.lake-measurements .detail-headline strong { font-size: 1.35rem; }
+
+.lakes-main .trend-chart-host { margin-block-start: 0.5rem; }

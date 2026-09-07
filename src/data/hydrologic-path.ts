@@ -7,6 +7,7 @@
  * controls use, so a detail surface cannot grow a second geography table.
  */
 import { HUC_CODE } from "./huc";
+import { parseDrainageUnits, referenceGeography } from "./boundaries";
 
 export type HydrologicPathLevel = 2 | 4 | 6 | 8;
 
@@ -70,4 +71,24 @@ export function hydrologicPath(
     { level: 6, label: "Basin", code: huc6, name: basinName ?? null },
     ...subbasin
   ];
+}
+
+/**
+ * The three named rosters a path needs, read from the reference export.
+ *
+ * The reservoir payload carries its own `watersheds` rosters; a payload that
+ * does not (the terminal lakes, ADR-118) reads the names from the same file
+ * the maps take their scopes from, one level at a time, so a lake's region
+ * and subregion are named exactly as a reservoir's are. An export this cannot
+ * read yields empty rosters, and the path shows its codes with no names --
+ * the codes stay true, and nothing here invents a label.
+ */
+export function referenceRosters(reference: unknown): HydrologicRosters {
+  const units = (level: 2 | 4 | 8) =>
+    parseDrainageUnits(referenceGeography(reference, level)?.drainage, level);
+  return {
+    regions: units(2).map((area) => ({ huc2: area.huc6, name: area.name })),
+    subregions: units(4).map((area) => ({ huc4: area.huc6, name: area.name })),
+    subbasins: units(8).map((area) => ({ huc8: area.huc6, name: area.name }))
+  };
 }

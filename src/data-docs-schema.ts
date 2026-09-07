@@ -612,3 +612,97 @@ export const REFERENCE_GROUPS: readonly ApiFieldGroup[] = [
       "The edges of a box a map can open on to show this drainage area: west, south, east and north, in that order.")
   ]},
 ];
+
+/*
+ * The terminal-lake payload (ADR-117). Two measurement blocks with the same
+ * fields, so the block is documented once and named twice.
+ */
+const LAKE_MEASUREMENT = (unit: string): readonly ApiField[] => [
+  f("current", unit, "Newest reading."),
+  f("as_of", "date", "Date of the newest reading."),
+  f("record_high", unit, "Highest reading in the published record."),
+  f("record_high_date", "date", "Date of the highest reading."),
+  f("record_low", unit, "Lowest reading in the published record."),
+  f("record_low_date", "date", "Date of the lowest reading."),
+  f("change_7d", unit, "Change from the reading about 7 days earlier, or null."),
+  f("change_7d_reference_date", "date", "Date of the earlier reading, or null."),
+  f("change_7d_elapsed_days", "days", "Days between the two readings, or null."),
+  f("change_30d", unit, "Change from the reading about 30 days earlier, or null."),
+  f("change_30d_reference_date", "date", "Date of the earlier reading, or null."),
+  f("change_30d_elapsed_days", "days", "Days between the two readings, or null."),
+  f("change_365d", unit, "Change from the reading about 365 days earlier, or null."),
+  f("change_365d_reference_date", "date", "Date of the earlier reading, or null."),
+  f("change_365d_elapsed_days", "days", "Days between the two readings, or null."),
+  f("seasonal_rank", "position",
+    "Position of the newest reading among earlier years near the same date, counted from the lowest, or null."),
+  f("seasonal_rank_of", "count", "Number of years in that comparison, this one included, or null."),
+  f("first_obs", "date", "First date in the published record."),
+  f("n_obs", "readings", "Number of readings held."),
+  f("parameter_code", "identifier", "Publisher's code for the measured quantity."),
+  f("statistic_id", "identifier", "Publisher's code for the daily statistic.")
+];
+
+export const LAKE_GROUPS: readonly ApiFieldGroup[] = [
+  { id: "lake-header", title: "File header", path: "root", fields: [
+    f("schema_version", "version number", "Version of this JSON structure."),
+    f("method_version", "identifier", "Version of the calculations behind the derived values."),
+    f("water_type", "identifier", "Always natural_terminal_lake. A lake is never a reservoir record."),
+    f("fetched_at", "date and time", "Time the file was generated, in coordinated universal time."),
+    f("run_date", "date", "Local date of the refresh."),
+    f("stale_after_days", "days", "Days allowed before a daily reading is late."),
+    f("withdraw_after_days", "days", "The most days a reading can be old and still be published."),
+    f("lake_count", "lakes", "Number of records in the lakes array."),
+    f("stale_count", "lakes", "Number of records with late data."),
+    f("withdrawn_count", "lakes", "Number of lakes held back for old data."),
+    f("lakes", "array", "Current lake records."),
+    f("withdrawn", "array", "Lakes held back because their newest reading is too old. Each entry carries no measurement.")
+  ]},
+  { id: "lake-record", title: "Lake record", path: "lakes[]", fields: [
+    f("name", "text", "Name of the lake."),
+    f("water_type", "identifier", "Always natural_terminal_lake."),
+    f("source_key", "identifier", "Provider key. Always usgs for the first lake."),
+    f("source_label", "text", "Publisher's name in full."),
+    f("source_url", "web address", "Service the readings came from."),
+    f("source_station_id", "identifier", "Publisher's site number."),
+    f("state", "code", "Two-letter state code of the lake point, or null."),
+    f("lat", "degrees", "Latitude of the published lake point."),
+    f("lon", "degrees", "Longitude of the published lake point."),
+    f("data_frequency", "identifier", "Always daily."),
+    f("stale_after_days", "days", "Days allowed before this lake's reading is late."),
+    f("as_of", "date", "Date of the newest reading present in both measurements."),
+    f("days_stale", "days", "Age of that reading on the refresh date."),
+    f("is_stale", "true or false", "True when the reading is late."),
+    f("fetch_ok", "true or false", "False when today's request failed and the last record was kept."),
+    f("elevation", "object", "Surface level block. Fields are listed below."),
+    f("volume", "object", "Volume block. Fields are listed below."),
+    f("targets", "array", "Restoration or regulatory levels, each with its authority, source and date. Never a full level. Empty when there are none."),
+    f("first_obs", "date", "First date in either published series."),
+    f("years_of_record", "years", "Length of the published record."),
+    f("huc6", "code", "Six-digit drainage area that contains the lake point.", true),
+    f("huc6_name", "text", "Name of that drainage area.", true),
+    f("huc8", "code", "Eight-digit subbasin that contains the lake point.", true),
+    f("huc8_name", "text", "Name of that subbasin.", true),
+    f("connected_states", "array", "States the drainage area reaches.", true)
+  ]},
+  { id: "lake-elevation", title: "Surface level", path: "lakes[].elevation", fields: [
+    f("unit", "identifier", "Always ft."),
+    f("vertical_datum", "identifier", "Datum the level is measured above."),
+    ...LAKE_MEASUREMENT("feet")
+  ]},
+  { id: "lake-volume", title: "Volume", path: "lakes[].volume", fields: [
+    f("unit", "identifier", "Always acre_feet."),
+    f("relation", "object", "The published table that turns a water level into a volume: its name, source and the date it came into use."),
+    f("change_7d_pct", "percent", "The 7-day change as a share of the earlier reading, or null."),
+    f("change_30d_pct", "percent", "The 30-day change as a share of the earlier reading, or null."),
+    f("change_365d_pct", "percent", "The 365-day change as a share of the earlier reading, or null."),
+    f("monthly", "array", "The last 12 calendar months: mean, lowest, highest and last volume, with the normal for that month and the years behind it."),
+    ...LAKE_MEASUREMENT("acre-feet")
+  ]},
+  { id: "lake-withdrawn", title: "Withdrawn lakes", path: "withdrawn[]", fields: [
+    f("name", "text", "Name of the lake."),
+    f("as_of", "date", "Date of the last reading before the feed went quiet."),
+    f("days_stale", "days", "Age of that reading on the refresh date."),
+    f("source_label", "text", "Publisher's name, or null."),
+    f("reason", "text", "Why the lake is held back. Contains no measurement.")
+  ]}
+];
