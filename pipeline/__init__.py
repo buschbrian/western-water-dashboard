@@ -14,12 +14,13 @@ notebook had to learn a new import path.
     history     reading a series at a date, and the twelve months behind today
     freshness   carry-forward, the withdrawal threshold, the notice
     geography   county and drainage-area assignment
+    lakes       natural terminal lakes, measured without a full level (ADR-112)
 
 Put new logic in the module that owns the concern, not in the orchestrator.
 See docs/architecture/pipeline.md and pipeline/AGENTS.md.
 """
 
 from . import (  # noqa: F401
-    constants, freshness, geography, history, numbers, providers, roster,
-    seasonal, source_history,
+    constants, freshness, geography, history, lakes, numbers, providers,
+    roster, seasonal, source_history,
 )

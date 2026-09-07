@@ -124,6 +124,7 @@ ADR-041.**
   [ADR-036](ADR-036-accessibility-is-a-gate-and-a-measured-content-policy.md),
   [ADR-045](ADR-045-name-the-site-for-the-water-and-each-page-for-its-subject.md),
   [ADR-112](ADR-112-publish-terminal-lakes-as-a-separate-water-type.md),
+  [ADR-117](ADR-117-publish-terminal-lakes-from-their-own-roster-and-payload.md),
   [ADR-114](ADR-114-publish-a-water-type-and-an-operating-character.md),
   [ADR-079](ADR-079-rename-through-a-former-name-table-and-publish-the-operator.md),
   [ADR-089](ADR-089-put-reservoir-state-facts-in-their-own-csv-columns.md)
@@ -283,6 +284,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-114](ADR-114-publish-a-water-type-and-an-operating-character.md) | Publish a water type and an operating character | Accepted; extends ADR-112 and qualifies ADR-072 and ADR-111; labels first, each numeric consequence its own decision |
 | [ADR-115](ADR-115-state-a-reviewed-hold-where-the-reservoir-used-to-be.md) | State a reviewed hold where the reservoir used to be | Accepted; extends ADR-056 and qualifies ADR-020; a hold is a four-field notice, never a measurement |
 | [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md) | Exclude a reviewed reading, and never repair one | Accepted; extends ADR-072's no-repair rule; five readings named across four withheld California stations, the issues stay open |
+| [ADR-117](ADR-117-publish-terminal-lakes-from-their-own-roster-and-payload.md) | Publish terminal lakes from their own roster and payload | Accepted; implements ADR-112 and extends ADR-056 and ADR-098; Walker Lake is the first lake, generated and not yet shown |
 
 ## Relationship to the historical journal
 

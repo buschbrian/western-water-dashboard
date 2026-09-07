@@ -71,6 +71,7 @@ if [ "$dry_run" = 1 ]; then
   note "  3. drought coverage $python_bin tools/compute_drought_coverage.py, every offered level"
   note "  4. pair check       $python_bin tools/check_drought_pair.py"
   note "  5. snow             $python_bin refresh_snowpack.py"
+  note "  5b. terminal lakes  $python_bin refresh_lakes.py (keeps the last complete lake payload on failure)"
   note "  6. assistant indexes $python_bin tools/build_assistant_indexes.py (keeps the last accepted set on failure)"
   note "  7. commit the published set:"
   published_files plan | sed 's/^/       /'
@@ -153,6 +154,14 @@ fi
 # never replaces the last complete file.
 if ! "$python_bin" refresh_snowpack.py; then
   warn "Snow download failed" "Keeping the last complete snow payload"
+fi
+
+# 5b. The natural terminal lakes (ADR-112) are a separate water type with a
+# separate payload and the same failure mode as snow: a lake's own carry-forward
+# is inside the script, and a failure that takes the whole run down keeps the
+# last complete file rather than publishing a partial one.
+if ! "$python_bin" refresh_lakes.py; then
+  warn "Terminal lake refresh failed" "Keeping the last complete lake payload"
 fi
 
 # 6. Compact assistant indexes are an optional reader surface. Their builder

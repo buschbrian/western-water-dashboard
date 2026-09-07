@@ -18,7 +18,7 @@ from .constants import (
     ADMITTED_CAP_RESERVOIRS_PATH, ADMITTED_CWMS_RESERVOIRS_PATH,
     ADMITTED_DNRC_RESERVOIRS_PATH,
     ADMITTED_RESERVOIRS_PATH, ADMITTED_RISE_RESERVOIRS_PATH,
-    ADMITTED_SRP_RESERVOIRS_PATH, ADMITTED_USGS_RESERVOIRS_PATH,
+    ADMITTED_SRP_RESERVOIRS_PATH, ADMITTED_USGS_RESERVOIRS_PATH, ADMITTED_TERMINAL_LAKES_PATH,
     BASE_AWDB_RESERVOIRS,
     BASE_RISE_RESERVOIRS, CAPACITY_PATH,
 )
@@ -519,6 +519,105 @@ def load_admitted_usgs_reservoirs(
 
 
 ADMITTED_USGS_RESERVOIRS = load_admitted_usgs_reservoirs()
+
+
+def load_admitted_terminal_lakes(
+    path: Path = ADMITTED_TERMINAL_LAKES_PATH,
+) -> dict[str, dict]:
+    """Load the reviewed natural terminal lakes (ADR-112).
+
+    Not a reservoir roster and not loaded by one: a lake has no dam, no full
+    level and no percent full, so `validate_capacity_evidence` never sees it,
+    and any capacity-shaped field in an entry is refused outright -- the way a
+    waiver with no reason is refused in the reservoir files. What a lake must
+    carry instead is the evidence the decision asks for: a reviewed waterbody
+    point, a reviewed closed-basin assignment, and for each of its two
+    measurements the survey's parameter, statistic and unit, with the
+    published elevation-volume relation named beside the volume.
+
+    A target -- a restoration or regulatory level -- is admitted only as a
+    named target with its authority, source and date. It is never a capacity,
+    and the loader will not let one be spelled as one.
+    """
+    document = json.loads(path.read_text(encoding="utf-8"))
+    if document.get("water_type") != "natural_terminal_lake":
+        raise ValueError(f"{path.name} must declare water_type natural_terminal_lake")
+    rows = document.get("lakes")
+    if not isinstance(rows, dict) or not rows:
+        raise ValueError(f"{path.name} must contain a non-empty lakes object")
+    forbidden = {"capacity", "capacity_af", "pct_of_capacity", "nid_id", "dam_lat",
+                 "dam_lon", "full_level_af", "physical_capacity_af"}
+    for station, row in rows.items():
+        if not isinstance(station, str) or not station or not isinstance(row, dict):
+            raise ValueError(f"invalid lake entry in {path.name}")
+        name = row.get("name")
+        if not isinstance(name, str) or not name:
+            raise ValueError(f"{station}: a lake needs a name to be called by")
+        if row.get("station") != station:
+            raise ValueError(
+                f"{station}: keyed by one station and configured for "
+                f"{row.get('station')!r}")
+        if row.get("cadence") != "daily":
+            raise ValueError(f"{name}: a terminal lake series must be daily")
+        if not isinstance(row.get("lat"), (int, float)) or not isinstance(
+                row.get("lon"), (int, float)):
+            raise ValueError(f"{name}: coordinates are required")
+        spelled = forbidden & set(row)
+        if spelled:
+            raise ValueError(
+                f"{name}: a terminal lake has no capacity; remove {sorted(spelled)}")
+        _reviewed_date(name, "por_start", row.get("por_start"))
+        for block in ("waterbody", "closed_basin"):
+            evidence = row.get(block)
+            if not isinstance(evidence, dict) or not evidence:
+                raise ValueError(f"{name}: a reviewed {block} block is required")
+        waterbody = row["waterbody"]
+        if not waterbody.get("nhdplus_hr_permanent_identifier") \
+                or not isinstance(waterbody.get("source_url"), str) \
+                or not waterbody["source_url"].startswith("https://"):
+            raise ValueError(
+                f"{name}: the waterbody must name its NHDPlus HR identifier and an "
+                "HTTPS source")
+        _reviewed_date(name, "waterbody.probed", waterbody.get("probed"))
+        basin = row["closed_basin"]
+        for field in ("huc6", "huc8", "evidence"):
+            if not isinstance(basin.get(field), str) or not basin[field]:
+                raise ValueError(f"{name}: closed_basin needs {field}")
+        _reviewed_date(name, "closed_basin.reviewed", basin.get("reviewed"))
+        for measure in ("elevation", "volume"):
+            series = row.get(measure)
+            if not isinstance(series, dict):
+                raise ValueError(f"{name}: the {measure} series is required")
+            for field in ("parameter_code", "statistic_id", "unit"):
+                if not isinstance(series.get(field), str) or not series[field]:
+                    raise ValueError(f"{name}: {measure} needs {field}")
+        if not isinstance(row["elevation"].get("vertical_datum"), str) \
+                or not row["elevation"]["vertical_datum"]:
+            raise ValueError(f"{name}: an elevation is meaningless without its datum")
+        relation = row["volume"].get("relation")
+        if not isinstance(relation, dict) or not relation.get("name") \
+                or not isinstance(relation.get("source_url"), str) \
+                or not relation["source_url"].startswith("https://"):
+            raise ValueError(
+                f"{name}: the volume must name its elevation-volume relation and an "
+                "HTTPS source")
+        targets = row.get("targets")
+        if not isinstance(targets, list):
+            raise ValueError(f"{name}: targets must be a list, empty when there are none")
+        for target in targets:
+            for field in ("name", "authority", "source_url", "set_on"):
+                if not isinstance(target.get(field), str) or not target[field]:
+                    raise ValueError(
+                        f"{name}: a target is a named level with its authority, "
+                        f"source and date; missing {field}")
+            if not isinstance(target.get("elevation_ft"), (int, float)):
+                raise ValueError(f"{name}: a target is an elevation in feet")
+            if any(key in target for key in ("capacity_af", "volume_af", "pct")):
+                raise ValueError(f"{name}: a target is never a capacity (ADR-112)")
+    return rows
+
+
+ADMITTED_TERMINAL_LAKES = load_admitted_terminal_lakes()
 USGS_RESERVOIRS = {
     site_no: (
         row["name"], row["lat"], row["lon"],
