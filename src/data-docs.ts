@@ -5,6 +5,7 @@ import "@esri/calcite-components/components/calcite-navigation";
 
 import {
   DROUGHT_GROUPS,
+  LAKE_GROUPS,
   REFERENCE_GROUPS,
   RESERVOIR_GROUPS,
   SNOW_GROUPS,
@@ -41,6 +42,7 @@ root.innerHTML = `
       <ul>
         <li><a href="#files">Published files</a></li>
         <li><a href="#reservoir-fields">Reservoir fields</a></li>
+        <li><a href="#lake-fields">Terminal lake fields</a></li>
         <li><a href="#snow-fields">Snow fields</a></li>
         <li><a href="#drought-fields">Drought fields</a></li>
         <li><a href="#reference-fields">Reference fields</a></li>
@@ -59,6 +61,16 @@ root.innerHTML = `
           morning. If one provider request fails, the last good reservoir record stays in
           the file and is marked as late data. A broadly failed run does not replace the
           last published file. Shown on the <a href="./">storage map</a>.</p>
+      </article>
+      <article class="api-file">
+        <h3>Terminal lakes</h3>
+        <p><a href="./api/lakes.json"><code>/api/lakes.json</code></a></p>
+        <p>Natural lakes with no outlet and no dam. Each record carries the surface
+          level above a named datum and the volume on a published table. Changes,
+          record readings and history rank are included. No full level and no percent
+          full, because none is defined for a terminal lake. Structure version 1.
+          Refreshed each morning, separately from the reservoirs, and never added to a
+          reservoir total. Shown on the <a href="./lakes.html">terminal lakes page</a>.</p>
       </article>
       <article class="api-file">
         <h3>Snow monitoring</h3>
@@ -111,6 +123,10 @@ root.innerHTML = `
     <section class="methods-section api-fields" id="reservoir-fields"
       aria-labelledby="reservoir-fields-heading">
       <h2 id="reservoir-fields-heading">Reservoir fields</h2>
+    </section>
+    <section class="methods-section api-fields" id="lake-fields"
+      aria-labelledby="lake-fields-heading">
+      <h2 id="lake-fields-heading">Terminal lake fields</h2>
     </section>
     <section class="methods-section api-fields" id="snow-fields"
       aria-labelledby="snow-fields-heading">
@@ -212,6 +228,7 @@ function renderGroups(hostId: string, groups: readonly ApiFieldGroup[]): void {
 }
 
 renderGroups("reservoir-fields", RESERVOIR_GROUPS);
+renderGroups("lake-fields", LAKE_GROUPS);
 renderGroups("snow-fields", SNOW_GROUPS);
 renderGroups("drought-fields", DROUGHT_GROUPS);
 renderGroups("reference-fields", REFERENCE_GROUPS);
@@ -220,6 +237,6 @@ void setupPlaceChooser();
 
 window.__dataDocsReady = {
   files: document.querySelectorAll(".api-file").length,
-  groups: RESERVOIR_GROUPS.length + SNOW_GROUPS.length + DROUGHT_GROUPS.length
-    + REFERENCE_GROUPS.length
+  groups: RESERVOIR_GROUPS.length + LAKE_GROUPS.length + SNOW_GROUPS.length
+    + DROUGHT_GROUPS.length + REFERENCE_GROUPS.length
 };

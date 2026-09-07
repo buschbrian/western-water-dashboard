@@ -21,10 +21,14 @@ Two rules before any figure below is read:
 | `snowpack.json` | 3,629 KB | **304 KB** |
 | `reservoirs.json` | 2,055 KB | 220.8 KB |
 | `snow_sites.json` | 143 KB | 22 KB |
+| `lakes.json` | 7.1 KB | 1.4 KB |
 | `reference.json` | 193 KB | 38.4 KB |
 | `data/drought/usdm-huc6.json` | 24.5 KB | 3.4 KB |
 | `data/drought/usdm-huc4.json` | 10.6 KB | 2.1 KB |
 | `data/drought/usdm-huc8.json` | 121 KB | 12.3 KB |
+
+`lakes.json` was measured 2026-09-06 on its first generated file, one lake
+(ADR-117); it is fetched only by the terminal-lakes page (ADR-118).
 
 The two storage figures were re-measured 2026-08-21, after R3 admitted
 Colorado; the section at the end of this file has the arithmetic. The

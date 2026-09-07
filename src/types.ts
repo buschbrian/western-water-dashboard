@@ -648,3 +648,119 @@ export interface UpstreamIndex {
   review_count?: number;
   traces: Record<string, UpstreamTrace>;
 }
+
+/*
+ * A natural terminal lake (ADR-112, ADR-117): a water measured without a
+ * full level. Its payload is `lakes.json`, separate from the reservoirs on
+ * purpose -- a lake joins no reservoir rollup, and none of the reservoir
+ * consumers ever see one.
+ */
+
+/** One measured series: its current value, extremes, dated changes and rank. */
+export interface LakeMeasurement {
+  current: number;
+  as_of: string;
+  record_high: number;
+  record_high_date: string;
+  record_low: number;
+  record_low_date: string;
+  first_obs: string;
+  n_obs: number;
+  change_7d: NullableNumber;
+  change_7d_reference_date: string | null;
+  change_7d_elapsed_days: NullableNumber;
+  change_30d: NullableNumber;
+  change_30d_reference_date: string | null;
+  change_30d_elapsed_days: NullableNumber;
+  change_365d: NullableNumber;
+  change_365d_reference_date: string | null;
+  change_365d_elapsed_days: NullableNumber;
+  seasonal_rank: NullableNumber;
+  seasonal_rank_of: NullableNumber;
+  parameter_code: string;
+  statistic_id: string;
+}
+
+export interface LakeElevation extends LakeMeasurement {
+  unit: "ft";
+  vertical_datum: string;
+}
+
+export interface LakeVolumeRelation {
+  name: string;
+  source_url: string;
+  in_use_from: string | null;
+}
+
+export interface LakeVolume extends LakeMeasurement {
+  unit: "acre_feet";
+  relation: LakeVolumeRelation;
+  change_7d_pct: NullableNumber;
+  change_30d_pct: NullableNumber;
+  change_365d_pct: NullableNumber;
+  monthly: MonthlyRecord[];
+}
+
+/** A restoration or regulatory level: a named target, never a capacity. */
+export interface LakeTarget {
+  name: string;
+  authority: string;
+  source_url: string;
+  set_on: string;
+  elevation_ft: number;
+}
+
+export interface TerminalLake {
+  name: string;
+  water_type: "natural_terminal_lake";
+  source_key: "usgs";
+  source_label: string;
+  source_url: string;
+  source_station_id: string;
+  state: string | null;
+  lat: number;
+  lon: number;
+  data_frequency: "daily";
+  stale_after_days: number;
+  as_of: string;
+  days_stale: number;
+  is_stale: boolean;
+  fetch_ok: boolean;
+  fetch_error?: string;
+  elevation: LakeElevation;
+  volume: LakeVolume;
+  targets: LakeTarget[];
+  first_obs: string;
+  years_of_record: number;
+  huc6?: string | null;
+  huc6_name?: string | null;
+  huc8?: string | null;
+  huc8_name?: string | null;
+  connected_states?: string[];
+  in_utah?: boolean;
+  intersects_utah?: boolean;
+}
+
+/** A lake the payload is not publishing (ADR-056): no measurement in it. */
+export interface WithdrawnLake {
+  name: string;
+  as_of: string;
+  days_stale: number;
+  source_label: string | null;
+  reason: string;
+}
+
+export interface LakePayload {
+  schema_version: number;
+  method_version: string;
+  water_type: "natural_terminal_lake";
+  fetched_at: string;
+  run_date: string;
+  stale_after_days: number;
+  withdraw_after_days: number;
+  lake_count: number;
+  stale_count: number;
+  withdrawn_count: number;
+  lakes: TerminalLake[];
+  withdrawn: WithdrawnLake[];
+}
