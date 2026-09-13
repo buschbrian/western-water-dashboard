@@ -136,7 +136,22 @@ describe("the two forms of one filter", () => {
     for (const reservoir of reservoirs) {
       const index = classIndexOf(reservoir);
       if (index === null) continue;
-      expect(STORAGE_CLASSES[index]?.min).toBeLessThanOrEqual(headlinePercent(reservoir) ?? 0);
+      const percent = headlinePercent(reservoir);
+      // classIndexOf found a class, so storageClass() read a real number --
+      // it only returns null for a null or non-finite percent.
+      if (percent === null) throw new Error(`${reservoir.name} had a class with no percent`);
+      // The lowest class has no lower bound by design (filterBounds' own
+      // comment: it also catches a reading below zero, like Paonia
+      // Reservoir's gauge going slightly negative at dead pool). Every
+      // other class's min is a real lower bound.
+      if (index > 0) {
+        expect(STORAGE_CLASSES[index]?.min, reservoir.name).toBeLessThanOrEqual(percent);
+      }
+      // Every class but the highest has a real upper bound: the next
+      // class's min. This is the half of "the class it is coloured by"
+      // that still catches a reservoir landing one band too high.
+      const next = STORAGE_CLASSES[index + 1];
+      if (next) expect(percent, reservoir.name).toBeLessThan(next.min);
     }
   });
 });
