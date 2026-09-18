@@ -3,7 +3,32 @@
 Notable changes to the dashboard. The data itself is refreshed every morning
 and is not listed here.
 
+The format is [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the
+version numbers are [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+A version names the application and its published data contracts. The payloads
+carry their own `schema_version`, and the seasonal estimator carries its own
+`METHOD_VERSION`; neither follows this number.
+
 ## [Unreleased]
+
+### Added
+
+- **What the drought looks like on the ground.** A new page,
+  `landscape.html`, carries photographs of the western landscape beside the
+  measurements the rest of the site publishes. It says what a photograph is
+  evidence of -- one place on one day, not a measurement and not a trend --
+  and states that every frame is a real capture with no generative content.
+  Every frame is made on public land and names the place it was made, with a
+  location where that helps a reader find the same view. The gallery is empty
+  today and says so.
+
+## [1.0.0] - 2026-09-18
+
+The first tagged release, and the state the site has run in for several weeks.
+Everything below this heading shipped before the tag: it is the whole history
+of the modernization, gathered into one release rather than rewritten. The
+scope is closed at this version (ADR-117). Further work is content and
+maintenance, not new geographic analysis.
 
 ### Added
 

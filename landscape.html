@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- A static page, like terms.html: no scripts and no external requests, so
+       the policy is far stricter than the application pages need. Inline
+       style is the one allowance, because this page carries its own
+       stylesheet. `img-src 'self'` is what the photographs need and all they
+       need -- every frame is a file in this repository under public/photos/,
+       served from this origin. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'none'; script-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <meta name="description" content="Photographs of the western drought on the ground, read beside the measurements on the drought and storage pages." />
+  <title>Drought on the Ground — Western Water Dashboard</title>
+  <style>
+    /* The same tokens and the same type as terms.html, which is the static
+       page pattern on this site. No serif anywhere. */
+    :root {
+      --app-accent: #356b6f;
+      --app-border: #d4c5b2;
+      --app-muted: #655f55;
+      --app-surface: #f3eee6;
+      --app-surface-raised: #fffaf2;
+      --app-text: #2f342f;
+      color-scheme: light dark;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --app-accent: #86b9b5;
+        --app-border: #5f5a50;
+        --app-muted: #c9c0b2;
+        --app-surface: #242723;
+        --app-surface-raised: #30332e;
+        --app-text: #f5efe5;
+      }
+    }
+    body {
+      margin: 0;
+      color: var(--app-text);
+      background: var(--app-surface);
+      font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+    main {
+      max-width: 44rem;
+      margin-inline: auto;
+      padding: 2rem 1.25rem 3rem;
+    }
+    .eyebrow {
+      color: var(--app-muted);
+      font-size: .8125rem;
+      font-weight: 700;
+      letter-spacing: .02em;
+      margin-block-end: .25rem;
+    }
+    h1 { font-size: 1.75rem; margin-block: 0 .5rem; }
+    h2 {
+      font-size: 1.125rem;
+      margin-block: 2rem .5rem;
+      padding-block-start: 1.25rem;
+      border-block-start: 1px solid var(--app-border);
+    }
+    h3 { font-size: 1rem; margin-block: 1.5rem .25rem; }
+    a { color: var(--app-accent); }
+    .card {
+      background: var(--app-surface-raised);
+      border: 1px solid var(--app-border);
+      border-radius: .5rem;
+      padding: 1rem 1.25rem;
+      margin-block: 1rem;
+    }
+    /* The gallery. Empty today and valid either way: the notice is a normal
+       block, and a figure added later is a normal block beside it. Nothing
+       here is positioned against a count of photographs. */
+    .gallery { margin-block: 1rem; }
+    figure.photo {
+      margin: 0 0 2.5rem;
+      background: var(--app-surface-raised);
+      border: 1px solid var(--app-border);
+      border-radius: .5rem;
+      overflow: hidden;
+    }
+    figure.photo img {
+      display: block;
+      width: 100%;
+      height: auto;
+    }
+    figure.photo figcaption {
+      padding: 1rem 1.25rem;
+      font-size: .9375rem;
+    }
+    figure.photo figcaption p { margin-block: 0 .75rem; }
+    .provenance {
+      margin: 0;
+      padding-block-start: .75rem;
+      border-block-start: 1px solid var(--app-border);
+      color: var(--app-muted);
+      font-size: .8125rem;
+    }
+    .provenance div { display: flex; gap: .5rem; margin-block-end: .25rem; }
+    .provenance dt { font-weight: 700; min-width: 7.5rem; }
+    .provenance dd { margin: 0; }
+    footer {
+      max-width: 44rem;
+      margin-inline: auto;
+      padding: 0 1.25rem 2rem;
+      color: var(--app-muted);
+      font-size: .8125rem;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">Western Water Dashboard</p>
+    <h1>Drought on the ground</h1>
+    <p>The rest of this site measures water. The
+      <a href="./drought.html">drought page</a> counts the land in each drought
+      class each week. The <a href="./">storage map</a> counts the water behind
+      each dam. Neither one shows what the dry ground looks like. This page
+      does, in photographs made in the Great Basin.</p>
+
+    <h2 id="what-a-photograph-proves">What a photograph proves</h2>
+    <p>A photograph is evidence about one place on one day. It is not a
+      measurement and it is not a trend. It cannot tell you how much of a
+      drainage area is dry. Only the weekly measurements can do that.</p>
+    <p>So read the two together. The chart gives the extent, and the
+      photograph gives the scale. A lake bed you can walk across is the same
+      fact as a class on a map. It is the version a person can hold on to.</p>
+
+    <h2 id="places">Public land, and it is named</h2>
+    <div class="card">
+      <p><strong>Every photograph here was made on public land.</strong> That is
+        the point of the project. This ground belongs to everyone, and what the
+        drought is doing to it is a public fact.</p>
+      <p>So each one names its place. Where a location helps you find the same
+        view, it is given: a road, a trailhead, or the coordinates of the spot
+        itself. Nothing here is held back.</p>
+      <p>Finding a place and reaching it are different questions. Some of these
+        need a high-clearance vehicle, and some need an ordinary permit. Read
+        the land manager's own rules before you go.</p>
+    </div>
+
+    <h2 id="provenance">Every photograph is a real capture</h2>
+    <p>Each photograph carries a provenance block below it. The block names the
+      place, the month and the photographer. It also states that the frame is a
+      real capture with no generative content.</p>
+    <p>The processing is ordinary: exposure, color, and crop. Nothing is added
+      to a frame and nothing is taken out of one. That claim is about
+      provenance, not about tools.</p>
+    <p>Each file also keeps its own camera data, the place it was made
+      included. A frame that says what it is can be checked.</p>
+
+    <h2 id="photographs">The photographs</h2>
+    <div class="gallery">
+      <!--
+        HOW TO ADD A PHOTOGRAPH
+        ================================================================
+        The full procedure, including file size, format and naming, is in
+        docs/operations/landscape-photographs.md. The short form:
+
+          1. Put the file in public/photos/ as
+             <place>-<month>-<subject>.jpg. Leave its camera data alone.
+          2. Copy one template block below, paste it inside this gallery,
+             and delete the surrounding comment markers.
+          3. Fill the four marked fields. Leave the last provenance row
+             exactly as it is written.
+          4. Delete the "no photographs yet" notice once the first one is
+             published.
+
+        Keep width and height on the img. They hold the page steady while
+        the photograph loads. Use the file's own pixel size.
+
+        TEMPLATE -- one photograph
+        ----------------------------------------------------------------
+        <figure class="photo">
+          <img src="./photos/FILE-NAME.jpg" width="1600" height="1067"
+               loading="lazy"
+               alt="ALT TEXT: one sentence naming what the camera sees, for a
+                    reader who cannot see it. Say the ground, the water or its
+                    absence, and the light. Do not repeat the caption." />
+          <figcaption>
+            <p>CAPTION: two or three short sentences. The first says what this
+              is. The second says what the water did here. The third, if there
+              is one, names the measurement for the same week and links to the
+              page it is on.</p>
+            <dl class="provenance">
+              <div><dt>Place</dt><dd>PLACE NAME, said the way a map says it, and the land it is on. Add coordinates after it where they help a reader find the same view.</dd></div>
+              <div><dt>Month</dt><dd>MONTH and year.</dd></div>
+              <div><dt>Photographer</dt><dd>Brian Busch</dd></div>
+              <div><dt>Capture</dt><dd>Real capture. No generative content.</dd></div>
+            </dl>
+          </figcaption>
+        </figure>
+        ----------------------------------------------------------------
+
+        The four frames this page was built for, from the summer of 2026:
+
+          1. A dry lake bed, wide, with the far shoreline in it.
+          2. The cracked surface of the same bed, close.
+          3. A reservoir shoreline, with the old waterline above the water.
+          4. A spring, a creek or a stock pond that still holds water.
+
+        Any of the four can be published on its own. The page does not
+        need the full set, and an empty gallery is a valid page.
+      -->
+      <p class="card" id="no-photographs-yet">No photographs are published
+        here yet. The frames from the summer of 2026 are being prepared.</p>
+    </div>
+  </main>
+  <footer>
+    <p><a href="./">Storage map</a> · <a href="./drought.html">Weekly
+      drought</a> · <a href="./methods.html">Methods and sources</a> ·
+      <a href="./terms.html">Terms and license</a> ·
+      <a href="https://github.com/buschbrian/western-water-dashboard" rel="noreferrer">Source
+      code</a></p>
+  </footer>
+</body>
+</html>
