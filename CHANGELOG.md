@@ -11,6 +11,16 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ## [Unreleased]
 
+### Added
+
+- **What the drought looks like on the ground.** A new page,
+  `landscape.html`, carries photographs of the western landscape beside the
+  measurements the rest of the site publishes. It says what a photograph is
+  evidence of -- one place on one day, not a measurement and not a trend --
+  states that every frame is a real capture with no generative content, and
+  publishes no exact coordinates for any of them, because a tire track on a
+  dry lake bed stays there for years. The gallery is empty today and says so.
+
 ## [1.0.0] - 2026-09-18
 
 The first tagged release, and the state the site has run in for several weeks.

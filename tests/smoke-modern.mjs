@@ -4947,6 +4947,7 @@ for (const failure of [
     ["Methods", "methods.html", null],
     ["Data reference", "data.html", "__dataDocsReady"],
     ["Terms", "terms.html", null],
+    ["Drought on the ground", "landscape.html", null],
     ["Reservoir page", "reservoir.html?name=Pearl%20Lake", "__reservoirReady"]
   ];
   console.log("\n=== Simplified Technical English");

@@ -95,7 +95,8 @@ export default defineConfig({
         data: resolve(root, "data.html"),
         reservoir: resolve(root, "reservoir.html"),
         explore: resolve(root, "explore.html"),
-        terms: resolve(root, "terms.html")
+        terms: resolve(root, "terms.html"),
+        landscape: resolve(root, "landscape.html")
       }
     }
   },
