@@ -79,7 +79,9 @@ export default defineConfig({
   // so an unqualified test glob collects every copy of every test file and
   // reports five times the real count -- passing, and meaningless.
   test: {
-    exclude: ["**/node_modules/**", "**/dist/**", ".claude/**"]
+    // .atlas and .agents are gitignored local skill installs that carry their
+    // own test files; CI never sees them, but a local run would collect them.
+    exclude: ["**/node_modules/**", "**/dist/**", ".claude/**", ".atlas/**", ".agents/**"]
   },
   build: {
     outDir,
