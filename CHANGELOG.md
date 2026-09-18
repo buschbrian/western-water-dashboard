@@ -3,7 +3,21 @@
 Notable changes to the dashboard. The data itself is refreshed every morning
 and is not listed here.
 
+The format is [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the
+version numbers are [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+A version names the application and its published data contracts. The payloads
+carry their own `schema_version`, and the seasonal estimator carries its own
+`METHOD_VERSION`; neither follows this number.
+
 ## [Unreleased]
+
+## [1.0.0] - 2026-09-18
+
+The first tagged release, and the state the site has run in for several weeks.
+Everything below this heading shipped before the tag: it is the whole history
+of the modernization, gathered into one release rather than rewritten. The
+scope is closed at this version (ADR-117). Further work is content and
+maintenance, not new geographic analysis.
 
 ### Added
 
