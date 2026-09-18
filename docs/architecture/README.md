@@ -72,6 +72,15 @@ renamed to the version, an empty `[Unreleased]` heading is left above it,
 hand. No job tags a release: the one release gate nothing can automate is the
 human visual review, because the ArcGIS canvas is blank in headless Chromium.
 
+**Release order confirmed by the owner on 2026-09-18:** release 1.0.0 first.
+The existing Topaz Lake PR [#56](https://github.com/buschbrian/western-water-dashboard/pull/56)
+and terminal-lake PRs [#61](https://github.com/buschbrian/western-water-dashboard/pull/61)
+and [#62](https://github.com/buschbrian/western-water-dashboard/pull/62)
+follow afterward; they are not prerequisites for 1.0.0. Keep them out of the
+release commit and tag. Their review, conflict resolution, dependency order
+(#61 before #62), and version/changelog updates belong to the next release.
+This sequencing decision does not record completion of the human visual review.
+
 The scope closed at 1.0.0
 ([ADR-117](../decisions/ADR-117-close-the-scope-at-version-1-0-0.md)). Work
 after it is maintenance and context — words, photographs, a provider that
