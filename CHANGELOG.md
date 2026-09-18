@@ -17,9 +17,10 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   `landscape.html`, carries photographs of the western landscape beside the
   measurements the rest of the site publishes. It says what a photograph is
   evidence of -- one place on one day, not a measurement and not a trend --
-  states that every frame is a real capture with no generative content, and
-  publishes no exact coordinates for any of them, because a tire track on a
-  dry lake bed stays there for years. The gallery is empty today and says so.
+  and states that every frame is a real capture with no generative content.
+  Every frame is made on public land and names the place it was made, with a
+  location where that helps a reader find the same view. The gallery is empty
+  today and says so.
 
 ## [1.0.0] - 2026-09-18
 

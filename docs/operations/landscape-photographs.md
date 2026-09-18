@@ -4,32 +4,9 @@ The procedure for [`landscape.html`](../../landscape.html), the static page
 that pairs the measurements with what the land looks like. It is a ten-minute
 job and every step is on this page.
 
-The page owns the reader-facing claims — no exact coordinates, and every frame
-a real capture. This document owns how a file gets there without breaking
-either one.
-
-## Before anything else: clean the file
-
-**A photograph carries its location inside it.** A camera or a phone writes GPS
-coordinates, a serial number, an owner name and the capture timestamp into the
-file's metadata. This repository is public. A frame copied in untouched
-publishes the exact coordinates of a fragile site, which is the one thing the
-page says it will not do.
-
-Strip the metadata from a working copy, never from the original:
-
-```bash
-cp ~/Pictures/export/frame.jpg /tmp/frame.jpg
-exiftool -all= /tmp/frame.jpg                 # removes GPS, serial, owner, timestamps
-exiftool -G /tmp/frame.jpg                    # confirm: nothing but the basics survives
-```
-
-`exiftool -G` is the check that matters. A file that still prints a `GPS`
-group, an `OwnerName`, a `SerialNumber` or a `CreatorTool` naming a local path
-is not ready. Repeat the strip rather than editing fields one at a time.
-
-Copyright and credit do not need to live in the file. The page states the
-photographer in the provenance block, where a reader can see it.
+The page owns the reader-facing claims: every frame is a real capture, made on
+public land, and its place is named. This document owns how a file gets there
+without breaking any of them.
 
 ## The file
 
@@ -45,8 +22,25 @@ photographer in the provenance block, where a reader can see it.
 Examples: `sevier-lake-jul2026-dry-bed.jpg`,
 `great-salt-lake-aug2026-old-waterline.jpg`.
 
-The name is a file name, not a location. Use the same coarse place the caption
-uses. Do not put a lake's exact arm, a spring's name or a road number in it.
+The name is a file name, not the caption. Keep it short, and use the same place
+the caption uses so the two agree.
+
+### Camera data stays in the file
+
+**Do not strip the metadata.** These are public places on public land, and
+where a photograph was made is part of what it says. The GPS position a camera
+writes is the same kind of fact as the place named in the caption, and this
+project publishes coordinates for every reservoir and snow site already
+(ADR-096). There is nothing here to hide.
+
+Optional, and only about your gear rather than the place: `exiftool` can drop
+the camera serial number and the owner name and leave everything else alone.
+
+```bash
+exiftool -SerialNumber= -OwnerName= public/photos/frame.jpg
+```
+
+Skip that step unless you want it. Nothing on the page depends on it.
 
 **Why the size limit.** Every published file is downloaded by every reader who
 opens the page, and this site measures its own transfer cost
@@ -92,8 +86,8 @@ Keep each sentence under 25 words: the browser suite measures them.
 
 | Row | What goes in it |
 |---|---|
-| Place | The coarsest name that still means something — a named lake bed, a valley, a county. **No coordinates, ever.** |
-| Month | Month and year. No day: a day plus a place is a location. |
+| Place | The place, said the way a map says it, and the public land it is on. Coordinates after it where they help a reader find the same view. |
+| Month | Month and year. A day as well, if the caption leans on the weather that day. |
 | Photographer | `Brian Busch` |
 | Capture | `Real capture. No generative content.` — written exactly, never reworded |
 
