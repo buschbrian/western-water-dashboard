@@ -24,10 +24,13 @@ of them changes what the site is.
 
 The absence of a version has a second cost that is easy to miss. Without one,
 every conversation about the project has to be about what to add next, because
-there is no statement of what it already is. The roster is 404 reservoirs
-across 11 states from nine providers, with mountain snow, weekly drought,
-upstream sets, four area sizes, an accessibility gate and a documented public
-data API. Measured against anything else published in the West, that is not an
+there is no statement of what it already is. On 2026-09-24 the daily payload
+publishes 405 reservoirs across 11 states from nine providers, and names two
+more that it does not publish: one withdrawn because its newest reading is
+more than 60 days old (ADR-056), and one held for review (ADR-115). Those
+counts move with the daily refresh. Beside them are mountain snow, weekly
+drought, upstream sets, four area sizes, an accessibility gate and a
+documented public data API. Measured against anything else published in the West, that is not an
 unfinished product waiting on its next feature.
 
 ## Decision
