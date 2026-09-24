@@ -25,7 +25,8 @@ than bundled. **Start with ADR-002.**
   [ADR-018](ADR-018-reference-data-ships-as-one-versioned-export.md),
   [ADR-051](ADR-051-revalidate-do-not-refetch.md),
   [ADR-052](ADR-052-write-the-snow-calendar-once.md),
-  [ADR-031](ADR-031-retire-comparison-implementations-and-redirect-their-urls.md)
+  [ADR-031](ADR-031-retire-comparison-implementations-and-redirect-their-urls.md),
+  [ADR-117](ADR-117-close-the-scope-at-version-1-0-0.md)
 - Superseded, read only for history: ADR-012, ADR-019
 
 ### Reservoir admission, identity and source authority
@@ -283,6 +284,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-114](ADR-114-publish-a-water-type-and-an-operating-character.md) | Publish a water type and an operating character | Accepted; extends ADR-112 and qualifies ADR-072 and ADR-111; labels first, each numeric consequence its own decision |
 | [ADR-115](ADR-115-state-a-reviewed-hold-where-the-reservoir-used-to-be.md) | State a reviewed hold where the reservoir used to be | Accepted; extends ADR-056 and qualifies ADR-020; a hold is a four-field notice, never a measurement |
 | [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md) | Exclude a reviewed reading, and never repair one | Accepted; extends ADR-072's no-repair rule; five readings named across four withheld California stations, the issues stay open |
+| [ADR-117](ADR-117-close-the-scope-at-version-1-0-0.md) | Close the scope at version 1.0.0 | Accepted; the accumulated changelog becomes the 1.0.0 release, the geographic scope closes, and the tag is cut by a person |
 
 ## Relationship to the historical journal
 

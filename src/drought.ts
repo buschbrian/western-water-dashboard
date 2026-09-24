@@ -486,6 +486,12 @@ function renderDrought(
         <div class="table-scroll" tabindex="0" role="region" aria-label="Drought class table, scrolls sideways"><table class="overview-table"><thead><tr><th>Drainage area</th><th>No drought</th><th>D0</th><th>D1</th><th>D2</th><th>D3</th><th>D4</th><th>Extreme or worse</th><th>Change since last week</th></tr></thead><tbody id="drought-table-rows"></tbody></table></div>
       </details>
       <p class="drought-attribution">${payload.attribution}. Read the full national map at <a href="https://droughtmonitor.unl.edu/" target="_blank" rel="noreferrer">droughtmonitor.unl.edu</a>.</p>
+      <!-- The one thing a weekly class share cannot show: what the land
+           under it looks like. The photographs live on a static page of
+           their own rather than in this view, because they are content
+           that never changes with the payload and need no map, no
+           readiness field and no deadline. -->
+      <p class="drought-attribution">The <a href="./landscape.html">drought on the ground</a> page will carry photographs of what these classes look like in the Great Basin.</p>
     </section>`;
 
   /* Filter state, read from the address bar so a shared link opens on the
