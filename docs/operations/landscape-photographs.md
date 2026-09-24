@@ -25,27 +25,78 @@ Examples: `sevier-lake-jul2026-dry-bed.jpg`,
 The name is a file name, not the caption. Keep it short, and use the same place
 the caption uses so the two agree.
 
-### Camera data stays in the file
+**Why the size limit.** Every published file is downloaded by every reader who
+opens the page, and this site measures its own transfer cost
+([`docs/data-transfer.md`](../data-transfer.md)). Four photographs at 400 KB is
+a page that opens on a phone on a mountain road. Four at 4 MB is not.
 
-**Do not strip the metadata.** These are public places on public land, and
+### Camera data stays in the file, local file paths do not
+
+**Do not strip the location.** These are public places on public land, and
 where a photograph was made is part of what it says. The GPS position a camera
 writes is the same kind of fact as the place named in the caption, and this
 project publishes coordinates for every reservoir and snow site already
 (ADR-096). There is nothing here to hide.
 
-Optional, and only about your gear rather than the place: `exiftool` can drop
-the camera serial number and the owner name and leave everything else alone.
+**Always strip the editing history.** Lightroom and DxO write XMP that records
+where the file lived on your own disk: the raw file name, the file it was
+derived from, and a history of saves, any of which can carry an absolute path
+such as `/Users/<name>/Pictures/...`. That is not a fact about the place and
+has no reader. Remove it from every file:
 
 ```bash
-exiftool -SerialNumber= -OwnerName= public/photos/frame.jpg
+exiftool -overwrite_original \
+  -XMP-crs:RawFileName= \
+  -XMP-xmpMM:DerivedFrom= -XMP-xmpMM:History= \
+  -XMP-xmpMM:Ingredients= -XMP-xmpMM:Pantry= \
+  public/photos/frame.jpg
 ```
 
-Skip that step unless you want it. Nothing on the page depends on it.
+`-overwrite_original` matters: without it `exiftool` leaves
+`frame.jpg_original` beside the file, with every field intact. The build
+publishes only `.jpg` files from `public/photos/`, but a backup there is one
+`git add` from the repository's history.
 
-**Why the size limit.** Every published file is downloaded by every reader who
-opens the page, and this site measures its own transfer cost
-([`docs/data-transfer.md`](../data-transfer.md)). Four photographs at 400 KB is
-a page that opens on a phone on a mountain road. Four at 4 MB is not.
+Optional, and only about your gear rather than the place: drop the body and
+lens serial numbers, including the one in the maker notes, and the owner name.
+
+```bash
+exiftool -overwrite_original -SerialNumber= -LensSerialNumber= \
+  -InternalSerialNumber= -OwnerName= public/photos/frame.jpg
+```
+
+Without a group prefix each name clears that tag in every group that carries
+it: EXIF, XMP and the maker notes. Skip this step unless you want it. Nothing
+on the page depends on it.
+
+Then confirm no local path is left. This prints nothing when the file is
+clean:
+
+```bash
+exiftool -a -G1 -s public/photos/frame.jpg | grep -E '/Users/|/home/|[A-Za-z]:\\'
+```
+
+### Check the file before it is published
+
+Two checks, every photograph, before the markup.
+
+**The point is on public land.** The page promises it, and nothing else checks
+it. Read the position the file carries:
+
+```bash
+exiftool -n -GPSLatitude -GPSLongitude public/photos/frame.jpg
+```
+
+Look that point up in the USGS Protected Areas Database viewer (PAD-US) or the
+BLM surface management agency map, and name the land manager it falls on in
+the Place row. A point on private land, on tribal land, or in an inholding
+does not go on this page, even if the view itself is of public ground. A file
+with no GPS position needs the same check from where you stood.
+
+**Run the `photo-metadata-audit` skill** over `public/photos/`. It lists every
+field in each file and writes a share-safe report without GPS, serials, owner
+names or paths. Read the private report for anything the step above missed,
+and keep both reports out of this repository.
 
 ## The markup
 
@@ -104,7 +155,7 @@ Then:
 
 ```bash
 npm run verify:fast        # the page is in the visible-text checks
-npx vite build             # confirms it still builds and publishes
+npm run verify:frontend    # confirms it still builds and publishes
 ```
 
 Run `npm run verify:browser` if you have Playwright installed. It reads the
