@@ -294,7 +294,7 @@ describe("a data-only commit deploys on its own", () => {
       "maplibre/index.html", "retired-route.js",
       "data/reservoirs.json", "data/snow_sites.json",
       "data/snowpack.json", "data/reference.json",
-      // The terminal lakes (ADR-118): their page and their payload, at the
+      // The terminal lakes (ADR-119): their page and their payload, at the
       // root, under data/ and as an API alias, like the reservoirs'.
       "lakes.html", "lakes.json", "data/lakes.json", "api/lakes.json"]) {
       expect(workflow, `the deploy must verify dist/${path}`).toContain(path);

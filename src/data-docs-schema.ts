@@ -614,7 +614,7 @@ export const REFERENCE_GROUPS: readonly ApiFieldGroup[] = [
 ];
 
 /*
- * The terminal-lake payload (ADR-117). Two measurement blocks with the same
+ * The terminal-lake payload (ADR-118). Two measurement blocks with the same
  * fields, so the block is documented once and named twice.
  */
 const LAKE_MEASUREMENT = (unit: string): readonly ApiField[] => [

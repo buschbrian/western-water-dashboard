@@ -650,7 +650,7 @@ export interface UpstreamIndex {
 }
 
 /*
- * A natural terminal lake (ADR-112, ADR-117): a water measured without a
+ * A natural terminal lake (ADR-112, ADR-118): a water measured without a
  * full level. Its payload is `lakes.json`, separate from the reservoirs on
  * purpose -- a lake joins no reservoir rollup, and none of the reservoir
  * consumers ever see one.

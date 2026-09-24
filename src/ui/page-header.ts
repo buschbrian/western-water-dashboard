@@ -61,7 +61,7 @@ const PAGE_SUBJECTS: Record<PageId, string> = {
    * reached from a reservoir, not from the navigation. The entry point
    * replaces the tab title with the reservoir's name once it resolves. */
   reservoir: "Reservoir Details",
-  /* The natural terminal lakes (ADR-118). Reached from the methods and data
+  /* The natural terminal lakes (ADR-119). Reached from the methods and data
    * pages rather than from the bar: the bar clips rather than scrolls, and
    * whether one lake earns a place in it is a decision not yet made. */
   lakes: "Terminal Lakes"

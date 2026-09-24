@@ -19,7 +19,7 @@ export async function loadUpstreamIndex(
   return validateUpstreamIndex(await response.json() as unknown);
 }
 
-/** The terminal lakes (ADR-117): their own file, never merged into the reservoirs. */
+/** The terminal lakes (ADR-118): their own file, never merged into the reservoirs. */
 export async function loadLakes(
   url = import.meta.env.DEV ? "./lakes.json" : "./data/lakes.json"
 ): Promise<LakePayload> {

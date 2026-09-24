@@ -1,5 +1,5 @@
 /*
- * The terminal-lakes page (ADR-118): a static shell, the runtime `lakes.json`,
+ * The terminal-lakes page (ADR-119): a static shell, the runtime `lakes.json`,
  * nothing generated (ADR-002).
  *
  * Every lake the payload publishes is on this one page, because there is one

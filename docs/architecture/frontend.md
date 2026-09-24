@@ -20,7 +20,7 @@ module that owns the behaviour and read the entry point only for the sequence.
 | Drought | `src/drought.ts` | `src/drought-model.ts`, `src/ui/drought-map.ts`, `src/viz/drought-*.ts`, `src/state/drought-url.ts` |
 | One reservoir | `src/reservoir.ts` | `src/reservoir-model.ts` (link resolution, both baselines, provenance), `src/ui/reservoir-template.ts`; the reading itself is `describeReservoir`, shared with the map's details panel so the two cannot drift |
 | Methods, data, terms | `src/methods.ts`, `src/data-docs.ts` | `src/data-docs-schema.ts` is the field-by-field contract |
-| Terminal lakes | `src/lakes.ts` | `src/lakes-model.ts` (every sentence and row), `src/data/lakes-validate.ts`, `src/ui/lakes-template.ts`; reached from the methods and data pages, not the bar (ADR-118) |
+| Terminal lakes | `src/lakes.ts` | `src/lakes-model.ts` (every sentence and row), `src/data/lakes-validate.ts`, `src/ui/lakes-template.ts`; reached from the methods and data pages, not the bar (ADR-119) |
 
 Shared by all of them: `src/data/` (fetch, validate, scope, rollup),
 `src/state/` (URL, filters, preferences), `src/viz/` (colour, symbols,
@@ -48,7 +48,7 @@ none, and the browser suite visits every one.
 ### The terminal-lakes page
 
 One reading page, `lakes.html`, for every published natural terminal lake
-(ADR-118). It fetches `lakes.json` through `loadLakes`, whose validator
+(ADR-119). It fetches `lakes.json` through `loadLakes`, whose validator
 refuses a lake record carrying a reservoir-only field, a level carrying a
 percentage change, a target spelled as a capacity and a notice carrying a
 measurement -- the browser holds ADR-112's rules as the pipeline does. Each

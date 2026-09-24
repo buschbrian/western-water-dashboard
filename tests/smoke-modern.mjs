@@ -2712,7 +2712,7 @@ for (const viewport of VIEWPORTS) {
       `${label}: rendered ${state.groups} field groups, readiness reported ${state.ready?.groups}`);
     check(JSON.stringify(state.links) === JSON.stringify([
       "./api/reservoirs.json", "./",
-      // The terminal lakes (ADR-117, ADR-118): their own file and page.
+      // The terminal lakes (ADR-118, ADR-119): their own file and page.
       "./api/lakes.json", "./lakes.html",
       "./api/snowpack.json", "./snow.html",
       "./data/drought/usdm-huc6.json", "./drought.html",
@@ -4924,7 +4924,7 @@ for (const failure of [
 }
 
 /*
- * The terminal-lakes page (ADR-118), at every width.
+ * The terminal-lakes page (ADR-119), at every width.
  *
  * One page for every published lake, so the contract is the readiness
  * signal's: what the payload published is what the page drew, aria-busy has

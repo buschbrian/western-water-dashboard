@@ -1,6 +1,6 @@
 /*
  * The terminal-lakes page's frame, less everything the payload supplies
- * (ADR-118). The same split the reservoir page makes: structure and rule
+ * (ADR-119). The same split the reservoir page makes: structure and rule
  * text here, readings filled in by the entry point.
  */
 import "@esri/calcite-components/components/calcite-action";

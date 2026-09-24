@@ -28,7 +28,7 @@ Two rules before any figure below is read:
 | `data/drought/usdm-huc8.json` | 121 KB | 12.3 KB |
 
 `lakes.json` was measured 2026-09-06 on its first generated file, one lake
-(ADR-117); it is fetched only by the terminal-lakes page (ADR-118).
+(ADR-118); it is fetched only by the terminal-lakes page (ADR-119).
 
 The two storage figures were re-measured 2026-08-21, after R3 admitted
 Colorado; the section at the end of this file has the arithmetic. The

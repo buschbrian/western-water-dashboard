@@ -1,5 +1,5 @@
 /*
- * The runtime validator for `lakes.json` (ADR-117).
+ * The runtime validator for `lakes.json` (ADR-118).
  *
  * The same posture as the reservoir validator: a payload that does not say
  * what the page needs is refused whole, because a lake drawn from a half-read

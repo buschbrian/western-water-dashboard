@@ -1,5 +1,5 @@
 /*
- * The words and rows the terminal-lakes page is made of (ADR-118).
+ * The words and rows the terminal-lakes page is made of (ADR-119).
  *
  * Pure, like every other `*-model.ts`: a lake record in, sentences and
  * labelled rows out, nothing rendered. The rank and the change intervals

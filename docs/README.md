@@ -84,8 +84,8 @@ should be worked:
    the unnamed Calcite slider handle that `src/ui/slider-label.ts` works
    around, and the `script-src` measurement behind ADR-036.
 5. **The next terminal lakes.** Walker Lake is published end to end: the
-   roster and payload (ADR-117) and its own page, reached from the methods and
-   data pages (ADR-118). What remains is contract work before it is page work:
+   roster and payload (ADR-118) and its own page, reached from the methods and
+   data pages (ADR-119). What remains is contract work before it is page work:
    Pyramid Lake needs the volume block to become optional by decision, Great
    Salt Lake needs an arm-aware record, and whether a lake earns a place in the
    navigation bar waits for a second lake. `docs/data-transfer.md` needs the

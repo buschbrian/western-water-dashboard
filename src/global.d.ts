@@ -300,7 +300,7 @@ interface Window {
   __reservoirReady?: {
     status: "found" | "withdrawn" | "held" | "unknown" | "none";
   };
-  /** The terminal-lakes page settled (ADR-118). `lakes` is what the payload
+  /** The terminal-lakes page settled (ADR-119). `lakes` is what the payload
    * published and `rendered` what the page drew, so a page that loaded its
    * data and drew none of it is visible; `withdrawn` counts the notices. A
    * failed fetch reports zeros with `failed` true. */

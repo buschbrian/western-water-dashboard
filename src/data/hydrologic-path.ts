@@ -77,7 +77,7 @@ export function hydrologicPath(
  * The three named rosters a path needs, read from the reference export.
  *
  * The reservoir payload carries its own `watersheds` rosters; a payload that
- * does not (the terminal lakes, ADR-118) reads the names from the same file
+ * does not (the terminal lakes, ADR-119) reads the names from the same file
  * the maps take their scopes from, one level at a time, so a lake's region
  * and subregion are named exactly as a reservoir's are. An export this cannot
  * read yields empty rosters, and the path shows its codes with no names --

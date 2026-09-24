@@ -1,13 +1,13 @@
-# ADR-118: Show terminal lakes on their own page
+# ADR-119: Show terminal lakes on their own page
 
 - Status: Accepted
 - Date: 2026-09-06
-- Extends: ADR-117 and ADR-045
+- Extends: ADR-118 and ADR-045
 - Qualifies: ADR-078's glossary statement, already superseded by ADR-112
 
 ## Context
 
-ADR-117 built the pipeline half of ADR-112: `lakes.json` carries Walker Lake's
+ADR-118 built the pipeline half of ADR-112: `lakes.json` carries Walker Lake's
 surface elevation and volume with no full level, and named the reader surface
 as the next decision. Three places could show a lake.
 
