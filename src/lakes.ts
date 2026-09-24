@@ -102,7 +102,7 @@ function renderLake(lake: TerminalLake, rosters: HydrologicRosters): HTMLElement
   const chartHost = document.createElement("div");
   chartHost.className = "trend-chart-host";
   const chart = renderTrendChart(chartHost, view.months, view.name);
-  const table = renderTrendTable(view.months);
+  const table = renderTrendTable(view.months, { fullLevel: false });
   if (chart || table) {
     article.append(heading("h3", "Volume in the last 12 months", "reservoir-subhead"));
     if (chart) article.append(chartHost);

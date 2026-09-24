@@ -4946,6 +4946,14 @@ for (const viewport of VIEWPORTS) {
     ready: window.__lakesReady ?? null,
     busy: document.querySelector("#lakes-main")?.getAttribute("aria-busy"),
     text: document.body.innerText,
+    // `innerText` skips a closed <details>, and the monthly table is one.
+    // The full-level refusal reads every text node instead.
+    allText: (() => {
+      const copy = document.body.cloneNode(true);
+      copy.querySelectorAll("script, style, template, noscript")
+        .forEach((node) => node.remove());
+      return copy.textContent;
+    })(),
     cards: document.querySelectorAll("#lakes-main .lake-measurements > section").length,
     pathRows: document.querySelectorAll("#lakes-main .hydrologic-path li").length,
     scroll: document.documentElement.scrollWidth,
@@ -4965,7 +4973,7 @@ for (const viewport of VIEWPORTS) {
     && state.text.includes("feet"),
   `Lakes page (${viewport.name}): the page does not name its lake and both units`);
   check(!/percent full|% full|full level/i.test(
-    state.text.replace(/no percent full|no full level|not as a full level|never a percent full/gi, "")),
+    state.allText.replace(/no percent full|no full level|not as a full level|never a percent full/gi, "")),
   `Lakes page (${viewport.name}): a terminal lake was given a full level`);
   check(state.pathRows === 4,
     `Lakes page (${viewport.name}): has ${state.pathRows} hydrologic path rows`);
