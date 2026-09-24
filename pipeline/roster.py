@@ -9,6 +9,7 @@ Procedure for changing any of this: docs/operations/source-admission.md.
 """
 
 import datetime as dt
+import functools
 import json
 import math
 from pathlib import Path
@@ -617,7 +618,17 @@ def load_admitted_terminal_lakes(
     return rows
 
 
-ADMITTED_TERMINAL_LAKES = load_admitted_terminal_lakes()
+@functools.cache
+def admitted_terminal_lakes() -> dict[str, dict]:
+    """The lake roster, loaded on first use rather than at import.
+
+    Every reservoir path imports this module, and ADR-118 keeps the two
+    refreshes independent: a lake roster that fails review must cost the lake
+    payload, never the reservoir refresh. Only `refresh_lakes.py` calls this.
+    """
+    return load_admitted_terminal_lakes()
+
+
 USGS_RESERVOIRS = {
     site_no: (
         row["name"], row["lat"], row["lon"],

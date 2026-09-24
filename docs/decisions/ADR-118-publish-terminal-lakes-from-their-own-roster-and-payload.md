@@ -1,9 +1,13 @@
-# ADR-117: Publish terminal lakes from their own roster and payload
+# ADR-118: Publish terminal lakes from their own roster and payload
 
 - Status: Accepted
 - Date: 2026-09-06
 - Implements: ADR-112
 - Extends: ADR-056 and ADR-098
+- Relates to: the owner's sequencing of 2026-09-18 — release 1.0.0 first,
+  the lakes after it, and this pipeline half before the lake page. This record
+  was drafted as ADR-117 and renumbered when the release decision took that
+  number.
 
 ## Context
 
@@ -35,6 +39,10 @@ the two measurements the survey's parameter, statistic and unit, with the
 elevation's vertical datum and the volume's relation named beside them.
 `refresh_lakes.py` writes `lakes.json` through `pipeline.lakes`; nothing in it
 is imported by `refresh_reservoirs.py`, and `reservoirs.json` does not change.
+The roster is read on first use, through
+`pipeline.roster.admitted_terminal_lakes`, and never at import, so the
+reservoir refresh, which imports the same module, cannot be stopped by a lake
+roster that fails review.
 
 **The record publishes two measurements, each with its own provenance.** An
 `elevation` block carries the level in feet with its datum, and a `volume`
@@ -49,15 +57,21 @@ no hydrologic meaning (ADR-112's third rejected alternative). The record's own
 **The rank is the reservoir estimator, unchanged.** One vote per prior year in
 the same window, counted from the lowest (`pipeline.seasonal.seasonal_rank`),
 under the same `METHOD_VERSION`. A lake does not get a second definition of
-"normal for this date". No climate normal is published for a lake until
+"normal for this date". The volume's twelve-month history carries the
+same period-of-record monthly normal a reservoir's does (`normal_af`, the
+median of that calendar month's mean volume over the lake's own earlier
+years, with `normal_years` beside it), and that is the normal a chart of it
+draws. No 1991–2020 climate normal is published for a lake until
 `tools/build_normal_baselines.py` learns the type; the payload says so by
-carrying none rather than by carrying a reservoir's.
+carrying `climate_normal_af` as null rather than by carrying a reservoir's.
 
 **Freshness follows ADR-056.** A failed fetch carries yesterday's record
 forward marked late; past `WITHDRAW_AFTER_DAYS` the lake leaves the payload for
-a notice of name, date, age, source and reason and nothing else. The validator
-refuses a notice carrying a measurement and a lake record carrying any of the
-reservoir-only fields.
+a notice of name, date, age, source and reason and nothing else. While the
+feed stays down, the next run has no record to carry, so it carries the notice
+with its age recomputed, as the reservoir path's `carry_withdrawals` does.
+The validator refuses a notice carrying a measurement and a lake record
+carrying any of the reservoir-only fields.
 
 **A target is copied, never computed against.** A restoration or regulatory
 level may appear only as a named elevation with its authority, source and

@@ -19,7 +19,7 @@ modules in `pipeline/`:
 | `pipeline/seasonal.py` | The seasonal estimator: window, annual votes, normals, rank, percentile. |
 | `pipeline/freshness.py` | Carry-forward, the withdrawal threshold and the withdrawal notice. |
 | `pipeline/geography.py` | County and drainage-area assignment onto finished records. |
-| `pipeline/lakes.py` | The natural terminal lakes (ADR-112, ADR-117): a record of elevation and volume with no full level, its validator, and the lake payload envelope. |
+| `pipeline/lakes.py` | The natural terminal lakes (ADR-112, ADR-118): a record of elevation and volume with no full level, its validator, and the lake payload envelope. |
 | `refresh_reservoirs.py` | Fetch, summarize, assemble, validate, write, and report to CI. |
 
 `refresh_reservoirs` re-exports every public name from those modules, so
@@ -99,7 +99,7 @@ zero.
 they change.
 
 **A terminal lake is published from its own roster to its own payload**
-(ADR-117). `admitted_terminal_lakes.json` is loaded by
+(ADR-118). `admitted_terminal_lakes.json` is loaded by
 `pipeline.roster.load_admitted_terminal_lakes`, which refuses any
 capacity-shaped field and requires the evidence ADR-112 asks for: a reviewed
 waterbody point, a reviewed closed-basin assignment, the elevation's vertical

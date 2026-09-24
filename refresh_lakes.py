@@ -27,22 +27,40 @@ import pandas as pd
 
 from pipeline import lakes
 from pipeline.constants import LAKES_OUTPUT_PATH, START_DATE, local_today
-from pipeline.freshness import carry_forward
+from pipeline.freshness import carry_forward, carry_withdrawals
 from pipeline.providers import (
     RETRY_ATTEMPTS, fetch_usgs_parameter_series,
 )
-from pipeline.roster import ADMITTED_TERMINAL_LAKES
+from pipeline.roster import admitted_terminal_lakes
 
 
-def load_previous(path=LAKES_OUTPUT_PATH) -> dict[str, dict]:
-    """Yesterday's published records by station, for carry-forward."""
+def _read_previous(path) -> dict:
     if not path.exists():
         return {}
     try:
         payload = json.loads(path.read_text(encoding="utf-8"))
     except (OSError, ValueError):
         return {}
-    return {str(r.get("source_station_id")): r for r in payload.get("lakes") or []}
+    return payload if isinstance(payload, dict) else {}
+
+
+def load_previous(path=LAKES_OUTPUT_PATH) -> dict[str, dict]:
+    """Yesterday's published records by station, for carry-forward."""
+    return {str(r.get("source_station_id")): r
+            for r in _read_previous(path).get("lakes") or []}
+
+
+def load_previous_withdrawals(path=LAKES_OUTPUT_PATH) -> dict[str, dict]:
+    """Yesterday's withdrawal notices by lake name.
+
+    A withdrawn lake is not in `lakes`, so `load_previous` cannot carry it. A
+    notice has no station id (ADR-056 fixes its fields), and the roster name
+    is the key the validator checks against.
+    """
+    notices = _read_previous(path).get("withdrawn")
+    if not isinstance(notices, list):
+        return {}
+    return {n["name"]: n for n in notices if isinstance(n, dict) and n.get("name")}
 
 
 def fetch_lake(station: str, entry: dict, start: str, end: str
@@ -70,7 +88,7 @@ def main() -> int:
 
     today = local_today()
     end = (today + pd.Timedelta(days=1)).strftime("%Y%m%d")
-    targets = dict(ADMITTED_TERMINAL_LAKES)
+    targets = dict(admitted_terminal_lakes())
     if args.only:
         wanted = set(args.only)
         targets = {s: e for s, e in targets.items() if e["name"] in wanted or s in wanted}
@@ -79,8 +97,20 @@ def main() -> int:
             print(f"ERROR: unknown lake(s): {', '.join(sorted(missing))}", file=sys.stderr)
             return 2
 
-    previous = load_previous()
-    records = []
+    previous = load_previous(LAKES_OUTPUT_PATH)
+    previous_withdrawn = load_previous_withdrawals(LAKES_OUTPUT_PATH)
+    records, carried_notices = [], []
+
+    def carry(station: str, name: str, reason: str) -> None:
+        # A lake already withdrawn has no record to carry, only its notice.
+        # Without the notice the roster check fails and the lake payload
+        # freezes on the day after a withdrawal.
+        if station in previous:
+            records.append(carry_forward(previous[station], today, reason))
+        elif name in previous_withdrawn:
+            carried_notices.extend(
+                carry_withdrawals([previous_withdrawn[name]], set(), today))
+
     for station, entry in targets.items():
         name = entry["name"]
         # A lake's own record begins where the roster says its readings are on
@@ -92,15 +122,13 @@ def main() -> int:
             reason = (f"fetch failed after {RETRY_ATTEMPTS} attempts: "
                       f"{type(exc).__name__}: {exc}")
             print(f"WARNING: {name} ({station}) -- {reason}")
-            if station in previous:
-                records.append(carry_forward(previous[station], today, reason))
+            carry(station, name, reason)
             continue
         if elevation.empty or volume.empty:
             which = "elevation" if elevation.empty else "volume"
             reason = f"the survey returned no usable {which} rows for the requested range"
             print(f"WARNING: {name} ({station}) -- {reason}")
-            if station in previous:
-                records.append(carry_forward(previous[station], today, reason))
+            carry(station, name, reason)
             continue
         records.append(lakes.summarize_lake(entry, elevation, volume, today))
         time.sleep(0.5)
@@ -112,7 +140,7 @@ def main() -> int:
         return 0
 
     fetched_at = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
-    payload = lakes.build_payload(records, today, fetched_at)
+    payload = lakes.build_payload(records, today, fetched_at, carried_notices)
     try:
         lakes.validate_payload(payload, targets)
     except ValueError as exc:

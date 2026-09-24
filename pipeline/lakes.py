@@ -188,9 +188,16 @@ def attach_watersheds(records: list[dict]) -> None:
             source="published_point", fine_units=fine_units))
 
 
-def build_payload(records: list[dict], today: pd.Timestamp, fetched_at: str) -> dict:
-    """The envelope, with the late and the withdrawn told apart (ADR-056)."""
+def build_payload(records: list[dict], today: pd.Timestamp, fetched_at: str,
+                  carried_notices: list[dict] | None = None) -> dict:
+    """The envelope, with the late and the withdrawn told apart (ADR-056).
+
+    `carried_notices` are yesterday's notices for lakes that fetched nothing
+    today; `withdrawal_notice` passes one through with its fields unchanged.
+    """
     published, withdrawn = partition_by_age(records)
+    withdrawn.extend(carried_notices or ())
+    withdrawn.sort(key=lambda r: -(r.get("days_stale") or 0))
     published.sort(key=lambda r: r["name"])
     return {
         "schema_version": LAKE_SCHEMA_VERSION,

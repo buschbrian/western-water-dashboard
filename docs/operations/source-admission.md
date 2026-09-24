@@ -148,7 +148,7 @@ datum and any stage-volume relation. It receives no dam or outlet point, no
 percent full and no membership in reservoir rollups. A target level stays a
 named restoration or regulatory target and never becomes capacity.
 
-The path is built (ADR-117). A lake is admitted in
+The path is built (ADR-118). A lake is admitted in
 `admitted_terminal_lakes.json`, never in a reservoir roster, and
 `refresh_lakes.py` publishes it to `lakes.json`. The loader refuses any
 capacity-shaped field and requires: a `waterbody` block naming the NHDPlus HR

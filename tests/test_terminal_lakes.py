@@ -25,7 +25,7 @@ TODAY = R.local_today()
 
 
 def entry(**overrides) -> dict:
-    row = json.loads(json.dumps(roster.ADMITTED_TERMINAL_LAKES["10288500"]))
+    row = json.loads(json.dumps(roster.admitted_terminal_lakes()["10288500"]))
     row.update(overrides)
     return row
 
@@ -44,13 +44,38 @@ def daily(column: str, base: float, amplitude: float, *, years: int = 6,
 # --- the roster ----------------------------------------------------------
 
 def test_walker_lake_is_admitted_with_the_evidence_the_decision_asks_for():
-    row = roster.ADMITTED_TERMINAL_LAKES["10288500"]
+    row = roster.admitted_terminal_lakes()["10288500"]
     assert row["name"] == "Walker Lake"
     assert row["closed_basin"]["huc6"] == "160503"
     assert row["waterbody"]["nhdplus_hr_permanent_identifier"]
     assert row["elevation"]["vertical_datum"] == "NGVD29"
     assert row["volume"]["relation"]["source_url"].startswith("https://")
     assert "capacity" not in row
+
+
+def test_a_malformed_lake_roster_never_reaches_the_reservoir_refresh():
+    """ADR-118 keeps the refreshes independent: importing the reservoir
+    orchestrator must not read the lake roster, so a lake roster that fails
+    review costs the lake payload and nothing else."""
+    probe = """
+import pathlib
+real = pathlib.Path.read_text
+def guarded(self, *args, **kwargs):
+    if self.name == "admitted_terminal_lakes.json":
+        return '{"water_type": "reservoir", "lakes": {}}'
+    return real(self, *args, **kwargs)
+pathlib.Path.read_text = guarded
+import refresh_reservoirs
+from pipeline import roster
+try:
+    roster.admitted_terminal_lakes()
+except ValueError:
+    print("lake roster refused on first use")
+"""
+    result = subprocess.run([sys.executable, "-c", probe], cwd=ROOT,
+                            capture_output=True, text=True)
+    assert result.returncode == 0, result.stderr
+    assert "lake roster refused on first use" in result.stdout
 
 
 def test_walker_lake_stays_out_of_every_reservoir_roster():
@@ -203,7 +228,7 @@ def test_the_assignment_comes_from_the_lake_point_and_says_so():
     record = lakes.summarize_lake(
         entry(), daily("elevation_ft", 3915, 3), daily("volume_af", 1_150_000, 40_000), TODAY)
     lakes.attach_watersheds([record])
-    row = roster.ADMITTED_TERMINAL_LAKES["10288500"]
+    row = roster.admitted_terminal_lakes()["10288500"]
     assert record["huc6"] == row["closed_basin"]["huc6"]
     assert record["huc8"] == row["closed_basin"]["huc8"]
     assert record["huc_assignment_source"] == "published_point"
@@ -223,7 +248,7 @@ def test_the_payload_names_its_type_and_versions_and_validates():
     assert payload["schema_version"] == R.constants.LAKE_SCHEMA_VERSION
     assert payload["method_version"] == R.METHOD_VERSION
     assert payload["lake_count"] == 1 and payload["withdrawn_count"] == 0
-    lakes.validate_payload(payload, roster.ADMITTED_TERMINAL_LAKES)
+    lakes.validate_payload(payload, roster.admitted_terminal_lakes())
 
 
 def test_a_reservoir_field_on_a_lake_is_refused():
@@ -231,7 +256,7 @@ def test_a_reservoir_field_on_a_lake_is_refused():
         entry(), daily("elevation_ft", 3915, 3), daily("volume_af", 1_150_000, 40_000), TODAY)
     record["pct_of_capacity"] = 55.0
     with pytest.raises(ValueError, match="no full level"):
-        lakes.validate_payload(build([record]), roster.ADMITTED_TERMINAL_LAKES)
+        lakes.validate_payload(build([record]), roster.admitted_terminal_lakes())
 
 
 def test_a_quiet_lake_is_withdrawn_with_a_notice_and_no_measurement():
@@ -243,12 +268,12 @@ def test_a_quiet_lake_is_withdrawn_with_a_notice_and_no_measurement():
     notice = payload["withdrawn"][0]
     assert set(notice) <= lakes.NOTICE_FIELDS
     assert "elevation" not in notice and "volume" not in notice
-    lakes.validate_payload(payload, roster.ADMITTED_TERMINAL_LAKES)
+    lakes.validate_payload(payload, roster.admitted_terminal_lakes())
 
 
 def test_a_lake_missing_from_the_payload_fails_validation():
     with pytest.raises(ValueError, match="missing \\['Walker Lake'\\]"):
-        lakes.validate_payload(build([]), roster.ADMITTED_TERMINAL_LAKES)
+        lakes.validate_payload(build([]), roster.admitted_terminal_lakes())
 
 
 # --- the orchestrator ----------------------------------------------------
@@ -263,6 +288,43 @@ def test_carry_forward_keeps_yesterday_marked_late(monkeypatch, tmp_path):
     carried = R.carry_forward(kept["10288500"], TODAY + pd.Timedelta(days=3), "down")
     assert carried["is_stale"] is True and carried["fetch_ok"] is False
     assert carried["elevation"]["current"] == record["elevation"]["current"]
+
+
+@pytest.mark.parametrize("outage", ["raises", "empty"])
+def test_a_withdrawn_lake_stays_withdrawn_while_its_feed_is_down(
+        monkeypatch, tmp_path, capsys, outage):
+    """Day N withdraws the lake; on day N+1 the feed is still down and there
+    is no record to carry, only the notice. Without carrying it the roster
+    check failed and lakes.json froze on day N."""
+    quiet = lakes.summarize_lake(
+        entry(), daily("elevation_ft", 3915, 3, stale_days=90),
+        daily("volume_af", 1_150_000, 40_000, stale_days=90), TODAY)
+    path = tmp_path / "lakes.json"
+    path.write_text(json.dumps(build([quiet])))
+    day_before = json.loads(path.read_text())["withdrawn"][0]
+
+    def down(*_args):
+        if outage == "raises":
+            raise ConnectionError("feed down")
+        empty = pd.DataFrame({"date": pd.to_datetime([])})
+        return empty.assign(elevation_ft=[]), empty.assign(volume_af=[])
+
+    tomorrow = TODAY + pd.Timedelta(days=1)
+    monkeypatch.setattr(refresh_lakes, "fetch_lake", down)
+    monkeypatch.setattr(refresh_lakes, "local_today", lambda: tomorrow)
+    monkeypatch.setattr(refresh_lakes, "LAKES_OUTPUT_PATH", path)
+    monkeypatch.setattr(sys, "argv", ["refresh_lakes.py"])
+    assert refresh_lakes.main() == 0, capsys.readouterr().err
+
+    payload = json.loads(path.read_text())
+    assert payload["run_date"] == tomorrow.date().isoformat()
+    assert payload["lakes"] == [] and payload["withdrawn_count"] == 1
+    notice = payload["withdrawn"][0]
+    assert set(notice) <= lakes.NOTICE_FIELDS
+    assert notice["name"] == "Walker Lake"
+    assert notice["as_of"] == day_before["as_of"]
+    assert notice["days_stale"] == day_before["days_stale"] + 1
+    lakes.validate_payload(payload, roster.admitted_terminal_lakes())
 
 
 def test_the_daily_script_runs_the_lake_refresh_after_snow_and_before_the_commit():
