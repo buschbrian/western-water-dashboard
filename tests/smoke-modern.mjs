@@ -4947,12 +4947,14 @@ for (const viewport of VIEWPORTS) {
     busy: document.querySelector("#lakes-main")?.getAttribute("aria-busy"),
     text: document.body.innerText,
     // `innerText` skips a closed <details>, and the monthly table is one.
-    // The full-level refusal reads every text node instead.
+    // The full-level refusal reads every text node instead, with source
+    // line breaks collapsed the way `innerText` collapses them, so a
+    // negation wrapped across lines still matches its allowed phrase.
     allText: (() => {
       const copy = document.body.cloneNode(true);
       copy.querySelectorAll("script, style, template, noscript")
         .forEach((node) => node.remove());
-      return copy.textContent;
+      return copy.textContent.replace(/\s+/g, " ");
     })(),
     cards: document.querySelectorAll("#lakes-main .lake-measurements > section").length,
     pathRows: document.querySelectorAll("#lakes-main .hydrologic-path li").length,
