@@ -196,7 +196,8 @@ export function describeLake(lake: TerminalLake, chartColor: string): LakeView {
     ],
     note: "History rank compares this value with one value from each earlier year near "
       + "the same date. “Third-lowest of twelve” places it among those years and "
-      + "this one. The years start in 2015, so the rank rests on a small sample."
+      + `this one. The years start in ${lake.first_obs.slice(0, 4)}, so the rank rests `
+      + "on a small sample."
   };
 }
 

@@ -43,6 +43,15 @@ describe("the terminal-lake page's words", () => {
     }
   });
 
+  it("dates the rank's first year from the payload, not from the page", () => {
+    expect(describeLake(walker, "#000000").note).toContain(
+      `The years start in ${walker.first_obs.slice(0, 4)},`);
+    const later = validateLakePayload(payload({
+      lakes: [lake({ first_obs: "2018-03-01" })]
+    })).lakes[0]!;
+    expect(describeLake(later, "#000000").note).toContain("The years start in 2018,");
+  });
+
   it("says when a reading is late, by how many days", () => {
     const late = validateLakePayload(payload({
       lakes: [lake({ is_stale: true, days_stale: 5 })], stale_count: 1
