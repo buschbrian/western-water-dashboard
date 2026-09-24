@@ -1,4 +1,4 @@
-import { copyFile, cp, mkdir } from "node:fs/promises";
+import { copyFile, cp, mkdir, readdir, rm } from "node:fs/promises";
 import { resolve } from "node:path";
 // From vitest/config rather than vite: it is the same defineConfig with the
 // `test` block added to the type. Vite's own does not know that key exists.
@@ -69,6 +69,14 @@ function preserveRuntimeDataAndRedirects(): Plugin {
         resolve(outDir, "legacy", "index.html"));
       await copyFile(resolve(root, "maplibre", "index.html"),
         resolve(outDir, "maplibre", "index.html"));
+
+      // public/photos/ is copied whole. Only the photographs are published:
+      // not its README, and not an `exiftool` `*_original` backup that still
+      // carries the fields the procedure strips.
+      const photos = resolve(outDir, "photos");
+      for (const name of await readdir(photos).catch(() => [])) {
+        if (!name.endsWith(".jpg")) await rm(resolve(photos, name), { recursive: true });
+      }
     }
   };
 }
