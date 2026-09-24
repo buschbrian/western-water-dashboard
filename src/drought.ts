@@ -491,7 +491,7 @@ function renderDrought(
            their own rather than in this view, because they are content
            that never changes with the payload and need no map, no
            readiness field and no deadline. -->
-      <p class="drought-attribution">The photographs on <a href="./landscape.html">drought on the ground</a> show what these classes look like in the Great Basin.</p>
+      <p class="drought-attribution">The <a href="./landscape.html">drought on the ground</a> page will carry photographs of what these classes look like in the Great Basin.</p>
     </section>`;
 
   /* Filter state, read from the address bar so a shared link opens on the
