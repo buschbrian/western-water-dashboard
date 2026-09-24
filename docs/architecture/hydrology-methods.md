@@ -135,7 +135,7 @@ are traceable. It has no dam point, capacity or percent full and is excluded
 from every reservoir rollup. A restoration level is labelled as a target with
 its authority and date rather than represented as capacity.
 
-Walker Lake is the first lake (ADR-117). Its elevation is published in feet
+Walker Lake is the first lake (ADR-118). Its elevation is published in feet
 above NGVD29 and its volume in acre-feet on the Lopes and Smith (2007)
 relation the Geological Survey has applied since 1 October 2014; the published
 record starts on 2015-01-01, inside that relation, so no volume is on an
@@ -143,7 +143,9 @@ earlier table. Each measurement carries its dated record extremes, its dated
 7-, 30- and 365-day changes, and a same-date seasonal rank from the reservoir
 estimator unchanged — one vote per prior year in the same window, counted from
 the lowest, under the same `METHOD_VERSION`. A level has no percentage change:
-a share of a height above an arbitrary datum has no hydrologic meaning. No
+a share of a height above an arbitrary datum has no hydrologic meaning. The
+volume's twelve-month history carries the period-of-record monthly normal
+(`normal_af`, with `normal_years`) that a reservoir's does; no 1991–2020
 climate normal is published for a lake until the normals builder learns the
 type. The payload is `lakes.json`; no page shows it yet, so the glossary's
 statement that every published water is a reservoir still holds for readers.

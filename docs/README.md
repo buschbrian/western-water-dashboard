@@ -84,7 +84,7 @@ should be worked:
    the unnamed Calcite slider handle that `src/ui/slider-label.ts` works
    around, and the `script-src` measurement behind ADR-036.
 5. **Show the first terminal lake.** The pipeline half of ADR-112 is built
-   (ADR-117): Walker Lake is admitted in `admitted_terminal_lakes.json` and
+   (ADR-118): Walker Lake is admitted in `admitted_terminal_lakes.json` and
    `refresh_lakes.py` publishes `lakes.json` with elevation, volume, changes and
    rank and no full level. What remains is the reader surface: where a lake
    appears, how it is drawn beside reservoirs without joining their totals,

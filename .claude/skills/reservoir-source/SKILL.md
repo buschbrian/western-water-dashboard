@@ -21,7 +21,7 @@ reviewing a held candidate.
 
 `pipeline/providers.py`, `pipeline/roster.py`, `admission.py`,
 `admitted_*.json` (a terminal lake goes in `admitted_terminal_lakes.json` and
-`pipeline/lakes.py`, never in a reservoir roster -- ADR-117), `tools/audit_*_stations.py`,
+`pipeline/lakes.py`, never in a reservoir roster -- ADR-118), `tools/audit_*_stations.py`,
 `tools/audit_candidate_capacity.py`, `tests/test_admission.py`,
 `tests/test_refresh.py`.
 
