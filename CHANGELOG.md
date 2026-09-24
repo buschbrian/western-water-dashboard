@@ -11,6 +11,14 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ## [Unreleased]
 
+## [1.0.0] - 2026-09-18
+
+The first tagged release, and the state the site has run in for several weeks.
+Everything below this heading shipped before the tag: it is the whole history
+of the modernization, gathered into one release rather than rewritten. The
+scope is closed at this version (ADR-117). Further work is content and
+maintenance, not new geographic analysis.
+
 ### Added
 
 - **What the drought looks like on the ground.** A new page,
@@ -21,16 +29,6 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   Every frame is made on public land and names the place it was made, with a
   location where that helps a reader find the same view. The gallery is empty
   today and says so.
-
-## [1.0.0] - 2026-09-18
-
-The first tagged release, and the state the site has run in for several weeks.
-Everything below this heading shipped before the tag: it is the whole history
-of the modernization, gathered into one release rather than rewritten. The
-scope is closed at this version (ADR-117). Further work is content and
-maintenance, not new geographic analysis.
-
-### Added
 
 - **Two more providers, both of them reservoir operators: five more
   reservoirs.** The Salt River Project publishes total storage for the four

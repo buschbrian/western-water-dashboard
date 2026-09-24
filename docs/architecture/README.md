@@ -71,6 +71,8 @@ renamed to the version, an empty `[Unreleased]` heading is left above it,
 `package.json` and the lockfile are bumped together, and the tag is cut by
 hand. No job tags a release: the one release gate nothing can automate is the
 human visual review, because the ArcGIS canvas is blank in headless Chromium.
+The version heading carries the date the tag is cut: whoever cuts it sets
+that date in the changelog first, then tags that commit.
 
 **Release order confirmed by the owner on 2026-09-18:** release 1.0.0 first.
 The existing Topaz Lake PR [#56](https://github.com/buschbrian/western-water-dashboard/pull/56)
