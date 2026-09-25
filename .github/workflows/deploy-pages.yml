@@ -70,6 +70,7 @@ jobs:
                       lakes.html lakes.json data/lakes.json \
                       data/drought/usdm-current.geojson data/drought/usdm-huc6.json \
                       explore.html maplibre/index.html retired-route.js \
+                      terms.html landscape.html \
                       reservoirs.json capacities.json \
                       snow_sites.json snowpack.json reference.json \
                       data/reservoirs.json data/capacities.json \

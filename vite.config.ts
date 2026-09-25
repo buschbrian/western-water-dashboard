@@ -1,4 +1,4 @@
-import { copyFile, cp, mkdir } from "node:fs/promises";
+import { copyFile, cp, mkdir, readdir, rm } from "node:fs/promises";
 import { resolve } from "node:path";
 // From vitest/config rather than vite: it is the same defineConfig with the
 // `test` block added to the type. Vite's own does not know that key exists.
@@ -69,6 +69,14 @@ function preserveRuntimeDataAndRedirects(): Plugin {
         resolve(outDir, "legacy", "index.html"));
       await copyFile(resolve(root, "maplibre", "index.html"),
         resolve(outDir, "maplibre", "index.html"));
+
+      // public/photos/ is copied whole. Only the photographs are published:
+      // not its README, and not an `exiftool` `*_original` backup that still
+      // carries the fields the procedure strips.
+      const photos = resolve(outDir, "photos");
+      for (const name of await readdir(photos).catch(() => [])) {
+        if (!name.endsWith(".jpg")) await rm(resolve(photos, name), { recursive: true });
+      }
     }
   };
 }
@@ -79,7 +87,9 @@ export default defineConfig({
   // so an unqualified test glob collects every copy of every test file and
   // reports five times the real count -- passing, and meaningless.
   test: {
-    exclude: ["**/node_modules/**", "**/dist/**", ".claude/**"]
+    // .atlas and .agents are gitignored local skill installs that carry their
+    // own test files; CI never sees them, but a local run would collect them.
+    exclude: ["**/node_modules/**", "**/dist/**", ".claude/**", ".atlas/**", ".agents/**"]
   },
   build: {
     outDir,
@@ -96,7 +106,8 @@ export default defineConfig({
         reservoir: resolve(root, "reservoir.html"),
         lakes: resolve(root, "lakes.html"),
         explore: resolve(root, "explore.html"),
-        terms: resolve(root, "terms.html")
+        terms: resolve(root, "terms.html"),
+        landscape: resolve(root, "landscape.html")
       }
     }
   },

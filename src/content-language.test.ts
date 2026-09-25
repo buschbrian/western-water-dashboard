@@ -136,8 +136,9 @@ describe("user text", () => {
   it("does not transform visible text in CSS", async () => {
     const publishedPages = [
       "index.html", "modern.html", "overview.html", "snow.html", "drought.html",
-      "methods.html", "data.html", "reservoir.html", "terms.html", "explore.html",
-      "lakes.html", "legacy/index.html", "maplibre/index.html"
+      "methods.html", "data.html", "reservoir.html", "terms.html",
+      "landscape.html", "explore.html", "lakes.html",
+      "legacy/index.html", "maplibre/index.html"
     ];
     const styleFiles = (await readdir(resolve(root, "src/styles")))
       .filter((file) => file.endsWith(".css"))
