@@ -51,6 +51,44 @@ oracle, and two Python pipelines.
 | `huc.py`, `watershed_scopes.py`, `admission.py` | Drainage assignment, named scopes, candidate admission. |
 | `tools/` | Audits, boundary work, drought computation, measurement. |
 
+## Releases and version numbers
+
+**Three version numbers move for three different reasons, and none of them
+follows another.**
+
+| Number | Names | Moves when |
+|---|---|---|
+| `version` in `package.json` | The application and its published contracts: the pages, the URL state a saved link carries, the shape of the payloads under `/api/`. | A published page or a payload contract changes. Semantic Versioning. |
+| `schema_version` in each payload | The structure of that one file. | A field is added, removed or retyped in it. |
+| `METHOD_VERSION` | The seasonal estimator behind the derived figures. | The arithmetic changes while the fields do not ([`hydrology-methods.md`](hydrology-methods.md#method-version)). |
+
+The daily numbers move without any of them, which is ADR-002: the morning's
+data commit is the deploy.
+
+**A release is a person's assertion, so a person makes it.** The accumulated
+`[Unreleased]` section of [`CHANGELOG.md`](../../CHANGELOG.md) is dated and
+renamed to the version, an empty `[Unreleased]` heading is left above it,
+`package.json` and the lockfile are bumped together, and the tag is cut by
+hand. No job tags a release: the one release gate nothing can automate is the
+human visual review, because the ArcGIS canvas is blank in headless Chromium.
+The version heading carries the date the tag is cut: whoever cuts it sets
+that date in the changelog first, then tags that commit.
+
+**Release order confirmed by the owner on 2026-09-18:** release 1.0.0 first.
+The existing Topaz Lake PR [#56](https://github.com/buschbrian/western-water-dashboard/pull/56)
+and terminal-lake PRs [#61](https://github.com/buschbrian/western-water-dashboard/pull/61)
+and [#62](https://github.com/buschbrian/western-water-dashboard/pull/62)
+follow afterward; they are not prerequisites for 1.0.0. Keep them out of the
+release commit and tag. Their review, conflict resolution, dependency order
+(#61 before #62), and version/changelog updates belong to the next release.
+This sequencing decision does not record completion of the human visual review.
+
+The scope closed at 1.0.0
+([ADR-117](../decisions/ADR-117-close-the-scope-at-version-1-0-0.md)). Work
+after it is maintenance and context — words, photographs, a provider that
+breaks, a reviewed source question. A new measured domain, a new rollup axis or
+a new computing page is out of scope and needs its own record first.
+
 ## Generated and source-owned files
 
 Never hand-edit a generated file: the next pipeline run overwrites it, and an
