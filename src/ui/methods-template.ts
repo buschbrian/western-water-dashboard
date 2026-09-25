@@ -343,11 +343,19 @@ export function methodsMarkup(search: string): string {
       <h2 id="terms-heading">Meaning of terms</h2>
       <dl class="methods-list">
         <dt>Reservoir</dt>
-        <dd>Every water this site measures is a reservoir. Each one holds its water
-          behind a dam and has a known full level. The word follows the roster, not the
-          name. Riffe Lake and Bear Lake are reservoirs here, and their names stay what
-          they are called locally. Some were natural lakes before a dam raised
-          them.</dd>
+        <dd>Every water on the storage map and in the storage charts is a reservoir.
+          Each one holds its water behind a dam and has a known full level. The word
+          follows the roster, not the name. Riffe Lake and Bear Lake are reservoirs
+          here, and their names stay what they are called locally. Some were natural
+          lakes before a dam raised them.</dd>
+        <dt>Terminal lake</dt>
+        <dd>A natural lake at the end of a closed basin, with no outlet and no dam.
+          Water leaves it only by evaporation. This site publishes its surface level
+          and its volume on the <a href="./lakes.html">terminal lakes page</a>. It
+          never publishes a percent full for a lake, because no full level is defined
+          for one. A terminal lake is not counted in any reservoir total. A
+          restoration or regulatory level is shown as a target, not as a full
+          level.</dd>
         <dt>Capacity</dt>
         <dd>The amount of water that a reservoir is designed to hold.</dd>
         <dt>Acre-foot</dt>

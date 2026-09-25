@@ -189,8 +189,17 @@ export function renderTrendChart(
   return true;
 }
 
+export interface TrendTableOptions {
+  /** False for a water with no full level (ADR-112): the column is left out,
+   * not filled with dashes. */
+  fullLevel?: boolean;
+}
+
 /** The numbers behind the chart, collapsed so the panel stays a panel. */
-export function renderTrendTable(months: readonly DetailMonth[]): HTMLElement | null {
+export function renderTrendTable(
+  months: readonly DetailMonth[],
+  { fullLevel = true }: TrendTableOptions = {}
+): HTMLElement | null {
   if (!months.some((month) => month.storageAf !== null)) return null;
 
   const wrapper = document.createElement("details");
@@ -206,8 +215,10 @@ export function renderTrendTable(months: readonly DetailMonth[]): HTMLElement | 
 
   const head = document.createElement("thead");
   const headRow = document.createElement("tr");
-  for (const [label, numeric] of [["Month", false], ["Acre-feet", true],
-    ["Of full level", true], ["Change from normal", true]] as const) {
+  const columns: [string, boolean][] = [["Month", false], ["Acre-feet", true]];
+  if (fullLevel) columns.push(["Of full level", true]);
+  columns.push(["Change from normal", true]);
+  for (const [label, numeric] of columns) {
     const cell = document.createElement("th");
     cell.scope = "col";
     cell.textContent = label;
@@ -237,7 +248,7 @@ export function renderTrendTable(months: readonly DetailMonth[]): HTMLElement | 
         month.changeFromNormal.toFixed(0)}%`;
       change.classList.add(month.changeFromNormal < 0 ? "trend-down" : "trend-up");
     }
-    row.append(name, storage, share, change);
+    row.append(name, storage, ...(fullLevel ? [share] : []), change);
     body.append(row);
   }
 

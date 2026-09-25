@@ -40,6 +40,10 @@ ADMITTED_SRP_RESERVOIRS_PATH = ROOT / "admitted_srp_reservoirs.json"
 ADMITTED_DNRC_RESERVOIRS_PATH = ROOT / "admitted_dnrc_reservoirs.json"
 ADMITTED_CWMS_RESERVOIRS_PATH = ROOT / "admitted_cwms_reservoirs.json"
 ADMITTED_CAP_RESERVOIRS_PATH = ROOT / "admitted_cap_reservoirs.json"
+#: The natural terminal lakes, a separate water type with its own roster and
+#: payload (ADR-112). Never merged into the reservoir file above.
+ADMITTED_TERMINAL_LAKES_PATH = ROOT / "admitted_terminal_lakes.json"
+LAKES_OUTPUT_PATH = ROOT / "lakes.json"
 SOURCE_HISTORY_PATH = ROOT / "data" / "reservoir-source-history.json"
 NORMALS_PATH = ROOT / "normals.json"
 COUNTIES_PATH = ROOT / "counties.json"
@@ -219,6 +223,10 @@ EXPORT_SCHEMA_VERSION = 4
 # additive, as every field added to this payload has been, and a bump is
 # how a consumer is told something it reads has changed shape.
 RESERVOIR_SCHEMA_VERSION = 1
+
+#: The shape of `lakes.json`, versioned apart from the reservoir payload: a
+#: lake record has no capacity or percent full to share a contract with.
+LAKE_SCHEMA_VERSION = 1
 
 #: The estimator behind the derived numbers, separate from the shape of the
 #: file carrying them. `tools/build_normal_baselines.py` publishes the same
