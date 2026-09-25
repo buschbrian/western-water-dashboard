@@ -183,6 +183,9 @@ const CAPACITY_BASIS_NAMES: Record<string, string> = {
      who published it. */
   srp_reservoir_metadata: "the full level published by the reservoir operator",
   dnrc_stage_metadata: "the full level published by the reservoir operator",
+  /* A government or owner report reviewed in place of a missing inventory
+     record (ADR-110). Topaz Lake is the first. */
+  authoritative_water_report: "the full level in a reviewed water report",
   /* Not a property of the structure but of how it is run today: a safety
      order holds the reservoir below what it can take, and the panel has to
      say so, or a reservoir at its allowed level reads as short of full for a
