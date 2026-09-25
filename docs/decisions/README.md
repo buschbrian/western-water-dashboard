@@ -126,6 +126,7 @@ ADR-041.**
   [ADR-045](ADR-045-name-the-site-for-the-water-and-each-page-for-its-subject.md),
   [ADR-112](ADR-112-publish-terminal-lakes-as-a-separate-water-type.md),
   [ADR-118](ADR-118-publish-terminal-lakes-from-their-own-roster-and-payload.md),
+  [ADR-119](ADR-119-show-terminal-lakes-on-their-own-page.md),
   [ADR-114](ADR-114-publish-a-water-type-and-an-operating-character.md),
   [ADR-079](ADR-079-rename-through-a-former-name-table-and-publish-the-operator.md),
   [ADR-089](ADR-089-put-reservoir-state-facts-in-their-own-csv-columns.md)
@@ -287,6 +288,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md) | Exclude a reviewed reading, and never repair one | Accepted; extends ADR-072's no-repair rule; five readings named across four withheld California stations, the issues stay open |
 | [ADR-117](ADR-117-close-the-scope-at-version-1-0-0.md) | Close the scope at version 1.0.0 | Accepted; the accumulated changelog becomes the 1.0.0 release, the geographic scope closes, and the tag is cut by a person |
 | [ADR-118](ADR-118-publish-terminal-lakes-from-their-own-roster-and-payload.md) | Publish terminal lakes from their own roster and payload | Accepted; implements ADR-112 and extends ADR-056 and ADR-098; Walker Lake is the first lake, generated and not yet shown |
+| [ADR-119](ADR-119-show-terminal-lakes-on-their-own-page.md) | Show terminal lakes on their own page | Accepted; extends ADR-118 and ADR-045; reached from the methods and data pages, not the bar |
 
 ## Relationship to the historical journal
 
