@@ -34,6 +34,15 @@ const browser = await chromium.launch({
   executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
 });
 const tab = await browser.newPage({ viewport: { width: 1280, height: 900 } });
+/* A fresh profile on the bare URL is exactly the first visit, and the storage
+ * map now asks where to start before it fetches the map SDK at all -- so the
+ * map this test is about would not start until someone answered. Seeded as
+ * dismissed, the same way `smoke-modern.mjs` seeds its page contexts. */
+await tab.addInitScript(() => {
+  try {
+    localStorage.setItem("utah-reservoir-dashboard-splash-dismissed", "1");
+  } catch { /* storage refused */ }
+});
 
 /*
  * The data services only. `js.arcgis.com` serves the SDK's own assets -- its

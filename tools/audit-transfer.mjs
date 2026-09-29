@@ -125,6 +125,15 @@ const kib = (bytes) => `${(bytes / 1024).toFixed(0)} KiB`;
 
 async function auditPage(browser, page) {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  /* The storage map asks a first-time reader where to start, and does not
+   * fetch the map SDK until that question is closed. The first-visit
+   * question's own weight is a different measurement; this one is the
+   * pages, so the question is seeded as already answered. */
+  await context.addInitScript(() => {
+    try {
+      localStorage.setItem("utah-reservoir-dashboard-splash-dismissed", "1");
+    } catch { /* storage refused */ }
+  });
   const tab = await context.newPage();
 
   const requests = [];

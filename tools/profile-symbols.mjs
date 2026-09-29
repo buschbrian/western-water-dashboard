@@ -198,6 +198,13 @@ const results = { baselineIdle: null, withLayer: [], withoutLayer: [] };
 
 try {
   const context = await browser.newContext({ viewport: { width: 1280, height: 900 } });
+  /* A fresh profile on the bare URL is a first visit, and the storage map
+   * does not start the map until the first-visit question is closed. */
+  await context.addInitScript(() => {
+    try {
+      localStorage.setItem("utah-reservoir-dashboard-splash-dismissed", "1");
+    } catch { /* storage refused */ }
+  });
   const tab = await context.newPage();
   await tab.goto(`http://127.0.0.1:${PORT}/modern.html`,
     { waitUntil: "domcontentloaded", timeout: 60000 });
