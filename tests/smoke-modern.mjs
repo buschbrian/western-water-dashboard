@@ -5021,6 +5021,7 @@ console.log(`\n=== Lakes page: ${VIEWPORTS.length} widths`);
     ["Methods", "methods.html", null],
     ["Data reference", "data.html", "__dataDocsReady"],
     ["Terms", "terms.html", null],
+    ["For reporters", "reporters.html", null],
     ["Drought on the ground", "landscape.html", null],
     ["Reservoir page", "reservoir.html?name=Pearl%20Lake", "__reservoirReady"]
   ];
