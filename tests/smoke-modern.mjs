@@ -778,6 +778,27 @@ const browser = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
   null, { timeout: 30000 }).then(() => true, () => false);
   check(settled, `${label}: the map still reports itself as loading after it started`);
 
+  /* The map-background gallery is built on the first open of its expand,
+   * not with the page, because it downloads a thumbnail for every
+   * background when it connects. Proved working, not just present: an
+   * element that never found its view would pass an existence check. */
+  const galleriesBefore = await tab.evaluate(() =>
+    document.querySelectorAll("arcgis-basemap-gallery").length);
+  check(galleriesBefore === 0,
+    `${label}: the background gallery was built before anyone opened it`);
+  await tab.locator("#basemap-expand").click();
+  const gallery = await tab.waitForFunction(() => {
+    const element = document.querySelector("#basemap-expand arcgis-basemap-gallery");
+    const basemaps = element?.source?.basemaps?.length ?? 0;
+    return element && element.view && element.state === "ready" && basemaps > 0
+      ? { state: element.state, basemaps, bound: Boolean(element.view) }
+      : null;
+  }, null, { timeout: 30000 }).then((handle) => handle.jsonValue()).catch(() => null);
+  console.log("  gallery:", JSON.stringify(gallery));
+  check(gallery !== null,
+    `${label}: opening the background control did not build a working gallery`);
+  await tab.keyboard.press("Escape");
+
   /* The header action is the same chooser, not a second one built by the
    * later boot step. */
   await tab.locator("#place-chooser-trigger").click();
