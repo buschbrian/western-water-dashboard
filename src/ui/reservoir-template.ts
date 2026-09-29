@@ -26,6 +26,7 @@ export function reservoirTemplate(search: string): string {
   </main>
   <footer class="app-footer reservoir-footer">
     <a href="./data.html">Use the public data API</a> ·
+    <a href="./reporters.html">For reporters</a> ·
     <a href="./terms.html">Terms and license</a>
   </footer>`;
 }
