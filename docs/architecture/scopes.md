@@ -138,6 +138,15 @@ action is direct on wide screens and inside the page menu on phones. It reopens
 the same dialog and starts the selected destination from an empty query, so the
 new place travels and page-owned filters do not.
 
+When the storage map asks, it asks **before the map exists** (ADR-120): it
+loads the reservoir payload and the place rosters, opens the question, and
+imports and builds the map only when the dialog closes without a choice. A
+choice navigates, so no map is built for the page being left. On a fresh
+profile at the bare URL, `window.__dashboardReady` is therefore not written
+until the question is closed; every browser harness that opens the bare URL
+seeds the dismissal key first, as `newPageContext` in `tests/smoke-modern.mjs`
+does.
+
 The stored choice is **never written back into the address bar**: what a reader
 copies must be what they see, not what they prefer. `?state=all` exists so that
 "everywhere" can be said out loud rather than by silence — deleting the

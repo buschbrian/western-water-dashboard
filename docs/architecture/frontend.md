@@ -90,6 +90,20 @@ in 6.0. Import one web component per custom element, never a package root.
 *Enforced:* `src/architecture.test.ts`, which also fails the build on a second
 physical Calcite installation.
 
+**The storage map's entry does not import the map SDK** (ADR-120).
+`src/main.ts` reaches `./ui/map` and `./arcgis/basemaps` only through
+`startMap()`'s dynamic import, so the first-visit question can open before
+any `@arcgis/core` is fetched; the static entry path is Calcite and the
+page's own modules. A static import of either module, or of anything that
+imports `@arcgis/core`, from the entry's graph undoes that. The
+`budget:sdk` static-path figure is where it would show.
+
+**The basemap gallery is built on the first open of its control.** It
+fetches the portal's basemap group and a thumbnail per background when it
+connects, not when it is shown, so `ui/basemap-gallery.ts` adds it to the
+empty `arcgis-expand` on the first expand rather than writing it into the
+map's markup.
+
 **A new Calcite icon is a 404, not a missing glyph.** Icons are committed under
 `public/assets/icon/` and pinned by `architecture.test.ts`; turning a component
 feature on can pull in an icon that is not there. The browser suite catches it

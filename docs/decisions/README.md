@@ -79,6 +79,7 @@ The four different scopes, the hydrologic level, and what a link carries.
   [ADR-076](ADR-076-nest-the-place-menus-and-let-the-heading-carry-the-state.md),
   [ADR-085](ADR-085-gate-snows-drainage-rows-to-the-drawn-tier.md),
   [ADR-086](ADR-086-open-the-place-chooser-from-every-page-header.md),
+  [ADR-120](ADR-120-ask-where-to-start-before-loading-the-map.md),
   [ADR-087](ADR-087-retire-the-utah-reservoir-scope.md),
   [ADR-088](ADR-088-offer-huc-8-on-drought-first.md),
   [ADR-103](ADR-103-offer-huc-8-on-every-surface.md),
@@ -154,7 +155,8 @@ ADR-008, then ADR-032 and ADR-061.**
   [ADR-023](ADR-023-fill-the-empty-drainage-areas.md),
   [ADR-029](ADR-029-the-table-narrows-where-the-map-dims.md),
   [ADR-040](ADR-040-open-the-snow-map-on-the-season-peak.md),
-  [ADR-086](ADR-086-open-the-place-chooser-from-every-page-header.md)
+  [ADR-086](ADR-086-open-the-place-chooser-from-every-page-header.md),
+  [ADR-120](ADR-120-ask-where-to-start-before-loading-the-map.md)
 - Superseded, read only for history: ADR-007, ADR-016, ADR-022, ADR-025,
   ADR-027, ADR-030, ADR-043, ADR-054
 - Current architecture: [`docs/architecture/frontend.md`](../architecture/frontend.md)
@@ -289,6 +291,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-117](ADR-117-close-the-scope-at-version-1-0-0.md) | Close the scope at version 1.0.0 | Accepted; the accumulated changelog becomes the 1.0.0 release, the geographic scope closes, and the tag is cut by a person |
 | [ADR-118](ADR-118-publish-terminal-lakes-from-their-own-roster-and-payload.md) | Publish terminal lakes from their own roster and payload | Accepted; implements ADR-112 and extends ADR-056 and ADR-098; Walker Lake is the first lake, generated and not yet shown |
 | [ADR-119](ADR-119-show-terminal-lakes-on-their-own-page.md) | Show terminal lakes on their own page | Accepted; extends ADR-118 and ADR-045; reached from the methods and data pages, not the bar |
+| [ADR-120](ADR-120-ask-where-to-start-before-loading-the-map.md) | Ask where to start before loading the map | Accepted; extends ADR-086; the storage map fetches the map SDK only after the first-visit question closes without a choice |
 
 ## Relationship to the historical journal
 
