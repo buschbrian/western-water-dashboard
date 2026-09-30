@@ -14,7 +14,6 @@
  * reader can only recover from by reloading the page.
  */
 import "@arcgis/map-components/components/arcgis-fullscreen";
-import "@arcgis/map-components/components/arcgis-basemap-gallery";
 import "@arcgis/map-components/components/arcgis-compass";
 import "@arcgis/map-components/components/arcgis-expand";
 import "@arcgis/map-components/components/arcgis-home";
@@ -24,6 +23,7 @@ import "@arcgis/map-components/components/arcgis-zoom";
 
 import type ArcGISMap from "@arcgis/core/Map";
 import { MAP_MAX_ZOOM, MAP_MIN_ZOOM, drainageExtent, navigableExtent } from "../viz/extent";
+import { galleryOnFirstExpand } from "./basemap-gallery";
 import { createHoverCard, type HoverMapElement } from "./map-hover";
 
 export interface ViewMapElement extends HoverMapElement {
@@ -114,11 +114,12 @@ export function createViewMap(
     <arcgis-home slot="top-right"></arcgis-home>
     <arcgis-compass slot="top-right"></arcgis-compass>
     <arcgis-expand slot="top-left" close-on-esc
-      expand-icon="basemap" expand-tooltip="Map background">
-      <arcgis-basemap-gallery></arcgis-basemap-gallery>
-    </arcgis-expand>
+      expand-icon="basemap" expand-tooltip="Map background"></arcgis-expand>
     <arcgis-fullscreen slot="top-left"></arcgis-fullscreen>
     <arcgis-scale-bar slot="bottom-right" unit="dual"></arcgis-scale-bar>`;
+  /* Filled on first open, not with the page (`basemap-gallery.ts`). */
+  const basemapExpand = element.querySelector("arcgis-expand");
+  if (basemapExpand) void galleryOnFirstExpand(basemapExpand);
   const card = createHoverCard(options.cardId);
   host.replaceChildren(element, card);
   return { element, card };

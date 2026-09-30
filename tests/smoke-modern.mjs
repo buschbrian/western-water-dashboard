@@ -550,8 +550,13 @@ async function checkAccessibility(tab, check, label) {
  * a fresh profile, which is exactly the condition the first-visit splash
  * exists for -- so without this it opens over every one of them and its
  * modal backdrop swallows the clicks these tests make. Seeded as dismissed
- * so the suite tests the pages; the splash has its own case below, which
- * clears the key first and is the only place it is exercised. */
+ * so the suite tests the pages; the splash has its own cases below, which
+ * start from an unseeded profile and are the only place it is exercised.
+ *
+ * On the storage map this is also what lets the page start at all: the map
+ * SDK is not fetched until the first-visit question is closed, so a context
+ * that opens the bare URL without this waits on a dialog nobody answers and
+ * never reports readiness. */
 const SPLASH_DISMISSED_KEY = "utah-reservoir-dashboard-splash-dismissed";
 async function newPageContext(browser, viewport) {
   const context = await browser.newContext({ viewport });
@@ -709,6 +714,96 @@ const browser = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
   await tab.waitForURL(/overview\.html\?state=[A-Z]{2}$/, { timeout: 60000 });
   check(!/[?&](class|late|reservoir|sort)=/.test(tab.url()),
     `${label}: the reset destination kept page-owned state (${tab.url()})`);
+  await context.close();
+}
+
+/* The first-visit question is asked before the map SDK is fetched, and
+ * "not now" is the one answer that stays on this page -- so Escape is what
+ * starts the map. Two claims: nothing of the map exists while the question is
+ * open, which is the whole point of asking it first, and closing the question
+ * without a choice still reaches the same readiness a returning reader gets. */
+{
+  const context = await browser.newContext({ viewport: VIEWPORTS[0] });
+  const tab = await context.newPage();
+  const label = "First-visit chooser closed with Escape (desktop)";
+  console.log(`
+=== ${label}`);
+  await tab.goto(URL, { waitUntil: "domcontentloaded", timeout: 60000 });
+  await tab.waitForSelector("dialog.opening-splash[open]", { timeout: 90000 });
+  const whileAsking = await tab.evaluate(() => ({
+    mapElement: document.querySelector("arcgis-map") !== null,
+    mapDefined: customElements.get("arcgis-map") !== undefined,
+    ready: window.__dashboardReady !== undefined,
+    busy: document.querySelector("#map-host")?.getAttribute("aria-busy") ?? null
+  }));
+  console.log("  while asking:", JSON.stringify(whileAsking));
+  check(!whileAsking.mapElement && !whileAsking.mapDefined,
+    `${label}: the map SDK was loaded behind the first-visit question`);
+  check(!whileAsking.ready,
+    `${label}: readiness was reported before the map had started`);
+  check(whileAsking.busy === "true",
+    `${label}: the map host stopped reporting busy before the map started`);
+
+  await tab.keyboard.press("Escape");
+  await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 90000 });
+  const after = await tab.evaluate(() => ({
+    open: document.querySelector("dialog.opening-splash")?.hasAttribute("open") ?? null,
+    dialogs: document.querySelectorAll("dialog.opening-splash").length,
+    drawn: window.__dashboardReady?.drawn ?? null,
+    reservoirs: window.__dashboardReady?.reservoirs ?? null,
+    stateFilter: window.__dashboardReady?.stateFilter ?? null,
+    dismissed: (() => {
+      try {
+        return localStorage.getItem("utah-reservoir-dashboard-splash-dismissed") !== null;
+      } catch { return null; }
+    })(),
+    search: window.location.search
+  }));
+  console.log("  after Escape:", JSON.stringify(after));
+  check(after.open === false, `${label}: the chooser is still open after Escape`);
+  check(after.dialogs === 1,
+    `${label}: the chooser was built ${after.dialogs} times, expected once`);
+  check(after.drawn === expectedReservoirs && after.reservoirs === expectedReservoirs,
+    `${label}: drew ${after.drawn} of ${after.reservoirs} reservoirs after Escape, `
+      + `expected ${expectedReservoirs}`);
+  check(after.stateFilter === "all" && !/[?&](state|area)=/.test(after.search),
+    `${label}: Escape changed the place (${after.stateFilter}, "${after.search}")`);
+  check(after.dismissed === true,
+    `${label}: Escape did not record the question as answered`);
+  /* Waited for rather than read once: readiness is written when the data is
+   * drawn, and the host clears when the view is ready or its own deadline
+   * passes, which can be a moment later. */
+  const settled = await tab.waitForFunction(() =>
+    document.querySelector("#map-host")?.getAttribute("aria-busy") === "false",
+  null, { timeout: 30000 }).then(() => true, () => false);
+  check(settled, `${label}: the map still reports itself as loading after it started`);
+
+  /* The map-background gallery is built on the first open of its expand,
+   * not with the page, because it downloads a thumbnail for every
+   * background when it connects. Proved working, not just present: an
+   * element that never found its view would pass an existence check. */
+  const galleriesBefore = await tab.evaluate(() =>
+    document.querySelectorAll("arcgis-basemap-gallery").length);
+  check(galleriesBefore === 0,
+    `${label}: the background gallery was built before anyone opened it`);
+  await tab.locator("#basemap-expand").click();
+  const gallery = await tab.waitForFunction(() => {
+    const element = document.querySelector("#basemap-expand arcgis-basemap-gallery");
+    const basemaps = element?.source?.basemaps?.length ?? 0;
+    return element && element.view && element.state === "ready" && basemaps > 0
+      ? { state: element.state, basemaps, bound: Boolean(element.view) }
+      : null;
+  }, null, { timeout: 30000 }).then((handle) => handle.jsonValue()).catch(() => null);
+  console.log("  gallery:", JSON.stringify(gallery));
+  check(gallery !== null,
+    `${label}: opening the background control did not build a working gallery`);
+  await tab.keyboard.press("Escape");
+
+  /* The header action is the same chooser, not a second one built by the
+   * later boot step. */
+  await tab.locator("#place-chooser-trigger").click();
+  await tab.waitForSelector("dialog.opening-splash[open]", { timeout: 5000 });
+  await tab.keyboard.press("Escape");
   await context.close();
 }
 
@@ -3663,7 +3758,7 @@ for (const viewport of VIEWPORTS) {
  * so refusing exactly that one leaves the rest of the chain to answer.
  */
 {
-  const context = await browser.newContext({ viewport: VIEWPORTS[0] });
+  const context = await newPageContext(browser, VIEWPORTS[0]);
   const tab = await context.newPage();
   const errors = [];
   const refused = [];
@@ -3729,7 +3824,7 @@ for (const viewport of VIEWPORTS) {
  * layers are local, so losing geographic context must not delete the map's
  * actual subject. */
 {
-  const context = await browser.newContext({ viewport: VIEWPORTS[0] });
+  const context = await newPageContext(browser, VIEWPORTS[0]);
   const tab = await context.newPage();
   const errors = [];
   const refused = [];
@@ -3792,6 +3887,11 @@ for (const viewport of VIEWPORTS) {
     viewport: VIEWPORTS[0],
     reducedMotion: "reduce"
   });
+  /* This block ends on the bare URL, which is a first visit in a fresh
+   * profile; seeded like `newPageContext` so the map starts. */
+  await context.addInitScript((key) => {
+    try { localStorage.setItem(key, "1"); } catch { /* storage refused */ }
+  }, SPLASH_DISMISSED_KEY);
   await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin: URL });
   const tab = await context.newPage();
   const errors = [];
@@ -4169,7 +4269,7 @@ for (const failure of [
   { name: "data refused", fulfil: { status: 503, body: "" } },
   { name: "data never answers", hang: true }
 ]) {
-  const context = await browser.newContext({ viewport: VIEWPORTS[0] });
+  const context = await newPageContext(browser, VIEWPORTS[0]);
   const tab = await context.newPage();
   const errors = [];
   let heldRoute = null;
@@ -4267,7 +4367,7 @@ for (const failure of [
     .map((reservoir) => reservoir.huc6?.slice(0, 4))
     .filter((code) => typeof code === "string" && coarseDroughtAreas.has(code))).size;
 
-  const context = await browser.newContext({ viewport: VIEWPORTS[0] });
+  const context = await newPageContext(browser, VIEWPORTS[0]);
   const tab = await context.newPage();
   const errors = [];
   tab.on("pageerror", (err) => errors.push(`uncaught: ${err.message}`));
@@ -5011,7 +5111,7 @@ console.log(`\n=== Lakes page: ${VIEWPORTS.length} widths`);
  */
 {
   const STE_WORD_LIMIT = 25;
-  const context = await browser.newContext({ viewport: VIEWPORTS[0] });
+  const context = await newPageContext(browser, VIEWPORTS[0]);
   const tab = await context.newPage();
   const pages = [
     ["Storage map", "", "__dashboardReady"],

@@ -1,5 +1,4 @@
 import "@esri/calcite-components/components/calcite-notice";
-import "@arcgis/map-components/components/arcgis-basemap-gallery";
 import "@arcgis/map-components/components/arcgis-compass";
 import "@arcgis/map-components/components/arcgis-expand";
 import "@arcgis/map-components/components/arcgis-locate";
@@ -33,6 +32,7 @@ import {
   mapExtentFromBox
 } from "../viz/extent";
 import { storageByArea } from "../drought-model";
+import { galleryOnFirstExpand } from "./basemap-gallery";
 import { elementById } from "./dom";
 import { drainageAreaLines, storageReservoirLines } from "./hover-content";
 import { reservoirFromHits, type GraphicHit, type HitGraphic } from "./hit";
@@ -410,11 +410,14 @@ export async function loadMap(
     <arcgis-compass slot="top-right"></arcgis-compass>
     <arcgis-locate slot="top-right"></arcgis-locate>
     <arcgis-expand slot="top-left" id="basemap-expand" close-on-esc
-      expand-icon="basemap" expand-tooltip="Map background">
-      <arcgis-basemap-gallery></arcgis-basemap-gallery>
-    </arcgis-expand>
+      expand-icon="basemap" expand-tooltip="Map background"></arcgis-expand>
     <arcgis-fullscreen slot="top-left"></arcgis-fullscreen>
     <arcgis-scale-bar slot="bottom-right" unit="dual"></arcgis-scale-bar>`;
+  /* The gallery is put in the expand when a reader first opens it: built
+   * with the page, it downloaded every background's thumbnail on every load
+   * (`basemap-gallery.ts`). */
+  const basemapExpand = element.querySelector("arcgis-expand");
+  if (basemapExpand) void galleryOnFirstExpand(basemapExpand);
   element.addEventListener("arcgisViewReadyChange", () => {
     /* Not `{ once: true }` any more, and guarded on the view's own `ready`
      * flag: this event also fires for the transition *out* of ready, which

@@ -2,7 +2,6 @@ import { drainageCodeAtLevel } from "./data/huc";
 import "@esri/calcite-components/main.css";
 import { setAssetPath as setCalciteAssetPath } from "@esri/calcite-components";
 
-import { installAnonymousAuthPolicy } from "./arcgis/basemaps";
 import { loadDrainageScope, loadOfferedLevels } from "./data/boundaries";
 import { loadReservoirs } from "./data/load";
 import { downloadCsv, downloadText } from "./data/download";
@@ -31,7 +30,9 @@ import {
   isOpeningScopeChosen
 } from "./data/opening-scope";
 import { readStoredPlace, resolveOpeningPlace, searchWithPlace } from "./state/opening-preference";
-import { setupPlaceChooser, wasDismissed } from "./ui/opening-splash";
+import {
+  setupPlaceChooser, shouldAskWhere, wasDismissed
+} from "./ui/opening-splash";
 import {
   asScoped, isLakeMead, isLakePowell, isLate, rollupOfScoped,
   type ScopedReservoirs,
@@ -90,7 +91,7 @@ import {
 } from "./ui/storage-place-control-model";
 import { renderLegend } from "./ui/legend";
 import { hydrologicPathRows } from "./ui/location-facts";
-import { loadMap, type MapController } from "./ui/map";
+import type { MapController } from "./ui/map";
 import { coordinateText } from "./viz/coordinates";
 import {
   browserCapabilities,
@@ -1036,14 +1037,37 @@ function wireSelection(): void {
   });
 }
 
-if (!supportsDashboard(browserCapabilities())) {
-  renderUnsupported(root);
-} else {
-  // This policy must precede renderShell and loadMap. It turns secured-resource
-  // challenges into failures the basemap fallback can handle without a prompt.
+/**
+ * Fetches the map SDK and builds the map.
+ *
+ * The SDK is imported here rather than at the top of the file so that a
+ * reader who is shown the first-visit question does not pay for it first.
+ * The question needs two small payloads; the SDK is most of what this page
+ * downloads and most of the time the main thread is busy, and every answer
+ * to the question except "not now" goes to a different page. Imported
+ * statically, the SDK was fetched and executed behind the dialog and delayed
+ * the dialog itself by several seconds on a phone.
+ *
+ * The anonymous-credential policy is installed before `loadMap` asks the SDK
+ * for anything, as it was when it ran at the top of the boot: it turns a
+ * secured-resource challenge into a failure the basemap fallback can take
+ * instead of a sign-in prompt (ADR-004). Nothing before this point touches
+ * the SDK, so installing it here is still before every layer and basemap.
+ */
+async function startMap(): Promise<MapController> {
+  const [{ installAnonymousAuthPolicy }, { loadMap }] = await Promise.all([
+    import("./arcgis/basemaps"),
+    import("./ui/map")
+  ]);
   installAnonymousAuthPolicy((error) => {
     console.warn("Secured map resource refused:", error.url);
   });
+  return loadMap(selection);
+}
+
+if (!supportsDashboard(browserCapabilities())) {
+  renderUnsupported(root);
+} else {
   /* A boot that dies has to say so.
    *
    * Everything below this line runs inside one top-level `await`, and until
@@ -1095,15 +1119,75 @@ if (!supportsDashboard(browserCapabilities())) {
    * `resolveOpeningScope` against an empty roster still applies `state`
    * (`state` is never checked against the rosters, only `area`'s aliveness
    * is) and falls back to the wide default box. */
-  const [reservoirs, map, loadedRosters] = await Promise.all([
-    loadData(),
-    loadMap(selection),
-    loadOpeningRosters().catch((error: unknown): OpeningRosters => {
-      console.warn("The opening-scope rosters could not load; the map opens " +
-        "with no state narrowing.", error);
-      return EMPTY_OPENING_ROSTERS;
-    })
-  ]);
+  const rostersLoading = loadOpeningRosters().catch((error: unknown): OpeningRosters => {
+    console.warn("The opening-scope rosters could not load; the map opens " +
+      "with no state narrowing.", error);
+    return EMPTY_OPENING_ROSTERS;
+  });
+  /* The address bar wins where it answered, the reader's remembered place
+   * otherwise, and everywhere when neither did (`resolveOpeningPlace`). The
+   * stored choice is never written back into the address bar: what a reader
+   * copies should be what they are looking at, not what they prefer.
+   *
+   * Read before anything is awaited, because it decides the order below.
+   * It reads only the address bar and the stored place, so it gives the same
+   * answer here that it gave when it was read after the fetches. */
+  const openingPlace = resolveOpeningPlace(window.location.search, readStoredPlace());
+  const askOnFirstVisit = {
+    source: openingPlace.source,
+    dismissed: wasDismissed(),
+    search: window.location.search
+  };
+
+  /*
+   * The first-visit question comes before the map, not after it.
+   *
+   * It needs the two payloads it names places from and nothing else, and
+   * every answer to it except "not now" is a navigation to a new URL. So
+   * when it is going to be asked, it is asked as soon as those two payloads
+   * are in, and the map SDK is not fetched until the reader closes the
+   * dialog without choosing. Before this, the question waited for the SDK,
+   * the map, the drainage areas and the level control, and the page spent
+   * most of its first load building a map that the reader's answer then
+   * navigated away from.
+   *
+   * The wait on the dialog has no deadline on purpose: it is the reader's
+   * answer, not a request, and the modal dialog is the only thing on the
+   * page that can be used while it is open. `#map-host` stays busy through
+   * it, which is true -- the map has not started -- and `loadMap` clears it
+   * on every exit exactly as before.
+   *
+   * When the question is not asked (a link, a stored place, a reader who
+   * dismissed it), nothing changes: data, map and rosters load together.
+   * In both orders the data and the rosters are in before the map's first
+   * draw, so the narrowing rule below still holds.
+   */
+  let chooserBuilt = false;
+  let reservoirs: readonly Reservoir[] | null;
+  let map: MapController;
+  let loadedRosters: OpeningRosters;
+  if (shouldAskWhere(askOnFirstVisit.source, askOnFirstVisit.dismissed,
+    askOnFirstVisit.search)) {
+    [reservoirs, loadedRosters] = await Promise.all([loadData(), rostersLoading]);
+    const chooser = await setupPlaceChooser({
+      rosters: loadedRosters,
+      reservoirStates: (reservoirs ?? []).map((reservoir) =>
+        reservoir.waterbody_states ?? reservoir.state),
+      askOnFirstVisit
+    });
+    chooserBuilt = true;
+    const dialog = chooser?.element;
+    if (dialog?.open) {
+      await new Promise<void>((resolve) => {
+        dialog.addEventListener("close", () => resolve(), { once: true });
+      });
+    }
+    map = await startMap();
+  } else {
+    [reservoirs, map, loadedRosters] = await Promise.all([
+      loadData(), startMap(), rostersLoading
+    ]);
+  }
   /* Module-level (declared beside `scope`, above): `drainageAreaName` and
    * the place menus read it outside this function's scope. */
   openingRosters = loadedRosters;
@@ -1130,11 +1214,6 @@ if (!supportsDashboard(browserCapabilities())) {
    * own drainage-area filter, same as always -- just never the drawn
    * boundaries.
    */
-  /* The address bar wins where it answered, the reader's remembered place
-   * otherwise, and everywhere when neither did (`resolveOpeningPlace`). The
-   * stored choice is never written back into the address bar: what a reader
-   * copies should be what they are looking at, not what they prefer. */
-  const openingPlace = resolveOpeningPlace(window.location.search, readStoredPlace());
   const openingSelection = openingPlace.selection;
   const scopeChosen = isOpeningScopeChosen(openingSelection);
   // Module-level (declared beside `scope`, above): `applyScope` and
@@ -1391,19 +1470,18 @@ if (!supportsDashboard(browserCapabilities())) {
   await loadContext(map);
   const levelsOffered = await wireLevelControl();
   wirePlaceControls(openingRosters, openingScope.selection);
-  /* Reuses the rosters already fetched, so the first-visit question cannot
-   * arrive late. The same builder also wires the wide-header action and the
-   * mobile menu item every shared-header page carries (ADR-086). */
-  await setupPlaceChooser({
-    rosters: openingRosters,
-    reservoirStates: published.map((reservoir) =>
-      reservoir.waterbody_states ?? reservoir.state),
-    askOnFirstVisit: {
-      source: openingPlace.source,
-      dismissed: wasDismissed(),
-      search: window.location.search
-    }
-  });
+  /* Reuses the rosters already fetched. The same builder also wires the
+   * wide-header action and the mobile menu item every shared-header page
+   * carries (ADR-086). Built once: when the first-visit question was asked,
+   * the chooser already exists and its header actions are already wired. */
+  if (!chooserBuilt) {
+    await setupPlaceChooser({
+      rosters: openingRosters,
+      reservoirStates: published.map((reservoir) =>
+        reservoir.waterbody_states ?? reservoir.state),
+      askOnFirstVisit
+    });
+  }
 
   /* One fact per field, and fields are only ever added (never removed or
    * re-pointed at an expression another field already reads): two fields
