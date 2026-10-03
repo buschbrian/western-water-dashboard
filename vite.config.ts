@@ -107,6 +107,7 @@ export default defineConfig({
         lakes: resolve(root, "lakes.html"),
         explore: resolve(root, "explore.html"),
         terms: resolve(root, "terms.html"),
+        reporters: resolve(root, "reporters.html"),
         landscape: resolve(root, "landscape.html")
       }
     }
