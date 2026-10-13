@@ -5,6 +5,12 @@
   changed — and a red build freezes the published numbers. Compare against the
   frozen oracle through `src/data/legacy-harness.ts`, against synthetic series,
   or against the payload's own declared fields.
+- **Seasonal tests read a frozen season, not the daily file.** `snowpack.json`
+  restarts at one snowless day every 1 October, and tests that needed a
+  headline or a peak froze the deploy from 2026-10-02. Read
+  `readSnowpackSeasonFixture()` (`tests/fixtures/snowpack-wy2026.json`, classed
+  `frozen`) for model behaviour; keep `readSnowpack()` for what today's file
+  must satisfy, which is the validator.
 - **Tests about where a reservoir is read the roster, never `reservoirs.json`**,
   or a quiet feed silently retires the assertion (ADR-056).
 - **Size budgets are gzipped**, never raw. A budget in the wrong unit fails on
