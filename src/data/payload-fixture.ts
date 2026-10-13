@@ -37,6 +37,28 @@ export function readSnowpack(): SnowpackPayload {
   return validateSnowpackPayload(JSON.parse(source) as unknown);
 }
 
+/**
+ * A complete water year of the snow payload, frozen, through the same
+ * validator the browser uses.
+ *
+ * `snowpack.json` holds only the current water year, so on 1 October it
+ * restarts at one day with almost no snow and almost no normal to divide by.
+ * A test about how the model treats a season -- a headline, a peak day, an
+ * area mean that differs between states -- has nothing to measure for weeks
+ * after that, and reading the daily file turned the build red on 2026-10-02
+ * with no code changed. Those tests read this instead: the payload committed
+ * at 7791ce7 (as of 2026-09-30), the last full day of water year 2026, byte
+ * for byte. It is classed `frozen` in `data/generated-files.json`.
+ *
+ * Keep `readSnowpack()` for what must hold of today's file: that it still
+ * passes the validator.
+ */
+export function readSnowpackSeasonFixture(): SnowpackPayload {
+  const source = readFileSync(
+    new URL("../../tests/fixtures/snowpack-wy2026.json", import.meta.url), "utf8");
+  return validateSnowpackPayload(JSON.parse(source) as unknown);
+}
+
 /** The committed weekly drought coverage, through the browser's validator. */
 export function readDroughtCoverage(): DroughtCoveragePayload {
   const source = readFileSync(

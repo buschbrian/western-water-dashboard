@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { parseDrainageUnits, type DrainageScope } from "./data/boundaries";
-import { readDrainageGeoJson, readSnowpack } from "./data/payload-fixture";
+import { readDrainageGeoJson, readSnowpackSeasonFixture } from "./data/payload-fixture";
 import { SNOW_CLASSES, snowClassIndex } from "./viz/snow-classes";
 import type { SnowpackPayload } from "./types";
 import {
@@ -40,7 +40,10 @@ import {
   type CurvePoint
 } from "./snow-model";
 
-const payload = readSnowpack();
+/* A whole water year, frozen: every test below is about how the model treats
+ * a season, and the daily `snowpack.json` restarts at one snowless day each
+ * 1 October. See `readSnowpackSeasonFixture`. */
+const payload = readSnowpackSeasonFixture();
 
 describe("percent of normal", () => {
   it("refuses to divide by a zero or missing normal median", () => {
@@ -167,7 +170,7 @@ describe("the payload narrowed to one state's sites", () => {
   });
 
   it("drops every area entirely for a state with no sites at all", () => {
-    /* No site in the committed payload carries this state (confirmed against
+    /* No site in the season fixture carries this state (confirmed against
      * the payload's own roster below); every area should vanish rather than
      * publish an empty-but-present roster. */
     expect(payload.sites.some((site) => site.state === "TX")).toBe(false);
@@ -237,7 +240,7 @@ describe("the payload narrowed to one state's sites", () => {
      * a wider one.
      *
      * Against a payload whose floors differ, because every floor the
-     * committed payload publishes is 2 -- so over that payload "its own
+     * season fixture publishes is 2 -- so over that payload "its own
      * floor" and "the highest floor" are the same number, and the assertion
      * would hold just as well against the wrong rule. `payloadAtLevel` takes
      * the highest deliberately; this must not. */
@@ -570,10 +573,12 @@ describe("headline readings", () => {
     expect(newestFloored(thinNormal, 100)?.date).toBe("2026-10-27");
   });
 
-  it("finds a headline in the committed payload", () => {
+  it("finds a headline in a complete season", () => {
     const region = regionCurve(payload);
     const floor = headlineFloor(payload.site_count, 2);
-    // Data-independent: any real season has at least one broad reading.
+    // Any complete season has at least one broad reading. The first weeks of
+    // a water year have none, which is why this reads the frozen season and
+    // not the daily file: `newestHeadline` answering null then is correct.
     expect(bestAgainstNormal(region, floor)).not.toBeNull();
     expect(newestHeadline(region, floor)).not.toBeNull();
   });
@@ -655,6 +660,52 @@ describe("the map day", () => {
   });
 });
 
+describe("the first day of a water year", () => {
+  /*
+   * The daily payload restarts every 1 October at one day: every site
+   * reporting, almost none with snow, and a normal of zero. That is the
+   * morning the season-shaped tests above went red on, reading the daily file
+   * (2026-10-02). The data was right and so was the model; this holds what
+   * the model must do with it, built from the fixture's own sites so it
+   * cannot drift with the calendar.
+   */
+  const day = "2026-10-01";
+  const first: SnowpackPayload = {
+    ...payload,
+    sites: payload.sites.map((site) => ({
+      ...site,
+      series: [[day, 0, 0]] as SnowpackPayload["sites"][number]["series"]
+    })),
+    rollups: payload.rollups.map((rollup) => ({
+      ...rollup,
+      series: [{
+        date: day,
+        reporting_site_count: rollup.site_count,
+        mean_percent_of_normal_median: null
+      }]
+    }))
+  };
+  const floor = headlineFloor(first.site_count, 2);
+
+  it("promotes no percentage to a headline, and leaves the depth reading reachable", () => {
+    const region = regionCurve(first);
+    expect(region).toHaveLength(1);
+    expect(region[0]!.percent).toBeNull();
+    expect(newestHeadline(region, floor)).toBeNull();
+    expect(bestAgainstNormal(region, floor)).toBeNull();
+    // Every site reported, so the depth fallback's reporting floor is met.
+    expect(newestFloored(region, floor)?.date).toBe(day);
+  });
+
+  it("still opens the map on a day, with no site given a percentage", () => {
+    expect(defaultMapDay(first)).toBe(day);
+    const values = mapDayValues(first, day);
+    expect(values.sites.size).toBe(first.site_count);
+    expect([...values.sites.values()].every((value) => value === null)).toBe(true);
+    expect([...values.depths.values()].every((depth) => depth.inches === 0)).toBe(true);
+  });
+});
+
 describe("one site's season", () => {
   const site = payload.sites[0]!;
 
@@ -721,7 +772,7 @@ describe("one site's season", () => {
     }
   });
 
-  it("gives every committed site a drawable season", () => {
+  it("gives every site in a complete season a drawable season", () => {
     for (const entry of payload.sites) {
       const points = sitePoints(entry);
       expect(points.length).toBeGreaterThan(1);
@@ -863,7 +914,7 @@ describe("the areas the snow map draws", () => {
   function payloadWith(
     rollups: { huc6: string; site_count: number; minimum_reporting_sites: number }[]
   ): SnowpackPayload {
-    return { ...readSnowpack(), rollups: rollups as never } as SnowpackPayload;
+    return { ...readSnowpackSeasonFixture(), rollups: rollups as never } as SnowpackPayload;
   }
 
   it("drops an area that cannot ever meet its own reporting floor", () => {
@@ -894,7 +945,7 @@ describe("the areas the snow map draws", () => {
   });
 
   it("drops both of the payload's real one-site areas and nothing else", () => {
-    const payload = readSnowpack();
+    const payload = readSnowpackSeasonFixture();
     const scope = {
       level: 6,
       areas: payload.rollups.map((rollup) => area(rollup.huc6))
@@ -958,7 +1009,7 @@ describe("the denominator floor", () => {
    * point that never appears as text acts only by rescaling the axis.
    *
    * Synthetic sites, not today's payload: on the first mornings of a water
-   * year the committed file holds only days whose normals are all zero, so
+   * year the daily file holds only days whose normals are all zero, so
    * asserting the live curve contains a thin-but-positive day would turn
    * the build red with no code change. The property under test is the
    * code's -- a day below the headline's denominator floor keeps its
