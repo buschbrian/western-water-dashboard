@@ -44,6 +44,35 @@ LABELS = {
 }
 
 
+#: GitHub refuses an issue title longer than this. The refresh run of
+#: 2026-10-13 named every quiet feed in the title during a CDEC and AWDB
+#: outage, `gh issue edit` was refused, the step failed, and a red refresh run
+#: means the Pages deploy that chains from it is skipped -- so a long list of
+#: late feeds kept the data that *did* arrive off the site.
+TITLE_LIMIT = 256
+
+
+def _titled(prefix: str, names: str) -> str:
+    """`prefix (A, B, C)`, kept inside GitHub's title limit.
+
+    Names are dropped from the end and counted instead ("and 41 more"). The
+    body's table still lists every one; the title only has to say which
+    condition this is and start the list.
+    """
+    whole = f"{prefix} ({names})"
+    if len(whole) <= TITLE_LIMIT:
+        return whole
+    listed = [name.strip() for name in names.split(",") if name.strip()]
+    for keep in range(len(listed) - 1, -1, -1):
+        rest = len(listed) - keep
+        shown = ", ".join(listed[:keep])
+        tail = f"and {rest} more"
+        title = f"{prefix} ({shown}, {tail})" if shown else f"{prefix} ({rest} reservoir(s))"
+        if len(title) <= TITLE_LIMIT:
+            return title
+    return prefix[:TITLE_LIMIT]
+
+
 def _footer(checked: str) -> str:
     """The line every one of these issues ends with.
 
@@ -61,7 +90,7 @@ def _footer(checked: str) -> str:
 
 
 def stale_report(count: str, names: str, table: str, checked: str) -> tuple[str, str]:
-    title = f"Reservoir feeds have gone quiet ({names})"
+    title = _titled("Reservoir feeds have gone quiet", names)
     body = "\n\n".join([
         f"The refresh found **{count}** reservoir(s) later than their expected "
         "source cadence.",
@@ -80,7 +109,7 @@ def stale_report(count: str, names: str, table: str, checked: str) -> tuple[str,
 
 
 def withdrawn_report(count: str, names: str, table: str, checked: str) -> tuple[str, str]:
-    title = f"Reservoirs withdrawn for out-of-season data ({names})"
+    title = _titled("Reservoirs withdrawn for out-of-season data", names)
     body = "\n\n".join([
         f"The refresh withdrew **{count}** reservoir(s) from the published "
         "payload. They are **not on the map, not in the list, and not in any "
