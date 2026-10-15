@@ -201,7 +201,7 @@ been renamed and nothing committed.
 ### What this breaks, and it is not a small thing
 
 **`?reservoir=<name>` is a name-keyed link.** `findReservoir`
-([selection.ts:72](../src/state/selection.ts:72)) resolves a station id
+([selection.ts:72](../src/state/selection.ts)) resolves a station id
 first, then the qualified label, then a bare name. Renaming a reservoir
 therefore **breaks every saved link written against the old name** — and
 those links exist: the retired-route translation in `public/retired-route.js`
@@ -245,7 +245,7 @@ Two controls, built independently:
   already correct: `resolveOpeningScope` does it coarsest-first. What it is
   not is *nested* — four sibling dropdowns in a row, with no visible
   statement that a subregion lives inside a region.
-- **The Storage Charts filter bar** ([overview.ts:537](../src/overview.ts:537))
+- **The Storage Charts filter bar** ([overview.ts:537](../src/overview.ts))
   builds its own State, Subregion, Drainage area and **County** selects. The
   county list is built once from the widest scope and **never narrowed by the
   state select** — the code says so: "The state list is built once from the
