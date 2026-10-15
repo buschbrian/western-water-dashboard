@@ -880,13 +880,25 @@ def _previous_payload(path, reservoirs, withdrawn):
     return path
 
 
-def _single_source_run(path, fetched, refreshed=(RISE,), today=TODAY):
+def _carry(path, records, withdrawn, refreshed, today, roster):
+    """main()'s carry step, with the same `answered` main() computes."""
+    answered = ({r.get("name") for r in records}
+                | {r.get("name") for r in withdrawn})
+    withdrawn.extend(R.carry_withdrawals(
+        R.load_previous_withdrawals(path), refreshed, today,
+        answered=answered, roster=roster))
+    withdrawn.sort(key=lambda r: -(r.get("days_stale") or 0))
+    return records, [R.withdrawal_notice(r) for r in withdrawn]
+
+
+def _single_source_run(path, fetched, refreshed=(RISE,), today=TODAY, roster=None):
     """Replay what `--source <one>` does: merge, partition, carry, state.
 
     These are main()'s own steps in main()'s order, ending where the envelope
     does -- with notices rather than records -- so a failure here is the
     failure the pipeline would publish. `refreshed` is what main() reads off
     the records it fetched: the labels of the feeds it actually spoke to.
+    `roster` stands in for `ALL_RESERVOIR_NAMES`; None means unknown.
     """
     previous = R.load_previous(path)
     stations = {r["source_station_id"] for r in fetched}
@@ -894,10 +906,20 @@ def _single_source_run(path, fetched, refreshed=(RISE,), today=TODAY):
     records.extend(record for station, record in previous.items()
                    if station not in stations)
     records, withdrawn = R.partition_by_age(records)
-    withdrawn.extend(R.carry_withdrawals(
-        R.load_previous_withdrawals(path), set(refreshed), today))
-    withdrawn.sort(key=lambda r: -(r.get("days_stale") or 0))
-    return records, [R.withdrawal_notice(r) for r in withdrawn]
+    return _carry(path, records, withdrawn, set(refreshed), today, roster)
+
+
+def _full_run(path, fetched, failed=(), today=TODAY, roster=None):
+    """Replay a full run: every source fetched, and a failed fetch carried
+    forward from the previous payload when -- and only when -- there is a
+    previous record to carry. `failed` names the stations that failed."""
+    previous = R.load_previous(path)
+    records = list(fetched)
+    for station in failed:
+        if station in previous:
+            records.append(R.carry_forward(previous[station], today, "refused"))
+    records, withdrawn = R.partition_by_age(records)
+    return _carry(path, records, withdrawn, None, today, roster)
 
 
 def test_a_single_source_merge_keeps_the_other_sources_withdrawal_notices(tmp_path):
@@ -943,20 +965,23 @@ def test_a_carried_notice_still_carries_no_measurement(tmp_path):
         assert key not in withdrawn[0], key
 
 
-def test_the_refreshed_sources_own_notices_are_not_carried(tmp_path):
-    """This run attempted every station of the feed it refreshed.
+def test_the_refreshed_sources_own_notices_are_not_carried_off_the_roster(tmp_path):
+    """A refreshed source's notice is carried only for a reservoir the run
+    left unanswered *and* the roster still names.
 
-    Whatever those reservoirs did, they have been answered for: published if
-    they came back, written into `withdrawn` from today's reading if they did
-    not. Carrying the old notice would state one of them twice.
+    This test used to say every station of a refreshed feed "has been answered
+    for", and so asserted these notices were never carried. A failed fetch
+    proved that wrong (see the Lake Hemet test below). What still holds is
+    ADR-113: a reservoir the reviewed roster no longer names must not state
+    itself forever. Here neither reservoir is on the roster.
     """
     path = _previous_payload(
         tmp_path / "reservoirs.json", reservoirs=[],
         withdrawn=[AWDB_NOTICE, {**AWDB_NOTICE, "name": "Elkhead Reservoir",
                                  "source_label": RISE}])
 
-    _, only_awdb = _single_source_run(path, fetched=[], refreshed=[RISE])
-    _, only_rise = _single_source_run(path, fetched=[], refreshed=[AWDB])
+    _, only_awdb = _single_source_run(path, fetched=[], refreshed=[RISE], roster=set())
+    _, only_rise = _single_source_run(path, fetched=[], refreshed=[AWDB], roster=set())
 
     assert [n["name"] for n in only_awdb] == ["Montpelier Reservoir"]
     assert [n["name"] for n in only_rise] == ["Elkhead Reservoir"]
@@ -1039,6 +1064,73 @@ def test_the_worst_withdrawal_is_stated_first_however_it_arrived(tmp_path):
         "Carried far", "Refetched", "Carried near"]
 
 
+HEMET_NOTICE = {
+    "name": "Lake Hemet",
+    "as_of": "2026-07-31",
+    "days_stale": 73,
+    "source_label": "California Data Exchange Center",
+    "reason": "no reading inside the publication window",
+}
+
+
+def test_a_withdrawn_reservoir_whose_fetch_failed_is_still_stated(tmp_path):
+    """ADR-056 on a full run during an outage.
+
+    On 2026-10-13 CDEC refused the request for Lake Hemet, withdrawn since
+    July. A withdrawn reservoir has no previous record to carry forward, so it
+    got no record at all, and a full run never carried notices. It fell out of
+    both lists, and `test_committed_reservoirs_json_is_well_formed` caught the
+    roster no longer adding up.
+    """
+    path = _previous_payload(
+        tmp_path / "reservoirs.json",
+        reservoirs=[{"name": "Deer Creek", "source_station_id": "919",
+                     "source_label": RISE, "days_stale": 1}],
+        withdrawn=[HEMET_NOTICE])
+
+    records, withdrawn = _full_run(
+        path,
+        fetched=[{"name": "Deer Creek", "source_station_id": "919",
+                  "source_label": RISE, "days_stale": 0, "fetch_ok": True}],
+        failed=["HMT"], roster={"Deer Creek", "Lake Hemet"})
+
+    assert [r["name"] for r in records] == ["Deer Creek"]
+    assert [n["name"] for n in withdrawn] == ["Lake Hemet"]
+    assert withdrawn[0]["days_stale"] == int(
+        (TODAY - pd.Timestamp("2026-07-31")).days)
+    for key in ("current_storage_af", "pct_of_record_max", "monthly"):
+        assert key not in withdrawn[0], key
+
+
+def test_a_full_run_does_not_carry_a_reservoir_the_roster_removed(tmp_path):
+    """ADR-113: a reviewed removal is final on the next run, full or not."""
+    path = _previous_payload(
+        tmp_path / "reservoirs.json", reservoirs=[], withdrawn=[HEMET_NOTICE])
+
+    _, withdrawn = _full_run(path, fetched=[], roster={"Deer Creek"})
+
+    assert withdrawn == []
+
+
+def test_a_full_run_states_a_refetched_withdrawal_once(tmp_path):
+    """Re-derived from today's reading, the carried notice is not added."""
+    path = _previous_payload(
+        tmp_path / "reservoirs.json", reservoirs=[], withdrawn=[HEMET_NOTICE])
+    age = R.WITHDRAW_AFTER_DAYS + 20
+
+    records, withdrawn = _full_run(
+        path,
+        fetched=[{"name": "Lake Hemet", "source_station_id": "HMT",
+                  "source_label": "California Data Exchange Center",
+                  "as_of": str((TODAY - pd.Timedelta(days=age)).date()),
+                  "days_stale": age}],
+        roster={"Lake Hemet"})
+
+    assert records == []
+    assert [n["name"] for n in withdrawn] == ["Lake Hemet"]
+    assert withdrawn[0]["days_stale"] == age
+
+
 def test_a_notice_naming_a_source_this_run_cannot_see_is_kept(tmp_path):
     """An older payload, or a feed since renamed.
 
@@ -1072,6 +1164,12 @@ def test_the_partial_refresh_path_actually_carries_the_notices():
 
     assert "carry_withdrawals(" in partial
     assert "load_previous_withdrawals(OUTPUT_PATH)" in partial
+    # Every run carries, not only partial ones: a full run whose fetch fails
+    # for a withdrawn reservoir has nothing else to state it with.
+    carry_line = partial[:partial.index("carry_withdrawals(")].splitlines()[-1]
+    assert carry_line.startswith("    withdrawn.extend("), carry_line
+    assert "roster=set(ALL_RESERVOIR_NAMES)" in partial
+    assert "answered=answered" in partial
     # Sorted after the carry, or the worst withdrawal is not stated first
     # whenever a carried notice is the worst one.
     assert partial.index("carry_withdrawals(") < partial.index("withdrawn.sort(")

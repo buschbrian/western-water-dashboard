@@ -112,29 +112,43 @@ def carry_unrefreshed(previous: dict[str, dict], selected_stations: set[str],
     return kept
 
 
-def carry_withdrawals(notices: list[dict], refreshed: set[str],
-                      today: pd.Timestamp) -> list[dict]:
-    """Keep the notices belonging to the sources this run did not refresh.
+def carry_withdrawals(notices: list[dict], refreshed: set[str] | None,
+                      today: pd.Timestamp, *,
+                      answered: set[str] = frozenset(),
+                      roster: set[str] | None = None) -> list[dict]:
+    """Keep the notices this run has not answered for itself.
 
-    A single-source run republishes the other source from the last payload,
-    and a withdrawn reservoir is not in the part of it the merge reads. The
-    notices are carried here instead, so ADR-056's promise that a withdrawal
-    is always stated survives a partial refresh.
+    A withdrawn reservoir is not in `reservoirs`, so nothing the merge reads
+    can recover it, and `partition_by_age` can only re-derive a notice from a
+    record this run holds. The previous notices are carried here instead, so
+    ADR-056's promise that a withdrawal is always stated survives both a
+    partial refresh and a failed fetch.
 
-    Matched on the source rather than on the reservoir, because the source is
-    what a notice can say. ADR-056 fixes its fields at name, date, age, source
-    label and reason precisely so that nothing downstream can find a
-    measurement in one, and a station id is not among them. It does not need
-    to be: `--source` selects a whole feed, so this run attempted every
-    station of every source it refreshed, and each of those reservoirs has
-    already been answered for -- published if it came back, and written into
-    `withdrawn` from today's reading by `partition_by_age` if it did not.
-    Carrying one of those would state it twice.
+    `refreshed` is the set of source labels this run fetched, or None for a
+    full run, which fetched every source.
 
-    A notice naming a source this run cannot see -- an older payload, or a
-    feed since renamed -- is kept. The cost of keeping one too long is a
-    reader told about a reservoir that is not there; the cost of dropping one
-    is the silence ADR-056 was written against.
+    - A notice from a source this run did **not** refresh is kept, as it
+      always was: a single-source run republishes the other sources whole.
+      So is one naming a source this run cannot see -- an older payload, or a
+      feed since renamed. Keeping one too long tells a reader about a
+      reservoir that is not there; dropping one is the silence ADR-056 was
+      written against.
+    - A notice from a source this run **did** refresh is kept only if this
+      run left that reservoir unanswered and it is still on the committed
+      `roster`. This used to assume every such reservoir "has already been
+      answered for": published if it came back, re-withdrawn by
+      `partition_by_age` if not. A failed fetch breaks that. A withdrawn
+      reservoir has no previous record to `carry_forward`, so when its feed
+      refused the request it got no record at all and fell out of both
+      lists. That is how Lake Hemet left the payload on 2026-10-13, during a
+      CDEC outage. The roster check keeps a reviewed removal (ADR-113) from
+      stating itself forever.
+    - A reservoir in `answered` -- published or withdrawn by this run -- is
+      never carried, so nothing is stated twice.
+
+    Matched on name and source label because those are what a notice can
+    say. ADR-056 fixes its fields at name, date, age, source label and reason
+    so that nothing downstream can find a measurement in one.
 
     The age is recomputed against today, because `as_of` and `days_stale` are
     one fact printed twice and a carried notice would otherwise say a
@@ -144,8 +158,12 @@ def carry_withdrawals(notices: list[dict], refreshed: set[str],
     """
     carried = []
     for notice in notices:
-        if notice.get("source_label") in refreshed:
+        name = notice.get("name")
+        if name in answered:
             continue
+        if refreshed is None or notice.get("source_label") in refreshed:
+            if roster is None or name not in roster:
+                continue
         entry = dict(notice)
         as_of = pd.Timestamp(entry.get("as_of"))
         if not pd.isna(as_of):

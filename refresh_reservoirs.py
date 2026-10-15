@@ -1202,18 +1202,22 @@ def main() -> int:
 
     records, withdrawn = partition_by_age(records)
 
-    if args.source != "all":
-        # The merge above cannot carry a withdrawal, because `load_previous`
-        # reads `reservoirs` and ADR-056's whole point is that a withdrawn
-        # reservoir is not in there. Without this, a run refreshing one source
-        # published `withdrawn_count: 0` and quietly stopped naming every
-        # reservoir the other sources have withdrawn -- exactly the silence
-        # that record exists to prevent. These are notices rather than
-        # records; `withdrawal_notice` is written to pass one through
-        # unchanged, so the envelope below does not need to know.
-        withdrawn.extend(carry_withdrawals(
-            load_previous_withdrawals(OUTPUT_PATH), refreshed_sources, today))
-        withdrawn.sort(key=lambda r: -(r.get("days_stale") or 0))
+    # The merge above cannot carry a withdrawal, because `load_previous`
+    # reads `reservoirs` and ADR-056's whole point is that a withdrawn
+    # reservoir is not in there. Without this, a run refreshing one source
+    # published `withdrawn_count: 0` and quietly stopped naming every
+    # reservoir the other sources have withdrawn -- and a full run whose
+    # fetch failed for a withdrawn reservoir dropped it from both lists
+    # (Lake Hemet, 2026-10-13). These are notices rather than records;
+    # `withdrawal_notice` is written to pass one through unchanged, so the
+    # envelope below does not need to know. Every run, not only partial ones.
+    answered = ({r.get("name") for r in records}
+                | {r.get("name") for r in withdrawn})
+    withdrawn.extend(carry_withdrawals(
+        load_previous_withdrawals(OUTPUT_PATH),
+        refreshed_sources if args.source != "all" else None, today,
+        answered=answered, roster=set(ALL_RESERVOIR_NAMES)))
+    withdrawn.sort(key=lambda r: -(r.get("days_stale") or 0))
 
     watersheds = attach_watersheds(records)
     counties = attach_counties(records)

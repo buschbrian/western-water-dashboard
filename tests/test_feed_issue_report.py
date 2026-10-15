@@ -91,6 +91,37 @@ class TestContent:
             assert "marked stale" not in body
 
 
+class TestTitleLength:
+    """GitHub refuses a title over 256 characters. On 2026-10-13 a CDEC and
+    AWDB outage put dozens of names in the stale title, `gh issue edit` was
+    refused, and the failed step turned the refresh run red -- which skips
+    the Pages deploy that chains from it."""
+
+    MANY = ", ".join(f"Reservoir Number {index}" for index in range(60))
+
+    @pytest.mark.parametrize("kind", ["stale", "withdrawn"])
+    def test_a_long_list_stays_inside_the_limit(self, kind):
+        title, body = render(kind, count="60", names=self.MANY, table="|x|")
+        assert len(title) <= R.TITLE_LIMIT == 256
+        assert title.startswith("Reservoir")
+        assert "Reservoir Number 0" in title
+        assert title.endswith("more)")
+        # The count the title gives up is exact, and nothing is lost: the
+        # names it leaves out are still the body's to list.
+        shown = title[title.index("(") + 1:title.rindex(", and ")].split(", ")
+        assert f"and {60 - len(shown)} more" in title
+        assert "|x|" in body
+
+    def test_a_short_list_is_unchanged(self):
+        title, _ = render("stale", **STALE)
+        assert title == "Reservoir feeds have gone quiet (Bear Lake, Hyrum)"
+
+    def test_one_enormous_name_still_fits(self):
+        title, _ = render("withdrawn", count="1", names="X" * 400, table="|x|")
+        assert len(title) <= R.TITLE_LIMIT
+        assert title == "Reservoirs withdrawn for out-of-season data (1 reservoir(s))"
+
+
 class TestCommandLine:
     def test_it_writes_a_body_file_and_prints_the_title(self, tmp_path, capsys):
         target = tmp_path / "body.md"
