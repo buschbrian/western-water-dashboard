@@ -93,6 +93,18 @@ function check(condition, message) {
   if (!condition) failures.push(message);
 }
 
+/* Cards that share a row must match; a card alone on the last row is a
+ * footer that spans the strip, and its height follows its own text. */
+function unevenRows(cards) {
+  const rows = new Map();
+  for (const card of cards) {
+    const top = Math.round(card.top);
+    rows.set(top, [...(rows.get(top) ?? []), card.height]);
+  }
+  return [...rows.values()]
+    .filter((heights) => Math.max(...heights) - Math.min(...heights) > 1);
+}
+
 const payload = JSON.parse(await readFile(path.join(REPO_ROOT, "reservoirs.json"), "utf8"));
 const snowPayload = JSON.parse(
   await readFile(path.join(REPO_ROOT, "snowpack.json"), "utf8"));
@@ -3195,6 +3207,7 @@ for (const viewport of VIEWPORTS) {
       })(),
       summaryCards: [...document.querySelectorAll(".snow-summary .overview-kpi")]
         .map((card) => ({
+          top: card.getBoundingClientRect().top,
           height: card.getBoundingClientRect().height,
           overflowCount: [...card.querySelectorAll("span, strong, small")]
             .filter((node) => node.scrollWidth > node.clientWidth + 1).length
@@ -3227,9 +3240,9 @@ for (const viewport of VIEWPORTS) {
     check(state.summaryCards.length === 5
       && state.summaryCards.every((card) => card.overflowCount === 0),
     `${label}: summary text leaves its card ${JSON.stringify(state.summaryCards)}`);
-    const snowSummaryHeights = state.summaryCards.map((card) => card.height);
-    check(Math.max(...snowSummaryHeights) - Math.min(...snowSummaryHeights) <= 1,
-      `${label}: summary card heights differ ${JSON.stringify(snowSummaryHeights)}`);
+    const unevenSnowRows = unevenRows(state.summaryCards);
+    check(unevenSnowRows.length === 0,
+      `${label}: summary card heights differ within a row ${JSON.stringify(unevenSnowRows)}`);
     check(!state.search.includes("area="),
       `${label}: the whole region still carries ${state.search}`);
     check(state.scroll <= state.viewport + 1,
@@ -3663,9 +3676,9 @@ for (const viewport of VIEWPORTS) {
   await context.close();
 }
 
-/* Snowpack's five-card strip changes row count at medium widths. Keep every
- * card equal and contained there, between the standard desktop and phone
- * widths. */
+/* Snowpack's five-card strip changes row count at medium widths. Keep the
+ * cards in each row equal and every card contained there, between the
+ * standard desktop and phone widths. */
 {
   const viewport = { name: "medium", width: 860, height: 900 };
   const context = await newPageContext(browser, viewport);
@@ -3681,7 +3694,10 @@ for (const viewport of VIEWPORTS) {
       const cards = [...document.querySelectorAll(".snow-summary .overview-kpi")];
       return {
         cards: cards.length,
-        heights: cards.map((card) => card.getBoundingClientRect().height),
+        boxes: cards.map((card) => {
+          const box = card.getBoundingClientRect();
+          return { top: box.top, height: box.height };
+        }),
         overflows: cards.flatMap((card, cardIndex) =>
           [...card.querySelectorAll("span, strong, small")]
             .filter((node) => node.scrollWidth > node.clientWidth + 1)
@@ -3694,8 +3710,9 @@ for (const viewport of VIEWPORTS) {
       `${label}: rendered ${summary.cards} summary cards`);
     check(summary.overflows.length === 0,
       `${label}: summary text leaves its box ${JSON.stringify(summary.overflows)}`);
-    check(Math.max(...summary.heights) - Math.min(...summary.heights) <= 1,
-      `${label}: card heights differ ${JSON.stringify(summary.heights)}`);
+    const uneven = unevenRows(summary.boxes);
+    check(uneven.length === 0,
+      `${label}: card heights differ within a row ${JSON.stringify(uneven)}`);
     check(summary.scroll <= summary.viewport + 1,
       `${label}: page overflows horizontally (${summary.scroll}px in ${summary.viewport}px)`);
   } catch (error) {
