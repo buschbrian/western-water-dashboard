@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <!-- A static page, like terms.html: no scripts and no external requests, so
+       the policy is as strict as terms.html's. Inline style is the one
+       allowance, because this page carries its own stylesheet. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'none'; script-src 'none'; style-src 'unsafe-inline'; img-src 'self' data:" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <meta name="description" content="How to cite figures from the Western Water Dashboard, what they can and cannot support, and who to contact." />
+  <title>For Reporters — Western Water Dashboard</title>
+  <style>
+    /* The same tokens and the same type as terms.html. */
+    :root {
+      --app-accent: #356b6f;
+      --app-border: #d4c5b2;
+      --app-muted: #655f55;
+      --app-surface: #f3eee6;
+      --app-surface-raised: #fffaf2;
+      --app-text: #2f342f;
+      color-scheme: light dark;
+    }
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --app-accent: #86b9b5;
+        --app-border: #5f5a50;
+        --app-muted: #c9c0b2;
+        --app-surface: #242723;
+        --app-surface-raised: #30332e;
+        --app-text: #f5efe5;
+      }
+    }
+    body {
+      margin: 0;
+      color: var(--app-text);
+      background: var(--app-surface);
+      font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+      line-height: 1.55;
+    }
+    main {
+      max-width: 44rem;
+      margin-inline: auto;
+      padding: 2rem 1.25rem 3rem;
+    }
+    .eyebrow {
+      color: var(--app-muted);
+      font-size: .8125rem;
+      font-weight: 700;
+      letter-spacing: .02em;
+      margin-block-end: .25rem;
+    }
+    h1 { font-size: 1.75rem; margin-block: 0 .5rem; }
+    h2 {
+      font-size: 1.125rem;
+      margin-block: 2rem .5rem;
+      padding-block-start: 1.25rem;
+      border-block-start: 1px solid var(--app-border);
+    }
+    a { color: var(--app-accent); overflow-wrap: anywhere; }
+    .card {
+      background: var(--app-surface-raised);
+      border: 1px solid var(--app-border);
+      border-radius: .5rem;
+      padding: 1rem 1.25rem;
+      margin-block: 1rem;
+    }
+    dt { font-weight: 700; margin-block-start: .75rem; }
+    dd { margin-inline-start: 0; }
+    footer {
+      max-width: 44rem;
+      margin-inline: auto;
+      padding: 0 1.25rem 2rem;
+      color: var(--app-muted);
+      font-size: .8125rem;
+    }
+  </style>
+</head>
+<body>
+  <main>
+    <p class="eyebrow">Western Water Dashboard</p>
+    <h1>For reporters</h1>
+    <p>This page is for reporters and editors who use figures from this site. It
+      tells you how to cite a figure, what the figures can support, and who to
+      contact. The <a href="./methods.html">methods page</a> gives the full
+      method for every number.</p>
+
+    <h2 id="cite">How to cite a figure</h2>
+    <div class="card">
+      <p><strong>Credit line:</strong> Source: [provider] data, compiled by the
+        Western Water Dashboard (buschbrian.github.io/western-water-dashboard).</p>
+      <p>Name the provider first, because the measurements are theirs. Each
+        reservoir page names its provider under "Measured by". This site collects
+        the readings and does the arithmetic.</p>
+    </div>
+    <ul>
+      <li><strong>Give the date of the reading.</strong> Each reservoir page shows
+        it as the reading date. The numbers change every morning, and some
+        providers publish only once a month.</li>
+      <li><strong>Link to the page that shows the figure.</strong> Each reservoir
+        has its own page, for example
+        <a href="./reservoir.html?name=Lake%20Powell">Lake Powell</a>. Its address
+        stays the same from day to day.</li>
+      <li><strong>Copy the address of a map view.</strong> The storage map, the
+        snow page and the drought page keep the place you chose in the address.</li>
+    </ul>
+
+    <h2 id="meaning">What the main figures mean</h2>
+    <dl>
+      <dt>Percent full</dt>
+      <dd>Storage now, divided by the reservoir's full level. The reservoir page
+        tells you which full level it uses.</dd>
+      <dt>Normal for this week</dt>
+      <dd>The middle value for the same week in earlier years. The site compares
+        against 1991 through 2020 unless the page names a different period.</dd>
+      <dt>History rank</dt>
+      <dd>How today's reading compares with the same date in each year since 2015.
+        "1st-lowest of 12" means the lowest of those 12 years. Write "lowest for
+        this time of year since 2015". Do not write "record low", because the
+        record here starts in 2015.</dd>
+      <dt>Change in 30 days, change in 1 year</dt>
+      <dd>The difference between the newest reading and the reading nearest that
+        many days before it.</dd>
+      <dt>Drought</dt>
+      <dd>The share of land in a drainage area at each class of the U.S. Drought
+        Monitor's weekly map. A new map is published each Thursday.</dd>
+      <dt>Snow</dt>
+      <dd>Snow water, compared with the 1991 through 2020 median for the same day.
+        Early in the season the normal is very small. Then the page gives the
+        depth in inches instead of a percentage.</dd>
+    </dl>
+
+    <h2 id="limits">What the figures cannot support</h2>
+    <ul>
+      <li><strong>Nothing here is a forecast.</strong> Every number is a
+        measurement, a published assessment, or arithmetic on those.</li>
+      <li><strong>People operate these reservoirs.</strong> A reservoir can fall
+        because it releases water for deliveries or power. Ask the operator before
+        you write that a watershed is drying.</li>
+      <li><strong>The period you compare against changes the answer.</strong>
+        Name the period when you give a percent of normal.</li>
+      <li><strong>Readings are provisional.</strong> A provider can revise a
+        reading later, and the next morning's data will carry the revision.</li>
+      <li><strong>A combined total mixes reading dates.</strong> Each page that
+        shows a total gives the range of dates behind it.</li>
+      <li><strong>This is not an official product.</strong> Where this site and an
+        agency disagree, the agency is right.</li>
+    </ul>
+
+    <h2 id="data">Data files</h2>
+    <p>The <a href="./data.html">public data API</a> gives the same numbers as JSON
+      files, with a description of each field. Each reservoir page also has a CSV
+      download of that reservoir's readings.</p>
+
+    <h2 id="images">Charts and screenshots</h2>
+    <p>To publish a screenshot or a chart from this site, send an email first.
+      For an embedded or branded version of the dashboard, see the
+      <a href="./terms.html#license">terms and license page</a>.</p>
+
+    <h2 id="contact">Contact</h2>
+    <p>Brian Busch builds and maintains this site. Email
+      <a href="mailto:brian.busch@me.com">brian.busch@me.com</a> to check a figure
+      before you publish it, to ask about a method, or to ask what the data
+      cannot show.</p>
+  </main>
+  <footer>
+    <p><a href="./">Storage map</a> · <a href="./methods.html">Methods and
+      sources</a> · <a href="./data.html">Public data API</a> ·
+      <a href="./terms.html">Terms and license</a> ·
+      <a href="https://github.com/buschbrian/western-water-dashboard" rel="noreferrer">Source
+      code</a></p>
+  </footer>
+</body>
+</html>
