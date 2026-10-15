@@ -1161,14 +1161,7 @@ def main() -> int:
                          | set(usgs_targets) | set(srp_targets)
                          | set(dnrc_targets) | set(cwms_targets)
                          | set(cap_targets))
-    refreshed_sources: set[str] = set()
     if args.source != "all":
-        # Which feeds this run actually spoke to, read from what it fetched
-        # rather than from a flag-to-label table that could drift away from
-        # the labels the records themselves carry. Three providers now, and a
-        # fourth would need no change here.
-        refreshed_sources = {r["source_label"] for r in records
-                             if r.get("source_label")}
         records.extend(carry_unrefreshed(previous, selected_stations, args.source))
 
     if not records:
@@ -1202,18 +1195,17 @@ def main() -> int:
 
     records, withdrawn = partition_by_age(records)
 
-    if args.source != "all":
-        # The merge above cannot carry a withdrawal, because `load_previous`
-        # reads `reservoirs` and ADR-056's whole point is that a withdrawn
-        # reservoir is not in there. Without this, a run refreshing one source
-        # published `withdrawn_count: 0` and quietly stopped naming every
-        # reservoir the other sources have withdrawn -- exactly the silence
-        # that record exists to prevent. These are notices rather than
-        # records; `withdrawal_notice` is written to pass one through
-        # unchanged, so the envelope below does not need to know.
-        withdrawn.extend(carry_withdrawals(
-            load_previous_withdrawals(OUTPUT_PATH), refreshed_sources, today))
-        withdrawn.sort(key=lambda r: -(r.get("days_stale") or 0))
+    # `load_previous` reads `reservoirs`, and ADR-056's whole point is that a
+    # withdrawn reservoir is not in there, so nothing above can carry one: not
+    # the merge of an unrefreshed source, and not `carry_forward` after a
+    # failed fetch. A single-source run once published `withdrawn_count: 0`,
+    # and a CDEC outage once dropped Lake Hemet from the payload entirely --
+    # exactly the silence that record exists to prevent. These are notices
+    # rather than records; `withdrawal_notice` passes one through unchanged.
+    answered = {r["name"] for r in records} | {r["name"] for r in withdrawn}
+    withdrawn.extend(carry_withdrawals(
+        load_previous_withdrawals(OUTPUT_PATH), answered, today))
+    withdrawn.sort(key=lambda r: -(r.get("days_stale") or 0))
 
     watersheds = attach_watersheds(records)
     counties = attach_counties(records)

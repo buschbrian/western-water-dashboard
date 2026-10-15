@@ -60,8 +60,27 @@ def _footer(checked: str) -> str:
     return f"Last checked {checked}"
 
 
+#: GitHub refuses an issue title longer than this, and the refresh run failed
+#: on 2026-10-13 when 200 quiet feeds were named in one.
+MAX_TITLE_LENGTH = 256
+
+
+def _named_title(lead: str, names: str) -> str:
+    """`lead (names)`, naming as many as fit and counting the rest."""
+    title = f"{lead} ({names})"
+    if len(title) <= MAX_TITLE_LENGTH:
+        return title
+    listed = [n.strip() for n in names.split(",") if n.strip()]
+    for keep in range(len(listed) - 1, 0, -1):
+        title = (f"{lead} ({', '.join(listed[:keep])} "
+                 f"and {len(listed) - keep} more)")
+        if len(title) <= MAX_TITLE_LENGTH:
+            return title
+    return f"{lead} ({len(listed)} reservoirs)"
+
+
 def stale_report(count: str, names: str, table: str, checked: str) -> tuple[str, str]:
-    title = f"Reservoir feeds have gone quiet ({names})"
+    title = _named_title("Reservoir feeds have gone quiet", names)
     body = "\n\n".join([
         f"The refresh found **{count}** reservoir(s) later than their expected "
         "source cadence.",
@@ -80,7 +99,7 @@ def stale_report(count: str, names: str, table: str, checked: str) -> tuple[str,
 
 
 def withdrawn_report(count: str, names: str, table: str, checked: str) -> tuple[str, str]:
-    title = f"Reservoirs withdrawn for out-of-season data ({names})"
+    title = _named_title("Reservoirs withdrawn for out-of-season data", names)
     body = "\n\n".join([
         f"The refresh withdrew **{count}** reservoir(s) from the published "
         "payload. They are **not on the map, not in the list, and not in any "

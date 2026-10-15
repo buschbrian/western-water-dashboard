@@ -112,29 +112,23 @@ def carry_unrefreshed(previous: dict[str, dict], selected_stations: set[str],
     return kept
 
 
-def carry_withdrawals(notices: list[dict], refreshed: set[str],
+def carry_withdrawals(notices: list[dict], answered: set[str],
                       today: pd.Timestamp) -> list[dict]:
-    """Keep the notices belonging to the sources this run did not refresh.
+    """Keep the notices for every reservoir this run did not answer for.
 
-    A single-source run republishes the other source from the last payload,
-    and a withdrawn reservoir is not in the part of it the merge reads. The
-    notices are carried here instead, so ADR-056's promise that a withdrawal
-    is always stated survives a partial refresh.
+    A withdrawn reservoir is not in `reservoirs`, so neither the merge of an
+    unrefreshed source nor `carry_forward` after a failed fetch can see it,
+    and `partition_by_age` cannot re-derive the notice from a record that is
+    not there. The notice is carried here instead, so ADR-056's promise that
+    a withdrawal is always stated survives a partial refresh and an outage.
 
-    Matched on the source rather than on the reservoir, because the source is
-    what a notice can say. ADR-056 fixes its fields at name, date, age, source
-    label and reason precisely so that nothing downstream can find a
-    measurement in one, and a station id is not among them. It does not need
-    to be: `--source` selects a whole feed, so this run attempted every
-    station of every source it refreshed, and each of those reservoirs has
-    already been answered for -- published if it came back, and written into
-    `withdrawn` from today's reading by `partition_by_age` if it did not.
-    Carrying one of those would state it twice.
-
-    A notice naming a source this run cannot see -- an older payload, or a
-    feed since renamed -- is kept. The cost of keeping one too long is a
-    reader told about a reservoir that is not there; the cost of dropping one
-    is the silence ADR-056 was written against.
+    Matched on the reservoir name, which every notice states and which is
+    unique across the roster. A reservoir this run published, or withdrew
+    from today's reading, is in `answered` and carrying it would state it
+    twice. Anything else keeps its last notice: a source this run did not
+    refresh, and a station whose fetch failed on a morning its provider was
+    down (2026-10-13: Lake Hemet left the payload entirely when CDEC was
+    unreachable).
 
     The age is recomputed against today, because `as_of` and `days_stale` are
     one fact printed twice and a carried notice would otherwise say a
@@ -144,7 +138,7 @@ def carry_withdrawals(notices: list[dict], refreshed: set[str],
     """
     carried = []
     for notice in notices:
-        if notice.get("source_label") in refreshed:
+        if notice.get("name") in answered:
             continue
         entry = dict(notice)
         as_of = pd.Timestamp(entry.get("as_of"))

@@ -880,13 +880,13 @@ def _previous_payload(path, reservoirs, withdrawn):
     return path
 
 
-def _single_source_run(path, fetched, refreshed=(RISE,), today=TODAY):
+def _single_source_run(path, fetched, today=TODAY):
     """Replay what `--source <one>` does: merge, partition, carry, state.
 
     These are main()'s own steps in main()'s order, ending where the envelope
     does -- with notices rather than records -- so a failure here is the
-    failure the pipeline would publish. `refreshed` is what main() reads off
-    the records it fetched: the labels of the feeds it actually spoke to.
+    failure the pipeline would publish. A station missing from `fetched` is
+    one whose fetch failed, or one from a source this run did not refresh.
     """
     previous = R.load_previous(path)
     stations = {r["source_station_id"] for r in fetched}
@@ -894,8 +894,9 @@ def _single_source_run(path, fetched, refreshed=(RISE,), today=TODAY):
     records.extend(record for station, record in previous.items()
                    if station not in stations)
     records, withdrawn = R.partition_by_age(records)
+    answered = {r["name"] for r in records} | {r["name"] for r in withdrawn}
     withdrawn.extend(R.carry_withdrawals(
-        R.load_previous_withdrawals(path), set(refreshed), today))
+        R.load_previous_withdrawals(path), answered, today))
     withdrawn.sort(key=lambda r: -(r.get("days_stale") or 0))
     return records, [R.withdrawal_notice(r) for r in withdrawn]
 
@@ -920,8 +921,7 @@ def test_a_single_source_merge_keeps_the_other_sources_withdrawal_notices(tmp_pa
     records, withdrawn = _single_source_run(
         path,
         fetched=[{"name": "Deer Creek", "source_station_id": "919",
-                  "source_label": RISE, "days_stale": 0, "fetch_ok": True}],
-        refreshed=[RISE])
+                  "source_label": RISE, "days_stale": 0, "fetch_ok": True}])
 
     assert [r["name"] for r in records] == ["Deer Creek"]
     assert [n["name"] for n in withdrawn] == ["Montpelier Reservoir"]
@@ -943,23 +943,22 @@ def test_a_carried_notice_still_carries_no_measurement(tmp_path):
         assert key not in withdrawn[0], key
 
 
-def test_the_refreshed_sources_own_notices_are_not_carried(tmp_path):
-    """This run attempted every station of the feed it refreshed.
+def test_a_withdrawn_reservoir_whose_fetch_failed_keeps_its_notice(tmp_path):
+    """A provider outage is not an answer.
 
-    Whatever those reservoirs did, they have been answered for: published if
-    they came back, written into `withdrawn` from today's reading if they did
-    not. Carrying the old notice would state one of them twice.
+    2026-10-13: CDEC was unreachable, Lake Hemet had been withdrawn the day
+    before, and with no record to carry forward and no notice carried either
+    it left the payload entirely -- neither published nor withdrawn.
     """
     path = _previous_payload(
         tmp_path / "reservoirs.json", reservoirs=[],
         withdrawn=[AWDB_NOTICE, {**AWDB_NOTICE, "name": "Elkhead Reservoir",
                                  "source_label": RISE}])
 
-    _, only_awdb = _single_source_run(path, fetched=[], refreshed=[RISE])
-    _, only_rise = _single_source_run(path, fetched=[], refreshed=[AWDB])
+    _, withdrawn = _single_source_run(path, fetched=[])
 
-    assert [n["name"] for n in only_awdb] == ["Montpelier Reservoir"]
-    assert [n["name"] for n in only_rise] == ["Elkhead Reservoir"]
+    assert sorted(n["name"] for n in withdrawn) == [
+        "Elkhead Reservoir", "Montpelier Reservoir"]
 
 
 def test_a_reservoir_this_run_republished_is_not_also_withdrawn(tmp_path):
@@ -971,8 +970,7 @@ def test_a_reservoir_this_run_republished_is_not_also_withdrawn(tmp_path):
         path,
         fetched=[{"name": "Montpelier Reservoir", "source_label": AWDB,
                   "source_station_id": "10069500:ID:BOR", "days_stale": 0,
-                  "fetch_ok": True}],
-        refreshed=[AWDB])
+                  "fetch_ok": True}])
 
     assert [r["name"] for r in records] == ["Montpelier Reservoir"]
     assert withdrawn == []
@@ -989,8 +987,7 @@ def test_a_reservoir_this_run_refetched_and_still_withdrew_is_stated_once(tmp_pa
         fetched=[{"name": "Montpelier Reservoir", "source_label": AWDB,
                   "source_station_id": "10069500:ID:BOR",
                   "as_of": str((TODAY - pd.Timedelta(days=age)).date()),
-                  "days_stale": age}],
-        refreshed=[AWDB])
+                  "days_stale": age}])
 
     assert records == []
     assert [n["name"] for n in withdrawn] == ["Montpelier Reservoir"]
@@ -1032,8 +1029,7 @@ def test_the_worst_withdrawal_is_stated_first_however_it_arrived(tmp_path):
         fetched=[{"name": "Refetched", "source_station_id": "c",
                   "source_label": RISE,
                   "as_of": str((TODAY - pd.Timedelta(days=between)).date()),
-                  "days_stale": between}],
-        refreshed=[RISE])
+                  "days_stale": between}])
 
     assert [n["name"] for n in withdrawn] == [
         "Carried far", "Refetched", "Carried near"]
@@ -1051,7 +1047,7 @@ def test_a_notice_naming_a_source_this_run_cannot_see_is_kept(tmp_path):
         withdrawn=[{**AWDB_NOTICE, "source_label": "A feed since renamed"},
                    {k: v for k, v in AWDB_NOTICE.items() if k != "source_label"}])
 
-    _, withdrawn = _single_source_run(path, fetched=[], refreshed=[RISE, AWDB])
+    _, withdrawn = _single_source_run(path, fetched=[])
 
     assert len(withdrawn) == 2
 
@@ -1072,6 +1068,9 @@ def test_the_partial_refresh_path_actually_carries_the_notices():
 
     assert "carry_withdrawals(" in partial
     assert "load_previous_withdrawals(OUTPUT_PATH)" in partial
+    # On every run, not only a partial one: a full run with a provider down
+    # loses a withdrawn reservoir the same way (2026-10-13, Lake Hemet).
+    assert "args.source" not in partial[:partial.index("carry_withdrawals(")]
     # Sorted after the carry, or the worst withdrawal is not stated first
     # whenever a carried notice is the worst one.
     assert partial.index("carry_withdrawals(") < partial.index("withdrawn.sort(")

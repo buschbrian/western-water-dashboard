@@ -55,6 +55,17 @@ class TestShape:
         assert "\n" not in title and title.strip() == title
 
 
+    @pytest.mark.parametrize("kind", ["stale", "withdrawn"])
+    def test_a_long_list_still_fits_a_github_title(self, kind):
+        """2026-10-13: 200 quiet feeds made a title GitHub refused, and the
+        refresh run failed on the issue step rather than on anything real."""
+        names = ", ".join(f"Reservoir number {i}" for i in range(200))
+        title, _ = render(kind, count="200", names=names, table="|")
+        assert len(title) <= R.MAX_TITLE_LENGTH
+        assert "Reservoir number 0" in title
+        assert title.endswith(" more)")
+
+
 class TestContent:
     def test_the_counts_and_names_reach_the_reader(self):
         title, body = render("stale", **STALE)
