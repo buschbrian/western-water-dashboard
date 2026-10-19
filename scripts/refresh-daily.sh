@@ -151,7 +151,8 @@ fi
 
 # 5. Snow has its own payload and its own failure mode. The reviewed inventory
 # is committed; a short provider response is retried one station at a time and
-# never replaces the last complete file.
+# never replaces the last complete file. On the first run of a new water year
+# it copies the finished season to data/snow/ before replacing it (ADR-121).
 if ! "$python_bin" refresh_snowpack.py; then
   warn "Snow download failed" "Keeping the last complete snow payload"
 fi

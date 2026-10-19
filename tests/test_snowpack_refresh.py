@@ -1,5 +1,6 @@
 """Network-free checks for the independent snow-data refresh."""
 
+import json
 import sys
 from datetime import date, datetime, timezone
 from pathlib import Path
@@ -8,7 +9,10 @@ import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+import refresh_snowpack  # noqa: E402
 from refresh_snowpack import (  # noqa: E402
+    archive_finished_season,
+    archive_path,
     build_payload,
     build_rollups,
     fetch_all,
@@ -253,3 +257,107 @@ def test_payload_covers_inventory_and_uses_the_mountain_water_year():
             site_out["series_normals"])
     ]
     assert rebuilt == [["2026-03-01", 6.0, 8.0]]
+
+
+# ---------------------------------------------------------------------------
+# The rollover archive (ADR-121)
+# ---------------------------------------------------------------------------
+
+def published(water_year, as_of, extra=""):
+    """A payload as the refresh writes it: compact JSON and a newline. The
+    `extra` field makes two files of one season differ byte for byte."""
+    return (f'{{"schema_version":3,"as_of":"{as_of}",'
+            f'"water_year":{water_year}{extra}}}\n').encode("utf-8")
+
+
+def test_the_rollover_keeps_the_finished_season_byte_for_byte(tmp_path):
+    output = tmp_path / "snowpack.json"
+    body = published(2026, "2026-09-30")
+    output.write_bytes(body)
+    written = archive_finished_season(output, 2027, tmp_path / "snow")
+    assert written == archive_path(2026, tmp_path / "snow")
+    assert written.name == "snowpack-wy2026.json"
+    assert written.read_bytes() == body
+    # Nothing but the archive is left beside it: no temporary file.
+    assert sorted(path.name for path in written.parent.iterdir()) == [written.name]
+
+
+def test_a_run_inside_the_same_season_archives_nothing(tmp_path):
+    output = tmp_path / "snowpack.json"
+    output.write_bytes(published(2026, "2026-09-29"))
+    assert archive_finished_season(output, 2026, tmp_path / "snow") is None
+    assert not (tmp_path / "snow").exists()
+
+
+def test_the_first_run_ever_has_nothing_to_archive(tmp_path):
+    assert archive_finished_season(
+        tmp_path / "snowpack.json", 2027, tmp_path / "snow") is None
+
+
+def test_repeating_the_rollover_is_harmless(tmp_path):
+    output = tmp_path / "snowpack.json"
+    body = published(2026, "2026-09-30")
+    output.write_bytes(body)
+    archive = tmp_path / "snow"
+    assert archive_finished_season(output, 2027, archive) is not None
+    assert archive_finished_season(output, 2027, archive) is None
+    assert archive_path(2026, archive).read_bytes() == body
+
+
+def test_an_existing_archive_is_never_replaced(tmp_path, capsys):
+    archive = tmp_path / "snow"
+    archive.mkdir()
+    first = published(2026, "2026-09-30")
+    archive_path(2026, archive).write_bytes(first)
+    output = tmp_path / "snowpack.json"
+    output.write_bytes(published(2026, "2026-09-30", ',"note":"other"'))
+    assert archive_finished_season(output, 2027, archive) is None
+    assert archive_path(2026, archive).read_bytes() == first
+    assert "kept as written" in capsys.readouterr().out
+
+
+def test_an_unreadable_payload_stops_the_rollover_rather_than_vanishing(tmp_path):
+    output = tmp_path / "snowpack.json"
+    output.write_bytes(b"{not json")
+    with pytest.raises(ValueError, match="refusing to replace"):
+        archive_finished_season(output, 2027, tmp_path / "snow")
+    output.write_bytes(b'{"as_of":"2026-09-30"}')
+    with pytest.raises(ValueError, match="names no water year"):
+        archive_finished_season(output, 2027, tmp_path / "snow")
+
+
+def test_main_archives_before_it_writes_the_new_season(tmp_path, monkeypatch):
+    """The whole rollover through `main`, with the provider stubbed: the
+    morning of 1 October replaces water year 2026 with water year 2027, and
+    the 2026 file survives as it was published."""
+    inventory = {
+        "site_count": 2,
+        "normal_period": {"start_year": 1991, "end_year": 2020},
+        "sites": [site("1:UT:SNTL", name="One"), site("2:UT:SNTL", name="Two")],
+    }
+    inventory_path = tmp_path / "snow_sites.json"
+    inventory_path.write_text(json.dumps(inventory), encoding="utf-8")
+    output = tmp_path / "snowpack.json"
+    finished = published(2026, "2026-09-30")
+    output.write_bytes(finished)
+    archive = tmp_path / "snow"
+
+    def fetch(_session, station_ids, begin, end):
+        assert begin == date(2026, 10, 1)
+        return [record(station, [{"date": "2026-10-01", "value": 0.0, "median": 0.0,
+                                  "qcFlag": "V", "qaFlag": "P"}])
+                for station in station_ids]
+
+    monkeypatch.setattr(refresh_snowpack, "fetch_all", fetch)
+    monkeypatch.setattr(refresh_snowpack.huc, "load_units_at",
+                        lambda _level: (_ for _ in ()).throw(OSError("offline")))
+    monkeypatch.setattr(sys, "argv", [
+        "refresh_snowpack.py", "--inventory", str(inventory_path),
+        "--output", str(output), "--as-of", "2026-10-01",
+        "--archive-dir", str(archive)])
+    assert refresh_snowpack.main() == 0
+
+    assert archive_path(2026, archive).read_bytes() == finished
+    rolled = json.loads(output.read_text(encoding="utf-8"))
+    assert rolled["water_year"] == 2027
+    assert rolled["as_of"] == "2026-10-01"

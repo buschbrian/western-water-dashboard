@@ -106,14 +106,61 @@ class TestTheTableItself:
                     "classed as generated")
 
 
+def classified_by(path: str) -> bool:
+    """Whether the table owns a path: by name, or as a file directly inside
+    a directory entry. A directory entry exists for one kind of file -- a
+    write-once archive that gains a member each year (ADR-121) -- and owns
+    only its own direct members, so it cannot quietly classify a subtree."""
+    for entry in FILES:
+        if entry["path"] == path:
+            return True
+        if (ROOT / entry["path"]).is_dir() and str(Path(path).parent) == entry["path"]:
+            return True
+    return False
+
+
 class TestTheRepository:
     def test_every_committed_data_file_is_classified(self):
         """The point of the table: a new payload cannot arrive unowned."""
-        classified = {entry["path"] for entry in FILES}
-        unclassified = sorted(committed_data_files() - classified)
+        unclassified = sorted(path for path in committed_data_files()
+                              if not classified_by(path))
         assert unclassified == [], (
             "add these to data/generated-files.json with an owner: "
             f"{unclassified}")
+
+    def test_a_directory_entry_is_a_generated_archive(self):
+        """Only a write-once archive may be owned as a directory. Anything
+        else gets a row of its own, so its writer and its class are named."""
+        for entry in FILES:
+            if (ROOT / entry["path"]).is_dir():
+                assert entry["class"] == "generated-archive", entry["path"]
+
+    def test_the_snow_archive_holds_one_frozen_file_per_finished_season(self):
+        """Every finished water year since the archive began is kept, named
+        for its own water year, and nothing else is in the directory. The
+        payload's own `water_year` says which seasons have finished, so this
+        holds on any morning: the day after a rollover, a season the refresh
+        archived and did not commit fails here rather than vanishing."""
+        archive = ROOT / "data" / "snow"
+        current = json.loads((ROOT / "snowpack.json").read_text(encoding="utf-8"))
+        names = sorted(path.name for path in archive.iterdir())
+        expected = [f"snowpack-wy{year}.json"
+                    for year in range(2026, current["water_year"])]
+        assert names == expected
+        for name in names:
+            season = json.loads((archive / name).read_text(encoding="utf-8"))
+            assert name == f"snowpack-wy{season['water_year']}.json"
+            assert season["as_of"] >= f"{season['water_year'] - 1}-10-01"
+
+    def test_the_first_archived_season_is_the_one_published_at_2998844(self):
+        """The 2025-26 season was archived from git history, after the
+        rollover had already overwritten it. Pinned to the blob the refresh
+        committed on 2026-09-30, so the archive cannot drift from what
+        readers were served."""
+        import hashlib
+        body = (ROOT / "data" / "snow" / "snowpack-wy2026.json").read_bytes()
+        assert hashlib.sha256(body).hexdigest() == (
+            "57726be42409a4acb3d9fe940aa443acbd9fd8736c38e11a89e847c25a1da437")
 
     def test_every_offered_drought_level_is_committed_by_the_refresh(self):
         """ADR-064 offers two levels, and a reader who changes the level

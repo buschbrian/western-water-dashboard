@@ -2822,6 +2822,8 @@ for (const viewport of VIEWPORTS) {
       // The terminal lakes (ADR-118, ADR-119): their own file and page.
       "./api/lakes.json", "./lakes.html",
       "./api/snowpack.json", "./snow.html",
+      // Each finished snow season, frozen (ADR-121).
+      "./data/snow/snowpack-wy2026.json",
       "./data/drought/usdm-huc6.json", "./drought.html",
       "./data/drought/usdm-current.geojson",
       // The same week over larger areas, published because the reader can

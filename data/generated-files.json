@@ -41,6 +41,13 @@
       "staged_by_refresh": true
     },
     {
+      "path": "data/snow",
+      "class": "generated-archive",
+      "writer": "refresh_snowpack.py",
+      "staged_by_refresh": true,
+      "note": "One frozen file per finished water year, snowpack-wy<YEAR>.json: snowpack.json byte for byte as published on the season's last morning, copied by the first refresh of the next water year before it overwrites the payload (ADR-121). Write-once; never rewritten. A directory entry, so the season that ends next year is classified and committed without editing this table."
+    },
+    {
       "path": "snow_sites.json",
       "class": "generated-daily",
       "writer": "refresh_snowpack.py",
