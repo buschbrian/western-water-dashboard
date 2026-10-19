@@ -100,6 +100,11 @@ const userTextFiles = [
   // own descriptions, which a screen reader reads as the chart.
   "src/viz/drought-gap.ts",
   "src/viz/drought-severity.ts",
+  // The two ten-year charts and the card around them (ADR-123): their
+  // copy, the calendar's key and every week's readout.
+  "src/ui/drought-decade.ts",
+  "src/viz/drought-history.ts",
+  "src/viz/drought-calendar.ts",
   // The weekly digest writes sentences about every other surface.
   "src/viz/weekly-summary.ts",
   "src/weekly-model.ts",

@@ -3668,6 +3668,82 @@ for (const viewport of VIEWPORTS) {
       "reservoir-reference", "Reservoir,");
     if (droughtFiltersOpened) await tab.locator("#drought-filter-toggle").click();
 
+    /* The ten-year cards (ADR-123). The archive is fetched only when they
+     * come near the screen, so this scrolls to them first and then waits on
+     * the readiness field rather than on a fixed delay. */
+    await tab.locator("#drought-decade-card").scrollIntoViewIfNeeded();
+    await tab.waitForFunction(() => ["loaded", "failed"].includes(
+      window.__droughtReady?.decadeState ?? ""), { timeout: 30000 });
+    const decade = await tab.evaluate(() => {
+      const host = document.getElementById("drought-decade-host");
+      const svg = host?.querySelector("svg");
+      return {
+        ready: window.__droughtReady,
+        bands: host?.querySelectorAll(".drought-history-band").length ?? 0,
+        now: host?.querySelectorAll(".drought-history-now").length ?? 0,
+        svgWidth: svg?.getBoundingClientRect().width ?? 0,
+        hostWidth: host?.getBoundingClientRect().width ?? 0,
+        busy: [host, document.getElementById("drought-calendar-host")]
+          .map((node) => node?.getAttribute("aria-busy")),
+        calendarNames: document.querySelectorAll(".drought-calendar-name").length,
+        calendarStrips: [...document.querySelectorAll(".drought-calendar-strip")]
+          .filter((strip) => (strip.getAttribute("aria-label") ?? "").length > 0).length,
+        pressed: [...document.querySelectorAll(".drought-calendar-name[aria-pressed=\"true\"]")]
+          .map((button) => button.dataset.code),
+        yearRows: document.querySelectorAll("#drought-decade-year-rows tr").length,
+        tableRows: document.querySelectorAll("#drought-calendar-rows tr").length,
+        keyItems: document.querySelectorAll("#drought-calendar-key li").length,
+        scroll: document.documentElement.scrollWidth,
+        viewport: document.documentElement.clientWidth
+      };
+    });
+    console.log("  decade:", JSON.stringify({
+      state: decade.ready?.decadeState, weeks: decade.ready?.decadeWeeks,
+      area: decade.ready?.decadeArea, rows: decade.ready?.calendarRows
+    }));
+    check(decade.ready?.decadeState === "loaded",
+      `${label}: the ten-year record is ${decade.ready?.decadeState}`);
+    check(decade.bands > 0 && decade.bands <= 5 && decade.now === 1,
+      `${label}: the ten-year chart drew ${decade.bands} class bands and ${decade.now} week marks`);
+    check(Math.abs(decade.svgWidth - decade.hostWidth) <= 1,
+      `${label}: the ten-year chart is ${decade.svgWidth}px in a ${decade.hostWidth}px host`);
+    check(decade.busy.every((value) => value === "false"),
+      `${label}: a ten-year card is still busy (${decade.busy.join(", ")})`);
+    check(decade.calendarNames === decade.ready?.units
+      && decade.ready?.calendarRows === decade.ready?.units
+      && decade.calendarStrips === decade.calendarNames
+      && decade.tableRows === decade.calendarNames,
+    `${label}: the calendar drew ${decade.calendarNames} rows, ${decade.calendarStrips} ` +
+      `described strips and ${decade.tableRows} table rows for ${decade.ready?.units} areas`);
+    check(decade.pressed.length === 1 && decade.pressed[0] === decade.ready?.decadeArea,
+      `${label}: the calendar marks ${JSON.stringify(decade.pressed)} as shown, ` +
+      `the chart draws ${decade.ready?.decadeArea}`);
+    check(decade.yearRows > 0 && decade.keyItems === 7,
+      `${label}: ${decade.yearRows} year rows and ${decade.keyItems} key entries`);
+    check(decade.scroll <= decade.viewport + 1,
+      `${label}: the ten-year cards overflow the page (${decade.scroll}px)`);
+    /* A calendar name is a control: choosing one redraws the chart above. */
+    const other = await tab.evaluate((shown) => [...document.querySelectorAll(
+      ".drought-calendar-name")].map((button) => button.dataset.code)
+      .find((code) => code !== shown), decade.ready?.decadeArea);
+    if (other) {
+      await tab.locator(`.drought-calendar-name[data-code="${other}"]`).click();
+      await tab.waitForFunction((code) => window.__droughtReady?.decadeArea === code,
+        other, { timeout: 5000 });
+      const after = await tab.evaluate(() => ({
+        focused: document.activeElement?.id,
+        readout: document.getElementById("drought-decade-readout")?.textContent ?? ""
+      }));
+      check(after.focused === "drought-decade-host" && after.readout.startsWith("Week of"),
+        `${label}: choosing a calendar row left focus on ${after.focused} ` +
+        `and the readout as "${after.readout}"`);
+      await tab.keyboard.press("ArrowLeft");
+      const stepped = await tab.evaluate(() =>
+        document.getElementById("drought-decade-readout")?.textContent ?? "");
+      check(stepped.startsWith("Week of") && stepped !== after.readout,
+        `${label}: the arrow key did not move the ten-year readout ("${stepped}")`);
+    }
+
     /* Last, on a settled page: every control is wired, every table is
      * filled, and the shadow roots have rendered their real controls. */
     checkLabelFonts(check, label, labelFonts);

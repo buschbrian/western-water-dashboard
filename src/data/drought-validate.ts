@@ -26,7 +26,7 @@ function isShares(value: unknown): value is DroughtShares {
   return Math.abs(total - 100) <= 0.35;
 }
 
-function isAtLeast(value: unknown): value is DroughtAtLeast {
+export function isAtLeast(value: unknown): value is DroughtAtLeast {
   if (!isObject(value)) return false;
   if (!LEVELS.every((level) => isShare(value[level]))) return false;
   // "This class or worse" cannot grow as the class worsens.

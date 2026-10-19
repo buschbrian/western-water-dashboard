@@ -150,3 +150,81 @@
 }
 .drought-severity-tick { font-size: 10px; font-weight: 600; fill: var(--app-muted); }
 .drought-severity-caption { font-size: 10px; fill: var(--app-muted); }
+
+/* The ten-year chart (ADR-123). The class bands carry their fills from the
+   class table; the grid, the gap bands and the marks take theme tokens. */
+.drought-decade-host { margin-block-start: .5rem; border-radius: .35rem; }
+.drought-decade-host:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 2px; }
+.drought-decade-controls { max-inline-size: 28rem; margin-block-start: .5rem; }
+.drought-decade-controls calcite-label { --calcite-font-size-relative-base: var(--app-control-text); }
+.drought-history-chart { display: block; inline-size: 100%; block-size: auto; touch-action: pan-y; }
+.drought-history-gap { fill: color-mix(in srgb, var(--app-muted) 30%, transparent); }
+.drought-history-year { stroke: var(--app-border); stroke-width: 1; }
+.drought-history-base { stroke: var(--app-muted); stroke-width: 1; }
+.drought-history-now { stroke: var(--app-text); stroke-width: 1.5; stroke-dasharray: 3 3; }
+.drought-history-cursor { stroke: var(--app-text); stroke-width: 1; opacity: .8; }
+
+/* The calendar: one row per area, a name and a strip of weeks. The strip's
+   own background is the page's "no drought" hatch, so a week left unfilled
+   reads as no drought; a week with no share is filled grey over it. */
+.drought-calendar-host { margin-block-start: .75rem; }
+.drought-calendar-rows { display: grid; gap: 1px; margin: 0; padding: 0; list-style: none; }
+.drought-calendar-row {
+  display: grid;
+  grid-template-columns: minmax(9rem, 14rem) minmax(0, 1fr);
+  gap: 0 .75rem;
+  align-items: center;
+  min-inline-size: 0;
+}
+.drought-calendar-name {
+  min-inline-size: 0;
+  padding: 0 .25rem;
+  overflow: hidden;
+  color: var(--app-text);
+  font: inherit;
+  font-size: .75rem;
+  line-height: 1.25;
+  text-align: end;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: none;
+  border: 1px solid transparent;
+  border-radius: .2rem;
+  cursor: pointer;
+}
+.drought-calendar-name:hover { border-color: var(--app-border); }
+.drought-calendar-name:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 1px; }
+.drought-calendar-name[aria-pressed="true"] { font-weight: 700; border-color: var(--app-muted); }
+.drought-calendar-strip {
+  display: block;
+  inline-size: 100%;
+  block-size: .85rem;
+  border: 1px solid var(--app-border);
+}
+.drought-calendar-cell { shape-rendering: crispEdges; }
+.drought-calendar-missing,
+.drought-calendar-missing-swatch { fill: var(--app-muted); background: var(--app-muted); }
+.drought-calendar-year { stroke: var(--app-surface-raised); stroke-width: 1; opacity: .7; }
+.drought-calendar-now { fill: none; stroke: var(--app-text); stroke-width: 1.5; }
+.drought-calendar-axis { margin-block-end: .2rem; }
+/* Two lines: the week mark above, so it never sits on the last year's label. */
+.drought-calendar-years {
+  position: relative;
+  block-size: 2rem;
+  color: var(--app-muted);
+  font-size: .7rem;
+}
+.drought-calendar-years span { position: absolute; inset-block-end: 0; padding-inline-start: 2px; }
+.drought-calendar-years .drought-calendar-now-label {
+  inset-block: 0 auto;
+  inset-inline-end: 0;
+  padding: 0;
+}
+/* At phone width the name sits over its strip rather than beside it, so the
+   weeks keep the whole width of the card. */
+@media (max-width: 640px) {
+  .drought-calendar-row { grid-template-columns: minmax(0, 1fr); gap: 0; }
+  .drought-calendar-name { text-align: start; padding-inline: 0; }
+  .drought-calendar-rows { gap: .3rem; }
+  .drought-calendar-years span:not(.drought-calendar-now-label):nth-child(even) { display: none; }
+}

@@ -368,6 +368,16 @@ values. A long worst-condition value wraps inside its own card. The extreme or
 exceptional card uses the same short heading-and-note rhythm as the other
 three; the count and coverage method do not change.
 
+**The two ten-year cards fetch their archive only when they come near the
+screen** (ADR-123). `src/ui/drought-decade.ts` observes both cards with a
+600px margin and fetches `usdm-huc{level}-history.json` once, with a 30-second
+deadline; loaded, failed and "no archive at this level" (HUC-8) each clear
+`aria-busy` and say so in words, and `decadeState` reports which. The
+one-area chart is responsive SVG drawn at the host's width; the calendar is
+HTML rows around SVG strips that stretch to their width, with the name above
+the strip below 640px. The chart's area select and the calendar's buttons are
+local display state, never written to the address bar.
+
 **The Storage charts keep the mixed hierarchy in their menus** (ADR-076,
 ADR-084). Place choices render as indented `calcite-option-group` rows: basins
 under their subregion, subregions under their region, counties under their

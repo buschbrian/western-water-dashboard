@@ -11,6 +11,20 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ## [Unreleased]
 
+### Added
+
+- **Ten years of drought on the drought page** (ADR-123). Two new cards below
+  the week's figures. One draws a single drainage area's last decade the way
+  the Drought Monitor draws its own: the share of the measured land at each
+  class or worse, every week, in the map's colours, with this week marked and
+  weeks with no map left as gaps. The other is a calendar of every area in
+  view, one row each and one column a week, coloured by the most severe class
+  that at least half of the area's measured land is in. Both read the archive
+  at the page's area size, and the archive is fetched only when the cards come
+  near the screen, so the page opens as fast as before. Each has a table that
+  says the same thing in words, and the chart can be read a week at a time
+  with the arrow keys.
+
 ### Changed
 
 - **Every drought share is measured from the monitor's full-resolution map**
