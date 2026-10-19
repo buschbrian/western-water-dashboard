@@ -213,6 +213,16 @@ rescaling the axis. Before this floor reached the curve, one autumn day set
 the Yakima axis to 1,400% over a winter that peaked at 68.9%. Headlines hold
 a stricter floor still: at least half the area's sites reporting.
 
+The floor is one predicate, `normalIsComparable`, and the map reads it too
+(ADR-121): an area whose mean normal that day is under an inch, or a site
+whose own normal is, takes no class and is drawn as "too little normal snow
+to compare". **The season's peak** is the deepest day of the region's depth
+curve among the days that clear both floors — half the sites reporting and a
+comparable mean normal (`seasonPeak`). Before any day does, there is no peak
+and the map opens on the newest day that met the reporting floor. The words
+"season high point" belong to a finished season; a running one has "most
+snow so far".
+
 The payload's `method.version` names the estimator behind these figures; two
 files written under different versions are not one series.
 

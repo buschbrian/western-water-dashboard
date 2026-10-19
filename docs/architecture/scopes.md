@@ -269,6 +269,11 @@ controls grouping, and the client rebuilds each surviving rollup from its
 station series rather than averaging published basin percentages. A valid
 `?site=` is the most specific request and wins if it conflicts with the set.
 
+Snowpack's `?season=` is not a scope. It names which water year every figure
+describes (ADR-121), is page-local and never portable, and leaves the four
+scope questions where they were: a finished season is narrowed by the same
+state, level, area and upstream set as the current one.
+
 ### Drought's sequential selected scope
 
 Drought orders four controls: **State**, **County**, **Area size**, then the

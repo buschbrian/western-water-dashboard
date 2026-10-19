@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted; amended by ADR-121
 
 ## Date
 
