@@ -505,7 +505,7 @@ def merge_history(previous: dict | None, payload: dict,
     weeks.append(entry)
     weeks.sort(key=lambda week: week["map_date"])
     del weeks[:-keep]
-    return {
+    history = {
         "schema_version": 1,
         "source": payload["source"],
         "attribution": payload["attribution"],
@@ -527,6 +527,22 @@ def merge_history(previous: dict | None, payload: dict,
         "unit_count": payload["unit_count"],
         "weeks": weeks,
     }
+    # Where weeks measured from the monitor's archive came from, and which
+    # weeks it could not supply (`tools/backfill_drought_history.py`).
+    # Carried forward so a weekly run cannot erase it, and trimmed with the
+    # weeks so it never names a week the file no longer covers. No archive
+    # carries one today.
+    backfill = (previous or {}).get("backfill")
+    if backfill is not None:
+        first = weeks[0]["map_date"]
+        history["backfill"] = {
+            **backfill,
+            "skipped": [item for item in backfill.get("skipped", [])
+                        if item["map_date"] >= first],
+        }
+        history = {key: history[key] for key in
+                   [*(key for key in history if key != "weeks"), "weeks"]}
+    return history
 
 
 def write_atomic(path: Path, payload: dict) -> bool:

@@ -401,6 +401,34 @@ class TestHistory:
         assert HISTORY_WEEKS_KEPT == 520
 
 
+class TestBackfillBlock:
+    """Where archive weeks came from survives the weekly run."""
+
+    def test_the_weekly_run_carries_the_block_forward(self):
+        history = merge_history(None, week_payload("2026-08-11"))
+        history["backfill"] = {"source": "archive", "note": "n", "skipped": [
+            {"map_date": "2026-08-04", "reason": "no map"}]}
+        history["weeks"].insert(0, {**history_entry(week_payload("2026-07-28")),
+                                    "release_date": None})
+        history["first_map_date"] = "2026-07-28"
+        merged = merge_history(history, week_payload("2026-08-18"))
+        assert merged["backfill"]["skipped"] == [{"map_date": "2026-08-04", "reason": "no map"}]
+        assert list(merged)[-1] == "weeks"
+
+    def test_a_skipped_week_leaves_with_the_weeks_around_it(self):
+        history = merge_history(None, week_payload("2026-08-11"), keep=2)
+        history["backfill"] = {"source": "archive", "note": "n", "skipped": [
+            {"map_date": "2026-08-04", "reason": "no map"}]}
+        merged = merge_history(history, week_payload("2026-08-18"), keep=2)
+        merged = merge_history(merged, week_payload("2026-08-25"), keep=2)
+        assert merged["first_map_date"] == "2026-08-18"
+        assert merged["backfill"]["skipped"] == []
+
+    def test_a_history_with_no_backfill_gains_no_block(self):
+        history = merge_history(None, week_payload("2026-08-11"))
+        assert "backfill" not in merge_history(history, week_payload("2026-08-18"))
+
+
 class TestPreviousWeek:
     """The one week a week-over-week comparison needs, carried in the current
     file so no page fetches an archive to find one subtraction."""
