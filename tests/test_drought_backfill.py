@@ -1,5 +1,5 @@
 """The archive backfill: what it accepts from the monitor's archive, how it
-compares a week, and how it adds weeks beside the weekly run's.
+compares a week, how it adds weeks, and how it rebuilds a whole series.
 
 No network: every archive file here is built in the test. The equivalence
 gate against the real archive is the tool's own `--verify-overlap` mode,
@@ -15,13 +15,13 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 
 from backfill_drought_history import (  # noqa: E402
-    ArchiveWeekError,
     add_archive_weeks,
-    archive_drought,
     compare_week,
     map_dates,
+    rebuild_history,
 )
 from compute_drought_coverage import METHOD_VERSION  # noqa: E402
+from drought_archive import ArchiveWeekError, archive_drought  # noqa: E402
 
 
 def ring(west, south, east, north):
@@ -157,3 +157,35 @@ class TestAddWeeks:
         old["method"]["version"] = "drought-coverage-1"
         with pytest.raises(ValueError, match="drought-coverage-1"):
             add_archive_weeks(old, {}, {})
+
+
+class TestRebuild:
+    def test_every_week_is_the_new_measurement_and_release_dates_survive(self):
+        old = history(entry("2026-10-06", 10.0, release_date="2026-10-08"),
+                      entry("2026-10-13", 10.0, release_date="2026-10-15"))
+        old["method"]["version"] = "drought-coverage-2"
+        result = rebuild_history(old, {
+            "2026-09-29": entry("2026-09-29", 30.0, release_date=None),
+            "2026-10-06": entry("2026-10-06", 40.0, release_date=None),
+            "2026-10-13": entry("2026-10-13", 50.0, release_date=None),
+        }, {"2026-09-22": "the archive holds no map for this date"})
+        assert result["method"]["version"] == METHOD_VERSION
+        assert [w["release_date"] for w in result["weeks"]] == [
+            None, "2026-10-08", "2026-10-15"]
+        assert [w["units"][0]["percent_of_area_at_least"]["d0"]
+                for w in result["weeks"]] == [30.0, 40.0, 50.0]
+        assert result["week_count"] == 3 and result["first_map_date"] == "2026-09-29"
+        # Named only when it falls inside the series it describes.
+        assert result["backfill"]["skipped"] == []
+        assert list(result)[-1] == "weeks"
+
+    def test_a_skipped_week_inside_the_series_is_named(self):
+        result = rebuild_history(history(entry("2026-10-13")), {
+            "2026-09-29": entry("2026-09-29"), "2026-10-13": entry("2026-10-13")},
+            {"2026-10-06": "a ring is not closed"})
+        assert result["backfill"]["skipped"] == [
+            {"map_date": "2026-10-06", "reason": "a ring is not closed"}]
+
+    def test_nothing_measured_leaves_the_archive_alone(self):
+        with pytest.raises(ValueError, match="left as it was"):
+            rebuild_history(history(entry("2026-10-13")), {}, {})

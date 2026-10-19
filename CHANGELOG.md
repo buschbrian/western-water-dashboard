@@ -11,6 +11,22 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ## [Unreleased]
 
+### Changed
+
+- **Every drought share is measured from the monitor's full-resolution map**
+  (ADR-122, method `drought-coverage-3`). The weekly figures used to be
+  measured from the simplified polygons the map draws. Checked against the
+  monitor's archive of the same weeks, that simplification moved 47 of 5,955
+  published shares by one tenth. The weekly run now measures the archive's map
+  of the week, and when that map is not posted yet it keeps last week rather
+  than measure the simplified one. The published weeks were measured again, so
+  those 47 shares each moved by one tenth.
+- **The drought archives reach back ten years** (ADR-122). The region,
+  subregion and basin archives were rebuilt from the monitor's weekly maps
+  back to November 2016, every week measured the same way. A week the archive
+  cannot supply is named in the file and left as a gap. The question service's
+  drought index carries the newest 26 weeks of each.
+
 ## [1.0.0] - 2026-09-18
 
 The first tagged release, and the state the site has run in for several weeks.

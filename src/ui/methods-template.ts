@@ -192,8 +192,10 @@ export function methodsMarkup(search: string): string {
           counts areas in drought, it counts D1 and worse, and any figure that includes D0
           says so.
           <br />The drawn areas are downloaded each week. The share of each drainage area's
-          land in each class is worked out from them by this project. That share is this
-          site's own calculation, not a figure the monitor publishes. Read the source at
+          land in each class is worked out by this project. It uses the monitor's full-detail
+          archive copy of the same map. The shares are kept for every week of the last ten
+          years. They are this site's own calculation, not figures the monitor publishes.
+          Read the source at
           <a href="https://droughtmonitor.unl.edu/" target="_blank"
             rel="noreferrer">droughtmonitor.unl.edu</a>.</dd>
         <dt>Drainage areas</dt>

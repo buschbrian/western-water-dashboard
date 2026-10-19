@@ -102,14 +102,14 @@
       "class": "generated-archive",
       "writer": "tools/compute_drought_coverage.py",
       "staged_by_refresh": true,
-      "note": "One archive per level; merge_history refuses a payload at another. This is where the default level's previous week comes from."
+      "note": "One archive per level; merge_history refuses a payload at another. This is where the default level's previous week comes from. A decade of weeks, each measured from the monitor's archived map; tools/backfill_drought_history.py --rebuild measured the weeks before the weekly run (ADR-122)."
     },
     {
       "path": "data/drought/usdm-huc4-history.json",
       "class": "generated-archive",
       "writer": "tools/compute_drought_coverage.py --scope west-huc4",
       "staged_by_refresh": true,
-      "note": "The subregion archive (ADR-074). Started later than the basin one, so it holds fewer weeks and its level says so rather than pretending to a comparison it cannot make."
+      "note": "The subregion archive (ADR-074). Its weeks before the weekly run were measured from the monitor's archived maps, like the basin one (ADR-122)."
     },
     {
       "path": "data/drought/usdm-huc2-history.json",
@@ -293,7 +293,7 @@
       "class": "generated-daily",
       "writer": "tools/build_assistant_indexes.py",
       "staged_by_refresh": true,
-      "note": "Current HUC2/4/6/8 drought facts and available HUC2/4/6 weekly histories."
+      "note": "Current HUC2/4/6/8 drought facts and the newest 26 weeks of the HUC2/4/6 archives (DROUGHT_HISTORY_WEEKS)."
     },
     {
       "path": "huc6.geojson",

@@ -20,6 +20,11 @@ MAX_BYTES = {
     "snow.json": 1_000_000,
     "drought.json": 600_000,
 }
+#: The newest weeks of each drought archive the question service is given.
+#: The archives hold a decade (ADR-122), about 6 MB across three levels, ten
+#: times this index's budget; half a year answers "how has it changed lately"
+#: and the full series stays one link away in the published archives.
+DROUGHT_HISTORY_WEEKS = 26
 
 
 def read(path: str) -> dict:
@@ -119,13 +124,14 @@ def drought_index() -> dict:
         }
         if level != 8:
             history = read(f"data/drought/usdm-huc{level}-history.json")
-            histories[str(level)] = history["weeks"]
+            histories[str(level)] = history["weeks"][-DROUGHT_HISTORY_WEEKS:]
     return {
         "schema_version": SCHEMA_VERSION,
         "topic": "drought",
         "as_of": levels["6"]["release_date"],
         "generated_at": dt.datetime.now(dt.timezone.utc).replace(microsecond=0).isoformat(),
         "levels": levels, "histories": histories,
+        "history_weeks": DROUGHT_HISTORY_WEEKS,
     }
 
 

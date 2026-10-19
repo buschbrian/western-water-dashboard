@@ -8,6 +8,7 @@ structure and self-consistency, never this week's drought, so a Thursday
 release cannot turn the suite red.
 """
 
+import datetime as dt
 import json
 import sys
 from pathlib import Path
@@ -407,7 +408,7 @@ class TestHistory:
 
 
 class TestBackfillBlock:
-    """Where archive weeks came from survives the weekly run."""
+    """Which weeks the archive could not supply survives the weekly run."""
 
     def test_the_weekly_run_carries_the_block_forward(self):
         history = merge_history(None, week_payload("2026-08-11"))
@@ -505,6 +506,49 @@ class TestCommittedHistory:
         if not path.exists():
             pytest.skip("no drought history has been built in this checkout")
         return json.loads(path.read_text(encoding="utf-8"))
+
+    @pytest.fixture(scope="class", params=[2, 4, 6])
+    @classmethod
+    def archive(cls, request):
+        path = ROOT / "data" / "drought" / f"usdm-huc{request.param}-history.json"
+        if not path.exists():
+            pytest.skip(f"no HUC-{request.param} history in this checkout")
+        return request.param, json.loads(path.read_text(encoding="utf-8"))
+
+    def test_every_week_is_a_tuesday_map_measured_at_one_level(self, archive):
+        level, history = archive
+        assert history["level"] == level
+        assert history["method"]["version"] == METHOD_VERSION
+        for week in history["weeks"]:
+            assert dt.date.fromisoformat(week["map_date"]).weekday() == 1
+            # A string from the weekly run; null from the archive, which
+            # states no release date (ADR-122).
+            assert week["release_date"] is None or isinstance(week["release_date"], str)
+            for unit in week["units"]:
+                shares = [unit["percent_of_area_at_least"][key] for key in LEVELS]
+                assert shares == sorted(shares, reverse=True)
+
+    def test_a_skipped_week_is_named_and_never_also_published(self, archive):
+        """A week the archive could not supply is listed with its reason, so
+        the gap in the series is a stated gap rather than a silent one."""
+        _level, history = archive
+        backfill = history.get("backfill")
+        if backfill is None:
+            return
+        held = {week["map_date"] for week in history["weeks"]}
+        for item in backfill["skipped"]:
+            assert item["map_date"] not in held
+            assert history["first_map_date"] <= item["map_date"] <= history["last_map_date"]
+            assert item["reason"]
+
+    def test_the_weeks_join_on_the_level_the_file_declares(self, archive):
+        level, history = archive
+        current = json.loads((ROOT / "data" / "drought" / f"usdm-huc{level}.json")
+                             .read_text(encoding="utf-8"))
+        published = {unit[f"huc{level}"] for unit in current["units"]
+                     if "percent_of_area_at_least" in unit}
+        for week in history["weeks"]:
+            assert {unit[f"huc{level}"] for unit in week["units"]} == published
 
     def test_the_weeks_are_unique_and_in_order(self, history):
         dates = [week["map_date"] for week in history["weeks"]]
@@ -681,3 +725,67 @@ class TestUnmeasuredLand:
         entry = history_entry(payload)
         assert "measured" not in entry["units"][0]
         assert set(entry["units"][0]) == {"huc6", "percent_of_area_at_least"}
+
+
+class TestArchiveInput:
+    """The weekly run measures the archive's map of the week, or nothing.
+
+    The download names the week and its release date; its simplified polygons
+    are drawn by the map and never measured (ADR-122)."""
+
+    @pytest.fixture()
+    def files(self, tmp_path):
+        live = drought_fixture([(1, polygon(square(-1, -1, 1, 1)))])
+        live["map_date"] = "2026-10-13"
+        live["release_date"] = "2026-10-15"
+        paths = {
+            "drought": tmp_path / "current.geojson",
+            "boundaries": tmp_path / "boundaries.geojson",
+            "land": tmp_path / "land.geojson",
+            "output": tmp_path / "out.json",
+            "history": tmp_path / "history.json",
+        }
+        paths["drought"].write_text(json.dumps(live))
+        paths["boundaries"].write_text(json.dumps(
+            boundaries_fixture(polygon(square(-1, -1, 1, 1)))))
+        paths["land"].write_text(json.dumps(land_fixture(polygon(square(-2, -2, 2, 2)))))
+        return paths
+
+    def run(self, monkeypatch, files, archive):
+        import compute_drought_coverage as engine
+
+        def fake_archive(map_date, cache, release_date=None):
+            if archive is None:
+                raise engine.ArchiveWeekError("the archive holds no map for this date")
+            assert map_date == "2026-10-13"
+            return {"map_date": map_date, "release_date": release_date,
+                    "source": f"archive/{map_date}", "attribution": "a",
+                    "features": [{"properties": {"DM": level}, "geometry": geometry}
+                                 for level, geometry in archive]}
+
+        monkeypatch.setattr(engine, "load_archive_week", fake_archive)
+        monkeypatch.setattr(sys, "argv", [
+            "compute_drought_coverage.py", "--drought", str(files["drought"]),
+            "--boundaries", str(files["boundaries"]), "--land", str(files["land"]),
+            "--output", str(files["output"]), "--history", str(files["history"]),
+            "--step", "0.05"])
+        return engine.main()
+
+    def test_the_shares_come_from_the_archive_map_not_the_download(
+            self, monkeypatch, files):
+        # The download says D1 everywhere; the archive says D3 on the west half.
+        assert self.run(monkeypatch, files,
+                        [(3, polygon(square(-1, -1, 0, 1)))]) == 0
+        payload = json.loads(files["output"].read_text())
+        unit = payload["units"][0]
+        assert unit["percent_of_area"]["d1"] == 0.0
+        assert unit["percent_of_area_at_least"]["d3"] == pytest.approx(50.0, abs=1.5)
+        assert payload["release_date"] == "2026-10-15"
+        assert payload["method"]["version"] == METHOD_VERSION == "drought-coverage-3"
+
+    def test_a_week_the_archive_has_not_posted_writes_nothing(self, monkeypatch, files):
+        """No fallback to the simplified polygons: that would put two kinds of
+        geometry into one series. The refresh keeps last week whole."""
+        assert self.run(monkeypatch, files, None) == 2
+        assert not files["output"].exists()
+        assert not files["history"].exists()

@@ -2830,6 +2830,10 @@ for (const viewport of VIEWPORTS) {
       "./data/drought/usdm-huc2.json",
       "./data/drought/usdm-huc4.json",
       "./data/drought/usdm-huc8.json",
+      // Ten years of weeks at the three levels that keep them (ADR-122).
+      "./data/drought/usdm-huc2-history.json",
+      "./data/drought/usdm-huc4-history.json",
+      "./data/drought/usdm-huc6-history.json",
       "./api/reference.json",
       // The upstream sets (ADR-077), published under /data/ rather than /api/
       // because they are a derived trace, not an observation series.
@@ -3663,6 +3667,7 @@ for (const viewport of VIEWPORTS) {
     await checkViewMapHover(tab, check, label, "drought-map-host", "drought-map-hover",
       "reservoir-reference", "Reservoir,");
     if (droughtFiltersOpened) await tab.locator("#drought-filter-toggle").click();
+
     /* Last, on a settled page: every control is wired, every table is
      * filled, and the shadow roots have rendered their real controls. */
     checkLabelFonts(check, label, labelFonts);
