@@ -12,6 +12,7 @@ import json
 import sys
 from pathlib import Path
 
+import numpy as np
 import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -19,15 +20,19 @@ sys.path.insert(0, str(ROOT / "tools"))
 
 from compute_drought_coverage import (  # noqa: E402
     DEFAULT_STEP,
+    DROUGHT_PATH,
     HISTORY_WEEKS_KEPT,
+    LAND_PATH,
     LEVELS,
     METHOD_VERSION,
     build_payload,
+    reaching,
     unit_field,
     history_entry,
     land_mask_segments,
     merge_history,
     previous_week,
+    row_crossings,
     segments_of,
     unit_coverage,
 )
@@ -427,6 +432,40 @@ class TestBackfillBlock:
     def test_a_history_with_no_backfill_gains_no_block(self):
         history = merge_history(None, week_payload("2026-08-11"))
         assert "backfill" not in merge_history(history, week_payload("2026-08-18"))
+
+
+class TestBands:
+    """The banded edge selection is a speed-up and must change nothing."""
+
+    def test_it_keeps_every_edge_a_row_in_the_band_can_cross(self):
+        rng = np.random.default_rng(7)
+        segments = rng.uniform(-5, 5, size=(4000, 4))
+        # Edges ending exactly on a band limit are the ones worth checking.
+        segments[:200, 1] = 0.5
+        segments[200:400, 3] = -0.25
+        for low, high in ((-0.25, 0.5), (0.5, 0.5), (-3.0, -2.9)):
+            kept = reaching(segments, low, high)
+            for lat in np.linspace(low, high, 9):
+                assert np.array_equal(row_crossings(kept, lat),
+                                      row_crossings(segments, lat))
+
+    def test_a_committed_week_measures_bit_for_bit_with_and_without_bands(
+            self, monkeypatch):
+        """Exact float equality on the committed polygons, against the loop as
+        it ran before bands: every edge tested on every row."""
+        import compute_drought_coverage as engine
+        drought = json.loads(DROUGHT_PATH.read_text(encoding="utf-8"))
+        boundaries = json.loads((ROOT / get_scope("west-huc4").output)
+                                .read_text(encoding="utf-8"))
+        land = land_mask_segments(json.loads(LAND_PATH.read_text(encoding="utf-8")))
+        classes = {feature["properties"]["DM"]: segments_of(feature["geometry"])
+                   for feature in drought["features"]}
+        units = [segments_of(feature["geometry"])
+                 for feature in boundaries["features"][:6]]
+        banded = [unit_coverage(unit, classes, 0.01, land) for unit in units]
+        monkeypatch.setattr(engine, "reaching", lambda segments, low, high: segments)
+        unbanded = [unit_coverage(unit, classes, 0.01, land) for unit in units]
+        assert banded == unbanded
 
 
 class TestPreviousWeek:

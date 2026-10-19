@@ -183,6 +183,30 @@ def inside_row(crossings: np.ndarray, lons: np.ndarray) -> np.ndarray:
     return (np.searchsorted(crossings, lons) % 2) == 1
 
 
+#: Grid rows measured against one pre-selected set of polygon edges.
+#:
+#: A speed-up and nothing else. Only an edge whose latitudes span a row can
+#: cross it, so each band of rows is tested against the edges that reach the
+#: band rather than against every edge of a national polygon. `row_crossings`
+#: keeps exactly the edges it kept before and solves them with the same
+#: arithmetic, so every crossing, every count and every published share is
+#: bit-for-bit what the unbanded loop gave; `tests/test_drought_coverage.py`
+#: holds that against the committed polygons.
+BAND_ROWS = 64
+
+
+def reaching(segments: np.ndarray, low: float, high: float) -> np.ndarray:
+    """The edges that can cross some latitude from `low` to `high`.
+
+    `row_crossings` keeps an edge when exactly one end lies above the row, so
+    its higher end is above `low` and its lower end at or below `high`. Any
+    edge outside that is one no row in the band could have kept.
+    """
+    y1 = segments[:, 1]
+    y2 = segments[:, 3]
+    return segments[(np.maximum(y1, y2) > low) & (np.minimum(y1, y2) <= high)]
+
+
 def unit_coverage(
     unit_segments: np.ndarray,
     drought_segments: dict[int, np.ndarray],
@@ -218,36 +242,47 @@ def unit_coverage(
     total_weight = 0.0
     measured_weight = 0.0
     level_weights = dict.fromkeys(drought_segments, 0.0)
-    for lat in lats:
-        in_unit = inside_row(row_crossings(unit_segments, lat), lons)
-        count = int(in_unit.sum())
-        if count == 0:
-            continue
-        weight = math.cos(math.radians(lat))
-        total_weight += weight * count
-        row_lons = lons[in_unit]
-        # Cells the monitor does not reach are dropped before any class is
-        # counted, so they cannot land in "none" and be read as no drought.
-        # Each state answers alone: parity over pooled edges would read a
-        # point inside two states' overlap sliver as outside the country.
-        if land_segments is not None:
-            on_land = np.zeros(row_lons.shape, dtype=bool)
-            for state_segments in land_segments:
-                on_land |= inside_row(
-                    row_crossings(state_segments, lat), row_lons)
-            row_lons = row_lons[on_land]
-            if row_lons.size == 0:
+    for start in range(0, lats.size, BAND_ROWS):
+        band = lats[start:start + BAND_ROWS]
+        low, high = band[0], band[-1]
+        band_unit = reaching(unit_segments, low, high)
+        band_drought = {level: reaching(segments, low, high)
+                        for level, segments in drought_segments.items()}
+        # A state no row in the band can enter adds no land, so it is left
+        # out rather than asked about on every row.
+        band_land = None if land_segments is None else [
+            part for part in (reaching(segments, low, high)
+                              for segments in land_segments) if part.size]
+        for lat in band:
+            in_unit = inside_row(row_crossings(band_unit, lat), lons)
+            count = int(in_unit.sum())
+            if count == 0:
                 continue
-        measured_weight += weight * row_lons.size
-        # One class per point, worst wins. The classes are exclusive by
-        # contract, but their 100-metre-simplified edges can overlap by a
-        # sliver, and a point counted twice would push the total past 100.
-        category = np.full(row_lons.shape, -1)
-        for level in sorted(drought_segments):
-            hits = inside_row(row_crossings(drought_segments[level], lat), row_lons)
-            category[hits] = level
-        for level in drought_segments:
-            level_weights[level] += weight * int((category == level).sum())
+            weight = math.cos(math.radians(lat))
+            total_weight += weight * count
+            row_lons = lons[in_unit]
+            # Cells the monitor does not reach are dropped before any class is
+            # counted, so they cannot land in "none" and be read as no drought.
+            # Each state answers alone: parity over pooled edges would read a
+            # point inside two states' overlap sliver as outside the country.
+            if band_land is not None:
+                on_land = np.zeros(row_lons.shape, dtype=bool)
+                for state_segments in band_land:
+                    on_land |= inside_row(
+                        row_crossings(state_segments, lat), row_lons)
+                row_lons = row_lons[on_land]
+                if row_lons.size == 0:
+                    continue
+            measured_weight += weight * row_lons.size
+            # One class per point, worst wins. The classes are exclusive by
+            # contract, but their 100-metre-simplified edges can overlap by a
+            # sliver, and a point counted twice would push the total past 100.
+            category = np.full(row_lons.shape, -1)
+            for level in sorted(band_drought):
+                hits = inside_row(row_crossings(band_drought[level], lat), row_lons)
+                category[hits] = level
+            for level in band_drought:
+                level_weights[level] += weight * int((category == level).sum())
 
     if total_weight == 0.0:
         raise ValueError("no grid point landed inside the drainage area")
