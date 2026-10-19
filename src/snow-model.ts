@@ -526,6 +526,88 @@ export function seasonName(waterYear: number): string {
   return `${waterYear - 1}–${String(waterYear % 100).padStart(2, "0")}`;
 }
 
+/**
+ * The first finished season the pipeline kept (ADR-121). Every water year
+ * from this one to the season before the current payload's has a frozen
+ * file in `data/snow/`; `tests/test_generated_files.py` holds the directory
+ * to that, so the page can name the seasons it offers without asking the
+ * server which files exist.
+ */
+export const FIRST_ARCHIVED_WATER_YEAR = 2026;
+
+/** Every season the page offers, newest first: the current water year, then
+ * each finished one back to the first archived. */
+export function offeredSeasons(currentWaterYear: number): number[] {
+  const seasons: number[] = [];
+  for (let year = currentWaterYear; year >= FIRST_ARCHIVED_WATER_YEAR; year -= 1) {
+    seasons.push(year);
+  }
+  return seasons.length > 0 ? seasons : [currentWaterYear];
+}
+
+/**
+ * The season to show for a requested one: the request when it names a
+ * finished, published season, and the current season otherwise. A link to
+ * the season that is still running (or one not yet started) is the current
+ * season by another name; next October the same link names an archive, and
+ * that is the meaning it was written with.
+ */
+export function resolveSeason(requested: number | null, currentWaterYear: number): number {
+  return requested !== null && requested < currentWaterYear
+    && requested >= FIRST_ARCHIVED_WATER_YEAR ? requested : currentWaterYear;
+}
+
+/**
+ * Another season's curve moved onto this season's calendar, date for date:
+ * 2026-03-13 drawn at 2027-03-13. The same day of the year rather than the
+ * same count of days from 1 October, so a first-of-month reading lands on
+ * the first of the month. A 29 February with no partner is dropped.
+ */
+export function shiftSeason(
+  points: readonly CurvePoint[], years: number
+): CurvePoint[] {
+  return points.flatMap((point) => {
+    const year = Number(point.date.slice(0, 4)) + years;
+    const date = `${year}${point.date.slice(4)}`;
+    const check = new Date(`${date}T00:00:00Z`);
+    if (Number.isNaN(check.getTime()) || check.toISOString().slice(0, 10) !== date) return [];
+    return [{ ...point, date }];
+  });
+}
+
+/** One month of the season table, this season's reading beside another's. */
+export interface MonthComparison {
+  key: string;
+  label: string;
+  point: CurvePoint | null;
+  other: CurvePoint | null;
+}
+
+/**
+ * The first day of every month of the season, with this season's reading and
+ * the comparison season's reading for the same date -- the text form of the
+ * two lines on the chart. Every month is listed, not only the ones this
+ * season has reached, because in October the other season is the whole of
+ * what the chart shows.
+ */
+export function monthComparison(
+  points: readonly CurvePoint[], other: readonly CurvePoint[], waterYear: number
+): MonthComparison[] {
+  const byDate = new Map(points.map((point) => [point.date, point]));
+  const otherByDate = new Map(other.map((point) => [point.date, point]));
+  return Array.from({ length: 12 }, (_, offset) => {
+    const month = ((offset + 9) % 12) + 1;
+    const year = month >= 10 ? waterYear - 1 : waterYear;
+    const key = `${year}-${String(month).padStart(2, "0")}`;
+    return {
+      key,
+      label: `${MONTH_NAMES[month - 1]} ${year}`,
+      point: byDate.get(`${key}-01`) ?? null,
+      other: otherByDate.get(`${key}-01`) ?? null
+    };
+  });
+}
+
 /** "October 2025 through September 2026" for water year 2026. */
 export function seasonLabel(payload: SnowpackPayload): string {
   return `October ${payload.water_year - 1} through September ${payload.water_year}`;

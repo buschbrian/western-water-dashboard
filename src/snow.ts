@@ -37,7 +37,7 @@ import {
 } from "./data/opening-scope";
 import { readStoredPlace, resolveOpeningPlace, searchWithPlace } from "./state/opening-preference";
 import { stateName } from "./data/state-vocabulary";
-import { loadSnowpack } from "./data/snow-load";
+import { loadArchivedSeason, loadSnowpack } from "./data/snow-load";
 import { hydrologicPath } from "./data/hydrologic-path";
 import { loadUpstreamIndex } from "./data/load";
 import {
@@ -54,15 +54,20 @@ import {
   normalPeriodLabel,
   observedPeak,
   measuredScope,
+  monthComparison,
+  offeredSeasons,
   payloadAtLevel,
   payloadForSites,
   payloadForStationSet,
   payloadForState,
   percentOfNormal,
   regionCurve,
+  resolveSeason,
+  shiftSeason,
   bestAgainstNormal,
   seasonComplete,
   seasonLabel,
+  seasonName,
   seasonPeak,
   siteByStation,
   siteMonthReadings,
@@ -83,7 +88,7 @@ import {
   type SiteStatus
 } from "./snow-model";
 import { levelFromSearch, writeLevel } from "./state/level";
-import { snowStateFromSearch, writeSnowUrl } from "./state/snow-url";
+import { searchForSeason, snowStateFromSearch, writeSnowUrl } from "./state/snow-url";
 import type { SnowpackPayload, SnowSite } from "./types";
 import { brandMarkup, pageLinksMarkup, updatePageLinks } from "./ui/page-header";
 import { setupPlaceChooser } from "./ui/opening-splash";
@@ -117,7 +122,7 @@ import {
 } from "./viz/extent";
 import { formatDate, formatPercent } from "./viz/format";
 import { renderSiteCurve } from "./viz/site-curve";
-import { renderSnowCurve } from "./viz/snow-curve";
+import { renderSnowCurve, renderSnowSeasonCurve } from "./viz/snow-curve";
 import "./styles/overview.css";
 import "./styles/snow.css";
 
@@ -269,6 +274,27 @@ function formatInches(value: number | null): string {
 
 type SiteBasin = Pick<SnowSite, "huc6" | "huc6_name">;
 
+/**
+ * Which season the page shows, and which one it can set beside it (ADR-121).
+ *
+ * The current payload is always loaded: it says which seasons have finished.
+ * A finished season is loaded instead of it only when the reader asks for one,
+ * and the season before the shown one only when the season chart is about to
+ * be seen -- the archive is the largest file this page can ask for.
+ */
+interface SeasonView {
+  /** The water year on screen. */
+  shown: number;
+  /** The water year of the current payload. */
+  current: number;
+  /** Every season offered, newest first. */
+  offered: readonly number[];
+  /** The season drawn behind the shown one on the season chart, or null. */
+  previous: number | null;
+  /** Loads `previous`, narrowed exactly as the shown payload was. */
+  loadPrevious: (() => Promise<SnowpackPayload>) | null;
+}
+
 /*
  * The two place menus (ADR-084) are wired inside `renderSnow`, beside the
  * level control: the Drainage menu's gating needs this payload's own
@@ -279,7 +305,7 @@ type SiteBasin = Pick<SnowSite, "huc6" | "huc6_name">;
 function renderSnow(
   payload: SnowpackPayload, openingScope: OpeningScope, widenedForSite: string | null,
   rosters: OpeningRosters, siteBasins: ReadonlyMap<string, SiteBasin>,
-  upstreamView: UpstreamView | null
+  upstreamView: UpstreamView | null, season: SeasonView
 ): void {
   const content = document.querySelector<HTMLElement>("#snow-content");
   if (!content) return;
@@ -323,16 +349,22 @@ function renderSnow(
       </div>
     </section>
     <p id="snow-status" class="filter-status" role="status"></p>
+    <div id="snow-season-row" class="snow-season-row" hidden>
+      <calcite-label class="snow-season-control">Snow season
+        <calcite-select id="snow-season" scale="m" label="Which snow season to show">${season.offered.map((year) => `<calcite-option value="${year}"${year === season.shown ? " selected" : ""}>${year === season.current ? `This season, ${seasonName(year)}` : seasonName(year)}</calcite-option>`).join("")}</calcite-select>
+      </calcite-label>
+      <p id="snow-season-note" class="snow-season-note"></p>
+    </div>
     <section class="overview-kpis snow-summary" aria-label="Snow measurement summary">
       <article class="overview-kpi overview-kpi-primary"><span>Newest value</span><strong data-snow-kpi="now">—</strong><small data-snow-kpi="now-note">—</small></article>
       <article class="overview-kpi"><span>Best against normal</span><strong data-snow-kpi="peak">—</strong><small data-snow-kpi="peak-note">—</small></article>
       <article class="overview-kpi"><span>Measurement sites</span><strong data-snow-kpi="sites">—</strong><small>Measured every day</small></article>
       <article class="overview-kpi"><span>Late data</span><strong data-snow-kpi="late">—</strong><small>No new value for more than two days</small></article>
-      <article class="overview-kpi"><span>Data published</span><strong>${formatDate(payload.as_of)}</strong><small>${payload.water_year - 1}–${payload.water_year} snow season</small></article>
+      <article class="overview-kpi"><span>Data published</span><strong>${formatDate(payload.as_of)}</strong><small>${seasonName(payload.water_year)} snow season</small></article>
     </section>
     <section class="overview-card" aria-labelledby="snow-map-heading">
       <div class="card-heading">
-        <div><h2 id="snow-map-heading">Where the snow is</h2><p>Each drainage area takes its colour from the plain average of the sites reporting inside it that day, and every site counts once. That is a figure about the measuring sites. It is not a measure of the snow lying across the whole area. The sites are placed where snow can be measured reliably. That is neither evenly across the land nor evenly up the mountainside. Each measurement site is a point on the same scale. Select an area to see how many sites its figure came from. The map opens on the day the season held the most snow, because the rest of the year measures against that day. A day counts only when the sites reporting have at least one inch of normal snow on average, so early in the season the map opens on the newest day. Move the slider to see any other day. Areas and sites without a fair value for that day stay grey. The key shows apart the ones with too little normal snow to compare against.</p></div>
+        <div><h2 id="snow-map-heading">Where the snow is</h2><p>Each drainage area takes its colour from the plain average of the sites reporting inside it that day, and every site counts once. That is a figure about the measuring sites. It is not a measure of the snow lying across the whole area. The sites are placed where snow can be measured reliably. That is neither evenly across the land nor evenly up the mountainside. Each measurement site is a point on the same scale. Select an area to see how many sites its figure came from. The map opens on the day the season held the most snow, because the rest of the year measures against that day. A day counts only when the reporting sites have at least one inch of normal snow on average. Early in the season, the map opens on the newest day instead. Move the slider to see any other day. Areas and sites without a fair value for that day stay grey. The key shows apart the ones with too little normal snow to compare against.</p></div>
         <span class="sdk-badge">ArcGIS map</span>
       </div>
       <div id="snow-map-host" class="view-map-host" aria-busy="true"
@@ -343,15 +375,18 @@ function renderSnow(
           step="1" snap label-handles="false" aria-label="Day of the snow season shown on the map"></calcite-slider>
         <span id="snow-day-reading" class="snow-day-reading">—</span>
       </div>
+      <p id="snow-season-route" class="snow-season-route" hidden></p>
     </section>
     <section class="overview-card" aria-labelledby="snow-curve-heading">
       <div class="card-heading">
-        <div><h2 id="snow-curve-heading">The snow season, day by day</h2><p data-snow-curve-caption>The line is the mean of the site values, as a percent of normal for each day. The dashed line marks normal: the middle value for the same day in the years ${normalPeriodLabel(payload)}. Gaps are days with too few reporting sites to give a fair mean.</p></div>
+        <div><h2 id="snow-curve-heading">The snow season, day by day</h2><p data-snow-curve-caption>The line is the mean of the site values, as a percent of normal for each day. The dashed line marks normal: the middle value for the same day in the years ${normalPeriodLabel(payload)}. Gaps are days with too few reporting sites, or too little normal snow, to give a fair mean.${season.previous !== null ? ` A thinner grey line shows the ${seasonName(season.previous)} season on the same dates.` : ""}</p></div>
         <span class="sdk-badge">Line chart</span>
       </div>
       <div id="snow-curve-host" aria-busy="true"></div>
+      <div id="snow-curve-key" class="snow-curve-key" role="list" aria-label="Lines on the season chart" hidden></div>
+      <p id="snow-curve-note" class="snow-curve-note" hidden></p>
       <details class="snow-month-details"><summary>Values on the first day of each month</summary>
-        <div class="table-scroll" tabindex="0" role="region" aria-label="First-of-month table, scrolls sideways"><table class="overview-table"><thead><tr><th>Month</th><th>Of normal</th><th>Reporting sites</th></tr></thead><tbody id="snow-month-rows"></tbody></table></div>
+        <div class="table-scroll" tabindex="0" role="region" aria-label="First-of-month table, scrolls sideways"><table class="overview-table"><thead><tr id="snow-month-head"><th>Month</th><th>Of normal</th><th>Reporting sites</th></tr></thead><tbody id="snow-month-rows"></tbody></table></div>
       </details>
     </section>
     <section class="overview-card" aria-labelledby="snow-basin-heading">
@@ -551,8 +586,10 @@ function renderSnow(
     area: string | null; day: string | null; site: string | null;
     upstream: string | null; basin: string | null;
     query: string; band: ElevationBand; status: SiteStatus;
+    season: number | null;
   } {
     return {
+      season: season.shown === season.current ? null : season.shown,
       area: currentArea,
       day: currentDay === startDay ? null : currentDay,
       site: currentSite,
@@ -602,9 +639,24 @@ function renderSnow(
         `${window.location.pathname}${query ? `?${query}` : ""}${window.location.hash}`);
     }
     updatePageLinks(window.location.search);
+    if (seasonRouteLink && seasonRouteYear !== null) {
+      seasonRouteLink.href =
+        `${window.location.pathname}${searchForSeason(window.location.search, seasonRouteYear)}`;
+    }
   }
   let levelsOffered = 1;
   let lastCurvePoints = 0;
+  /* The season behind this one on the chart: not asked for until the chart
+   * is about to be seen (see `startComparison`), then kept for the life of
+   * the page, so a change of area redraws it without fetching again. */
+  let previousPayload: SnowpackPayload | null = null;
+  let comparisonStatus: "none" | "waiting" | "loaded" | "failed" =
+    season.loadPrevious ? "waiting" : "none";
+  let lastComparisonPoints = 0;
+  /* The early-season way to the last finished season's peak, or null when
+   * this season has one of its own (ADR-121). */
+  let seasonRouteLink: HTMLAnchorElement | null = null;
+  let seasonRouteYear: number | null = null;
   let lastSiteCurvePoints = 0;
   let lastBasinCurvePoints = 0;
   let shownSiteRows: readonly SiteRow[] = [];
@@ -632,6 +684,13 @@ function renderSnow(
       basinCurvePoints: lastBasinCurvePoints,
       level,
       levelsOffered,
+      /* The season on screen and the one drawn behind it (ADR-121). */
+      season: season.shown,
+      seasonsOffered: season.offered.length,
+      comparisonSeason: season.previous,
+      comparisonStatus,
+      comparisonPoints: lastComparisonPoints,
+      seasonRoute: seasonRouteYear,
       ...(map ? {
         mapBasins: map.status.basins,
         mapSites: map.status.sites,
@@ -967,11 +1026,34 @@ function renderSnow(
      * headlines and the month table above stay on the raw curve. */
     /* The curve draws into its own host and stays fitted to it, so the axis
      * keeps one size at every card width (`viz/responsive.ts`). */
-    const curvePoints = renderSnowCurve(curveHost, curveForDrawing(curve),
-      `Mean snow water for ${chosenLabel} as a percent of normal, day by day ` +
-      `for the season ${seasonLabel(payload)}. The dashed line marks normal. ` +
-      `The table below lists the value on the first day of each month.`);
-    if (curvePoints === 0) {
+    /* The season before this one, for the same place, on this season's
+     * calendar (ADR-121). The same narrowing produced it, so `chosen` names
+     * the same area in both. */
+    const otherCurve = previousPayload && season.previous !== null
+      ? (chosen === null ? regionCurve(previousPayload) : basinCurve(previousPayload, chosen))
+      : null;
+    const other = otherCurve && season.previous !== null
+      ? shiftSeason(otherCurve, season.shown - season.previous) : null;
+    let curvePoints: number;
+    let comparisonPoints = 0;
+    if (other && season.previous !== null) {
+      const drawn = renderSnowSeasonCurve(curveHost, curveForDrawing(curve),
+        `Mean snow water for ${chosenLabel} as a percent of normal, day by day ` +
+        `for the season ${seasonLabel(payload)}, with the ` +
+        `${seasonName(season.previous)} season on the same dates as a thinner ` +
+        `grey line. The dashed line marks normal. The table below lists both ` +
+        `seasons on the first day of each month.`,
+        { points: curveForDrawing(other), start: `${season.shown - 1}-10-01`,
+          end: `${season.shown}-09-30` });
+      curvePoints = drawn.points;
+      comparisonPoints = drawn.comparison;
+    } else {
+      curvePoints = renderSnowCurve(curveHost, curveForDrawing(curve),
+        `Mean snow water for ${chosenLabel} as a percent of normal, day by day ` +
+        `for the season ${seasonLabel(payload)}. The dashed line marks normal. ` +
+        `The table below lists the value on the first day of each month.`);
+    }
+    if (curvePoints === 0 && comparisonPoints === 0) {
       const empty = document.createElement("p");
       empty.className = "chart-empty";
       empty.textContent =
@@ -979,8 +1061,27 @@ function renderSnow(
       curveHost.replaceChildren(empty);
     }
     curveHost.setAttribute("aria-busy", "false");
+    lastComparisonPoints = comparisonPoints;
+    drawCurveKey(comparisonPoints > 0 && season.previous !== null ? season.previous : null,
+      curvePoints > 0);
 
-    monthRows.replaceChildren(...monthReadings(curve).map((month) => {
+    const head = document.querySelector<HTMLTableRowElement>("#snow-month-head");
+    const headings = ["Month", "Of normal", "Reporting sites"];
+    if (other && season.previous !== null) {
+      headings.push(`${seasonName(season.previous)}, of normal`);
+    }
+    head?.replaceChildren(...headings.map((text) => {
+      const cell = document.createElement("th");
+      cell.textContent = text;
+      return cell;
+    }));
+    /* The other season's column is the text of its grey line, so it holds
+     * the line's denominator floor; this season's column keeps the raw
+     * readings it has always listed. */
+    const months = other
+      ? monthComparison(curve, curveForDrawing(other), season.shown)
+      : monthReadings(curve).map((month) => ({ ...month, other: undefined }));
+    monthRows.replaceChildren(...months.map((month) => {
       const row = document.createElement("tr");
       const name = document.createElement("th");
       name.scope = "row";
@@ -990,6 +1091,11 @@ function renderSnow(
       const sites = document.createElement("td");
       sites.textContent = month.point ? String(month.point.reportingSites) : "—";
       row.append(name, percent, sites);
+      if (month.other !== undefined) {
+        const earlier = document.createElement("td");
+        earlier.textContent = month.other ? formatPercent(month.other.percent) : "—";
+        row.append(earlier);
+      }
       return row;
     }));
 
@@ -1040,6 +1146,47 @@ function renderSnow(
     lastCurvePoints = curvePoints;
     publishReady();
   };
+
+  /**
+   * The chart's key and its note, shown only while another season is drawn.
+   * One line of words each, in the order a reader meets the lines: this
+   * season, the other season, normal.
+   */
+  function drawCurveKey(other: number | null, ownLine: boolean): void {
+    const key = document.querySelector<HTMLElement>("#snow-curve-key");
+    const note = document.querySelector<HTMLElement>("#snow-curve-note");
+    if (key) {
+      key.hidden = other === null;
+      key.replaceChildren(...(other === null ? [] : [
+        { text: `This season, ${seasonName(season.shown)}`, line: "snow-key-own" },
+        { text: seasonName(other), line: "snow-key-other" },
+        { text: "Normal", line: "snow-key-normal" }
+      ].map((entry) => {
+        const item = document.createElement("span");
+        item.className = "snow-curve-key-item";
+        item.setAttribute("role", "listitem");
+        const swatch = document.createElement("span");
+        swatch.className = `snow-key-line ${entry.line}`;
+        const label = document.createElement("span");
+        label.textContent = entry.text;
+        item.append(swatch, label);
+        return item;
+      })));
+    }
+    if (note) {
+      /* October: the other season is the whole chart, and the reader should
+       * not have to work out why this season has no line. */
+      const text = other !== null && !ownLine
+        ? `This season has no fair mean yet. The grey line shows the ` +
+          `${seasonName(other)} season.`
+        : comparisonStatus === "failed" && season.previous !== null
+          ? `The ${seasonName(season.previous)} season could not load. ` +
+            "This season is shown alone."
+          : "";
+      note.textContent = text;
+      note.hidden = text === "";
+    }
+  }
 
   /** The narrowing, in words, for the live region under the controls. */
   function describeSiteFilter(filter: SiteFilter): string {
@@ -1107,10 +1254,12 @@ function renderSnow(
     const caption = document.createElement("p");
     caption.className = "snow-spread-note";
     const thin = spread.belowFloor > 0
-      ? `${spread.belowFloor} with too little normal snow to compare against, ` : "";
+      ? ` Of those, ${spread.belowFloor} had too little normal snow to compare against.`
+      : "";
     caption.textContent = `How the ${total} sites were spread on ` +
-      `${formatDate(day)}: ${spread.reporting} with a fair value, ${thin}` +
-      `${spread.noValue} without one. The mean above is one number over all of them.`;
+      `${formatDate(day)}: ${spread.reporting} with a fair value, ` +
+      `${spread.noValue + spread.belowFloor} without one.${thin} ` +
+      "The mean above is one number over all of them.";
     spreadHost.replaceChildren(bar, caption);
   }
 
@@ -1210,6 +1359,87 @@ function renderSnow(
     const day = days[Math.max(0, Math.min(days.length - 1, index))];
     if (day) applyDay(day);
   });
+
+  /* The season control (ADR-121). A change is a navigation, like the area
+   * size: every figure on the page belongs to the other season's file. The
+   * day goes with it, because a day belongs to one season's calendar. */
+  const seasonRow = document.querySelector<HTMLElement>("#snow-season-row");
+  const seasonSelect = document.querySelector<HTMLElement & { value: string }>("#snow-season");
+  const seasonNote = document.querySelector<HTMLElement>("#snow-season-note");
+  if (seasonRow && seasonSelect) {
+    /* One season on offer is not a choice: hidden, not disabled, the rule
+     * the comparison-period control follows. */
+    seasonRow.hidden = season.offered.length < 2;
+    seasonSelect.value = String(season.shown);
+    seasonSelect.addEventListener("calciteSelectChange", () => {
+      const chosen = Number(seasonSelect.value);
+      if (!Number.isInteger(chosen) || chosen === season.shown) return;
+      const next = searchForSeason(window.location.search,
+        chosen === season.current ? null : chosen);
+      window.location.replace(`${window.location.pathname}${next}`);
+    });
+  }
+  if (seasonNote) {
+    seasonNote.textContent = season.shown === season.current ? ""
+      : `The finished ${seasonName(season.shown)} season, as published on ` +
+        `${formatDate(payload.as_of)}. These values do not change.`;
+    seasonNote.hidden = seasonNote.textContent === "";
+  }
+
+  /* Early in a season the map has no peak and no fair colours, and says so;
+   * this is the one-step way to the last finished season at its own peak.
+   * A real link, so it opens in a new tab and the back button returns. */
+  const seasonRoute = document.querySelector<HTMLElement>("#snow-season-route");
+  const lastFinished = season.offered.find((year) => year < season.current) ?? null;
+  if (seasonRoute && season.shown === season.current && peakDay === null
+    && lastFinished !== null) {
+    seasonRouteYear = lastFinished;
+    seasonRouteLink = document.createElement("a");
+    seasonRouteLink.className = "snow-season-route-link";
+    seasonRouteLink.textContent =
+      `See the ${seasonName(lastFinished)} season at its high point`;
+    seasonRouteLink.href =
+      `${window.location.pathname}${searchForSeason(window.location.search, lastFinished)}`;
+    seasonRoute.replaceChildren(
+      "This season has too little normal snow so far to compare against, " +
+      "so the map opens on the newest day. ", seasonRouteLink);
+    seasonRoute.hidden = false;
+  }
+
+  /* The season behind this one is fetched once the chart is close to the
+   * screen, not on first paint: a reader who looks at the map and leaves
+   * never pays for a second season (docs/data-transfer.md). The fetch has
+   * the page's own deadline (`SNOW_TIMEOUT_MS`); a failure says so beside
+   * the chart and leaves this season drawn alone. */
+  let comparisonAsked = false;
+  const startComparison = (): void => {
+    const load = season.loadPrevious;
+    if (!load || comparisonAsked) return;
+    comparisonAsked = true;
+    load().then((previous) => {
+      previousPayload = previous;
+      comparisonStatus = "loaded";
+      update();
+    }).catch((error: unknown) => {
+      console.warn("The previous snow season could not load:", error);
+      comparisonStatus = "failed";
+      drawCurveKey(null, lastCurvePoints > 0);
+      publishReady();
+    });
+  };
+  const curveCard = curveHost.closest("section");
+  if (season.loadPrevious && curveCard) {
+    if (typeof IntersectionObserver === "function") {
+      const watcher = new IntersectionObserver((entries) => {
+        if (!entries.some((entry) => entry.isIntersecting)) return;
+        watcher.disconnect();
+        startComparison();
+      }, { rootMargin: "600px 0px" });
+      watcher.observe(curveCard);
+    } else {
+      startComparison();
+    }
+  }
 
   const wanted = snowStateFromSearch(window.location.search);
   /* The table controls, restored before the first draw so a shared link
@@ -1338,7 +1568,7 @@ try {
    * dead code already does), and the fallback here is that same empty
    * roster rather than a second code path.
    */
-  const [rawSnowpack, rosters, upstreamIndex] = await Promise.all([
+  const [currentSnowpack, rosters, upstreamIndex] = await Promise.all([
     loadSnowpack(),
     loadOpeningRosters().catch((error: unknown): OpeningRosters => {
       console.warn("The opening-scope rosters could not load; the page " +
@@ -1353,6 +1583,13 @@ try {
       })
       : Promise.resolve(null)
   ]);
+  /* The season to show (ADR-121). The current file says which seasons have
+   * finished; a finished one replaces it only when the link asks for it, so
+   * the default page fetches one season and no more. */
+  const offered = offeredSeasons(currentSnowpack.water_year);
+  const shownSeason = resolveSeason(requestedSnowState.season, currentSnowpack.water_year);
+  const rawSnowpack = shownSeason === currentSnowpack.water_year
+    ? currentSnowpack : await loadArchivedSeason(shownSeason);
   /* Regrouped before anything reads it, so the picker, the curves, the table,
    * the map and the `?basin=` link all describe the areas the reader asked
    * for and none of them has to know a level exists (ADR-064). */
@@ -1396,6 +1633,7 @@ try {
 
   let payload = payloadForOpeningScope(levelPayload, openingScope.selection, level);
   let upstreamView: UpstreamView | null = null;
+  let appliedStations: readonly string[] | null = null;
   if (requestedSnowState.upstream) {
     const station = requestedSnowState.upstream;
     const trace = upstreamIndex?.traces[station];
@@ -1423,13 +1661,32 @@ try {
         };
       } else {
         payload = payloadForStationSet(payload, trace.upstream_snow_sites);
+        appliedStations = trace.upstream_snow_sites;
         upstreamView = {
           ...facts, currentSites: payload.site_count, status: "applied"
         };
       }
     }
   }
-  renderSnow(payload, openingScope, widenedForSite, rosters, siteBasins, upstreamView);
+  /* The season behind the shown one goes through the same narrowing as the
+   * shown one -- level, place, upstream set -- so the two lines on the chart
+   * describe the same sites' ground. Each season's own sites, rebuilt with
+   * the same rule; a site that joined the network this year is in this
+   * year's line and not last year's, which is what each file measured. */
+  const selection = openingScope.selection;
+  const narrow = (raw: SnowpackPayload): SnowpackPayload => {
+    const placed = payloadForOpeningScope(payloadAtLevel(raw, level), selection, level);
+    return appliedStations ? payloadForStationSet(placed, appliedStations) : placed;
+  };
+  const previous = offered.includes(shownSeason - 1) ? shownSeason - 1 : null;
+  renderSnow(payload, openingScope, widenedForSite, rosters, siteBasins, upstreamView, {
+    shown: shownSeason,
+    current: currentSnowpack.water_year,
+    offered,
+    previous,
+    loadPrevious: previous === null ? null
+      : () => loadArchivedSeason(previous).then(narrow)
+  });
 } catch (error) {
   console.error("Snowpack view failed:", error);
   const content = document.querySelector<HTMLElement>("#snow-content");

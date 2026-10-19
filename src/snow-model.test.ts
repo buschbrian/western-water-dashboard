@@ -22,7 +22,12 @@ import {
   newestReading,
   percentIsMeaningful,
   MEANINGFUL_NORMAL_INCHES,
+  FIRST_ARCHIVED_WATER_YEAR,
+  monthComparison,
   normalIsComparable,
+  offeredSeasons,
+  resolveSeason,
+  shiftSeason,
   percentOfNormal,
   payloadForStationSet,
   payloadForState,
@@ -762,7 +767,7 @@ describe("the turn of the water year (ADR-121)", () => {
   });
 });
 
-describe("the denominator floor", () => {
+describe("one denominator rule", () => {
   it("is one inch, inclusive", () => {
     expect(normalIsComparable(MEANINGFUL_NORMAL_INCHES)).toBe(true);
     expect(normalIsComparable(0.99)).toBe(false);
@@ -771,6 +776,63 @@ describe("the denominator floor", () => {
   it("names a season the way the page sets two side by side", () => {
     expect(seasonName(2026)).toBe("2025–26");
     expect(seasonName(2100)).toBe("2099–00");
+  });
+});
+
+describe("choosing a season (ADR-121)", () => {
+  it("offers the current season, then every finished one back to the first kept", () => {
+    expect(FIRST_ARCHIVED_WATER_YEAR).toBe(2026);
+    expect(offeredSeasons(2027)).toEqual([2027, 2026]);
+    expect(offeredSeasons(2029)).toEqual([2029, 2028, 2027, 2026]);
+    expect(offeredSeasons(2026)).toEqual([2026]);
+  });
+
+  it("shows a finished season only when it is one the archive holds", () => {
+    expect(resolveSeason(null, 2027)).toBe(2027);
+    expect(resolveSeason(2026, 2027)).toBe(2026);
+    // The running season, or one not started, is the current season.
+    expect(resolveSeason(2027, 2027)).toBe(2027);
+    expect(resolveSeason(2030, 2027)).toBe(2027);
+    // Before the archive began there is nothing to show.
+    expect(resolveSeason(2025, 2027)).toBe(2027);
+  });
+
+  it("moves a season onto the next one's calendar date for date", () => {
+    const points: CurvePoint[] = [
+      { date: "2025-10-01", percent: null, reportingSites: 600 },
+      { date: "2026-03-13", percent: 61.4, reportingSites: 634 },
+      { date: "2028-02-29", percent: 50, reportingSites: 600 }
+    ];
+    expect(shiftSeason(points, 1).map((point) => point.date))
+      .toEqual(["2026-10-01", "2027-03-13"]);
+    expect(shiftSeason(points, 1)[1]?.percent).toBe(61.4);
+  });
+
+  it("lists every month of the season with both seasons' first-of-month values", () => {
+    const own: CurvePoint[] = [
+      { date: "2026-10-01", percent: null, reportingSites: 630 }
+    ];
+    const other = shiftSeason(regionCurve(payload), 1);
+    const rows = monthComparison(own, other, 2027);
+    expect(rows).toHaveLength(12);
+    expect(rows[0]?.label).toBe("October 2026");
+    expect(rows[11]?.label).toBe("September 2027");
+    expect(rows[0]?.point?.date).toBe("2026-10-01");
+    expect(rows[1]?.point).toBeNull();
+    /* The other season's March reading is its 2026-03-01 value, drawn on
+     * 2027-03-01. */
+    const march = regionCurve(payload).find((point) => point.date === "2026-03-01");
+    expect(rows[5]?.other?.percent).toBe(march?.percent);
+  });
+
+  it("groups both seasons under the same area codes", () => {
+    /* The same regrouping gives both seasons the same codes, so an area
+     * chosen on this season's page has a line in the other season too. */
+    const early = readSnowpackEarlySeasonFixture();
+    const codes = (season: SnowpackPayload): string[] =>
+      payloadAtLevel(season, 4).rollups.map((rollup) => rollup.huc6);
+    const shared = codes(early).filter((code) => codes(payload).includes(code));
+    expect(shared.length).toBe(codes(early).length);
   });
 });
 

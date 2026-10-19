@@ -11,6 +11,12 @@
  * from `?area=` on purpose: `?area=` is the shared cross-page vocabulary and
  * changes the whole page including the chart and the map, while these three
  * only narrow the table under it.
+ *
+ * `?season=2025-26` shows a finished season instead of the current one
+ * (ADR-121), absent for the current season. Written only when the reader
+ * chooses, and named for the season rather than for "last year", so a link
+ * keeps meaning the same winter after the next one starts. Page-local: it
+ * is not carried to the other pages, which have no seasons.
  */
 import { isElevationBand, isSiteStatus, type ElevationBand, type SiteStatus }
   from "../snow-model";
@@ -34,6 +40,24 @@ export interface SnowUrlState {
   query: string;
   band: ElevationBand;
   status: SiteStatus;
+  /** The water year of a finished season to show, or null for the current
+   * season. Whether that season is published is the page's question. */
+  season: number | null;
+}
+
+/** "2025-26" for water year 2026 -- ASCII in the address bar, the en dash
+ * stays in the visible name (`seasonName`). */
+export function seasonParam(waterYear: number): string {
+  return `${waterYear - 1}-${String(waterYear % 100).padStart(2, "0")}`;
+}
+
+/** The water year a `?season=` value names, or null for anything that is
+ * not two consecutive years. */
+export function seasonFromParam(value: string | null): number | null {
+  const match = value ? /^(\d{4})-(\d{2})$/.exec(value) : null;
+  if (!match) return null;
+  const end = Number(match[1]) + 1;
+  return String(end % 100).padStart(2, "0") === match[2] ? end : null;
 }
 
 /** Station triplets look like "1030:CO:SNTL"; the page still checks the
@@ -63,7 +87,8 @@ export function snowStateFromSearch(search: string): SnowUrlState {
     basin: basin && HUC_CODE.test(basin) ? basin : null,
     query,
     band: band && isElevationBand(band) ? band : "all",
-    status: status && isSiteStatus(status) ? status : "all"
+    status: status && isSiteStatus(status) ? status : "all",
+    season: seasonFromParam(params.get("season"))
   };
 }
 
@@ -87,6 +112,22 @@ export function snowSearchFromState(state: SnowUrlState, search: string): string
   else params.delete("elev");
   if (state.status !== "all") params.set("status", state.status);
   else params.delete("status");
+  if (state.season !== null) params.set("season", seasonParam(state.season));
+  else params.delete("season");
+  const text = params.toString();
+  return text ? `?${text}` : "";
+}
+
+/**
+ * The address of the same view in another season: every other choice kept,
+ * the day dropped. A day belongs to one season's calendar, and the other
+ * season opens on its own default day -- its peak, when it has one.
+ */
+export function searchForSeason(search: string, waterYear: number | null): string {
+  const params = new URLSearchParams(search);
+  params.delete("day");
+  if (waterYear !== null) params.set("season", seasonParam(waterYear));
+  else params.delete("season");
   const text = params.toString();
   return text ? `?${text}` : "";
 }

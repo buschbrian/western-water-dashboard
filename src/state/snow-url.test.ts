@@ -1,5 +1,43 @@
 import { describe, expect, it } from "vitest";
-import { snowSearchFromState, snowStateFromSearch } from "./snow-url";
+import {
+  searchForSeason,
+  seasonFromParam,
+  seasonParam,
+  snowSearchFromState,
+  snowStateFromSearch
+} from "./snow-url";
+
+describe("the season in the address bar (ADR-121)", () => {
+  it("names a season by its two years and reads it back as a water year", () => {
+    expect(seasonParam(2026)).toBe("2025-26");
+    expect(seasonFromParam("2025-26")).toBe(2026);
+    expect(seasonFromParam("2099-00")).toBe(2100);
+    expect(snowStateFromSearch("?season=2025-26").season).toBe(2026);
+  });
+
+  it("refuses anything that is not two consecutive years", () => {
+    expect(seasonFromParam("2025-27")).toBeNull();
+    expect(seasonFromParam("2026")).toBeNull();
+    expect(seasonFromParam("2025–26")).toBeNull();
+    expect(seasonFromParam(null)).toBeNull();
+    expect(snowStateFromSearch("").season).toBeNull();
+  });
+
+  it("writes the season only when one is chosen", () => {
+    const state = snowStateFromSearch("?area=160201");
+    expect(snowSearchFromState(state, "")).toBe("?area=160201");
+    expect(snowSearchFromState({ ...state, season: 2026 }, ""))
+      .toBe("?area=160201&season=2025-26");
+  });
+
+  it("moves to another season keeping the place, and drops the day", () => {
+    expect(searchForSeason("?area=160201&day=2026-10-16&site=1%3AUT%3ASNTL", 2026))
+      .toBe("?area=160201&site=1%3AUT%3ASNTL&season=2025-26");
+    expect(searchForSeason("?season=2025-26&day=2026-03-13&state=UT", null))
+      .toBe("?state=UT");
+    expect(searchForSeason("", 2026)).toBe("?season=2025-26");
+  });
+});
 
 describe("snow URL state", () => {
   it("reads a six-digit drainage area and nothing else", () => {
@@ -44,9 +82,11 @@ describe("snow URL state", () => {
         for (const site of ["1030:CO:SNTL", null]) {
           for (const basin of ["160201", null]) {
             for (const upstream of ["6124", null]) {
-              const state = { area, day, site, upstream, basin, query: "", band: "all" as const,
-                status: "all" as const };
-              expect(snowStateFromSearch(snowSearchFromState(state, ""))).toEqual(state);
+              for (const season of [2026, null]) {
+                const state = { area, day, site, upstream, basin, query: "",
+                  band: "all" as const, status: "all" as const, season };
+                expect(snowStateFromSearch(snowSearchFromState(state, ""))).toEqual(state);
+              }
             }
           }
         }
@@ -57,16 +97,16 @@ describe("snow URL state", () => {
   it("drops every parameter entirely for the default view", () => {
     expect(snowSearchFromState(
       { area: null, day: null, site: null, upstream: null, basin: null, query: "", band: "all",
-        status: "all" },
+        status: "all", season: null },
       "?area=160201&day=2026-04-01&site=1030%3ACO%3ASNTL&basin=140100" +
-      "&upstream=6124&q=alta&elev=high&status=late"))
+      "&upstream=6124&q=alta&elev=high&status=late&season=2025-26"))
       .toBe("");
   });
 
   it("leaves parameters it does not own alone", () => {
     const search = snowSearchFromState(
       { area: "140100", day: null, site: null, upstream: null, basin: null, query: "",
-        band: "all", status: "all" },
+        band: "all", status: "all", season: null },
       "?theme=dark");
     expect(search).toContain("theme=dark");
     expect(search).toContain("area=140100");
@@ -96,7 +136,7 @@ describe("snow URL state", () => {
   it("leaves a whitespace-only search out of the address bar", () => {
     expect(snowSearchFromState(
       { area: null, day: null, site: null, upstream: null, basin: null, query: "   ",
-        band: "all", status: "all" }, ""))
+        band: "all", status: "all", season: null }, ""))
       .toBe("");
   });
 });

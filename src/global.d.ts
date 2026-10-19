@@ -154,6 +154,19 @@ interface Window {
     level?: number;
     /** How many levels the reference export offers. */
     levelsOffered?: number;
+    /** The water year on screen, and how many seasons the control offers
+     * (ADR-121). */
+    season?: number;
+    seasonsOffered?: number;
+    /** The season drawn behind the shown one on the season chart, or null
+     * when none is published; whether it has loaded; and the days its line
+     * drew. It is fetched only once the chart is near the screen. */
+    comparisonSeason?: number | null;
+    comparisonStatus?: "none" | "waiting" | "loaded" | "failed";
+    comparisonPoints?: number;
+    /** The finished season the early-season map links to, or null while the
+     * shown season has a peak of its own. */
+    seasonRoute?: number | null;
     sites: number;
     late: number;
     basins: number;
