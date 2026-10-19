@@ -172,11 +172,17 @@ interface Window {
     /** Basins and sites holding a class colour on the shown day. */
     mapBasinsWithValues?: number;
     mapSitesWithValues?: number;
+    /** Basins and sites that reported on the shown day against a normal too
+     * small to compare with, drawn apart from any class (ADR-121). */
+    mapBasinsBelowFloor?: number;
+    mapSitesBelowFloor?: number;
+    /** The season's peak by ADR-121's rule, or null while it has none. */
+    mapPeak?: string | null;
     mapDay?: string | null;
     mapBasemap?: boolean;
     mapViewReady?: boolean;
     /** Classes in the snow colour table. The legend draws one chip for each,
-     * plus one for a day with no fair value. */
+     * plus one each for the two ways of having no fair value. */
     mapClasses?: number;
     /** The measurement site whose season is open, or null for none. */
     site?: string | null;

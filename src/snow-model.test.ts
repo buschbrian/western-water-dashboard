@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { parseDrainageUnits, type DrainageScope } from "./data/boundaries";
-import { readDrainageGeoJson, readSnowpackSeasonFixture } from "./data/payload-fixture";
+import {
+  readDrainageGeoJson,
+  readSnowpackEarlySeasonFixture,
+  readSnowpackSeasonFixture
+} from "./data/payload-fixture";
 import { SNOW_CLASSES, snowClassIndex } from "./viz/snow-classes";
 import type { SnowpackPayload } from "./types";
 import {
@@ -18,6 +22,7 @@ import {
   newestReading,
   percentIsMeaningful,
   MEANINGFUL_NORMAL_INCHES,
+  normalIsComparable,
   percentOfNormal,
   payloadForStationSet,
   payloadForState,
@@ -25,7 +30,10 @@ import {
   regionCurve,
   regionDepthCurve,
   bestAgainstNormal,
+  seasonComplete,
   seasonLabel,
+  seasonName,
+  seasonPeak,
   siteByStation,
   siteMonthReadings,
   sitePoints,
@@ -635,11 +643,34 @@ describe("the map day", () => {
     const day = defaultMapDay(payload)!;
     const values = mapDayValues(payload, day);
     expect(values.basins.size).toBe(payload.rollups.length);
+    /* At the peak every area stands on a normal worth dividing by, so the
+     * denominator floor withholds nothing and the map is the rollups. */
+    expect(values.basinsBelowFloor.size).toBe(0);
     for (const rollup of payload.rollups) {
       const published = rollup.series.find((entry) => entry.date === day);
       expect(values.basins.get(rollup.huc6))
         .toBe(published ? published.mean_percent_of_normal_median : null);
     }
+  });
+
+  it("opens the finished 2025-26 season on its peak, 2026-03-13", () => {
+    /* A literal date, on purpose: the fixture is frozen, and this is the
+     * day the season-turn rule must leave alone (ADR-121). ADR-040 named
+     * 2026-03-07 on the 217-site record of the time; the western network's
+     * 638 sites peak six days later. */
+    expect(seasonPeak(payload)).toBe("2026-03-13");
+    expect(defaultMapDay(payload)).toBe("2026-03-13");
+    expect(seasonComplete(payload)).toBe(true);
+  });
+
+  it("finds no peak where the normal is too small to divide by", () => {
+    /* The deepest day the region had before mid-November is still not a
+     * peak: every day of October 2025 fails the denominator floor. */
+    const october = { ...payload, sites: payload.sites.map((site) => ({
+      ...site, series: site.series.filter(([date]) => date < "2025-11-01")
+    })) };
+    expect(regionDepthCurve(october).length).toBeGreaterThan(0);
+    expect(seasonPeak(october)).toBeNull();
   });
 
   it("answers for every site, with null for a day it did not report", () => {
@@ -657,6 +688,89 @@ describe("the map day", () => {
     const values = mapDayValues(payload, "1999-01-01");
     expect([...values.basins.values()].every((value) => value === null)).toBe(true);
     expect([...values.sites.values()].every((value) => value === null)).toBe(true);
+  });
+});
+
+describe("the turn of the water year (ADR-121)", () => {
+  /* Seventeen October days, frozen: the morning the map opened on 2026-10-16
+   * as the "season high point" and classed fourteen basins above normal. */
+  const early = readSnowpackEarlySeasonFixture();
+  const floor = headlineFloor(early.site_count, 2);
+
+  it("is the fixture it claims to be", () => {
+    expect(early.water_year).toBe(2027);
+    expect(early.as_of).toBe("2026-10-18");
+    expect(seasonComplete(early)).toBe(false);
+  });
+
+  it("has no peak, so the map opens on the newest day that met the floor", () => {
+    expect(seasonPeak(early)).toBeNull();
+    const newest = newestFloored(regionCurve(early), floor);
+    expect(newest?.date).toBe("2026-10-17");
+    expect(defaultMapDay(early)).toBe(newest?.date);
+  });
+
+  it("agrees with the cards, which already refused the comparison", () => {
+    const region = regionCurve(early);
+    expect(newestHeadline(region, floor)).toBeNull();
+    expect(bestAgainstNormal(region, floor)).toBeNull();
+    expect(curveForDrawing(region).every((point) => point.percent === null)).toBe(true);
+  });
+
+  it("classes no basin against a normal too small to compare", () => {
+    const day = "2026-10-16";
+    const values = mapDayValues(early, day);
+    const published = early.rollups.flatMap((rollup) => {
+      const entry = rollup.series.find((point) => point.date === day);
+      const percent = entry?.mean_percent_of_normal_median ?? null;
+      return percent === null ? [] : [{ code: rollup.huc6, percent }];
+    });
+    /* What the live map drew: sixteen basins with a published percentage,
+     * fourteen of them above 110% of normal. */
+    expect(published).toHaveLength(16);
+    expect(published.filter((entry) => entry.percent >= 110)).toHaveLength(14);
+    for (const entry of published) {
+      expect(values.basins.get(entry.code)).toBeNull();
+      expect(values.basinsBelowFloor.has(entry.code)).toBe(true);
+    }
+    expect([...values.basins.values()].every((value) => value === null)).toBe(true);
+  });
+
+  it("holds sites to the same floor, and keeps their depths", () => {
+    const values = mapDayValues(early, "2026-10-16");
+    expect(values.sitesBelowFloor.size).toBeGreaterThan(0);
+    for (const station of values.sitesBelowFloor) {
+      expect(values.sites.get(station)).toBeNull();
+      const depth = values.depths.get(station)!;
+      expect(depth.inches).not.toBeNull();
+      expect(normalIsComparable(depth.normalInches!)).toBe(false);
+    }
+    /* A site that keeps a class stands on a normal worth dividing by. */
+    for (const [station, percent] of values.sites) {
+      if (percent !== null) {
+        expect(normalIsComparable(values.depths.get(station)!.normalInches!)).toBe(true);
+      }
+    }
+  });
+
+  it("counts below-floor sites apart from sites with no value", () => {
+    const values = mapDayValues(early, "2026-10-16");
+    const spread = siteSpread(values.sites, SNOW_CLASSES.length, snowClassIndex,
+      values.sitesBelowFloor);
+    expect(spread.belowFloor).toBe(values.sitesBelowFloor.size);
+    expect(spread.reporting + spread.belowFloor + spread.noValue).toBe(early.site_count);
+  });
+});
+
+describe("the denominator floor", () => {
+  it("is one inch, inclusive", () => {
+    expect(normalIsComparable(MEANINGFUL_NORMAL_INCHES)).toBe(true);
+    expect(normalIsComparable(0.99)).toBe(false);
+  });
+
+  it("names a season the way the page sets two side by side", () => {
+    expect(seasonName(2026)).toBe("2025–26");
+    expect(seasonName(2100)).toBe("2099–00");
   });
 });
 

@@ -133,3 +133,13 @@
   outline: 2px solid var(--app-accent);
   outline-offset: 1px;
 }
+
+/* The below-floor chip (ADR-121): a reading on a day whose normal is too
+   small to compare against. Denser and darker than the no-value hatch, and
+   leaning the other way, so the two greys in the key are two answers. The
+   map draws the same state as a backward-diagonal hatch. */
+.snow-swatch-below-floor {
+  background:
+    repeating-linear-gradient(45deg,
+      rgb(110 118 126 / .85) 0 1.5px, transparent 1.5px 4px);
+}

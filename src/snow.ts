@@ -61,7 +61,9 @@ import {
   percentOfNormal,
   regionCurve,
   bestAgainstNormal,
+  seasonComplete,
   seasonLabel,
+  seasonPeak,
   siteByStation,
   siteMonthReadings,
   sitePoints,
@@ -107,7 +109,9 @@ import { createViewMap, mapStatusNote } from "./ui/view-map";
 import { nameSliderHandle } from "./ui/slider-label";
 import { wireMobileFilterDisclosure } from "./ui/mobile-filter-disclosure";
 import { wireTheme } from "./ui/theme";
-import { NO_VALUE_LABEL, SNOW_CLASSES, snowClassIndex } from "./viz/snow-classes";
+import {
+  BELOW_FLOOR_LABEL, NO_VALUE_LABEL, SNOW_CLASSES, snowClassIndex
+} from "./viz/snow-classes";
 import {
   mapExtentFromBox
 } from "./viz/extent";
@@ -328,7 +332,7 @@ function renderSnow(
     </section>
     <section class="overview-card" aria-labelledby="snow-map-heading">
       <div class="card-heading">
-        <div><h2 id="snow-map-heading">Where the snow is</h2><p>Each drainage area takes its colour from the plain average of the sites reporting inside it that day, and every site counts once. That is a figure about the measuring sites. It is not a measure of the snow lying across the whole area. The sites are placed where snow can be measured reliably. That is neither evenly across the land nor evenly up the mountainside. Each measurement site is a point on the same scale. Select an area to see how many sites its figure came from. The map opens on the day this season held the most snow, because the rest of the year measures against that day. Move the slider to see any other day. Areas and sites without a fair value for that day stay grey.</p></div>
+        <div><h2 id="snow-map-heading">Where the snow is</h2><p>Each drainage area takes its colour from the plain average of the sites reporting inside it that day, and every site counts once. That is a figure about the measuring sites. It is not a measure of the snow lying across the whole area. The sites are placed where snow can be measured reliably. That is neither evenly across the land nor evenly up the mountainside. Each measurement site is a point on the same scale. Select an area to see how many sites its figure came from. The map opens on the day the season held the most snow, because the rest of the year measures against that day. A day counts only when the sites reporting have at least one inch of normal snow on average, so early in the season the map opens on the newest day. Move the slider to see any other day. Areas and sites without a fair value for that day stay grey. The key shows apart the ones with too little normal snow to compare against.</p></div>
         <span class="sdk-badge">ArcGIS map</span>
       </div>
       <div id="snow-map-host" class="view-map-host" aria-busy="true"
@@ -490,15 +494,18 @@ function renderSnow(
   legend.setAttribute("aria-label", "Snow map classes and their colours");
   {
     const entries = [
-      ...SNOW_CLASSES.map((entry) => ({ label: entry.label, color: entry.color as string | null })),
-      { label: NO_VALUE_LABEL, color: null }
+      ...SNOW_CLASSES.map((entry) => ({
+        label: entry.label, color: entry.color as string | null, empty: ""
+      })),
+      { label: BELOW_FLOOR_LABEL, color: null, empty: " snow-swatch-below-floor" },
+      { label: NO_VALUE_LABEL, color: null, empty: " drought-segment-none" }
     ];
     legend.replaceChildren(...entries.map((entry) => {
       const item = document.createElement("span");
       item.className = "drought-legend-item";
       item.setAttribute("role", "listitem");
       const swatch = document.createElement("span");
-      swatch.className = "drought-swatch" + (entry.color ? "" : " drought-segment-none");
+      swatch.className = "drought-swatch" + entry.empty;
       if (entry.color) swatch.style.background = entry.color;
       const label = document.createElement("span");
       label.textContent = entry.label;
@@ -516,6 +523,7 @@ function renderSnow(
    * readiness signal reads whatever it has so far, adding fields and never
    * removing one. */
   let map: SnowMapController | null = null;
+  const peakDay = seasonPeak(payload);
   const fallbackDay = days.length > 0 ? days[days.length - 1]! : null;
   const startDay = defaultMapDay(payload) ?? fallbackDay;
   let currentDay = startDay;
@@ -629,6 +637,14 @@ function renderSnow(
         mapSites: map.status.sites,
         mapBasinsWithValues: map.status.basinsWithValues,
         mapSitesWithValues: map.status.sitesWithValues,
+        /* Areas and sites the shown day measured against a normal too small
+         * to compare with (ADR-121). With the counts above, they say whether
+         * the map drew anything at all; in October the first can be zero. */
+        mapBasinsBelowFloor: map.status.basinsBelowFloor,
+        mapSitesBelowFloor: map.status.sitesBelowFloor,
+        /* The season's peak by the stated rule, or null while it has none.
+         * The day the reading beside the slider calls the high point. */
+        mapPeak: peakDay,
         mapDay: map.status.day,
         mapBasemap: map.status.basemap,
         mapViewReady: map.status.viewReady,
@@ -882,15 +898,17 @@ function renderSnow(
     publishReady();
   };
 
-  /* The day the map opened on, kept so the reading can say when the reader is
-   * back on it. Moving the slider away and back should not lose the fact that
-   * this one day is the season's high point. */
-  const peakDay = startDay;
+  /* The season's peak, kept so the reading can say when the reader is on it.
+   * Not the day the map opened on: early in the season the map opens on the
+   * newest day, and that day is no high point (ADR-121). Until the season
+   * is over the deepest day is only the deepest so far, and the words say
+   * so. */
+  const peakNote = seasonComplete(payload)
+    ? " · season high point" : " · most snow so far this season";
   const describeDay = (day: string): string => {
     const point = regionPoints.find((entry) => entry.date === day);
     const sitesNote = point ? `, ${point.reportingSites} sites reporting` : "";
-    const peakNote = day === peakDay ? " · season high point" : "";
-    return `${formatDate(day)}${sitesNote}${peakNote}`;
+    return `${formatDate(day)}${sitesNote}${day === peakDay ? peakNote : ""}`;
   };
 
   const applyDay = (day: string): void => {
@@ -1049,9 +1067,10 @@ function renderSnow(
      * so; a bar of nothing would be a third empty box. */
     if (!spreadHost || currentDay === null) return;
     const day = currentDay;
-    const values = mapDayValues(payload, day).sites;
-    const spread = siteSpread(values, SNOW_CLASSES.length, snowClassIndex);
-    const total = spread.reporting + spread.noValue;
+    const dayValues = mapDayValues(payload, day);
+    const spread = siteSpread(dayValues.sites, SNOW_CLASSES.length, snowClassIndex,
+      dayValues.sitesBelowFloor);
+    const total = spread.reporting + spread.belowFloor + spread.noValue;
     if (total === 0) {
       spreadHost.replaceChildren();
       return;
@@ -1060,9 +1079,13 @@ function renderSnow(
       ...SNOW_CLASSES.map((entry, index) => ({
         label: entry.label,
         color: entry.color as string | null,
+        empty: "",
         count: spread.counts[index] ?? 0
       })),
-      { label: NO_VALUE_LABEL, color: null, count: spread.noValue }
+      { label: BELOW_FLOOR_LABEL, color: null, empty: " snow-swatch-below-floor",
+        count: spread.belowFloor },
+      { label: NO_VALUE_LABEL, color: null, empty: " drought-segment-none",
+        count: spread.noValue }
     ].filter((segment) => segment.count > 0);
 
     const bar = document.createElement("div");
@@ -1074,7 +1097,7 @@ function renderSnow(
       ". The table below lists every site.");
     for (const segment of segments) {
       const piece = document.createElement("span");
-      piece.className = "drought-segment" + (segment.color ? "" : " drought-segment-none");
+      piece.className = "drought-segment" + segment.empty;
       piece.style.flexGrow = String(segment.count);
       if (segment.color) piece.style.background = segment.color;
       piece.title = `${segment.label}: ${segment.count} of ${total} sites`;
@@ -1083,8 +1106,10 @@ function renderSnow(
 
     const caption = document.createElement("p");
     caption.className = "snow-spread-note";
+    const thin = spread.belowFloor > 0
+      ? `${spread.belowFloor} with too little normal snow to compare against, ` : "";
     caption.textContent = `How the ${total} sites were spread on ` +
-      `${formatDate(day)}: ${spread.reporting} with a fair value, ` +
+      `${formatDate(day)}: ${spread.reporting} with a fair value, ${thin}` +
       `${spread.noValue} without one. The mean above is one number over all of them.`;
     spreadHost.replaceChildren(bar, caption);
   }

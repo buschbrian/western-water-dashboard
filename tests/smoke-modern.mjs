@@ -3270,19 +3270,34 @@ for (const viewport of VIEWPORTS) {
       `${label}: the map drew ${mapState.ready?.mapBasins} basins of ${mapState.ready?.basins}`);
     check(mapState.ready?.mapSites === mapState.ready?.sites,
       `${label}: the map drew ${mapState.ready?.mapSites} sites of ${mapState.ready?.sites}`);
-    check(mapState.ready?.mapBasinsWithValues > 0 && mapState.ready?.mapSitesWithValues > 0,
-      `${label}: the shown day coloured ${mapState.ready?.mapBasinsWithValues} basins ` +
-      `and ${mapState.ready?.mapSitesWithValues} sites`);
+    /* Drawn means classed or, early in a season, shown apart as having too
+     * little normal snow to compare (ADR-121). In October the first count can
+     * honestly be zero; both being zero is a map that drew nothing. */
+    check(mapState.ready?.mapBasinsWithValues + mapState.ready?.mapBasinsBelowFloor > 0
+      && mapState.ready?.mapSitesWithValues + mapState.ready?.mapSitesBelowFloor > 0,
+    `${label}: the shown day coloured ${mapState.ready?.mapBasinsWithValues} basins ` +
+      `(${mapState.ready?.mapBasinsBelowFloor} below the floor) and ` +
+      `${mapState.ready?.mapSitesWithValues} sites ` +
+      `(${mapState.ready?.mapSitesBelowFloor} below the floor)`);
+    /* The reading calls a day the high point only when the season has one,
+     * and only that day. */
+    const dayReading = await tab.evaluate(() =>
+      document.querySelector("#snow-day-reading")?.textContent ?? "");
+    check(/high point|most snow so far/.test(dayReading)
+      === (mapState.ready?.mapPeak === mapState.ready?.mapDay),
+    `${label}: the day reading "${dayReading}" disagrees with the peak `
+      + `${mapState.ready?.mapPeak} on ${mapState.ready?.mapDay}`);
     check(typeof mapState.ready?.mapDay === "string",
       `${label}: the map has no shown day`);
-    /* One chip per class, plus one for a day with no fair value. Read from
-     * the table the page publishes rather than written here: this assertion
-     * was a hardcoded 6 and it broke the moment the table gained a class,
-     * which is a test measuring itself rather than the page. */
-    const expectedChips = (mapState.ready?.mapClasses ?? 0) + 1;
+    /* One chip per class, plus two for the two ways of having no fair value:
+     * no reading, and a normal too small to compare against (ADR-121). Read
+     * from the table the page publishes rather than written here: this
+     * assertion was a hardcoded 6 and it broke the moment the table gained a
+     * class, which is a test measuring itself rather than the page. */
+    const expectedChips = (mapState.ready?.mapClasses ?? 0) + 2;
     check(mapState.slider && mapState.legendItems === expectedChips,
       `${label}: day control ${mapState.slider}, legend ${mapState.legendItems} ` +
-      `chips for ${mapState.ready?.mapClasses} classes plus no-value`);
+      `chips for ${mapState.ready?.mapClasses} classes plus two no-value states`);
     /* The reservoirs are deliberately absent here. This map already carries
      * fourteen filled basins and 217 site markers; the same points that are
      * useful context on the drought map buried the readings on this one. */

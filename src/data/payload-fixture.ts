@@ -59,6 +59,22 @@ export function readSnowpackSeasonFixture(): SnowpackPayload {
   return validateSnowpackPayload(JSON.parse(source) as unknown);
 }
 
+/**
+ * The first seventeen days of a water year, frozen, through the browser's
+ * validator: `snowpack.json` as committed at ed71e7b (as of 2026-10-18).
+ *
+ * The season's turn is a state the daily file passes through for a few weeks
+ * a year, so a test about it cannot read the daily file -- by November it
+ * would be testing a winter. This is the morning the map opened on
+ * 2026-10-16 as the "season high point" and classed fourteen basins above
+ * normal (ADR-121). Classed `frozen` in `data/generated-files.json`.
+ */
+export function readSnowpackEarlySeasonFixture(): SnowpackPayload {
+  const source = readFileSync(
+    new URL("../../tests/fixtures/snowpack-wy2027-october.json", import.meta.url), "utf8");
+  return validateSnowpackPayload(JSON.parse(source) as unknown);
+}
+
 /** The committed weekly drought coverage, through the browser's validator. */
 export function readDroughtCoverage(): DroughtCoveragePayload {
   const source = readFileSync(

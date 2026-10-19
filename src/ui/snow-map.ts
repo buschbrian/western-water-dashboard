@@ -55,6 +55,10 @@ export interface SnowMapStatus {
   sites: number;
   basinsWithValues: number;
   sitesWithValues: number;
+  /** Areas and sites that reported on the shown day against a normal too
+   * small to compare with: drawn hatched and grey, never in a class. */
+  basinsBelowFloor: number;
+  sitesBelowFloor: number;
   day: string | null;
   /** Drainage areas carrying their name, which is every area in scope --
    * the label engine decides per frame which of them fit. */
@@ -91,6 +95,7 @@ const CHOSEN_OUTLINE = { color: "#27363f", width: 2.2 };
 type FillSymbol = {
   type: "simple-fill";
   color: Rgba;
+  style?: "solid" | "backward-diagonal";
   outline: { color: string; width: number };
 };
 type MarkerSymbol = {
@@ -100,13 +105,24 @@ type MarkerSymbol = {
   outline: { color: string; width: number };
 };
 
-function basinSymbol(percent: number | null, chosen: boolean): FillSymbol {
+/* The below-floor look: a hatch in the no-value grey, so it reads as "no
+ * fair value" first and "but something was measured" second, and can never
+ * be mistaken for a class colour (ADR-121). */
+const BELOW_FLOOR_FILL: Rgba = [110, 118, 126, 0.55];
+
+function basinSymbol(
+  percent: number | null, chosen: boolean, belowFloor = false
+): FillSymbol {
   const index = snowClassIndex(percent);
   const entry = index === null ? null : SNOW_CLASSES[index];
+  const outline = chosen ? CHOSEN_OUTLINE : OUTLINE;
+  if (!entry && belowFloor) {
+    return { type: "simple-fill", style: "backward-diagonal", color: BELOW_FLOOR_FILL, outline };
+  }
   return {
     type: "simple-fill",
     color: entry ? hexRgba(entry.color, 0.5) : [148, 155, 162, 0.12],
-    outline: chosen ? CHOSEN_OUTLINE : OUTLINE
+    outline
   };
 }
 
@@ -139,14 +155,25 @@ function basinRenderer(
     uniqueValueInfos: areas.map((area) => ({
       value: area.huc6,
       symbol: basinSymbol(
-        values?.basins.get(area.huc6) ?? null, area.huc6 === chosen)
+        values?.basins.get(area.huc6) ?? null, area.huc6 === chosen,
+        values?.basinsBelowFloor.has(area.huc6) ?? false)
     }))
   };
 }
 
-function siteSymbol(percent: number | null): MarkerSymbol {
+function siteSymbol(percent: number | null, belowFloor = false): MarkerSymbol {
   const index = snowClassIndex(percent);
   const entry = index === null ? null : SNOW_CLASSES[index];
+  if (!entry && belowFloor) {
+    /* Filled grey rather than hollow: a reading exists, it just has nothing
+     * fair to be compared with. */
+    return {
+      type: "simple-marker",
+      size: 4.5,
+      color: [110, 118, 126, 0.9],
+      outline: { color: "#ffffff", width: 0.6 }
+    };
+  }
   return entry
     ? {
       type: "simple-marker",
@@ -236,6 +263,8 @@ export async function createSnowMap(
     sites: siteGraphics.size,
     basinsWithValues: 0,
     sitesWithValues: 0,
+    basinsBelowFloor: 0,
+    sitesBelowFloor: 0,
     day: null,
     basinLabels: areas.length,
     basinLabelsDeconflicted: true
@@ -267,10 +296,14 @@ export async function createSnowMap(
       for (const [station, graphic] of siteGraphics) {
         const percent = values.sites.get(station) ?? null;
         if (percent !== null) sitesWithValues += 1;
-        graphic.symbol = siteSymbol(percent);
+        graphic.symbol = siteSymbol(percent, values.sitesBelowFloor.has(station));
       }
       status.basinsWithValues = basinsWithValues;
       status.sitesWithValues = sitesWithValues;
+      status.basinsBelowFloor = areas
+        .filter((area) => values.basinsBelowFloor.has(area.huc6)).length;
+      status.sitesBelowFloor = [...siteGraphics.keys()]
+        .filter((station) => values.sitesBelowFloor.has(station)).length;
     },
     setArea(huc6) {
       chosenArea = huc6;
@@ -306,7 +339,8 @@ export async function createSnowMap(
           return {
             content: {
               heading: site.name,
-              lines: snowSiteLines(site, percent, depth)
+              lines: snowSiteLines(site, percent, depth,
+                currentValues.sitesBelowFloor.has(site.station))
             },
             graphic: result.graphic
           };
@@ -320,7 +354,8 @@ export async function createSnowMap(
           return {
             content: {
               heading: String(attributes["name"]),
-              lines: snowBasinLines(percent, reporting)
+              lines: snowBasinLines(percent, reporting,
+                currentValues.basinsBelowFloor.has(huc6))
             },
             graphic: result.graphic
           };
