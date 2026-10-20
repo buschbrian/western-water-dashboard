@@ -2490,7 +2490,7 @@
       "station_triplet": "14237800:WA:BOR",
       "lat": 46.50344,
       "lon": -122.58761,
-      "cadence": "daily",
+      "cadence": "monthly",
       "huc6": "170800",
       "huc6_name": "Lower Columbia",
       "capacity": {
