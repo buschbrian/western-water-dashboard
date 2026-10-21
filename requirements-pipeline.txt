@@ -2,3 +2,6 @@
 pandas==3.0.*
 numpy>=2.3,<2.4
 requests==2.*
+# The IANA zones for zoneinfo. CWMS names series zones such as "US/Pacific";
+# the ubuntu-26.04 runner's system zone files no longer carry those aliases.
+tzdata>=2026.1
