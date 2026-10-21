@@ -11,6 +11,13 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ## [Unreleased]
 
+### Changed
+
+- **The snowpack page shows present conditions** (ADR-121). The map opens on
+  the newest day rather than the season's peak. The change in snow water over
+  the last 7 days replaces "Best against normal", the site count says how many
+  sites have snow on the ground, and a new table gives snow by elevation.
+
 ## [1.0.0] - 2026-09-18
 
 The first tagged release, and the state the site has run in for several weeks.

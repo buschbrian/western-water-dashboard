@@ -52,7 +52,6 @@ import {
   newestFloored,
   newestHeadline,
   normalPeriodLabel,
-  observedPeak,
   measuredScope,
   payloadAtLevel,
   payloadForSites,
@@ -60,7 +59,6 @@ import {
   payloadForState,
   percentOfNormal,
   regionCurve,
-  bestAgainstNormal,
   seasonLabel,
   siteByStation,
   siteMonthReadings,
@@ -68,6 +66,12 @@ import {
   siteRows,
   siteSpread,
   siteTiming,
+  snowChange,
+  sitesWithSnow,
+  elevationSummary,
+  siteChange,
+  type SnowChange,
+  CHANGE_DAYS,
   ELEVATION_BANDS,
   elevationBandLabel,
   filterSiteRows,
@@ -263,6 +267,18 @@ function formatInches(value: number | null): string {
   return value === null ? "—" : value.toFixed(1);
 }
 
+/* Hundredths, because a mean over hundreds of sites moves in steps smaller
+ * than the tenth each site reports in. */
+function formatChangeInches(value: number): string {
+  const sign = value >= 0.005 ? "+" : value <= -0.005 ? "−" : "";
+  return `${sign}${Math.abs(value).toFixed(2)}`;
+}
+
+/** "137 gained snow, 117 lost snow" -- the counts behind a mean change. */
+function changeCounts(change: SnowChange): string {
+  return `${change.gained} gained snow, ${change.lost} lost snow`;
+}
+
 type SiteBasin = Pick<SnowSite, "huc6" | "huc6_name">;
 
 /*
@@ -321,14 +337,14 @@ function renderSnow(
     <p id="snow-status" class="filter-status" role="status"></p>
     <section class="overview-kpis snow-summary" aria-label="Snow measurement summary">
       <article class="overview-kpi overview-kpi-primary"><span>Newest value</span><strong data-snow-kpi="now">—</strong><small data-snow-kpi="now-note">—</small></article>
-      <article class="overview-kpi"><span>Best against normal</span><strong data-snow-kpi="peak">—</strong><small data-snow-kpi="peak-note">—</small></article>
-      <article class="overview-kpi"><span>Measurement sites</span><strong data-snow-kpi="sites">—</strong><small>Measured every day</small></article>
+      <article class="overview-kpi"><span>Change in the last ${CHANGE_DAYS} days</span><strong data-snow-kpi="change">—</strong><small data-snow-kpi="change-note">—</small></article>
+      <article class="overview-kpi"><span>Measurement sites</span><strong data-snow-kpi="sites">—</strong><small data-snow-kpi="sites-note">—</small></article>
       <article class="overview-kpi"><span>Late data</span><strong data-snow-kpi="late">—</strong><small>No new value for more than two days</small></article>
       <article class="overview-kpi"><span>Data published</span><strong>${formatDate(payload.as_of)}</strong><small>${payload.water_year - 1}–${payload.water_year} snow season</small></article>
     </section>
     <section class="overview-card" aria-labelledby="snow-map-heading">
       <div class="card-heading">
-        <div><h2 id="snow-map-heading">Where the snow is</h2><p>Each drainage area takes its colour from the plain average of the sites reporting inside it that day, and every site counts once. That is a figure about the measuring sites. It is not a measure of the snow lying across the whole area. The sites are placed where snow can be measured reliably. That is neither evenly across the land nor evenly up the mountainside. Each measurement site is a point on the same scale. Select an area to see how many sites its figure came from. The map opens on the day this season held the most snow, because the rest of the year measures against that day. Move the slider to see any other day. Areas and sites without a fair value for that day stay grey.</p></div>
+        <div><h2 id="snow-map-heading">Where the snow is</h2><p>Each drainage area takes its colour from the plain average of the sites reporting inside it that day, and every site counts once. That is a figure about the measuring sites. It is not a measure of the snow lying across the whole area. The sites are placed where snow can be measured reliably. That is neither evenly across the land nor evenly up the mountainside. Each measurement site is a point on the same scale. Select an area to see how many sites its figure came from. The map opens on the newest day with values from at least half the sites. Move the slider to see an earlier day. Areas and sites without a fair value for that day stay grey.</p></div>
         <span class="sdk-badge">ArcGIS map</span>
       </div>
       <div id="snow-map-host" class="view-map-host" aria-busy="true"
@@ -349,6 +365,10 @@ function renderSnow(
       <details class="snow-month-details"><summary>Values on the first day of each month</summary>
         <div class="table-scroll" tabindex="0" role="region" aria-label="First-of-month table, scrolls sideways"><table class="overview-table"><thead><tr><th>Month</th><th>Of normal</th><th>Reporting sites</th></tr></thead><tbody id="snow-month-rows"></tbody></table></div>
       </details>
+    </section>
+    <section class="overview-card table-card" aria-labelledby="snow-elevation-heading">
+      <div class="card-heading"><div><h2 id="snow-elevation-heading">Snow by elevation</h2><p>Snow starts to build first and stays longest at the high sites. The values are for the newest day in the summary above. A change counts only the sites with a value on both days.</p></div></div>
+      <div class="table-scroll" tabindex="0" role="region" aria-label="Snow by elevation table, scrolls sideways"><table class="overview-table"><thead><tr><th>Elevation</th><th>Sites with values</th><th>Sites with snow</th><th>Mean snow water (inches)</th><th>Change in ${CHANGE_DAYS} days (inches)</th></tr></thead><tbody id="snow-elevation-rows"></tbody></table></div>
     </section>
     <section class="overview-card" aria-labelledby="snow-basin-heading">
       <div class="card-heading">
@@ -405,6 +425,7 @@ function renderSnow(
   const status = document.querySelector<HTMLElement>("#snow-status");
   const curveHost = document.querySelector<HTMLElement>("#snow-curve-host");
   const monthRows = document.querySelector<HTMLTableSectionElement>("#snow-month-rows");
+  const elevationRows = document.querySelector<HTMLTableSectionElement>("#snow-elevation-rows");
   const siteRowsBody = document.querySelector<HTMLTableSectionElement>("#snow-site-rows");
   const querybox = document.querySelector<HTMLInputElement>("#snow-query");
   const geoJsonButton = document.querySelector<HTMLElement>("#snow-geojson");
@@ -436,7 +457,7 @@ function renderSnow(
   siteCurveHost.className = "snow-curve-host";
   const basinCurveHost = document.createElement("div");
   basinCurveHost.className = "snow-curve-host";
-  if (!status || !curveHost || !monthRows || !siteRowsBody
+  if (!status || !curveHost || !monthRows || !elevationRows || !siteRowsBody
     || !mapHost || !daySlider || !dayReading || !sitePicker || !siteDetail
     || !basinPicker || !basinDetail) return;
 
@@ -678,7 +699,7 @@ function renderSnow(
       const reading = document.createElement("p");
       reading.className = "snow-site-reading";
       const latest = [...points].reverse().find((point) => point.inches !== null);
-      const peak = observedPeak(points);
+      const change = siteChange(site);
       const parts: string[] = [];
       if (latest) {
         const percent = percentOfNormal(latest.inches, latest.normalInches);
@@ -687,9 +708,10 @@ function renderSnow(
           ` on ${formatDate(latest.date)}.`);
       }
       if (site.late) parts.push("This site has late data.");
-      if (peak) {
-        parts.push(`Season high point: ${formatInches(peak.inches)} inches ` +
-          `on ${formatDate(peak.date)}.`);
+      if (change) {
+        parts.push(`Change in the last ${CHANGE_DAYS} days: ` +
+          `${formatChangeInches(change.meanChangeInches)} inches ` +
+          `since ${formatDate(change.startDate)}.`);
       }
       reading.textContent = parts.join(" ");
 
@@ -820,10 +842,13 @@ function renderSnow(
           `snow water on ${formatDate(newest.date)}. There is too little ` +
           "normal snow for this date to compare against.");
       }
-      const peak = bestAgainstNormal(points, floor);
-      if (peak) {
-        parts.push(`Best against normal: ${formatPercent(peak.percent)} ` +
-          `on ${formatDate(peak.date)}.`);
+      const change = newest
+        ? snowChange(payload.sites.filter((site) => site.huc6 === rollup.huc6), newest.date)
+        : null;
+      if (change && change.sites >= floor) {
+        parts.push(`Change in the last ${CHANGE_DAYS} days: ` +
+          `${formatChangeInches(change.meanChangeInches)} inches, mean of ` +
+          `${change.sites} sites; ${changeCounts(change)}.`);
       }
       reading.textContent = parts.length > 0 ? parts.join(" ")
         : "Too few sites in this area have values yet this season.";
@@ -883,14 +908,13 @@ function renderSnow(
   };
 
   /* The day the map opened on, kept so the reading can say when the reader is
-   * back on it. Moving the slider away and back should not lose the fact that
-   * this one day is the season's high point. */
-  const peakDay = startDay;
+   * back on it. */
+  const openingDay = startDay;
   const describeDay = (day: string): string => {
     const point = regionPoints.find((entry) => entry.date === day);
     const sitesNote = point ? `, ${point.reportingSites} sites reporting` : "";
-    const peakNote = day === peakDay ? " · season high point" : "";
-    return `${formatDate(day)}${sitesNote}${peakNote}`;
+    const newestNote = day === openingDay ? " · newest day" : "";
+    return `${formatDate(day)}${sitesNote}${newestNote}`;
   };
 
   const applyDay = (day: string): void => {
@@ -937,12 +961,45 @@ function renderSnow(
         ? `Snow water on ${formatDate(reading.date)}. There is too little ` +
           "normal snow for this date to compare against"
         : "Too few sites have values yet this season");
-    const peak = bestAgainstNormal(curve, floor);
-    setKpi("peak", peak ? formatPercent(peak.percent) : "—");
-    setKpi("peak-note", peak
-      ? `${formatDate(peak.date)} · ${peak.reportingSites} sites`
-      : "Too few sites have values yet this season");
+    /* The change and the elevation table read the same day as the newest
+     * value beside them, so the summary describes one day. */
+    const inView = chosen === null
+      ? payload.sites
+      : payload.sites.filter((site) => site.huc6 === chosen);
+    const change = reading ? snowChange(inView, reading.date) : null;
+    const fairChange = change !== null && change.sites >= floor ? change : null;
+    setKpi("change", fairChange
+      ? `${formatChangeInches(fairChange.meanChangeInches)} in`
+      : "—");
+    setKpi("change-note", fairChange
+      ? `Mean of ${fairChange.sites} sites since ` +
+        `${formatDate(fairChange.startDate)}; ${changeCounts(fairChange)}`
+      : "Too few sites have values on both days");
     setKpi("sites", String(rows.length));
+    setKpi("sites-note", reading
+      ? `${sitesWithSnow(inView, reading.date)} with snow on the ground ` +
+        `on ${formatDate(reading.date)}`
+      : "Measured every day");
+    elevationRows.replaceChildren(...(reading
+      ? elevationSummary(inView, reading.date)
+      : []).map((band) => {
+      const row = document.createElement("tr");
+      const name = document.createElement("th");
+      name.scope = "row";
+      name.textContent = elevationBandLabel(band.band);
+      const cells = [
+        `${band.reporting} of ${band.sites}`,
+        String(band.withSnow),
+        formatInches(band.meanInches),
+        band.change ? formatChangeInches(band.change.meanChangeInches) : "—"
+      ].map((text) => {
+        const cell = document.createElement("td");
+        cell.textContent = text;
+        return cell;
+      });
+      row.append(name, ...cells);
+      return row;
+    }));
     setKpi("late", String(rows.filter((row) => row.late).length));
 
     /* The drawing gets the denominator floor (`curveForDrawing`); the

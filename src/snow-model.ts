@@ -646,42 +646,6 @@ export function newestReading(points: readonly CurvePoint[]): CurvePoint | null 
   return null;
 }
 
-/**
- * The day the snowpack stood highest against its own normal, or null when no
- * day qualifies.
- *
- * Not the season's peak snow, which is `defaultMapDay` and is a different
- * question with a different answer: in the 2026 season this reads 78.4% on
- * 2026-01-08, while the deepest day is 2026-03-13 and is itself only 60.7%
- * of normal. The most water and the best showing against normal are rarely
- * the same day, and the page now names them apart -- "Best against normal"
- * here, "season high point" on the map.
- *
- * Both floors, like `newestHeadline`, and for the same reason. This function
- * held only the reporting floor, and the maximum of a ratio is exactly where
- * a weak denominator does its worst: on 2026-08-24 the published summary read
- * **10,250% of normal on 2025-10-04**, from 545 sites dividing a dusting by a
- * mean normal of four ten-thousandths of an inch. The reporting floor cannot
- * catch that -- every site in the region was reporting -- so the number
- * cleared the only gate it had, and it went out under the same name the map
- * was using for 2026-03-13.
- *
- * `curveForDrawing`'s note says to leave the KPI path unfiltered because it
- * "already appl[ies] its own, stricter floor". That was true of the newest
- * value and never true here.
- */
-export function bestAgainstNormal(
-  points: readonly CurvePoint[], floor: number
-): CurvePoint | null {
-  let best: CurvePoint | null = null;
-  for (const point of points) {
-    if (point.percent === null || point.reportingSites < floor) continue;
-    if (!percentIsMeaningful(point)) continue;
-    if (best === null || point.percent > (best.percent as number)) best = point;
-  }
-  return best;
-}
-
 /** One site's own reading for the chosen day, in the published units. */
 export interface SiteDayDepth {
   inches: NullableNumber;
@@ -772,40 +736,150 @@ export function regionDepthCurve(payload: SnowpackPayload): DepthPoint[] {
 }
 
 /**
- * The day the map opens on: the season's peak snow.
+ * The day the map opens on: the newest day at least half the sites reported
+ * (ADR-121).
  *
- * It used to be the newest day that met the reporting floor, and that was
- * wrong in a way only the data showed. Late in the melt season the newest
- * qualifying day is the *most depleted* day that still qualifies, so the map
- * opened on the worst picture of the year by construction -- in this record,
- * 2026-05-09, where every reporting basin sits under a quarter of normal and
- * the whole region is one colour.
+ * ADR-040 opened on the season's peak snow, so that a late-spring visit did
+ * not open on the most melted day. In October that rule opens on the first
+ * dusting, labelled the high point of a season three weeks old, and through
+ * the winter it opens on a day that is not today. The page now describes
+ * present conditions; the slider still reaches every earlier day.
  *
- * Peak snow, not peak percent of normal. That distinction was measured and it
- * matters: the highest percent-of-normal day in this record is 2025-12-06 at
- * 78% of normal, on a mean of 2.3 inches of snow -- a good ratio in early
- * December, when the normal it is divided by is also tiny. The peak depth day
- * is 2026-03-07, at 61% of normal on 8.4 inches. The first is arithmetically
- * the best day and hydrologically nearly meaningless; the second is the day
- * the snowpack actually held the most water, which is what a reader means by
- * the peak and what the rest of the year is judged against.
- *
- * The same half-the-sites floor applies, so a handful of high stations cannot
- * define the peak on their own.
+ * Depth, not percent of normal, decides which days qualify, so October's
+ * near-zero normals cannot refuse every day of the month.
  */
 export function defaultMapDay(payload: SnowpackPayload): string | null {
   const floor = headlineFloor(payload.site_count, 2);
-  let best: DepthPoint | null = null;
-  for (const point of regionDepthCurve(payload)) {
-    if (point.reportingSites < floor) continue;
-    if (best === null || point.meanInches > best.meanInches) best = point;
+  const curve = regionDepthCurve(payload);
+  for (let index = curve.length - 1; index >= 0; index -= 1) {
+    const point = curve[index]!;
+    if (point.reportingSites >= floor) return point.date;
   }
-  /* Out of season, or a record too thin to find a peak in, falls back to the
-   * newest day that met the floor -- which is the old behaviour, and still
-   * the right answer when there is no peak to show. */
-  return best?.date
-    ?? newestHeadline(regionCurve(payload), floor)?.date
-    ?? null;
+  return null;
+}
+
+/**
+ * How many days the change figures look back. A week is long enough to hold
+ * a storm cycle and short enough to describe now.
+ */
+export const CHANGE_DAYS = 7;
+
+/** One change in snow water across a group of sites, between two days. */
+export interface SnowChange {
+  startDate: string;
+  endDate: string;
+  /** Mean of each site's own change, in inches. */
+  meanChangeInches: number;
+  /** Sites with a value on both days. Only these are counted. */
+  sites: number;
+  /** Sites whose change rounds to at least a tenth of an inch either way --
+   * the step the snow pillows report in. Smaller changes are neither. */
+  gained: number;
+  lost: number;
+}
+
+export function isoDaysBefore(date: string, days: number): string {
+  const value = new Date(`${date}T00:00:00Z`);
+  value.setUTCDate(value.getUTCDate() - days);
+  return value.toISOString().slice(0, 10);
+}
+
+function readingOn(site: SnowSite, date: string): number | null {
+  const row = site.series.find((entry) => entry[0] === date);
+  return row ? row[1] : null;
+}
+
+/**
+ * The change in snow water over `days` days ending on `endDate`.
+ *
+ * Paired, not two means subtracted: a site counts only when it reported on
+ * both days. Subtracting two means taken over different sites lets a site
+ * that went quiet, or one that came back, move the figure by its whole depth.
+ */
+export function snowChange(
+  sites: readonly SnowSite[], endDate: string, days: number = CHANGE_DAYS
+): SnowChange | null {
+  const startDate = isoDaysBefore(endDate, days);
+  let total = 0;
+  let count = 0;
+  let gained = 0;
+  let lost = 0;
+  for (const site of sites) {
+    const end = readingOn(site, endDate);
+    const start = readingOn(site, startDate);
+    if (end === null || start === null) continue;
+    const change = end - start;
+    total += change;
+    count += 1;
+    const tenths = Math.round(change * 10);
+    if (tenths > 0) gained += 1;
+    else if (tenths < 0) lost += 1;
+  }
+  if (count === 0) return null;
+  return { startDate, endDate, meanChangeInches: total / count, sites: count, gained, lost };
+}
+
+/** Sites with snow on the ground on one day: any reading above zero. */
+export function sitesWithSnow(sites: readonly SnowSite[], date: string): number {
+  let count = 0;
+  for (const site of sites) {
+    const inches = readingOn(site, date);
+    if (inches !== null && inches > 0) count += 1;
+  }
+  return count;
+}
+
+/** One elevation band on one day. */
+export interface ElevationSummary {
+  band: Exclude<ElevationBand, "all">;
+  sites: number;
+  reporting: number;
+  withSnow: number;
+  /** Mean snow water across the band's reporting sites, in inches. */
+  meanInches: number | null;
+  change: SnowChange | null;
+}
+
+/**
+ * Each elevation band on one day.
+ *
+ * Snow builds first and lasts longest at the high sites, so a regional mean
+ * in autumn or late spring is mostly a statement about how many low sites are
+ * bare. Splitting by band says where the snow is, using the same bands the
+ * site filter offers.
+ */
+export function elevationSummary(
+  sites: readonly SnowSite[], date: string
+): ElevationSummary[] {
+  const bands = ELEVATION_BANDS.filter(
+    (band): band is Exclude<ElevationBand, "all"> => band !== "all");
+  return bands.map((band) => {
+    const inBand = sites.filter((site) => elevationBandOf(site.elevation_feet) === band);
+    const readings = inBand
+      .map((site) => readingOn(site, date))
+      .filter((inches): inches is number => inches !== null);
+    return {
+      band,
+      sites: inBand.length,
+      reporting: readings.length,
+      withSnow: readings.filter((inches) => inches > 0).length,
+      meanInches: readings.length > 0
+        ? readings.reduce((sum, inches) => sum + inches, 0) / readings.length
+        : null,
+      change: snowChange(inBand, date)
+    };
+  });
+}
+
+/** One site's change over `days` days ending on its own newest reading. */
+export function siteChange(
+  site: SnowSite, days: number = CHANGE_DAYS
+): SnowChange | null {
+  for (let index = site.series.length - 1; index >= 0; index -= 1) {
+    const row = site.series[index]!;
+    if (row[1] !== null) return snowChange([site], row[0], days);
+  }
+  return null;
 }
 
 /** One published day of one site's series, with the columns named. */
@@ -861,19 +935,6 @@ export function siteTiming(site: SnowSite, waterYear: number): SiteTiming {
     peakInches: timing.peak?.value ?? null,
     meltout: timingDate(timing.meltout, waterYear)
   };
-}
-
-/** The highest reading of the season so far, or null before any value. */
-export function observedPeak(
-  points: readonly SitePoint[]
-): { date: string; inches: number } | null {
-  let best: { date: string; inches: number } | null = null;
-  for (const point of points) {
-    if (point.inches !== null && (best === null || point.inches > best.inches)) {
-      best = { date: point.date, inches: point.inches };
-    }
-  }
-  return best;
 }
 
 /** First-of-month rows for the table behind a site's curve. */

@@ -154,11 +154,11 @@ ADR-008, then ADR-032 and ADR-061.**
 - Views and interaction: [ADR-021](ADR-021-snow-telemetry-goes-on-a-view-of-its-own.md),
   [ADR-023](ADR-023-fill-the-empty-drainage-areas.md),
   [ADR-029](ADR-029-the-table-narrows-where-the-map-dims.md),
-  [ADR-040](ADR-040-open-the-snow-map-on-the-season-peak.md),
   [ADR-086](ADR-086-open-the-place-chooser-from-every-page-header.md),
-  [ADR-120](ADR-120-ask-where-to-start-before-loading-the-map.md)
+  [ADR-120](ADR-120-ask-where-to-start-before-loading-the-map.md),
+  [ADR-121](ADR-121-show-present-snow-conditions.md)
 - Superseded, read only for history: ADR-007, ADR-016, ADR-022, ADR-025,
-  ADR-027, ADR-030, ADR-043, ADR-054
+  ADR-027, ADR-030, ADR-040, ADR-043, ADR-054
 - Current architecture: [`docs/architecture/frontend.md`](../architecture/frontend.md)
 
 ### Credentials and third-party services
@@ -211,7 +211,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-037](ADR-037-refetch-the-boundaries-at-the-resolution-the-source-stops-adding.md) | Refetch the drainage boundaries at the resolution the source stops adding detail | Accepted |
 | [ADR-038](ADR-038-split-the-snow-classes-and-move-to-a-scientific-colour-map.md) | Split the bottom snow class, and take the ramp from a scientific colour map | Accepted |
 | [ADR-039](ADR-039-draw-percent-full-with-a-sequential-ramp.md) | Draw percent full with a sequential ramp, and free the ring from it | Accepted |
-| [ADR-040](ADR-040-open-the-snow-map-on-the-season-peak.md) | Open the snow map on the season's peak snow | Accepted |
+| [ADR-040](ADR-040-open-the-snow-map-on-the-season-peak.md) | Open the snow map on the season's peak snow | Superseded by ADR-121 |
 | [ADR-041](ADR-041-let-the-reader-choose-the-comparison-period.md) | Let the reader choose the comparison period, and open on the standard one | Accepted |
 | [ADR-042](ADR-042-sink-the-basemaps-reference-layers-below-the-data.md) | Sink the basemap's reference layers below this project's data | Accepted |
 | [ADR-043](ADR-043-shade-thematic-fills-from-above-with-a-no-key-hillshade.md) | Shade thematic fills from above, with a hillshade that needs no key | Superseded by ADR-054 |
@@ -292,6 +292,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-118](ADR-118-publish-terminal-lakes-from-their-own-roster-and-payload.md) | Publish terminal lakes from their own roster and payload | Accepted; implements ADR-112 and extends ADR-056 and ADR-098; Walker Lake is the first lake, generated and not yet shown |
 | [ADR-119](ADR-119-show-terminal-lakes-on-their-own-page.md) | Show terminal lakes on their own page | Accepted; extends ADR-118 and ADR-045; reached from the methods and data pages, not the bar |
 | [ADR-120](ADR-120-ask-where-to-start-before-loading-the-map.md) | Ask where to start before loading the map | Accepted; extends ADR-086; the storage map fetches the map SDK only after the first-visit question closes without a choice |
+| [ADR-121](ADR-121-show-present-snow-conditions.md) | Show present snow conditions, not the season's peak | Accepted; supersedes ADR-040; the snow map opens on the newest day, and a 7-day change, a snow-covered count and an elevation table replace the season-peak figures |
 
 ## Relationship to the historical journal
 

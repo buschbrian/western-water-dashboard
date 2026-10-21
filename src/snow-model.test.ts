@@ -21,10 +21,14 @@ import {
   percentOfNormal,
   payloadForStationSet,
   payloadForState,
-  observedPeak,
   regionCurve,
   regionDepthCurve,
-  bestAgainstNormal,
+  snowChange,
+  siteChange,
+  sitesWithSnow,
+  elevationSummary,
+  isoDaysBefore,
+  CHANGE_DAYS,
   seasonLabel,
   siteByStation,
   siteMonthReadings,
@@ -512,36 +516,11 @@ describe("headline readings", () => {
     expect(headlineFloor(3, 2)).toBe(2);
   });
 
-  it("refuses an October artifact as the best against normal", () => {
-    // 115.8% from twelve early sites is not the story; 77.7% from 169 is.
-    expect(bestAgainstNormal(points, 109)?.percent).toBe(77.7);
-  });
-
   it("refuses two unmelted June stations as the newest value", () => {
     expect(newestHeadline(points, 109)?.date).toBe("2026-04-01");
   });
 
-  it("refuses a thin denominator as the best against normal", () => {
-    /* The reporting floor cannot catch this one: every site is reporting.
-     * This is the shape that published 10,250% of normal on an October day,
-     * from a mean normal of almost nothing. */
-    const thinNormal: CurvePoint[] = [
-      { date: "2025-10-04", percent: 10250, reportingSites: 545, normalInches: 0.04 },
-      { date: "2026-03-13", percent: 61.4, reportingSites: 549, normalInches: 13.7 }
-    ];
-    expect(bestAgainstNormal(thinNormal, 300)?.date).toBe("2026-03-13");
-  });
-
-  it("returns null when every day fails the denominator", () => {
-    const allThin: CurvePoint[] = [
-      { date: "2025-10-04", percent: 10250, reportingSites: 545, normalInches: 0.04 },
-      { date: "2025-10-05", percent: 650, reportingSites: 545, normalInches: 0.12 }
-    ];
-    expect(bestAgainstNormal(allThin, 300)).toBeNull();
-  });
-
   it("returns null when no day meets the floor", () => {
-    expect(bestAgainstNormal(points, 200)).toBeNull();
     expect(newestHeadline(points, 200)).toBeNull();
   });
 
@@ -579,48 +558,38 @@ describe("headline readings", () => {
     // Any complete season has at least one broad reading. The first weeks of
     // a water year have none, which is why this reads the frozen season and
     // not the daily file: `newestHeadline` answering null then is correct.
-    expect(bestAgainstNormal(region, floor)).not.toBeNull();
     expect(newestHeadline(region, floor)).not.toBeNull();
   });
 });
 
 describe("the map day", () => {
   /*
-   * The map opens on the season's peak snow, and each half of that is a
-   * decision the data forced.
-   *
-   * It used to open on the newest day meeting the floor. Late in the melt
-   * season that is the *most depleted* day that still qualifies, so the map
-   * opened on the worst picture of the year by construction.
-   *
-   * And peak depth, not peak percent of normal: the highest-ratio day in this
-   * record sits in early December on a couple of inches of snow, because the
-   * normal it is divided by is tiny then too.
+   * The map opens on present conditions (ADR-121): the newest day at least
+   * half the sites reported. Depth decides which days qualify, so a month of
+   * near-zero October normals cannot refuse every day.
    */
-  it("opens on the day the region held the most snow", () => {
+  it("opens on the newest day at least half the sites reported", () => {
     const day = defaultMapDay(payload);
     const floor = headlineFloor(payload.site_count, 2);
     const qualifying = regionDepthCurve(payload)
       .filter((point) => point.reportingSites >= floor);
 
     expect(day).not.toBeNull();
-    expect(qualifying.length).toBeGreaterThan(0);
-    const peak = qualifying.reduce((best, point) =>
-      point.meanInches > best.meanInches ? point : best);
-    expect(day).toBe(peak.date);
+    expect(day).toBe(qualifying[qualifying.length - 1]!.date);
   });
 
-  it("does not open on the newest day, which is the most melted one", () => {
+  it("skips a newest day too few sites reported", () => {
     const floor = headlineFloor(payload.site_count, 2);
-    const newest = newestHeadline(regionCurve(payload), floor);
-    const peak = regionDepthCurve(payload)
-      .filter((point) => point.reportingSites >= floor)
-      .reduce((best, point) => point.meanInches > best.meanInches ? point : best);
-
-    /* Data-independent: assert the relationship, not the dates. In a record
-     * that ends mid-winter these could coincide, and that would be correct. */
-    expect(peak.meanInches).toBeGreaterThanOrEqual(
-      regionDepthCurve(payload).find((p) => p.date === newest?.date)?.meanInches ?? 0);
+    const last = regionDepthCurve(payload)
+      .filter((point) => point.reportingSites >= floor).at(-1)!.date;
+    const extra = isoDaysBefore(last, -1);
+    const thin: SnowpackPayload = {
+      ...payload,
+      sites: payload.sites.map((site, index) => index === 0
+        ? { ...site, series: [...site.series, [extra, 1, 1]] as typeof site.series }
+        : site)
+    };
+    expect(defaultMapDay(thin)).toBe(last);
   });
 
   it("lets a handful of high stations define nothing", () => {
@@ -646,10 +615,12 @@ describe("the map day", () => {
     const day = defaultMapDay(payload)!;
     const values = mapDayValues(payload, day);
     expect(values.sites.size).toBe(payload.site_count);
-    const withValues = [...values.sites.values()]
-      .filter((value) => value !== null).length;
+    /* The floor is on readings, not percentages: on a late-September newest
+     * day the normals are zero and every percentage is rightly null. */
+    const withReadings = [...values.depths.values()]
+      .filter((depth) => depth.inches !== null).length;
     // The default day met the half-the-sites floor by construction.
-    expect(withValues).toBeGreaterThanOrEqual(
+    expect(withReadings).toBeGreaterThanOrEqual(
       headlineFloor(payload.site_count, 2));
   });
 
@@ -692,7 +663,6 @@ describe("the first day of a water year", () => {
     expect(region).toHaveLength(1);
     expect(region[0]!.percent).toBeNull();
     expect(newestHeadline(region, floor)).toBeNull();
-    expect(bestAgainstNormal(region, floor)).toBeNull();
     // Every site reported, so the depth fallback's reporting floor is met.
     expect(newestFloored(region, floor)?.date).toBe(day);
   });
@@ -703,6 +673,76 @@ describe("the first day of a water year", () => {
     expect(values.sites.size).toBe(first.site_count);
     expect([...values.sites.values()].every((value) => value === null)).toBe(true);
     expect([...values.depths.values()].every((depth) => depth.inches === 0)).toBe(true);
+  });
+});
+
+describe("change over the last days", () => {
+  const site = (station: string, elevation: number,
+    rows: [string, number | null][]): SnowpackPayload["sites"][number] => ({
+    ...payload.sites[0]!,
+    station,
+    elevation_feet: elevation,
+    series: rows.map(([date, inches]) => [date, inches, 1]) as
+      SnowpackPayload["sites"][number]["series"]
+  });
+  const end = "2026-11-08";
+  const start = isoDaysBefore(end, CHANGE_DAYS);
+  const sites = [
+    site("a", 7000, [[start, 0], [end, 0.3]]),
+    site("b", 9000, [[start, 2.0], [end, 1.5]]),
+    site("c", 10000, [[start, 4.0], [end, 4.04]]),
+    // Reported only on the newer day: it is not a change, and counting it as
+    // one would add its whole depth to the mean.
+    site("d", 10500, [[end, 6.0]])
+  ];
+
+  it("looks back the stated number of days", () => {
+    expect(start).toBe("2026-11-01");
+  });
+
+  it("counts only sites with a value on both days", () => {
+    const change = snowChange(sites, end)!;
+    expect(change.sites).toBe(3);
+    expect(change.meanChangeInches).toBeCloseTo((0.3 - 0.5 + 0.04) / 3, 6);
+  });
+
+  it("calls a change under a tenth of an inch neither a gain nor a loss", () => {
+    const change = snowChange(sites, end)!;
+    expect(change.gained).toBe(1);
+    expect(change.lost).toBe(1);
+  });
+
+  it("answers null when no site has both days", () => {
+    expect(snowChange(sites, "2026-12-01")).toBeNull();
+  });
+
+  it("counts a site as snow-covered for any reading above zero", () => {
+    expect(sitesWithSnow(sites, start)).toBe(2);
+    expect(sitesWithSnow(sites, end)).toBe(4);
+  });
+
+  it("splits the day by the site filter's elevation bands", () => {
+    const bands = elevationSummary(sites, end);
+    expect(bands.map((band) => band.band)).toEqual(["low", "middle", "high"]);
+    const high = bands.find((band) => band.band === "high")!;
+    expect(high.sites).toBe(2);
+    expect(high.reporting).toBe(2);
+    expect(high.meanInches).toBeCloseTo(5.02, 6);
+    expect(high.change?.sites).toBe(1);
+    expect(bands.reduce((sum, band) => sum + band.sites, 0)).toBe(sites.length);
+  });
+
+  it("reads one site's change back from its own newest value", () => {
+    const quiet = site("e", 9000, [[start, 3], [end, 2], ["2026-11-09", null]]);
+    expect(siteChange(quiet)?.endDate).toBe(end);
+    expect(siteChange(quiet)?.meanChangeInches).toBe(-1);
+  });
+
+  it("finds a change in a complete season", () => {
+    const day = defaultMapDay(payload)!;
+    const change = snowChange(payload.sites, day);
+    expect(change).not.toBeNull();
+    expect(change!.gained + change!.lost).toBeLessThanOrEqual(change!.sites);
   });
 });
 
@@ -749,18 +789,6 @@ describe("one site's season", () => {
     expect(timing).toEqual({
       onset: null, peakDate: null, peakInches: null, meltout: null
     });
-  });
-
-  it("finds the season's highest reading", () => {
-    const peak = observedPeak([
-      { date: "2026-01-01", inches: 3, normalInches: 5 },
-      { date: "2026-03-01", inches: 9.5, normalInches: 10 },
-      { date: "2026-04-01", inches: null, normalInches: 11 }
-    ]);
-    expect(peak).toEqual({ date: "2026-03-01", inches: 9.5 });
-    expect(observedPeak([
-      { date: "2026-01-01", inches: null, normalInches: null }
-    ])).toBeNull();
   });
 
   it("keeps one month row per month, first-of-month values only", () => {

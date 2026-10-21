@@ -347,6 +347,13 @@ county, Elevation and Reporting below it. Those three controls and their reset
 action narrow only the measurement-site table. The five Snowpack summary
 cards reserve matching rows for their headings, values and short notes.
 
+**Snowpack describes present conditions** (ADR-121). The map opens on the
+newest day at least half the sites reported. The summary, a drainage area's
+card and a site's card give the change in snow water over the last 7 days,
+paired by site; the summary and the "Snow by elevation" table read the same
+day as the newest value. The season's peak is reached through the curve and
+the slider, not named as a figure.
+
 **Drought orders its place controls sequentially** (ADR-091): State, County
 after a state is chosen, Area size, then exactly one hydrologic tier. The last
 label follows the chosen size: Region, Subregion, Basin or Subbasin. A county
