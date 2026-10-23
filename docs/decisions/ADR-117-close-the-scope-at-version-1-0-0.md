@@ -1,6 +1,6 @@
 # ADR-117: Close the scope at version 1.0.0
 
-- Status: Accepted
+- Status: Superseded by ADR-121 (bounded pilot exception; versioning and remaining scope limits retained)
 - Date: 2026-09-18
 - Relates to: ADR-001 (the build step), ADR-002 (the data commit is the deploy)
 

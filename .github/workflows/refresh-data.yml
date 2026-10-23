@@ -35,7 +35,7 @@ jobs:
 
       - uses: actions/setup-python@v6
         with:
-          python-version: "3.11"
+          python-version: "3.14"
 
       # Pinned deliberately. Unpinned, the daily job silently picks up major
       # releases -- pandas 3.0 changed groupby.apply semantics and deprecated

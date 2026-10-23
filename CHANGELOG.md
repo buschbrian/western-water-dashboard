@@ -11,6 +11,24 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ## [Unreleased]
 
+### Changed
+
+- Update ArcGIS to 5.1.27, Calcite to 5.2, Vite to 8.3 and Vitest to 5.
+  Keep TypeScript on current 7.0.2, update accessibility tooling and Node
+  types, and run CI on Node 26.
+- Update the Python dependency baseline to pandas 3.1, NumPy 2.5,
+  requests 2.34, pytest 9.1 and ArcGIS for Python 2.4.4. Run Python jobs on
+  3.14 and use the shared requirements for manual data workflows.
+  Use pandas' supported `day_of_year` spelling without changing the calendar
+  method.
+- Record the bounded recent-conditions pilot and credential setup, with
+  ignored local environment files. No pilot data or R2 uploader is published.
+
+### Fixed
+
+- Keep wrapped snow summary cards equally tall when the early-season note
+  needs several lines.
+
 ## [1.0.0] - 2026-09-18
 
 The first tagged release, and the state the site has run in for several weeks.

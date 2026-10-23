@@ -35,7 +35,7 @@ def daily(column: str, base: float, amplitude: float, *, years: int = 6,
     rng = np.random.default_rng(seed)
     idx = pd.date_range(TODAY - pd.Timedelta(days=365 * years),
                         TODAY - pd.Timedelta(days=stale_days), freq="D")
-    doy = idx.dayofyear.to_numpy()
+    doy = idx.day_of_year.to_numpy()
     values = base + amplitude * np.sin((doy - 100) / 365 * 2 * np.pi) \
         + rng.normal(0, amplitude / 50, len(idx))
     return pd.DataFrame({"date": idx, column: values})

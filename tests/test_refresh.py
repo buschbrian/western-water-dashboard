@@ -44,7 +44,7 @@ def synthetic_series(stale_days: int = 0, start: str = "2015-01-01",
     """A seasonal, gently declining daily storage series through today-stale_days."""
     rng = np.random.default_rng(seed)
     idx = pd.date_range(start, TODAY - pd.Timedelta(days=stale_days), freq="D")
-    doy = idx.dayofyear.to_numpy()
+    doy = idx.day_of_year.to_numpy()
     base = 50000 + 20000 * np.sin((doy - 100) / 365 * 2 * np.pi)
     trend = np.linspace(0, -12000, len(idx))
     values = base + trend + rng.normal(0, 300, len(idx))

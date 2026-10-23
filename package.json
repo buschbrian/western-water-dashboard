@@ -3,6 +3,9 @@
   "version": "1.0.0",
   "private": true,
   "type": "module",
+  "engines": {
+    "node": ">=26"
+  },
   "scripts": {
     "dev": "vite --open /",
     "build": "tsc --noEmit && vitest run && npm run budget:sdk && vite build",
@@ -21,17 +24,17 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@arcgis/charts-components": "^5.1.22",
-    "@arcgis/common-components": "^5.1.22",
-    "@arcgis/core": "^5.1.22",
-    "@arcgis/map-components": "^5.1.22",
-    "@esri/calcite-components": "^5.1.0"
+    "@arcgis/charts-components": "^5.1.27",
+    "@arcgis/common-components": "^5.1.27",
+    "@arcgis/core": "^5.1.27",
+    "@arcgis/map-components": "^5.1.27",
+    "@esri/calcite-components": "^5.2.0"
   },
   "devDependencies": {
-    "@types/node": "^24.0.0",
-    "axe-core": "^4.13.0",
+    "@types/node": "^26.6.5",
+    "axe-core": "^4.14.0",
     "typescript": "^7.0.2",
-    "vite": "^8.1.5",
-    "vitest": "^4.1.10"
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5"
   }
 }
