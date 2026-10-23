@@ -43,6 +43,8 @@ using any measurement as an implementation acceptance result.
    USGS v1 API; cache metadata and fetch overlapping recent windows so
    revisions can be incorporated. Review the existing v0 adapter separately
    before moving the published reservoirs to v1.
+   `tools/build_gauge_review.py` writes the evidence for this review to
+   `gauge-review.csv`; see [Gauge review worksheet](#gauge-review-worksheet).
 3. Establish precipitation valid windows, nodata coverage, projection and
    area-weighted basin summaries. Use dedicated raster tooling outside the
    existing three-dependency daily environment until the added dependency is
@@ -65,6 +67,37 @@ histories and rasters on demand. Measure raster requests, total transfer,
 render readiness, interaction, accessibility and errors separately against
 the same device, viewport and network baseline. No page-speed claim follows
 from the probe's server response times.
+
+## Gauge review worksheet
+
+`gauge-review.csv` lists every U.S. Geological Survey stream gauge in Utah
+whose primary daily mean discharge series reported within seven days of the
+screen. It is evidence for a ruling, not a roster: nothing reads it at
+refresh time, and a gauge enters the pilot only when `reviewer_ruling` says
+so. Rerunning the builder refreshes the screen and trace columns and never
+changes `reviewer_ruling` or `notes`.
+
+| Column | Meaning |
+|---|---|
+| `record_begin`, `last_daily_value` | The series' own period, from `time-series-metadata` |
+| `covers_1991_2020` | The record starts by 1 January 1991. Gaps inside it are not checked |
+| `trace_screen` | `traced`, `not_indexed` or `no_basin` are findings; anything else was the service, and `--missing` retries it |
+| `nldi_basin_sq_mi`, `trace_check` | The NLDI basin indexed to the gauge, and a note when it differs from the published drainage area by more than 25% |
+| `upstream_reservoirs`, `upstream_snow_sites` | Published reservoirs and snow sites inside that basin |
+
+An upstream reservoir means storage can shape the flow. It is not a
+finding that the flow is regulated, and the gauge does not measure that
+reservoir's inflow. NLDI basins are simplified polygons; check a reservoir
+listed close to a basin edge before relying on it.
+
+First screen, 2026-10-23: 164 gauges, 118 covering 1991–2020. 157 traced
+and 7 are not indexed by NLDI (tunnels, drains and small Wasatch Front
+creeks). 79 have a published reservoir upstream; 34 have none, cover
+1991–2020 and have a snow site upstream. Seven traced areas differ from the
+published drainage area by more than 25%; Daniels Creek at Charleston
+traced about 404 square miles against 50 and is the wrong basin. Early
+requests took 13 to 150 seconds each, against the half second measured in
+August, so the trace runs resumably; later requests were fast.
 
 ## Credentials and hosting
 
