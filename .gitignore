@@ -7,6 +7,11 @@ __pycache__/
 # Agents working in git worktrees link these two back to the main checkout.
 .venv
 
+# Local provider and upload credentials.
+.env
+.env.*
+!.env.example
+
 # macOS writes one of these into every directory it opens. One reached a
 # commit already; this keeps the next one out.
 .DS_Store

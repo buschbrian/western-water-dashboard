@@ -95,7 +95,7 @@ describe("SDK architecture boundaries", () => {
 
     expect(calciteInstallations).toHaveLength(1);
     expect(calciteInstallations[0]?.path).toBe("node_modules/@esri/calcite-components");
-    expect(calciteInstallations[0]?.version).toMatch(/^5\.1\./);
+    expect(calciteInstallations[0]?.version).toMatch(/^5\.2\./);
   });
 
   it("ships the small local Calcite asset contract used by the shell", async () => {

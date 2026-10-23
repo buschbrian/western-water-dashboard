@@ -43,6 +43,9 @@ the test is right and the prose is the bug.
 
 ## Maintained references
 
+[Recent conditions pilot](RECENT-CONDITIONS-PILOT.md) records the authorized
+Utah pilot, measured API sample, implementation sequence and environment setup.
+
 | Document | Role |
 |---|---|
 | [Source inventory](AUTHORITATIVE-SOURCE-INVENTORY.md) | Source ownership, endpoints, copy rules, failure behaviour. Read by `src/source-inventory.test.ts`. |

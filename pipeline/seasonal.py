@@ -52,9 +52,9 @@ def canonical_day(when) -> "np.ndarray | int":
     Accepts a `DatetimeIndex` or a single `Timestamp` and answers in kind.
     """
     if isinstance(when, pd.Timestamp):
-        shift = 1 if (when.is_leap_year and when.dayofyear >= 60) else 0
-        return int(when.dayofyear) - shift
-    doy = np.asarray(when.dayofyear)
+        shift = 1 if (when.is_leap_year and when.day_of_year >= 60) else 0
+        return int(when.day_of_year) - shift
+    doy = np.asarray(when.day_of_year)
     return doy - np.where(np.asarray(when.is_leap_year) & (doy >= 60), 1, 0)
 
 

@@ -1,7 +1,7 @@
 # Frontend architecture
 
 The reader-facing application: strict TypeScript, Vite, ArcGIS Maps SDK 5.1,
-ArcGIS Charts 5.1, Calcite Components 5.1. Scoped agent rules for this area
+ArcGIS Charts 5.1, Calcite Components 5.2. Scoped agent rules for this area
 are in [`.claude/rules/frontend.md`](../../.claude/rules/frontend.md) and
 [`src/AGENTS.md`](../../src/AGENTS.md).
 
@@ -346,6 +346,8 @@ Show every site in the upper-right of its heading, then aligns Site name or
 county, Elevation and Reporting below it. Those three controls and their reset
 action narrow only the measurement-site table. The five Snowpack summary
 cards reserve matching rows for their headings, values and short notes.
+The note row reserves four lines so the early-season explanation does not
+make one wrapped flex row taller than the next.
 
 **Drought orders its place controls sequentially** (ADR-091): State, County
 after a state is chosen, Area size, then exactly one hydrologic tier. The last
