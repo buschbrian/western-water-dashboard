@@ -1,4 +1,4 @@
-# ADR-121: Bound recent conditions to a static-data pilot
+# ADR-124: Bound recent conditions to a static-data pilot
 
 - Status: Accepted
 - Date: 2026-10-23
