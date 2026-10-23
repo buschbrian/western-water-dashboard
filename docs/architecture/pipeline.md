@@ -34,7 +34,7 @@ computation, normals).
 
 ## Recent-conditions pilot boundary
 
-ADR-121 permits a bounded Utah pilot alongside the existing published domains.
+ADR-124 permits a bounded Utah pilot alongside the existing published domains.
 Its chosen delivery model is scheduled Python ingestion and static, versioned
 outputs, with R2 available for rasters and archives. It is not connected to the
 daily job or any public page yet. The scope, remaining work and credential

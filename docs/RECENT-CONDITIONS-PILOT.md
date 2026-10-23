@@ -1,7 +1,7 @@
 # Recent conditions pilot
 
 Status: authorized scope and implementation plan, 2026-10-23.
-Decision: [ADR-121](decisions/ADR-121-bound-recent-conditions-to-a-static-data-pilot.md).
+Decision: [ADR-124](decisions/ADR-124-bound-recent-conditions-to-a-static-data-pilot.md).
 No pilot observations, uploader or raster layer are published yet.
 
 ## What the first view answers
