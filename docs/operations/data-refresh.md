@@ -29,7 +29,7 @@ scripts/refresh-daily.sh          # everything, exactly as the workflow does
    commit. Publishing yesterday's week is a small honest loss; publishing two
    different weeks is a broken page.
 5. **Snow** — `refresh_snowpack.py`. A failure keeps the last complete payload.
-   **Precipitation** — `refresh_station_readings.py` (ADR-122), after snow and
+   **Precipitation** — `refresh_station_readings.py` (ADR-125), after snow and
    independent of it. A failure keeps the last complete `precipitation.json`.
 6. **Commit** — the published set, staged together, so the drought files can
    never be committed apart. The list lives in `data/generated-files.json` and
@@ -121,7 +121,7 @@ public services this project does not pay for). Run it when the standard
 climate period moves (2021-2050 becomes standard in 2031) or when a reservoir
 joins the roster.
 
-`build_precipitation_history.py` (ADR-122) fetches every water year from
+`build_precipitation_history.py` (ADR-125) fetches every water year from
 1991 for the snow stations, ten at a time, two requests at once: about an
 hour for the whole inventory. Run it each October once the water year has
 closed, so the window gains that year, and with `--missing` when the

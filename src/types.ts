@@ -765,7 +765,7 @@ export interface LakePayload {
   withdrawn: WithdrawnLake[];
 }
 
-/** One station's accumulated precipitation this water year (ADR-122). */
+/** One station's accumulated precipitation this water year (ADR-125). */
 export interface PrecipitationSite {
   station: string;
   latest_date: string;
@@ -789,7 +789,7 @@ export interface PrecipitationPayload {
 /**
  * Every water year in the window at each station whose record covers all of
  * them, decoded to inches: `years[y][s]` is year `first_water_year + y` at
- * step `s` (ADR-122).
+ * step `s` (ADR-125).
  */
 export interface PrecipitationHistory {
   schema_version: number;

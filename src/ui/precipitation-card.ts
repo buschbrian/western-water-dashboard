@@ -1,5 +1,5 @@
 /*
- * The snow page's precipitation card (ADR-122). It fetches its own two files,
+ * The snow page's precipitation card (ADR-125). It fetches its own two files,
  * so a failure here costs this card and never the snow figures above it, and
  * it follows whatever place the page is showing: the page hands it the
  * stations in view and it does the rest.
@@ -10,7 +10,7 @@ import { loadPrecipitation, loadPrecipitationHistory } from "../data/precip-load
 import { ordinal, precipitationView, type PrecipitationView } from "../precip-model";
 import type { PrecipitationHistory, PrecipitationPayload, SnowSite } from "../types";
 import { formatDate } from "../viz/format";
-import { renderPrecipitationCurve } from "../viz/precip-curve";
+import { HISTORY_REGIONS, renderPrecipitationCurve, shortDate, type PrecipitationRange } from "../viz/precip-curve";
 
 export interface PrecipitationStatus {
   state: "loading" | "ready" | "failed";
@@ -18,8 +18,10 @@ export interface PrecipitationStatus {
   stations: number;
   /** Days of this year's line drawn. */
   curveDays: number;
-  /** History bands drawn, 0 when the place has no station in the set. */
-  bandSteps: number;
+  /** Days of history bands drawn, 0 when the place has no station in the set. */
+  bandDays: number;
+  /** The window the chart shows: the season so far, or the whole year. */
+  range: PrecipitationRange;
 }
 
 export interface PrecipitationCard {
@@ -74,12 +76,52 @@ function headlineKpis(view: PrecipitationView): HTMLElement[] {
     kpi("Of a median year", h.shareOfMedianYear === null ? "—" : `${h.shareOfMedianYear}%`,
       `A median year brings ${inches(h.medianYearInches)}`)
   ];
-  if (h.snowWaterInches !== null) {
-    const notInSnow = Math.max(0, h.inches - h.snowWaterInches);
-    kpis.push(kpi("In the snow now", inches(h.snowWaterInches),
-      `${inches(notInSnow)} fell and is not in the snow`));
-  }
   return kpis;
+}
+
+/**
+ * The same stations' snow water on the headline's day, as a small fact block
+ * beside the figures rather than a line on the precipitation axis: two
+ * measurements on one axis read as two kinds of precipitation. It says only
+ * what the two values show. The difference is not measured rain or melt --
+ * wind, gauge catch and sublimation sit in it too -- so it is not named as
+ * either.
+ */
+function snowSplit(view: PrecipitationView): HTMLElement | null {
+  const reading = view.snow;
+  if (!reading || reading.precipitationInches <= 0) return null;
+  const h = { inches: reading.precipitationInches };
+  const block = document.createElement("div");
+  block.className = "precip-split";
+  const snow = reading.snowInches;
+  block.append(text("p", "precip-split-title", `Snow water on ${shortDate(reading.date)}: ${inches(snow)}`));
+  if (snow > h.inches) {
+    block.append(text("p", "precip-split-note",
+      `That is more than the ${inches(h.inches)} the gauges caught by then. ` +
+      "A gauge catches less snow than falls, most of all in wind."));
+    return block;
+  }
+  const rest = h.inches - snow;
+  if (snow > 0) {
+    const bar = document.createElement("div");
+    bar.className = "precip-split-bar";
+    bar.setAttribute("role", "img");
+    bar.setAttribute("aria-label",
+      `Of ${inches(h.inches)} caught by the gauges, ${inches(snow)} is in the snow now.`);
+    const snowPart = document.createElement("span");
+    snowPart.className = "precip-split-snow";
+    snowPart.style.inlineSize = `${(snow / h.inches) * 100}%`;
+    const restPart = document.createElement("span");
+    restPart.className = "precip-split-rest";
+    restPart.style.inlineSize = `${(rest / h.inches) * 100}%`;
+    bar.append(...[snowPart, restPart].filter((_, index) => (index === 0 ? snow : rest) > 0));
+    block.append(bar);
+  }
+  block.append(text("p", "precip-split-note", (snow === 0
+    ? `By then the gauges had caught ${inches(h.inches)}, and none of it is in the snow. `
+    : `By then the gauges had caught ${inches(h.inches)}, ${inches(rest)} more than the snow holds. `)
+    + "These values do not show where that water went."));
+  return block;
 }
 
 function april1Sentence(view: PrecipitationView): string | null {
@@ -106,8 +148,10 @@ function coverageSentence(view: PrecipitationView): string {
 function monthRows(view: PrecipitationView): HTMLTableRowElement[] {
   const byDate = new Map(view.precipitation.map((day) => [day.date, day.inches]));
   const snowByDate = new Map(view.snowWater.map((day) => [day.date, day.inches]));
+  /* The first of every month, and the year's last day. The bands are daily,
+   * so each row is a day the model computed rather than a weekly step. */
   return view.bands
-    .filter((band) => band.date.endsWith("-01") || band.date === view.bands.at(-1)?.date)
+    .filter((band) => band.date.endsWith("-01") || band === view.bands.at(-1))
     .map((band) => {
       const row = document.createElement("tr");
       const name = document.createElement("th");
@@ -134,13 +178,41 @@ export function createPrecipitationCard(
   const legend = document.createElement("div");
   legend.className = "precip-legend";
   legend.append(
-    legendItem("precip-swatch-precip", "Precipitation this year"),
-    legendItem("precip-swatch-snow", "Snow water this year"),
-    legendItem("precip-swatch-gap", "Fell, not in the snow now"),
-    legendItem("precip-swatch-median", "Median year"),
-    legendItem("precip-swatch-half", "Middle half of years"),
-    legendItem("precip-swatch-eight", "8 of 10 years"),
-    legendItem("precip-swatch-range", "Highest to lowest year"));
+    legendItem("precip-swatch-precip", "This year"),
+    legendItem("precip-swatch-median", "Median year"));
+  /* The history key goes under the chart, in the order the regions stack,
+   * with one sentence that says what a region is and is not. */
+  const historyKey = document.createElement("div");
+  historyKey.className = "precip-history-key";
+  const regions = document.createElement("div");
+  regions.className = "precip-legend";
+  regions.append(...HISTORY_REGIONS.map((region) => legendItem(`precip-swatch-region ${region.className}`, region.label)));
+  const historyNote = text("p", "precip-coverage", "");
+  historyKey.append(regions, historyNote);
+  const axisTitle = document.createElement("p");
+  axisTitle.className = "precip-axis-title";
+  const split = document.createElement("div");
+  /* Two plain toggle buttons rather than a component: one choice, two
+   * answers, and `aria-pressed` says which is on. */
+  const ranges = document.createElement("div");
+  ranges.className = "precip-range";
+  ranges.setAttribute("role", "group");
+  ranges.setAttribute("aria-label", "Days shown on the chart");
+  const rangeButtons = new Map<PrecipitationRange, HTMLButtonElement>();
+  for (const [value, label] of [["season", "Season so far"], ["year", "Whole water year"]] as const) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = label;
+    button.setAttribute("aria-pressed", String(value === "season"));
+    button.addEventListener("click", () => {
+      if (status.range === value) return;
+      status.range = value;
+      for (const [key, other] of rangeButtons) other.setAttribute("aria-pressed", String(key === value));
+      draw();
+    });
+    rangeButtons.set(value, button);
+    ranges.append(button);
+  }
   const host = document.createElement("div");
   host.className = "snow-curve-host precip-curve-host";
   host.setAttribute("aria-busy", "true");
@@ -152,10 +224,18 @@ export function createPrecipitationCard(
   details.className = "snow-month-details";
   details.innerHTML = `<summary>Values on the first day of each month</summary>
     <div class="table-scroll" tabindex="0" role="region" aria-label="Precipitation by month table, scrolls sideways"><table class="overview-table"><thead><tr><th>Date</th><th>Precipitation (in)</th><th>Snow water (in)</th><th>Median year (in)</th><th>Middle half from (in)</th><th>Middle half to (in)</th><th>Lowest year (in)</th><th>Highest year (in)</th></tr></thead><tbody></tbody></table></div>`;
-  section.append(kpis, legend, host, april, coverage, details);
+  const controls = document.createElement("div");
+  controls.className = "precip-controls";
+  controls.append(ranges, legend);
+  const top = document.createElement("div");
+  top.className = "precip-top";
+  top.append(kpis, split);
+  section.append(top, controls, axisTitle, host, historyKey, april, coverage, details);
   const tbody = details.querySelector("tbody")!;
 
-  const status: PrecipitationStatus = { state: "loading", stations: 0, curveDays: 0, bandSteps: 0 };
+  const status: PrecipitationStatus = {
+    state: "loading", stations: 0, curveDays: 0, bandDays: 0, range: "season"
+  };
   let data: { daily: PrecipitationPayload; history: PrecipitationHistory } | null = null;
   let wanted: { stations: readonly string[]; snowSites: readonly SnowSite[] } | null = null;
 
@@ -163,10 +243,14 @@ export function createPrecipitationCard(
     if (!data || !wanted) return;
     const view = precipitationView(wanted.stations, data.daily, data.history, wanted.snowSites);
     status.stations = view.stations.length;
-    status.bandSteps = view.bands.length;
+    status.bandDays = view.bands.length;
     if (!view.headline) {
       kpis.replaceChildren();
+      split.replaceChildren();
       legend.hidden = true;
+      ranges.hidden = true;
+      historyKey.hidden = true;
+      axisTitle.textContent = "";
       april.textContent = "";
       coverage.textContent = "";
       tbody.replaceChildren();
@@ -174,18 +258,28 @@ export function createPrecipitationCard(
         ? `No station in this place has a full precipitation record from ${view.firstWaterYear}. ` +
           "Choose a larger place to compare this year with history."
         : "No station in this place measures precipitation today.");
-      renderPrecipitationCurve(host, [], [], [], "");
+      renderPrecipitationCurve(host, [], [], status.range, "");
       host.replaceChildren(empty);
       status.curveDays = 0;
     } else {
       kpis.replaceChildren(...headlineKpis(view));
+      const splitBlock = snowSplit(view);
+      split.replaceChildren(...(splitBlock ? [splitBlock] : []));
       legend.hidden = false;
+      ranges.hidden = false;
+      historyKey.hidden = false;
+      const stationCount = `${view.stations.length} station${view.stations.length === 1 ? "" : "s"}`;
+      axisTitle.replaceChildren(
+        document.createTextNode("Precipitation since 1 October (inches)"),
+        text("span", "", `Mean at ${stationCount}`));
+      historyNote.textContent = `History: water years ${view.firstWaterYear} to ${view.lastWaterYear}. ` +
+        "Each colour shows where past years were on the same date. The edges are not the path of any one year, and they are not a forecast.";
       const h = view.headline;
-      renderPrecipitationCurve(host, view.bands, view.precipitation, view.snowWater,
-        `Mean precipitation since 1 October for the place shown: ${inches(h.inches)} on ` +
-        `${formatDate(h.date)}, against a median of ${inches(h.medianInches)} for the date in the ` +
-        `water years ${view.firstWaterYear} to ${view.lastWaterYear}. Snow water now is ` +
-        `${h.snowWaterInches === null ? "not known" : inches(h.snowWaterInches)}. ` +
+      renderPrecipitationCurve(host, view.bands, view.precipitation, status.range,
+        `Mean precipitation since 1 October for the place shown, ` +
+        `${status.range === "season" ? "for the season so far" : "for the whole water year"}: ` +
+        `${inches(h.inches)} on ${formatDate(h.date)}, against a median of ${inches(h.medianInches)} ` +
+        `for the date in the water years ${view.firstWaterYear} to ${view.lastWaterYear}. ` +
         "The table below lists the values on the first day of each month.");
       status.curveDays = view.precipitation.filter((day) => day.inches !== null).length;
       april.textContent = april1Sentence(view) ?? "";
@@ -208,6 +302,7 @@ export function createPrecipitationCard(
         console.error("Precipitation could not load:", error);
         status.state = "failed";
         legend.hidden = true;
+        ranges.hidden = true;
         host.replaceChildren(text("p", "chart-empty",
           "The precipitation values could not load. The snow figures on this page are not affected."));
         host.setAttribute("aria-busy", "false");

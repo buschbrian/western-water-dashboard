@@ -1,6 +1,6 @@
 /*
  * Precipitation since 1 October for whatever place the snow page shows,
- * against that place's own history (ADR-122). Pure, so it is tested against
+ * against that place's own history (ADR-125). Pure, so it is tested against
  * synthetic stations without a browser.
  *
  * One set of stations answers every question on the card: the stations in
@@ -41,9 +41,19 @@ export interface PrecipitationHeadline {
   /** 1 is the highest. Years with the same value share a rank. */
   rank: number;
   rankedYears: number;
-  snowWaterInches: number | null;
   /** Null after 1 April, or when the median for 1 April is already passed. */
   toApril1: { medianInches: number; neededInches: number; medianGainInches: number } | null;
+}
+
+/**
+ * Snow water at the same stations, on the newest day both measurements are
+ * complete for the set: its own day, which can trail the headline's by up to
+ * `SNOW_LAG_DAYS`, and the precipitation of that same day beside it.
+ */
+export interface SnowWaterReading {
+  date: string;
+  snowInches: number;
+  precipitationInches: number;
 }
 
 export interface PrecipitationView {
@@ -60,6 +70,7 @@ export interface PrecipitationView {
   precipitation: DayValue[];
   snowWater: DayValue[];
   headline: PrecipitationHeadline | null;
+  snow: SnowWaterReading | null;
 }
 
 const DAY_MS = 86_400_000;
@@ -140,7 +151,7 @@ export function precipitationView(
     lastWaterYear: history.last_water_year
   };
   if (stations.length === 0) {
-    return { ...base, bands: [], precipitation: [], snowWater: [], headline: null };
+    return { ...base, bands: [], precipitation: [], snowWater: [], headline: null, snow: null };
   }
 
   const stepDates = history.step_month_days.map((monthDay) => stepDate(daily.water_year, monthDay));
@@ -150,8 +161,18 @@ export function precipitationView(
     yearCurves.push(stepDates.map((_, step) =>
       mean(stations.map((station) => history.sites.get(station)![year]![step]!))));
   }
-  const bands: BandStep[] = stepDates.map((date, step) => {
-    const sorted = yearCurves.map((curve) => curve[step]!).sort((a, b) => a - b);
+  /* Every day of the water year, each year read on its own straight line
+   * first and the quantiles taken after. Interpolating weekly quantiles
+   * instead gives a different number (the two do not commute), and the
+   * chart, its readout, the table and the headline must all say the same
+   * thing for the same day. */
+  const days: string[] = [];
+  for (let day = dayNumber(stepDates[0]!); day <= dayNumber(stepDates[stepDates.length - 1]!); day += 1) {
+    days.push(new Date(day * DAY_MS).toISOString().slice(0, 10));
+  }
+  const bands: BandStep[] = days.map((date) => {
+    const sorted = yearCurves.map((curve) => valueOnDate(curve, stepDates, date)!)
+      .sort((a, b) => a - b);
     return {
       date,
       lowest: sorted[0]!,
@@ -185,21 +206,22 @@ export function precipitationView(
     };
   });
 
-  /* The headline's day is the newest on which both lines are complete, so
-   * the snow water it quotes is the same stations on the same day. Snow
-   * readings often trail the gauge by a day; when they trail by more than
-   * `SNOW_LAG_DAYS`, the headline takes the newest precipitation and says
-   * nothing about snow rather than going stale. */
-  const newestPrecip = [...precipitation].reverse().find((day) => day.inches !== null);
-  const snowComplete = new Set(snowWater.filter((day) => day.inches !== null).map((day) => day.date));
-  const paired = [...precipitation].reverse()
-    .find((day) => day.inches !== null && snowComplete.has(day.date));
-  const newest = paired && newestPrecip
-    && dayNumber(newestPrecip.date) - dayNumber(paired.date) <= SNOW_LAG_DAYS
-    ? paired : newestPrecip;
+  /* The headline is the newest precipitation, the same day the line ends.
+   * Snow water is read on its own day: the newest on which both measurements
+   * are complete for the set, so it is the same stations on one day. Snow
+   * readings often trail the gauge by a day; past `SNOW_LAG_DAYS` the card
+   * says nothing about snow rather than quote a stale value. */
+  const newest = [...precipitation].reverse().find((day) => day.inches !== null);
   if (!newest || newest.inches === null) {
-    return { ...base, bands, precipitation, snowWater, headline: null };
+    return { ...base, bands, precipitation, snowWater, headline: null, snow: null };
   }
+  const snowByDate = new Map(snowWater.map((day) => [day.date, day.inches]));
+  const paired = [...precipitation].reverse()
+    .find((day) => day.inches !== null && (snowByDate.get(day.date) ?? null) !== null);
+  const snow: SnowWaterReading | null = paired
+    && dayNumber(newest.date) - dayNumber(paired.date) <= SNOW_LAG_DAYS
+    ? { date: paired.date, snowInches: snowByDate.get(paired.date)!, precipitationInches: paired.inches! }
+    : null;
   const medianYear = bands[bands.length - 1]!.median;
   const onDate = yearCurves
     .map((curve) => valueOnDate(curve, stepDates, newest.date))
@@ -219,12 +241,12 @@ export function precipitationView(
     }
     : null;
 
-  const snowToday = snowWater.find((day) => day.date === newest.date)?.inches ?? null;
   return {
     ...base,
     bands,
     precipitation,
     snowWater,
+    snow,
     headline: {
       date: newest.date,
       inches: newest.inches,
@@ -236,7 +258,6 @@ export function precipitationView(
       medianYearInches: roundTenth(medianYear),
       rank,
       rankedYears: onDate.length + 1,
-      snowWaterInches: snowToday,
       toApril1
     }
   };

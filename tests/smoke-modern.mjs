@@ -3133,7 +3133,7 @@ for (const viewport of VIEWPORTS) {
     check(linked.tableRows < linked.ready?.sites,
       `${label}: a narrowed view shows ${linked.tableRows} of ${linked.ready?.sites} sites`);
 
-    /* The precipitation card loads on its own (ADR-122). Checked for what it
+    /* The precipitation card loads on its own (ADR-125). Checked for what it
      * drew against what it reported, never against today's numbers: on the
      * first morning of a water year it may honestly have no line yet. It
      * fetches only once it nears the screen, so it is scrolled to first. */
@@ -3158,12 +3158,24 @@ for (const viewport of VIEWPORTS) {
     check(precip.busy === "false", `${label}: the precipitation chart left aria-busy ${precip.busy}`);
     check(precip.status?.stations <= linked.tableRows,
       `${label}: precipitation used ${precip.status?.stations} stations from ${linked.tableRows} in view`);
-    check(precip.status?.curveDays > 0 ? precip.svg && precip.status.bandSteps === 53 : precip.empty,
-      `${label}: precipitation drew ${precip.status?.curveDays} days and ${precip.status?.bandSteps} steps, `
+    check(precip.status?.curveDays > 0 ? precip.svg && precip.status.bandDays >= 365 : precip.empty,
+      `${label}: precipitation drew ${precip.status?.curveDays} days and ${precip.status?.bandDays} steps, `
         + `svg ${precip.svg}, empty message ${precip.empty}`);
-    check(precip.status?.curveDays === 0 || precip.monthRows > 0,
+    check(precip.status?.curveDays === 0 || precip.monthRows === 13,
       `${label}: the precipitation table has ${precip.monthRows} rows`);
     check(precip.overflow <= 1, `${label}: the precipitation card overflows by ${precip.overflow}px`);
+    if (precip.status?.curveDays > 0) {
+      /* The chart opens on the season so far and can show the whole year;
+       * the whole year holds every band day the season view does not. */
+      check(precip.status.range === "season",
+        `${label}: the precipitation chart opened on ${precip.status.range}`);
+      await tab.locator(".precip-range button", { hasText: "Whole water year" }).click();
+      await tab.waitForFunction(() => window.__snowReady?.precipitation?.range === "year", { timeout: 10000 });
+      const pressed = await tab.evaluate(() => [...document.querySelectorAll(".precip-range button")]
+        .map((button) => button.getAttribute("aria-pressed")).join(","));
+      check(pressed === "false,true", `${label}: the range buttons report ${pressed}`);
+      await tab.locator(".precip-range button", { hasText: "Season so far" }).click();
+    }
 
     /* The visible site rows, as points. Same promise as the CSV download:
      * the file holds exactly the rows on screen, so it is checked against

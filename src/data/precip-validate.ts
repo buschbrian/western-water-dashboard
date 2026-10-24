@@ -23,6 +23,11 @@ export function validatePrecipitationPayload(value: unknown): PrecipitationPaylo
   if (!Array.isArray(dates) || !dates.every((date) => typeof date === "string" && ISO_DATE.test(date))) {
     throw new Error("Precipitation payload has no readable calendar.");
   }
+  /* Ascending, or "newest" would mean "last in the list" and a calendar
+   * written backwards would put an old reading in the headline. */
+  if (!dates.every((date, index) => index === 0 || (date as string) > (dates[index - 1] as string))) {
+    throw new Error("Precipitation payload calendar is not in date order.");
+  }
   if (typeof value.as_of !== "string" || !Number.isInteger(value.water_year)
     || !Number.isInteger(value.schema_version) || typeof value.generated_at !== "string") {
     throw new Error("Precipitation payload header is not readable.");

@@ -13,7 +13,7 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
-- **Precipitation since 1 October on the snow page** (ADR-122). A new card
+- **Precipitation since 1 October on the snow page** (ADR-125). A new card
   compares this water year's gauge precipitation with every water year since
   1991 at the same stations, for whatever place the page shows, and draws the
   snow water those stations hold now on the same axis. Inches lead; the

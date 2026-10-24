@@ -1,4 +1,4 @@
-"""Refresh the snow stations' precipitation for the water year (ADR-122).
+"""Refresh the snow stations' precipitation for the water year (ADR-125).
 
 The same reviewed inventory and the same Conservation Service request as the
 snow refresh, asking for the gauge's accumulated precipitation (`PREC`)

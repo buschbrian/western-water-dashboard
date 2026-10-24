@@ -30,7 +30,7 @@ Two rules before any figure below is read:
 | `data/drought/usdm-huc8.json` | 121 KB | 12.3 KB |
 
 The two precipitation files were measured 2026-10-24 on their first generated
-copies (ADR-122). The history is fetched only when the snow page's
+copies (ADR-125). The history is fetched only when the snow page's
 precipitation card nears the screen.
 
 `lakes.json` was measured 2026-09-06 on its first generated file, one lake

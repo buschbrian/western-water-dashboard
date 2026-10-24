@@ -1,5 +1,5 @@
 """Build precipitation_history.json -- every water year since 1991 at each
-snow station whose precipitation record covers all of them (ADR-122).
+snow station whose precipitation record covers all of them (ADR-125).
 
 ## Why one fixed set of stations
 
@@ -22,7 +22,8 @@ moves a week's band by less than the week's own rain. The page says so.
 ## The step rule
 
 A step's value is the station's published reading on that calendar day. If
-that day is absent, the latest reading in the three days before it stands in,
+that day is absent, the latest reading in the three days before it, and never
+from before 1 October of the same water year, stands in,
 and the record counts how many times that happened. Nothing is repaired: an
 accumulation that falls between steps is kept as published. A station with
 any step that has no reading inside the rule is not in the fixed set.
@@ -119,11 +120,14 @@ def year_steps(readings: dict[str, float], water_year: int,
     None when a step has no reading inside the rule.
     """
     values, substituted = [], 0
+    year_start = step_date(water_year, "10-01")
     for month_day in month_days:
         day = step_date(water_year, month_day)
         value = readings.get(day.isoformat())
         if value is None:
-            for back in range(1, SUBSTITUTE_DAYS + 1):
+            # Never across 1 October: the day before belongs to the last
+            # water year's total, not to this one's accumulation.
+            for back in range(1, min(SUBSTITUTE_DAYS, (day - year_start).days) + 1):
                 value = readings.get((day - timedelta(days=back)).isoformat())
                 if value is not None:
                     substituted += 1

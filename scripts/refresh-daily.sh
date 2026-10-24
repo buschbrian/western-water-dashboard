@@ -157,7 +157,7 @@ if ! "$python_bin" refresh_snowpack.py; then
   warn "Snow download failed" "Keeping the last complete snow payload"
 fi
 
-# 5a. Precipitation at the same snow stations (ADR-122): its own file and its
+# 5a. Precipitation at the same snow stations (ADR-125): its own file and its
 # own failure, so a quiet gauge network never costs the snow payload.
 if ! "$python_bin" refresh_station_readings.py; then
   warn "Precipitation download failed" "Keeping the last complete precipitation file"

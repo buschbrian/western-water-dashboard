@@ -56,7 +56,7 @@ function preserveRuntimeDataAndRedirects(): Plugin {
       for (const file of [
         "reservoirs.json", "lakes.json", "snow_sites.json", "snowpack.json",
         "reference.json", "capacities.json", "upstream_index.json",
-        // ADR-122: the daily precipitation file and its committed history.
+        // ADR-125: the daily precipitation file and its committed history.
         "precipitation.json", "precipitation_history.json"
       ]) {
         await copyFile(resolve(root, file), resolve(outDir, file));

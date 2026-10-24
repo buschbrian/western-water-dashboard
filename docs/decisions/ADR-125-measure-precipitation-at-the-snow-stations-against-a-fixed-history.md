@@ -1,4 +1,4 @@
-# ADR-122: Measure precipitation at the snow stations against a fixed history
+# ADR-125: Measure precipitation at the snow stations against a fixed history
 
 ## Status
 
@@ -68,21 +68,34 @@ snow stations, compared only with the same stations' own history.**
    since 1 October against the median for the date. Percent of median is
    printed only once the median for the date reaches
    `MEANINGFUL_NORMAL_INCHES`, the snow page's own floor.
-4. **Snow water is drawn on the same axis.** The same stations' mean snow
-   water, from `snowpack.json`, is a second line, and the space between the
-   two lines is hatched and named "fell, not in the snow now". Same units,
-   same stations, one axis.
-5. **History is weekly, stored, and rebuilt in October.**
+4. **Snow water is stated beside the headline, not drawn on the chart.** The
+   same stations' mean snow water on the headline's day, from
+   `snowpack.json`, splits this year's precipitation into one bar: the part
+   held as snow water now, and the part that is not (rain, or snow that
+   melted). The headline's day is the newest on which both measurements are
+   complete for the set, stepping back at most two days. A first version drew
+   snow water as a second line on the precipitation axis; two measurements on
+   one axis read as two kinds of precipitation, and it was taken off.
+5. **The chart opens on the season so far.** It shows 1 October to four weeks
+   past the newest reading (at least eight weeks), with the vertical scale
+   fitted to that window; a reader can switch to the whole water year. On a
+   whole-year scale the first weeks of a season are a flat line at the
+   bottom of the chart, which is where an autumn reader is looking.
+6. **History is weekly, stored, and rebuilt in October.**
    `tools/build_precipitation_history.py` keeps each station's accumulation
    on 53 calendar days a year (1 October, then every seven days to 30
    September), in tenths of an inch as step changes, and the browser sums
-   any place from it by the same rule as the daily line. Between steps a
-   year is read on a straight line; the methods page says so.
-6. **The daily file is separate.** `refresh_station_readings.py` writes
+   any place from it by the same rule as the daily line. Between steps each
+   year is read on a straight line, and the bands for every day are taken
+   from those readings, so the chart, its readout, the table and the
+   headline give one number for one day. The methods page says so. A missing
+   step may borrow from the three days before it, never from before 1
+   October.
+7. **The daily file is separate.** `refresh_station_readings.py` writes
    `precipitation.json` from the same inventory and the same request shape
    as the snow refresh, importing its fetch and missing-station tolerance. A
    failure costs this file and never `snowpack.json`.
-7. **One quantile rule.** Band edges and the median are read from the sorted
+8. **One quantile rule.** Band edges and the median are read from the sorted
    years on a straight line between neighbours (the common "type 7" rule).
    A history rank counts the years strictly above this one; years with the
    same value, to a tenth of an inch, share a rank.
@@ -137,4 +150,6 @@ snow stations, compared only with the same stations' own history.**
 - A place where no station has a full record says so and draws nothing,
   rather than drawing a short history.
 - The snow page's readiness object carries a `precipitation` field for the
-  card's own load.
+  card's own load and the range it shows.
+- The record was first drafted as ADR-122 and renumbered before merge, when
+  `feat/drought-decade` was found to hold ADR-122 and ADR-123.

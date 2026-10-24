@@ -122,18 +122,36 @@ describe("precipitation against its own history", () => {
       { date: "2026-10-07", inches: null },
       { date: "2026-10-08", inches: 2 }
     ]);
-    expect(view.headline?.snowWaterInches).toBe(0.3);
+    expect(view.snow?.snowInches).toBe(0.3);
   });
 
-  it("dates the headline to the newest day with snow water too, within two days", () => {
-    const precip = { a: { "2026-10-07": 1, "2026-10-08": 2 } };
+  it("gives the drawn band the same median as the headline between steps", () => {
+    // Three years going 0->7, 3->3 and 4->4 from 1 to 8 October: read each
+    // year on 4 October first (3, 3, 4) and the median is 3; joining the
+    // weekly medians (3 and 4) would say 3.4.
+    const years = [[0, 7], [3, 3], [4, 4]].map(([a, b]) => [a!, b!, b!, b!, b!]);
+    const custom: PrecipitationHistory = {
+      ...history({ a: () => 1 }, 3), sites: new Map([["a", years]])
+    };
+    const view = precipitationView(["a"], daily({ a: { "2026-10-04": 2 } }), custom, []);
+    expect(view.headline?.medianInches).toBe(3);
+    expect(view.bands.find((band) => band.date === "2026-10-04")?.median).toBe(3);
+    expect(view.bands[0]?.date).toBe("2026-10-01");
+    expect(view.bands.at(-1)?.date).toBe("2027-09-30");
+  });
+
+  it("reads snow water on its own newest complete day, at most two days back", () => {
+    const precip = { a: { "2026-10-05": 0.5, "2026-10-07": 1, "2026-10-08": 2 } };
     const lagging = precipitationView(["a"], daily(precip), history({ a: () => 1 }),
       [snow("a", [["2026-10-07", 0.5]])]);
-    expect(lagging.headline?.date).toBe("2026-10-07");
-    expect(lagging.headline?.snowWaterInches).toBe(0.5);
+    expect(lagging.headline?.date).toBe("2026-10-08");
+    expect(lagging.snow).toEqual({ date: "2026-10-07", snowInches: 0.5, precipitationInches: 1 });
+    const stale = precipitationView(["a"], daily(precip), history({ a: () => 1 }),
+      [snow("a", [["2026-10-05", 0.2]])]);
+    expect(stale.snow).toBeNull();
     const silent = precipitationView(["a"], daily(precip), history({ a: () => 1 }), []);
     expect(silent.headline?.date).toBe("2026-10-08");
-    expect(silent.headline?.snowWaterInches).toBeNull();
+    expect(silent.snow).toBeNull();
   });
 
   it("returns no headline for a place with no station in the set", () => {
@@ -162,6 +180,15 @@ describe("precipitation file validation", () => {
       schema_version: 1, checked: "2026-10-24", first_water_year: 2001, last_water_year: 2002,
       step_month_days: ["10-01", "10-08"], sites: [{ station: "a", available: true, years: [[1, 1]] }]
     })).toThrow(/does not cover/);
+  });
+
+  it("refuses a calendar written out of date order", () => {
+    expect(() => validatePrecipitationPayload({
+      schema_version: 1, generated_at: "x", as_of: "2026-10-09", water_year: 2027,
+      series_dates: ["2026-10-08", "2026-10-01"],
+      sites: [{ station: "a", latest_date: "2026-10-08", late: false,
+        series_days: [0, 1], series_values: [5, 0] }]
+    })).toThrow(/date order/);
   });
 
   it("refuses positions out of order", () => {

@@ -1,4 +1,4 @@
-"""Network-free checks for the precipitation refresh and its history builder (ADR-122)."""
+"""Network-free checks for the precipitation refresh and its history builder (ADR-125)."""
 
 import sys
 from datetime import date, datetime, timedelta, timezone
@@ -87,6 +87,14 @@ def test_a_missing_step_borrows_only_from_the_three_days_before():
     for back in range(0, 4):
         readings.pop((date(2000, 10, 8) - timedelta(days=back)).isoformat(), None)
     values, _ = year_steps(readings, 2001, days)
+    assert values is None
+
+
+def test_a_missing_1_october_never_borrows_last_years_total():
+    readings = full_year(2001, lambda day: 40.0 if day.month == 9 else 1.0)
+    readings.update({"2000-09-28": 40.0, "2000-09-29": 40.0, "2000-09-30": 40.0})
+    del readings["2000-10-01"]
+    values, _ = year_steps(readings, 2001, step_month_days())
     assert values is None
 
 
