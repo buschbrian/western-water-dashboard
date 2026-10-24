@@ -11,6 +11,25 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ## [Unreleased]
 
+### Added
+
+- **What is above a reservoir, as stored water** (ADR-127). A reservoir's
+  page states the upstream reservoirs' combined storage, then groups them by
+  drainage area with a total and a fill bar for each, in place of a wall of
+  name chips.
+- **Where this year stands**, on the snow page's precipitation card: every
+  past water year as a dot on the latest date, this year as the large one.
+- An Esri defect register (`docs/operations/esri-register.md`) and draft
+  reports for the defects worth filing.
+
+### Fixed
+
+- The precipitation card's latest reading no longer lags when one station
+  misses a day.
+- The snow map and methods page now describe an area's figure as the sites'
+  snow water added up over their normals added up (ADR-081), not a plain
+  average.
+
 ## [1.1.1] - 2026-10-24
 
 ### Fixed
