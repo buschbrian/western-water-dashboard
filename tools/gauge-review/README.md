@@ -1,0 +1,103 @@
+# Private gauge review source
+
+This is the source of the private Claude Artifact review, not a dashboard
+route. Vite does not publish this directory. `gauge-review.csv` remains the
+review worksheet; this page does not edit that file or admit gauges.
+
+The original page and its cached basin/map data were prepared in Claude's
+scratch directory on 2026-10-24. Keep this source in git; keep runtime data and
+private review records outside the public deployment.
+
+## Prepare and publish
+
+1. Use the existing Artifact's `gauges.json` and `maps/*.jpg` assets. Do not
+   replace them with a new network fetch simply to update the page. The local
+   preview currently links to Claude's cached assets; copy that bundle to
+   durable local storage before deleting the scratch directory.
+2. Republish this `index.html` to the **existing** private Artifact. Keep its
+   identity, existing assets, runtime contract and private access. Do not create
+   a new Artifact or clear its database. Read back the existing `rulings`
+   collection before and after, without writing probe records.
+3. Preserve the existing `db` rules (read `view`, write `admin` at the root)
+   and `user` capability, and add `downloads: {}`. A nonempty capabilities
+   declaration is a full replacement: restate all three. The database document
+   schema stays `{ruling, notes, updatedAt}` keyed by USGS site number.
+4. CSV and GeoJSON exports use the documented Artifact `downloads.save` API.
+   The basin's file extension is `.json`: the runtime permits JSON but does
+   not list `.geojson` among its accepted extensions. The content is GeoJSON
+   in longitude/latitude and opens in GIS software. Confirm the actual export
+   in the published runtime.
+5. Browser-check a flagged gauge, an untraced gauge and a long-record gauge;
+   test notes followed immediately by Next and map-layer changes; test save
+   rejection/retry and Agree-next with the unruled filter. Check 320, 768,
+   1024 and 1440 px, keyboard access, and the downloads permission prompt.
+   Use the chrome-devtools MCP. The dashboard smoke suites serve `dist/` and
+   do **not** exercise this private page.
+
+For a local read-only preview, supply the two cached assets beside this file
+and serve the directory with `python3 -m http.server 8794 --bind 127.0.0.1`.
+Outside Claude the saved-review controls are read-only. No local mock record
+is sent to the Artifact.
+
+## Review safeguards
+
+- Editing waits for the initial saved-review snapshot and write permission.
+- Local drafts are retained through navigation and server snapshots. Failed
+  saves stay flagged, can be retried, and do not count as saved review.
+- Agree-next waits for success and uses the queue before its current row is
+  removed by the unruled filter.
+- CSV exports contain only touched gauges, keyed by site number, including
+  notes-only and explicitly cleared records. `save_state=unsaved` marks local
+  drafts. A fresh export must be reviewed and explicitly merged; it is not a
+  pipeline input. Preserve site numbers as text in spreadsheet software.
+- Use one editing session at a time. This retains the existing last-write-wins
+  document store; it does not add cross-device conflict resolution. A timeout
+  cannot cancel a write already sent to the store; inspect a fresh server
+  read before reconciling competing edits.
+- No ruling establishes record completeness, a flow normal, a regulation
+  finding or a corrected drainage boundary. Those remain separate gates.
+
+## Drainage area interpretation
+
+`tools/build_gauge_review.py` calls the gauge-indexed NLDI basin endpoint
+without `splitCatchment` or `simplified` overrides. The service documents this
+as **full upstream catchments**, simplified by default, including the whole
+local catchment. It does not subtract basins above intervening reservoirs.
+The reservoir index uses a reviewed dam point to choose a COMID, then requests
+its upstream basin; this is a different starting-location path.
+
+The committed reservoir index dated 2026-08-30 gives Jordanelle about 252 sq mi
+and Deer Creek about 547 sq mi. The latter set includes Jordanelle and three
+listed headwater reservoirs. Subtracting the nested Jordanelle basin suggests
+about 295 sq mi between the dams (roughly 54% of Deer Creek's full basin), but
+no difference polygon has been validated here. That percentage does not
+measure runoff, reservoir inflow or stored water. For multiple upstream
+reservoirs, subtract the **union** of verified upstream basins, not their sum.
+
+Published areas need matching outlets and definitions: full upstream versus
+between-reservoir, and total versus contributing area. Whole catchments,
+noncontributing land, simplification and wrong flowlines are separate possible
+causes of a discrepancy. A 25% flag cannot identify its cause. Daniels Creek's
+404 versus 50.1 sq mi remains unresolved; Deer Creek's expected inclusion of
+Jordanelle does not validate a tributary gauge's outline.
+
+Storage is a sum of the `current_storage_af` of distinct reservoir members,
+not an area fraction. `src/upstream-model.ts` uses the committed upstream set;
+the builder excludes the target reservoir. Summing several upstream-card
+totals can count the same reservoir more than once.
+
+Sources checked 2026-10-24:
+
+- [USGS basin endpoint and split-catchment defaults](https://api.water.usgs.gov/docs/nldi/basin/)
+- [USGS total and contributing drainage area](https://water.usgs.gov/themes/hydrofabric/drainage-area/)
+- [USGS Deer Creek reservoir: 547 sq mi](https://waterdata.usgs.gov/monitoring-location/USGS-10159000/)
+- [USGS Provo River below Jordanelle: 252 sq mi](https://waterdata.usgs.gov/monitoring-location/USGS-10155100/)
+- [USGS Daniels Creek: 50.1 sq mi](https://waterdata.usgs.gov/monitoring-location/USGS-10157500/)
+
+## Verification
+
+Run `node tools/gauge-review/checks.mjs`. It uses Node's test runner and a small
+DOM/store harness; it checks save failures, timeouts, navigation, drafts,
+snapshots, exports and area flags. It does not prove browser layout, real
+Artifact permissions, actual file delivery or the basin's hydrologic validity.
+Run the repository's `npm run verify:fast` for documentation/code integration.

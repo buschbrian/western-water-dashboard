@@ -1,0 +1,734 @@
+<title>Utah Gauge Review</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root {
+  --bg: #eef2f1;
+  --surface: #ffffff;
+  --sunk: #e4eae8;
+  --ink: #15201e;
+  --muted: #56645f;
+  --line: #cfd8d4;
+  --accent: #0d5e6d;
+  --accent-ink: #ffffff;
+  --natural: #1d6aa8;
+  --shaped: #a35f00;
+  --short: #6a58a8;
+  --check: #c13b0b;
+  --exclude: #6f7573;
+  --info: #3d6b62;
+  --basin: #0b63c9;
+  --font-ui: "Public Sans", "Segoe UI", system-ui, -apple-system, sans-serif;
+  --font-data: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --radius: 6px;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #101716; --surface: #18211f; --sunk: #0b1110; --ink: #e5ecea; --muted: #9aa9a4;
+    --line: #2c3936; --accent: #5cc2d3; --accent-ink: #062126;
+    --natural: #6fb2ec; --shaped: #e9a23b; --short: #ac9cf0; --check: #ff8a5c; --exclude: #9ca3a0; --info: #7fc2b4;
+    --basin: #1f7ae0;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #101716; --surface: #18211f; --sunk: #0b1110; --ink: #e5ecea; --muted: #9aa9a4;
+  --line: #2c3936; --accent: #5cc2d3; --accent-ink: #062126;
+  --natural: #6fb2ec; --shaped: #e9a23b; --short: #ac9cf0; --check: #ff8a5c; --exclude: #9ca3a0; --info: #7fc2b4;
+  --basin: #1f7ae0;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: 15px; line-height: 1.5; }
+.wrap { max-width: 1360px; margin: 0 auto; padding-block: 20px 40px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+h1, h2, h3, h4 { text-wrap: balance; margin: 0; }
+h1 { font-size: 1.6rem; font-weight: 700; letter-spacing: -0.01em; }
+.mono { font-family: var(--font-data); font-variant-numeric: tabular-nums; }
+.muted { color: var(--muted); }
+button, input, textarea, select { font: inherit; color: inherit; }
+button { cursor: pointer; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+header.top { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16px 24px; align-items: end; }
+.top p { margin: 4px 0 0; color: var(--muted); max-width: 78ch; }
+.progress { min-width: 260px; }
+.progress .count { font-size: 1.9rem; font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1; }
+.progress .count small { font-size: 0.95rem; font-weight: 500; color: var(--muted); }
+.bar { display: flex; height: 8px; border-radius: 4px; overflow: hidden; background: var(--sunk); margin-top: 8px; gap: 2px; }
+.bar span { display: block; height: 100%; background: var(--tc); }
+.save-state { font-size: 0.82rem; color: var(--muted); margin-top: 6px; min-height: 1.3em; }
+.save-state.err { color: var(--check); }
+
+.tiers { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 8px; margin-top: 18px; }
+.tier-card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 10px 12px;
+  text-align: left; display: grid; gap: 2px; border-top: 3px solid var(--tc); align-content: start; }
+.tier-card[aria-pressed="true"] { outline: 2px solid var(--tc); outline-offset: -1px; }
+.tier-card b { font-size: 0.92rem; }
+.tier-card .n { font-variant-numeric: tabular-nums; font-size: 1.2rem; font-weight: 700; }
+.tier-card .rule { font-size: 0.76rem; color: var(--muted); line-height: 1.35; }
+
+.desk { display: grid; grid-template-columns: minmax(280px, 360px) minmax(0, 1fr); gap: 16px; margin-top: 16px; align-items: start; }
+.queue { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); display: flex; flex-direction: column;
+  max-height: calc(100vh - 32px); position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); min-width: 0; }
+.queue-tools { padding: 10px; display: grid; gap: 8px; border-bottom: 1px solid var(--line); }
+.queue-tools input[type="search"] { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
+.toggles { display: flex; flex-wrap: wrap; gap: 6px; }
+.toggle { border: 1px solid var(--line); background: var(--bg); border-radius: 999px; padding: 3px 10px; font-size: 0.82rem; }
+.toggle[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.threshold { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; font-size: 0.82rem; color: var(--muted); }
+.threshold select { padding: 3px 6px; border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg); }
+.list { overflow-y: auto; list-style: none; margin: 0; padding: 4px; }
+.list li button { width: 100%; text-align: left; border: 0; background: none; padding: 8px 10px; border-radius: 4px;
+  display: grid; grid-template-columns: 10px minmax(0, 1fr) auto; gap: 2px 10px; align-items: center; }
+.list li button:hover { background: var(--sunk); }
+.list li button[aria-current="true"] { background: var(--sunk); box-shadow: inset 3px 0 0 var(--accent); }
+.dot { width: 10px; height: 10px; border-radius: 50%; background: var(--tc); }
+.list .nm { font-size: 0.86rem; font-weight: 500; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.list .sub { grid-column: 2; font-size: 0.74rem; color: var(--muted); }
+.list .sub .flag { color: var(--check); font-weight: 600; }
+.ruled { grid-row: 1 / span 2; grid-column: 3; font-size: 0.72rem; font-weight: 600; padding: 1px 7px; border-radius: 999px;
+  border: 1px solid var(--rc); color: var(--rc); white-space: nowrap; }
+.ruled.agree { background: var(--rc); color: var(--surface); }
+.list-empty { padding: 16px; color: var(--muted); font-size: 0.9rem; }
+
+.focus { display: grid; gap: 16px; min-width: 0; }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; min-width: 0; }
+
+.gauge-head { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 8px 16px; align-items: start; }
+.gauge-head h2 { font-size: 1.3rem; line-height: 1.25; }
+.gauge-head .ids { margin-top: 4px; font-size: 0.85rem; color: var(--muted); }
+.nav-btns { display: flex; gap: 6px; }
+.btn { border: 1px solid var(--line); background: var(--bg); border-radius: var(--radius); padding: 6px 12px; font-size: 0.88rem; font-weight: 500; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+a.ext { color: var(--accent); font-weight: 600; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.question { margin-top: 12px; padding: 10px 12px; border-radius: var(--radius); background: var(--sunk); font-size: 0.95rem; }
+.question b { display: block; font-size: 0.75rem; color: var(--muted); font-weight: 600; margin-bottom: 2px; }
+
+.mapbox { margin-top: 14px; }
+.map-tabs { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 8px; }
+.map-tabs .sep { flex: 1; }
+.map-frame { position: relative; border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; background: var(--sunk); }
+.map-scroll { overflow: auto; max-height: 660px; }
+.map-content { position: relative; }
+.map-frame img { display: block; width: 100%; height: auto; }
+.map-frame svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.map-frame.overview svg { position: static; display: block; height: auto; max-height: 460px; }
+.map-frame .nomap { padding: 40px 16px; text-align: center; color: var(--muted); }
+.basin-shape { fill: rgb(11 99 201 / 0.13); stroke: var(--basin); stroke-width: 2.5; vector-effect: non-scaling-stroke; stroke-linejoin: round; }
+.gauge-pt { fill: #e11d48; stroke: #ffffff; stroke-width: 2.5; vector-effect: non-scaling-stroke; }
+.res-pt { fill: #ffffff; stroke: #7a3d00; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.res-pt.up { fill: #d97706; }
+.snow-pt { fill: #ffffff; stroke: #4338ca; stroke-width: 2; vector-effect: non-scaling-stroke; }
+.snow-pt.up { fill: #6366f1; }
+.ov-outline { fill: var(--sunk); stroke: var(--line); stroke-width: 1.2; vector-effect: non-scaling-stroke; }
+.ov-dot { stroke: var(--surface); stroke-width: 1; vector-effect: non-scaling-stroke; cursor: pointer; fill: var(--tc); }
+.ov-dot.dim { opacity: 0.22; }
+.ov-dot.sel { stroke: var(--ink); stroke-width: 2.5; }
+.map-legend { display: flex; flex-wrap: wrap; gap: 4px 16px; font-size: 0.78rem; color: var(--muted); margin-top: 6px; align-items: center; }
+.map-legend svg { vertical-align: -3px; margin-right: 4px; }
+.map-note { font-size: 0.78rem; color: var(--muted); margin-top: 4px; }
+
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; margin-top: 14px;
+  background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.facts div { background: var(--surface); padding: 8px 12px; min-width: 0; }
+.facts dt { font-size: 0.74rem; color: var(--muted); }
+.facts dd { margin: 0; font-family: var(--font-data); font-variant-numeric: tabular-nums; font-size: 0.92rem; overflow-wrap: anywhere; }
+.facts dd.flag { color: var(--check); }
+
+h3.sec { font-size: 1rem; margin-top: 20px; }
+.issues { display: grid; gap: 8px; margin-top: 8px; }
+.issue { border: 1px solid var(--line); border-left: 4px solid var(--sev); border-radius: var(--radius); padding: 10px 12px; display: grid; gap: 4px; }
+.issue.sev-problem { --sev: var(--check); }
+.issue.sev-caution { --sev: var(--shaped); }
+.issue.sev-info { --sev: var(--info); }
+.issue h4 { font-size: 0.93rem; display: flex; gap: 8px; align-items: baseline; flex-wrap: wrap; }
+.issue h4 .sev { font-size: 0.7rem; font-weight: 700; color: var(--sev); }
+.issue p { margin: 0; font-size: 0.87rem; }
+.issue p b { font-weight: 600; }
+.issue ul { margin: 2px 0 0; padding-left: 18px; font-size: 0.85rem; }
+
+.choices { display: grid; gap: 6px; margin-top: 8px; }
+.choice { border: 1px solid var(--line); border-left: 4px solid var(--tc); background: var(--bg); border-radius: var(--radius);
+  padding: 9px 12px; text-align: left; display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px 12px; min-width: 0; }
+.choice b { font-size: 0.92rem; }
+.choice .what { grid-column: 1; font-size: 0.83rem; color: var(--muted); }
+.choice .warn { grid-column: 1; font-size: 0.8rem; color: var(--check); }
+.choice .tag { grid-column: 2; grid-row: 1; font-size: 0.7rem; font-weight: 700; color: var(--tc); white-space: nowrap; }
+.choice .key { grid-column: 2; grid-row: 2; font-family: var(--font-data); font-size: 0.7rem; color: var(--muted); text-align: right; }
+.choice[aria-pressed="true"] { background: var(--tc); border-color: var(--tc); color: var(--surface); }
+.choice[aria-pressed="true"] .what, .choice[aria-pressed="true"] .key, .choice[aria-pressed="true"] .tag, .choice[aria-pressed="true"] .warn { color: var(--surface); }
+.choice:disabled { cursor: not-allowed; opacity: 0.55; }
+.row-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; align-items: center; }
+label.notes-label { display: block; font-size: 0.82rem; font-weight: 600; margin-top: 14px; }
+textarea { width: 100%; min-height: 76px; margin-top: 4px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius);
+  background: var(--bg); resize: vertical; }
+.readonly-note { margin-top: 10px; font-size: 0.85rem; color: var(--check); }
+.keys { font-size: 0.78rem; color: var(--muted); margin-top: 10px; }
+kbd { font-family: var(--font-data); font-size: 0.75rem; border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 3px; padding: 0 4px; background: var(--bg); }
+details.more { margin-top: 8px; font-size: 0.85rem; }
+details.more summary { cursor: pointer; color: var(--accent); font-weight: 600; }
+.chips { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+.chip { font-size: 0.8rem; padding: 2px 8px; border-radius: 4px; background: var(--sunk); }
+
+.t-natural { --tc: var(--natural); } .t-shaped { --tc: var(--shaped); } .t-short { --tc: var(--short); }
+.t-check { --tc: var(--check); } .t-exclude { --tc: var(--exclude); } .t-area { --tc: var(--basin); }
+.r-natural { --rc: var(--natural); } .r-shaped { --rc: var(--shaped); } .r-short { --rc: var(--short); }
+.r-check { --rc: var(--check); } .r-exclude { --rc: var(--exclude); }
+
+@media (max-width: 1000px) {
+  header.top { grid-template-columns: 1fr; }
+  .tiers { grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); }
+  .desk { grid-template-columns: 1fr; }
+  .queue { position: static; max-height: 420px; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .list li button, .choice, .btn, .toggle { transition: background-color 120ms ease, border-color 120ms ease; }
+}
+</style>
+
+<main class="wrap">
+  <header class="top">
+    <div>
+      <h1>Utah Gauge Review</h1>
+      <p>Each U.S. Geological Survey stream gauge that reported in Utah in the last week. For each one, decide whether its flow can be compared with its own normal for the date, and whether the basin traced for it is right. The suggestion comes from fixed rules; the ruling is yours. <span id="screened"></span></p>
+    </div>
+    <div class="progress" aria-live="polite">
+      <div class="count"><span id="ruled-count">0</span> <small>of <span id="total-count">164</span> ruled</small></div>
+      <div class="bar" id="ruled-bar" aria-hidden="true"></div>
+      <div class="save-state" id="save-state" role="status">Connecting to saved rulings…</div>
+    </div>
+  </header>
+
+  <p class="muted">This is a review of the station evidence, not approval of a flow normal. A start date does not prove record completeness. Reservoirs inside a traced basin do not by themselves prove regulation. Rulings stay in this private review until they are exported and merged into the worksheet.</p>
+  <details class="panel more">
+    <summary>How full drainage, drainage between reservoirs and stored water differ</summary>
+    <p>The basin request used here includes the full upstream network. It does not stop at the next reservoir. It also includes the whole catchment containing the indexed flowline; a split at the exact gauge is a separate service option. A difference in area is a prompt to check the outlet and the area definition.</p>
+    <p><b>Deer Creek example, from the committed reservoir trace:</b> the full basin above Jordanelle is about 252 sq mi. The full basin above Deer Creek is about 547 sq mi and includes the Jordanelle basin. If those boundaries are nested, subtracting the upstream basin leaves about 295 sq mi between the two dams. That difference is illustrative; no separate between-dam polygon has been verified here.</p>
+    <p>Do not add 252 and 547 to measure their combined land area: the upstream land overlaps. The land between the dams is about 54% of the full Deer Creek basin, not 54% of its flow or storage. Imports, diversions and operations need separate evidence.</p>
+    <p>The dashboard sums the actual stored acre-feet of distinct reservoirs in the selected set. Deer Creek's own storage figure is separate from its upstream-storage card, which excludes Deer Creek itself and includes Jordanelle and three listed headwater reservoirs. Do not add upstream-card totals together: their memberships can overlap.</p>
+    <p><a class="ext" href="https://api.water.usgs.gov/docs/nldi/basin/" target="_blank" rel="noopener">USGS basin request and catchment split</a> · <a class="ext" href="https://water.usgs.gov/themes/hydrofabric/drainage-area/" target="_blank" rel="noopener">Total and contributing drainage area</a></p>
+  </details>
+  <div class="row-actions">
+    <button class="btn" type="button" id="export-review">Export rulings CSV</button>
+    <button class="btn" type="button" id="retry-save" hidden>Retry unsaved changes</button>
+    <span class="muted" id="unsaved-count" role="status"></span>
+  </div>
+  <div class="tiers" id="tier-cards" role="group" aria-label="Filter the list"></div>
+
+  <div class="desk">
+    <aside class="queue" aria-label="Gauges to review">
+      <div class="queue-tools">
+        <input type="search" id="search" placeholder="Name, site number, county or HUC" aria-label="Search gauges">
+        <div class="threshold">
+          <label for="threshold">Flag a traced basin that differs from the published area by more than</label>
+          <select id="threshold">
+            <option value="0.1">10%</option>
+            <option value="0.15">15%</option>
+            <option value="0.25" selected>25%</option>
+            <option value="0.5">50%</option>
+          </select>
+        </div>
+        <div class="toggles" role="group" aria-label="List options">
+          <button class="toggle" id="t-unruled" aria-pressed="false" type="button">Not yet ruled</button>
+          <button class="toggle" id="t-differs" aria-pressed="false" type="button">Ruling differs</button>
+          <button class="toggle" id="t-order" aria-pressed="true" type="button">Review order</button>
+        </div>
+      </div>
+      <ul class="list" id="list"></ul>
+    </aside>
+
+    <section class="focus" aria-label="Gauge evidence and ruling">
+      <article class="panel" id="gauge" aria-live="polite">
+        <p class="muted">Loading the gauge list…</p>
+      </article>
+    </section>
+  </div>
+</main>
+
+<script>
+const TIERS = [
+  { id: "natural", label: "Natural", key: "1", rule: "No published reservoir or named diversion upstream." },
+  { id: "shaped", label: "Shaped", key: "2", rule: "A published reservoir in the basin, or below a named diversion." },
+  { id: "short", label: "Short record", key: "3", rule: "Record starts after 1 January 1991." },
+  { id: "check", label: "Check", key: "4", rule: "Basin not traced, or traced area far from the published one." },
+  { id: "exclude", label: "Exclude", key: "5", rule: "The gauge measures a tunnel, drain or canal." },
+];
+const TIER = Object.fromEntries(TIERS.map(t => [t.id, t]));
+const ORDER = { check: 0, exclude: 1, natural: 2, short: 3, shaped: 4 };
+
+const state = {
+  gauges: [], outline: [], rulings: {}, selected: null, threshold: 0.25,
+  filter: null, unruled: false, differs: false, reviewOrder: true, query: "",
+  mapView: "close", layers: { basin: true, res: true, snow: true },
+  db: null, canWrite: false, ready: false, pending: {}, dirty: {}, failures: {}, mapZoom: 1,
+};
+const $ = id => document.getElementById(id);
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = n => n == null ? "—" : Number(n).toLocaleString(undefined, { maximumFractionDigits: n < 10 ? 1 : 0 });
+const rulingOf = site => state.rulings[site]?.ruling || "";
+const notesOf = site => state.rulings[site]?.notes ?? "";
+
+function areaDiff(g) {
+  if (!Number.isFinite(g.area) || !Number.isFinite(g.traced) || g.area <= 0 || g.traced < 0) return null;
+  return g.traced / g.area - 1;
+}
+function areaFlag(g) { const d = areaDiff(g); return d != null && Math.abs(d) > state.threshold; }
+const conduit = g => /tunnel, drain or canal/.test(g.reason);
+const belowDiversion = g => /below a diversion/.test(g.reason);
+const years = g => g.begin ? Math.floor((Date.parse(g.last || "2026-10-24") - Date.parse(g.begin)) / 3.15576e10) : null;
+
+/* What the checks found, written out for one gauge. */
+function findings(g) {
+  const out = [];
+  const d = areaDiff(g);
+  if (conduit(g)) out.push({ sev: "problem", title: "The gauge measures a man-made channel",
+    found: `The gauge name, <b>${esc(g.name)}</b>, names a tunnel, drain or canal as the water measured.`,
+    why: "Flow in a tunnel or canal follows how much water an operator sends through it, not the weather.",
+    check: ["Open the gauge page and confirm the measured water is the conduit, not a river beside it."] });
+  if (g.trace !== "traced") out.push({ sev: "problem", title: "No basin was traced",
+    found: `The worksheet has no completed basin trace for this gauge (${esc(g.check || g.trace || "not run")}). Tunnels, drains and small Wasatch Front creeks are often missing from it.`,
+    why: "Without a basin, nothing upstream can be listed, so reservoirs and diversions above the gauge are unknown.",
+    check: ["Use the topo map to see what drains to the red point.", "Look for reservoirs, canals or a city above it.", "Keep Check while the basin or upstream effects remain unknown. Use Shaped or Exclude only with evidence for that choice."] });
+  if (d != null) {
+    const pct = Math.round(Math.abs(d) * 100), bigger = d > 0;
+    if (Math.abs(d) > state.threshold) out.push({ sev: "problem",
+      title: `Traced basin is ${pct}% ${bigger ? "larger" : "smaller"} than the published drainage area`,
+      found: `Traced <b>${fmt(g.traced)} sq mi</b>; the gauge publishes <b>${fmt(g.area)} sq mi</b>.`,
+      why: bigger
+        ? "The two areas may use different outlets or definitions: full upstream basin, land between reservoirs, or total versus contributing area. Whole local catchments can also extend below a gauge. Check those possibilities and the indexed flowline before treating this as an error."
+        : "A smaller trace can reflect a missing tributary, a different outlet or a different area definition. Check whether both numbers describe the full upstream basin before treating the difference as an error.",
+      check: [`On the close-up map, the blue outline should follow the ridges around the stream that runs to the red point.`,
+        bigger ? "First confirm the outlet, flowline and full versus between-reservoir area. If the outline includes a river that does not drain to this gauge, keep Check and record the suspected mismatch." : "If a tributary that joins above the red point falls outside the outline, the trace is short: rule Check.",
+        "If the outline is right and the published area is the odd one, say so in the notes and rule on the flow itself."] });
+    else if (Math.abs(d) > 0.1) out.push({ sev: "info", title: `Traced basin is within ${Math.round(state.threshold * 100)}% of the published area (${bigger ? "+" : "−"}${pct}%)`,
+      found: `Traced ${fmt(g.traced)} sq mi against ${fmt(g.area)} sq mi published.`,
+      why: "Being below this review threshold does not verify the basin. The two area estimates can still describe different boundaries.", check: [] });
+  } else if (g.trace === "traced" && g.area == null) out.push({ sev: "info", title: "No published drainage area to compare",
+    found: `The gauge publishes no drainage area. The trace gives ${fmt(g.traced)} sq mi.`,
+    why: "The area check cannot run, so the outline is the only evidence of the basin.", check: ["Check the outline on the close-up map."] });
+  if (g.covers) out.push({ sev: "info", title: "Record starts by 1991; completeness is not checked",
+    found: `The listed record begins ${esc(g.begin)}. No check for gaps or daily values in 1991–2020 has been made here.`,
+    why: "A long date span alone does not establish a usable flow baseline. Natural is a candidate classification, not approval of a normal or rank.",
+    check: ["Keep record-coverage review and the flow comparison method as separate gates before publishing a comparison."] });
+  if (g.reservoirs.length) out.push({ sev: "info", title: "This outline includes land above upstream reservoirs",
+    found: "This is a full upstream basin, not just the land between this gauge and the next reservoir.",
+    why: "Nested basins overlap. Their land areas must not be added, and an area fraction is not a fraction of flow or stored water.",
+    check: ["Check the published area's outlet and whether it is full, between reservoirs, total or contributing.", "For a between-reservoir area, subtract the union of verified upstream basins from the downstream basin; do not subtract overlapping basins more than once.", "Keep storage in acre-feet separate from drainage area in square miles. Reservoirs in this outline are potential upstream influences, not measured inflow."] });
+  if (g.reservoirs.length) {
+    const res = g.nearRes.filter(r => r.up).sort((a, b) => (b.af || 0) - (a.af || 0));
+    const total = res.reduce((s, r) => s + (r.af || 0), 0);
+    out.push({ sev: "caution", title: `${g.reservoirs.length} published reservoir${g.reservoirs.length > 1 ? "s" : ""} inside the traced basin`,
+      found: `${res.slice(0, 6).map(r => `<b>${esc(r.name)}</b>${r.af ? ` (${fmt(r.af)} acre-feet)` : ""}`).join(", ")}${res.length > 6 ? ` and ${res.length - 6} more` : ""}.${total ? ` Together they can hold about ${fmt(total)} acre-feet.` : ""}`,
+      why: "A reservoir inside this outline is a reason to check regulation. Its location and capacity do not establish how much it changes flow at this gauge.",
+      check: ["Orange squares on the map are these reservoirs.", "If one is tiny, far up a side drainage, or outside the true basin, the flow may still be close to natural: rule Natural and say why.", "Use Shaped when the source remarks or other evidence support an upstream effect; keep Check if the outline or effect is unresolved."] });
+  }
+  if (belowDiversion(g)) out.push({ sev: "caution", title: "The name places the gauge below a diversion",
+    found: `<b>${esc(g.name)}</b>`,
+    why: "Water is taken out above the gauge, so its flow is less than what the basin produced, by an amount that changes with demand.",
+    check: ["The gauge page remarks usually say how much is diverted and when.", "Rule Shaped unless the diversion is small or seasonal and you can say so."] });
+  if (!g.covers) {
+    const y = years(g);
+    out.push({ sev: "caution", title: `Record starts ${esc(g.begin || "on an unknown date")}${y != null ? `, about ${y} years` : ""}`,
+      found: "The record starts after the beginning of 1991–2020, or its start date is unknown. This screen does not check gaps or compute a flow normal.",
+      why: "The start-date screen cannot establish a complete baseline. The pilot still needs a separate record-coverage check and a decision on the flow comparison method.",
+      check: ["Rule Short record to show its flow without a comparison, unless another problem above rules it out."] });
+  }
+  if (!out.some(f => f.sev !== "info")) out.push({ sev: "info", title: "No problem found by the rules",
+    found: `No published reservoir or named diversion in the basin. Record from ${esc(g.begin)}. ${g.snow.length ? `${g.snow.length} snow site${g.snow.length > 1 ? "s" : ""} upstream.` : "No snow site upstream."}`,
+    why: "The rules only see the dashboard's published reservoirs and diversions named in the gauge name. Unlisted reservoirs, canals that take water out, imports from another basin and city water use are not checked.",
+    check: ["Scan the close-up map inside the blue outline for lakes, canals and towns.", "Read the remarks on the gauge page for regulation or diversion.", "Natural is a candidate ruling only after checking upstream effects. Record completeness and the flow comparison method still need review."] });
+  return out;
+}
+
+function question(g) {
+  if (conduit(g)) return "Is this gauge a river at all, or a man-made channel to leave out?";
+  if (g.trace !== "traced") return "Can you verify the basin and upstream effects? Keep Check while they are unknown.";
+  if (areaFlag(g)) return "Is the blue outline the real basin of this gauge? If not, the rest of its evidence is unreliable.";
+  if (g.reservoirs.length || belowDiversion(g)) return "Is the flow here shaped enough by storage or diversion that it should not be ranked against normal?";
+  if (!g.covers) return "The record is too short for a 1991–2020 normal. Should the flow show without a comparison?";
+  return "Is this flow natural enough to compare with its own normal for the date?";
+}
+
+function options(g) {
+  const res = g.reservoirs.length;
+  return [
+    { id: "natural", what: "Candidate for a flow comparison, after record completeness and the flow method are approved. This ruling does not create a normal or publish a rank.",
+      warn: !g.covers ? "The record does not start by 1991, or its start is unknown. A complete 1991–2020 baseline has not been established."
+        : res ? `${res} reservoir${res > 1 ? "s" : ""} upstream would be ranked as if the flow were natural.`
+        : belowDiversion(g) ? "A diversion above the gauge would be ranked as if natural." : "" },
+    { id: "shaped", what: "Its flow is shown and labelled as shaped by storage or diversion upstream. No rank against normal.", warn: "" },
+    { id: "short", what: "Its flow is shown with no comparison with normal, because the record is too short.",
+      warn: g.covers ? "The record starts by 1991. Gaps in 1991–2020 have not been checked." : "" },
+    { id: "check", what: "Nothing is published for this gauge until its basin is checked again.",
+      warn: "Use this while the basin or other evidence is unresolved." },
+    { id: "exclude", what: "The gauge is left out of the pilot.", warn: "" },
+  ];
+}
+
+function visible() {
+  const q = state.query.trim().toLowerCase();
+  const rows = state.gauges.filter(g => {
+    if (state.filter === "area" && !areaFlag(g)) return false;
+    if (state.filter && state.filter !== "area" && g.tier !== state.filter) return false;
+    const r = rulingOf(g.site);
+    if (state.unruled && r && !state.dirty[g.site]) return false;
+    if (state.differs && (!r || r === g.tier)) return false;
+    if (q && !(`${g.name} ${g.site} ${g.county} ${g.huc8}`.toLowerCase().includes(q))) return false;
+    return true;
+  });
+  return rows.sort(state.reviewOrder
+    ? (a, b) => (areaFlag(b) - areaFlag(a)) || (ORDER[a.tier] - ORDER[b.tier]) || a.huc8.localeCompare(b.huc8) || a.name.localeCompare(b.name)
+    : (a, b) => a.huc8.localeCompare(b.huc8) || a.site.localeCompare(b.site));
+}
+
+function renderHeader() {
+  const total = state.gauges.length;
+  $("ruled-count").textContent = state.gauges.filter(g => rulingOf(g.site) && !state.dirty[g.site]).length;
+  const unsaved = Object.keys(state.dirty).length;
+  $("unsaved-count").textContent = unsaved ? `${unsaved} gauge${unsaved === 1 ? " has" : "s have"} unsaved changes. Keep this page open or export a backup.` : "";
+  $("retry-save").hidden = !Object.keys(state.failures).length;
+  $("total-count").textContent = total;
+  $("ruled-bar").innerHTML = TIERS.map(t => {
+    const n = state.gauges.filter(g => rulingOf(g.site) === t.id && !state.dirty[g.site]).length;
+    return n ? `<span class="t-${t.id}" style="width:${(n / total) * 100}%"></span>` : "";
+  }).join("");
+  const flagged = state.gauges.filter(areaFlag);
+  $("tier-cards").innerHTML = TIERS.map(t => {
+    const n = state.gauges.filter(g => g.tier === t.id).length;
+    const done = state.gauges.filter(g => g.tier === t.id && rulingOf(g.site) && !state.dirty[g.site]).length;
+    return `<button type="button" class="tier-card t-${t.id}" data-filter="${t.id}" aria-pressed="${state.filter === t.id}">
+      <b>${t.label}</b><span class="n">${n}</span><span class="rule">${done} ruled · ${esc(t.rule)}</span></button>`;
+  }).join("") + `<button type="button" class="tier-card t-area" data-filter="area" aria-pressed="${state.filter === "area"}">
+      <b>Area differs</b><span class="n">${flagged.length}</span><span class="rule">${flagged.filter(g => rulingOf(g.site) && !state.dirty[g.site]).length} ruled · Traced basin more than ${Math.round(state.threshold * 100)}% off the published area. Any tier.</span></button>`;
+}
+
+function renderList() {
+  const rows = visible();
+  if (!rows.length) { $("list").innerHTML = `<li class="list-empty">No gauge matches these filters.</li>`; return; }
+  $("list").innerHTML = rows.map(g => {
+    const r = rulingOf(g.site), d = areaDiff(g);
+    const badge = r ? `<span class="ruled r-${r}${r === g.tier ? " agree" : ""}">${esc(TIER[r]?.label || r)}${state.dirty[g.site] ? " · unsaved" : ""}</span>` : "";
+    const flag = areaFlag(g) ? ` · <span class="flag">area ${d > 0 ? "+" : "−"}${Math.round(Math.abs(d) * 100)}%</span>` : "";
+    return `<li><button type="button" class="t-${g.tier}" data-site="${g.site}" aria-current="${state.selected === g.site}">
+      <span class="dot"></span><span class="nm">${esc(g.name)}</span>${badge}
+      <span class="sub"><span class="mono">${g.site}</span> · ${esc(g.county)}${flag}</span></button></li>`;
+  }).join("");
+}
+
+/* Close-up map: the export's own Web Mercator extent, so the overlay lines up with the image. */
+function mercator(lon, lat) {
+  return [lon * Math.PI / 180 * 6378137, Math.log(Math.tan(Math.PI / 4 + lat * Math.PI / 360)) * 6378137];
+}
+function closeMap(g) {
+  if (!g.map) return `<div class="map-frame"><p class="nomap">No topo map was fetched for this gauge.</p></div>`;
+  const m = g.map, W = m.width, H = m.height;
+  const px = (lon, lat) => { const [x, y] = mercator(lon, lat); return [((x - m.xmin) / (m.xmax - m.xmin)) * W, ((m.ymax - y) / (m.ymax - m.ymin)) * H]; };
+  const pathOf = ring => ring.map((p, i) => (i ? "L" : "M") + px(p[0], p[1]).map(v => v.toFixed(1)).join(",")).join("") + "Z";
+  const basin = state.layers.basin && g.shape ? `<path class="basin-shape" fill-rule="evenodd" d="${g.shape.map(pathOf).join("")}"><title>Traced basin, ${fmt(g.traced)} sq mi</title></path>` : "";
+  const res = state.layers.res ? g.nearRes.map(r => { const [x, y] = px(r.lon, r.lat);
+    return `<rect class="res-pt${r.up ? " up" : ""}" x="${(x - 6).toFixed(1)}" y="${(y - 6).toFixed(1)}" width="12" height="12"><title>${esc(r.name)}${r.af ? `, ${fmt(r.af)} acre-feet` : ""}${r.up ? " (inside the traced basin)" : ""}</title></rect>`; }).join("") : "";
+  const snow = state.layers.snow ? g.nearSnow.map(s => { const [x, y] = px(s.lon, s.lat);
+    return `<path class="snow-pt${s.up ? " up" : ""}" d="M${x.toFixed(1)},${(y - 8).toFixed(1)}L${(x + 7).toFixed(1)},${(y + 5).toFixed(1)}L${(x - 7).toFixed(1)},${(y + 5).toFixed(1)}Z"><title>${esc(s.name)} snow site${s.up ? " (inside the traced basin)" : ""}</title></path>`; }).join("") : "";
+  const [gx, gy] = px(g.lon, g.lat);
+  return `<div class="map-frame map-scroll" tabindex="0" aria-label="Gauge map. Zoom, then scroll to inspect the basin."><div class="map-content" style="width:${state.mapZoom * 100}%"><img src="maps/${g.site}.jpg" width="${W}" height="${H}" alt="USGS topographic map around ${esc(g.name)}">
+    <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${basin}${res}${snow}
+      <circle class="gauge-pt" cx="${gx.toFixed(1)}" cy="${gy.toFixed(1)}" r="8"><title>${esc(g.name)}</title></circle></svg></div></div>`;
+}
+const LEGEND = `<span><svg width="16" height="12"><rect x="1" y="1" width="14" height="10" fill="rgb(11 99 201 / .15)" stroke="#0b63c9" stroke-width="2"/></svg>Traced basin</span>
+  <span><svg width="14" height="14"><circle cx="7" cy="7" r="5" fill="#e11d48" stroke="#fff" stroke-width="2"/></svg>Gauge</span>
+  <span><svg width="14" height="14"><rect x="2" y="2" width="10" height="10" fill="#d97706" stroke="#7a3d00" stroke-width="2"/></svg>Published reservoir in the basin</span>
+  <span><svg width="14" height="14"><rect x="2" y="2" width="10" height="10" fill="#fff" stroke="#7a3d00" stroke-width="2"/></svg>Outside it</span>
+  <span><svg width="14" height="14"><path d="M7,1L13,12L1,12Z" fill="#6366f1" stroke="#4338ca" stroke-width="1.5"/></svg>Snow site in the basin</span>
+  <span><svg width="14" height="14"><path d="M7,1L13,12L1,12Z" fill="#fff" stroke="#4338ca" stroke-width="1.5"/></svg>Outside it</span>`;
+
+function overviewMap() {
+  const pts = state.outline.concat(state.gauges.map(g => [g.lon, g.lat]));
+  const lons = pts.map(p => p[0]), lats = pts.map(p => p[1]);
+  const minX = Math.min(...lons) - 0.15, maxX = Math.max(...lons) + 0.15, minY = Math.min(...lats) - 0.15, maxY = Math.max(...lats) + 0.15;
+  const k = Math.cos(((minY + maxY) / 2) * Math.PI / 180), W = 1000, H = Math.round(W * (maxY - minY) / ((maxX - minX) * k));
+  const p = ([x, y]) => [((x - minX) / (maxX - minX)) * W, ((maxY - y) / (maxY - minY)) * H];
+  const d = state.outline.map((q, i) => (i ? "L" : "M") + p(q).map(v => v.toFixed(1)).join(",")).join("") + "Z";
+  const shown = new Set(visible().map(g => g.site));
+  const dots = [...state.gauges].sort((a, b) => (a.site === state.selected) - (b.site === state.selected)).map(g => {
+    const [x, y] = p([g.lon, g.lat]);
+    const cls = [shown.has(g.site) ? "" : "dim", g.site === state.selected ? "sel" : ""].join(" ");
+    return `<circle class="ov-dot t-${g.tier} ${cls}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${g.site === state.selected ? 10 : 6}" data-site="${g.site}"><title>${esc(g.name)}</title></circle>`;
+  }).join("");
+  return `<div class="map-frame overview"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Utah with each gauge coloured by its suggested tier"><path class="ov-outline" d="${d}"></path>${dots}</svg></div>`;
+}
+
+function renderGauge() {
+  const box = $("gauge");
+  const g = state.gauges.find(x => x.site === state.selected);
+  if (!g) { box.innerHTML = `<p class="muted">Choose a gauge in the list.</p>`; return; }
+  const r = rulingOf(g.site), t = TIER[g.tier], ro = !state.ready || !state.canWrite, d = areaDiff(g);
+  const list = findings(g);
+  const close = state.mapView === "close";
+  box.innerHTML = `
+    <div class="gauge-head">
+      <div>
+        <h2>${esc(g.name)}</h2>
+        <div class="ids"><span class="mono">USGS ${g.site}</span> · ${esc(g.county)} · HUC <span class="mono">${g.huc8}</span> ·
+          <a class="ext" href="${esc(g.page)}" target="_blank" rel="noopener">Open the gauge page</a></div>
+      </div>
+      <div class="nav-btns">
+        <button class="btn" type="button" data-nav="-1">Previous</button>
+        <button class="btn" type="button" data-nav="1">Next</button>
+      </div>
+    </div>
+    <div class="question"><b>What you are deciding</b>${esc(question(g))}</div>
+
+    <div class="mapbox">
+      <div class="map-tabs" role="group" aria-label="Map">
+        <button class="toggle" type="button" data-view="close" aria-pressed="${close}">This gauge</button>
+        <button class="toggle" type="button" data-view="overview" aria-pressed="${!close}">All of Utah</button>
+        <span class="sep"></span>
+        ${close ? `<button class="toggle" type="button" data-layer="basin" aria-pressed="${state.layers.basin}">Basin</button>
+        <button class="toggle" type="button" data-layer="res" aria-pressed="${state.layers.res}">Reservoirs</button>
+        <button class="toggle" type="button" data-layer="snow" aria-pressed="${state.layers.snow}">Snow sites</button>
+        <button class="btn" type="button" data-zoom="out" aria-label="Zoom out" ${state.mapZoom === 1 ? "disabled" : ""}>−</button>
+        <button class="btn" type="button" data-zoom="in" aria-label="Zoom in" ${state.mapZoom === 4 ? "disabled" : ""}>+</button>
+        <button class="btn" type="button" data-zoom="fit">Fit basin</button>
+        <button class="btn" type="button" data-export-basin ${!g.shape ? "disabled" : ""}>Export basin GeoJSON</button>` : ""}
+      </div>
+      ${close ? closeMap(g) : overviewMap()}
+      ${close ? `<div class="map-legend">${LEGEND}</div><p class="map-note">Base map: USGS National Map topographic. The traced basin is the NLDI basin indexed to this gauge, simplified for drawing. Point to a symbol for its name. Zoom and scroll to inspect the outline, or export it for another map. The export uses the same simplified drawing and is not a corrected basin.</p>`
+        : `<p class="map-note">Dots are coloured by suggested tier. Faded dots are outside the current filter. Select a dot to open that gauge.</p>`}
+    </div>
+
+    <dl class="facts">
+      <div><dt>Published drainage area</dt><dd>${g.area == null ? "Not published" : fmt(g.area) + " sq mi"}</dd></div>
+      <div><dt>Traced basin</dt><dd class="${areaFlag(g) ? "flag" : ""}">${g.trace === "traced" ? `${fmt(g.traced)} sq mi${d != null ? ` (${d > 0 ? "+" : "−"}${Math.round(Math.abs(d) * 100)}%)` : ""}` : esc(g.trace || "Not run")}</dd></div>
+      <div><dt>Record</dt><dd>${esc(g.begin || "Unknown")} to ${esc(g.last || "?")}</dd></div>
+      <div><dt>Starts by 1991</dt><dd>${g.covers ? "Yes; gaps unchecked" : "No or unknown"}</dd></div>
+      <div><dt>Inside traced basin</dt><dd>${g.reservoirs.length} reservoirs · ${g.snow.length} snow sites</dd></div>
+    </dl>
+
+    <h3 class="sec">What the checks found</h3>
+    <div class="issues">${list.map(f => `<div class="issue sev-${f.sev}">
+      <h4><span class="sev">${f.sev === "problem" ? "Problem" : f.sev === "caution" ? "Caution" : "Note"}</span>${esc(f.title)}</h4>
+      <p>${f.found}</p><p><b>Why it matters.</b> ${esc(f.why)}</p>
+      ${f.check.length ? `<p><b>How to check.</b></p><ul>${f.check.map(c => `<li>${esc(c)}</li>`).join("")}</ul>` : ""}</div>`).join("")}</div>
+    ${g.snow.length ? `<details class="more"><summary>Snow sites in the traced basin (${g.snow.length})</summary><div class="chips">${g.nearSnow.filter(s => s.up).map(s => `<span class="chip">${esc(s.name)}</span>`).join("")}</div></details>` : ""}
+
+    <h3 class="sec">Your options</h3>
+    <p class="muted" style="margin:2px 0 0;font-size:.85rem">The rules suggest <b>${t.label}</b>. Choosing a ruling starts a save to this review. Export the rulings, then merge them by USGS site number into the worksheet. Nothing is published here.</p>
+    <div class="choices" role="group" aria-label="Ruling">
+      ${options(g).map(o => `<button type="button" class="choice t-${o.id}" data-rule="${o.id}" aria-pressed="${r === o.id}" ${ro ? "disabled" : ""}>
+        <b>${TIER[o.id].label}</b><span class="tag">${o.id === g.tier ? "Suggested" : ""}</span>
+        <span class="what">${esc(o.what)}</span><span class="key">Key ${TIER[o.id].key}</span>
+        ${o.warn ? `<span class="warn">${esc(o.warn)}</span>` : ""}</button>`).join("")}
+    </div>
+    <div class="row-actions">
+      <button class="btn primary" type="button" data-agree ${ro ? "disabled" : ""}>Agree with ${t.label}, next</button>
+      <button class="btn" type="button" data-clear ${ro || !r ? "disabled" : ""}>Clear ruling</button>
+    </div>
+    <label class="notes-label" for="notes">Notes${r && r !== g.tier ? " (say why the ruling differs from the suggestion)" : ""}</label>
+    <textarea id="notes" ${ro ? "disabled" : ""} placeholder="For example: the outline takes in the Provo River; the creek's own basin is the small one east of Charleston">${esc(notesOf(g.site))}</textarea>
+    ${ro ? `<p class="readonly-note">${state.ready ? "You can read this review but not change it." : "Waiting for the saved review before enabling changes."}</p>` : ""}
+    <p class="keys"><kbd>J</kbd> next · <kbd>K</kbd> previous · <kbd>1</kbd>–<kbd>5</kbd> rule · <kbd>A</kbd> agree and go to the next · <kbd>M</kbd> switch map</p>`;
+}
+
+function renderAll() { renderHeader(); renderList(); renderGauge(); }
+function select(site, scroll = true) {
+  state.selected = site; state.mapZoom = 1; renderList(); renderGauge();
+  if (scroll) $("list").querySelector(`[data-site="${site}"]`)?.scrollIntoView({ block: "nearest" });
+}
+function step(dir) {
+  const rows = visible(); if (!rows.length) return;
+  const i = rows.findIndex(g => g.site === state.selected);
+  select(rows[(i < 0 ? 0 : i + dir + rows.length) % rows.length].site);
+}
+function setSave(text, err = false) { const el = $("save-state"); el.textContent = text; el.classList.toggle("err", err); }
+
+const notesTimers = new Map();
+function deadline(promise, ms = 15000) {
+  let timer;
+  return Promise.race([promise, new Promise((_, reject) => {
+    timer = setTimeout(() => reject(new Error("Save timed out; export a backup before closing")), ms);
+  })]).finally(() => clearTimeout(timer));
+}
+function draft(site, patch) {
+  const body = { ruling: rulingOf(site), notes: notesOf(site), ...patch, updatedAt: new Date().toISOString() };
+  state.rulings[site] = body;
+  state.dirty[site] = body;
+  return body;
+}
+function saveStatus() {
+  const n = Object.keys(state.dirty).length;
+  const failed = Object.keys(state.failures).length;
+  setSave(failed ? `${failed} save${failed === 1 ? " failed" : "s failed"}. Retry or export a backup before closing.`
+    : n ? `Saving changes for ${n} gauge${n === 1 ? "" : "s"}…` : "All changes saved to this review.", failed > 0);
+  renderHeader(); renderList();
+}
+function write(site, patch) {
+  if (!state.db || !state.ready || !state.canWrite) { setSave("Rulings cannot be saved in this view.", true); return Promise.resolve(false); }
+  clearTimeout(notesTimers.get(site)); notesTimers.delete(site);
+  const body = draft(site, patch);
+  delete state.failures[site];
+  saveStatus();
+  const run = (state.pending[site] || Promise.resolve()).then(async () => {
+    try {
+      await deadline(state.db.collection("rulings").doc(site).set(body));
+      if (state.dirty[site] === body) { delete state.dirty[site]; delete state.failures[site]; }
+      saveStatus();
+      return true;
+    } catch (e) {
+      state.failures[site] = e?.message || "The store did not answer";
+      saveStatus();
+      return false;
+    }
+  });
+  state.pending[site] = run;
+  return run;
+}
+function rule(site, ruling) {
+  const saved = write(site, { ruling });
+  renderHeader(); renderList();
+  const keepScroll = window.scrollY; renderGauge(); window.scrollTo(0, keepScroll);
+  return saved;
+}
+async function agreeNext() {
+  const site = state.selected;
+  const rows = visible();
+  const i = rows.findIndex(g => g.site === site);
+  const next = rows[(i + 1) % rows.length]?.site;
+  const g = state.gauges.find(x => x.site === site);
+  if (g && await rule(site, g.tier) && state.selected === site && next) select(next);
+}
+async function download(name, text, type) {
+  try {
+    if (window.claude?.use) {
+      const downloads = await deadline(window.claude.use("downloads"));
+      if (!downloads) throw new Error("Downloads are not available in this view");
+      await downloads.save({ filename: name, data: text });
+    } else {
+      const url = URL.createObjectURL(new Blob([text], { type }));
+      const a = document.createElement("a"); a.href = url; a.download = name; a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
+  } catch (error) {
+    if (error.code !== "declined") setSave(`Export failed: ${error.message}. Keep the page open.`, true);
+  }
+}
+function reviewCSV() {
+  const cells = value => `"${String(value ?? "").replaceAll('"', '""')}"`;
+  return [ ["usgs_site_no", "reviewer_ruling", "notes", "updated_at", "save_state"],
+    ...state.gauges.filter(g => state.rulings[g.site]).map(g => [g.site, rulingOf(g.site), notesOf(g.site), state.rulings[g.site]?.updatedAt || "", state.dirty[g.site] ? "unsaved" : "saved"]) ]
+    .map(row => row.map(cells).join(",")).join("\r\n") + "\r\n";
+}
+function basinGeoJSON(g) {
+  const feature = (geometry, properties) => ({ type: "Feature", geometry, properties });
+  return { type: "FeatureCollection", features: [
+    feature({ type: "MultiPolygon", coordinates: g.shape.map(ring => [ring]) },
+      { usgs_site_no: g.site, name: g.name, status: "unverified simplified NLDI drawing", published_sq_mi: g.area, traced_sq_mi: g.traced, area_difference_pct: areaDiff(g) == null ? null : areaDiff(g) * 100 }),
+    feature({ type: "Point", coordinates: [g.lon, g.lat] }, { usgs_site_no: g.site, name: g.name, kind: "gauge" }),
+    ...g.nearRes.map(r => feature({ type: "Point", coordinates: [r.lon, r.lat] }, { name: r.name, kind: "reservoir", in_traced_basin: r.up })),
+    ...g.nearSnow.map(s => feature({ type: "Point", coordinates: [s.lon, s.lat] }, { name: s.name, kind: "snow_site", in_traced_basin: s.up })),
+  ] };
+}
+document.addEventListener("input", e => {
+  if (e.target.id !== "notes" || !state.ready || !state.canWrite) return;
+  const site = state.selected;
+  draft(site, { notes: e.target.value });
+  clearTimeout(notesTimers.get(site));
+  notesTimers.set(site, setTimeout(() => write(site, {}), 700));
+  saveStatus();
+});
+window.addEventListener("beforeunload", e => {
+  if (!Object.keys(state.dirty).length) return;
+  e.preventDefault(); e.returnValue = "";
+});
+$("export-review").addEventListener("click", () => download("gauge-rulings.csv", reviewCSV(), "text/csv;charset=utf-8"));
+$("retry-save").addEventListener("click", () => {
+  for (const site of Object.keys(state.failures)) write(site, {});
+});
+document.addEventListener("click", e => {
+  const el = e.target.closest("[data-site],[data-filter],[data-rule],[data-nav],[data-agree],[data-clear],[data-view],[data-layer],[data-zoom],[data-export-basin],#t-unruled,#t-differs,#t-order");
+  if (!el) return;
+  if (el.disabled) return;
+  if (el.dataset.zoom) { state.mapZoom = el.dataset.zoom === "fit" ? 1 : Math.max(1, Math.min(4, state.mapZoom * (el.dataset.zoom === "in" ? 2 : 0.5))); return renderGauge(); }
+  if (el.hasAttribute("data-export-basin")) {
+    const g = state.gauges.find(x => x.site === state.selected);
+    if (g?.shape) download(`basin-${g.site}.json`, JSON.stringify(basinGeoJSON(g)), "application/geo+json");
+    return;
+  }
+  if (el.dataset.site) { state.mapView = el.closest("svg") ? "close" : state.mapView; return select(el.dataset.site, true); }
+  if (el.dataset.filter) { state.filter = state.filter === el.dataset.filter ? null : el.dataset.filter; return renderAll(); }
+  if (el.dataset.rule) return rule(state.selected, el.dataset.rule);
+  if (el.dataset.nav) return step(Number(el.dataset.nav));
+  if (el.dataset.view) { state.mapView = el.dataset.view; return renderGauge(); }
+  if (el.dataset.layer) { state.layers[el.dataset.layer] = !state.layers[el.dataset.layer]; return renderGauge(); }
+  if (el.hasAttribute("data-agree")) return agreeNext();
+  if (el.hasAttribute("data-clear")) return rule(state.selected, "");
+  if (el.id === "t-unruled") state.unruled = !state.unruled;
+  if (el.id === "t-differs") state.differs = !state.differs;
+  if (el.id === "t-order") state.reviewOrder = !state.reviewOrder;
+  el.setAttribute("aria-pressed", String(el.id === "t-unruled" ? state.unruled : el.id === "t-differs" ? state.differs : state.reviewOrder));
+  renderList();
+});
+$("search").addEventListener("input", e => { state.query = e.target.value; renderList(); });
+$("threshold").addEventListener("change", e => { state.threshold = Number(e.target.value); renderAll(); });
+document.addEventListener("keydown", e => {
+  if (e.target.matches("input, textarea, select") || e.metaKey || e.ctrlKey || e.altKey) return;
+  const k = e.key.toLowerCase();
+  if (k === "j") step(1);
+  else if (k === "k") step(-1);
+  else if (k === "m") { state.mapView = state.mapView === "close" ? "overview" : "close"; renderGauge(); }
+  else if (k === "a" && state.selected && state.ready && state.canWrite) agreeNext();
+  else if (/^[1-5]$/.test(k) && state.selected && state.ready && state.canWrite) rule(state.selected, TIERS[Number(k) - 1].id);
+  else return;
+  e.preventDefault();
+});
+
+async function connect() {
+  try {
+    const db = await deadline(Promise.resolve(window.claude?.use?.("db")));
+    if (!db) throw new Error("Open the private page on claude.ai while signed in");
+    const user = await deadline(window.claude.use("user"));
+    const allowed = user ? await deadline(user.can("data.write")) : false;
+    state.db = db;
+    let firstSnapshot = false;
+    const timer = setTimeout(() => {
+      if (!firstSnapshot) setSave("Saved review did not load. Reload before making changes.", true);
+    }, 15000);
+    db.collection("rulings").onSnapshot(snap => {
+      if (snap.metadata.hasPendingWrites) return;
+      clearTimeout(timer); firstSnapshot = true;
+      for (const ch of snap.docChanges()) {
+        if (state.dirty[ch.doc.id]) continue;
+        if (ch.type === "removed") delete state.rulings[ch.doc.id];
+        else state.rulings[ch.doc.id] = { ...ch.doc.data() };
+      }
+      state.ready = true;
+      state.canWrite = allowed === true;
+      saveStatus();
+      if (!state.canWrite) setSave("Read only.");
+      if (document.activeElement?.id !== "notes") { const y = window.scrollY; renderGauge(); window.scrollTo(0, y); }
+    }, err => {
+      clearTimeout(timer); state.ready = false; state.canWrite = false;
+      setSave(`Saved review stopped updating (${err.code}). Export a backup, then reload.`, true);
+      renderGauge();
+    });
+  } catch (error) {
+    state.ready = true; state.canWrite = false;
+    setSave(`Saved rulings are unavailable: ${error.message}.`, true); renderGauge();
+  }
+}
+
+fetch("gauges.json", { signal: AbortSignal.timeout(15000) }).then(r => {
+  if (!r.ok) throw new Error(`Gauge list HTTP ${r.status}`);
+  return r.json();
+}).then(data => {
+  state.gauges = data.gauges;
+  state.outline = data.outline;
+  $("screened").textContent = `Screened ${data.screened}. Area difference is (traced − published) / published. Changing the area threshold only changes flags; it does not change suggestions or rulings.`;
+  state.selected = visible()[0]?.site ?? null;
+  renderAll();
+  connect();
+}).catch(() => { $("gauge").innerHTML = `<p class="readonly-note">The gauge list did not load. Reload the page.</p>`; });
+</script>

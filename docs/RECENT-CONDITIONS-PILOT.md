@@ -97,7 +97,8 @@ and 7 are not indexed by NLDI (tunnels, drains and small Wasatch Front
 creeks). 79 have a published reservoir upstream; 34 have none, cover
 1991–2020 and have a snow site upstream. Seven traced areas differ from the
 published drainage area by more than 25%; Daniels Creek at Charleston
-traced about 404 square miles against 50 and is the wrong basin. Early
+traced about 404 square miles against 50 and needs an outlet and flowline
+check; the difference alone does not establish its cause. Early
 requests took 13 to 150 seconds each, against the half second measured in
 August, so the trace runs resumably; later requests were fast.
 
@@ -125,6 +126,24 @@ by this worksheet.
 First suggestions, 2026-10-24: 51 `natural`, 81 `shaped`, 18 `short`,
 11 `check`, 3 `exclude`. A useful order is the 14 `check` and `exclude`
 rows first, then the 51 `natural` rows, where a missed diversion costs most.
+
+### Private review page
+
+The maintainable source and republish procedure are in
+[`tools/gauge-review/`](../tools/gauge-review/README.md). The private page saves
+rulings to its own store, not directly to this worksheet. Export and review the
+records before merging by USGS site number. A `natural` ruling is a candidate
+classification, not approval of a normal: completeness within 1991–2020 and
+the flow comparison method still need separate review.
+
+The area flag compares `(traced - published) / published`. Both numbers must
+refer to the same outlet and area definition before the difference is treated
+as a delineation error. NLDI's default basin is the full upstream network,
+including the whole local catchment; it does not stop at an upstream dam.
+Thus the basin above Deer Creek includes the basin above Jordanelle. Land
+between reservoirs would require subtracting the union of verified upstream
+basins, and an area percentage is not a percentage of flow or storage.
+See the source notes for the worked example and USGS references.
 
 ## Credentials and hosting
 
