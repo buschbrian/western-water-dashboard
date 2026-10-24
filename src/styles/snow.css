@@ -133,3 +133,78 @@
   outline: 2px solid var(--app-accent);
   outline-offset: 1px;
 }
+
+/* The precipitation card (ADR-122). The two series colours are validated for
+ * colour-vision separation against each theme's surface; the history bands
+ * are one muted hue, darker toward the middle. */
+:root {
+  --precip-line: #3d5fc0;
+  --precip-snow-line: #2e9a86;
+  --precip-band: var(--app-muted);
+}
+:root[data-theme="dark"] {
+  --precip-line: #768cec;
+  --precip-snow-line: #3aa894;
+}
+.precip-curve-host { position: relative; }
+.precip-curve { display: block; inline-size: 100%; block-size: auto; }
+.precip-curve:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 2px; }
+.precip-band { fill: var(--precip-band); stroke: none; }
+.precip-band-range { fill-opacity: .1; }
+.precip-band-eight { fill-opacity: .14; }
+.precip-band-half { fill-opacity: .2; }
+.precip-median { fill: none; stroke: var(--app-muted); stroke-width: 1.5; stroke-dasharray: 5 4; }
+.precip-gap { fill: url(#precip-gap-hatch); }
+.precip-gap-stroke { stroke: var(--precip-line); stroke-width: 1.5; stroke-opacity: .45; }
+.precip-line, .precip-snow-line {
+  fill: none; stroke-width: 2.5; stroke-linejoin: round; stroke-linecap: round;
+}
+.precip-line { stroke: var(--precip-line); }
+.precip-snow-line { stroke: var(--precip-snow-line); }
+.precip-latest { fill: var(--precip-line); stroke: var(--app-surface-raised); stroke-width: 2; }
+.precip-end-label { font-size: 11px; fill: var(--app-text); font-weight: 600; }
+.precip-end-median { font-weight: 400; fill: var(--app-muted); }
+.precip-crosshair { stroke: var(--app-muted); stroke-width: 1; }
+.precip-tooltip {
+  position: absolute;
+  inset-block-start: .5rem;
+  display: grid;
+  gap: .15rem;
+  padding: .45rem .6rem;
+  font-size: .78rem;
+  color: var(--app-text);
+  background: var(--app-surface-raised);
+  border: 1px solid var(--app-border);
+  border-radius: .35rem;
+  pointer-events: none;
+  white-space: nowrap;
+  z-index: 1;
+}
+.precip-tooltip[hidden] { display: none; }
+.precip-kpis { margin-block-end: .75rem; }
+.precip-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem 1rem;
+  margin-block-end: .5rem;
+  font-size: .8rem;
+  color: var(--app-muted);
+}
+.precip-legend[hidden] { display: none; }
+.precip-legend-item { display: inline-flex; align-items: center; gap: .4rem; }
+.precip-swatch { inline-size: 1.4rem; block-size: .75rem; border-radius: 2px; }
+.precip-swatch-precip, .precip-swatch-snow, .precip-swatch-median {
+  block-size: 0; border-block-start: 3px solid var(--precip-line); border-radius: 0;
+}
+.precip-swatch-snow { border-block-start-color: var(--precip-snow-line); }
+.precip-swatch-median { border-block-start: 2px dashed var(--app-muted); }
+.precip-swatch-gap {
+  background: repeating-linear-gradient(45deg,
+    color-mix(in srgb, var(--precip-line) 45%, transparent) 0 1.5px, transparent 1.5px 4px);
+  border: 1px solid color-mix(in srgb, var(--precip-line) 45%, transparent);
+}
+.precip-swatch-half { background: color-mix(in srgb, var(--precip-band) 38%, transparent); }
+.precip-swatch-eight { background: color-mix(in srgb, var(--precip-band) 23%, transparent); }
+.precip-swatch-range { background: color-mix(in srgb, var(--precip-band) 10%, transparent); }
+.precip-note { margin-block: .6rem 0; font-size: .9rem; }
+.precip-coverage { color: var(--app-muted); font-size: .8rem; }

@@ -764,3 +764,40 @@ export interface LakePayload {
   lakes: TerminalLake[];
   withdrawn: WithdrawnLake[];
 }
+
+/** One station's accumulated precipitation this water year (ADR-122). */
+export interface PrecipitationSite {
+  station: string;
+  latest_date: string;
+  late: boolean;
+  /** Inches accumulated since 1 October, by date. */
+  readings: ReadonlyMap<string, number>;
+}
+
+export interface PrecipitationPayload {
+  schema_version: number;
+  generated_at: string;
+  as_of: string;
+  water_year: number;
+  series_dates: string[];
+  site_count: number;
+  late_site_count: number;
+  missing_site_count: number;
+  sites: PrecipitationSite[];
+}
+
+/**
+ * Every water year in the window at each station whose record covers all of
+ * them, decoded to inches: `years[y][s]` is year `first_water_year + y` at
+ * step `s` (ADR-122).
+ */
+export interface PrecipitationHistory {
+  schema_version: number;
+  checked: string;
+  first_water_year: number;
+  last_water_year: number;
+  step_month_days: string[];
+  site_count: number;
+  available_site_count: number;
+  sites: ReadonlyMap<string, number[][]>;
+}

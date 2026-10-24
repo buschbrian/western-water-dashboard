@@ -115,7 +115,8 @@ ADR-041.**
   [ADR-082](ADR-082-publish-a-drought-severity-and-coverage-index.md),
   [ADR-083](ADR-083-anchor-the-monthly-normal-window-once-per-chart.md),
   [ADR-100](ADR-100-a-sub-daily-providers-day-is-its-last-reading.md),
-  [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md)
+  [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md),
+  [ADR-122](ADR-122-measure-precipitation-at-the-snow-stations-against-a-fixed-history.md)
 - Current architecture: [`docs/architecture/hydrology-methods.md`](../architecture/hydrology-methods.md)
 
 ### Visible language, accessibility and naming
@@ -292,6 +293,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-118](ADR-118-publish-terminal-lakes-from-their-own-roster-and-payload.md) | Publish terminal lakes from their own roster and payload | Accepted; implements ADR-112 and extends ADR-056 and ADR-098; Walker Lake is the first lake, generated and not yet shown |
 | [ADR-119](ADR-119-show-terminal-lakes-on-their-own-page.md) | Show terminal lakes on their own page | Accepted; extends ADR-118 and ADR-045; reached from the methods and data pages, not the bar |
 | [ADR-120](ADR-120-ask-where-to-start-before-loading-the-map.md) | Ask where to start before loading the map | Accepted; extends ADR-086; the storage map fetches the map SDK only after the first-visit question closes without a choice |
+| [ADR-122](ADR-122-measure-precipitation-at-the-snow-stations-against-a-fixed-history.md) | Measure precipitation at the snow stations against a fixed history | Accepted; the record ADR-117 asks for to bring a new measured element into scope; keeps ADR-081's denominator floor |
 
 ## Relationship to the historical journal
 

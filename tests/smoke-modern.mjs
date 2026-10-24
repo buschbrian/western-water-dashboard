@@ -3133,6 +3133,38 @@ for (const viewport of VIEWPORTS) {
     check(linked.tableRows < linked.ready?.sites,
       `${label}: a narrowed view shows ${linked.tableRows} of ${linked.ready?.sites} sites`);
 
+    /* The precipitation card loads on its own (ADR-122). Checked for what it
+     * drew against what it reported, never against today's numbers: on the
+     * first morning of a water year it may honestly have no line yet. It
+     * fetches only once it nears the screen, so it is scrolled to first. */
+    await tab.locator("#precip-card").scrollIntoViewIfNeeded();
+    await tab.waitForFunction(
+      () => window.__snowReady?.precipitation && window.__snowReady.precipitation.state !== "loading",
+      { timeout: 60000 });
+    const precip = await tab.evaluate(() => ({
+      status: window.__snowReady?.precipitation,
+      busy: document.querySelector(".precip-curve-host")?.getAttribute("aria-busy"),
+      svg: Boolean(document.querySelector(".precip-curve-host svg")),
+      empty: Boolean(document.querySelector(".precip-curve-host .chart-empty")),
+      monthRows: document.querySelectorAll("#precip-card tbody tr").length,
+      overflow: (() => {
+        const card = document.querySelector("#precip-card");
+        return card ? card.scrollWidth - card.clientWidth : -1;
+      })()
+    }));
+    console.log("  precipitation:", JSON.stringify(precip));
+    check(precip.status?.state === "ready",
+      `${label}: the precipitation card ended as ${precip.status?.state}`);
+    check(precip.busy === "false", `${label}: the precipitation chart left aria-busy ${precip.busy}`);
+    check(precip.status?.stations <= linked.tableRows,
+      `${label}: precipitation used ${precip.status?.stations} stations from ${linked.tableRows} in view`);
+    check(precip.status?.curveDays > 0 ? precip.svg && precip.status.bandSteps === 53 : precip.empty,
+      `${label}: precipitation drew ${precip.status?.curveDays} days and ${precip.status?.bandSteps} steps, `
+        + `svg ${precip.svg}, empty message ${precip.empty}`);
+    check(precip.status?.curveDays === 0 || precip.monthRows > 0,
+      `${label}: the precipitation table has ${precip.monthRows} rows`);
+    check(precip.overflow <= 1, `${label}: the precipitation card overflows by ${precip.overflow}px`);
+
     /* The visible site rows, as points. Same promise as the CSV download:
      * the file holds exactly the rows on screen, so it is checked against
      * the count the page just rendered rather than against the payload. */

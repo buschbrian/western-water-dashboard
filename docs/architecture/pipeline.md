@@ -26,7 +26,8 @@ modules in `pipeline/`:
 `import refresh_reservoirs as R` still reaches all of them and no tool or test
 had to learn a new import path.
 
-Other entry points: `refresh_snowpack.py` (snow payload), `refresh_lakes.py`
+Other entry points: `refresh_snowpack.py` (snow payload),
+`refresh_station_readings.py` (precipitation at the snow stations, ADR-122), `refresh_lakes.py`
 (the terminal-lake payload, `lakes.json`), `watershed_scopes.py`
 and `huc.py` (named scopes, drainage assignment, grouping), `admission.py`
 (candidate screening), `tools/` (audits, boundary fetches, drought

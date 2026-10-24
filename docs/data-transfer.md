@@ -22,10 +22,16 @@ Two rules before any figure below is read:
 | `reservoirs.json` | 2,055 KB | 220.8 KB |
 | `snow_sites.json` | 143 KB | 22 KB |
 | `lakes.json` | 7.1 KB | 1.4 KB |
+| `precipitation.json` | 155 KB | 8.9 KB |
+| `precipitation_history.json` | 1,639 KB | 488 KB |
 | `reference.json` | 193 KB | 38.4 KB |
 | `data/drought/usdm-huc6.json` | 24.5 KB | 3.4 KB |
 | `data/drought/usdm-huc4.json` | 10.6 KB | 2.1 KB |
 | `data/drought/usdm-huc8.json` | 121 KB | 12.3 KB |
+
+The two precipitation files were measured 2026-10-24 on their first generated
+copies (ADR-122). The history is fetched only when the snow page's
+precipitation card nears the screen.
 
 `lakes.json` was measured 2026-09-06 on its first generated file, one lake
 (ADR-118); it is fetched only by the terminal-lakes page (ADR-119).

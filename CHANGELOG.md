@@ -11,6 +11,17 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ## [Unreleased]
 
+### Added
+
+- **Precipitation since 1 October on the snow page** (ADR-122). A new card
+  compares this water year's gauge precipitation with every water year since
+  1991 at the same stations, for whatever place the page shows, and draws the
+  snow water those stations hold now on the same axis. Inches lead; the
+  percentage waits for a median worth dividing by. Two new data files,
+  `precipitation.json` (daily) and `precipitation_history.json` (rebuilt each
+  October), written by `refresh_station_readings.py` and
+  `tools/build_precipitation_history.py`.
+
 ## [1.0.0] - 2026-09-18
 
 The first tagged release, and the state the site has run in for several weeks.
