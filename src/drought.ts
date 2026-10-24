@@ -465,7 +465,7 @@ function renderDrought(
       <div class="card-heading">
         <div><h2 id="drought-map-heading">The drought map</h2><p id="drought-map-copy">The monitor's weekly national map in its own colours, for the week of ${formatDate(payload.map_date)}. The outlined shapes are the ${scopedUnits.length} drainage areas the figures below describe.</p></div>
       </div>
-      <div id="drought-map-host" class="view-map-host has-inset-legend" aria-busy="true"
+      <div id="drought-map-host" class="view-map-host has-inset-legend" role="region" aria-busy="true"
         aria-label="A map of drought classes over the drainage areas. The bars and table on this page carry the same shares as text."></div>
       <p class="card-note" id="drought-map-edge-note">Drought does not stop at the edges of the drainage areas, so the map draws the wider pattern too.</p>
       <p class="card-note">The monitor's map is a weekly expert judgement rather than a single instrument reading. Its authors weigh many kinds of evidence together, including water-supply records.</p>

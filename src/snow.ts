@@ -369,7 +369,7 @@ function renderSnow(
       <div class="card-heading">
         <div><h2 id="snow-map-heading">Where the snow is</h2><p>Each drainage area takes its colour from how its snow compares with normal on the day shown. Move the slider to see any other day.</p></div>
       </div>
-      <div id="snow-map-host" class="view-map-host" aria-busy="true"
+      <div id="snow-map-host" class="view-map-host" role="region" aria-busy="true"
         aria-label="A map of the drainage areas and snow measurement sites. The chart and tables on this page carry the same values as text."></div>
       <div class="snow-day-row">
         <label class="snow-day-label" for="snow-day">Day shown</label>
