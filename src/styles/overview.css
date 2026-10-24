@@ -352,7 +352,7 @@ body {
  * or date stays inside its own card at every supported width. */
 .snow-summary .overview-kpi {
   display: grid;
-  grid-template-rows: 2rem minmax(2.6rem, auto) auto;
+  grid-template-rows: 2rem minmax(2.6rem, auto) minmax(4rem, auto);
   align-content: start;
   min-block-size: 8.4rem;
 }

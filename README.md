@@ -80,8 +80,8 @@ a shareable URL.
 
 Requirements:
 
-- Node.js 22
-- Python 3.11 or newer for pipeline work
+- Node.js 26
+- Python 3.14 for pipeline work (the dependency set requires at least 3.12)
 - Playwright Chromium, or a local Google Chrome executable, for browser tests
 
 ```bash

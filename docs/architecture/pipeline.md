@@ -32,6 +32,19 @@ and `huc.py` (named scopes, drainage assignment, grouping), `admission.py`
 (candidate screening), `tools/` (audits, boundary fetches, drought
 computation, normals).
 
+## Recent-conditions pilot boundary
+
+ADR-124 permits a bounded Utah pilot alongside the existing published domains.
+Its chosen delivery model is scheduled Python ingestion and static, versioned
+outputs, with R2 available for rasters and archives. It is not connected to the
+daily job or any public page yet. The scope, remaining work and credential
+setup are in [the pilot plan](../RECENT-CONDITIONS-PILOT.md).
+
+The supported CI runtime is Python 3.14. The pipeline dependency set requires
+Python 3.12 or newer; all data workflows install the shared
+`requirements-pipeline.txt`. GIS audit tools use `requirements-gis.txt`
+separately and do not add ArcGIS for Python to the daily job.
+
 ## Runtime data contract
 
 For an approved point correction, `refresh_reservoirs.py --rebuild-points

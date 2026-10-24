@@ -1,7 +1,8 @@
 # What this site costs over the wire
 
-**Status:** maintained measurement record, checked through the 2026-08-21
-audit that added the reservoir page to the tool's page list. Re-run
+**Status:** maintained measurement record, with a build-budget comparison
+added 2026-10-23. The last full transfer audit below is dated 2026-08-21.
+Re-run
 `tools/audit-transfer.mjs` after changing a payload, hosted layer, SDK
 surface, or content-policy host.
 
@@ -13,6 +14,24 @@ Two rules before any figure below is read:
   taken from it are raw and marked as such.
 - **Re-measure rather than reason.** Every number here came from a real
   request and each one moves with things that are easy to change by accident.
+
+## Dependency upgrade budget (2026-10-23)
+
+`npm run budget:sdk` compared commit `995a69b` with the dependency upgrade
+to ArcGIS 5.1.27, Calcite 5.2.0 and Vite 8.3.5 on the same machine:
+
+| Build measurement | Before | After |
+|---|---:|---:|
+| All emitted assets, raw | 23.67 MiB | 23.72 MiB |
+| All emitted assets, gzip | 8.26 MiB | 8.27 MiB |
+| Emitted files | 1,559 | 1,561 |
+| Static initial JavaScript, gzip | 0.18 MiB | 0.18 MiB |
+
+The initial JavaScript is unchanged at the tool's reported precision; all
+existing budget limits pass without adjustment. These are build measurements,
+not complete page-transfer totals or browser speed measurements. Lazy SDK
+assets, data and remote map traffic still depend on the page and interaction.
+No recent-conditions payload or raster is included in this comparison.
 
 ## The payloads
 

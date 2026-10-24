@@ -1,7 +1,7 @@
 # Shared by CI and the scheduled reservoir refresh.
-pandas==3.0.*
-numpy>=2.3,<2.4
-requests==2.*
+pandas==3.1.*
+numpy>=2.5.4,<2.6
+requests>=2.34.2,<3
 # The IANA zones for zoneinfo. CWMS names series zones such as "US/Pacific";
 # the ubuntu-26.04 runner's system zone files no longer carry those aliases.
 tzdata>=2026.1
