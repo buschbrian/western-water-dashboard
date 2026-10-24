@@ -56,7 +56,8 @@ denominator. **Start with ADR-070, then ADR-072, then ADR-003.**
   [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md)
 - Freshness and withdrawal:
   [ADR-056](ADR-056-withdraw-a-reading-that-belongs-to-another-season.md),
-  [ADR-115](ADR-115-state-a-reviewed-hold-where-the-reservoir-used-to-be.md)
+  [ADR-115](ADR-115-state-a-reviewed-hold-where-the-reservoir-used-to-be.md),
+  [ADR-126](ADR-126-key-a-withdrawal-notice-by-its-station.md)
 - Superseded, read only for history: ADR-099
 - Procedure: [`docs/operations/source-admission.md`](../operations/source-admission.md)
 
@@ -303,6 +304,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-123](ADR-123-draw-ten-years-of-drought-on-the-drought-page.md) | Draw ten years of drought on the drought page | Accepted; extends ADR-117's scope at the maintainer's request; fetched only when its cards come near the screen |
 | [ADR-124](ADR-124-bound-recent-conditions-to-a-static-data-pilot.md) | Bound recent conditions to a static-data pilot | Accepted; scheduled Utah pilot with static outputs, existing USGS access and isolated R2 storage; implementation pending |
 | [ADR-125](ADR-125-measure-precipitation-at-the-snow-stations-against-a-fixed-history.md) | Measure precipitation at the snow stations against a fixed history | Accepted; the record ADR-117 asks for to bring a new measured element into scope; keeps ADR-081's denominator floor |
+| [ADR-126](ADR-126-key-a-withdrawal-notice-by-its-station.md) | Key a withdrawal notice by its station | Accepted; extends ADR-056 and ADR-066; the notice gains `source_station_id`, an optional field with no schema bump, and an older notice falls back to its name for one run |
 
 ## Relationship to the historical journal
 

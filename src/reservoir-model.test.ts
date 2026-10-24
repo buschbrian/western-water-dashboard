@@ -162,6 +162,19 @@ describe("resolveReservoirPage", () => {
     });
   });
 
+  it("tells two withdrawn reservoirs of one name apart by station (ADR-126)", () => {
+    const notice = (station: string, label: string) => ({
+      name: "Lost Creek", as_of: "2026-06-01", days_stale: 100,
+      source_label: label, source_station_id: station,
+      reason: "no reading inside the publication window"
+    });
+    const both = payloadWith([], [notice("544", "Reclamation"),
+      notice("14335040:OR:BOR", "USDA NRCS AWDB")]);
+    expect(resolveReservoirPage(both, "?name=14335040:OR:BOR"))
+      .toMatchObject({ status: "withdrawn", sourceLabel: "USDA NRCS AWDB" });
+    expect(resolveReservoirPage(both, "?name=Lost%20Creek").status).toBe("unknown");
+  });
+
   it("answers a bare link with the landing state", () => {
     expect(resolveReservoirPage(payload, "").status).toBe("none");
     expect(resolveReservoirPage(payload, "?name=").status).toBe("none");

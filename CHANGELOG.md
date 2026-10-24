@@ -65,6 +65,11 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Fixed
 
+- **A withdrawal notice no longer disappears when a same-named reservoir
+  publishes.** Notices were matched by name, and the roster holds two Lost
+  Creek and two Clear Lake. A notice now carries its station
+  (`source_station_id`) and is matched by it. Older notices without one fall
+  back to the name for one run (ADR-126).
 - Keep wrapped snow summary cards equally tall when the early-season note
   needs several lines.
 

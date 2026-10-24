@@ -58,7 +58,7 @@ def partition_by_age(records: list[dict]) -> tuple[list[dict], list[dict]]:
     return published, withdrawn
 
 
-def withdrawal_notice(record: dict) -> dict:
+def withdrawal_notice(record: dict, *, with_station: bool = False) -> dict:
     """What the payload says about a reservoir it is not publishing.
 
     Deliberately not a reservoir record: no storage, no percent full, no
@@ -67,17 +67,23 @@ def withdrawal_notice(record: dict) -> dict:
     that was -- enough for a reader to know the roster changed and why, and
     not enough for anything to chart it.
 
-    The source label is here to be read as well as displayed: it is the only
-    field that says which feed a notice belongs to, and `carry_withdrawals`
-    is what asks.
+    The source label is here to be read as well as displayed: it says which
+    feed a notice belongs to, and `carry_withdrawals` asks it. The station id
+    says which reservoir (ADR-126). It names the reservoir and is not a
+    measurement, so ADR-056's rule that a notice carries none still holds.
+    `with_station` is the reservoir payload's; a lake notice keeps its own
+    fixed fields (ADR-118) until the lake roster needs the same.
     """
-    return {
+    notice = {
         "name": record.get("name"),
         "as_of": record.get("as_of"),
         "days_stale": record.get("days_stale"),
         "source_label": record.get("source_label"),
         "reason": "no reading inside the publication window",
     }
+    if with_station and record.get("source_station_id") is not None:
+        notice["source_station_id"] = str(record["source_station_id"])
+    return notice
 
 
 def carry_unrefreshed(previous: dict[str, dict], selected_stations: set[str],
@@ -115,7 +121,9 @@ def carry_unrefreshed(previous: dict[str, dict], selected_stations: set[str],
 def carry_withdrawals(notices: list[dict], refreshed: set[str] | None,
                       today: pd.Timestamp, *,
                       answered: set[str] = frozenset(),
-                      roster: set[str] | None = None) -> list[dict]:
+                      roster: set[str] | None = None,
+                      answered_names: set[str] = frozenset(),
+                      roster_names: set[str] | None = None) -> list[dict]:
     """Keep the notices this run has not answered for itself.
 
     A withdrawn reservoir is not in `reservoirs`, so nothing the merge reads
@@ -146,9 +154,13 @@ def carry_withdrawals(notices: list[dict], refreshed: set[str] | None,
     - A reservoir in `answered` -- published or withdrawn by this run -- is
       never carried, so nothing is stated twice.
 
-    Matched on name and source label because those are what a notice can
-    say. ADR-056 fixes its fields at name, date, age, source label and reason
-    so that nothing downstream can find a measurement in one.
+    Matched on `source_station_id` (ADR-126), because a name is not an
+    identity: the roster holds two "Lost Creek" and two "Clear Lake", the
+    latter from the same feed. `answered` and `roster` are sets of station
+    ids. A notice written before ADR-126 has no station id and falls back to
+    its name, against `answered_names` and `roster_names`, for that notice
+    only; it is never dropped for lacking one. Once every carried notice has
+    a station id the fallback is dead code and can go.
 
     The age is recomputed against today, because `as_of` and `days_stale` are
     one fact printed twice and a carried notice would otherwise say a
@@ -158,11 +170,15 @@ def carry_withdrawals(notices: list[dict], refreshed: set[str] | None,
     """
     carried = []
     for notice in notices:
-        name = notice.get("name")
-        if name in answered:
+        station = notice.get("source_station_id")
+        if station is not None:
+            key, seen, known = str(station), answered, roster
+        else:
+            key, seen, known = notice.get("name"), answered_names, roster_names
+        if key in seen:
             continue
         if refreshed is None or notice.get("source_label") in refreshed:
-            if roster is None or name not in roster:
+            if known is None or key not in known:
                 continue
         entry = dict(notice)
         as_of = pd.Timestamp(entry.get("as_of"))

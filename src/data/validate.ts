@@ -383,6 +383,12 @@ export function validateReservoirPayload(value: unknown): ReservoirPayload {
       if ("current_storage_af" in entry) {
         throw new Error("a withdrawn entry carries a storage figure");
       }
+      /* Optional: a notice written before ADR-126 has no station id and is
+       * old, not malformed. Present, it must be text. */
+      if (entry.source_station_id !== undefined &&
+          (typeof entry.source_station_id !== "string" || !entry.source_station_id)) {
+        throw new Error("a withdrawn entry has an invalid station id");
+      }
       if (entry.days_stale <= value.withdraw_after_days) {
         throw new Error("a withdrawn entry is inside the publication window");
       }

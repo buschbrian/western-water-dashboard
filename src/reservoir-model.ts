@@ -71,8 +71,15 @@ export function resolveReservoirPage(
     : holds.filter((entry) => entry.name.toLowerCase() === lowered);
   if (candidates.length === 1 && candidates[0]) return { status: "held", notice: candidates[0] };
   if (candidates.length > 1) return { status: "unknown", requested };
-  const notice = (payload.withdrawn ?? []).find(
-    (entry) => entry.name.toLowerCase() === lowered);
+  // A station id names one reservoir; a name may name two (ADR-126). A name
+  // that matches more than one notice is ambiguous and says so, as for holds.
+  const withdrawn = payload.withdrawn ?? [];
+  const noticeByStation = withdrawn.filter(
+    (entry) => entry.source_station_id?.toLowerCase() === lowered);
+  const noticeCandidates = noticeByStation.length ? noticeByStation
+    : withdrawn.filter((entry) => entry.name.toLowerCase() === lowered);
+  if (noticeCandidates.length > 1) return { status: "unknown", requested };
+  const notice = noticeCandidates[0];
   if (notice) {
     return {
       status: "withdrawn",

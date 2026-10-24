@@ -54,7 +54,7 @@ export const RESERVOIR_GROUPS: readonly ApiFieldGroup[] = [
     f("capacity_count", "reservoirs", "Number of records with a traced full level."),
     f("withdraw_after_days", "days", "The most days a reading can be old and still be published."),
     f("withdrawn_count", "reservoirs", "Number of reservoirs held back for old data."),
-    f("withdrawn", "array", "Reservoirs held back because their newest reading is too old to belong beside the others."),
+    f("withdrawn", "array", "Reservoirs held back because their newest reading is too old to belong beside the others. Each entry holds the name, the station, the last reading date, its age in days, the publisher and the reason, and no measurement."),
     f("watersheds", "object", "Summary of drainage-area assignment coverage."),
     f("counties", "object", "Summary of county assignment coverage."),
     f("reservoirs", "array", "Current storage records and 12-month histories.")

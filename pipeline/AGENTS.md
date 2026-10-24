@@ -24,7 +24,8 @@ the module that owns the concern, not in the orchestrator.
   `RESERVOIR_SCHEMA_VERSION` or `EXPORT_SCHEMA_VERSION`.
 - **Never hand-edit a generated payload.** Change the writer and run it.
 - **A withdrawal notice carries no measurement**; the validator rejects one that
-  does (ADR-056).
+  does (ADR-056). It names its reservoir by `source_station_id`, never by name
+  alone (ADR-126).
 - **The calendar is corrected, never the reading.** Every published date means
   when the water was measured.
 - **A roster addition needs a refresh in the same change** — there is no

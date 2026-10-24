@@ -596,6 +596,11 @@ export interface WithdrawnReservoir {
   as_of: string;
   days_stale: number;
   source_label: string;
+  /**
+   * The station the notice is about (ADR-126). Optional: a notice written
+   * before that record has none, and is matched by name. Not a measurement.
+   */
+  source_station_id?: string;
   reason: string;
 }
 
