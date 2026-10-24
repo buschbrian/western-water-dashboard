@@ -90,6 +90,22 @@ function definitionList(rows: readonly { label: string; value: string }[],
   return list;
 }
 
+/** The reading's dated facts as tiles: each label over its value. */
+function answerTiles(rows: readonly { label: string; value: string }[]): HTMLDListElement {
+  const list = document.createElement("dl");
+  list.className = "reservoir-tiles";
+  for (const row of rows) {
+    const tile = document.createElement("div");
+    const term = document.createElement("dt");
+    term.textContent = row.label;
+    const definition = document.createElement("dd");
+    definition.textContent = row.value;
+    tile.append(term, definition);
+    list.append(tile);
+  }
+  return list;
+}
+
 function sectionHeading(text: string): HTMLHeadingElement {
   const heading = document.createElement("h2");
   heading.className = "reservoir-subhead";
@@ -138,24 +154,46 @@ async function renderFound(payload: ReservoirPayload,
   basis.textContent = view.basis;
   headline.append(value, basis);
 
+  /* The answer first: how much is stored, how full that is, how it has
+   * moved and whether that is normal. Every other row of the details view
+   * follows lower down, under the section it belongs to. */
+  const answerLabels = new Set(["Reading date", "History rank", view.baseline.label]);
+  const isAnswer = (row: { label: string }): boolean =>
+    row.label.startsWith("Change in") || answerLabels.has(row.label);
+  const stored = view.rows.find((row) => row.label === "Stored now");
+  const answerRank = (label: string): number => label === "Reading date" ? 0
+    : label.startsWith("Change in") ? 1 : label === view.baseline.label ? 2 : 3;
+  const answerRows = view.rows.filter(isAnswer)
+    .sort((a, b) => answerRank(a.label) - answerRank(b.label));
+  const restRows = view.rows.filter((row) =>
+    row !== stored && !isAnswer(row) && row.label !== "Measured by");
+  const peakRows = restRows.filter((row) => row.label === "Highest value this year");
+  const factRows = restRows.filter((row) => row.label !== "Highest value this year");
+
   const children: (HTMLElement | SVGElement)[] = [eyebrow, heading];
   if (view.late) children.push(note(view.late, "detail-late"));
-  children.push(headline, definitionList(view.rows, "detail-rows"));
+  if (stored) {
+    const figure = document.createElement("p");
+    figure.className = "reservoir-storage";
+    const label = document.createElement("span");
+    label.textContent = stored.label;
+    const amount = document.createElement("strong");
+    amount.textContent = stored.value;
+    figure.append(label, amount);
+    children.push(figure);
+  }
+  children.push(headline, answerTiles(answerRows));
 
-  const location = createLocationFacts(
-    hydrologicPath(reservoir.huc6, reservoir.huc6_name, payload.watersheds ?? {},
-      reservoir.huc8, reservoir.huc8_name),
-    coordinateText(reservoir.lat, reservoir.lon));
-  if (location) children.push(sectionHeading("Location"), location);
-
-  // The reservoir's own ground, from Esri's World Imagery. Mounted after
-  // the page is on screen and outside the readiness signal: a slow image
-  // must not hold the page's facts hostage, and its own deadline replaces
-  // it with a sentence rather than an empty box.
-  const imageryHost = document.createElement("div");
-  imageryHost.className = "reservoir-imagery-host";
-  imageryHost.setAttribute("aria-busy", "true");
-  children.push(sectionHeading("From above"), imageryHost);
+  // The twelve months, drawn by the same SVG builder the details panel uses.
+  const chartHost = document.createElement("div");
+  chartHost.className = "trend-chart-host";
+  const chart = renderTrendChart(chartHost, view.months, view.name);
+  const table = renderTrendTable(view.months);
+  if (chart || table) {
+    children.push(sectionHeading("The last 12 months"));
+    if (chart) children.push(chartHost);
+    if (table) children.push(table);
+  }
 
   // Both comparisons, each saying how many years stand behind it. A reader
   // who wants only one is on the map page; here they can see what choosing
@@ -168,21 +206,37 @@ async function renderFound(payload: ReservoirPayload,
         + `of normal now, from ${row.sampleYears} year${row.sampleYears === 1 ? "" : "s"}`
         + `${row.coversFullPeriod ? "" : " (part of the period)"}`
   }));
-  if (baselines.length) {
+  if (baselines.length || peakRows.length) {
     children.push(sectionHeading("Comparisons"));
-    children.push(definitionList(baselines, "detail-rows"));
+    children.push(definitionList([...baselines, ...peakRows], "detail-rows"));
   }
 
-  // The twelve months, drawn by the same SVG builder the details panel uses.
-  const chartHost = document.createElement("div");
-  chartHost.className = "trend-chart-host";
-  const chart = renderTrendChart(chartHost, view.months, view.name);
-  const table = renderTrendTable(view.months);
-  if (chart || table) {
-    children.push(sectionHeading("The last 12 months"));
-    if (chart) children.push(chartHost);
-    if (table) children.push(table);
-  }
+  // What the committed trace says sits above this reservoir (ADR-077); the
+  // section fills in when the index arrives and stays empty if it does not.
+  const upstreamHost = document.createElement("div");
+  upstreamHost.className = "reservoir-upstream";
+  children.push(upstreamHost);
+
+  const location = createLocationFacts(
+    hydrologicPath(reservoir.huc6, reservoir.huc6_name, payload.watersheds ?? {},
+      reservoir.huc8, reservoir.huc8_name),
+    coordinateText(reservoir.lat, reservoir.lon));
+  const provenance = provenanceRows(reservoir);
+  const countyRows = provenance.filter((row) => row.label === "County");
+  children.push(sectionHeading("Location"));
+  if (location) children.push(location);
+  if (countyRows.length) children.push(definitionList(countyRows, "detail-rows"));
+
+  // The reservoir's own ground, from Esri's World Imagery. Mounted after
+  // the page is on screen and outside the readiness signal: a slow image
+  // must not hold the page's facts hostage, and its own deadline replaces
+  // it with a sentence rather than an empty box.
+  const imageryHost = document.createElement("div");
+  imageryHost.className = "reservoir-imagery-host";
+  imageryHost.setAttribute("aria-busy", "true");
+  const imageryHeading = sectionHeading("From above");
+  imageryHeading.className = "reservoir-minorhead";
+  children.push(imageryHeading, imageryHost);
 
   // Where the numbers come from, plus the record itself.
   const record = [
@@ -197,9 +251,10 @@ async function renderFound(payload: ReservoirPayload,
       value: `${reservoir.n_obs} readings over ${reservoir.years_of_record} years`
     }
   ];
-  children.push(sectionHeading("Source"));
-  children.push(definitionList([...provenanceRows(reservoir), ...record],
-    "detail-rows"));
+  children.push(sectionHeading("Sources"));
+  children.push(definitionList([
+    ...provenance.filter((row) => row.label !== "County"),
+    ...factRows, ...record], "detail-rows"));
   children.push(note(view.note));
 
   const mapLink = document.createElement("p");
@@ -233,15 +288,14 @@ async function renderFound(payload: ReservoirPayload,
       "The aerial image could not be loaded just now.", "chart-empty"));
     imageryHost.removeAttribute("aria-busy");
   } })();
-  // What the committed trace says sits above this reservoir (ADR-077). A
-  // missing index costs this section and nothing else; a screen inside it
-  // is stated as what it is rather than shown as an empty count.
+  // A missing index costs the upstream section and nothing else; a screen
+  // inside it is stated as what it is rather than shown as an empty count.
   const upstreamReady = (async () => { try {
     const index = await loadUpstreamIndex();
     const station = reservoir.source_station_id;
     const trace = station === null ? null : index.traces[station];
     if (trace && station) {
-      main.append(...upstreamSection(trace, payload.reservoirs, station));
+      upstreamHost.append(...upstreamSection(trace, payload.reservoirs, station));
     }
   } catch {
     console.error("The upstream index could not be read:");
