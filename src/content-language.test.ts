@@ -81,6 +81,9 @@ const userTextFiles = [
   "src/viz/snow-curve.ts",
   "src/viz/snow-classes.ts",
   "src/viz/site-curve.ts",
+  // The precipitation card writes its own figures, notes and the storm
+  // totals' sentences (ADR-125, ADR-129).
+  "src/ui/precipitation-card.ts",
   "src/ui/snow-map.ts",
   "src/ui/drought-map.ts",
   // Every hover card on every map: the sentences the pointer produces are

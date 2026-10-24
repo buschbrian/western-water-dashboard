@@ -413,7 +413,12 @@ function renderSnow(
    * picked a different site would leave a fresh observer behind with it. */
   const precipSection = document.querySelector<HTMLElement>("#precip-card");
   const precipCard = precipSection
-    ? createPrecipitationCard(precipSection, () => publishReady())
+    ? createPrecipitationCard(precipSection, () => publishReady(), {
+      onSelectSite: (station) => {
+        renderSiteDetail(station);
+        siteDetail?.closest("section")?.scrollIntoView({ block: "start" });
+      }
+    })
     : null;
   const siteCurveHost = document.createElement("div");
   siteCurveHost.className = "snow-curve-host";

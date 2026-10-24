@@ -8,6 +8,9 @@
  */
 import { loadPrecipitation, loadPrecipitationHistory } from "../data/precip-load";
 import { ordinal, precipitationView, type PrecipitationView } from "../precip-model";
+import {
+  firstAvailableEnd, STORM_WINDOWS, stormTotals, type StormTotals, type StormWindow, type StormWindowTotal
+} from "../precip-storm-model";
 import type { PrecipitationHistory, PrecipitationPayload, SnowSite } from "../types";
 import { formatDate } from "../viz/format";
 import { renderPrecipitationStrip } from "../viz/precip-strip";
@@ -29,6 +32,21 @@ export interface PrecipitationStatus {
   date: string | null;
   /** Past water years drawn as dots on the strip, 0 when it is hidden. */
   stripYears: number;
+  /** The recent totals (ADR-129), for the window the station list shows. */
+  storm: StormStatus;
+}
+
+export interface StormStatus {
+  window: StormWindow;
+  /** The day every window ends on, or null with no station reporting. */
+  endDate: string | null;
+  available: boolean;
+  /** Stations the window's mean is taken over. */
+  stations: number;
+  /** Stations in the place with no value on both days, or a falling total. */
+  leftOut: number;
+  /** Rows in the station list. */
+  rows: number;
 }
 
 export interface PrecipitationCardOptions {
@@ -39,6 +57,8 @@ export interface PrecipitationCardOptions {
    * at once rather than when it nears the screen, and a failure does not
    * point at other figures on the page. */
   standalone?: boolean;
+  /** Called when a reader selects a station in the recent totals' list. */
+  onSelectSite?: (station: string) => void;
 }
 
 export interface PrecipitationCard {
@@ -101,6 +121,47 @@ function legendItem(swatchClass: string, label: string): HTMLElement {
   swatch.setAttribute("aria-hidden", "true");
   item.append(swatch, document.createTextNode(label));
   return item;
+}
+
+const STORM_ROWS = 8;
+
+function stationCount(count: number): string {
+  return `${count} station${count === 1 ? "" : "s"}`;
+}
+
+function windowName(days: StormWindow): string {
+  return days === 1 ? "Last 1 day" : `Last ${days} days`;
+}
+
+/** A mean under a tenth is not zero when some station caught a tip. */
+function stormInches(total: StormWindowTotal): string {
+  if (total.meanInches === null) return "—";
+  if (total.meanInches === 0 && total.totals.some((station) => station.inches > 0)) return "Less than 0.1 in";
+  return inches(total.meanInches);
+}
+
+function stormKpis(storm: StormTotals, daily: PrecipitationPayload): HTMLElement[] {
+  return storm.windows.map((total) => {
+    if (!total.available) {
+      const from = firstAvailableEnd(daily, total.days);
+      return kpi(windowName(total.days), "—",
+        from ? `Not available until ${formatDate(from)}` : "Not available yet");
+    }
+    return kpi(windowName(total.days), stormInches(total),
+      total.meanInches === null ? "No station measured both days" : `Mean of ${stationCount(total.totals.length)}`);
+  });
+}
+
+function stormLeftOut(total: StormWindowTotal): string {
+  const parts: string[] = [];
+  if (total.withoutValue > 0) {
+    parts.push(`${stationCount(total.withoutValue)} without a value on both days ${total.withoutValue === 1 ? "is" : "are"} not used.`);
+  }
+  if (total.falling > 0) {
+    parts.push(`${stationCount(total.falling)} ${total.falling === 1 ? "shows" : "show"} a fall in the gauge total and ${total.falling === 1 ? "is" : "are"} not used. ` +
+      "A fall comes from a gauge reset, a correction or evaporation, so it is not a measurement of precipitation.");
+  }
+  return parts.join(" ");
 }
 
 function headlineKpis(view: PrecipitationView): HTMLElement[] {
@@ -217,6 +278,47 @@ export function createPrecipitationCard(
   section: HTMLElement, onChange: () => void, options: PrecipitationCardOptions = {}
 ): PrecipitationCard {
   const stripOnly = options.parts === "strip";
+  /* The recent totals (ADR-129) lead the full card: the question most
+   * readers bring after a storm. They need no history, so they can draw for
+   * a place the rest of the card cannot speak for. A story view (ADR-128)
+   * shows the season figure alone and leaves them out. */
+  const withStorm = !stripOnly && !options.standalone;
+  const storm = document.createElement("div");
+  storm.className = "precip-storm";
+  storm.hidden = true;
+  const stormTitle = text("h3", "precip-storm-title", "Recent precipitation");
+  const stormKpiRow = document.createElement("div");
+  stormKpiRow.className = "overview-kpis precip-storm-kpis";
+  const stormEnd = text("p", "precip-coverage", "");
+  const stormListHead = document.createElement("div");
+  stormListHead.className = "precip-storm-head";
+  const stormListTitle = text("p", "chart-axis-title", "");
+  const stormWindows = document.createElement("div");
+  stormWindows.className = "precip-range";
+  stormWindows.setAttribute("role", "group");
+  stormWindows.setAttribute("aria-label", "Days in the station list");
+  const windowButtons = new Map<StormWindow, HTMLButtonElement>();
+  for (const days of STORM_WINDOWS) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = days === 1 ? "1 day" : `${days} days`;
+    button.setAttribute("aria-pressed", String(days === 3));
+    button.addEventListener("click", () => {
+      if (status.storm.window === days) return;
+      status.storm.window = days;
+      for (const [key, other] of windowButtons) other.setAttribute("aria-pressed", String(key === days));
+      drawStorm();
+      onChange();
+    });
+    windowButtons.set(days, button);
+    stormWindows.append(button);
+  }
+  stormListHead.append(stormListTitle, stormWindows);
+  const stormList = document.createElement("ol");
+  stormList.className = "precip-storm-list";
+  const stormEmpty = text("p", "precip-note", "");
+  const stormNote = text("p", "precip-coverage", "");
+  storm.append(stormTitle, stormKpiRow, stormEnd, stormListHead, stormList, stormEmpty, stormNote);
   const kpis = document.createElement("div");
   kpis.className = "overview-kpis precip-kpis";
   const legend = document.createElement("div");
@@ -296,7 +398,7 @@ export function createPrecipitationCard(
     strip.append(stripKey);
   }
   if (stripOnly) section.append(strip, host);
-  else section.append(top, strip, controls, axisTitle, host, historyKey, april, coverage, details, readNote);
+  else section.append(...(withStorm ? [storm] : []), top, strip, controls, axisTitle, host, historyKey, april, coverage, details, readNote);
   /* The card's credit line stays last, under everything this card adds. */
   const source = section.querySelector(":scope > .card-source");
   if (source) section.append(source);
@@ -304,7 +406,8 @@ export function createPrecipitationCard(
 
   const status: PrecipitationStatus = {
     state: "loading", stations: 0, curveDays: 0, bandDays: 0, range: "season",
-    date: null, stripYears: 0
+    date: null, stripYears: 0,
+    storm: { window: 3, endDate: null, available: false, stations: 0, leftOut: 0, rows: 0 }
   };
   let chartHeight = PRECIPITATION_CHART_HEIGHT;
   /* The last chart drawn, kept so a new height redraws the chart alone and
@@ -314,6 +417,60 @@ export function createPrecipitationCard(
   let wanted: {
     stations: readonly string[]; snowSites: readonly SnowSite[]; finishedSeason: string | null;
   } | null = null;
+
+  let stormView: StormTotals | null = null;
+
+  const drawStorm = (): void => {
+    const totals = stormView;
+    const shown = totals?.windows.find((total) => total.days === status.storm.window);
+    status.storm.endDate = totals?.endDate ?? null;
+    if (!totals || !data || totals.endDate === null || !shown) {
+      storm.hidden = true;
+      Object.assign(status.storm, { available: false, stations: 0, leftOut: 0, rows: 0 });
+      return;
+    }
+    stormKpiRow.replaceChildren(...stormKpis(totals, data.daily));
+    stormEnd.textContent = `The totals end on ${formatDate(totals.endDate)}. ` +
+      "Each value is a mean of the stations that measured both days.";
+    stormListTitle.textContent = `Most precipitation, ${windowName(shown.days).toLowerCase()}`;
+    const rows = shown.totals.filter((total) => total.inches > 0).slice(0, STORM_ROWS);
+    const sites = new Map((wanted?.snowSites ?? []).map((site) => [site.station, site]));
+    const onSelectSite = options.onSelectSite;
+    stormList.replaceChildren(...rows.map((total, index) => {
+      const site = sites.get(total.station);
+      const name = site?.name ?? total.station;
+      const item = document.createElement("li");
+      const rank = text("span", "precip-storm-rank", `${index + 1}`);
+      rank.setAttribute("aria-hidden", "true");
+      const label = document.createElement(onSelectSite ? "button" : "span");
+      label.className = "precip-storm-name";
+      label.textContent = name;
+      if (label instanceof HTMLButtonElement) {
+        label.type = "button";
+        label.setAttribute("aria-label", `Show the season for ${name}`);
+        label.addEventListener("click", () => onSelectSite?.(total.station));
+      }
+      const where = text("span", "precip-storm-area", site?.huc6_name ?? "");
+      item.append(rank, label, where, text("strong", "precip-storm-value", inches(total.inches)));
+      return item;
+    }));
+    stormList.hidden = rows.length === 0;
+    stormEmpty.textContent = !shown.available
+      ? `A ${shown.days}-day total would start before 1 October, so there is no value yet.`
+      : rows.length === 0
+        ? `No station in this place measured precipitation in the ${windowName(shown.days).toLowerCase()}.`
+        : "";
+    stormEmpty.hidden = stormEmpty.textContent === "";
+    stormNote.textContent = [stormLeftOut(shown),
+      "0.1 in is the smallest step a gauge measures."].filter(Boolean).join(" ");
+    storm.hidden = false;
+    Object.assign(status.storm, {
+      available: shown.available,
+      stations: shown.totals.length,
+      leftOut: shown.withoutValue + shown.falling,
+      rows: rows.length
+    });
+  };
 
   const draw = (): void => {
     if (wanted?.finishedSeason) {
@@ -330,6 +487,8 @@ export function createPrecipitationCard(
       april.textContent = "";
       coverage.textContent = "";
       tbody.replaceChildren();
+      stormView = null;
+      drawStorm();
       renderPrecipitationCurve(host, [], [], status.range, "");
       host.replaceChildren(text("p", "chart-empty",
         `This card shows the current water year only. The page shows the ${wanted.finishedSeason} snow season. ` +
@@ -346,6 +505,8 @@ export function createPrecipitationCard(
     }
     if (!data || !wanted) return;
     const view = precipitationView(wanted.stations, data.daily, data.history, wanted.snowSites);
+    stormView = withStorm ? stormTotals(wanted.stations, data.daily) : null;
+    drawStorm();
     status.stations = view.stations.length;
     status.bandDays = view.bands.length;
     if (!view.headline) {
@@ -471,7 +632,7 @@ export function createPrecipitationCard(
       wanted = { stations, snowSites, finishedSeason };
       draw();
     },
-    get status() { return { ...status }; },
+    get status() { return { ...status, storm: { ...status.storm } }; },
     parts: {
       top, kpis, split, strip, stripNote, stripKey, controls, axisTitle, chart: host,
       historyKey, april, coverage, table: details, readNote

@@ -11,7 +11,7 @@
  * average station has had 4.1 inches" is a sentence a reader can use.
  */
 import { MEANINGFUL_NORMAL_INCHES } from "./snow-model";
-import type { PrecipitationHistory, PrecipitationPayload, SnowSite } from "./types";
+import type { PrecipitationHistory, PrecipitationPayload, PrecipitationSite, SnowSite } from "./types";
 
 export interface BandStep {
   date: string;
@@ -136,6 +136,15 @@ function snowWaterByDate(site: SnowSite): Map<string, number> {
   return values;
 }
 
+/** The newest day on which at least `SET_SHARE` of these stations have a reading. */
+export function newestSetDay(
+  dates: readonly string[], sites: readonly PrecipitationSite[]
+): string | undefined {
+  const needed = Math.ceil(sites.length * SET_SHARE);
+  return [...dates].reverse().find((date) =>
+    sites.filter((site) => site.readings.has(date)).length >= needed);
+}
+
 export function precipitationView(
   placeStations: readonly string[],
   daily: PrecipitationPayload,
@@ -151,9 +160,7 @@ export function precipitationView(
    * stations hold the whole region's line four days back; a station with no
    * reading that day is counted as late, which is what it is. */
   const eligible = withHistory.filter((station) => !dailyByStation.get(station)!.late);
-  const setDay = [...daily.series_dates].reverse().find((date) =>
-    eligible.filter((station) => dailyByStation.get(station)!.readings.has(date)).length
-      >= Math.ceil(eligible.length * SET_SHARE));
+  const setDay = newestSetDay(daily.series_dates, eligible.map((station) => dailyByStation.get(station)!));
   const stations = setDay === undefined ? eligible
     : eligible.filter((station) => dailyByStation.get(station)!.readings.has(setDay));
   const base = {

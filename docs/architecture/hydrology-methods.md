@@ -267,6 +267,13 @@ date reaches `MEANINGFUL_NORMAL_INCHES`, the snow curve's own floor; before
 that the card gives inches, the difference from the median, and the share
 of a median year's total.
 
+**Storm totals are differences** (ADR-129). The card's 1-, 3- and 7-day
+totals are each station's accumulation on the set day minus its value N days
+earlier, meaned over every station in the place with both readings, not only
+the fixed set. A falling difference leaves the station out and is never
+clipped to zero; a window that starts before 1 October is not available yet;
+totals are rounded to the gauge's tenth of an inch.
+
 **The window is not the snow normal.** Snow compares with 1991–2020;
 precipitation with 1991 through the last finished year, rebuilt each
 October. A history is not a normal, and each card names its own years.

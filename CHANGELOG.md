@@ -20,6 +20,10 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   from the link or the reader's system and never stores it, and links to
   its full page in a new tab. Not in the navigation.
 - The precipitation chart reads a day on a tap as well as on hover.
+- **Recent precipitation** on the precipitation card: totals for the last 1,
+  3 and 7 days for the place shown, each the mean of the stations that
+  measured both days, and the eight stations with the most. A gauge total
+  that falls is left out and counted, never shown as zero (ADR-129).
 
 ### Changed
 

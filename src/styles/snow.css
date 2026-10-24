@@ -74,7 +74,7 @@
 
 /* A site name in the table is a real button; it looks like the link it
  * behaves as, and keeps the row's text metrics. */
-.site-name-button {
+.site-name-button, button.precip-storm-name {
   padding: 0;
   border: none;
   background: none;
@@ -84,7 +84,7 @@
   text-decoration: underline;
   cursor: pointer;
 }
-.site-name-button:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 2px; }
+.site-name-button:focus-visible, .precip-storm-name:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 2px; }
 
 .snow-day-row {
   display: flex;
@@ -353,3 +353,28 @@
 .precip-strip-dot { stroke: var(--app-surface-raised); stroke-width: 1.5; }
 .precip-strip-dot.precip-region-middle { stroke: color-mix(in srgb, var(--app-text) 30%, transparent); stroke-width: 1; }
 .precip-strip-rule { stroke: var(--precip-line); stroke-width: 1.5; stroke-dasharray: 2 3; }
+
+/* Recent totals (ADR-129): three small figures and a short ranked list.
+ * Rows of text, not bars. */
+.precip-storm { margin-block-end: 1rem; padding-block-end: .75rem; border-block-end: 1px solid var(--app-border); }
+.precip-storm[hidden], .precip-storm-list[hidden] { display: none; }
+.precip-storm-title { margin: 0; font-size: var(--app-group-heading); }
+#precip-card .precip-storm-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); max-inline-size: 36rem; margin-block: .5rem 0; }
+#precip-card .precip-storm-kpis > .overview-kpi { grid-column: auto; padding: .6rem .7rem; }
+#precip-card .precip-storm-kpis strong { font-size: clamp(1.1rem, 2vw, 1.5rem); }
+.precip-storm-head { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.25rem; margin-block: .75rem .25rem; }
+.precip-storm-head .chart-axis-title { margin: 0; }
+.precip-storm-list { margin: 0; padding: 0; list-style: none; max-inline-size: 30rem; }
+.precip-storm-list li {
+  display: grid;
+  grid-template-columns: 1.5rem minmax(0, 1fr) auto;
+  column-gap: .5rem;
+  padding-block: .3rem;
+  border-block-end: 1px solid color-mix(in srgb, var(--app-border) 60%, transparent);
+  font-size: .9rem;
+}
+.precip-storm-rank { color: var(--app-muted); font-variant-numeric: tabular-nums; }
+.precip-storm-name { grid-column: 2; min-inline-size: 0; overflow-wrap: anywhere; }
+.precip-storm-value { grid-column: 3; grid-row: 1; font-variant-numeric: tabular-nums; }
+.precip-storm-area { grid-column: 2; font-size: .78rem; color: var(--app-muted); }
+.precip-storm-area:empty { display: none; }

@@ -3388,6 +3388,38 @@ for (const viewport of VIEWPORTS) {
     check(precip.status?.curveDays === 0 || precip.monthRows === 13,
       `${label}: the precipitation table has ${precip.monthRows} rows`);
     check(precip.overflow <= 1, `${label}: the precipitation card overflows by ${precip.overflow}px`);
+    /* Recent totals (ADR-129): checked against what the card reported, never
+     * today's numbers. Every value is inches or a dash, never a percent. */
+    const storm = await tab.evaluate(() => {
+      const block = document.querySelector("#precip-card .precip-storm");
+      return {
+        shown: Boolean(block && !block.hidden),
+        values: [...(block?.querySelectorAll(".precip-storm-kpis strong") ?? [])].map((node) => node.textContent),
+        notes: [...(block?.querySelectorAll(".precip-storm-kpis small") ?? [])].map((node) => node.textContent),
+        listed: block?.querySelectorAll(".precip-storm-list li").length ?? 0,
+        text: block?.innerText ?? ""
+      };
+    });
+    const stormStatus = precip.status?.storm;
+    console.log("  storm totals:", JSON.stringify({ ...stormStatus, values: storm.values, listed: storm.listed }));
+    check(stormStatus && stormStatus.endDate !== undefined && stormStatus.leftOut >= 0,
+      `${label}: the readiness object has no storm totals`);
+    if (stormStatus?.endDate) {
+      check(storm.shown && storm.values.length === 3
+        && storm.values.every((value) => /^(\d+\.\d in|Less than 0\.1 in|—)$/.test(value)),
+      `${label}: the storm totals read ${JSON.stringify(storm.values)}`);
+      check(!storm.text.includes("%"), `${label}: the storm totals print a percent`);
+      check(storm.listed === stormStatus.rows && storm.listed <= 8,
+        `${label}: the storm list shows ${storm.listed} rows, readiness ${stormStatus.rows}`);
+      check(!stormStatus.available || stormStatus.stations === 0
+        || storm.notes.some((note) => note === `Mean of ${stormStatus.stations} station${stormStatus.stations === 1 ? "" : "s"}`),
+      `${label}: no storm total names its ${stormStatus.stations} stations`);
+      await tab.locator(".precip-storm .precip-range button", { hasText: "7 days" }).click();
+      await tab.waitForFunction(() => window.__snowReady?.precipitation?.storm?.window === 7, { timeout: 10000 });
+      await tab.locator(".precip-storm .precip-range button", { hasText: "3 days" }).click();
+    } else {
+      check(!storm.shown, `${label}: storm totals show with no end day`);
+    }
     if (precip.status?.curveDays > 0) {
       /* The chart opens on the season so far and can show the whole year;
        * the whole year holds every band day the season view does not. */
@@ -3395,7 +3427,7 @@ for (const viewport of VIEWPORTS) {
         `${label}: the precipitation chart opened on ${precip.status.range}`);
       await tab.locator(".precip-range button", { hasText: "Whole water year" }).click();
       await tab.waitForFunction(() => window.__snowReady?.precipitation?.range === "year", { timeout: 10000 });
-      const pressed = await tab.evaluate(() => [...document.querySelectorAll(".precip-range button")]
+      const pressed = await tab.evaluate(() => [...document.querySelectorAll(".precip-controls .precip-range button")]
         .map((button) => button.getAttribute("aria-pressed")).join(","));
       check(pressed === "false,true", `${label}: the range buttons report ${pressed}`);
       await tab.locator(".precip-range button", { hasText: "Season so far" }).click();
