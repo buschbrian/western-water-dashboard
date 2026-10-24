@@ -48,6 +48,13 @@ No recent-conditions payload or raster is included in this comparison.
 | `data/drought/usdm-huc4.json` | 10.6 KB | 2.1 KB |
 | `data/drought/usdm-huc8.json` | 121 KB | 12.3 KB |
 
+`data/drought/usdm-current.geojson`, the drought page's largest fetch, went
+from 506 KB to 322 KB gzipped on 2026-10-24 by writing three decimal places
+(about 110 m) instead of five, matching the service's 0.001-degree
+simplification. Clipping it to the West was measured at 54 KB and rejected:
+the maps limit where the view's centre may go, not what a zoomed-out view
+shows, so at the widest zoom a clip edge would be on screen.
+
 The two precipitation files were measured 2026-10-24 on their first generated
 copies (ADR-125). The history is fetched only when the snow page's
 precipitation card nears the screen.

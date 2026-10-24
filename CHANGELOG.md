@@ -22,6 +22,12 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 - An Esri defect register (`docs/operations/esri-register.md`) and draft
   reports for the defects worth filing.
 
+### Changed
+
+- The drought map's polygon file is about a third smaller (506 KB to 322 KB
+  gzipped): its coordinates carry three decimal places, the grain the drought
+  service already simplifies to, rather than five.
+
 ### Fixed
 
 - The precipitation card's latest reading no longer lags when one station

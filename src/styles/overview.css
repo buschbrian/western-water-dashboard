@@ -299,76 +299,73 @@ body {
  * small, muted treatment as #filter-status below it, so the two read as one
  * family of status lines rather than a status line and a stray paragraph. */
 .opening-scope-summary { margin: 0 .15rem .85rem; color: var(--app-muted); font-size: .85rem; }
-/* Five cards never divide evenly into a fixed column count, so a grid left
- * a hole beside the last row -- three cards, then two and a gap. Flex lets
- * whatever lands on the final row grow to fill it, so the strip reads as a
- * strip at every width instead of a table with a corner missing. */
+/* The summary strip: every card's label, value and note sit on shared rows.
+ *
+ * Each card used to size its own three rows, so a label that wrapped to two
+ * lines, or a value like "Exceptional drought" that wrapped, pushed that one
+ * card's value or note down while its neighbours' stayed up -- labels top-,
+ * middle- and bottom-aligned along one strip. Now the strip is a grid and each
+ * card spans three of its rows through `subgrid`: a row is as tall as its
+ * tallest label (or value, or note) in that line of cards, and every card's
+ * label, value and note start on the same lines.
+ *
+ * The column count comes from how many cards there are, so no width leaves a
+ * lone card or a hole -- the reason this strip was once flex (6 cards: 2, 3,
+ * 6 columns; 5: 2, 3 with the first spanning two, then 5; 4: 2, then 4).
+ * Rows are separated by each card's own bottom margin rather than a row gap,
+ * because a subgrid's rows would inherit the gap between its label and value. */
 .overview-kpis {
-  display: flex;
-  flex-wrap: wrap;
-  gap: .65rem;
-  margin-block: .75rem;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: .65rem;
+  row-gap: 0;
+  margin-block: .75rem .1rem;
 }
-/* 11.5rem rather than 11: at 11 the strip fits four cards on a 768px row
- * and leaves the fifth alone across the full width. Five is prime, so some
- * width always ends in a lone card -- this basis pushes that case out to
- * the sizes where it reads as a footer rather than a gap. */
-.overview-kpi { flex: 1 1 11.5rem; min-width: 0; }
+.overview-kpi {
+  grid-row: span 3;
+  display: grid;
+  grid-template-rows: subgrid;
+  row-gap: .2rem;
+  align-content: start;
+  min-width: 0;
+  margin-block-end: .65rem;
+}
+/* An odd count on two columns: the first card takes the whole first line. */
+.overview-kpis:has(> .overview-kpi:last-child:nth-child(odd)) > .overview-kpi:first-child { grid-column: span 2; }
+@media (min-width: 40rem) {
+  .overview-kpis:has(> .overview-kpi:nth-child(6)),
+  .overview-kpis:has(> .overview-kpi:last-child:nth-child(5)) { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+@media (min-width: 56rem) {
+  .overview-kpis:has(> .overview-kpi:last-child:nth-child(4)) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+  .overview-kpis:has(> .overview-kpi:last-child:nth-child(4)) > .overview-kpi:first-child { grid-column: auto; }
+}
+@media (min-width: 64rem) {
+  .overview-kpis:has(> .overview-kpi:last-child:nth-child(5)) { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+  .overview-kpis:has(> .overview-kpi:last-child:nth-child(5)) > .overview-kpi:first-child { grid-column: auto; }
+}
+@media (min-width: 72rem) {
+  .overview-kpis:has(> .overview-kpi:nth-child(6)) { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+}
 .overview-kpi, .overview-card {
   background: var(--app-surface-raised);
   border: 1px solid var(--app-border);
   border-radius: .65rem;
   box-shadow: 0 .2rem .9rem rgb(62 48 35 / 6%);
 }
-.overview-kpi { min-width: 0; padding: .85rem 1rem; border-block-start: .2rem solid var(--app-sand); }
+.overview-kpi { padding: .85rem 1rem; border-block-start: .2rem solid var(--app-sand); }
 .overview-kpi-primary { border-block-start-color: var(--app-terracotta); }
-.overview-kpi span, .overview-kpi small { display: block; overflow: hidden; color: var(--app-muted); text-overflow: ellipsis; }
-.overview-kpi span { font-size: .72rem; font-weight: 700; letter-spacing: .01em; }
-.overview-kpi strong { display: block; margin-block: .15rem; font-size: clamp(1.25rem, 2vw, 1.75rem); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.overview-kpi span, .overview-kpi small { display: block; color: var(--app-muted); }
+.overview-kpi span { font-size: .72rem; font-weight: 700; letter-spacing: .01em; line-height: 1.35; }
+.overview-kpi strong {
+  display: block;
+  margin: 0;
+  font-size: clamp(1.25rem, 2vw, 1.75rem);
+  line-height: 1.12;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
 .overview-kpi small { font-size: .7rem; line-height: 1.35; }
-/* Drought condition names can be longer than a medium-width summary card.
- * Give every card the same label and value rows, then let a condition wrap
- * inside its own row instead of drawing through the next card. */
-.drought-summary .overview-kpi {
-  display: grid;
-  grid-template-rows: 2rem minmax(3.2rem, auto) auto;
-  align-content: start;
-}
-.drought-summary .overview-kpi span,
-.drought-summary .overview-kpi small {
-  overflow: visible;
-  text-overflow: clip;
-}
-.drought-summary .overview-kpi span { line-height: 1.35; }
-.drought-summary .overview-kpi small { line-height: 1rem; }
-.drought-summary .overview-kpi strong {
-  margin: 0;
-  line-height: 1.12;
-  white-space: normal;
-  overflow-wrap: anywhere;
-}
-/* Snowpack has five cards, but the same alignment rule as drought: headings,
- * values and notes start on matching rows, and a large seasonal percentage
- * or date stays inside its own card at every supported width. */
-.snow-summary .overview-kpi {
-  display: grid;
-  grid-template-rows: 2rem minmax(2.6rem, auto) minmax(4rem, auto);
-  align-content: start;
-  min-block-size: 8.4rem;
-}
-.snow-summary .overview-kpi span,
-.snow-summary .overview-kpi small {
-  overflow: visible;
-  text-overflow: clip;
-}
-.snow-summary .overview-kpi span { line-height: 1.35; }
-.snow-summary .overview-kpi small { line-height: 1rem; }
-.snow-summary .overview-kpi strong {
-  margin: 0;
-  line-height: 1.12;
-  white-space: normal;
-  overflow-wrap: anywhere;
-}
 /* Six charts now, not two. `auto-fit` with a floor rather than a named
  * column count, for the same reason the filter bar is flex: the layout
  * should not have to know how many charts there are, and adding the fifth
@@ -878,22 +875,16 @@ body {
   .mobile-table-card:not(.mobile-table-open) > .table-scroll {
     display: none;
   }
-  /* The headline gets its own line on a phone; the rest pair up.
+  /* Two columns on a phone (an odd count gives the first card the whole
+   * first line, above).
    *
    * Tighter here than the strip's own padding because this block is the
    * tallest thing between a reader and the first chart on both data pages
    * -- 456 pixels of it on a 390-pixel phone, against a fold at 844. The
    * pairing above is what makes it three rows rather than six; this is the
    * rest of what density can honestly give back. */
-  .overview-kpis { gap: .5rem; }
-  .overview-kpi { flex-basis: 9rem; padding: .65rem .8rem; }
-  /* The value is the one line that cannot wrap, so on a half-width card it
-     is the one that can overflow its box. Its siblings already clip. */
-  .overview-kpi strong { overflow: hidden; text-overflow: ellipsis; }
-  .overview-kpi-primary { flex-basis: 100%; }
-  /* Drought has exactly four peer summaries. Keeping all four at the same
-     width avoids a lone full-width Map age card under two half-width peers. */
-  .drought-summary .overview-kpi-primary { flex-basis: 9rem; }
+  .overview-kpis { column-gap: .5rem; }
+  .overview-kpi { padding: .65rem .8rem; margin-block-end: .5rem; }
   .card-heading { flex-wrap: wrap; }
   .table-actions { width: 100%; justify-content: stretch; }
   .table-actions calcite-button { flex: 1 1 auto; }

@@ -353,7 +353,3 @@
 .precip-strip-dot { stroke: var(--app-surface-raised); stroke-width: 1.5; }
 .precip-strip-dot.precip-region-middle { stroke: color-mix(in srgb, var(--app-text) 30%, transparent); stroke-width: 1; }
 .precip-strip-rule { stroke: var(--precip-line); stroke-width: 1.5; stroke-dasharray: 2 3; }
-/* Four figures share the row with the snow block, so a narrower basis than
- * the page strip keeps them on one line at desktop widths instead of three
- * and a lone fourth. */
-.precip-kpis .overview-kpi { flex-basis: 8.5rem; }

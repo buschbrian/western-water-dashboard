@@ -47,7 +47,9 @@
   --app-terracotta: #d38a6b;
   /* Already 4.9:1 on the dark card surface, so the dark theme keeps the
      token it had. */
-  --app-badge-text: #d38a6b;
+  /* #d38a6b measured 4.04:1 on a dark card's badge tint; this is 5.17:1 there
+   * and 6.08:1 on the page (WCAG AA is 4.5:1). Same hue, a little lighter. */
+  --app-badge-text: #e2a285;
 }
 
 * { box-sizing: border-box; }
