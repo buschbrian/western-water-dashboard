@@ -29,7 +29,7 @@ import {
   baselineRows, provenanceRows, requestedName, resolveReservoirPage
 } from "./reservoir-model";
 import type { ReservoirPageState } from "./reservoir-model";
-import type { ReservoirPayload, Reservoir, UpstreamTrace } from "./types";
+import type { ReservoirPayload } from "./types";
 import { renderTrendChart, renderTrendTable } from "./viz/trend";
 import { formatAcreFeet, formatDate } from "./viz/format";
 import { storageColor } from "./viz/classes";
@@ -37,12 +37,11 @@ import { headlinePercent } from "./viz/symbols";
 import {
   describeReservoir
 } from "./state/detail";
-import { reservoirLabel } from "./state/selection";
-import { GROUP_AFTER, upstreamSummary, type UpstreamRow } from "./upstream-model";
 import {
   baselineChoices
 } from "./state/baseline";
 import { reservoirTemplate } from "./ui/reservoir-template";
+import { upstreamSection } from "./ui/upstream-section";
 import { setupPlaceChooser } from "./ui/opening-splash";
 import { setupPlaceSearch } from "./ui/place-search";
 import { createLocationFacts } from "./ui/location-facts";
@@ -309,134 +308,6 @@ async function renderFound(payload: ReservoirPayload,
   } })();
   await Promise.all([imageryReady, upstreamReady]);
   finish("found");
-}
-
-/**
- * The "What is above it" section: every published reservoir on land that
- * drains to this one, linked by the same labels the pages resolve by.
- *
- * Upstream of, never feeds: several of these sit on transbasin diversions,
- * and the water they hold does not always go where the river points
- * (ADR-077). The snow sites are counted in the sentence and named nowhere --
- * their own page is the place for them, and that filter is not built yet.
- */
-function upstreamSection(
-  trace: UpstreamTrace,
-  roster: readonly Reservoir[],
-  station: string
-): HTMLElement[] {
-  if (trace.screen != null) {
-    return [
-      sectionHeading("What is above it"),
-      note("The contributing area above this reservoir could not be traced "
-        + "when the site last asked.", "reservoir-note")
-    ];
-  }
-  const count = trace.upstream_reservoirs.length;
-  const sites = trace.upstream_snow_sites.length;
-  const children: HTMLElement[] = [sectionHeading("What is above it")];
-  const sentence = document.createElement("p");
-  sentence.className = "reservoir-note";
-  if (count === 0 && sites === 0) {
-    sentence.textContent =
-      "No published reservoir or snow-measuring site sits upstream of this "
-      + "one, on land that drains to it.";
-    children.push(sentence);
-    return children;
-  }
-  sentence.textContent = `${count} published `
-    + `reservoir${count === 1 ? "" : "s"} and ${sites} snow-measuring `
-    + `site${sites === 1 ? "" : "s"} sit upstream of this one, on land that `
-    + "drains to it.";
-  children.push(sentence);
-  if (sites > 0) {
-    const snowLink = document.createElement("p");
-    snowLink.className = "reservoir-links";
-    const link = document.createElement("a");
-    link.href = `snow.html?state=all&upstream=${encodeURIComponent(station)}`;
-    link.textContent = "See snow upstream of this reservoir";
-    snowLink.append(link);
-    children.push(snowLink);
-  }
-  if (count > 0) {
-    children.push(...upstreamStorage(trace.upstream_reservoirs, roster));
-  }
-  return children;
-}
-
-/** One reservoir as a row: its name, a small fill bar in the storage
- * colours, percent full and acre-feet. */
-function upstreamRow(row: UpstreamRow): HTMLLIElement {
-  const item = document.createElement("li");
-  item.className = "upstream-row";
-  const link = document.createElement("a");
-  link.href = `reservoir.html?name=${encodeURIComponent(row.label)}`;
-  link.textContent = row.label;
-  item.append(link, fillBar(row.percent), note(
-    `${row.percent === null ? "—" : `${Math.round(row.percent)}%`} · ` +
-    `${formatAcreFeet(row.reservoir.current_storage_af)} acre-feet`, "upstream-figure"));
-  return item;
-}
-
-function fillBar(percent: number | null): HTMLElement {
-  const bar = document.createElement("span");
-  bar.className = "upstream-bar";
-  bar.setAttribute("aria-hidden", "true");
-  const fill = document.createElement("span");
-  fill.style.inlineSize = `${Math.min(100, Math.max(0, percent ?? 0))}%`;
-  fill.style.background = storageColor(percent);
-  bar.append(fill);
-  return bar;
-}
-
-/**
- * The reservoirs above this one as stored water (ADR-127): one total, then
- * the drainage areas they sit in, largest first, each with its own total and
- * its reservoirs by size. The totals are `rollupOfScoped` over the upstream
- * set, the storage map's own rule for any set of reservoirs.
- */
-function upstreamStorage(stations: readonly string[], roster: readonly Reservoir[]): HTMLElement[] {
-  const summary = upstreamSummary(stations, roster, (reservoir) => reservoirLabel(reservoir, roster));
-  if (summary.rows.length === 0) return [];
-  const total = summary.rollup;
-  const out: HTMLElement[] = [note(
-    `Together they hold ${formatAcreFeet(total.storageAf)} acre-feet` +
-    (total.percentFull === null ? "." : `, ${Math.round(total.percentFull)}% of what they can hold.`) +
-    " Their readings are not all from the same day." +
-    (summary.notPublished > 0
-      ? ` ${summary.notPublished} more ${summary.notPublished === 1 ? "is" : "are"} above it but not published today.`
-      : ""), "reservoir-note")];
-  const list = (rows: readonly UpstreamRow[]): HTMLUListElement => {
-    const ul = document.createElement("ul");
-    ul.className = "upstream-list";
-    ul.append(...rows.map(upstreamRow));
-    return ul;
-  };
-  if (summary.rows.length < GROUP_AFTER) {
-    out.push(list(summary.rows));
-    return out;
-  }
-  summary.groups.forEach((group, index) => {
-    const details = document.createElement("details");
-    details.className = "upstream-group";
-    details.open = index < 2;
-    const head = document.createElement("summary");
-    const name = document.createElement("span");
-    name.className = "upstream-group-name";
-    name.textContent = group.name;
-    /* The count sits with the name, so the figure column holds the same two
-     * values as every row below it and the bars stay in one column. */
-    const count = document.createElement("span");
-    count.className = "upstream-group-count";
-    count.textContent = ` · ${group.rows.length} reservoir${group.rows.length === 1 ? "" : "s"}`;
-    name.append(count);
-    head.append(name, fillBar(group.rollup.percentFull), note(
-      `${group.rollup.percentFull === null ? "—" : `${Math.round(group.rollup.percentFull)}%`} · ` +
-      `${formatAcreFeet(group.rollup.storageAf)} acre-feet`, "upstream-figure"));
-    details.append(head, list(group.rows));
-    out.push(details);
-  });
-  return out;
 }
 
 /**

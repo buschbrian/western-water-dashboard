@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en" class="story-page">
+<head>
+  <meta charset="UTF-8" />
+  <!-- The same policy the other reading pages carry, shared rather than
+       tuned per page (see reservoir.html). It cannot say which sites may
+       frame this page: `frame-ancestors` is header-only, and GitHub Pages
+       sends none, so any site can embed it, which is the point of it. -->
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; base-uri 'self'; object-src 'none'; form-action 'none'; script-src 'self' 'unsafe-eval' 'wasm-unsafe-eval' blob: https://*.arcgis.com https://*.arcgisonline.com; worker-src 'self' blob: https://*.arcgis.com; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob: https://*.arcgis.com https://*.arcgisonline.com; font-src 'self' data: https://*.arcgis.com; connect-src 'self' https://*.arcgis.com https://*.arcgisonline.com https://hydro.nationalmap.gov" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
+  <!-- One static head for every view: a link preview is read from this file
+       before any script runs. The script names the view in the tab. -->
+  <meta name="description" content="One figure from the Western Water Dashboard, for a story to show: precipitation at the snow sites, or the water stored above a reservoir." />
+  <meta property="og:title" content="Western Water Dashboard story view" />
+  <meta property="og:description" content="One figure from the Western Water Dashboard, for a story to show: precipitation at the snow sites, or the water stored above a reservoir." />
+  <meta property="og:type" content="website" />
+  <title>Story View — Western Water Dashboard</title>
+</head>
+<body>
+  <div id="story-app"><p class="initial-loading">Loading&hellip;</p></div>
+  <script type="module" src="/src/story.ts"></script>
+</body>
+</html>

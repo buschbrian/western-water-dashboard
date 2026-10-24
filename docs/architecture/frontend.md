@@ -21,6 +21,7 @@ module that owns the behaviour and read the entry point only for the sequence.
 | One reservoir | `src/reservoir.ts` | `src/reservoir-model.ts` (link resolution, both baselines, provenance), `src/ui/reservoir-template.ts`; the reading itself is `describeReservoir`, shared with the map's details panel so the two cannot drift |
 | Methods, data, terms | `src/methods.ts`, `src/data-docs.ts` | `src/data-docs-schema.ts` is the field-by-field contract |
 | Terminal lakes | `src/lakes.ts` | `src/lakes-model.ts` (every sentence and row), `src/data/lakes-validate.ts`, `src/ui/lakes-template.ts`; reached from the methods and data pages, not the bar (ADR-119) |
+| Story views | `src/story.ts` | `src/state/story-url.ts` (the link), `src/snow-place.ts` (the snow page's place narrowing), `src/ui/precipitation-card.ts`, `src/ui/upstream-section.ts`, `src/ui/story-fit.ts`; for embedding, not in the bar (ADR-128) |
 
 Shared by all of them: `src/data/` (fetch, validate, scope, rollup),
 `src/state/` (URL, filters, preferences), `src/viz/` (colour, symbols,
@@ -60,6 +61,32 @@ Readiness is `window.__lakesReady`: `lakes` is what the payload published,
 `rendered` what the page drew, `withdrawn` the notices, `failed` a fetch that
 did not answer. The page is linked from the methods glossary and the data
 page and deliberately not from the navigation bar yet.
+
+### The story views
+
+One entry page, `story.html`, for a story to embed in an iframe (ADR-128).
+`?view=precip` or `?view=strip` with the snow page's place parameters
+(`state`, `area`, `level`) draws the precipitation card, or only its "Where
+this year stands" strip; `?view=upstream&reservoir=` draws a reservoir's
+stored water and the stored-water groups above it. It computes nothing:
+the precipitation views take their stations from `snowPlace`, which the snow
+page uses too, and the upstream view draws with `upstreamSection`, which the
+reservoir page uses too. A link the views cannot draw shows one sentence.
+
+The page is the frame. `html`, `body` and the app are the frame's height and
+never scroll, and nothing inside scrolls either. `fitContent`
+(`ui/story-fit.ts`) leaves blocks out, in each view's stated order, until
+the rest fits the frame's own height, then gives the room left to the
+precipitation chart. It runs again whenever the frame or the drawn blocks
+change size. A block it leaves out is taken out of the flow and hidden but
+keeps its width, so a chart brought back is measured at the width it was
+drawn at. Every rule in `story.css` sits under `.story-page`, because the
+build does not keep the shared sheets in import order.
+
+The theme is `?theme=light|dark`, or the reader's system setting, and never
+storage: `stampTheme` (`ui/theme-stamp.ts`) is the one function that sets
+`data-theme` and the Calcite mode classes, here and on every other page.
+Every link opens in a new tab. Readiness is `window.__storyReady`.
 
 ### Point location and downloads
 

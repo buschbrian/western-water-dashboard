@@ -134,6 +134,7 @@ ADR-041.**
   [ADR-112](ADR-112-publish-terminal-lakes-as-a-separate-water-type.md),
   [ADR-118](ADR-118-publish-terminal-lakes-from-their-own-roster-and-payload.md),
   [ADR-119](ADR-119-show-terminal-lakes-on-their-own-page.md),
+  [ADR-128](ADR-128-publish-compact-story-views-for-embedding.md),
   [ADR-114](ADR-114-publish-a-water-type-and-an-operating-character.md),
   [ADR-079](ADR-079-rename-through-a-former-name-table-and-publish-the-operator.md),
   [ADR-089](ADR-089-put-reservoir-state-facts-in-their-own-csv-columns.md)
@@ -307,6 +308,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-125](ADR-125-measure-precipitation-at-the-snow-stations-against-a-fixed-history.md) | Measure precipitation at the snow stations against a fixed history | Accepted; the record ADR-117 asks for to bring a new measured element into scope; keeps ADR-081's denominator floor |
 | [ADR-126](ADR-126-key-a-withdrawal-notice-by-its-station.md) | Key a withdrawal notice by its station | Accepted; extends ADR-056 and ADR-066; the notice gains `source_station_id`, an optional field with no schema bump, and an older notice falls back to its name for one run |
 | [ADR-127](ADR-127-state-what-is-above-a-reservoir-as-stored-water.md) | State what is above a reservoir as stored water | Accepted; applies `rollupOfScoped` to the ADR-077 upstream set; replaces the reservoir page's chips with basin groups and rows |
+| [ADR-128](ADR-128-publish-compact-story-views-for-embedding.md) | Publish compact story views for embedding | Accepted; one entry page, three views, a theme that never persists, a view that fits its frame; computes nothing new (ADR-117's scope) |
 
 ## Relationship to the historical journal
 

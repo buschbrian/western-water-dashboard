@@ -224,6 +224,8 @@ interface Window {
       curveDays: number;
       bandDays: number;
       range: "season" | "year";
+      date?: string | null;
+      stripYears?: number;
     };
   };
   /** The drought view finished drawing. `units` is what the coverage file
@@ -350,6 +352,25 @@ interface Window {
    * published and `rendered` what the page drew, so a page that loaded its
    * data and drew none of it is visible; `withdrawn` counts the notices. A
    * failed fetch reports zeros with `failed` true. */
+  /** A story view settled (ADR-128). `state` is one fact: drawn, failed to
+   * load, or a link that names no view or no published place. The counts
+   * are the drawn view's; `dropped` is how many blocks were left out to fit
+   * the frame, and `fits` whether what is left fits it. */
+  __storyReady?: {
+    view: string | null;
+    state: "loading" | "ready" | "failed" | "invalid";
+    theme: "light" | "dark" | "system";
+    reason?: string;
+    stations?: number;
+    curveDays?: number;
+    bandDays?: number;
+    stripYears?: number;
+    reservoir?: string;
+    upstreamItems?: number;
+    dropped?: number;
+    fits?: boolean;
+    chartHeight?: number | null;
+  };
   __lakesReady?: {
     lakes: number;
     rendered: number;

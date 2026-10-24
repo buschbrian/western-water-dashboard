@@ -117,6 +117,8 @@ export default defineConfig({
         data: resolve(root, "data.html"),
         reservoir: resolve(root, "reservoir.html"),
         lakes: resolve(root, "lakes.html"),
+        // ADR-128: the story views, for embedding. Not in the navigation.
+        story: resolve(root, "story.html"),
         explore: resolve(root, "explore.html"),
         terms: resolve(root, "terms.html"),
         landscape: resolve(root, "landscape.html")

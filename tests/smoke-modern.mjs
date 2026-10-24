@@ -5634,6 +5634,206 @@ for (const viewport of VIEWPORTS) {
 console.log(`\n=== Lakes page: ${VIEWPORTS.length} widths`);
 
 /*
+ * The story views (ADR-128): one figure, alone, filling the frame a story
+ * embeds it in.
+ *
+ * Each view is loaded at the two widths every page is tested at, in both
+ * themes, and in the frames a story gives it: the large embed, a side panel
+ * and two small ones. In every one the view must be ready, carry no site
+ * header, fill the frame without scrolling either way, clear aria-busy,
+ * leave nothing cut off, hold no inner scroller, take its theme from the
+ * link (or the system, with none) and never from the reader's stored
+ * choice, write nothing to storage, open every link in a new tab, and pass
+ * axe. Nothing here reads a number: the reservoir is the published one with
+ * the most published reservoirs above it.
+ */
+{
+  const THEME_KEY = "utah-reservoir-dashboard-theme";
+  const published = new Set(payload.reservoirs.map((reservoir) => reservoir.source_station_id));
+  const [upstreamStation] = Object.entries(upstreamIndex.traces)
+    .filter(([station, trace]) => published.has(station) && trace.screen == null)
+    .map(([station, trace]) => [station,
+      trace.upstream_reservoirs.filter((above) => published.has(above)).length])
+    .sort((a, b) => b[1] - a[1])[0] ?? [null];
+  check(upstreamStation !== null, "Story views: no published reservoir has a traced upstream set");
+  const views = [
+    { name: "precip", query: "view=precip&state=UT", full: "snow.html?state=UT" },
+    { name: "strip", query: "view=strip&state=UT", full: "snow.html?state=UT" },
+    { name: "upstream", query: `view=upstream&reservoir=${encodeURIComponent(upstreamStation)}`,
+      full: "reservoir.html?name=" }
+  ];
+  /* `theme: null` is no parameter: the view follows the system setting. */
+  const frames = [
+    { name: "desktop", width: 1280, height: 900, theme: "light" },
+    { name: "desktop", width: 1280, height: 900, theme: "dark" },
+    { name: "mobile", width: 390, height: 844, theme: "light" },
+    { name: "mobile", width: 390, height: 844, theme: "dark" },
+    { name: "large embed", width: 1298, height: 730, theme: "light" },
+    { name: "side panel", width: 900, height: 900, theme: null, system: "dark" },
+    { name: "small embed", width: 640, height: 480, theme: "dark" },
+    { name: "phone embed", width: 360, height: 640, theme: null, system: "light" },
+    { name: "smallest", width: 320, height: 480, theme: "light" }
+  ];
+  for (const view of views) {
+    for (const frame of frames) {
+      const expected = frame.theme ?? frame.system;
+      /* The opposite of what the view must show, in both places a page
+       * could take it from: the stored choice and the system. */
+      const opposite = expected === "dark" ? "light" : "dark";
+      const label = `Story view ${view.name} (${frame.name} ${frame.width}x${frame.height}, `
+        + `${frame.theme ?? `system ${frame.system}`})`;
+      const context = await browser.newContext({
+        viewport: { width: frame.width, height: frame.height },
+        colorScheme: frame.theme ? opposite : frame.system
+      });
+      await context.addInitScript(([key, value]) => {
+        try { localStorage.setItem(key, value); } catch { /* storage refused */ }
+      }, [THEME_KEY, opposite]);
+      const tab = await context.newPage();
+      const errors = [];
+      tab.on("pageerror", (error) => errors.push(String(error)));
+      watchConsoleErrors(tab, errors);
+      try {
+        const search = frame.theme ? `${view.query}&theme=${frame.theme}` : view.query;
+        await tab.goto(`${URL}story.html?${search}`, { waitUntil: "load", timeout: 90000 });
+        await tab.waitForFunction(() => window.__storyReady && window.__storyReady.state !== "loading",
+          null, { timeout: 90000 });
+        /* The fit runs again as the charts settle; give it the charts' own
+         * redraw deadline and more. */
+        await tab.waitForTimeout(400);
+        const state = await tab.evaluate((themeKey) => {
+          const doc = document.documentElement;
+          const content = document.querySelector(".story-content");
+          const main = document.querySelector("#story-main");
+          const scrollers = [...document.querySelectorAll("body *")].filter((node) => {
+            const style = getComputedStyle(node);
+            const scrolls = (value) => value === "auto" || value === "scroll";
+            return (scrolls(style.overflowY) && node.scrollHeight > node.clientHeight + 1)
+              || (scrolls(style.overflowX) && node.scrollWidth > node.clientWidth + 1);
+          }).map((node) => node.className || node.tagName);
+          const links = [...document.querySelectorAll("a[href]")]
+            .filter((link) => getComputedStyle(link).visibility !== "hidden" && link.getClientRects().length);
+          const full = links.find((link) => link.textContent === "Open the full page");
+          return {
+            ready: window.__storyReady,
+            title: document.title,
+            headers: document.querySelectorAll("header, calcite-navigation, nav").length,
+            busy: document.querySelectorAll('[aria-busy="true"]').length,
+            scrollWidth: doc.scrollWidth, clientWidth: doc.clientWidth,
+            scrollHeight: doc.scrollHeight, clientHeight: doc.clientHeight,
+            content: content ? content.getBoundingClientRect().height : -1,
+            main: main ? main.clientHeight : -1,
+            scrollers,
+            theme: doc.dataset.theme,
+            calcite: doc.classList.contains(`calcite-mode-${doc.dataset.theme}`)
+              && !doc.classList.contains(`calcite-mode-${doc.dataset.theme === "dark" ? "light" : "dark"}`),
+            stored: Object.fromEntries(Object.keys(localStorage).map((key) => [key, localStorage.getItem(key)])),
+            storedTheme: localStorage.getItem(themeKey),
+            fullHref: full?.getAttribute("href") ?? null,
+            fullTarget: full?.target ?? null,
+            fullRel: full?.rel ?? null,
+            sameTab: links.filter((link) => link.target !== "_blank" || !link.rel.includes("noopener")).length,
+            strip: document.querySelectorAll(".precip-strip-host svg").length,
+            curve: document.querySelectorAll(".precip-curve-host svg").length,
+            curveTouch: [...document.querySelectorAll(".precip-curve, .precip-strip")]
+              .map((svg) => getComputedStyle(svg).touchAction),
+            text: document.body.innerText
+          };
+        }, THEME_KEY);
+        console.log(`  ${label}:`, JSON.stringify({ ...state.ready, text: undefined }));
+        check(state.ready?.state === "ready" && state.ready?.view === view.name,
+          `${label}: readiness ${JSON.stringify(state.ready)}`);
+        check(state.title.endsWith("Western Water Dashboard") && !state.title.startsWith("Story View"),
+          `${label}: the tab does not name the view ("${state.title}")`);
+        check(state.headers === 0, `${label}: carries ${state.headers} header or navigation element(s)`);
+        check(state.busy === 0, `${label}: ${state.busy} element(s) left aria-busy`);
+        check(state.scrollWidth <= state.clientWidth + 1,
+          `${label}: scrolls sideways (${state.scrollWidth} > ${state.clientWidth})`);
+        check(state.scrollHeight <= state.clientHeight + 1,
+          `${label}: the page scrolls (${state.scrollHeight} > ${state.clientHeight})`);
+        check(state.ready?.fits === true && state.content <= state.main + 1,
+          `${label}: the view is cut off (${state.content} of ${state.main} px shown)`);
+        check(state.scrollers.length === 0,
+          `${label}: holds an inner scroller: ${state.scrollers.join(", ")}`);
+        check(state.theme === expected && state.calcite,
+          `${label}: shows theme ${state.theme} (Calcite agrees: ${state.calcite}), expected ${expected}`);
+        check(state.storedTheme === opposite && Object.keys(state.stored).length === 1,
+          `${label}: storage changed: ${JSON.stringify(state.stored)}`);
+        check(state.fullHref?.startsWith(view.full) && state.fullTarget === "_blank"
+          && state.fullRel?.includes("noopener"),
+        `${label}: "Open the full page" is ${state.fullHref} target=${state.fullTarget} rel=${state.fullRel}`);
+        check(state.sameTab === 0, `${label}: ${state.sameTab} link(s) would open inside the frame`);
+        check(state.text.includes("Western Water Dashboard"), `${label}: no credit line`);
+        check(state.curveTouch.every((value) => value === "pan-y"),
+          `${label}: a chart takes a finger's drag (touch-action ${JSON.stringify(state.curveTouch)})`);
+        if (view.name === "strip") {
+          check(state.strip === 1 && state.curve === 0 && state.ready?.stripYears > 0,
+            `${label}: the strip view drew ${state.strip} strip(s) and ${state.curve} chart(s)`);
+        }
+        if (view.name === "precip") {
+          check(state.ready?.stations > 0 && state.ready?.bandDays >= 365,
+            `${label}: precipitation from ${state.ready?.stations} stations, ${state.ready?.bandDays} days of history`);
+        }
+        if (view.name === "upstream") {
+          check(state.ready?.upstreamItems > 0, `${label}: listed ${state.ready?.upstreamItems} upstream rows`);
+        }
+        const visible = await tab.evaluate(COLLECT_SHADOW_TEXT);
+        const retired = RETIRED_TERMS.exec(visible);
+        check(retired === null, `${label}: visible text uses a retired term: "${retired?.[0]}"`);
+        await checkAccessibility(tab, check, label);
+      } catch (error) {
+        failures.push(`${label}: ${error.message}`);
+      } finally {
+        for (const message of errors) failures.push(`${label}: ${message}`);
+        await context.close();
+      }
+    }
+  }
+
+  /* A link the views cannot draw says so in one sentence, and is still not
+   * a blank frame or a busy one. */
+  for (const [query, reason] of [
+    ["view=map&state=UT", "view"],
+    ["view=precip", "place-missing"],
+    ["view=precip&state=XX", "place"],
+    ["view=strip&area=999999", "place"],
+    ["view=upstream&reservoir=No+such+reservoir+anywhere", "reservoir-unknown"]
+  ]) {
+    const label = `Story view invalid (${query})`;
+    const context = await browser.newContext({ viewport: { width: 640, height: 480 } });
+    const tab = await context.newPage();
+    const errors = [];
+    tab.on("pageerror", (error) => errors.push(String(error)));
+    watchConsoleErrors(tab, errors);
+    try {
+      await tab.goto(`${URL}story.html?${query}`, { waitUntil: "load", timeout: 90000 });
+      await tab.waitForFunction(() => window.__storyReady && window.__storyReady.state !== "loading",
+        null, { timeout: 90000 });
+      const state = await tab.evaluate(() => ({
+        ready: window.__storyReady,
+        sentences: [...document.querySelectorAll(".story-message")].map((node) => node.textContent),
+        busy: document.querySelectorAll('[aria-busy="true"]').length,
+        scrollHeight: document.documentElement.scrollHeight,
+        clientHeight: document.documentElement.clientHeight
+      }));
+      check(state.ready?.state === "invalid" && state.ready?.reason === reason,
+        `${label}: readiness ${JSON.stringify(state.ready)}, expected ${reason}`);
+      check(state.sentences.length === 1 && /^[A-Z].*\.$/.test(state.sentences[0] ?? ""),
+        `${label}: shows ${JSON.stringify(state.sentences)} rather than one sentence`);
+      check(state.busy === 0, `${label}: ${state.busy} element(s) left aria-busy`);
+      check(state.scrollHeight <= state.clientHeight + 1, `${label}: the page scrolls`);
+      await checkAccessibility(tab, check, label);
+    } catch (error) {
+      failures.push(`${label}: ${error.message}`);
+    } finally {
+      for (const message of errors) failures.push(`${label}: ${message}`);
+      await context.close();
+    }
+  }
+  console.log(`\n=== Story views: ${views.length} views at ${frames.length} frames, and 5 links they cannot draw`);
+}
+
+/*
  * Simplified Technical English, measured on what a reader actually sees.
  *
  * ADR-006 has always been enforced as a vocabulary -- a list of retired terms

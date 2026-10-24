@@ -11,7 +11,9 @@ import { ordinal, precipitationView, type PrecipitationView } from "../precip-mo
 import type { PrecipitationHistory, PrecipitationPayload, SnowSite } from "../types";
 import { formatDate } from "../viz/format";
 import { renderPrecipitationStrip } from "../viz/precip-strip";
-import { HISTORY_REGIONS, renderPrecipitationCurve, shortDate, type PrecipitationRange } from "../viz/precip-curve";
+import {
+  HISTORY_REGIONS, PRECIPITATION_CHART_HEIGHT, renderPrecipitationCurve, shortDate, type PrecipitationRange
+} from "../viz/precip-curve";
 
 export interface PrecipitationStatus {
   state: "loading" | "ready" | "failed";
@@ -23,6 +25,20 @@ export interface PrecipitationStatus {
   bandDays: number;
   /** The window the chart shows: the season so far, or the whole year. */
   range: PrecipitationRange;
+  /** The headline's date, or null before one is drawn. */
+  date: string | null;
+  /** Past water years drawn as dots on the strip, 0 when it is hidden. */
+  stripYears: number;
+}
+
+export interface PrecipitationCardOptions {
+  /** `strip` builds only "Where this year stands": its title, the dots and
+   * its note. The model, the figures and the rules are the same. */
+  parts?: "card" | "strip";
+  /** The card is the page's only subject (a story view, ADR-128): it loads
+   * at once rather than when it nears the screen, and a failure does not
+   * point at other figures on the page. */
+  standalone?: boolean;
 }
 
 export interface PrecipitationCard {
@@ -30,6 +46,30 @@ export interface PrecipitationCard {
    * one; the card holds only the current water year, so it says so then. */
   update(stations: readonly string[], snowSites: readonly SnowSite[], finishedSeason?: string | null): void;
   readonly status: PrecipitationStatus;
+  /** The card's blocks by name, for a page that has to fit them into a
+   * fixed frame (a story view, ADR-128). The elements stay the same for the
+   * life of the card; their contents are redrawn. */
+  readonly parts: PrecipitationCardParts;
+  /** Redraw the chart at this height in pixels, and keep it for later
+   * draws. The card's own default is the chart's full height. */
+  setChartHeight(height: number): void;
+}
+
+export interface PrecipitationCardParts {
+  top: HTMLElement;
+  kpis: HTMLElement;
+  split: HTMLElement;
+  strip: HTMLElement;
+  stripNote: HTMLElement;
+  stripKey: HTMLElement | null;
+  controls: HTMLElement;
+  axisTitle: HTMLElement;
+  chart: HTMLElement;
+  historyKey: HTMLElement;
+  april: HTMLElement;
+  coverage: HTMLElement;
+  table: HTMLElement;
+  readNote: HTMLElement;
 }
 
 const MONTH_LONG = ["January", "February", "March", "April", "May", "June", "July",
@@ -174,8 +214,9 @@ function monthRows(view: PrecipitationView): HTMLTableRowElement[] {
 }
 
 export function createPrecipitationCard(
-  section: HTMLElement, onChange: () => void
+  section: HTMLElement, onChange: () => void, options: PrecipitationCardOptions = {}
 ): PrecipitationCard {
+  const stripOnly = options.parts === "strip";
   const kpis = document.createElement("div");
   kpis.className = "overview-kpis precip-kpis";
   const legend = document.createElement("div");
@@ -246,15 +287,29 @@ export function createPrecipitationCard(
   const readNote = text("p", "card-note",
     "The chart opens on the season so far. Choose Whole water year to see all of it. The bands show what the same sites measured by each date in earlier water years. " +
     "Point to the chart, or select it and use the arrow keys, to read one day.");
-  section.append(top, strip, controls, axisTitle, host, historyKey, april, coverage, details, readNote);
+  /* Alone, the strip has no chart below it to share a key with, so it
+   * carries the key itself. */
+  const stripKey = stripOnly ? document.createElement("div") : null;
+  if (stripKey) {
+    stripKey.className = "precip-legend";
+    stripKey.append(...HISTORY_REGIONS.map((region) => legendItem(`precip-swatch-region ${region.className}`, region.label)));
+    strip.append(stripKey);
+  }
+  if (stripOnly) section.append(strip, host);
+  else section.append(top, strip, controls, axisTitle, host, historyKey, april, coverage, details, readNote);
   /* The card's credit line stays last, under everything this card adds. */
   const source = section.querySelector(":scope > .card-source");
   if (source) section.append(source);
   const tbody = details.querySelector("tbody")!;
 
   const status: PrecipitationStatus = {
-    state: "loading", stations: 0, curveDays: 0, bandDays: 0, range: "season"
+    state: "loading", stations: 0, curveDays: 0, bandDays: 0, range: "season",
+    date: null, stripYears: 0
   };
+  let chartHeight = PRECIPITATION_CHART_HEIGHT;
+  /* The last chart drawn, kept so a new height redraws the chart alone and
+   * leaves the figures above it as they are. */
+  let curve: (() => void) | null = null;
   let data: { daily: PrecipitationPayload; history: PrecipitationHistory } | null = null;
   let wanted: {
     stations: readonly string[]; snowSites: readonly SnowSite[]; finishedSeason: string | null;
@@ -283,6 +338,8 @@ export function createPrecipitationCard(
       status.stations = 0;
       status.curveDays = 0;
       status.bandDays = 0;
+      status.date = null;
+      status.stripYears = 0;
       status.state = "ready";
       onChange();
       return;
@@ -308,22 +365,32 @@ export function createPrecipitationCard(
         : "No station in this place measures precipitation today.");
       renderPrecipitationCurve(host, [], [], status.range, "");
       host.replaceChildren(empty);
+      host.hidden = false;
       status.curveDays = 0;
+      status.date = null;
+      status.stripYears = 0;
     } else {
       kpis.replaceChildren(...headlineKpis(view));
       const stripBand = view.bands.find((band) => band.date === view.headline!.date);
       if (stripBand && view.headline!.yearsOnDate.length > 0) {
         const headline = view.headline!;
+        /* Shown before it is drawn, so it is drawn at its own width rather
+         * than the fallback width of a hidden box. */
+        strip.hidden = false;
         stripTitle.textContent = `Where this year stands on ${shortDate(headline.date)}`;
         renderPrecipitationStrip(stripHost, headline.yearsOnDate, headline.inches, stripBand,
           `Each dot is one water year from ${view.firstWaterYear} to ${view.lastWaterYear} on ${shortDate(headline.date)}. ` +
           `This year has ${inches(headline.inches)}, the ${ordinal(headline.rank)} highest of ${headline.rankedYears}.`);
         stripNote.textContent = "Each dot is one past water year, at the same stations on the same date. " +
-          "Its colour is the history region it falls in on the chart below.";
+          (stripOnly ? "Its colour is the history region it falls in, as the key shows."
+            : "Its colour is the history region it falls in on the chart below.");
         strip.hidden = false;
+        status.stripYears = headline.yearsOnDate.length;
       } else {
         strip.hidden = true;
+        status.stripYears = 0;
       }
+      status.date = view.headline.date;
       const splitBlock = snowSplit(view);
       split.replaceChildren(...(splitBlock ? [splitBlock] : []));
       legend.hidden = false;
@@ -336,12 +403,25 @@ export function createPrecipitationCard(
       historyNote.textContent = `History: water years ${view.firstWaterYear} to ${view.lastWaterYear}. ` +
         "Each colour shows where past years were on the same date. The edges are not the path of any one year, and they are not a forecast.";
       const h = view.headline;
-      renderPrecipitationCurve(host, view.bands, view.precipitation, status.range,
-        `Mean precipitation since 1 October for the place shown, ` +
-        `${status.range === "season" ? "for the season so far" : "for the whole water year"}: ` +
-        `${inches(h.inches)} on ${formatDate(h.date)}, against a median of ${inches(h.medianInches)} ` +
-        `for the date in the water years ${view.firstWaterYear} to ${view.lastWaterYear}. ` +
-        "The table below lists the values on the first day of each month.");
+      if (stripOnly) {
+        /* Nothing else is built in this layout; the host stays only to say
+         * so when the strip has no date to stand on. */
+        host.replaceChildren(...(strip.hidden ? [text("p", "chart-empty",
+          "The history for this date is not available for this place.")] : []));
+        host.hidden = !strip.hidden;
+        curve = null;
+      } else {
+        curve = () => renderPrecipitationCurve(host, view.bands, view.precipitation, status.range,
+          `Mean precipitation since 1 October for the place shown, ` +
+          `${status.range === "season" ? "for the season so far" : "for the whole water year"}: ` +
+          `${inches(h.inches)} on ${formatDate(h.date)}, against a median of ${inches(h.medianInches)} ` +
+          `for the date in the water years ${view.firstWaterYear} to ${view.lastWaterYear}. ` +
+          (stripOnly || !options.standalone
+            ? "The table below lists the values on the first day of each month."
+            : "The full page lists the values on the first day of each month."),
+          chartHeight);
+        curve();
+      }
       status.curveDays = view.precipitation.filter((day) => day.inches !== null).length;
       april.textContent = april1Sentence(view) ?? "";
       april.hidden = april.textContent === "";
@@ -364,8 +444,10 @@ export function createPrecipitationCard(
         status.state = "failed";
         legend.hidden = true;
         ranges.hidden = true;
-        host.replaceChildren(text("p", "chart-empty",
-          "The precipitation values could not load. The snow figures on this page are not affected."));
+        host.replaceChildren(text("p", "chart-empty", options.standalone
+          ? "The precipitation values could not load."
+          : "The precipitation values could not load. The snow figures on this page are not affected."));
+        host.hidden = false;
         host.setAttribute("aria-busy", "false");
         onChange();
       });
@@ -373,7 +455,7 @@ export function createPrecipitationCard(
   /* The history is about half a megabyte gzipped, the largest file on the
    * page, so it is fetched when the card comes near the screen rather than
    * by every reader who opens the page for the map. */
-  if ("IntersectionObserver" in window) {
+  if (!options.standalone && "IntersectionObserver" in window) {
     const observer = new IntersectionObserver((entries) => {
       if (!entries.some((entry) => entry.isIntersecting)) return;
       observer.disconnect();
@@ -389,6 +471,15 @@ export function createPrecipitationCard(
       wanted = { stations, snowSites, finishedSeason };
       draw();
     },
-    get status() { return { ...status }; }
+    get status() { return { ...status }; },
+    parts: {
+      top, kpis, split, strip, stripNote, stripKey, controls, axisTitle, chart: host,
+      historyKey, april, coverage, table: details, readNote
+    },
+    setChartHeight(height) {
+      if (height === chartHeight) return;
+      chartHeight = height;
+      curve?.();
+    }
   };
 }

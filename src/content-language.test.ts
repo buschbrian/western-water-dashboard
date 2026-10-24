@@ -66,6 +66,13 @@ const userTextFiles = [
   "src/lakes.ts",
   "src/lakes-model.ts",
   "src/ui/lakes-template.ts",
+  // The story views (ADR-128): their frame, entry point, link sentences and
+  // the two shared builders they draw with.
+  "story.html",
+  "src/story.ts",
+  "src/state/story-url.ts",
+  "src/ui/upstream-section.ts",
+  "src/ui/precipitation-card.ts",
   // The snowpack view writes all of its own visible text, including the
   // seasonal caveat and the axis words on the curve.
   "snow.html",
@@ -145,7 +152,7 @@ describe("user text", () => {
     const publishedPages = [
       "index.html", "modern.html", "overview.html", "snow.html", "drought.html",
       "methods.html", "data.html", "reservoir.html", "terms.html",
-      "landscape.html", "explore.html", "lakes.html",
+      "landscape.html", "explore.html", "lakes.html", "story.html",
       "legacy/index.html", "maplibre/index.html"
     ];
     const styleFiles = (await readdir(resolve(root, "src/styles")))

@@ -26,6 +26,9 @@ import { renderResponsiveChart, stopResponsiveChart } from "./responsive";
 const SVG = "http://www.w3.org/2000/svg";
 const FALLBACK_WIDTH = 640;
 const HEIGHT = 320;
+/** The shortest a caller may ask the chart to be, so the plot keeps room. */
+export const PRECIPITATION_CHART_MIN_HEIGHT = 160;
+export const PRECIPITATION_CHART_HEIGHT = HEIGHT;
 const PAD_LEFT = 36;
 const PAD_RIGHT = 14;
 const PAD_TOP = 22;
@@ -120,8 +123,9 @@ function inches(value: number | null): string {
 
 export function renderPrecipitationCurve(
   host: HTMLElement, allBands: readonly BandStep[], precipitation: readonly DayValue[],
-  range: PrecipitationRange, ariaLabel: string
+  range: PrecipitationRange, ariaLabel: string, chartHeight: number = HEIGHT
 ): boolean {
+  const height = Math.max(PRECIPITATION_CHART_MIN_HEIGHT, Math.round(chartHeight));
   const newest = [...precipitation].reverse().find((day) => day.inches !== null);
   if (allBands.length < 2 || !newest) {
     stopResponsiveChart(host);
@@ -138,7 +142,7 @@ export function renderPrecipitationCurve(
     const last = dayNumber(bands[bands.length - 1]!.date);
     const span = last - first;
     const plotWidth = chartWidth - PAD_LEFT - PAD_RIGHT;
-    const plotHeight = HEIGHT - PAD_TOP - PAD_BOTTOM;
+    const plotHeight = height - PAD_TOP - PAD_BOTTOM;
     const plotBottom = PAD_TOP + plotHeight;
     const highest = Math.max(...bands.map((band) => band.highest),
       ...shown.map((day) => day.inches ?? 0));
@@ -148,7 +152,7 @@ export function renderPrecipitationCurve(
     const at = (date: string, value: number): string => `${x(date).toFixed(1)},${y(value).toFixed(1)}`;
 
     const svg = element("svg", {
-      class: "precip-curve", viewBox: `0 0 ${chartWidth} ${HEIGHT}`,
+      class: "precip-curve", viewBox: `0 0 ${chartWidth} ${height}`,
       role: "img", "aria-label": ariaLabel, tabindex: 0
     });
 
@@ -178,7 +182,7 @@ export function renderPrecipitationCurve(
       svg.append(element("line", {
         class: "precip-tick", x1: tickX, y1: plotBottom, x2: tickX, y2: plotBottom + 4
       }));
-      const label = element("text", { class: "precip-axis", x: tickX, y: HEIGHT - 8, "text-anchor": "middle" });
+      const label = element("text", { class: "precip-axis", x: tickX, y: height - 8, "text-anchor": "middle" });
       label.textContent = tick.text;
       svg.append(label);
     }
@@ -301,12 +305,19 @@ export function renderPrecipitationCurve(
       crosshair.setAttribute("visibility", "hidden");
       tip.hidden = true;
     };
-    svg.addEventListener("pointermove", (event) => {
+    const showAt = (event: PointerEvent): void => {
       const box = svg.getBoundingClientRect();
       const svgX = ((event.clientX - box.left) / box.width) * chartWidth;
       show(first + ((svgX - PAD_LEFT) / plotWidth) * span);
+    };
+    svg.addEventListener("pointermove", showAt);
+    /* A tap gives no hover. It reads the day it touched, and the reading
+     * stays after the finger lifts, because a touch pointer leaves the
+     * chart as soon as it is lifted. */
+    svg.addEventListener("pointerdown", showAt);
+    svg.addEventListener("pointerleave", (event) => {
+      if (event.pointerType !== "touch") hide();
     });
-    svg.addEventListener("pointerleave", hide);
     svg.addEventListener("blur", hide);
     svg.addEventListener("focus", () => show(focusDay));
     svg.addEventListener("keydown", (event) => {

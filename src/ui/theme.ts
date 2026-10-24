@@ -5,6 +5,7 @@ import {
   type ThemePreference
 } from "../state/theme";
 import { elementById } from "./dom";
+import { stampTheme } from "./theme-stamp";
 
 /* Deliberately still the old repository name, and it must stay that way.
  * This is a persistence key, not an identity: renaming it does not rename
@@ -33,10 +34,7 @@ let themePreference = readThemePreference();
 
 function applyTheme(): void {
   const theme = effectiveTheme(themePreference, darkQuery.matches);
-  document.documentElement.classList.toggle("calcite-mode-dark", theme === "dark");
-  document.documentElement.classList.toggle("calcite-mode-light", theme === "light");
-  document.documentElement.dataset.theme = theme;
-  document.documentElement.style.colorScheme = theme;
+  stampTheme(theme);
   const action = document.getElementById("theme-toggle");
   if (action) {
     action.setAttribute("text", `Theme: ${themePreference}`);

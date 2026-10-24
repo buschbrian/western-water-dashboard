@@ -11,6 +11,16 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ## [Unreleased]
 
+### Added
+
+- **Story views** (ADR-128): `story.html` shows one figure alone, for a
+  story to embed: the precipitation card or its "Where this year stands"
+  strip for a state or drainage area, or the water stored above a
+  reservoir. Each view fills its frame without scrolling, takes its theme
+  from the link or the reader's system and never stores it, and links to
+  its full page in a new tab. Not in the navigation.
+- The precipitation chart reads a day on a tap as well as on hover.
+
 ### Changed
 
 - **The snow page is now "Precipitation and snow"**, with the precipitation

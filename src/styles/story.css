@@ -1,0 +1,76 @@
+/* The story views (ADR-128). A story shows the page in a frame of fixed
+ * size and scrolls past it, so the page fills the frame exactly and never
+ * scrolls; `ui/story-fit.ts` leaves out what does not fit. Inside the frame
+ * the viewport is the frame, so the shared stylesheets' width rules answer
+ * for the frame's own width. */
+/* Every rule here is under `.story-page`, the class on this page's root:
+ * the build does not promise the order of the shared sheets, and these must
+ * win over them. */
+html.story-page, .story-page body, .story-page #story-app { height: 100%; min-height: 0; margin: 0; overflow: hidden; }
+html.story-page[data-theme] body { background: var(--app-surface-raised); }
+
+.story-page #story-app { display: flex; flex-direction: column; }
+.story-page .story-main {
+  flex: 1 1 auto;
+  min-block-size: 0;
+  /* Clip, not hidden: a clipped box is not a scroller, so nothing inside
+   * the frame can catch the reader's wheel. The fit keeps it from cutting
+   * anything off. */
+  overflow: clip;
+  container-type: inline-size;
+}
+.story-page .story-content { position: relative; display: flow-root; padding: .75rem 1rem .25rem; }
+@container (max-width: 30rem) { .story-page .story-content { padding-inline: .75rem; } }
+
+/* Out of the flow and out of sight, but still its own width: a chart left
+ * out keeps the width it was drawn at, so bringing it back on a larger
+ * frame measures it as it will be drawn. `visibility` also takes it out of
+ * the tab order and away from a screen reader. */
+.story-page .story-dropped {
+  position: absolute !important;
+  inset-inline: 0;
+  inset-block-start: 0;
+  visibility: hidden !important;
+  pointer-events: none;
+}
+.story-page .story-kpi-short .overview-kpi small { display: none; }
+
+.story-page .story-title { margin: 0 0 .2rem; font-size: 1.15rem; line-height: 1.25; }
+.story-page .story-lead { margin: 0 0 .5rem; color: var(--app-muted); font-size: .85rem; line-height: 1.4; }
+.story-page .story-message { margin: .5rem 0; font-size: 1rem; line-height: 1.45; }
+
+.story-page .story-card { padding: 0; border: 0; border-radius: 0; box-shadow: none; background: transparent; }
+.story-page .story-card .overview-kpis { margin-block-start: .4rem; }
+
+/* The charts take a finger's drag as the story's scroll, never as their
+ * own, and nothing on them listens to the wheel. */
+.story-page .story-card svg { touch-action: pan-y; }
+
+.story-page .story-reservoir { display: flex; flex-wrap: wrap; gap: .25rem 1.5rem; align-items: end; margin-block: .35rem .25rem; }
+.story-page .story-figure { margin: 0; }
+.story-page .story-figure > span { display: block; color: var(--app-muted); font-size: .8rem; }
+.story-page .story-figure > strong { display: block; font-size: 1.6rem; line-height: 1.15; font-variant-numeric: tabular-nums; }
+.story-page .story-reservoir .detail-headline strong { font-size: 1.6rem; }
+.story-page .story-date-line { margin: 0; flex-basis: 100%; color: var(--app-muted); font-size: .8rem; }
+.story-page .story-upstream .reservoir-subhead {
+  margin-block: .6rem .3rem;
+  padding-block-start: .5rem;
+  border-block-start: 1px solid var(--app-border);
+  font-size: 1rem;
+}
+.story-page .story-upstream .reservoir-note { margin-block: .25rem; font-size: .9rem; line-height: 1.4; }
+.story-page .story-upstream .reservoir-links { margin-block: .25rem; font-size: .9rem; }
+.story-page .story-upstream .upstream-list { margin-block-start: .2rem; }
+
+.story-page .story-footer {
+  flex: none;
+  padding: .35rem 1rem .5rem;
+  border-block-start: 1px solid var(--app-border);
+  color: var(--app-muted);
+  font-size: .75rem;
+  line-height: 1.4;
+}
+.story-page .story-footer a { color: var(--app-text); }
+.story-page .story-footer a:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 2px; }
+.story-page .story-credit { font-weight: 600; color: var(--app-text); }
+.story-page .precip-strip-block > .precip-legend { margin-block-start: .4rem; }

@@ -128,7 +128,7 @@ describe("a data-only commit deploys on its own", () => {
   it("gives every published page the same content policy", async () => {
     const pages = ["index.html", "modern.html", "overview.html", "snow.html",
       "drought.html", "methods.html", "data.html", "explore.html", "lakes.html",
-      "legacy/index.html", "maplibre/index.html"];
+      "reservoir.html", "story.html", "legacy/index.html", "maplibre/index.html"];
     const policies = new Set<string>();
 
     for (const page of pages) {
@@ -299,7 +299,9 @@ describe("a data-only commit deploys on its own", () => {
       "data/snow/snowpack-wy2026.json",
       // The terminal lakes (ADR-119): their page and their payload, at the
       // root, under data/ and as an API alias, like the reservoirs'.
-      "lakes.html", "lakes.json", "data/lakes.json", "api/lakes.json"]) {
+      "lakes.html", "lakes.json", "data/lakes.json", "api/lakes.json",
+      // The story views (ADR-128): a public URL a published story embeds.
+      "story.html"]) {
       expect(workflow, `the deploy must verify dist/${path}`).toContain(path);
     }
     // The rule that makes a data-only deploy meaningful, checked in CI as
