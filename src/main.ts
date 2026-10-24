@@ -58,6 +58,7 @@ import {
 } from "./state/filters";
 import { describeRanking, rankingRecords } from "./state/ranking";
 import { createSelectionStore, findReservoir, reservoirLabel } from "./state/selection";
+import { setupPlaceSearch } from "./ui/place-search";
 import {
   DEFAULT_SORT,
   describeTable,
@@ -1101,6 +1102,7 @@ if (!supportsDashboard(browserCapabilities())) {
   });
 
   renderShell(root);
+  setupPlaceSearch("map");
   wirePanels();
   wireCopyViewLinks();
   wireTheme();

@@ -1,9 +1,11 @@
 """Build compact, public fact indexes for the dashboard question service.
 
 The Worker fetches one topic per question, so this builder keeps reservoir,
-snow and drought facts separate.  It writes temporary files, validates their
-shape and size, then replaces all three outputs.  A failure leaves the last
-accepted indexes untouched.
+snow and drought facts separate.  It also writes the names the shared
+header's "Find a place" search offers, which no other published file holds
+small enough to fetch on a page that does not need the full payloads.  It
+writes temporary files, validates their shape and size, then replaces every
+output.  A failure leaves the last accepted indexes untouched.
 """
 
 from __future__ import annotations
@@ -19,6 +21,7 @@ MAX_BYTES = {
     "reservoirs.json": 2_000_000,
     "snow.json": 1_000_000,
     "drought.json": 600_000,
+    "places.json": 250_000,
 }
 #: The newest weeks of each drought archive the question service is given.
 #: The archives hold a decade (ADR-122), about 6 MB across three levels, ten
@@ -135,6 +138,42 @@ def drought_index() -> dict:
     }
 
 
+def places_index() -> dict:
+    """Names only: what a reader can search for and nothing they could add up.
+
+    The search fetches this on every page, so it carries no measurement.
+    Reservoirs keep the point's own `state`, which is what the link label
+    uses to tell two reservoirs of one name apart (ADR-066).  Areas come
+    from the drawn roster at every level the export publishes, and snow
+    sites from the current payload, which is what the snow page resolves a
+    `site` link against.
+    """
+    reservoirs = read("reservoirs.json")
+    snow = read("snowpack.json")
+    watersheds = read("reference.json")["geography"]["watersheds"]
+    areas = []
+    for level, scope in sorted(watersheds["drawn_scopes"].items(),
+                               key=lambda item: int(item[0])):
+        field = f"huc{level}"
+        for unit in watersheds["scopes"][scope]["units"]:
+            areas.append({
+                "level": int(level), "code": unit[field],
+                "name": unit.get("name") or unit[field],
+                "states": unit.get("states") or "",
+            })
+    return {
+        "schema_version": SCHEMA_VERSION,
+        "topic": "places",
+        "as_of": str(reservoirs["generated_at"])[:10],
+        "generated_at": reservoirs["generated_at"],
+        "reservoirs": [{"name": item["name"], "state": item.get("state")}
+                       for item in reservoirs["reservoirs"]],
+        "areas": areas,
+        "sites": [{"station": site["station"], "name": site["name"],
+                   "state": site.get("state")} for site in snow["sites"]],
+    }
+
+
 def encoded(payload: dict) -> bytes:
     return (json.dumps(payload, ensure_ascii=False, separators=(",", ":"))
             + "\n").encode("utf-8")
@@ -145,6 +184,7 @@ def main() -> int:
         "reservoirs.json": reservoir_index(),
         "snow.json": snow_index(),
         "drought.json": drought_index(),
+        "places.json": places_index(),
     }
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     temporary = []

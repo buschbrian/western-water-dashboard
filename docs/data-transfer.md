@@ -47,6 +47,14 @@ No recent-conditions payload or raster is included in this comparison.
 | `data/drought/usdm-huc6.json` | 24.5 KB | 3.4 KB |
 | `data/drought/usdm-huc4.json` | 10.6 KB | 2.1 KB |
 | `data/drought/usdm-huc8.json` | 121 KB | 12.3 KB |
+| `data/assistant/places.json` | 101 KB | 17.5 KB |
+
+`data/assistant/places.json` was measured 2026-10-24 on its first generated
+copy (gzip -6): 406 reservoirs, 695 drainage areas at four levels and 636
+snow sites, names and states only. It is fetched only when a reader focuses
+the header's Find a place search. The files that already held those names
+would have cost about 325 KB on the wire for the same search:
+`reservoirs.json` alone is 263 KB.
 
 The two precipitation files were measured 2026-10-24 on their first generated
 copies (ADR-125). The history is fetched only when the snow page's

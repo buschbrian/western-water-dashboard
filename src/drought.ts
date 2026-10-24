@@ -121,6 +121,7 @@ import {
 } from "./viz/extent";
 import { brandMarkup, pageLinksMarkup, updatePageLinks } from "./ui/page-header";
 import { setupPlaceChooser } from "./ui/opening-splash";
+import { setupPlaceSearch } from "./ui/place-search";
 import { wireTheme } from "./ui/theme";
 import { DROUGHT_CLASSES, NO_DROUGHT_LABEL } from "./viz/drought-classes";
 import { formatDate, formatPercent } from "./viz/format";
@@ -146,6 +147,7 @@ root.innerHTML = `
   </main>`;
 wireTheme();
 void setupPlaceChooser();
+setupPlaceSearch("drought");
 
 /**
  * What a reader's `?state=` and `?area=` selection resolved to (slice S3c,

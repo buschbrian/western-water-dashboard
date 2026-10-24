@@ -263,6 +263,16 @@ Each was found by a failing test or a screenshot. Do not regress them.
 - **The place chooser is site navigation.** Every shared header exposes
   **Choose another place** directly at wide widths and inside the existing
   page menu on phones. The storage analysis panel has no duplicate control.
+- **Find a place is site navigation too.** Its action is on every shared
+  header at every width, so each phone lane counts it (12rem on the map,
+  8rem elsewhere). The panel it opens is fixed under the bar, outside the
+  navigation's clipping, and fetches `data/assistant/places.json` on the
+  field's first focus. Matching and links are `ui/place-search-model.ts`:
+  a reservoir opens its page by the `reservoirLabel` link, a snow site opens
+  `snow.html?state=all&site=`, and an area opens the current page's own topic
+  (the storage map from pages without areas) with `state=all`, `area` and
+  `level` unless it is a basin. `terms.html` has no shared header and no
+  script, so it has no search.
 - **A `calcite-sheet` takes its height from `--calcite-sheet-height`.**
   `--calcite-sheet-max-height` only caps it.
 - **`ResizeObserver` needs a render loop.** Its callbacks arrive with the

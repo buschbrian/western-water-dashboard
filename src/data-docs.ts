@@ -13,6 +13,7 @@ import {
 } from "./data-docs-schema";
 import { brandMarkup, pageLinksMarkup } from "./ui/page-header";
 import { setupPlaceChooser } from "./ui/opening-splash";
+import { setupPlaceSearch } from "./ui/place-search";
 import { wireTheme } from "./ui/theme";
 import "./styles/data-docs.css";
 
@@ -250,6 +251,7 @@ renderGroups("drought-fields", DROUGHT_GROUPS);
 renderGroups("reference-fields", REFERENCE_GROUPS);
 wireTheme();
 void setupPlaceChooser();
+setupPlaceSearch("data");
 
 window.__dataDocsReady = {
   files: document.querySelectorAll(".api-file").length,
