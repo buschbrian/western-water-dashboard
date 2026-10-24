@@ -41,6 +41,8 @@ export interface PrecipitationHeadline {
   /** 1 is the highest. Years with the same value share a rank. */
   rank: number;
   rankedYears: number;
+  /** Every past water year on the headline's date, oldest first. */
+  yearsOnDate: { waterYear: number; inches: number }[];
   /** Null after 1 April, or when the median for 1 April is already passed. */
   toApril1: { medianInches: number; neededInches: number; medianGainInches: number } | null;
 }
@@ -76,6 +78,8 @@ export interface PrecipitationView {
 const DAY_MS = 86_400_000;
 /** How far the headline may step back to find a day with snow water too. */
 export const SNOW_LAG_DAYS = 2;
+/** The share of eligible stations that must report for a day to set the station set. */
+export const SET_SHARE = 0.9;
 const roundTenth = (value: number): number => Math.round(value * 10) / 10;
 
 function dayNumber(date: string): number {
@@ -141,7 +145,17 @@ export function precipitationView(
   const dailyByStation = new Map(daily.sites.map((site) => [site.station, site]));
   const reporting = placeStations.filter((station) => dailyByStation.has(station));
   const withHistory = reporting.filter((station) => history.sites.has(station));
-  const stations = withHistory.filter((station) => !dailyByStation.get(station)!.late);
+  /* The set is the stations that report on its newest day: the newest day
+   * on which at least `SET_SHARE` of the eligible stations have a reading.
+   * Requiring every station on every day let one missing value at one of 367
+   * stations hold the whole region's line four days back; a station with no
+   * reading that day is counted as late, which is what it is. */
+  const eligible = withHistory.filter((station) => !dailyByStation.get(station)!.late);
+  const setDay = [...daily.series_dates].reverse().find((date) =>
+    eligible.filter((station) => dailyByStation.get(station)!.readings.has(date)).length
+      >= Math.ceil(eligible.length * SET_SHARE));
+  const stations = setDay === undefined ? eligible
+    : eligible.filter((station) => dailyByStation.get(station)!.readings.has(setDay));
   const base = {
     placeStationCount: placeStations.length,
     stations,
@@ -223,6 +237,10 @@ export function precipitationView(
     ? { date: paired.date, snowInches: snowByDate.get(paired.date)!, precipitationInches: paired.inches! }
     : null;
   const medianYear = bands[bands.length - 1]!.median;
+  const yearsOnDate = yearCurves.flatMap((curve, index) => {
+    const value = valueOnDate(curve, stepDates, newest.date);
+    return value === null ? [] : [{ waterYear: history.first_water_year + index, inches: roundTenth(value) }];
+  });
   const onDate = yearCurves
     .map((curve) => valueOnDate(curve, stepDates, newest.date))
     .filter((value): value is number => value !== null);
@@ -258,6 +276,7 @@ export function precipitationView(
       medianYearInches: roundTenth(medianYear),
       rank,
       rankedYears: onDate.length + 1,
+      yearsOnDate,
       toApril1
     }
   };

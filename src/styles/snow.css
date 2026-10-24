@@ -343,3 +343,17 @@
   color: var(--app-surface-raised);
 }
 .precip-range button:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 2px; }
+
+/* The same-date strip (ADR-125): past years as dots, this year as the large
+ * one. Short and airy on purpose -- a row of dots, not another full-width bar. */
+.precip-strip-block { margin-block: 0 1rem; }
+.precip-strip-block[hidden] { display: none; }
+.precip-strip-host { min-inline-size: 0; }
+.precip-strip { display: block; inline-size: 100%; block-size: auto; overflow: visible; }
+.precip-strip-dot { stroke: var(--app-surface-raised); stroke-width: 1.5; }
+.precip-strip-dot.precip-region-middle { stroke: color-mix(in srgb, var(--app-text) 30%, transparent); stroke-width: 1; }
+.precip-strip-rule { stroke: var(--precip-line); stroke-width: 1.5; stroke-dasharray: 2 3; }
+/* Four figures share the row with the snow block, so a narrower basis than
+ * the page strip keeps them on one line at desktop widths instead of three
+ * and a lone fourth. */
+.precip-kpis .overview-kpi { flex-basis: 8.5rem; }

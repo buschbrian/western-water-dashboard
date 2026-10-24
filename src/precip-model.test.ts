@@ -154,6 +154,17 @@ describe("precipitation against its own history", () => {
     expect(silent.snow).toBeNull();
   });
 
+  it("keeps the line current when one station misses the newest day", () => {
+    const readings: Record<string, Record<string, number>> = {};
+    for (let n = 0; n < 20; n += 1) readings[`s${n}`] = { "2026-10-07": 1, "2026-10-08": 2 };
+    delete readings["s0"]!["2026-10-08"];
+    const view = precipitationView(Object.keys(readings), daily(readings),
+      history(Object.fromEntries(Object.keys(readings).map((s) => [s, () => 1]))), []);
+    expect(view.headline?.date).toBe("2026-10-08");
+    expect(view.stations).toHaveLength(19);
+    expect(view.late).toBe(1);
+  });
+
   it("returns no headline for a place with no station in the set", () => {
     const view = precipitationView(["c"], daily({ c: { "2026-10-08": 1 } }),
       history({ a: () => 1 }), []);

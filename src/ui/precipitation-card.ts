@@ -10,6 +10,7 @@ import { loadPrecipitation, loadPrecipitationHistory } from "../data/precip-load
 import { ordinal, precipitationView, type PrecipitationView } from "../precip-model";
 import type { PrecipitationHistory, PrecipitationPayload, SnowSite } from "../types";
 import { formatDate } from "../viz/format";
+import { renderPrecipitationStrip } from "../viz/precip-strip";
 import { HISTORY_REGIONS, renderPrecipitationCurve, shortDate, type PrecipitationRange } from "../viz/precip-curve";
 
 export interface PrecipitationStatus {
@@ -232,7 +233,17 @@ export function createPrecipitationCard(
   const top = document.createElement("div");
   top.className = "precip-top";
   top.append(kpis, split);
-  section.append(top, controls, axisTitle, host, historyKey, april, coverage, details);
+  /* Where this year stands among every past year on the same date: the
+   * history rank, drawn. */
+  const strip = document.createElement("div");
+  strip.className = "precip-strip-block";
+  const stripTitle = text("p", "precip-axis-title", "");
+  const stripHost = document.createElement("div");
+  stripHost.className = "precip-strip-host";
+  const stripNote = text("p", "precip-coverage", "");
+  strip.append(stripTitle, stripHost, stripNote);
+  strip.hidden = true;
+  section.append(top, strip, controls, axisTitle, host, historyKey, april, coverage, details);
   const tbody = details.querySelector("tbody")!;
 
   const status: PrecipitationStatus = {
@@ -249,6 +260,7 @@ export function createPrecipitationCard(
        * current water year, and two years side by side on one page would
        * read as one. */
       kpis.replaceChildren();
+      strip.hidden = true;
       split.replaceChildren();
       legend.hidden = true;
       ranges.hidden = true;
@@ -275,6 +287,7 @@ export function createPrecipitationCard(
     status.bandDays = view.bands.length;
     if (!view.headline) {
       kpis.replaceChildren();
+      strip.hidden = true;
       split.replaceChildren();
       legend.hidden = true;
       ranges.hidden = true;
@@ -292,6 +305,19 @@ export function createPrecipitationCard(
       status.curveDays = 0;
     } else {
       kpis.replaceChildren(...headlineKpis(view));
+      const stripBand = view.bands.find((band) => band.date === view.headline!.date);
+      if (stripBand && view.headline!.yearsOnDate.length > 0) {
+        const headline = view.headline!;
+        stripTitle.textContent = `Where this year stands on ${shortDate(headline.date)}`;
+        renderPrecipitationStrip(stripHost, headline.yearsOnDate, headline.inches, stripBand,
+          `Each dot is one water year from ${view.firstWaterYear} to ${view.lastWaterYear} on ${shortDate(headline.date)}. ` +
+          `This year has ${inches(headline.inches)}, the ${ordinal(headline.rank)} highest of ${headline.rankedYears}.`);
+        stripNote.textContent = "Each dot is one past water year, at the same stations on the same date. " +
+          "Its colour is the history region it falls in on the chart below.";
+        strip.hidden = false;
+      } else {
+        strip.hidden = true;
+      }
       const splitBlock = snowSplit(view);
       split.replaceChildren(...(splitBlock ? [splitBlock] : []));
       legend.hidden = false;
