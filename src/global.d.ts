@@ -133,6 +133,13 @@ interface Window {
     reservoirs: number;
     visible: number;
     charts: number;
+    /** Chart hosts holding a chart that drew. For an SDK chart that means its
+     * drawing surface was found (`mountChart`); `charts` counts hosts, drawn
+     * or not, and is what the page has always reported. */
+    chartsDrawn: number;
+    /** Chart hosts showing "This chart could not be drawn" in place of a
+     * chart. */
+    chartsFailed: number;
     lakePowellExcluded: boolean;
     /** Lake Mead's own control, reported beside Powell's (ADR-062). */
     lakeMeadExcluded: boolean;

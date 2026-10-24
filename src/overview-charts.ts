@@ -113,6 +113,46 @@ const CHART_INK = {
  */
 const RENDER_SETTLE_MS = 8000;
 
+/**
+ * How long a chart that has drawn nothing at `RENDER_SETTLE_MS` is given
+ * before it is called failed. Generous on purpose: on a loaded machine the
+ * histogram's data step alone was measured at nine seconds and its
+ * `arcgisRenderingComplete` at nineteen, and calling a slow chart failed
+ * would take away a chart that was about to draw.
+ */
+const CHART_DRAW_DEADLINE_MS = 30000;
+
+/**
+ * Whether the chart has a drawing surface: the SVG (bar, combo) or canvas
+ * (scatter, histogram) the SDK's chart library draws marks into.
+ *
+ * This is the drawn signal, chosen over the others after measuring all of
+ * them in headless Chromium with a Calcite token set to `light-dark()` (E1):
+ *
+ * - The component's `render()` reads the Calcite tokens before it builds any
+ *   markup, so a token it cannot parse throws there and the drawing library
+ *   is never created: the shadow root holds no SVG and no canvas, every
+ *   time. A drawn chart always has one.
+ * - The throw is uncaught inside the component. When it happens on the first
+ *   update `componentOnReady` rejects; when it happens on the update after
+ *   `layer` and `model` are set, nothing of ours sees it and the page used
+ *   to publish readiness over blank charts, the 1.1.0 symptom.
+ * - `arcgisRuntimeError` and `arcgisDataProcessError` do not fire for it.
+ * - `arcgisRenderingComplete` does not fire for it either, but it is no
+ *   verdict on its own: E6 records it missing on drawn charts, and on a
+ *   loaded machine it arrived up to nineteen seconds after the chart was
+ *   created. It is used only to decide when to look.
+ * - A window `error` cannot name the chart it came from.
+ *
+ * The loader and alert the component can show are their own elements with
+ * their own shadow roots, so their icons do not match this query. A surface
+ * proves the library drew; it does not count marks. Mark structure differs
+ * between the SVG and canvas libraries and is not public.
+ */
+function hasDrawingSurface(chart: ChartElement): boolean {
+  return chart.shadowRoot?.querySelector("svg, canvas") != null;
+}
+
 /* The package exports only `setup-utils` from its model tree, so the model
  * type is taken from the element that consumes it rather than imported from
  * a path that is not public. */
@@ -368,16 +408,20 @@ async function mountChart(
   applyChartTheme(model);
   chart.layer = layer;
   chart.model = model;
-  /* Whichever comes first. `arcgisRenderingComplete` has been observed never
-   * to arrive on a chart that is fully drawn, so proceeding on the deadline
-   * can only mean the page stops claiming to be busy slightly early --
-   * waiting for the event alone means it never stops claiming it at all. */
-  let settle: ReturnType<typeof setTimeout>;
-  await Promise.race([
-    rendered,
-    new Promise<void>((resolve) => { settle = setTimeout(resolve, RENDER_SETTLE_MS); })
-  ]).finally(() => clearTimeout(settle));
-  return chart;
+  /* The event or a deadline decides when to look; the surface decides what
+   * happened. A chart drawn without the event (E6) is found at the first
+   * deadline; a slow one is given until the second. */
+  for (const wait of [RENDER_SETTLE_MS, CHART_DRAW_DEADLINE_MS - RENDER_SETTLE_MS]) {
+    let settle: ReturnType<typeof setTimeout>;
+    await Promise.race([
+      rendered,
+      new Promise<void>((resolve) => { settle = setTimeout(resolve, wait); })
+    ]).finally(() => clearTimeout(settle));
+    /* A newer render replaced this chart. That is not a failure, and the
+     * revision that replaced it reports its own outcome. */
+    if (!chart.isConnected || hasDrawingSurface(chart)) return chart;
+  }
+  throw new Error(`The chart drew nothing within ${CHART_DRAW_DEADLINE_MS} ms`);
 }
 
 /**
