@@ -858,12 +858,14 @@ function renderDrought(
 
     /* The same points the scatter drew, ranked. Built from `points` rather
      * than recomputed, so the two charts cannot disagree about which areas
-     * have a reservoir reading. `gapRows` counts the ranked rows; the
-     * chart itself is drawn when its section is opened. */
-    let gapRows = 0;
+     * have a reservoir reading. The chart is drawn when its section is
+     * opened, so two facts, two fields (ADR-090): `gapRows` is still the
+     * rows drawn (0 while closed) and `gapRowsRanked` the rows there are. */
+    const gapRows = 0;
+    let gapRowsRanked = 0;
     if (gapHost) {
       const ranked = byStorageGap(points);
-      gapRows = ranked.length;
+      gapRowsRanked = ranked.length;
       whenOpen(gapDetails, gapHost, () => {
         const drawn = renderDroughtGap(gapHost, ranked, {
           drynessLabel: `in ${dryness.label.toLowerCase()} (${dryness.code}) or worse`,
@@ -875,6 +877,7 @@ function renderDrought(
           gapHost.replaceChildren(mapStatusNote(
             "No area in view has a reservoir reading to compare against."));
         }
+        if (window.__droughtReady) window.__droughtReady = { ...window.__droughtReady, gapRows: drawn };
       });
     }
 
@@ -961,6 +964,7 @@ function renderDrought(
        * the severity chart: the first counts areas with a reservoir reading,
        * the second counts every area in scope. */
       gapRows,
+      gapRowsRanked,
       severityAreas,
       /* The count this page is currently about -- narrowed by `?level=`
        * already, and now also by `?state=`/`?area=` (D5). Equal to the
