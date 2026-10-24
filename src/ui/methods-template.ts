@@ -112,9 +112,9 @@ export function methodsMarkup(search: string): string {
             rel="noreferrer">dwr.state.co.us</a>.</dd>
         <dt>U.S. Geological Survey</dt>
         <dd>Daily reservoir storage for its published sites, through the agency's
-          daily-values service. Read the source at
-          <a href="https://waterservices.usgs.gov/" target="_blank"
-            rel="noreferrer">waterservices.usgs.gov</a>.</dd>
+          water data service. Read the source at
+          <a href="https://api.waterdata.usgs.gov/" target="_blank"
+            rel="noreferrer">api.waterdata.usgs.gov</a>.</dd>
         <dt>Salt River Project</dt>
         <dd>Storage every five minutes for the four Salt River reservoirs the
           operator runs, reduced to each day's last reading. Read the source at
