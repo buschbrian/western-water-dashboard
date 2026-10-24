@@ -37,7 +37,14 @@ LAYER_URL = (
 USER_AGENT = "western-water-dashboard/drought-monitor (+https://github.com/buschbrian)"
 TIMEOUT = 90
 MAX_ALLOWABLE_OFFSET = 0.001  # degrees; about 110 m north-to-south
-GEOMETRY_PRECISION = 5
+# Three decimal places, about 110 m: the same grain as the simplification
+# above, so no vertex is placed more finely than the geometry was drawn.
+# Five places wrote metre-level digits for a shape already simplified to
+# 110 m, and the file is the drought page's largest fetch: 505 KB gzipped at
+# five places against about 320 KB at three, measured 2026-10-24. Coverage
+# never reads these coordinates (ADR-122 measures the archive); only the map
+# draws them.
+GEOMETRY_PRECISION = 3
 DATE_FIELDS = ("MapDate", "ReleaseDate", "ValidStart", "ValidEnd")
 REQUIRED_FIELDS = {"DM", "MapDate", "ReleaseDate"}
 ATTRIBUTION = (
