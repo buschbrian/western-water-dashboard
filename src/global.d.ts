@@ -283,6 +283,9 @@ interface Window {
     mapAreaLabelsDeconflicted?: boolean;
     /** Rows in the ranked comparison: areas that have a reservoir reading. */
     gapRows?: number;
+    /** Rows the ranked comparison holds. It is drawn only when its section is
+     * opened, so `gapRows` is 0 until then and this says how many there are. */
+    gapRowsRanked?: number;
     /** Areas counted by the severity distribution: every published area. */
     severityAreas?: number;
     /* The map half, present once the map module has resolved or failed.
