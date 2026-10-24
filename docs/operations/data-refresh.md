@@ -32,6 +32,8 @@ scripts/refresh-daily.sh          # everything, exactly as the workflow does
    The first run of a new water year copies the finished season to
    `data/snow/snowpack-wy<YEAR>.json` before writing (ADR-121); the commit
    stages the whole `data/snow` directory, so the new file goes with it.
+   **Precipitation** — `refresh_station_readings.py` (ADR-125), after snow and
+   independent of it. A failure keeps the last complete `precipitation.json`.
 6. **Commit** — the published set, staged together, so the drought files can
    never be committed apart. The list lives in `data/generated-files.json` and
    `scripts/refresh-daily.sh` reads it; do not retype it into a workflow.
@@ -109,6 +111,8 @@ These are **not** part of the daily run:
 .venv/bin/python tools/build_normal_baselines.py --missing   # only what has no normal yet
 .venv/bin/python tools/build_normal_baselines.py --only "Name"
 .venv/bin/python tools/build_county_assignments.py
+.venv/bin/python tools/build_precipitation_history.py      # each October, after the water year closes
+.venv/bin/python tools/build_precipitation_history.py --missing
 .venv/bin/python tools/fetch_watershed_scope.py
 ```
 
@@ -119,6 +123,14 @@ reservoir in `reservoirs.json`. It is network-bound, not slow: one reservoir is
 public services this project does not pay for). Run it when the standard
 climate period moves (2021-2050 becomes standard in 2031) or when a reservoir
 joins the roster.
+
+`build_precipitation_history.py` (ADR-125) fetches every water year from
+1991 for the snow stations, ten at a time, two requests at once: about an
+hour for the whole inventory. Run it each October once the water year has
+closed, so the window gains that year, and with `--missing` when the
+inventory grows or a run reports stations that did not answer. A change of
+window refuses `--only` and `--missing`, because two windows are two
+populations; the full run rebuilds every station.
 
 **Every run merges; none replaces.** A reservoir absent from today's payload
 keeps its normal and the run says so — the roster it reads is what the

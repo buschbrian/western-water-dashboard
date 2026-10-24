@@ -54,6 +54,13 @@
       "staged_by_refresh": true
     },
     {
+      "path": "precipitation.json",
+      "class": "generated-daily",
+      "writer": "refresh_station_readings.py",
+      "staged_by_refresh": true,
+      "note": "Accumulated precipitation since 1 October at the snow stations (ADR-125). Separate from snowpack.json so a failure costs only this file."
+    },
+    {
       "path": "lakes.json",
       "class": "generated-daily",
       "writer": "refresh_lakes.py",
@@ -138,6 +145,13 @@
       "writer": "tools/build_normal_baselines.py",
       "staged_by_refresh": false,
       "note": "A median over a period that has ended cannot change. Network job; every run merges."
+    },
+    {
+      "path": "precipitation_history.json",
+      "class": "derived-on-demand",
+      "writer": "tools/build_precipitation_history.py",
+      "staged_by_refresh": false,
+      "note": "Every water year from 1991 at each snow station whose record covers all of them (ADR-125). Rebuilt each October after the year closes; network job; every run merges."
     },
     {
       "path": "counties.json",

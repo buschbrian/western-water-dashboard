@@ -71,6 +71,7 @@ if [ "$dry_run" = 1 ]; then
   note "  3. drought coverage $python_bin tools/compute_drought_coverage.py, every offered level"
   note "  4. pair check       $python_bin tools/check_drought_pair.py"
   note "  5. snow             $python_bin refresh_snowpack.py"
+  note "  5a. precipitation $python_bin refresh_station_readings.py (keeps the last complete file on failure)"
   note "  5b. terminal lakes  $python_bin refresh_lakes.py (keeps the last complete lake payload on failure)"
   note "  6. assistant indexes $python_bin tools/build_assistant_indexes.py (keeps the last accepted set on failure)"
   note "  7. commit the published set:"
@@ -155,6 +156,12 @@ fi
 # it copies the finished season to data/snow/ before replacing it (ADR-121).
 if ! "$python_bin" refresh_snowpack.py; then
   warn "Snow download failed" "Keeping the last complete snow payload"
+fi
+
+# 5a. Precipitation at the same snow stations (ADR-125): its own file and its
+# own failure, so a quiet gauge network never costs the snow payload.
+if ! "$python_bin" refresh_station_readings.py; then
+  warn "Precipitation download failed" "Keeping the last complete precipitation file"
 fi
 
 # 5b. The natural terminal lakes (ADR-112) are a separate water type with a

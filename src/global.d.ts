@@ -210,6 +210,14 @@ interface Window {
      * engine (ADR-047). */
     mapBasinLabels?: number;
     mapBasinLabelsDeconflicted?: boolean;
+    /** The precipitation card (ADR-125): its own load, so its own state. */
+    precipitation?: {
+      state: "loading" | "ready" | "failed";
+      stations: number;
+      curveDays: number;
+      bandDays: number;
+      range: "season" | "year";
+    };
   };
   /** The drought view finished drawing. `units` is what the coverage file
    * provided; `rows` is what the page rendered; `storageJoined` counts the

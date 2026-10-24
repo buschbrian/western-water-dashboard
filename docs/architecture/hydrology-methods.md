@@ -226,6 +226,51 @@ snow so far".
 The payload's `method.version` names the estimator behind these figures; two
 files written under different versions are not one series.
 
+## Precipitation against its own history
+
+**One fixed set of stations, and every number a mean over it** (ADR-125).
+The snow page's precipitation card compares this water year with every
+water year from 1991 through the last finished one, at the stations whose
+gauge record covers all of them. A place's set is its stations in that
+history that are not reporting late; the line, the bands, the median, the
+history rank, the share of a median year and the snow water line are all
+means over that one set. A station with no full history is counted in a
+sentence and used nowhere. A day draws only when every station in the set
+has a value on it.
+
+**The history is weekly.** `tools/build_precipitation_history.py` stores 53
+calendar days a year, 1 October and every seventh day to 30 September, so a
+leap year compares 1 March with 1 March. A step with no reading may take the
+latest reading from the three days before it, and the file counts how often
+that happened; a step with nothing inside that window takes the station out
+of the set. Nothing is repaired: a falling accumulation is kept as
+published, and a borrowed reading never comes from before 1 October. Between
+steps each year is read on a straight line, which moves a comparison by less
+than one week's precipitation, and every day's band is taken from those
+readings -- never by joining weekly quantiles, which gives a different number
+for the same day.
+
+**Band edges use one quantile rule**, linear between neighbours in the
+sorted years (type 7): highest and lowest, 10th to 90th ("8 of 10 years"),
+25th to 75th ("middle half"), and the median. A history rank is one plus
+the years strictly above this one, compared to a tenth of an inch, so equal
+years share a rank.
+
+**Snow water is a split, not a line.** The headline's day is the newest on
+which both precipitation and snow water are complete for the set, at most
+two days back; that day's snow water splits the precipitation into what the
+snow holds and what it does not. Snow water above the precipitation is stated
+as gauge undercatch, never drawn as a negative.
+
+**Inches lead.** Percent of median is printed only once the median for the
+date reaches `MEANINGFUL_NORMAL_INCHES`, the snow curve's own floor; before
+that the card gives inches, the difference from the median, and the share
+of a median year's total.
+
+**The window is not the snow normal.** Snow compares with 1991–2020;
+precipitation with 1991 through the last finished year, rebuilt each
+October. A history is not a normal, and each card names its own years.
+
 ## The monthly normal window
 
 **One chart, one baseline** (ADR-083). The recent monthly normal on the

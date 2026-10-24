@@ -77,6 +77,7 @@ jobs:
                       data/reservoirs.json data/capacities.json \
                       data/snow_sites.json data/snowpack.json \
                       data/snow/snowpack-wy2026.json \
+                      data/precipitation.json data/precipitation_history.json \
                       data/reference.json data/drought/usdm-current.geojson; do
             if [ ! -s "dist/$path" ]; then
               echo "::error title=Missing from dist::$path"

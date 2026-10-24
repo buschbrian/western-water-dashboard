@@ -123,6 +123,7 @@ import {
 import { formatDate, formatPercent } from "./viz/format";
 import { renderSiteCurve } from "./viz/site-curve";
 import { renderSnowCurve, renderSnowSeasonCurve } from "./viz/snow-curve";
+import { createPrecipitationCard } from "./ui/precipitation-card";
 import "./styles/overview.css";
 import "./styles/snow.css";
 
@@ -389,6 +390,12 @@ function renderSnow(
         <div class="table-scroll" tabindex="0" role="region" aria-label="First-of-month table, scrolls sideways"><table class="overview-table"><thead><tr id="snow-month-head"><th>Month</th><th>Of normal</th><th>Reporting sites</th></tr></thead><tbody id="snow-month-rows"></tbody></table></div>
       </details>
     </section>
+    <section class="overview-card" id="precip-card" aria-labelledby="precip-heading">
+      <div class="card-heading">
+        <div><h2 id="precip-heading">Precipitation since 1 October</h2><p>Rain and snow caught by the gauges at the measurement sites, added up from 1 October, and the snow water the same sites hold now. The bands show what the same sites measured by each date in earlier water years. Point to the chart, or select it and use the arrow keys, to read one day.</p></div>
+        <span class="sdk-badge">Line chart</span>
+      </div>
+    </section>
     <section class="overview-card" aria-labelledby="snow-basin-heading">
       <div class="card-heading">
         <div><h2 id="snow-basin-heading">One drainage area through the season</h2><p>The mean of the chosen area's site values as a percent of normal, day by day. The dashed line is the middle value for the same day in the years ${normalPeriodLabel(payload)}. Choose an area here, or select one on the map above.</p></div>
@@ -471,6 +478,10 @@ function renderSnow(
    * the card around them. Each carries a ResizeObserver that keeps its curve
    * fitted (`viz/responsive.ts`), and a fresh host every time the reader
    * picked a different site would leave a fresh observer behind with it. */
+  const precipSection = document.querySelector<HTMLElement>("#precip-card");
+  const precipCard = precipSection
+    ? createPrecipitationCard(precipSection, () => publishReady())
+    : null;
   const siteCurveHost = document.createElement("div");
   siteCurveHost.className = "snow-curve-host";
   const basinCurveHost = document.createElement("div");
@@ -682,6 +693,7 @@ function renderSnow(
       siteCurvePoints: lastSiteCurvePoints,
       basin: currentBasin,
       basinCurvePoints: lastBasinCurvePoints,
+      ...(precipCard ? { precipitation: precipCard.status } : {}),
       level,
       levelsOffered,
       /* The season on screen and the one drawn behind it (ADR-121). */
@@ -988,6 +1000,8 @@ function renderSnow(
       ? regionPoints
       : basinCurve(payload, chosen)) ?? regionPoints;
     const rows = siteRows(payload, chosen);
+    precipCard?.update(rows.map((row) => row.station), payload.sites,
+      season.shown === season.current ? null : seasonName(season.shown));
 
     /* Headlines hold to a stronger floor than the curve: at least half the
      * sites in view. Without it, October's first flurries and June's last

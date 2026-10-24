@@ -11,6 +11,18 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ## [Unreleased]
 
+### Added
+
+- **Precipitation since 1 October on the snow page** (ADR-125). A new card
+  compares this water year's gauge precipitation with every water year since
+  1991 at the same stations, for whatever place the page shows. It opens on
+  the season so far, and states the same stations' snow water beside the
+  figures rather than on the chart. Inches lead; the percentage waits for a
+  median worth dividing by. Two new data files,
+  `precipitation.json` (daily) and `precipitation_history.json` (rebuilt each
+  October), written by `refresh_station_readings.py` and
+  `tools/build_precipitation_history.py`.
+
 ### Changed
 
 - Update ArcGIS to 5.1.27, Calcite to 5.2, Vite to 8.3 and Vitest to 5.

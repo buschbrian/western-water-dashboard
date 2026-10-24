@@ -117,7 +117,8 @@ ADR-041.**
   [ADR-082](ADR-082-publish-a-drought-severity-and-coverage-index.md),
   [ADR-083](ADR-083-anchor-the-monthly-normal-window-once-per-chart.md),
   [ADR-100](ADR-100-a-sub-daily-providers-day-is-its-last-reading.md),
-  [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md)
+  [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md),
+  [ADR-125](ADR-125-measure-precipitation-at-the-snow-stations-against-a-fixed-history.md)
 - Current architecture: [`docs/architecture/hydrology-methods.md`](../architecture/hydrology-methods.md)
 
 ### Visible language, accessibility and naming
@@ -297,6 +298,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-120](ADR-120-ask-where-to-start-before-loading-the-map.md) | Ask where to start before loading the map | Accepted; extends ADR-086; the storage map fetches the map SDK only after the first-visit question closes without a choice |
 | [ADR-121](ADR-121-keep-the-finished-snow-season-and-open-the-new-one-honestly.md) | Keep the finished snow season, and open the new one honestly | Accepted; amends ADR-040; one denominator floor for the map and the peak, a write-once archive per water year, and a season choice |
 | [ADR-124](ADR-124-bound-recent-conditions-to-a-static-data-pilot.md) | Bound recent conditions to a static-data pilot | Accepted; scheduled Utah pilot with static outputs, existing USGS access and isolated R2 storage; implementation pending |
+| [ADR-125](ADR-125-measure-precipitation-at-the-snow-stations-against-a-fixed-history.md) | Measure precipitation at the snow stations against a fixed history | Accepted; the record ADR-117 asks for to bring a new measured element into scope; keeps ADR-081's denominator floor |
 
 ## Relationship to the historical journal
 
