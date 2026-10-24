@@ -59,7 +59,7 @@ export function calendarRowSummary(row: CalendarRow): string {
 export interface DroughtCalendarOptions {
   dates: readonly string[];
   /** The week to mark as this week, as a position in `dates`. */
-  current: number;
+  current: number | null;
   /** The area the chart above is showing, marked as chosen. */
   chosen: string | null;
   onChoose: (code: string) => void;
@@ -91,10 +91,12 @@ export function renderDroughtCalendar(
     label.style.insetInlineStart = `${(index / weeks) * 100}%`;
     axisLane.append(label);
   });
-  const now = document.createElement("span");
-  now.className = "drought-calendar-now-label";
-  now.textContent = "This week";
-  axisLane.append(now);
+  if (options.current !== null) {
+    const now = document.createElement("span");
+    now.className = "drought-calendar-now-label";
+    now.textContent = "This week";
+    axisLane.append(now);
+  }
   axis.append(axisSpacer, axisLane);
 
   const list = document.createElement("ol");
@@ -135,10 +137,12 @@ export function renderDroughtCalendar(
         class: "drought-calendar-year", "vector-effect": "non-scaling-stroke"
       }));
     }
-    strip.append(svgElement("rect", {
-      x: options.current, y: 0, width: 1, height: 1,
-      class: "drought-calendar-now", "vector-effect": "non-scaling-stroke"
-    }));
+    if (options.current !== null) {
+      strip.append(svgElement("rect", {
+        x: options.current, y: 0, width: 1, height: 1,
+        class: "drought-calendar-now", "vector-effect": "non-scaling-stroke"
+      }));
+    }
 
     item.append(name, strip);
     list.append(item);

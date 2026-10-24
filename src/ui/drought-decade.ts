@@ -19,6 +19,7 @@ import {
 import {
   calendarCounts,
   calendarRows,
+  displayedWeek,
   latestHeld,
   yearSummaries,
   type CalendarRow
@@ -44,7 +45,7 @@ export function droughtDecadeMarkup(): string {
   return `
     <section class="overview-card" id="drought-decade-card" aria-labelledby="drought-decade-heading">
       <div class="card-heading">
-        <div><h2 id="drought-decade-heading">Ten years in one area</h2><p>The share of the measured land in each class, for each week of the last ten years, in the same colours as the map. Each colour shows the land in that class or worse, so the top of the yellow is all the land in any class. The line at the right marks this week. A grey band is a week with no map. Move the pointer over the chart, or select it and use the arrow keys, to read one week.</p><p id="drought-decade-source" class="drought-chart-note"></p></div>
+        <div><h2 id="drought-decade-heading">Ten years in one area</h2><p>The share of the measured land in each class, for each week of the last ten years, in the same colours as the map. Each colour shows the land in that class or worse, so the top of the yellow is all the land in any class. The line marks this week when the record holds it. A grey band is a week with no map. Move the pointer over the chart, or select it and use the arrow keys, to read one week.</p><p id="drought-decade-source" class="drought-chart-note"></p></div>
       </div>
       <div class="drought-decade-controls" id="drought-decade-controls"></div>
       <div id="drought-decade-host" class="drought-decade-host" aria-busy="true"></div>
@@ -75,6 +76,8 @@ function report(fields: Record<string, unknown>): void {
 
 export interface DroughtDecadeContext {
   level: number;
+  /** The week the page shows. Only this week is marked as this week. */
+  mapDate: string;
   /** The areas in view, in the page's order. */
   units: readonly DroughtUnit[];
   /** The area the chart opens on: the reader's chosen one when it is in view. */
@@ -144,6 +147,7 @@ function draw(content: HTMLElement, context: DroughtDecadeContext, history: Drou
   let chosen = context.opening !== null && names.has(context.opening)
     ? context.opening : context.units[0]!.huc6;
 
+  const week = displayedWeek(history.dates, context.mapDate);
   if (source) {
     /* Every week is one measurement of one kind of map (ADR-122), so this
      * says so once and counts the weeks the archive could not supply. */
@@ -152,6 +156,7 @@ function draw(content: HTMLElement, context: DroughtDecadeContext, history: Drou
       notes.push(`The archive had no usable map for ${history.skipped.length} ` +
         `${history.skipped.length === 1 ? "week" : "weeks"}, shown as gaps.`);
     }
+    if (week.note !== null) notes.push(week.note);
     source.textContent = notes.join(" ");
   }
 
@@ -179,7 +184,8 @@ function draw(content: HTMLElement, context: DroughtDecadeContext, history: Drou
     name: unit.huc6_name,
     measuredPercent: unit.measured?.percent_of_area ?? null
   })));
-  const current = history.dates.length - 1;
+  const current = week.current;
+  const newest = history.dates.length - 1;
   let cursor: number | null = null;
 
   const drawChart = (): void => {
@@ -190,6 +196,7 @@ function draw(content: HTMLElement, context: DroughtDecadeContext, history: Drou
     const years = content.querySelector<HTMLElement>("#drought-decade-years");
     if (unit && !isMeasured(unit)) {
       stopResponsiveChart(host);
+      host.setAttribute("aria-busy", "false");
       host.removeAttribute("tabindex");
       host.replaceChildren(mapStatusNote("The drought monitor does not measure land in this area."));
       if (readout) readout.textContent = "";
@@ -201,7 +208,7 @@ function draw(content: HTMLElement, context: DroughtDecadeContext, history: Drou
     const partial = unit?.measured !== undefined
       ? ` The figures cover ${formatPercent(unit.measured.percent_of_area)} of the area.` : "";
     const ariaLabel = `${name}: the share of the measured land in each drought class, ` +
-      `each week from ${formatDate(history.dates[0]!)} to ${formatDate(history.dates[current]!)}. ` +
+      `each week from ${formatDate(history.dates[0]!)} to ${formatDate(history.dates[newest]!)}. ` +
       (latest !== null ? describeWeek(history.dates[latest]!, series[latest]!) : "") +
       partial + " The table below lists the highest share in each year.";
     renderResponsiveChart(host, (width) => {
@@ -233,10 +240,10 @@ function draw(content: HTMLElement, context: DroughtDecadeContext, history: Drou
       host.onkeydown = (event: KeyboardEvent): void => {
         const step = event.key === "ArrowLeft" ? -1 : event.key === "ArrowRight" ? 1
           : event.key === "PageUp" ? -52 : event.key === "PageDown" ? 52 : 0;
-        const jump = event.key === "Home" ? 0 : event.key === "End" ? current : null;
+        const jump = event.key === "Home" ? 0 : event.key === "End" ? newest : null;
         if (step === 0 && jump === null) return;
         event.preventDefault();
-        place(jump ?? Math.min(current, Math.max(0, (cursor ?? current) + step)));
+        place(jump ?? Math.min(newest, Math.max(0, (cursor ?? newest) + step)));
       };
       host.replaceChildren(chart.svg);
       return chart;

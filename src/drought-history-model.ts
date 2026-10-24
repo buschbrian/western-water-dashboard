@@ -8,6 +8,7 @@ import type { DroughtHistory } from "./data/drought-history";
 import type { DroughtAtLeast } from "./types";
 import type { DroughtClass } from "./viz/drought-classes";
 import { DROUGHT_CLASSES } from "./viz/drought-classes";
+import { formatDate } from "./viz/format";
 
 /**
  * The calendar's rule: a week takes the most severe class that at least half
@@ -134,4 +135,25 @@ export function latestHeld(series: readonly (DroughtAtLeast | null)[]): number |
     if (series[index] !== null) return index;
   }
   return null;
+}
+
+/**
+ * Which week of the record is the week the page shows. The record is fetched
+ * after the page, so its newest week can be newer than the displayed one (a
+ * deploy between the two) or older. Only a week whose date equals the
+ * displayed week is marked; any other case says so in words.
+ */
+export function displayedWeek(
+  dates: readonly string[], mapDate: string
+): { current: number | null; note: string | null } {
+  const newest = dates[dates.length - 1];
+  const found = dates.indexOf(mapDate);
+  const current = found >= 0 ? found : null;
+  if (newest === undefined || newest === mapDate) return { current, note: null };
+  const note = newest > mapDate
+    ? `The record has a newer week than the page above. It ends with the week of ${formatDate(newest)}. ` +
+      "Reload the page to see that week above."
+    : `The record ends with the week of ${formatDate(newest)}. The page above shows the week of ` +
+      `${formatDate(mapDate)}, so no week is marked.`;
+  return { current, note };
 }

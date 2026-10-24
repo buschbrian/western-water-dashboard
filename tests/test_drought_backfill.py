@@ -189,3 +189,43 @@ class TestRebuild:
     def test_nothing_measured_leaves_the_archive_alone(self):
         with pytest.raises(ValueError, match="left as it was"):
             rebuild_history(history(entry("2026-10-13")), {}, {})
+
+
+class TestArchiveCache:
+    """A rejected download must not poison the cache (no network)."""
+
+    def stub_fetch(self, monkeypatch, bodies):
+        import drought_archive
+
+        class Response:
+            def __init__(self, body):
+                self.body = body
+
+            def __enter__(self):
+                return self
+
+            def __exit__(self, *exc):
+                return False
+
+            def read(self):
+                return self.body
+
+        queue = list(bodies)
+        monkeypatch.setattr(drought_archive.urllib.request, "urlopen",
+                            lambda request, timeout=None: Response(queue.pop(0)))
+        monkeypatch.setattr(drought_archive.time, "sleep", lambda seconds: None)
+        return drought_archive
+
+    def test_an_invalid_body_is_not_kept_and_the_next_run_fetches_again(
+            self, monkeypatch, tmp_path):
+        import gzip
+        import json
+
+        good = json.dumps(archive_file(0)).encode()
+        module = self.stub_fetch(monkeypatch, [b"{not json", good])
+        with pytest.raises(ArchiveWeekError):
+            module.load_archive_week("2026-10-20", tmp_path)
+        assert not module.cached_path("2026-10-20", tmp_path).exists()
+        assert module.load_archive_week("2026-10-20", tmp_path)
+        assert gzip.decompress(
+            module.cached_path("2026-10-20", tmp_path).read_bytes()) == good

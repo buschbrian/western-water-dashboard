@@ -67,7 +67,8 @@ def archive_bytes(map_date: str, cache: Path) -> bytes:
     """One week's archive file, from the cache or the network, as bytes.
 
     Raises `ArchiveWeekError` for a week the archive does not hold (HTTP 404)
-    -- which is also what a week not posted yet looks like. A network failure
+    -- which is also what a week not posted yet looks like -- and for a body
+    that fails the checks below, which is then not cached. A network failure
     after every retry is a `RuntimeError`: that is the service's trouble, not
     the week's.
     """
@@ -93,12 +94,15 @@ def archive_bytes(map_date: str, cache: Path) -> bytes:
         time.sleep(RETRY_WAIT * 3 ** attempt)
     if body is None:
         raise RuntimeError(f"archive request for {map_date} failed: {failure}")
+    time.sleep(PAUSE)
+    # Checked before it is kept: a body that fails would otherwise be served
+    # from the cache on every later run, long after the archive had fixed it.
+    archive_drought(parse_archive(body), map_date)
     cache.mkdir(parents=True, exist_ok=True)
     with tempfile.NamedTemporaryFile("wb", dir=cache, delete=False) as handle:
         temporary = Path(handle.name)
         handle.write(gzip.compress(body, mtime=0))
     temporary.replace(path)
-    time.sleep(PAUSE)
     return body
 
 

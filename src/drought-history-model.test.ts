@@ -4,6 +4,7 @@ import {
   calendarCounts,
   calendarRows,
   calendarRuns,
+  displayedWeek,
   latestHeld,
   yearSummaries
 } from "./drought-history-model";
@@ -80,5 +81,26 @@ describe("the year table", () => {
   it("finds the latest week with a share", () => {
     expect(latestHeld([shares(1), null])).toBe(0);
     expect(latestHeld([null])).toBeNull();
+  });
+});
+
+describe("the displayed week", () => {
+  const dates = ["2026-10-06", "2026-10-13", "2026-10-20"];
+
+  it("marks the newest week when it is the displayed week", () => {
+    expect(displayedWeek(dates, "2026-10-20")).toEqual({ current: 2, note: null });
+  });
+
+  it("marks the displayed week, not the newest, when the record is newer", () => {
+    const result = displayedWeek(dates, "2026-10-13");
+    expect(result.current).toBe(1);
+    expect(result.note).toContain("newer week");
+    expect(result.note).toContain("Oct 20, 2026");
+  });
+
+  it("marks nothing when the displayed week is not in the record", () => {
+    const result = displayedWeek(dates.slice(0, 2), "2026-10-20");
+    expect(result.current).toBeNull();
+    expect(result.note).toContain("no week is marked");
   });
 });

@@ -1050,6 +1050,7 @@ function renderDrought(
    * week. */
   mountDroughtDecade(content, {
     level,
+    mapDate: payload.map_date,
     units: orderUnits(scopedUnits, storage, "severity"),
     opening: levelArea
   });
