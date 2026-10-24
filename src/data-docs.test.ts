@@ -90,6 +90,18 @@ describe("public API field documentation", () => {
     }
   });
 
+  it("covers every field of the finished seasons", () => {
+    /* Archived byte for byte (ADR-121), so the fields are the ones the
+     * payload had on the season's last day. Checked so a later change to
+     * the current file's shape cannot leave the archive undocumented. */
+    const data = read("data/snow/snowpack-wy2026.json");
+    expect(data.water_year).toBe(2026);
+    expectFields(SNOW_GROUPS, "snow-header", data);
+    expectFields(SNOW_GROUPS, "snow-rollup", data.rollups[0]);
+    expectFields(SNOW_GROUPS, "snow-rollup-series", data.rollups[0].series[0]);
+    expectFields(SNOW_GROUPS, "snow-site", merged(data.sites));
+  });
+
   it("covers every current reference field", () => {
     const data = read("reference.json");
     const catalog = data.capacity_catalog;

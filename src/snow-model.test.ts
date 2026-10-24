@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 import { parseDrainageUnits, type DrainageScope } from "./data/boundaries";
-import { readDrainageGeoJson, readSnowpackSeasonFixture } from "./data/payload-fixture";
+import {
+  readDrainageGeoJson,
+  readSnowpackEarlySeasonFixture,
+  readSnowpackSeasonFixture
+} from "./data/payload-fixture";
 import { SNOW_CLASSES, snowClassIndex } from "./viz/snow-classes";
 import type { SnowpackPayload } from "./types";
 import {
@@ -18,6 +22,12 @@ import {
   newestReading,
   percentIsMeaningful,
   MEANINGFUL_NORMAL_INCHES,
+  FIRST_ARCHIVED_WATER_YEAR,
+  monthComparison,
+  normalIsComparable,
+  offeredSeasons,
+  resolveSeason,
+  shiftSeason,
   percentOfNormal,
   payloadForStationSet,
   payloadForState,
@@ -25,7 +35,10 @@ import {
   regionCurve,
   regionDepthCurve,
   bestAgainstNormal,
+  seasonComplete,
   seasonLabel,
+  seasonName,
+  seasonPeak,
   siteByStation,
   siteMonthReadings,
   sitePoints,
@@ -635,11 +648,34 @@ describe("the map day", () => {
     const day = defaultMapDay(payload)!;
     const values = mapDayValues(payload, day);
     expect(values.basins.size).toBe(payload.rollups.length);
+    /* At the peak every area stands on a normal worth dividing by, so the
+     * denominator floor withholds nothing and the map is the rollups. */
+    expect(values.basinsBelowFloor.size).toBe(0);
     for (const rollup of payload.rollups) {
       const published = rollup.series.find((entry) => entry.date === day);
       expect(values.basins.get(rollup.huc6))
         .toBe(published ? published.mean_percent_of_normal_median : null);
     }
+  });
+
+  it("opens the finished 2025-26 season on its peak, 2026-03-13", () => {
+    /* A literal date, on purpose: the fixture is frozen, and this is the
+     * day the season-turn rule must leave alone (ADR-121). ADR-040 named
+     * 2026-03-07 on the 217-site record of the time; the western network's
+     * 638 sites peak six days later. */
+    expect(seasonPeak(payload)).toBe("2026-03-13");
+    expect(defaultMapDay(payload)).toBe("2026-03-13");
+    expect(seasonComplete(payload)).toBe(true);
+  });
+
+  it("finds no peak where the normal is too small to divide by", () => {
+    /* The deepest day the region had before mid-November is still not a
+     * peak: every day of October 2025 fails the denominator floor. */
+    const october = { ...payload, sites: payload.sites.map((site) => ({
+      ...site, series: site.series.filter(([date]) => date < "2025-11-01")
+    })) };
+    expect(regionDepthCurve(october).length).toBeGreaterThan(0);
+    expect(seasonPeak(october)).toBeNull();
   });
 
   it("answers for every site, with null for a day it did not report", () => {
@@ -657,6 +693,198 @@ describe("the map day", () => {
     const values = mapDayValues(payload, "1999-01-01");
     expect([...values.basins.values()].every((value) => value === null)).toBe(true);
     expect([...values.sites.values()].every((value) => value === null)).toBe(true);
+  });
+});
+
+describe("the turn of the water year (ADR-121)", () => {
+  /* Seventeen October days, frozen: the morning the map opened on 2026-10-16
+   * as the "season high point" and classed fourteen basins above normal. */
+  const early = readSnowpackEarlySeasonFixture();
+  const floor = headlineFloor(early.site_count, 2);
+
+  it("is the fixture it claims to be", () => {
+    expect(early.water_year).toBe(2027);
+    expect(early.as_of).toBe("2026-10-18");
+    expect(seasonComplete(early)).toBe(false);
+  });
+
+  it("has no peak, so the map opens on the newest day that met the floor", () => {
+    expect(seasonPeak(early)).toBeNull();
+    const newest = newestFloored(regionCurve(early), floor);
+    expect(newest?.date).toBe("2026-10-17");
+    expect(defaultMapDay(early)).toBe(newest?.date);
+  });
+
+  it("agrees with the cards, which already refused the comparison", () => {
+    const region = regionCurve(early);
+    expect(newestHeadline(region, floor)).toBeNull();
+    expect(bestAgainstNormal(region, floor)).toBeNull();
+    expect(curveForDrawing(region).every((point) => point.percent === null)).toBe(true);
+  });
+
+  it("classes no basin against a normal too small to compare", () => {
+    const day = "2026-10-16";
+    const values = mapDayValues(early, day);
+    const published = early.rollups.flatMap((rollup) => {
+      const entry = rollup.series.find((point) => point.date === day);
+      const percent = entry?.mean_percent_of_normal_median ?? null;
+      return percent === null ? [] : [{ code: rollup.huc6, percent }];
+    });
+    /* What the live map drew: sixteen basins with a published percentage,
+     * fourteen of them above 110% of normal. */
+    expect(published).toHaveLength(16);
+    expect(published.filter((entry) => entry.percent >= 110)).toHaveLength(14);
+    for (const entry of published) {
+      expect(values.basins.get(entry.code)).toBeNull();
+      expect(values.basinsBelowFloor.has(entry.code)).toBe(true);
+    }
+    expect([...values.basins.values()].every((value) => value === null)).toBe(true);
+  });
+
+  it("holds sites to the same floor, and keeps their depths", () => {
+    const values = mapDayValues(early, "2026-10-16");
+    expect(values.sitesBelowFloor.size).toBeGreaterThan(0);
+    for (const station of values.sitesBelowFloor) {
+      expect(values.sites.get(station)).toBeNull();
+      const depth = values.depths.get(station)!;
+      expect(depth.inches).not.toBeNull();
+      expect(normalIsComparable(depth.normalInches!)).toBe(false);
+    }
+    /* A site that keeps a class stands on a normal worth dividing by. */
+    for (const [station, percent] of values.sites) {
+      if (percent !== null) {
+        expect(normalIsComparable(values.depths.get(station)!.normalInches!)).toBe(true);
+      }
+    }
+  });
+
+  it("treats a zero normal as too little to compare, not as no reading", () => {
+    const day = "2026-10-16";
+    const values = mapDayValues(early, day);
+    const atRow = (site: SnowpackPayload["sites"][number]) =>
+      site.series.find((entry) => entry[0] === day);
+    const zeroNormal = early.sites.filter((site) => {
+      const row = atRow(site);
+      return row !== undefined && row[1] !== null && row[2] === 0;
+    });
+    /* Berthoud Summit stood at 0.2 in against a normal of 0 that day. */
+    expect(zeroNormal.map((site) => site.station)).toContain("335:CO:SNTL");
+    for (const site of zeroNormal) {
+      expect(values.sitesBelowFloor.has(site.station)).toBe(true);
+      expect(values.sites.get(site.station)).toBeNull();
+    }
+    const noReading = early.sites.filter((site) => atRow(site)?.[1] == null);
+    for (const site of noReading) {
+      expect(values.sitesBelowFloor.has(site.station)).toBe(false);
+    }
+    const spread = siteSpread(values.sites, SNOW_CLASSES.length, snowClassIndex,
+      values.sitesBelowFloor);
+    expect(spread.belowFloor).toBe(values.sitesBelowFloor.size);
+    expect(spread.noValue).toBeGreaterThanOrEqual(noReading.length);
+  });
+
+  it("holds an area on a zero mean normal below the floor, and one nobody reached out of it", () => {
+    const day = "2026-10-16";
+    const copy = structuredClone(early);
+    const rollup = copy.rollups.find((entry) =>
+      entry.series.some((point) => point.date === day && point.reporting_site_count > 0))!;
+    const members = copy.sites.filter((site) => site.huc6 === rollup.huc6);
+    for (const site of members) {
+      const row = site.series.find((entry) => entry[0] === day);
+      if (row) { row[1] = 0.2; row[2] = 0; }
+    }
+    const entry = rollup.series.find((point) => point.date === day)!;
+    entry.mean_percent_of_normal_median = null;
+    entry.reporting_site_count = rollup.minimum_reporting_sites;
+    const measured = mapDayValues(copy, day);
+    expect(measured.basinsBelowFloor.has(rollup.huc6)).toBe(true);
+    expect(measured.basins.get(rollup.huc6)).toBeNull();
+
+    for (const site of members) {
+      const row = site.series.find((point) => point[0] === day);
+      if (row) row[1] = null;
+    }
+    entry.reporting_site_count = 0;
+    const silent = mapDayValues(copy, day);
+    expect(silent.basinsBelowFloor.has(rollup.huc6)).toBe(false);
+    expect(silent.basins.get(rollup.huc6)).toBeNull();
+  });
+
+  it("counts below-floor sites apart from sites with no value", () => {
+    const values = mapDayValues(early, "2026-10-16");
+    const spread = siteSpread(values.sites, SNOW_CLASSES.length, snowClassIndex,
+      values.sitesBelowFloor);
+    expect(spread.belowFloor).toBe(values.sitesBelowFloor.size);
+    expect(spread.reporting + spread.belowFloor + spread.noValue).toBe(early.site_count);
+  });
+});
+
+describe("one denominator rule", () => {
+  it("is one inch, inclusive", () => {
+    expect(normalIsComparable(MEANINGFUL_NORMAL_INCHES)).toBe(true);
+    expect(normalIsComparable(0.99)).toBe(false);
+  });
+
+  it("names a season the way the page sets two side by side", () => {
+    expect(seasonName(2026)).toBe("2025–26");
+    expect(seasonName(2100)).toBe("2099–00");
+  });
+});
+
+describe("choosing a season (ADR-121)", () => {
+  it("offers the current season, then every finished one back to the first kept", () => {
+    expect(FIRST_ARCHIVED_WATER_YEAR).toBe(2026);
+    expect(offeredSeasons(2027)).toEqual([2027, 2026]);
+    expect(offeredSeasons(2029)).toEqual([2029, 2028, 2027, 2026]);
+    expect(offeredSeasons(2026)).toEqual([2026]);
+  });
+
+  it("shows a finished season only when it is one the archive holds", () => {
+    expect(resolveSeason(null, 2027)).toBe(2027);
+    expect(resolveSeason(2026, 2027)).toBe(2026);
+    // The running season, or one not started, is the current season.
+    expect(resolveSeason(2027, 2027)).toBe(2027);
+    expect(resolveSeason(2030, 2027)).toBe(2027);
+    // Before the archive began there is nothing to show.
+    expect(resolveSeason(2025, 2027)).toBe(2027);
+  });
+
+  it("moves a season onto the next one's calendar date for date", () => {
+    const points: CurvePoint[] = [
+      { date: "2025-10-01", percent: null, reportingSites: 600 },
+      { date: "2026-03-13", percent: 61.4, reportingSites: 634 },
+      { date: "2028-02-29", percent: 50, reportingSites: 600 }
+    ];
+    expect(shiftSeason(points, 1).map((point) => point.date))
+      .toEqual(["2026-10-01", "2027-03-13"]);
+    expect(shiftSeason(points, 1)[1]?.percent).toBe(61.4);
+  });
+
+  it("lists every month of the season with both seasons' first-of-month values", () => {
+    const own: CurvePoint[] = [
+      { date: "2026-10-01", percent: null, reportingSites: 630 }
+    ];
+    const other = shiftSeason(regionCurve(payload), 1);
+    const rows = monthComparison(own, other, 2027);
+    expect(rows).toHaveLength(12);
+    expect(rows[0]?.label).toBe("October 2026");
+    expect(rows[11]?.label).toBe("September 2027");
+    expect(rows[0]?.point?.date).toBe("2026-10-01");
+    expect(rows[1]?.point).toBeNull();
+    /* The other season's March reading is its 2026-03-01 value, drawn on
+     * 2027-03-01. */
+    const march = regionCurve(payload).find((point) => point.date === "2026-03-01");
+    expect(rows[5]?.other?.percent).toBe(march?.percent);
+  });
+
+  it("groups both seasons under the same area codes", () => {
+    /* The same regrouping gives both seasons the same codes, so an area
+     * chosen on this season's page has a line in the other season too. */
+    const early = readSnowpackEarlySeasonFixture();
+    const codes = (season: SnowpackPayload): string[] =>
+      payloadAtLevel(season, 4).rollups.map((rollup) => rollup.huc6);
+    const shared = codes(early).filter((code) => codes(payload).includes(code));
+    expect(shared.length).toBe(codes(early).length);
   });
 });
 

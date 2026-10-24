@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
-import { snowAxisScale } from "./snow-curve";
+import { snowAxisScale, snowCurveOwnPoints } from "./snow-curve";
+import type { CurvePoint } from "../snow-model";
 
 /* The ladder `snowAxisScale` picks from, mirrored here so a test failure
  * names the contract rather than reaching into the module's privates. */
@@ -38,5 +39,24 @@ describe("snowAxisScale", () => {
      * the regression signal, and the denominator floor keeps one off the
      * page. */
     expect(snowAxisScale(5000).step).toBe(500);
+  });
+});
+
+describe("snowCurveOwnPoints", () => {
+  const point = (date: string, percent: number | null): CurvePoint =>
+    ({ date, percent, reportingSites: 5, normalInches: 10 }) as CurvePoint;
+
+  it("leaves a single valid point out of the scale, the line and the marker", () => {
+    /* One 200% reading beside a season that peaks at 100%: drawn, it landed
+     * above an axis that stopped at 150. */
+    expect(snowCurveOwnPoints([point("2026-10-01", null), point("2026-10-02", 200)]))
+      .toEqual([]);
+    expect(snowCurveOwnPoints([point("2026-10-02", 200)])).toEqual([]);
+  });
+
+  it("keeps every point once two are valid, so a lone point between gaps stays a dot", () => {
+    const series = [point("2026-10-01", 80), point("2026-10-02", null),
+      point("2026-10-03", 90)];
+    expect(snowCurveOwnPoints(series)).toEqual(series);
   });
 });

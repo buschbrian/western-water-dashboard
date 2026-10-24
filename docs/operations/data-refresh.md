@@ -29,6 +29,9 @@ scripts/refresh-daily.sh          # everything, exactly as the workflow does
    commit. Publishing yesterday's week is a small honest loss; publishing two
    different weeks is a broken page.
 5. **Snow** — `refresh_snowpack.py`. A failure keeps the last complete payload.
+   The first run of a new water year copies the finished season to
+   `data/snow/snowpack-wy<YEAR>.json` before writing (ADR-121); the commit
+   stages the whole `data/snow` directory, so the new file goes with it.
 6. **Commit** — the published set, staged together, so the drought files can
    never be committed apart. The list lives in `data/generated-files.json` and
    `scripts/refresh-daily.sh` reads it; do not retype it into a workflow.

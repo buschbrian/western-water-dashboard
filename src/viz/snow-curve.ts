@@ -86,23 +86,80 @@ export function snowAxisScale(maxPercent: number): { top: number; step: number }
 export function renderSnowCurve(
   host: HTMLElement, points: readonly CurvePoint[], ariaLabel: string
 ): number {
+  return drawSnowCurve(host, points, ariaLabel).points;
+}
+
+/** A second season drawn behind this one (ADR-121), already moved onto this
+ * season's calendar (`shiftSeason`), and the whole water year to lay both
+ * out across. */
+export interface SnowCurveComparison {
+  points: readonly CurvePoint[];
+  /** The first and last day of the shown water year, YYYY-MM-DD. */
+  start: string;
+  end: string;
+}
+
+/**
+ * The season chart with another season behind it.
+ *
+ * The axis runs across the whole water year rather than across the days this
+ * season has reached, so in October this season is a short line at the left
+ * and the other season shows how the rest of a year can go. Drawn when either
+ * season has a line to draw; `points` counts this season's days and
+ * `comparison` the other's.
+ */
+export function renderSnowSeasonCurve(
+  host: HTMLElement, points: readonly CurvePoint[], ariaLabel: string,
+  comparison: SnowCurveComparison
+): { points: number; comparison: number } {
+  return drawSnowCurve(host, points, ariaLabel, comparison);
+}
+
+/**
+ * Which points the chart draws, scales to and counts.
+ *
+ * This season is a line, and one value is not a line: with a single valid
+ * point it is left out of the scale, the drawing, the newest-value marker
+ * and the count together, so the caller's zero means what it says. (A lone
+ * point inside a longer line is still a dot, `snow-line-dot`; that is a gap
+ * in a line, not a line of one.) The other season keeps its own two-point
+ * rule in `drawSnowCurve`.
+ */
+export function snowCurveOwnPoints(points: readonly CurvePoint[]): CurvePoint[] {
   const drawable = points.filter((point) => point.percent !== null);
-  if (drawable.length < 2 || points.length < 2) {
+  return drawable.length >= 2 ? [...points] : [];
+}
+
+function drawSnowCurve(
+  host: HTMLElement, rawPoints: readonly CurvePoint[], ariaLabel: string,
+  comparison?: SnowCurveComparison
+): { points: number; comparison: number } {
+  const points = snowCurveOwnPoints(rawPoints);
+  const drawable = points.filter((point) => point.percent !== null);
+  const others = comparison
+    ? comparison.points.filter((point) => point.percent !== null
+      && point.date >= comparison.start && point.date <= comparison.end)
+    : [];
+  const ownLine = drawable.length >= 2;
+  if (!ownLine && others.length < 2) {
     stopResponsiveChart(host);
     host.replaceChildren();
-    return 0;
+    return { points: 0, comparison: 0 };
   }
 
-  return renderResponsiveChart(host, (width) => {
+  const drawn = renderResponsiveChart(host, (width) => {
   const chartWidth = Math.max(MINIMUM_WIDTH, width);
-  const first = dayNumber(points[0]!.date);
-  const span = Math.max(1, dayNumber(points[points.length - 1]!.date) - first);
+  const firstDate = comparison ? comparison.start : points[0]!.date;
+  const lastDate = comparison ? comparison.end : points[points.length - 1]!.date;
+  const first = dayNumber(firstDate);
+  const span = Math.max(1, dayNumber(lastDate) - first);
   const plotWidth = chartWidth - PAD_LEFT - PAD_RIGHT;
   const plotHeight = HEIGHT - PAD_TOP - PAD_BOTTOM;
   /* The axis always reaches 150 so "just under normal" cannot fill the
    * frame and read as a good year; a genuinely big year extends it, with a
    * step that keeps the label count bounded (`snowAxisScale`). */
-  const maxPercent = Math.max(...drawable.map((point) => point.percent as number));
+  const maxPercent = Math.max(...[...(ownLine ? drawable : []), ...others]
+    .map((point) => point.percent as number));
   const { top, step } = snowAxisScale(maxPercent);
   const x = (date: string): number =>
     PAD_LEFT + ((dayNumber(date) - first) / span) * plotWidth;
@@ -134,10 +191,12 @@ export function renderSnowCurve(
     svg.append(label);
   }
 
-  // A month tick on the first of each month in the series.
-  for (const point of points) {
-    if (!point.date.endsWith("-01")) continue;
-    const at = x(point.date);
+  /* A month tick on the first of each month in the series -- or, with a
+   * season behind it, in the whole water year the axis now spans. */
+  const firsts = comparison ? monthFirsts(firstDate, lastDate)
+    : points.map((point) => point.date).filter((date) => date.endsWith("-01"));
+  for (const date of firsts) {
+    const at = x(date);
     svg.append(element("line", {
       class: "snow-grid snow-month-tick",
       x1: at.toFixed(1), y1: PAD_TOP + plotHeight,
@@ -146,29 +205,38 @@ export function renderSnowCurve(
     const label = element("text", {
       class: "snow-axis", x: at.toFixed(1), y: HEIGHT - 8, "text-anchor": "middle"
     });
-    label.textContent = MONTH_SHORT[Number(point.date.slice(5, 7)) - 1] ?? "";
+    label.textContent = MONTH_SHORT[Number(date.slice(5, 7)) - 1] ?? "";
     svg.append(label);
   }
 
   /* One polyline per unbroken run of values. A null is a day the floor was
-   * not met, and the line must not invent a reading across it. */
-  let run: string[] = [];
-  const flush = (): void => {
-    if (run.length > 1) {
-      svg.append(element("polyline", { class: "snow-line", points: run.join(" ") }));
-    } else if (run.length === 1) {
-      const [pointX, pointY] = run[0]!.split(",");
-      svg.append(element("circle", {
-        class: "snow-line-dot", cx: pointX!, cy: pointY!, r: 1.5
-      }));
+   * not met, and the line must not invent a reading across it. The other
+   * season goes down first, so this season's line reads over it. */
+  const drawLine = (series: readonly CurvePoint[], lineClass: string, dotClass: string): void => {
+    let run: string[] = [];
+    const flush = (): void => {
+      if (run.length > 1) {
+        svg.append(element("polyline", { class: lineClass, points: run.join(" ") }));
+      } else if (run.length === 1) {
+        const [pointX, pointY] = run[0]!.split(",");
+        svg.append(element("circle", {
+          class: dotClass, cx: pointX!, cy: pointY!, r: 1.5
+        }));
+      }
+      run = [];
+    };
+    for (const point of series) {
+      if (point.percent === null || point.date < firstDate || point.date > lastDate) {
+        flush(); continue;
+      }
+      run.push(`${x(point.date).toFixed(1)},${y(point.percent).toFixed(1)}`);
     }
-    run = [];
+    flush();
   };
-  for (const point of points) {
-    if (point.percent === null) { flush(); continue; }
-    run.push(`${x(point.date).toFixed(1)},${y(point.percent).toFixed(1)}`);
+  if (comparison) {
+    drawLine(comparison.points, "snow-line snow-line-other", "snow-line-dot snow-line-other-dot");
   }
-  flush();
+  drawLine(points, "snow-line", "snow-line-dot");
 
   /* Normal, over the season rather than under it. This is the line the curve
    * is read against, so it cannot be the one thing the curve hides: drawn
@@ -206,4 +274,20 @@ export function renderSnowCurve(
   host.replaceChildren(svg);
   return drawable.length;
   }, { fallbackWidth: FALLBACK_WIDTH, minimumWidth: MINIMUM_WIDTH });
+  return { points: ownLine ? drawn : 0, comparison: others.length };
+}
+
+/** The first of every month from `start` to `end`, inclusive. */
+function monthFirsts(start: string, end: string): string[] {
+  const dates: string[] = [];
+  let year = Number(start.slice(0, 4));
+  let month = Number(start.slice(5, 7));
+  if (!start.endsWith("-01")) month += 1;
+  for (;;) {
+    if (month > 12) { month = 1; year += 1; }
+    const date = `${year}-${String(month).padStart(2, "0")}-01`;
+    if (date > end) return dates;
+    dates.push(date);
+    month += 1;
+  }
 }

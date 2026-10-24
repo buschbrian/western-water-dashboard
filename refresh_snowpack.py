@@ -24,6 +24,8 @@ import huc
 ROOT = Path(__file__).resolve().parent
 INVENTORY_PATH = ROOT / "snow_sites.json"
 OUTPUT_PATH = ROOT / "snowpack.json"
+#: Where each finished water year is kept, one frozen file per season.
+ARCHIVE_DIR = ROOT / "data" / "snow"
 DATA_URL = "https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1/data"
 USER_AGENT = "western-water-dashboard/snow-refresh (+https://github.com/buschbrian)"
 TIMEOUT = 120
@@ -400,6 +402,67 @@ def build_payload(inventory: dict, records: list[dict], as_of: date,
     }
 
 
+def archive_path(water_year: int, archive_dir: Path = ARCHIVE_DIR) -> Path:
+    return archive_dir / f"snowpack-wy{water_year}.json"
+
+
+def archive_finished_season(output: Path, new_water_year: int,
+                            archive_dir: Path = ARCHIVE_DIR) -> Path | None:
+    """Keep the season the new run is about to replace, byte for byte.
+
+    `snowpack.json` holds one water year. On 1 October the refresh starts the
+    next one, and the season that just ended -- its peak, its melt, every
+    reading the page drew all year -- was overwritten with nothing kept
+    (ADR-121). This runs before that write: when the new run belongs to a
+    later water year than the published file, the published file is copied
+    as it stands to `data/snow/snowpack-wy<YEAR>.json`.
+
+    The bytes, not a re-serialisation. The archive is the season as readers
+    were served it on its last morning, and copying the file is the only way
+    to make that exactly true.
+
+    Write-once. An archive that already exists is never replaced: if it
+    matches, the call is a repeat and does nothing; if it does not, the
+    existing file is kept and the difference is reported, because a
+    published season does not change after it ends. Returns the path it
+    wrote, or None.
+    """
+    if not output.exists():
+        return None
+    body = output.read_bytes()
+    try:
+        published = json.loads(body)
+    except ValueError as exc:
+        raise ValueError(f"{output} is not readable JSON; refusing to replace "
+                         f"it without keeping it: {exc}") from exc
+    old_water_year = published.get("water_year") if isinstance(published, dict) else None
+    if not isinstance(old_water_year, int):
+        raise ValueError(f"{output} names no water year; refusing to replace it "
+                         "without keeping it")
+    if old_water_year >= new_water_year:
+        return None
+    target = archive_path(old_water_year, archive_dir)
+    if target.exists():
+        if target.read_bytes() != body:
+            print(f"WARNING: {target} already holds water year {old_water_year} "
+                  "and differs from the file being replaced; the archive is "
+                  "kept as written")
+        return None
+    target.parent.mkdir(parents=True, exist_ok=True)
+    descriptor, temporary = tempfile.mkstemp(prefix=f".{target.name}.", dir=target.parent)
+    try:
+        with os.fdopen(descriptor, "wb") as handle:
+            handle.write(body)
+        # A hard link fails if the name exists, so a second writer racing this
+        # one cannot replace an archive either.
+        os.link(temporary, target)
+        os.chmod(target, 0o644)
+    finally:
+        os.unlink(temporary)
+    print(f"  water year {old_water_year} archived to {target}")
+    return target
+
+
 def write_atomic(path: Path, payload: dict) -> bool:
     body = json.dumps(payload, separators=(",", ":"), ensure_ascii=False) + "\n"
     before = path.read_text(encoding="utf-8") if path.exists() else None
@@ -423,6 +486,7 @@ def main() -> int:
     parser.add_argument("--inventory", type=Path, default=INVENTORY_PATH)
     parser.add_argument("--output", type=Path, default=OUTPUT_PATH)
     parser.add_argument("--as-of", type=date.fromisoformat)
+    parser.add_argument("--archive-dir", type=Path, default=ARCHIVE_DIR)
     args = parser.parse_args()
 
     inventory = json.loads(args.inventory.read_text(encoding="utf-8"))
@@ -431,6 +495,9 @@ def main() -> int:
     records = fetch_all(
         requests.Session(), station_ids, water_year_start(today), today)
     payload = build_payload(inventory, records, today)
+    # Before the write, never after: the finished season exists only in the
+    # file this run is about to replace.
+    archive_finished_season(args.output, payload["water_year"], args.archive_dir)
     changed = write_atomic(args.output, payload)
     print(
         f"{payload['site_count']} snow sites refreshed; "

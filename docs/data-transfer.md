@@ -139,6 +139,24 @@ The lever that remains is not an encoding. Every site carries the whole water
 year because the page's subject is the shape of the season, and shortening
 that is a design decision rather than a compression one.
 
+## Finished snow seasons
+
+Measured 2026-10-18 (ADR-121). Each finished water year is published once, at
+`data/snow/snowpack-wy<YEAR>.json`, byte for byte as `snowpack.json` stood on
+the season's last morning:
+
+| file | raw | gzip |
+|---|---:|---:|
+| `data/snow/snowpack-wy2026.json` | 4,660 KB | **365 KB** (347 KB at -9) |
+| `snowpack.json` on 2026-10-18, 17 days of water year 2027 | 505 KB | 44 KB |
+
+A finished season is the largest file the snow page can ask for, eight times
+this October's payload, so it is never fetched on first paint. The page asks
+for it when the reader chooses that season, or when the season chart comes
+within 600 pixels of the screen to draw last season beside this one. A reader
+who opens the map and leaves pays nothing for it. The file never changes, so
+after the first fetch `no-cache` turns every later visit into a 304.
+
 ## Paying twice for the same bytes
 
 Every runtime fetch used `cache: "no-store"`, which refuses the cache and so

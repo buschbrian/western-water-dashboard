@@ -520,6 +520,94 @@ export function siteRows(
     });
 }
 
+/** "2025–26" for water year 2026: the season's short name, used wherever
+ * one season is set beside another. */
+export function seasonName(waterYear: number): string {
+  return `${waterYear - 1}–${String(waterYear % 100).padStart(2, "0")}`;
+}
+
+/**
+ * The first finished season the pipeline kept (ADR-121). Every water year
+ * from this one to the season before the current payload's has a frozen
+ * file in `data/snow/`; `tests/test_generated_files.py` holds the directory
+ * to that, so the page can name the seasons it offers without asking the
+ * server which files exist.
+ */
+export const FIRST_ARCHIVED_WATER_YEAR = 2026;
+
+/** Every season the page offers, newest first: the current water year, then
+ * each finished one back to the first archived. */
+export function offeredSeasons(currentWaterYear: number): number[] {
+  const seasons: number[] = [];
+  for (let year = currentWaterYear; year >= FIRST_ARCHIVED_WATER_YEAR; year -= 1) {
+    seasons.push(year);
+  }
+  return seasons.length > 0 ? seasons : [currentWaterYear];
+}
+
+/**
+ * The season to show for a requested one: the request when it names a
+ * finished, published season, and the current season otherwise. A link to
+ * the season that is still running (or one not yet started) is the current
+ * season by another name; next October the same link names an archive, and
+ * that is the meaning it was written with.
+ */
+export function resolveSeason(requested: number | null, currentWaterYear: number): number {
+  return requested !== null && requested < currentWaterYear
+    && requested >= FIRST_ARCHIVED_WATER_YEAR ? requested : currentWaterYear;
+}
+
+/**
+ * Another season's curve moved onto this season's calendar, date for date:
+ * 2026-03-13 drawn at 2027-03-13. The same day of the year rather than the
+ * same count of days from 1 October, so a first-of-month reading lands on
+ * the first of the month. A 29 February with no partner is dropped.
+ */
+export function shiftSeason(
+  points: readonly CurvePoint[], years: number
+): CurvePoint[] {
+  return points.flatMap((point) => {
+    const year = Number(point.date.slice(0, 4)) + years;
+    const date = `${year}${point.date.slice(4)}`;
+    const check = new Date(`${date}T00:00:00Z`);
+    if (Number.isNaN(check.getTime()) || check.toISOString().slice(0, 10) !== date) return [];
+    return [{ ...point, date }];
+  });
+}
+
+/** One month of the season table, this season's reading beside another's. */
+export interface MonthComparison {
+  key: string;
+  label: string;
+  point: CurvePoint | null;
+  other: CurvePoint | null;
+}
+
+/**
+ * The first day of every month of the season, with this season's reading and
+ * the comparison season's reading for the same date -- the text form of the
+ * two lines on the chart. Every month is listed, not only the ones this
+ * season has reached, because in October the other season is the whole of
+ * what the chart shows.
+ */
+export function monthComparison(
+  points: readonly CurvePoint[], other: readonly CurvePoint[], waterYear: number
+): MonthComparison[] {
+  const byDate = new Map(points.map((point) => [point.date, point]));
+  const otherByDate = new Map(other.map((point) => [point.date, point]));
+  return Array.from({ length: 12 }, (_, offset) => {
+    const month = ((offset + 9) % 12) + 1;
+    const year = month >= 10 ? waterYear - 1 : waterYear;
+    const key = `${year}-${String(month).padStart(2, "0")}`;
+    return {
+      key,
+      label: `${MONTH_NAMES[month - 1]} ${year}`,
+      point: byDate.get(`${key}-01`) ?? null,
+      other: otherByDate.get(`${key}-01`) ?? null
+    };
+  });
+}
+
 /** "October 2025 through September 2026" for water year 2026. */
 export function seasonLabel(payload: SnowpackPayload): string {
   return `October ${payload.water_year - 1} through September ${payload.water_year}`;
@@ -550,6 +638,19 @@ export function normalPeriodLabel(payload: SnowpackPayload): string {
 export const MEANINGFUL_NORMAL_INCHES = 1;
 
 /**
+ * Whether a mean normal is large enough to divide by.
+ *
+ * The one place the denominator floor is applied. The headlines, the drawn
+ * curve, the map's colours and the season's peak all ask this question, and
+ * a second copy of it is how the map came to class October basins "above
+ * 110% of normal" while the cards beside it refused the same arithmetic
+ * (ADR-121).
+ */
+export function normalIsComparable(normalInches: number): boolean {
+  return normalInches >= MEANINGFUL_NORMAL_INCHES;
+}
+
+/**
  * Whether a day's percentage is worth promoting, denominator and all.
  *
  * A point with no published normal passes: curves built before the normal
@@ -559,8 +660,7 @@ export const MEANINGFUL_NORMAL_INCHES = 1;
 export function percentIsMeaningful(point: CurvePoint): boolean {
   if (point.percent === null) return false;
   const normal = point.normalInches;
-  return normal === null || normal === undefined
-    || normal >= MEANINGFUL_NORMAL_INCHES;
+  return normal === null || normal === undefined || normalIsComparable(normal);
 }
 
 /**
@@ -710,29 +810,73 @@ export interface MapDayValues {
    * numbers are already in the row the percentage was computed from.
    */
   depths: Map<string, SiteDayDepth>;
+  /**
+   * Areas and sites with a measurement that day, but a normal too small to
+   * compare against (`normalIsComparable`), a normal of zero included: a
+   * zero normal gives no percentage at all, and the measurement is still
+   * there. Their entry in `basins` or `sites` is null, so nothing classes
+   * them; these sets are how the map draws them apart from a place that
+   * reported nothing at all. An area is in its set only when enough sites
+   * reported for it to have had a percentage on a usable normal.
+   */
+  basinsBelowFloor: Set<string>;
+  sitesBelowFloor: Set<string>;
 }
 
+/**
+ * Everything the map colours for one day, with the denominator floor applied.
+ *
+ * An area's percentage is the published one, and its normal is the mean over
+ * the same site-days the percentage summed (`meanNormalsByDate`'s population).
+ * On 2026-10-16 every one of the sixteen areas with a percentage stood on a
+ * mean normal under a quarter of an inch, and fourteen of them read "above
+ * 110% of normal": a few tenths of an inch divided by almost nothing. The
+ * cards already refused that number; the map now refuses it the same way.
+ */
 export function mapDayValues(
   payload: SnowpackPayload, date: string
 ): MapDayValues {
-  const basins = new Map<string, number | null>();
-  const reporting = new Map<string, number>();
-  for (const rollup of payload.rollups) {
-    const day = rollup.series.find((entry) => entry.date === date);
-    basins.set(rollup.huc6, day ? day.mean_percent_of_normal_median : null);
-    reporting.set(rollup.huc6, day ? day.reporting_site_count : 0);
-  }
+  const normalSums = new Map<string, { normal: number; count: number }>();
   const sites = new Map<string, number | null>();
   const depths = new Map<string, SiteDayDepth>();
+  const sitesBelowFloor = new Set<string>();
   for (const site of payload.sites) {
     const row = site.series.find((entry) => entry[0] === date);
-    sites.set(site.station, row ? percentOfNormal(row[1], row[2]) : null);
-    depths.set(site.station, {
-      inches: row ? row[1] : null,
-      normalInches: row ? row[2] : null
-    });
+    const inches = row ? row[1] : null;
+    const normal = row ? row[2] : null;
+    const percent = percentOfNormal(inches, normal);
+    if (inches !== null && normal !== null && !normalIsComparable(normal)) {
+      sitesBelowFloor.add(site.station);
+      sites.set(site.station, null);
+    } else {
+      sites.set(site.station, percent);
+    }
+    depths.set(site.station, { inches, normalInches: normal });
+    if (inches !== null && normal !== null) {
+      const bucket = normalSums.get(site.huc6);
+      if (bucket) { bucket.normal += normal; bucket.count += 1; }
+      else normalSums.set(site.huc6, { normal, count: 1 });
+    }
   }
-  return { basins, sites, reporting, depths };
+  const basins = new Map<string, number | null>();
+  const reporting = new Map<string, number>();
+  const basinsBelowFloor = new Set<string>();
+  for (const rollup of payload.rollups) {
+    const day = rollup.series.find((entry) => entry.date === date);
+    const percent = day ? day.mean_percent_of_normal_median : null;
+    const sums = normalSums.get(rollup.huc6);
+    const meanNormal = sums && sums.count > 0 ? sums.normal / sums.count : null;
+    const measured = day !== undefined
+      && day.reporting_site_count >= rollup.minimum_reporting_sites;
+    if (measured && meanNormal !== null && !normalIsComparable(meanNormal)) {
+      basinsBelowFloor.add(rollup.huc6);
+      basins.set(rollup.huc6, null);
+    } else {
+      basins.set(rollup.huc6, percent);
+    }
+    reporting.set(rollup.huc6, day ? day.reporting_site_count : 0);
+  }
+  return { basins, sites, reporting, depths, basinsBelowFloor, sitesBelowFloor };
 }
 
 /** One day of the region's snow depth: the mean across every site that
@@ -792,20 +936,58 @@ export function regionDepthCurve(payload: SnowpackPayload): DepthPoint[] {
  *
  * The same half-the-sites floor applies, so a handful of high stations cannot
  * define the peak on their own.
+ *
+ * Out of season, or on a record too thin to find a peak in, it is the newest
+ * day that met the reporting floor: the old behaviour, and still the right
+ * answer when there is no peak to show (ADR-121).
  */
 export function defaultMapDay(payload: SnowpackPayload): string | null {
   const floor = headlineFloor(payload.site_count, 2);
+  return seasonPeak(payload)
+    ?? newestFloored(regionCurve(payload), floor)?.date
+    ?? null;
+}
+
+/**
+ * The season's peak snow, or null while the season has none to show.
+ *
+ * The rule, stated once (ADR-121): the deepest day in the region's depth
+ * curve among the days that clear both of the page's floors -- at least half
+ * the sites reporting, and a mean normal over those sites the page can divide
+ * by (`normalIsComparable`).
+ *
+ * The second floor is the one that was missing. ADR-040's peak was measured
+ * on a finished season, where the deepest day is always deep in winter. On
+ * 2026-10-18 the payload held seventeen October days, and the deepest of them
+ * was 0.16 inches of snow water on a mean normal of four hundredths of an
+ * inch: the deepest day by arithmetic, and no peak by any reading of the word.
+ * The map opened there under the words "season high point", and painted most
+ * basins above normal. A day the page will not compare against normal is not
+ * a day it may call the peak either.
+ */
+export function seasonPeak(payload: SnowpackPayload): string | null {
+  const floor = headlineFloor(payload.site_count, 2);
+  const normals = new Map(regionCurve(payload)
+    .map((point) => [point.date, point.normalInches ?? null]));
   let best: DepthPoint | null = null;
   for (const point of regionDepthCurve(payload)) {
     if (point.reportingSites < floor) continue;
+    const normal = normals.get(point.date) ?? null;
+    if (normal === null || !normalIsComparable(normal)) continue;
     if (best === null || point.meanInches > best.meanInches) best = point;
   }
-  /* Out of season, or a record too thin to find a peak in, falls back to the
-   * newest day that met the floor -- which is the old behaviour, and still
-   * the right answer when there is no peak to show. */
-  return best?.date
-    ?? newestHeadline(regionCurve(payload), floor)?.date
-    ?? null;
+  return best?.date ?? null;
+}
+
+/**
+ * Whether the payload holds a finished water year.
+ *
+ * A season's high point is only final once the season is over; before that
+ * the deepest day so far is all there is, and the page says "so far". A
+ * finished season is one published as of its last day, 30 September.
+ */
+export function seasonComplete(payload: SnowpackPayload): boolean {
+  return payload.as_of >= `${payload.water_year}-09-30`;
 }
 
 /** One published day of one site's series, with the columns named. */
@@ -1038,6 +1220,9 @@ export function siteFilterActive(filter: SiteFilter): boolean {
 export interface SiteSpread {
   counts: number[];
   noValue: number;
+  /** Sites with a reading and a normal too small to compare against: no
+   * fair value either, but a different reason from no reading at all. */
+  belowFloor: number;
   reporting: number;
 }
 
@@ -1057,14 +1242,20 @@ export interface SiteSpread {
 export function siteSpread(
   values: ReadonlyMap<string, number | null>,
   classCount: number,
-  classIndexOf: (percent: number | null) => number | null
+  classIndexOf: (percent: number | null) => number | null,
+  belowFloor: ReadonlySet<string> = new Set()
 ): SiteSpread {
   const counts = new Array<number>(classCount).fill(0);
   let noValue = 0;
-  for (const percent of values.values()) {
+  let thin = 0;
+  for (const [station, percent] of values) {
     const index = classIndexOf(percent);
-    if (index === null || index < 0 || index >= classCount) noValue += 1;
-    else counts[index] = (counts[index] ?? 0) + 1;
+    if (index === null || index < 0 || index >= classCount) {
+      if (belowFloor.has(station)) thin += 1;
+      else noValue += 1;
+    } else {
+      counts[index] = (counts[index] ?? 0) + 1;
+    }
   }
-  return { counts, noValue, reporting: values.size - noValue };
+  return { counts, noValue, belowFloor: thin, reporting: values.size - noValue - thin };
 }

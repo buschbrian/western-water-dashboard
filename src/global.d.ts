@@ -154,6 +154,19 @@ interface Window {
     level?: number;
     /** How many levels the reference export offers. */
     levelsOffered?: number;
+    /** The water year on screen, and how many seasons the control offers
+     * (ADR-121). */
+    season?: number;
+    seasonsOffered?: number;
+    /** The season drawn behind the shown one on the season chart, or null
+     * when none is published; whether it has loaded; and the days its line
+     * drew. It is fetched only once the chart is near the screen. */
+    comparisonSeason?: number | null;
+    comparisonStatus?: "none" | "waiting" | "loaded" | "failed";
+    comparisonPoints?: number;
+    /** The finished season the early-season map links to, or null while the
+     * shown season has a peak of its own. */
+    seasonRoute?: number | null;
     sites: number;
     late: number;
     basins: number;
@@ -172,11 +185,17 @@ interface Window {
     /** Basins and sites holding a class colour on the shown day. */
     mapBasinsWithValues?: number;
     mapSitesWithValues?: number;
+    /** Basins and sites that reported on the shown day against a normal too
+     * small to compare with, drawn apart from any class (ADR-121). */
+    mapBasinsBelowFloor?: number;
+    mapSitesBelowFloor?: number;
+    /** The season's peak by ADR-121's rule, or null while it has none. */
+    mapPeak?: string | null;
     mapDay?: string | null;
     mapBasemap?: boolean;
     mapViewReady?: boolean;
     /** Classes in the snow colour table. The legend draws one chip for each,
-     * plus one for a day with no fair value. */
+     * plus one each for the two ways of having no fair value. */
     mapClasses?: number;
     /** The measurement site whose season is open, or null for none. */
     site?: string | null;

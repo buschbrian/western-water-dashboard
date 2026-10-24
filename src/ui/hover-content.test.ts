@@ -149,6 +149,17 @@ describe("the snow map cards", () => {
     expect(lines[2]).toBe("9,284 feet, Weber");
   });
 
+  /* A reading on a day whose normal is too small to divide by (ADR-121):
+   * no class, a reason, and the depth that does mean something. */
+  it("says why a site or area has no class when the normal is too small", () => {
+    expect(snowClassLabel(null, true)).toBe("Too little normal snow to compare");
+    const lines = snowSiteLines(site({}), null, { inches: 0.6, normalInches: 0.1 }, true);
+    expect(lines[0]).toBe("— of normal — Too little normal snow to compare");
+    expect(lines[1]).toBe("0.6 inches, normally 0.1 inches");
+    expect(snowBasinLines(null, 12, true)[0])
+      .toBe("— of normal — Too little normal snow to compare");
+  });
+
   it("has words for a day the site did not report", () => {
     const lines = snowSiteLines(site({}), null, { inches: null, normalInches: null });
     expect(lines[1]).toBe("no value, normally no value");

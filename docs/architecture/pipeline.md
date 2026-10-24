@@ -108,6 +108,12 @@ sites by 323 published dates, and 1,477 of those cells had no reading on
 2026-08-20. The count moves every morning, which is the point: it is never
 zero.
 
+**A finished snow season is kept as published** (ADR-121). When a run's water
+year is later than the payload it replaces, `archive_finished_season` copies
+the old file's bytes to `data/snow/snowpack-wy<YEAR>.json` first. The archive
+is write-once, owned in `data/generated-files.json` as one directory entry,
+and fetched by the page only on request.
+
 `docs/data-transfer.md` holds the measurements and is the file to update when
 they change.
 

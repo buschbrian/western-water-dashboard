@@ -133,3 +133,74 @@
   outline: 2px solid var(--app-accent);
   outline-offset: 1px;
 }
+
+/* The below-floor chip (ADR-121): a reading on a day whose normal is too
+   small to compare against. Denser and darker than the no-value hatch, and
+   leaning the other way, so the two greys in the key are two answers. The
+   map draws the same state as a backward-diagonal hatch. */
+.snow-swatch-below-floor {
+  background:
+    repeating-linear-gradient(45deg,
+      rgb(110 118 126 / .85) 0 1.5px, transparent 1.5px 4px);
+}
+
+/* The season choice (ADR-121). Its own row between the place summary and the
+   cards, because it is neither a place nor a table filter: it changes which
+   year every figure below describes. Outside the filter bar so it is not
+   folded away behind "Show filters" on a phone. */
+.snow-season-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .4rem 1rem;
+  align-items: end;
+  margin: .6rem .15rem 0;
+}
+.snow-season-row[hidden] { display: none; }
+.snow-season-control { min-inline-size: 0; inline-size: min(100%, 16rem); }
+.snow-season-control calcite-select { inline-size: 100%; }
+.snow-season-note {
+  flex: 1 1 16rem;
+  min-inline-size: 0;
+  margin: 0 0 .55rem;
+  color: var(--app-muted);
+  font-size: .8rem;
+}
+
+/* The early-season way to the last finished season's peak, under the day
+   slider it explains. */
+.snow-season-route {
+  margin: .6rem 0 0;
+  color: var(--app-muted);
+  font-size: .8rem;
+  line-height: 1.45;
+}
+.snow-season-route-link { color: var(--app-accent); font-weight: 600; }
+.snow-season-route-link:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 2px;
+}
+
+/* The other season on the chart: the same shape at half voice, solid where
+   normal is dashed, so the three lines are three different marks. */
+.snow-line-other {
+  stroke: var(--app-muted);
+  stroke-width: 1.5;
+  opacity: .75;
+}
+.snow-line-other-dot { fill: var(--app-muted); opacity: .75; }
+
+.snow-curve-key {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .3rem 1rem;
+  margin: .4rem 0 0;
+  color: var(--app-muted);
+  font-size: .78rem;
+}
+.snow-curve-key[hidden] { display: none; }
+.snow-curve-key-item { display: inline-flex; gap: .4rem; align-items: center; }
+.snow-key-line { inline-size: 1.4rem; block-size: 0; border-block-start: 2px solid; }
+.snow-key-own { border-color: var(--app-accent); }
+.snow-key-other { border-color: var(--app-muted); opacity: .75; }
+.snow-key-normal { border-block-start: 2px dashed var(--app-muted); }
+.snow-curve-note { margin: .4rem 0 0; color: var(--app-muted); font-size: .8rem; }

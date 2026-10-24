@@ -58,6 +58,15 @@ export const SNOW_CLASSES: readonly SnowClass[] = [
 /** The words and look for a place with no fair value on the chosen day. */
 export const NO_VALUE_LABEL = "No value for this day";
 
+/**
+ * A place that reported, on a day whose normal is too small to compare
+ * against (`normalIsComparable`). No fair value either, and drawn apart from
+ * the grey above because the reason is different: there is snow to measure,
+ * and almost no normal snow to measure it against. A hatch rather than a
+ * colour, so it can never be read as a class (ADR-038, ADR-121).
+ */
+export const BELOW_FLOOR_LABEL = "Too little normal snow to compare";
+
 /** The class a percent falls in, or null for no value. */
 export function snowClassIndex(percent: number | null): number | null {
   if (percent === null || !Number.isFinite(percent) || percent < 0) return null;

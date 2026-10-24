@@ -30,6 +30,11 @@ function preserveRuntimeDataAndRedirects(): Plugin {
         });
       await cp(resolve(root, "data", "assistant"), resolve(outDir, "data", "assistant"),
         { recursive: true });
+      // Each finished snow season, frozen (ADR-121). Fetched only when a
+      // reader asks for that season or the season chart sets it beside this
+      // one, never on first paint.
+      await cp(resolve(root, "data", "snow"), resolve(outDir, "data", "snow"),
+        { recursive: true });
 
       // Boundary GeoJSON joins the runtime data for the same reason as the
       // other files: it is fetched, never imported. It is also what lets the pages

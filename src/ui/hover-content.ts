@@ -19,7 +19,9 @@ import type { SiteDayDepth } from "../snow-model";
 import type { DroughtUnit, NullableNumber, Reservoir, SnowSite } from "../types";
 import { DROUGHT_CLASSES, NO_DROUGHT_LABEL } from "../viz/drought-classes";
 import { formatAcreFeet, formatDate, formatPercent } from "../viz/format";
-import { NO_VALUE_LABEL, SNOW_CLASSES, snowClassIndex } from "../viz/snow-classes";
+import {
+  BELOW_FLOOR_LABEL, NO_VALUE_LABEL, SNOW_CLASSES, snowClassIndex
+} from "../viz/snow-classes";
 import { headlineBasis, headlinePercent } from "../viz/symbols";
 
 /** Inches to one decimal, or the words for having no reading. */
@@ -28,11 +30,13 @@ export function formatInches(value: NullableNumber): string {
     ? "no value" : `${value.toFixed(1)} inches`;
 }
 
-/** The snow class words for a percentage, or the words for no value. */
-export function snowClassLabel(percent: number | null): string {
+/** The snow class words for a percentage, or the words for no value --
+ * which say why when the normal was too small to compare against. */
+export function snowClassLabel(percent: number | null, belowFloor = false): string {
   const index = snowClassIndex(percent);
   const entry = index === null ? null : SNOW_CLASSES[index];
-  return entry ? entry.label : NO_VALUE_LABEL;
+  if (entry) return entry.label;
+  return belowFloor ? BELOW_FLOOR_LABEL : NO_VALUE_LABEL;
 }
 
 /**
@@ -84,10 +88,11 @@ export function referenceReservoirLines(
 export function snowSiteLines(
   site: Pick<SnowSite, "elevation_feet" | "huc6_name" | "late" | "latest_date">,
   percent: number | null,
-  depth: SiteDayDepth | undefined
+  depth: SiteDayDepth | undefined,
+  belowFloor = false
 ): string[] {
   return [
-    `${formatPercent(percent)} of normal — ${snowClassLabel(percent)}`,
+    `${formatPercent(percent)} of normal — ${snowClassLabel(percent, belowFloor)}`,
     `${formatInches(depth?.inches ?? null)}, normally ` +
       `${formatInches(depth?.normalInches ?? null)}`,
     `${Math.round(site.elevation_feet).toLocaleString("en-US")} feet, ${site.huc6_name}`,
@@ -105,10 +110,10 @@ export function snowSiteLines(
  * statements, and the fill draws them in exactly the same colour.
  */
 export function snowBasinLines(
-  percent: number | null, reportingSites: number
+  percent: number | null, reportingSites: number, belowFloor = false
 ): string[] {
   return [
-    `${formatPercent(percent)} of normal — ${snowClassLabel(percent)}`,
+    `${formatPercent(percent)} of normal — ${snowClassLabel(percent, belowFloor)}`,
     `Mean of ${reportingSites} ${reportingSites === 1 ? "site" : "sites"} ` +
       "reporting this day",
     "Choose this area above for its own season"

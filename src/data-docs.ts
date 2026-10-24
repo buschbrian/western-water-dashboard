@@ -80,6 +80,11 @@ root.innerHTML = `
           season timing. Structure version 1. Refreshed independently each morning. An
           incomplete provider response does not replace the last complete file. Shown on
           the <a href="./snow.html">snowpack page</a>.</p>
+        <p>Each finished season is kept, unchanged, at
+          <a href="./data/snow/snowpack-wy2026.json"><code>/data/snow/snowpack-wy2026.json</code></a>,
+          named for the water year it ends in. It is the file as it was published on the
+          season's last day, with the same fields as the current file. The first refresh
+          of each October adds the season that ended, and no file is changed after that.</p>
       </article>
       <article class="api-file">
         <h3>Drought coverage by drainage area</h3>

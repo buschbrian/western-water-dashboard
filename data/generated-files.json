@@ -41,6 +41,13 @@
       "staged_by_refresh": true
     },
     {
+      "path": "data/snow",
+      "class": "generated-archive",
+      "writer": "refresh_snowpack.py",
+      "staged_by_refresh": true,
+      "note": "One frozen file per finished water year, snowpack-wy<YEAR>.json: snowpack.json byte for byte as published on the season's last morning, copied by the first refresh of the next water year before it overwrites the payload (ADR-121). Write-once; never rewritten. A directory entry, so the season that ends next year is classified and committed without editing this table."
+    },
+    {
       "path": "snow_sites.json",
       "class": "generated-daily",
       "writer": "refresh_snowpack.py",
@@ -315,6 +322,13 @@
       "writer": null,
       "staged_by_refresh": false,
       "note": "Test fixture: snowpack.json byte for byte as committed at 7791ce7 (as of 2026-09-30), the last full day of water year 2026. The season-shaped unit tests read it because the daily file restarts at one snowless day each 1 October. Never published."
+    },
+    {
+      "path": "tests/fixtures/snowpack-wy2027-october.json",
+      "class": "frozen",
+      "writer": null,
+      "staged_by_refresh": false,
+      "note": "Test fixture: snowpack.json byte for byte as committed at ed71e7b (as of 2026-10-18), seventeen days into water year 2027. Pins what the page does before the season has a peak or a normal worth dividing by (ADR-121). Never published."
     }
   ]
 }

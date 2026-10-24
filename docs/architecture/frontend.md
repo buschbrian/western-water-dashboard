@@ -340,6 +340,18 @@ keep these cases distinct. The
 active summary names the reservoir, current matching count and any indexed
 stations absent from the current snow payload.
 
+**Snowpack shows one season at a time** (ADR-121). `?season=2025-26` shows a
+finished season from `data/snow/` in place of the current payload; absent is
+the current season. The control sits in its own row above the summary cards,
+outside the filter bar, and a change navigates with the day dropped. The
+season chart draws the season before the shown one, moved onto the shown
+season's dates (`shiftSeason`), as a thinner grey line across the whole water
+year, with a key and a fourth month-table column. That file is fetched only
+when the chart comes near the screen. Early in a season, when `seasonPeak` is
+null, a line under the map links to the last finished season at its peak.
+The map draws areas and sites below the denominator floor as their own
+hatched state, apart from no value.
+
 The Snowpack filter card separates place from table filters. State, Area size
 and the hydrologic area form the first pane. The **Site options** pane puts
 Show every site in the upper-right of its heading, then aligns Site name or

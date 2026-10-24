@@ -2822,6 +2822,8 @@ for (const viewport of VIEWPORTS) {
       // The terminal lakes (ADR-118, ADR-119): their own file and page.
       "./api/lakes.json", "./lakes.html",
       "./api/snowpack.json", "./snow.html",
+      // Each finished snow season, frozen (ADR-121).
+      "./data/snow/snowpack-wy2026.json",
       "./data/drought/usdm-huc6.json", "./drought.html",
       "./data/drought/usdm-current.geojson",
       // The same week over larger areas, published because the reader can
@@ -3233,8 +3235,12 @@ for (const viewport of VIEWPORTS) {
     check(state.curveScale === null || state.curveScale.labelHeight >= 12,
       `${label}: the season curve's axis type renders at `
       + `${state.curveScale?.labelHeight}px`);
-    check(state.curveDrawn === (state.ready?.curvePoints > 0),
-      `${label}: curve drawn ${state.curveDrawn}, readiness holds ${state.ready?.curvePoints} points`);
+    /* Drawn when this season or the season behind it has a line (ADR-121):
+     * in October the other season can be the whole chart. */
+    check(state.curveDrawn
+      === (state.ready?.curvePoints > 0 || state.ready?.comparisonPoints > 0),
+    `${label}: curve drawn ${state.curveDrawn}, readiness holds ${state.ready?.curvePoints} `
+      + `points and ${state.ready?.comparisonPoints} for the other season`);
     check(state.ready?.curvePoints === 0 || state.monthRows > 0,
       `${label}: a drawn curve published no month table rows`);
     check(state.summaryCards.length === 5
@@ -3270,19 +3276,34 @@ for (const viewport of VIEWPORTS) {
       `${label}: the map drew ${mapState.ready?.mapBasins} basins of ${mapState.ready?.basins}`);
     check(mapState.ready?.mapSites === mapState.ready?.sites,
       `${label}: the map drew ${mapState.ready?.mapSites} sites of ${mapState.ready?.sites}`);
-    check(mapState.ready?.mapBasinsWithValues > 0 && mapState.ready?.mapSitesWithValues > 0,
-      `${label}: the shown day coloured ${mapState.ready?.mapBasinsWithValues} basins ` +
-      `and ${mapState.ready?.mapSitesWithValues} sites`);
+    /* Drawn means classed or, early in a season, shown apart as having too
+     * little normal snow to compare (ADR-121). In October the first count can
+     * honestly be zero; both being zero is a map that drew nothing. */
+    check(mapState.ready?.mapBasinsWithValues + mapState.ready?.mapBasinsBelowFloor > 0
+      && mapState.ready?.mapSitesWithValues + mapState.ready?.mapSitesBelowFloor > 0,
+    `${label}: the shown day coloured ${mapState.ready?.mapBasinsWithValues} basins ` +
+      `(${mapState.ready?.mapBasinsBelowFloor} below the floor) and ` +
+      `${mapState.ready?.mapSitesWithValues} sites ` +
+      `(${mapState.ready?.mapSitesBelowFloor} below the floor)`);
+    /* The reading calls a day the high point only when the season has one,
+     * and only that day. */
+    const dayReading = await tab.evaluate(() =>
+      document.querySelector("#snow-day-reading")?.textContent ?? "");
+    check(/high point|most snow so far/.test(dayReading)
+      === (mapState.ready?.mapPeak === mapState.ready?.mapDay),
+    `${label}: the day reading "${dayReading}" disagrees with the peak `
+      + `${mapState.ready?.mapPeak} on ${mapState.ready?.mapDay}`);
     check(typeof mapState.ready?.mapDay === "string",
       `${label}: the map has no shown day`);
-    /* One chip per class, plus one for a day with no fair value. Read from
-     * the table the page publishes rather than written here: this assertion
-     * was a hardcoded 6 and it broke the moment the table gained a class,
-     * which is a test measuring itself rather than the page. */
-    const expectedChips = (mapState.ready?.mapClasses ?? 0) + 1;
+    /* One chip per class, plus two for the two ways of having no fair value:
+     * no reading, and a normal too small to compare against (ADR-121). Read
+     * from the table the page publishes rather than written here: this
+     * assertion was a hardcoded 6 and it broke the moment the table gained a
+     * class, which is a test measuring itself rather than the page. */
+    const expectedChips = (mapState.ready?.mapClasses ?? 0) + 2;
     check(mapState.slider && mapState.legendItems === expectedChips,
       `${label}: day control ${mapState.slider}, legend ${mapState.legendItems} ` +
-      `chips for ${mapState.ready?.mapClasses} classes plus no-value`);
+      `chips for ${mapState.ready?.mapClasses} classes plus two no-value states`);
     /* The reservoirs are deliberately absent here. This map already carries
      * fourteen filled basins and 217 site markers; the same points that are
      * useful context on the drought map buried the readings on this one. */
@@ -3347,6 +3368,99 @@ for (const viewport of VIEWPORTS) {
     checkLabelFonts(check, label, labelFonts);
     await checkAccessibility(tab, check, label);
     await tab.screenshot({ path: `screenshots/snow-${viewport.name}.png`, fullPage: false });
+  } catch (err) {
+    failures.push(`${label}: ${err.message}`);
+  }
+  reportHostedOutage(label, hostedOutage);
+  for (const err of errors) failures.push(`${label}: ${err}`);
+  await context.close();
+}
+
+/* The season turn (ADR-121). The current season with the finished one drawn
+ * behind it on the chart, then the finished season itself through its own
+ * link. Neither check names a date the daily file decides: the current
+ * season is held to its own peak rule, the finished one to its frozen file. */
+for (const viewport of VIEWPORTS) {
+  const context = await newPageContext(browser, viewport);
+  const tab = await context.newPage();
+  const errors = [];
+  tab.on("pageerror", (err) => errors.push(`uncaught: ${err.message}`));
+  const hostedOutage = watchConsoleErrors(tab, errors);
+  const label = `Snowpack seasons (${viewport.name} ${viewport.width}px)`;
+  console.log(`\n=== ${label}`);
+  try {
+    await tab.goto(`${URL}snow.html?state=all`, { waitUntil: "domcontentloaded", timeout: 60000 });
+    await tab.waitForFunction(() => window.__snowReady?.mapDay !== undefined, { timeout: 60000 });
+    const before = await tab.evaluate(() => window.__snowReady);
+    check(before.seasonsOffered >= 2 && before.comparisonSeason === before.season - 1,
+      `${label}: offers ${before.seasonsOffered} seasons, compares with ${before.comparisonSeason}`);
+    /* Fetched only near the chart, so a reader who never scrolls never pays
+     * for a second season. */
+    await tab.locator("#snow-curve-host").scrollIntoViewIfNeeded();
+    await tab.waitForFunction(() => ["loaded", "failed"]
+      .includes(window.__snowReady?.comparisonStatus), { timeout: 60000 });
+    const current = await tab.evaluate(() => ({
+      ready: window.__snowReady,
+      keyItems: document.querySelectorAll("#snow-curve-key [role=listitem]").length,
+      otherLine: Boolean(document.querySelector("#snow-curve-host .snow-line-other")),
+      monthColumns: document.querySelectorAll("#snow-month-head th").length,
+      monthRows: document.querySelectorAll("#snow-month-rows tr").length,
+      reading: document.querySelector("#snow-day-reading")?.textContent ?? "",
+      route: document.querySelector(".snow-season-route-link")?.getAttribute("href") ?? null,
+      scroll: document.documentElement.scrollWidth,
+      viewport: document.documentElement.clientWidth
+    }));
+    console.log("  seasons:", JSON.stringify({
+      season: current.ready.season, peak: current.ready.mapPeak, day: current.ready.mapDay,
+      comparison: current.ready.comparisonStatus, points: current.ready.comparisonPoints
+    }));
+    check(current.ready.comparisonStatus === "loaded" && current.ready.comparisonPoints > 0
+      && current.otherLine && current.keyItems === 3,
+    `${label}: the finished season drew ${current.ready.comparisonPoints} points `
+      + `(${current.ready.comparisonStatus}), key ${current.keyItems}`);
+    check(current.monthColumns === 4 && current.monthRows === 12,
+      `${label}: the month table has ${current.monthColumns} columns and `
+      + `${current.monthRows} rows with a second season`);
+    /* Early in a season there is no peak; the map says so and links to the
+     * last finished season's. Later there is a peak and no link. */
+    if (current.ready.mapPeak === null) {
+      check(current.route !== null && current.route.includes(`season=${
+        current.ready.season - 2}-`) && !/high point|most snow/.test(current.reading),
+      `${label}: no peak yet, route ${current.route}, reading "${current.reading}"`);
+    } else {
+      check(current.route === null,
+        `${label}: the season has a peak and still links to another (${current.route})`);
+    }
+    check(current.scroll <= current.viewport + 1,
+      `${label}: page overflows horizontally (${current.scroll}px in ${current.viewport}px)`);
+
+    const finished = current.ready.season - 1;
+    await tab.goto(`${URL}snow.html?state=all&season=${finished - 1}-${
+      String(finished % 100).padStart(2, "0")}`,
+    { waitUntil: "domcontentloaded", timeout: 60000 });
+    await tab.waitForFunction(() => window.__snowReady?.mapDay !== undefined, { timeout: 60000 });
+    const archived = await tab.evaluate(() => ({
+      ready: window.__snowReady,
+      reading: document.querySelector("#snow-day-reading")?.textContent ?? "",
+      note: document.querySelector("#snow-season-note")?.textContent ?? "",
+      control: document.querySelector("#snow-season")?.value ?? null,
+      search: window.location.search
+    }));
+    console.log("  finished:", JSON.stringify({
+      season: archived.ready.season, peak: archived.ready.mapPeak, day: archived.ready.mapDay
+    }));
+    check(archived.ready.season === finished && archived.control === String(finished),
+      `${label}: the season link opened ${archived.ready.season}, control ${archived.control}`);
+    check(archived.ready.mapPeak !== null && archived.ready.mapDay === archived.ready.mapPeak
+      && archived.reading.includes("season high point"),
+    `${label}: the finished season opened on ${archived.ready.mapDay}, peak `
+      + `${archived.ready.mapPeak}, reading "${archived.reading}"`);
+    check(archived.ready.mapBasinsWithValues > 0,
+      `${label}: the finished season's peak coloured no basin`);
+    check(archived.note.includes("finished") && archived.search.includes("season="),
+      `${label}: the finished season is not named as such (${archived.note}, ${archived.search})`);
+    await checkAccessibility(tab, check, label);
+    await tab.screenshot({ path: `screenshots/snow-season-${viewport.name}.png`, fullPage: false });
   } catch (err) {
     failures.push(`${label}: ${err.message}`);
   }
