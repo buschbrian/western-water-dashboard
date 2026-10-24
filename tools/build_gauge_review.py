@@ -40,6 +40,7 @@ import argparse
 import csv
 import datetime as dt
 import os
+import re
 import sys
 import urllib.error
 import urllib.parse
@@ -77,11 +78,47 @@ FIELDS = [
     "drainage_area_sq_mi", "record_begin", "last_daily_value",
     "covers_1991_2020", "screened_on", "trace_screen", "nldi_basin_sq_mi",
     "trace_check", "upstream_reservoirs", "upstream_snow_sites",
+    "usgs_page", "suggested_ruling", "suggestion_reason",
     "reviewer_ruling", "notes",
 ]
 SCREEN_FIELDS = FIELDS[:FIELDS.index("trace_screen")]
 TRACE_FIELDS = ["trace_screen", "nldi_basin_sq_mi", "trace_check",
                 "upstream_reservoirs", "upstream_snow_sites"]
+
+#: The tiers a suggestion can name, strongest finding first. A suggestion is
+#: arithmetic over the columns beside it; the ruling is still a person's.
+SUGGESTIONS = ("exclude", "check", "shaped", "short", "natural")
+CONDUIT_NAME = re.compile(r"\b(TUNNEL|DRAIN|CANAL|DITCH)\s+(NEAR|NR|AT)\b")
+LOCATOR_WORD = re.compile(r"\b(AT|AB|ABV|ABOVE|BL|BLW|BEL|BELOW)\b")
+BELOW_DIVERSION_NAME = re.compile(
+    r"\b(BL|BLW|BEL|BELOW)\b.*\b(DIV|DIVERSION|CANAL|DITCH|POWERPLANT|TUNNEL)\b")
+USGS_PAGE_URL = "https://waterdata.usgs.gov/monitoring-location/USGS-{site}/"
+
+
+def suggest(row: dict) -> tuple[str, str]:
+    """A suggested ruling and every finding behind it, from the row alone."""
+    name = row["site_name"].upper()
+    findings: list[tuple[str, str]] = []
+    conduit = CONDUIT_NAME.search(name)
+    if conduit and not LOCATOR_WORD.search(name[:conduit.start()]):
+        findings.append(("exclude", "the gauge measures a tunnel, drain or canal"))
+    if row["trace_screen"] != "traced":
+        findings.append(("check", f"basin not traced ({row['trace_screen'] or 'not run'})"))
+    elif row["trace_check"]:
+        findings.append(("check", row["trace_check"]))
+    reservoirs = [r for r in row["upstream_reservoirs"].split("; ") if r]
+    if reservoirs:
+        findings.append(("shaped", f"{len(reservoirs)} published reservoir"
+                         f"{'s' if len(reservoirs) != 1 else ''} upstream"))
+    if BELOW_DIVERSION_NAME.search(name):
+        findings.append(("shaped", "the name places it below a diversion"))
+    if row["covers_1991_2020"] != "yes":
+        findings.append(("short", f"record starts {row['record_begin'] or 'unknown'}"))
+    if not findings:
+        snow = "snow sites upstream" if row["upstream_snow_sites"] else "no snow site upstream"
+        findings.append(("natural", f"no published reservoir or named diversion upstream; {snow}"))
+    tier = min((tier for tier, _ in findings), key=SUGGESTIONS.index)
+    return tier, "; ".join(reason for _, reason in findings)
 
 
 def usgs_features(url: str) -> list[dict]:
@@ -216,6 +253,9 @@ def read_rows(path: Path = OUTPUT_PATH) -> dict[str, dict]:
 
 
 def write_rows(rows: dict[str, dict], path: Path = OUTPUT_PATH) -> None:
+    for row in rows.values():
+        row["usgs_page"] = USGS_PAGE_URL.format(site=row["usgs_site_no"])
+        row["suggested_ruling"], row["suggestion_reason"] = suggest(row)
     ordered = sorted(rows.values(), key=lambda r: (r["huc8"], r["usgs_site_no"]))
     temporary = path.with_suffix(".csv.tmp")
     with temporary.open("w", newline="", encoding="utf-8") as handle:
@@ -245,10 +285,16 @@ def main(argv: list[str] | None = None) -> int:
                         help="trace only rows with no final trace screen")
     parser.add_argument("--no-trace", action="store_true",
                         help="refresh the screen fields and stop")
+    parser.add_argument("--suggest", action="store_true",
+                        help="recompute the suggestions offline and stop")
     args = parser.parse_args(argv)
     only = set(args.only) or None
 
     rows = read_rows()
+    if args.suggest:
+        write_rows(rows)
+        print(f"suggested a ruling for {len(rows)} rows in {OUTPUT_PATH.name}")
+        return 0
     if not args.missing:
         series, locations = fetch_screen_inputs()
         screened = screen(series, locations, dt.date.today())

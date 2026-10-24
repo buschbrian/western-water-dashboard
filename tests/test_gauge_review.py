@@ -164,3 +164,53 @@ def test_the_worksheet_round_trips_in_a_stable_order(tmp_path):
     lines = path.read_text(encoding="utf-8").splitlines()
     assert lines[0].split(",") == G.FIELDS
     assert [line.split(",")[0] for line in lines[1:]] == ["2", "1"]
+
+
+# --- the suggestion ----------------------------------------------------------
+
+def plain_row(name="PROVO RIVER NEAR WOODLAND, UT", **overrides):
+    row = dict.fromkeys(G.FIELDS, "")
+    row.update(usgs_site_no="1", site_name=name, trace_screen="traced",
+               covers_1991_2020="yes", upstream_snow_sites="Trial Lake")
+    row.update(overrides)
+    return row
+
+
+def test_a_traced_long_record_with_nothing_upstream_is_natural():
+    tier, reason = G.suggest(plain_row())
+    assert tier == "natural"
+    assert "snow sites upstream" in reason
+
+
+def test_a_tunnel_is_excluded_but_a_creek_measured_at_one_is_not():
+    assert G.suggest(plain_row("FAIRVIEW TUNNEL NEAR FAIRVIEW, UT"))[0] == "exclude"
+    assert G.suggest(plain_row("MILL CREEK AT SHELEY TUNNEL, NEAR MOAB, UT"))[0] == "natural"
+    assert G.suggest(plain_row("SUMMIT CREEK ABV SUMMIT CR CANAL NR SANTAQUIN UT"))[0] == "natural"
+
+
+def test_a_basin_problem_outranks_storage_and_every_finding_is_kept():
+    tier, reason = G.suggest(plain_row(
+        trace_check="traced about 404 sq mi; the gauge publishes 50 sq mi",
+        upstream_reservoirs="Deer Creek; Jordanelle", covers_1991_2020="no",
+        record_begin="1993-05-01"))
+    assert tier == "check"
+    assert "2 published reservoirs upstream" in reason
+    assert "record starts 1993-05-01" in reason
+
+
+def test_storage_or_a_named_diversion_upstream_is_shaped():
+    assert G.suggest(plain_row(upstream_reservoirs="Deer Creek"))[0] == "shaped"
+    assert G.suggest(plain_row("BEAR RIVER BELOW O-LINE CANAL NR BRIGHAM CITY, UT"))[0] == "shaped"
+
+
+def test_an_untraced_gauge_is_never_suggested_as_natural():
+    assert G.suggest(plain_row(trace_screen=""))[0] == "check"
+
+
+def test_writing_fills_the_suggestion_and_never_the_ruling(tmp_path):
+    path = tmp_path / "gauge-review.csv"
+    G.write_rows({"1": plain_row()}, path)
+    row = G.read_rows(path)["1"]
+    assert row["suggested_ruling"] == "natural"
+    assert row["usgs_page"].endswith("/USGS-1/")
+    assert row["reviewer_ruling"] == ""

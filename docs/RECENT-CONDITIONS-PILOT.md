@@ -84,6 +84,8 @@ changes `reviewer_ruling` or `notes`.
 | `trace_screen` | `traced`, `not_indexed` or `no_basin` are findings; anything else was the service, and `--missing` retries it |
 | `nldi_basin_sq_mi`, `trace_check` | The NLDI basin indexed to the gauge, and a note when it differs from the published drainage area by more than 25% |
 | `upstream_reservoirs`, `upstream_snow_sites` | Published reservoirs and snow sites inside that basin |
+| `usgs_page` | The gauge's U.S. Geological Survey page, for checking a row by hand |
+| `suggested_ruling`, `suggestion_reason` | A tier worked out from the columns above, and every finding behind it. Recomputed on every write; never copied into the ruling |
 
 An upstream reservoir means storage can shape the flow. It is not a
 finding that the flow is regulated, and the gauge does not measure that
@@ -98,6 +100,31 @@ published drainage area by more than 25%; Daniels Creek at Charleston
 traced about 404 square miles against 50 and is the wrong basin. Early
 requests took 13 to 150 seconds each, against the half second measured in
 August, so the trace runs resumably; later requests were fast.
+
+### Reviewing the worksheet
+
+`.venv/bin/python tools/build_gauge_review.py --suggest` recomputes the
+suggestions offline. Each row gets the strongest of its findings:
+
+| Tier | Rule | What a ruling of this tier would mean |
+|---|---|---|
+| `exclude` | The gauge's own name is a tunnel, drain or canal (`FAIRVIEW TUNNEL NEAR …`), not a river measured beside one | Not shown |
+| `check` | The basin was not traced, or the trace differs from the published drainage area by more than 25% | Unresolved until the basin is checked |
+| `shaped` | A published reservoir sits in the traced basin, or the name places the gauge below a diversion, canal, tunnel or powerplant | Flow shown and labelled as shaped upstream; not ranked against normal |
+| `short` | The record starts after 1 January 1991 | Flow shown; no comparison with normal |
+| `natural` | None of the above | Flow shown and compared with normal for the date |
+
+The rules see only published reservoirs and diversions a gauge's name
+mentions. An unlisted reservoir, a canal that takes water upstream or a
+transbasin import can still make a `natural` row wrong. Write the ruling in
+`reviewer_ruling` as one of the five tiers (blank means not yet reviewed),
+and a reason in `notes` when it differs from the suggestion. How each tier
+is published is a method decision for the pilot's flow record, not settled
+by this worksheet.
+
+First suggestions, 2026-10-24: 51 `natural`, 81 `shaped`, 18 `short`,
+11 `check`, 3 `exclude`. A useful order is the 14 `check` and `exclude`
+rows first, then the 51 `natural` rows, where a missed diversion costs most.
 
 ## Credentials and hosting
 
