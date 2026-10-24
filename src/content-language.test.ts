@@ -103,7 +103,10 @@ const userTextFiles = [
   // The weekly digest writes sentences about every other surface.
   "src/viz/weekly-summary.ts",
   "src/weekly-model.ts",
-  "src/state/drought-url.ts"
+  "src/state/drought-url.ts",
+  // The page for reporters: static prose about how to cite and read the
+  // figures, so it answers to the same word list as the pages it explains.
+  "reporters.html"
 ];
 
 const oldUnexplainedTerms = [
@@ -136,7 +139,7 @@ describe("user text", () => {
   it("does not transform visible text in CSS", async () => {
     const publishedPages = [
       "index.html", "modern.html", "overview.html", "snow.html", "drought.html",
-      "methods.html", "data.html", "reservoir.html", "terms.html",
+      "methods.html", "data.html", "reservoir.html", "terms.html", "reporters.html",
       "landscape.html", "explore.html", "lakes.html",
       "legacy/index.html", "maplibre/index.html"
     ];

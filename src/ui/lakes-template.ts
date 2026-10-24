@@ -29,6 +29,7 @@ export function lakesTemplate(search: string): string {
   <footer class="app-footer reservoir-footer">
     <a href="./data.html">Use the public data API</a> ·
     <a href="./methods.html">Methods and sources</a> ·
+    <a href="./reporters.html">For reporters</a> ·
     <a href="./terms.html">Terms and license</a>
   </footer>`;
 }
