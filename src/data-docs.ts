@@ -101,6 +101,17 @@ root.innerHTML = `
           <a href="./data/drought/usdm-huc8.json">subbasins</a>.
           Every file states its own <code>level</code>. Each area carries its
           code under the attribute that level names.</p>
+        <p>Ten years of weeks are kept for
+          <a href="./data/drought/usdm-huc2-history.json">regions</a>,
+          <a href="./data/drought/usdm-huc4-history.json">subregions</a>, and
+          <a href="./data/drought/usdm-huc6-history.json">basins</a>: each week's
+          <code>percent_of_area_at_least</code> for every area, oldest first. Every
+          week, in these files and in the weekly files above, is measured from the
+          monitor's full-resolution archived map of that week. The weeks before
+          August 2026 were measured after the fact and have a
+          <code>release_date</code> of null, because the archive does not give
+          one. The <code>backfill</code> block names any week the archive could
+          not supply.</p>
       </article>
       <article class="api-file">
         <h3>Capacity and geography reference</h3>

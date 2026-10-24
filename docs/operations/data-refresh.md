@@ -21,9 +21,15 @@ scripts/refresh-daily.sh          # everything, exactly as the workflow does
    last verified GeoJSON; it must not block current reservoir readings.
 3. **Drought coverage, once per offered level** —
    `tools/compute_drought_coverage.py` for HUC-2, HUC-4 and HUC-6 (with one
-   archive per level), and HUC-8 with `--no-history`. All are computed from
-   the one download, so one failing means all are suspect and the polygons
-   are reverted.
+   archive per level), and HUC-8 with `--no-history`. The download says which
+   week is current; the shares are measured from the monitor's full-resolution
+   archive map of that week, fetched once into a cache outside the repository
+   (ADR-122). The archive posts each week on Thursday at about 10:15 UTC,
+   before this job. When it has not posted the week yet, the engine exits 2
+   and writes nothing; the run warns "Drought archive not posted" and puts the
+   whole drought set back, downloads and archives included, so the page stays
+   on last week. Never measure the download instead: that mixes two kinds of
+   geometry in one series. Any other failure reverts the same set.
 4. **Pair check** — `tools/check_drought_pair.py`. If any coverage file
    disagrees with the polygons, every drought file is restored from the last
    commit. Publishing yesterday's week is a small honest loss; publishing two

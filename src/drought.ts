@@ -111,6 +111,7 @@ import { renderDroughtSeverity } from "./viz/drought-severity";
 import { renderResponsiveChart, stopResponsiveChart } from "./viz/responsive";
 import type { DroughtCoveragePayload, Reservoir } from "./types";
 import { createDroughtMap } from "./ui/drought-map";
+import { droughtDecadeMarkup, mountDroughtDecade } from "./ui/drought-decade";
 import { RESERVOIR_REFERENCE_LAYER_ID } from "./ui/layers";
 import type { ReservoirReference } from "./ui/layers";
 import { createViewMap, mapStatusNote } from "./ui/view-map";
@@ -479,6 +480,7 @@ function renderDrought(
       <div id="drought-change-host" class="drought-change-host"></div>
       <p class="drought-chart-note" id="drought-change-note"></p>
     </section>
+    ${droughtDecadeMarkup()}
     <section class="overview-card table-card" aria-labelledby="drought-areas-heading">
       <div class="card-heading"><div><h2 id="drought-areas-heading">Each drainage area</h2><p>The bar is the share of the area's land in each class, in the same colours as the map above. The figure beside the name is the combined reservoir storage in that area, as a percent of the combined full level. Those full levels mix definitions, so a combined percent full is a working total rather than one measure of full. The severity index adds up the shares at each class or worse, so it runs from 0 to 500. Shares and index are shares of the land the monitor measures.</p></div><calcite-button id="download-drought-csv" appearance="outline" icon-start="export" scale="s">Download filtered table (CSV file)</calcite-button></div>
       <div class="drought-rows"></div>
@@ -1040,6 +1042,18 @@ function renderDrought(
   });
 
   draw();
+
+  /* Ten years, fetched only when its cards come near the screen. Over every
+   * area in scope rather than the `worse=` view, like the severity and
+   * change charts: a decade is the place's history, not the filter's. It
+   * opens on the reader's chosen area, or else on the most severe one this
+   * week. */
+  mountDroughtDecade(content, {
+    level,
+    mapDate: payload.map_date,
+    units: orderUnits(scopedUnits, storage, "severity"),
+    opening: levelArea
+  });
 
   /* The map starts after the figures are on screen, from its own two
    * fetches: the national polygons the coverage was computed from, and the

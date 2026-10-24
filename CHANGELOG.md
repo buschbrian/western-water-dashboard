@@ -11,6 +11,7 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ## [Unreleased]
 
+
 ### Added
 
 - **Precipitation since 1 October on the snow page** (ADR-125). A new card
@@ -22,8 +23,34 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   `precipitation.json` (daily) and `precipitation_history.json` (rebuilt each
   October), written by `refresh_station_readings.py` and
   `tools/build_precipitation_history.py`.
+- **Ten years of drought on the drought page** (ADR-123). Two new cards below
+  the week's figures. One draws a single drainage area's last decade the way
+  the Drought Monitor draws its own: the share of the measured land at each
+  class or worse, every week, in the map's colours, with this week marked and
+  weeks with no map left as gaps. The other is a calendar of every area in
+  view, one row each and one column a week, coloured by the most severe class
+  that at least half of the area's measured land is in. Both read the archive
+  at the page's area size, and the archive is fetched only when the cards come
+  near the screen, so the page opens as fast as before. Each has a table that
+  says the same thing in words, and the chart can be read a week at a time
+  with the arrow keys.
 
 ### Changed
+
+- **Every drought share is measured from the monitor's full-resolution map**
+  (ADR-122, method `drought-coverage-3`). The weekly figures used to be
+  measured from the simplified polygons the map draws. Checked against the
+  monitor's archive of the same weeks, that simplification moved 47 of 5,955
+  published shares by one tenth. The weekly run now measures the archive's map
+  of the week, and when that map is not posted yet it keeps last week rather
+  than measure the simplified one. The published weeks were measured again, so
+  those 47 shares each moved by one tenth.
+- **The drought archives reach back ten years** (ADR-122). The region,
+  subregion and basin archives were rebuilt from the monitor's weekly maps
+  back to November 2016, every week measured the same way. A week the archive
+  cannot supply is named in the file and left as a gap. The question service's
+  drought index carries the newest 26 weeks of each.
+
 
 - Update ArcGIS to 5.1.27, Calcite to 5.2, Vite to 8.3 and Vitest to 5.
   Keep TypeScript on current 7.0.2, update accessibility tooling and Node

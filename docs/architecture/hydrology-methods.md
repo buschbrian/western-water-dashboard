@@ -366,10 +366,13 @@ redirected away from the committed coverage file used to rewrite the committed
 archive anyway.
 
 **The convergence study measures the sampler, not the inputs.** Both error
-terms above were measured over the same simplified polygons, so they say
-nothing about the geometry on the other side: the Drought Monitor classes and
-the land mask are fetched at roughly 100 m against a grid step of about 185 m
-of latitude — the same order — and no measurement here bounds that term. ADR-037
-put the drainage boundaries at about 56 m, below the grid; the monitor's classes
-and the mask are not at that resolution. Until the geometry tolerance is
-measured too, a step finer than 0.002° buys nothing worth its seventy seconds.
+terms above were measured over the same polygons, so they say nothing about
+the geometry itself. For the monitor's classes that term has now been measured
+and removed: the feature layer's 0.001° simplification moved unrounded shares
+by at most 0.038 points against the archive's full-resolution map, enough to
+flip 47 of 5,955 published tenths, so `drought-coverage-3` reads the classes
+from the archive map (ADR-122). The land mask is still fetched at roughly
+100 m against a grid step of about 185 m of latitude, and no measurement here
+bounds that part. ADR-037 put the drainage boundaries at about 56 m, below the
+grid. Until the mask's tolerance is measured too, a step finer than 0.002°
+buys nothing.

@@ -128,15 +128,39 @@ fi
 # without one and makes no previous-week claim (ADR-088).
 #
 # Recomputed every day rather than only when the download reports a change: it
-# is deterministic, carries no timestamps, and takes about a minute, so a
-# coverage file that somehow fell behind is repaired by the next run instead of
-# waiting for someone to notice.
-if ! "$python_bin" tools/compute_drought_coverage.py \
-   || ! "$python_bin" tools/compute_drought_coverage.py --scope west-huc4 \
-   || ! "$python_bin" tools/compute_drought_coverage.py --scope west-huc2 \
-   || ! "$python_bin" tools/compute_drought_coverage.py --scope west-huc8 --no-history; then
+# is deterministic and carries no timestamps, so a coverage file that somehow
+# fell behind is repaired by the next run instead of waiting for someone to
+# notice.
+#
+# The shares are measured from the monitor's full-resolution archive map of the
+# week the download names, never from the download itself (ADR-122). The
+# archive posts each week on Thursday at about 10:15 UTC, before this job runs;
+# a week it has not posted yet exits 2, and the whole set stays on last week
+# until a later run finds it. The first level fetches the file and the others
+# read it from the same cache.
+coverage_status=0
+measure() {
+  # Stops at the first level that fails, keeping its status.
+  [ "$coverage_status" = 0 ] || return 0
+  "$python_bin" "$@" || coverage_status=$?
+}
+measure tools/compute_drought_coverage.py
+measure tools/compute_drought_coverage.py --scope west-huc4
+measure tools/compute_drought_coverage.py --scope west-huc2
+measure tools/compute_drought_coverage.py --scope west-huc8 --no-history
+if [ "$coverage_status" = 2 ]; then
+  warn "Drought archive not posted" "Keeping last week's drought files until the archive has this week's map"
+elif [ "$coverage_status" != 0 ]; then
   warn "Coverage failed" "Reverting the polygons so the set stays on one week"
-  git checkout -- data/drought/usdm-current.geojson
+fi
+if [ "$coverage_status" != 0 ]; then
+  # Everything a level that finished before the failure may have written goes
+  # back too, archives included, along with both downloads.
+  git checkout -- data/drought/usdm-current.geojson data/drought/usdm-previous.geojson \
+    data/drought/usdm-huc6.json data/drought/usdm-huc4.json \
+    data/drought/usdm-huc2.json data/drought/usdm-huc8.json \
+    data/drought/usdm-huc6-history.json data/drought/usdm-huc4-history.json \
+    data/drought/usdm-huc2-history.json
 fi
 
 # 4. Belt and braces, and cheap. If the files disagree for any reason the

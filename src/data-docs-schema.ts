@@ -445,7 +445,10 @@ export const DROUGHT_GROUPS: readonly ApiFieldGroup[] = [
     f("sampling", "text", "How points were placed over each area."),
     f("grid_step_degrees", "decimal degrees", "Distance between sampled points."),
     f("weighting", "text", "How each point's land area was weighted."),
-    f("classes", "text", "How the drought classes relate to each other.")
+    f("classes", "text", "How the drought classes relate to each other."),
+    f("geometry", "text",
+      "Which map the classes were read from: the monitor's full-detail weekly map "
+      + "from its archive, not the simplified copy the map on this site draws.")
   ]},
   { id: "drought-unit", title: "Drainage-area record", path: "units[]", fields: [
     f("huc6", "identifier",

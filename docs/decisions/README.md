@@ -118,6 +118,7 @@ ADR-041.**
   [ADR-083](ADR-083-anchor-the-monthly-normal-window-once-per-chart.md),
   [ADR-100](ADR-100-a-sub-daily-providers-day-is-its-last-reading.md),
   [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md),
+  [ADR-122](ADR-122-measure-drought-from-the-monitors-full-resolution-archive.md),
   [ADR-125](ADR-125-measure-precipitation-at-the-snow-stations-against-a-fixed-history.md)
 - Current architecture: [`docs/architecture/hydrology-methods.md`](../architecture/hydrology-methods.md)
 
@@ -160,7 +161,8 @@ ADR-008, then ADR-032 and ADR-061.**
   [ADR-040](ADR-040-open-the-snow-map-on-the-season-peak.md),
   [ADR-121](ADR-121-keep-the-finished-snow-season-and-open-the-new-one-honestly.md),
   [ADR-086](ADR-086-open-the-place-chooser-from-every-page-header.md),
-  [ADR-120](ADR-120-ask-where-to-start-before-loading-the-map.md)
+  [ADR-120](ADR-120-ask-where-to-start-before-loading-the-map.md),
+  [ADR-123](ADR-123-draw-ten-years-of-drought-on-the-drought-page.md)
 - Superseded, read only for history: ADR-007, ADR-016, ADR-022, ADR-025,
   ADR-027, ADR-030, ADR-043, ADR-054
 - Current architecture: [`docs/architecture/frontend.md`](../architecture/frontend.md)
@@ -292,11 +294,13 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-114](ADR-114-publish-a-water-type-and-an-operating-character.md) | Publish a water type and an operating character | Accepted; extends ADR-112 and qualifies ADR-072 and ADR-111; labels first, each numeric consequence its own decision |
 | [ADR-115](ADR-115-state-a-reviewed-hold-where-the-reservoir-used-to-be.md) | State a reviewed hold where the reservoir used to be | Accepted; extends ADR-056 and qualifies ADR-020; a hold is a four-field notice, never a measurement |
 | [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md) | Exclude a reviewed reading, and never repair one | Accepted; extends ADR-072's no-repair rule; five readings named across four withheld California stations, the issues stay open |
-| [ADR-117](ADR-117-close-the-scope-at-version-1-0-0.md) | Close the scope at version 1.0.0 | Superseded by ADR-124 for the bounded pilot; versioning, release approval and other scope limits retained |
+| [ADR-117](ADR-117-close-the-scope-at-version-1-0-0.md) | Close the scope at version 1.0.0 | Superseded by ADR-124 for the bounded pilot; versioning, release approval and other scope limits retained; ADR-123 brings the drought time series and ADR-125 precipitation back into scope |
 | [ADR-118](ADR-118-publish-terminal-lakes-from-their-own-roster-and-payload.md) | Publish terminal lakes from their own roster and payload | Accepted; implements ADR-112 and extends ADR-056 and ADR-098; Walker Lake is the first lake, generated and not yet shown |
 | [ADR-119](ADR-119-show-terminal-lakes-on-their-own-page.md) | Show terminal lakes on their own page | Accepted; extends ADR-118 and ADR-045; reached from the methods and data pages, not the bar |
 | [ADR-120](ADR-120-ask-where-to-start-before-loading-the-map.md) | Ask where to start before loading the map | Accepted; extends ADR-086; the storage map fetches the map SDK only after the first-visit question closes without a choice |
 | [ADR-121](ADR-121-keep-the-finished-snow-season-and-open-the-new-one-honestly.md) | Keep the finished snow season, and open the new one honestly | Accepted; amends ADR-040; one denominator floor for the map and the peak, a write-once archive per water year, and a season choice |
+| [ADR-122](ADR-122-measure-drought-from-the-monitors-full-resolution-archive.md) | Measure drought from the monitor's full-resolution archive, back ten years | Accepted; method `drought-coverage-3`; the weekly run never measures the simplified download; the archives hold a decade |
+| [ADR-123](ADR-123-draw-ten-years-of-drought-on-the-drought-page.md) | Draw ten years of drought on the drought page | Accepted; extends ADR-117's scope at the maintainer's request; fetched only when its cards come near the screen |
 | [ADR-124](ADR-124-bound-recent-conditions-to-a-static-data-pilot.md) | Bound recent conditions to a static-data pilot | Accepted; scheduled Utah pilot with static outputs, existing USGS access and isolated R2 storage; implementation pending |
 | [ADR-125](ADR-125-measure-precipitation-at-the-snow-stations-against-a-fixed-history.md) | Measure precipitation at the snow stations against a fixed history | Accepted; the record ADR-117 asks for to bring a new measured element into scope; keeps ADR-081's denominator floor |
 

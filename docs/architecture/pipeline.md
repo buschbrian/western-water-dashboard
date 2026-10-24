@@ -191,9 +191,20 @@ corrected reading is a different reading and returns on its own.
 ## Drought coverage
 
 Coverage is computed per level into `data/drought/usdm-huc{level}.json` from
-the committed polygons, the committed scope boundaries and the committed land
-mask. It is deterministic and carries no timestamps, so an unchanged week
-writes an unchanged file.
+the monitor's full-resolution archive map of the week the committed download
+names, the committed scope boundaries and the committed land mask. The
+download's simplified polygons are drawn by the map and never measured; a week
+whose archive map is not posted is not measured at all (ADR-122). It is
+deterministic and carries no timestamps, so an unchanged week writes an
+unchanged file.
+
+**The archives hold a decade at one method version.** Each level's
+`usdm-huc{level}-history.json` keeps 520 weeks, every one measured from its
+archive map. `tools/backfill_drought_history.py --rebuild` measures them all
+again when `METHOD_VERSION` moves; `--verify-overlap` recomputes held weeks
+and compares exactly, and the default fill mode refuses to add a week until
+that passes. A week the archive could not supply is named in `backfill.skipped`
+and left as a gap.
 
 **Every coverage file must describe one week.** `tools/check_drought_pair.py`
 globs them all, because a reader who changes the level fetches a different

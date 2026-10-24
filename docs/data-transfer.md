@@ -55,6 +55,26 @@ precipitation card nears the screen.
 `lakes.json` was measured 2026-09-06 on its first generated file, one lake
 (ADR-118); it is fetched only by the terminal-lakes page (ADR-119).
 
+### The drought archives at a decade
+
+Measured 2026-10-19, after ADR-122 filled them to 518 weeks (gzip -6):
+
+| file | raw | gzip | before (9-10 weeks) |
+|---|---:|---:|---:|
+| `data/drought/usdm-huc2-history.json` | 260 KB | **19.2 KB** | 1.2 KB |
+| `data/drought/usdm-huc4-history.json` | 2,097 KB | **83.6 KB** | 2.8 KB |
+| `data/drought/usdm-huc6-history.json` | 3,627 KB | **123.0 KB** | 4.1 KB |
+
+The raw figures are large and the wire figures are not: a week repeats every
+key and most values move slowly, so gzip takes about 97% of the basin file.
+Writing the codes and dates once, as ADR-052 did for the snow calendar, was
+not worth a second shape for a public file at 123 KB. The lever that matters
+is when the file is fetched: the drought page asks for one level's archive
+only when its ten-year cards come near the screen (ADR-123), so a reader who
+does not scroll there pays nothing and the first load is unchanged. The
+weekly coverage files grew by a few dozen bytes each, for the new
+`method.geometry` field.
+
 The two storage figures were re-measured 2026-08-21, after R3 admitted
 Colorado; the section at the end of this file has the arithmetic. The
 `reference.json` note immediately below is older than they are and is kept for

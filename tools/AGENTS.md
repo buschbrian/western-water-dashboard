@@ -17,7 +17,9 @@ rather than replace.
   of any build or CI target. They are network-bound, not slow; keep `--workers`
   small, because the providers are public services this project does not pay
   for.
-- `compute_drought_coverage.py` is deterministic and writes no timestamps.
+- `compute_drought_coverage.py` is deterministic and writes no timestamps. It
+  measures the monitor's archived map of the week (`drought_archive.py`), never the
+  simplified download, and exits 2 writing nothing when that map is not posted.
   `--output` implies `--no-history`. Measure before moving `DEFAULT_STEP`:
   `measure_drought_convergence.py` exists for that and writes nothing.
 - Procedures: [`docs/operations/data-refresh.md`](../docs/operations/data-refresh.md)

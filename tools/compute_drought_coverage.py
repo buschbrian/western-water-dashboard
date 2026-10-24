@@ -1,11 +1,19 @@
 """Compute weekly drought coverage for each published drainage area.
 
-Reads the committed U.S. Drought Monitor polygons, the committed boundaries
-of the drawn scope and the committed land mask, and writes the percent of
-each drainage area's *measured* land in each intensity class. The downloaded
-polygons are *exclusive*: each feature covers exactly its class, verified by
-probing interior points, so "D1 or worse" is a sum of disjoint areas rather
-than a union.
+Reads the week the committed U.S. Drought Monitor download describes, measures
+that week's full-resolution map from the monitor's own archive
+(`drought_archive.py`), and writes the percent of each drainage area's
+*measured* land in each intensity class, using the committed boundaries of
+the drawn scope and the committed land mask. The classes are *exclusive*:
+each feature covers exactly its class, verified by probing interior points,
+so "D1 or worse" is a sum of disjoint areas rather than a union.
+
+The simplified download is never measured (ADR-122). It is what the map
+draws and it says which week is current; the shares come from the archive's
+map of that week or from nothing. If the archive has not posted the week, the
+run writes nothing and exits 2, and the refresh keeps the previous week
+whole -- falling back to the simplified polygons would put two kinds of
+geometry into one series.
 
 The monitor maps the United States and stops at both borders, so a drainage
 area crossing one is only partly measurable. Cells outside the mask are
@@ -19,6 +27,8 @@ published today is byte-for-byte what it was before the mask existed.
 
     python tools/compute_drought_coverage.py
     python tools/compute_drought_coverage.py --step 0.02 --output out.json
+    python tools/compute_drought_coverage.py --archive usdm_20261013.json \
+        --output a.json
 
 Method: even-odd scanline sampling. Each drainage area's bounding box is
 covered by a grid of cell centres ``step`` degrees apart. A grid row is one
@@ -46,19 +56,18 @@ an equal-area projection -- which is what Albers would supply -- would change
 nothing a reader could see. The first thing to reach for if the published
 precision ever tightens past 0.1 is a finer step, not a projection.
 
-WHAT THE ERROR BUDGET DOES NOT COVER: THE INPUT GEOMETRY ON THE OTHER SIDE.
-Both measured terms compare one computation of this engine against another
-over *the same simplified polygons*. The Drought Monitor classes and the land
-mask are both fetched at roughly 100 m resolution, and the grid step is about
-185 m of latitude -- the same order -- so a finer step than 0.002 samples a
-geometry whose own tolerance is coarser than the sampling. Because
-`tools/measure_drought_convergence.py` varies only the step while holding the
-polygons fixed, it cannot see this term at all; no measurement here bounds it.
-The practical consequence is narrow but worth stating: **a step finer than
-0.002 degrees buys nothing until the geometry tolerance is measured too**, so
-do not spend seventy more seconds a morning chasing it. ADR-037 already moved
-the drainage boundaries to about 56 m so they sit below the grid; the monitor's
-classes and the mask are the inputs this note is about.
+THE INPUT GEOMETRY. Both terms above compare one computation of this engine
+against another over the same polygons, so neither sees the geometry itself.
+That term was measured once, when the classes still came from the feature
+layer simplified to 0.001 degrees: against the archive's full-resolution map
+of the same weeks it moved unrounded shares by at most 0.038 points (median
+0.000), which turned 47 of 5,955 published shares by one tenth, every one of
+them on a rounding boundary. That is why the classes are now read at full
+resolution and the method version moved (ADR-122). The land mask is still
+fetched at roughly 100 m, the same order as the grid step, and nothing here
+bounds that part, so **a step finer than 0.002 degrees still buys nothing
+until the mask's tolerance is measured too**. ADR-037 already moved the
+drainage boundaries to about 56 m so they sit below the grid.
 
 WHY THE STEP IS 0.002 AND NOT 0.01. It was 0.01, whose sampling error was
 measured at 0.069 -- above the 0.05 that moves a published tenth. That figure
@@ -95,8 +104,19 @@ import numpy as np
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+sys.path.insert(0, str(ROOT / "tools"))
 import watershed_scopes  # noqa: E402
+from drought_archive import (  # noqa: E402
+    ARCHIVE_SOURCE,
+    DEFAULT_CACHE,
+    ArchiveWeekError,
+    archive_drought,
+    load_archive_week,
+    parse_archive,
+)
 
+#: The download that says which week is current and when it was released.
+#: Its polygons are drawn by the map and never measured.
 DROUGHT_PATH = ROOT / "data" / "drought" / "usdm-current.geojson"
 # The drawn scope's file, not a file named here: the coverage rows are joined
 # to the areas the maps draw, so a second copy of that decision would publish
@@ -122,21 +142,29 @@ DEFAULT_STEP = 0.002
 #: this archive needs to know whether they were measured the same way, and the
 #: step alone does not say -- the land mask and the class rules are part of
 #: the method too.
-METHOD_VERSION = "drought-coverage-2"
+#:
+#: 3: the classes are read from the monitor's full-resolution archive map of
+#: the week rather than from the feature layer's 0.001-degree simplification
+#: (ADR-122). Step, mask, weighting and class rules are unchanged.
+METHOD_VERSION = "drought-coverage-3"
 LEVELS = ("d0", "d1", "d2", "d3", "d4")
 
 # How many weekly maps the history keeps.
 #
 # The monitor publishes every Thursday, so this is ten years. It exists to
 # bound the file rather than because anything older stops being interesting:
-# at fourteen drainage areas and five cumulative shares each, a decade is
-# about 36,000 numbers, and the file only reaches that size in 2036.
+# at 75 basins and five cumulative shares each, a decade is about 195,000
+# numbers.
 #
-# The history starts the week this was added. The monitor's own archive goes
-# back to 2000 and is not backfilled here -- every figure in this file is one
-# this pipeline computed from polygons it verified, and mixing those with
-# values recomputed later from a different archive would make the series two
-# different measurements wearing one name.
+# The whole decade is measured the same way. This history once refused a
+# backfill, on the ground that weeks recomputed later from a different archive
+# would make the series two measurements wearing one name -- and when that was
+# tested, it was right: the weekly run's simplified polygons and the archive's
+# full-resolution ones disagreed on 47 published shares. So the weekly run now
+# measures the archive's map too, and every week in the file, from the backfill
+# (`tools/backfill_drought_history.py`) to this morning's, is one measurement
+# of one kind of geometry (ADR-122). A week the archive could not supply is a
+# named gap, never filled.
 HISTORY_WEEKS_KEPT = 520
 
 
@@ -183,6 +211,32 @@ def inside_row(crossings: np.ndarray, lons: np.ndarray) -> np.ndarray:
     return (np.searchsorted(crossings, lons) % 2) == 1
 
 
+#: Grid rows measured against one pre-selected set of polygon edges.
+#:
+#: A speed-up and nothing else. Only an edge whose latitudes span a row can
+#: cross it, so each band of rows is tested against the edges that reach the
+#: band rather than against every edge of a national polygon. `row_crossings`
+#: keeps exactly the edges it kept before and solves them with the same
+#: arithmetic, so every crossing, every count and every published share is
+#: bit-for-bit what the unbanded loop gave; `tests/test_drought_coverage.py`
+#: holds that against the committed polygons. It matters because the input is
+#: the monitor's full-resolution map, about twice the edges of the simplified
+#: download, and a decade of those is 1,500 measurements (ADR-122).
+BAND_ROWS = 64
+
+
+def reaching(segments: np.ndarray, low: float, high: float) -> np.ndarray:
+    """The edges that can cross some latitude from `low` to `high`.
+
+    `row_crossings` keeps an edge when exactly one end lies above the row, so
+    its higher end is above `low` and its lower end at or below `high`. Any
+    edge outside that is one no row in the band could have kept.
+    """
+    y1 = segments[:, 1]
+    y2 = segments[:, 3]
+    return segments[(np.maximum(y1, y2) > low) & (np.minimum(y1, y2) <= high)]
+
+
 def unit_coverage(
     unit_segments: np.ndarray,
     drought_segments: dict[int, np.ndarray],
@@ -218,36 +272,47 @@ def unit_coverage(
     total_weight = 0.0
     measured_weight = 0.0
     level_weights = dict.fromkeys(drought_segments, 0.0)
-    for lat in lats:
-        in_unit = inside_row(row_crossings(unit_segments, lat), lons)
-        count = int(in_unit.sum())
-        if count == 0:
-            continue
-        weight = math.cos(math.radians(lat))
-        total_weight += weight * count
-        row_lons = lons[in_unit]
-        # Cells the monitor does not reach are dropped before any class is
-        # counted, so they cannot land in "none" and be read as no drought.
-        # Each state answers alone: parity over pooled edges would read a
-        # point inside two states' overlap sliver as outside the country.
-        if land_segments is not None:
-            on_land = np.zeros(row_lons.shape, dtype=bool)
-            for state_segments in land_segments:
-                on_land |= inside_row(
-                    row_crossings(state_segments, lat), row_lons)
-            row_lons = row_lons[on_land]
-            if row_lons.size == 0:
+    for start in range(0, lats.size, BAND_ROWS):
+        band = lats[start:start + BAND_ROWS]
+        low, high = band[0], band[-1]
+        band_unit = reaching(unit_segments, low, high)
+        band_drought = {level: reaching(segments, low, high)
+                        for level, segments in drought_segments.items()}
+        # A state no row in the band can enter adds no land, so it is left
+        # out rather than asked about on every row.
+        band_land = None if land_segments is None else [
+            part for part in (reaching(segments, low, high)
+                              for segments in land_segments) if part.size]
+        for lat in band:
+            in_unit = inside_row(row_crossings(band_unit, lat), lons)
+            count = int(in_unit.sum())
+            if count == 0:
                 continue
-        measured_weight += weight * row_lons.size
-        # One class per point, worst wins. The classes are exclusive by
-        # contract, but their 100-metre-simplified edges can overlap by a
-        # sliver, and a point counted twice would push the total past 100.
-        category = np.full(row_lons.shape, -1)
-        for level in sorted(drought_segments):
-            hits = inside_row(row_crossings(drought_segments[level], lat), row_lons)
-            category[hits] = level
-        for level in drought_segments:
-            level_weights[level] += weight * int((category == level).sum())
+            weight = math.cos(math.radians(lat))
+            total_weight += weight * count
+            row_lons = lons[in_unit]
+            # Cells the monitor does not reach are dropped before any class is
+            # counted, so they cannot land in "none" and be read as no drought.
+            # Each state answers alone: parity over pooled edges would read a
+            # point inside two states' overlap sliver as outside the country.
+            if band_land is not None:
+                on_land = np.zeros(row_lons.shape, dtype=bool)
+                for state_segments in band_land:
+                    on_land |= inside_row(
+                        row_crossings(state_segments, lat), row_lons)
+                row_lons = row_lons[on_land]
+                if row_lons.size == 0:
+                    continue
+            measured_weight += weight * row_lons.size
+            # One class per point, worst wins. The classes are exclusive by
+            # contract, but their 100-metre-simplified edges can overlap by a
+            # sliver, and a point counted twice would push the total past 100.
+            category = np.full(row_lons.shape, -1)
+            for level in sorted(band_drought):
+                hits = inside_row(row_crossings(band_drought[level], lat), row_lons)
+                category[hits] = level
+            for level in band_drought:
+                level_weights[level] += weight * int((category == level).sum())
 
     if total_weight == 0.0:
         raise ValueError("no grid point landed inside the drainage area")
@@ -300,6 +365,28 @@ def unit_field(boundaries: dict) -> str:
             "a boundary collection must carry exactly one hydrologic code per "
             f"feature; this one carries {fields or 'none'}")
     return fields[0]
+
+
+def method_block(step: float) -> dict:
+    """How every share in a coverage file or an archive was measured."""
+    return {
+        "version": METHOD_VERSION,
+        "sampling": "even-odd scanline over cell centres",
+        "grid_step_degrees": step,
+        "weighting": "cosine of latitude",
+        "classes": "exclusive; at-least values are sums of disjoint classes",
+        "geometry": "the monitor's full-resolution weekly map from its archive",
+    }
+
+
+#: What an archive says about its own weeks.
+HISTORY_NOTE = (
+    "One entry for each weekly map, oldest first, each measured from the "
+    "monitor's archived map of that week. Exclusive class shares are "
+    "recoverable by differencing the cumulative ones. A week with a null "
+    "release date was measured after the fact; the archive states no release "
+    "date."
+)
 
 
 def build_payload(drought: dict, boundaries: dict, step: float,
@@ -379,13 +466,7 @@ def build_payload(drought: dict, boundaries: dict, step: float,
         "release_date": drought["release_date"],
         "source": drought["source"],
         "attribution": drought["attribution"],
-        "method": {
-            "version": METHOD_VERSION,
-            "sampling": "even-odd scanline over cell centres",
-            "grid_step_degrees": step,
-            "weighting": "cosine of latitude",
-            "classes": "exclusive; at-least values are sums of disjoint classes",
-        },
+        "method": method_block(step),
         # The size of the drainage areas, as the length of their code. The
         # boundary file decides it; this reports it so a reader never has to
         # infer the level by measuring a code -- and so a client knows which
@@ -505,20 +586,18 @@ def merge_history(previous: dict | None, payload: dict,
     weeks.append(entry)
     weeks.sort(key=lambda week: week["map_date"])
     del weeks[:-keep]
-    return {
+    history = {
         "schema_version": 1,
-        "source": payload["source"],
+        # Every week comes from its own archive file, so the series names the
+        # file pattern rather than whichever week was merged last.
+        "source": ARCHIVE_SOURCE,
         "attribution": payload["attribution"],
         # The size of the areas every week in here is keyed at. One archive,
         # one level: see the refusal above.
         "level": payload["level"],
         "method": {
             **payload["method"],
-            "history": (
-                "One entry for each weekly map this pipeline has computed, "
-                "oldest first. Exclusive class shares are recoverable by "
-                "differencing the cumulative ones."
-            ),
+            "history": HISTORY_NOTE,
         },
         "weeks_kept": keep,
         "first_map_date": weeks[0]["map_date"],
@@ -527,6 +606,22 @@ def merge_history(previous: dict | None, payload: dict,
         "unit_count": payload["unit_count"],
         "weeks": weeks,
     }
+    # Which weeks the monitor's archive could not supply
+    # (`tools/backfill_drought_history.py`). Carried forward so a weekly run
+    # cannot erase it, and trimmed with the weeks so it never names a week the
+    # file no longer covers.
+    backfill = (previous or {}).get("backfill")
+    if backfill is not None:
+        first = weeks[0]["map_date"]
+        history["backfill"] = {
+            **backfill,
+            "skipped": [item for item in backfill.get("skipped", [])
+                        if item["map_date"] >= first],
+        }
+        # Before the weeks, so a reader of the file meets it first.
+        history = {key: history[key] for key in
+                   [*(key for key in history if key != "weeks"), "weeks"]}
+    return history
 
 
 def write_atomic(path: Path, payload: dict) -> bool:
@@ -574,7 +669,15 @@ def history_path(level: int) -> Path:
 
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--drought", type=Path, default=DROUGHT_PATH)
+    parser.add_argument("--drought", type=Path, default=DROUGHT_PATH,
+                        help="the download naming the week and its release "
+                             "date; its polygons are not measured")
+    parser.add_argument("--archive", type=Path, default=None,
+                        help="measure this archive file for the week instead "
+                             "of fetching it")
+    parser.add_argument("--archive-cache", type=Path, default=DEFAULT_CACHE,
+                        help="where fetched archive files are kept, outside "
+                             "the repository")
     parser.add_argument("--scope", default=watershed_scopes.DEFAULT_SCOPE,
                         choices=tuple(sorted(watershed_scopes.SCOPES)),
                         help="which registered scope to measure; its level "
@@ -605,7 +708,20 @@ def main() -> int:
     # rewrote published figures. Naming `--history` explicitly still opts in.
     if args.output is not None and not explicit_history:
         args.no_history = True
-    drought = json.loads(args.drought.read_text(encoding="utf-8"))
+    live = json.loads(args.drought.read_text(encoding="utf-8"))
+    try:
+        drought = (archive_drought(parse_archive(args.archive.read_bytes()),
+                                   live["map_date"], live["release_date"])
+                   if args.archive is not None
+                   else load_archive_week(live["map_date"], args.archive_cache,
+                                          live["release_date"]))
+    except ArchiveWeekError as exc:
+        # Not posted yet, or not usable. Nothing is written, and the
+        # simplified polygons are never measured in its place: the refresh
+        # keeps last week's files whole and tries again tomorrow.
+        print(f"ERROR: no archive map to measure for {live['map_date']}: {exc}; "
+              "nothing written", file=sys.stderr)
+        return 2
     boundaries = json.loads(boundaries_path.read_text(encoding="utf-8"))
     # A missing mask is fatal rather than ignored. Running without it does not
     # fail -- it quietly reports every border basin's Canadian or Mexican half

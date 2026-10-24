@@ -265,6 +265,15 @@ interface Window {
     /** Areas plotted on the storage-against-drought chart. Fewer than `rows`
      * when an area in view has no reservoir reading to compare against. */
     scatterPoints?: number;
+    /** The ten-year cards (ADR-123): "waiting" until the archive is asked
+     * for, then "loaded", "failed", or "not-kept" at a level with no archive. */
+    decadeState?: "waiting" | "loaded" | "failed" | "not-kept";
+    /** Weekly slots in the archive's calendar, held or not. */
+    decadeWeeks?: number;
+    /** The area the ten-year chart is drawing. */
+    decadeArea?: string;
+    /** Rows in the calendar: every area in view. */
+    calendarRows?: number;
     /** Drainage areas carrying their name on the map. Every area in scope
      * since ADR-047 -- which of them fit is the label engine's answer, per
      * frame, and not a fact a readiness field can hold. */
