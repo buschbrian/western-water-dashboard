@@ -45,7 +45,7 @@ export function droughtDecadeMarkup(): string {
   return `
     <section class="overview-card" id="drought-decade-card" aria-labelledby="drought-decade-heading">
       <div class="card-heading">
-        <div><h2 id="drought-decade-heading">Ten years in one area</h2><p>The share of the measured land in each class, for each week of the last ten years, in the same colours as the map. Each colour shows the land in that class or worse, so the top of the yellow is all the land in any class. The line marks this week when the record holds it. A grey band is a week with no map. Move the pointer over the chart, or select it and use the arrow keys, to read one week.</p><p id="drought-decade-source" class="drought-chart-note"></p></div>
+        <div><h2 id="drought-decade-heading">Ten years in one area</h2><p>The share of the measured land in each class, for each week of the last ten years, in the same colours as the map.</p><p id="drought-decade-source" class="drought-chart-note"></p></div>
       </div>
       <div class="drought-decade-controls" id="drought-decade-controls"></div>
       <div id="drought-decade-host" class="drought-decade-host" aria-busy="true"></div>
@@ -53,6 +53,8 @@ export function droughtDecadeMarkup(): string {
       <details class="snow-month-details" id="drought-decade-years" hidden><summary>Highest share in each year</summary>
         <div class="table-scroll" tabindex="0" role="region" aria-label="Highest share in each year, scrolls sideways"><table class="overview-table"><thead><tr><th>Year</th><th>Weeks</th>${DROUGHT_CLASSES.map((entry) => `<th>${entry.code} or worse</th>`).join("")}</tr></thead><tbody id="drought-decade-year-rows"></tbody></table></div>
       </details>
+      <p class="card-note">Each colour shows the land in that class or worse, so the top of the yellow is all the land in any class. The line marks this week when the record holds it. A grey band is a week with no map.</p>
+      <p class="card-note">Move the pointer over the chart, or select it and use the arrow keys, to read one week.</p>
     </section>`;
 }
 

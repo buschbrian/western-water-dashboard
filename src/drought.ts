@@ -141,7 +141,7 @@ root.innerHTML = `
   </calcite-navigation>
   <main class="overview-main">
     <header class="overview-intro">
-      <p>How dry the land is, area by area, from the U.S. Drought Monitor's weekly national map. That map is a weekly expert judgement rather than a single instrument reading: its authors weigh many kinds of evidence together, including water-supply records. Each drainage area also shows its reservoir storage, because the two can disagree. Storage and drought are related pictures rather than independent measurements. They diverge for ordinary reasons. A reservoir holds water that arrived in earlier years. It collects that water from land far upstream. It is filled and emptied by decisions as well as by weather.</p>
+      <p>How dry the land is in each western drainage area, from the U.S. Drought Monitor's weekly map, shown beside reservoir storage. The two can disagree.</p>
     </header>
     <section id="drought-content" aria-live="polite"><calcite-loader label="Loading drought conditions"></calcite-loader></section>
   </main>`;
@@ -463,25 +463,31 @@ function renderDrought(
     </nav>
     <section class="overview-card" id="drought-map-card" aria-labelledby="drought-map-heading">
       <div class="card-heading">
-        <div><h2 id="drought-map-heading">The drought map</h2><p id="drought-map-copy">The monitor's weekly national map in its own colours, for the week of ${formatDate(payload.map_date)}. The outlined shapes are the ${scopedUnits.length} drainage areas the figures below describe. Drought does not stop at their edges, so the map draws the wider pattern too.</p></div>
+        <div><h2 id="drought-map-heading">The drought map</h2><p id="drought-map-copy">The monitor's weekly national map in its own colours, for the week of ${formatDate(payload.map_date)}. The outlined shapes are the ${scopedUnits.length} drainage areas the figures below describe.</p></div>
       </div>
       <div id="drought-map-host" class="view-map-host has-inset-legend" aria-busy="true"
         aria-label="A map of drought classes over the drainage areas. The bars and table on this page carry the same shares as text."></div>
+      <p class="card-note" id="drought-map-edge-note">Drought does not stop at the edges of the drainage areas, so the map draws the wider pattern too.</p>
+      <p class="card-note">The monitor's map is a weekly expert judgement rather than a single instrument reading. Its authors weigh many kinds of evidence together, including water-supply records.</p>
       <p class="card-source">ArcGIS map</p>
     </section>
     <section class="overview-card" id="drought-severity-card" aria-labelledby="drought-severity-heading">
       <div class="card-heading">
-        <div><h2 id="drought-severity-heading">How the areas are divided</h2><p>Every drainage area counted once, at the most severe class with land in it. The tile above says how many are at extreme drought or worse. This says where all ${scopedUnits.length} sit, which is a different question. Nine clear areas and nine areas one class below the line give the same count, and they are not the same week. Levels with no areas in them are still drawn, so one week can be compared with another.</p></div>
+        <div><h2 id="drought-severity-heading">How the areas are divided</h2><p>Every drainage area counted once, at the most severe class with land in it. The bars show where all ${scopedUnits.length} sit.</p></div>
       </div>
       <div id="drought-severity-host" class="drought-severity-host"></div>
       <ul class="overlay-key" id="drought-severity-key" aria-label="What each severity level is called"></ul>
+      <p class="card-note">The tile above says how many are at extreme drought or worse. This says where all ${scopedUnits.length} sit, which is a different question. Nine clear areas and nine areas one class below the line give the same count, and they are not the same week.</p>
+      <p class="card-note">Levels with no areas in them are still drawn, so one week can be compared with another.</p>
     </section>
     <section class="overview-card" id="drought-change-card" aria-labelledby="drought-change-heading">
       <div class="card-heading">
-        <div><h2 id="drought-change-heading">What changed since last week</h2><p>One bar for each drainage area, measured from the middle. A bar to the right means more of that area's land is in ${dryness.label.toLowerCase()} (${dryness.code}) or worse than a week ago. A bar to the left means less of it is. The unit is points of the area's own land, and both figures are the same measurement of the same ground a week apart. That is why this chart draws a bar and the one above it does not. The scale is the same distance either side of the middle, so a week where everything got wetter still puts no change in the middle.</p></div>
+        <div><h2 id="drought-change-heading">What changed since last week</h2><p>Each bar is one drainage area. Right of the middle, more of its land is in ${dryness.label.toLowerCase()} (${dryness.code}) or worse than a week ago. Left, less.</p></div>
       </div>
       <div id="drought-change-host" class="drought-change-host"></div>
       <p class="drought-chart-note" id="drought-change-note"></p>
+      <p class="card-note">Bars are measured from the middle. The unit is points of the area's own land, and both figures are the same measurement of the same ground a week apart. That is why this chart draws a bar and the one above it does not.</p>
+      <p class="card-note">The scale is the same distance either side of the middle, so a week where everything got wetter still puts no change in the middle.</p>
     </section>
     ${droughtDecadeMarkup()}
     <details class="overview-card drought-more" id="drought-scatter-details">
@@ -500,12 +506,15 @@ function renderDrought(
     </details>
     ${droughtCalendarMarkup()}
     <section class="overview-card table-card" id="drought-areas-card" aria-labelledby="drought-areas-heading">
-      <div class="card-heading"><div><h2 id="drought-areas-heading">Each drainage area</h2><p>The bar is the share of the area's land in each class, in the same colours as the map above. The figure beside the name is the combined reservoir storage in that area, as a percent of the combined full level. Those full levels mix definitions, so a combined percent full is a working total rather than one measure of full. The severity index adds up the shares at each class or worse, so it runs from 0 to 500. Shares and index are shares of the land the monitor measures.</p></div><calcite-button id="download-drought-csv" appearance="outline" icon-start="export" scale="s">Download filtered table (CSV file)</calcite-button></div>
+      <div class="card-heading"><div><h2 id="drought-areas-heading">Each drainage area</h2><p>The bar is the share of the area's land in each class, in the colours of the map above. The figure beside the name is its combined reservoir storage, percent full.</p></div><calcite-button id="download-drought-csv" appearance="outline" icon-start="export" scale="s">Download filtered table (CSV file)</calcite-button></div>
       <div class="drought-rows" id="drought-rows"></div>
       <p class="drought-rows-more"><button id="drought-show-all-areas" class="drought-show-all" type="button" aria-controls="drought-rows" aria-expanded="false" hidden>Show all areas</button></p>
       <details class="snow-month-details"><summary>Exact values for every class</summary>
         <div class="table-scroll" tabindex="0" role="region" aria-label="Drought class table, scrolls sideways"><table class="overview-table"><thead><tr><th>Drainage area</th><th>No drought</th><th>D0</th><th>D1</th><th>D2</th><th>D3</th><th>D4</th><th>Extreme or worse</th><th>Change since last week</th></tr></thead><tbody id="drought-table-rows"></tbody></table></div>
       </details>
+      <p class="card-note">The storage figure is the combined reservoir storage in that area, as a percent of the combined full level. Those full levels mix definitions, so a combined percent full is a working total rather than one measure of full.</p>
+      <p class="card-note">The severity index adds up the shares at each class or worse, so it runs from 0 to 500. Shares and index are shares of the land the monitor measures.</p>
+      <p class="card-note">Storage and drought are related pictures rather than independent measurements. They diverge for ordinary reasons. A reservoir holds water that arrived in earlier years. It collects that water from land far upstream. It is filled and emptied by decisions as well as by weather.</p>
       <p class="drought-attribution">${payload.attribution}. Read the full national map at <a href="https://droughtmonitor.unl.edu/" target="_blank" rel="noreferrer">droughtmonitor.unl.edu</a>.</p>
       <!-- The one thing a weekly class share cannot show: what the land
            under it looks like. The photographs live on a static page of
@@ -1370,6 +1379,7 @@ function renderDrought(
          * trusting. */
         const mapCopy = content.querySelector<HTMLElement>("#drought-map-copy");
         const classesCopy = mapCopy?.textContent ?? "";
+        const edgeNote = content.querySelector<HTMLElement>("#drought-map-edge-note");
         const changeCopy = "How much of each drainage area's land moved into "
           + `or out of ${dryness.label.toLowerCase()} (${dryness.code}) or worse `
           + `since ${formatDate(payload.previous?.map_date ?? "")}. `
@@ -1381,6 +1391,7 @@ function renderDrought(
           mapController.setMode(mode);
           fillLegend(mode);
           if (mapCopy) mapCopy.textContent = mode === "change" ? changeCopy : classesCopy;
+          if (edgeNote) edgeNote.hidden = mode === "change";
           window.__droughtReady = {
             ...(window.__droughtReady ?? {}), mapMode: mode
           } as NonNullable<typeof window.__droughtReady>;
