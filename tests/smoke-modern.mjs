@@ -1019,15 +1019,15 @@ function reportHostedOutage(label, hosted) {
     });
     check(active.text?.startsWith(`${reservoir.name} · Reservoir`) && active.selected === "true",
       `${label}: ArrowDown did not make the reservoir the active result (${JSON.stringify(active)})`);
-    /* Scored on the search alone in the dark theme: the whole page is
-     * scored with the results open in the light case below, and the rest
-     * of this page in the dark theme is not what this case is about. */
+    /* The whole page in the dark theme, with the results open. It was scored
+     * on the search alone while the dark "ArcGIS map" badge failed contrast
+     * (4.04:1); that badge is now 5.17:1, so the page is held to the same
+     * standard as the light case below. */
     await tab.addScriptTag({ url: `${URL}__axe.js` });
-    const searchViolations = await tab.evaluate(async (tags) =>
-      (await window.axe.run({ include: [["#place-search"], ["#place-search-trigger"]] },
-        { runOnly: { type: "tag", values: tags } })).violations
-        .map((violation) => `${violation.id}: ${violation.nodes[0]?.html.slice(0, 120)}`),
-    AXE_TAGS);
+    const searchViolations = axeViolations(await tab.evaluate(async (tags) =>
+      (await window.axe.run(document, { runOnly: { type: "tag", values: tags } })).violations,
+    AXE_TAGS)).map((violation) =>
+      `${violation.id}: ${violation.nodes[0]?.html.slice(0, 120)}`);
     check(searchViolations.length === 0,
       `${label}: axe-core found violations in the search: ${searchViolations.join("; ")}`);
     await input.press("Enter");
