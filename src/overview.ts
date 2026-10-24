@@ -110,9 +110,7 @@ root.innerHTML = `
   <main class="overview-main">
     <header class="overview-intro">
       <p>Explore current storage for the reservoirs this site tracks across the western
-        United States. Lake Powell and Lake Mead are each large enough to hide local
-        conditions in a combined total. Both start included, and either can be taken out at
-        any time.</p>
+        United States.</p>
     </header>
     <section id="overview-content" aria-live="polite"><calcite-loader label="Loading reservoir data"></calcite-loader></section>
   </main>`;
@@ -298,13 +296,14 @@ async function renderOverview(
       <div class="card-heading">
         <div>
           <h2 id="weekly-heading">What moved this week</h2>
-          <p class="weekly-intro">The last seven days, worked out from the same files the rest of this site draws. The storage figures follow the reservoirs the scope includes, so a change to the Lake Powell control changes them. The snow and drought figures describe the whole region and cannot follow a reservoir scope, which each of them says. Nothing here is a forecast.</p>
+          <p class="weekly-intro">The last seven days, worked out from the same files the rest of this site draws. Nothing here is a forecast.</p>
           <p class="weekly-scope" data-weekly="scope" role="status" aria-live="polite"></p>
         </div>
         <button id="weekly-toggle" class="mobile-disclosure-toggle" type="button"
           aria-controls="weekly-sections" aria-expanded="false">Show weekly update</button>
       </div>
       <div id="weekly-sections" class="weekly-sections"></div>
+      <p class="card-note weekly-note">The storage figures follow the reservoirs the scope includes, so a change to the Lake Powell control changes them. The snow and drought figures describe the whole region and cannot follow a reservoir scope, which each of them says.</p>
     </section>
     <!-- What a shared link's ?state= and ?area= narrowed this page to when
          it opened (slice S3d, docs/OPENING-SCOPE-AND-THE-WESTERN-ROSTER.md).
@@ -358,6 +357,7 @@ async function renderOverview(
              scale as the two place menus beside it. -->
         <calcite-label>Reporting<calcite-select id="cadence-filter" scale="l"><calcite-option value="all">All reporting</calcite-option><calcite-option value="daily">Daily</calcite-option><calcite-option value="monthly">Monthly</calcite-option><calcite-option value="late">Late or unavailable</calcite-option></calcite-select></calcite-label>
       </div>
+      <p class="card-note filter-note">Lake Powell and Lake Mead are each large enough to hide local conditions in a combined total. Both start included, and either can be taken out at any time.</p>
     </section>
     <p id="filter-status" class="filter-status" role="status"></p>
     <section class="overview-kpis" aria-label="Filtered storage summary">
@@ -392,10 +392,11 @@ async function renderOverview(
     <div class="overview-chart-grid">
       <section class="overview-card overview-card-wide" aria-labelledby="capacity-heading">
         <div class="card-heading">
-          <div><h2 id="capacity-heading">Largest reservoirs</h2><p>Click a bar to open that reservoir on the storage map. A reservoir can hold more than its full level when water is held above the usual pool. A bar can then run past 100%.</p></div>
+          <div><h2 id="capacity-heading">Largest reservoirs</h2><p>Bars show how full the largest reservoirs are. Click a bar to open that reservoir on the storage map.</p></div>
         </div>
         <div id="capacity-chart" class="chart-host" aria-busy="true"></div>
         <div class="chart-legend" data-legend></div>
+        <p class="card-note">A reservoir can hold more than its full level when water is held above the usual pool. A bar can then run past 100%.</p>
         <p class="card-source">Bar chart</p>
       </section>
       <section class="overview-card overview-card-wide" aria-labelledby="watershed-heading">
@@ -405,22 +406,26 @@ async function renderOverview(
         <p class="card-source">Bar chart</p>
       </section>
       <section class="overview-card" aria-labelledby="trend-heading">
-        <div class="card-heading"><div><h2 id="trend-heading">The last 12 months</h2><p>Combined storage for the reservoirs in view, month by month. The only chart here that shows direction. Each month counts only the reservoirs that reported it, so the months are not all drawn from the same set. The newest month is the one to read with care. Reservoirs read once a month report at month end, so that month is thin until they do. Hover any month to see how many reservoirs are behind it.</p></div></div>
+        <div class="card-heading"><div><h2 id="trend-heading">The last 12 months</h2><p>Combined storage for the reservoirs in view, month by month. The only chart here that shows direction.</p></div></div>
         <div id="trend-chart" class="chart-host" aria-busy="true"></div>
+        <p class="card-note">Each month counts only the reservoirs that reported it, so the months are not all drawn from the same set. Hover any month to see how many reservoirs are behind it.</p>
+        <p class="card-note">The newest month is the one to read with care. Reservoirs read once a month report at month end, so that month is thin until they do.</p>
         <p class="card-source">Bar and line chart</p>
       </section>
       <section class="overview-card" aria-labelledby="normal-heading">
-        <div class="card-heading"><div><h2 id="normal-heading">Stored now against normal</h2><p>Each dot is a reservoir. Dots below the dashed line hold less than they usually do on this date. The reservoirs get larger to the right, in tenfold steps, so the small ones are as readable as Flaming Gorge. The scale stops at twice the usual level. A reservoir that usually holds very little on this date can read far above that. A small change in storage is then a large change in the percentage.</p></div></div>
+        <div class="card-heading"><div><h2 id="normal-heading">Stored now against normal</h2><p>Each dot is a reservoir. Dots below the dashed line hold less than they usually do on this date.</p></div></div>
         <div id="normal-chart" class="chart-host" aria-busy="true"></div>
         <!-- Which reservoirs the ratio axis could not reach, named rather
              than dropped. Filled by offScaleNote and hidden when every
              reservoir fits, so this never announces an empty status. -->
         <div id="normal-off-scale" class="chart-note" role="status" hidden></div>
         <div class="chart-legend" data-legend></div>
+        <p class="card-note">The reservoirs get larger to the right, in tenfold steps, so the small ones are as readable as Flaming Gorge.</p>
+        <p class="card-note">The scale stops at twice the usual level. A reservoir that usually holds very little on this date can read far above that. A small change in storage is then a large change in the percentage.</p>
         <p class="card-source">Scatter plot</p>
       </section>
       <section class="overview-card overview-card-wide" aria-labelledby="distribution-heading">
-        <div class="card-heading"><div><h2 id="distribution-heading">How full, across all of them</h2><p>Reservoirs sorted into ten equal bands of percent full, with the mean, the middle value, and the range the middle half of them fall in. These reservoirs differ in size, purpose and operating rules, so they are not one population with a shape to fit a curve to.</p></div></div>
+        <div class="card-heading"><div><h2 id="distribution-heading">How full, across all of them</h2><p>Reservoirs sorted into ten equal bands of percent full, with the mean, the middle value, and the range the middle half of them fall in.</p></div></div>
         <div id="distribution-chart" class="chart-host" aria-busy="true"></div>
         <!-- Under the chart, not beside it. The histogram is the widest thing
              on this page and a key in a side rail would take width from the
@@ -428,12 +433,16 @@ async function renderOverview(
              chart symmetrical. -->
         <ul class="overlay-key" id="distribution-key"
           aria-label="What the lines across the histogram mean"></ul>
+        <p class="card-note">These reservoirs differ in size, purpose and operating rules, so they are not one population with a shape to fit a curve to.</p>
         <p class="card-source">Histogram</p>
       </section>
       <section class="overview-card overview-card-wide" aria-labelledby="spread-heading">
-        <div class="card-heading"><div><h2 id="spread-heading">Spread within each drainage area</h2><p>Each row is one drainage area, driest first. The box holds the middle half of its reservoirs and the line inside it is the middle value. The whiskers reach the rest, and every dot beyond them is one reservoir worth opening on the map. The figure at the right of each row is how many reservoirs the row holds. A box drawn over three of them carries less weight than one drawn over forty. The box takes its colour from that area's middle value, in the same colours as the map circles. An area at 60% can be forty reservoirs near 60, or half full and half empty. Areas with fewer than three reservoirs are left out, because a box drawn over two of them is just the two values again. A reservoir can hold more than its full level when water is held above the usual pool. A whisker or a mark pressed against the right edge can then stand for a value past 100%.</p></div></div>
+        <div class="card-heading"><div><h2 id="spread-heading">Spread within each drainage area</h2><p>Each row is one drainage area, driest first. The box holds the middle half of its reservoirs and the line inside it is the middle value.</p></div></div>
         <div id="spread-chart" class="chart-host" aria-busy="true"></div>
         <div class="chart-legend" data-legend></div>
+        <p class="card-note">The whiskers reach the rest, and every dot beyond them is one reservoir worth opening on the map. The figure at the right of each row is how many reservoirs the row holds. A box drawn over three of them carries less weight than one drawn over forty.</p>
+        <p class="card-note">The box takes its colour from that area's middle value, in the same colours as the map circles. An area at 60% can be forty reservoirs near 60, or half full and half empty.</p>
+        <p class="card-note">Areas with fewer than three reservoirs are left out, because a box drawn over two of them is just the two values again. A reservoir can hold more than its full level when water is held above the usual pool. A whisker or a mark pressed against the right edge can then stand for a value past 100%.</p>
         <p class="card-source">Box plot</p>
       </section>
     </div>

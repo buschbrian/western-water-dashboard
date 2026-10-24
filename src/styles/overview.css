@@ -862,6 +862,7 @@ body {
   .mobile-filterbar:not(.mobile-filters-open) .filterbar-head-actions,
   .mobile-filterbar:not(.mobile-filters-open) > .filterbar-search,
   .mobile-filterbar:not(.mobile-filters-open) > .filterbar-controls,
+  .mobile-filterbar:not(.mobile-filters-open) > .filter-note,
   .mobile-filterbar:not(.mobile-filters-open) > .map-controls,
   .mobile-filterbar:not(.mobile-filters-open) > .filterbar-secondary-pane {
     display: none;
@@ -874,6 +875,7 @@ body {
   #overview-filter-actions .switch-label { justify-content: space-between; }
   #overview-filter-actions .reset-button { width: 100%; }
   .weekly-card:not(.weekly-open) .weekly-intro,
+  .weekly-card:not(.weekly-open) .weekly-note,
   .weekly-card:not(.weekly-open) .weekly-sections {
     display: none;
   }
