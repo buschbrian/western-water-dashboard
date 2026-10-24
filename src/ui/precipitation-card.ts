@@ -244,6 +244,9 @@ export function createPrecipitationCard(
   strip.append(stripTitle, stripHost, stripNote);
   strip.hidden = true;
   section.append(top, strip, controls, axisTitle, host, historyKey, april, coverage, details);
+  /* The card's credit line stays last, under everything this card adds. */
+  const source = section.querySelector(":scope > .card-source");
+  if (source) section.append(source);
   const tbody = details.querySelector("tbody")!;
 
   const status: PrecipitationStatus = {

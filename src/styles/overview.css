@@ -475,15 +475,13 @@ body {
 .card-heading { display: flex; gap: 1rem; align-items: start; justify-content: space-between; }
 .card-heading h2 { margin: 0; font-size: var(--app-section-heading); }
 .card-heading p { margin: .25rem 0 .65rem; color: var(--app-muted); font-size: .8rem; line-height: 1.4; }
-.sdk-badge {
-  flex: 0 0 auto;
-  padding: .2rem .45rem;
-  color: var(--app-badge-text);
-  background: color-mix(in srgb, var(--app-terracotta) 9%, transparent);
-  border-radius: 999px;
-  font-size: .65rem;
-  font-weight: 700;
-  letter-spacing: .01em;
+/* What drew a card, as a quiet credit under it rather than a pill beside
+ * its title: the title and the figures are what a reader came for. */
+.card-source {
+  margin: .75rem 0 0;
+  font-size: .7rem;
+  color: var(--app-muted);
+  text-align: end;
 }
 .chart-host { position: relative; min-height: 27rem; height: 27rem; overflow: hidden; }
 /* One row per category, tall enough for a category name that wraps.

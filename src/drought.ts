@@ -464,10 +464,10 @@ function renderDrought(
     <section class="overview-card" id="drought-map-card" aria-labelledby="drought-map-heading">
       <div class="card-heading">
         <div><h2 id="drought-map-heading">The drought map</h2><p id="drought-map-copy">The monitor's weekly national map in its own colours, for the week of ${formatDate(payload.map_date)}. The outlined shapes are the ${scopedUnits.length} drainage areas the figures below describe. Drought does not stop at their edges, so the map draws the wider pattern too.</p></div>
-        <span class="sdk-badge">ArcGIS map</span>
       </div>
       <div id="drought-map-host" class="view-map-host has-inset-legend" aria-busy="true"
         aria-label="A map of drought classes over the drainage areas. The bars and table on this page carry the same shares as text."></div>
+      <p class="card-source">ArcGIS map</p>
     </section>
     <section class="overview-card" id="drought-severity-card" aria-labelledby="drought-severity-heading">
       <div class="card-heading">

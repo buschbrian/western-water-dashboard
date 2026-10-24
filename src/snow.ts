@@ -368,7 +368,6 @@ function renderSnow(
     <section class="overview-card" aria-labelledby="snow-map-heading">
       <div class="card-heading">
         <div><h2 id="snow-map-heading">Where the snow is</h2><p>Each drainage area takes its colour from the sites reporting inside it that day. Their snow water is added up and divided by their normal snow water added up. So a site with more normal snow counts for more. That is a figure about the measuring sites. It is not a measure of the snow lying across the whole area. The sites are placed where snow can be measured reliably. That is neither evenly across the land nor evenly up the mountainside. Each measurement site is a point on the same scale. Select an area to see how many sites its figure came from. The map opens on the day the season held the most snow, because the rest of the year measures against that day. A day counts only when the reporting sites have at least one inch of normal snow on average. Early in the season, the map opens on the newest day instead. Move the slider to see any other day. Areas and sites without a fair value for that day stay grey. The key shows apart the ones with too little normal snow to compare against.</p></div>
-        <span class="sdk-badge">ArcGIS map</span>
       </div>
       <div id="snow-map-host" class="view-map-host" aria-busy="true"
         aria-label="A map of the drainage areas and snow measurement sites. The chart and tables on this page carry the same values as text."></div>
@@ -379,11 +378,11 @@ function renderSnow(
         <span id="snow-day-reading" class="snow-day-reading">—</span>
       </div>
       <p id="snow-season-route" class="snow-season-route" hidden></p>
+      <p class="card-source">ArcGIS map</p>
     </section>
     <section class="overview-card" aria-labelledby="snow-curve-heading">
       <div class="card-heading">
         <div><h2 id="snow-curve-heading">The snow season, day by day</h2><p data-snow-curve-caption>The line is the mean of the site values, as a percent of normal for each day. The dashed line marks normal: the middle value for the same day in the years ${normalPeriodLabel(payload)}. Gaps are days with too few reporting sites, or too little normal snow, to give a fair mean.${season.previous !== null ? ` A thinner grey line shows the ${seasonName(season.previous)} season on the same dates.` : ""}</p></div>
-        <span class="sdk-badge">Line chart</span>
       </div>
       <p class="chart-axis-title">Snow water as a percent of normal<span>Mean of the sites reporting each day. 100 is normal.</span></p>
       <div id="snow-curve-host" aria-busy="true"></div>
@@ -392,12 +391,13 @@ function renderSnow(
       <details class="snow-month-details"><summary>Values on the first day of each month</summary>
         <div class="table-scroll" tabindex="0" role="region" aria-label="First-of-month table, scrolls sideways"><table class="overview-table"><thead><tr id="snow-month-head"><th>Month</th><th>Of normal</th><th>Reporting sites</th></tr></thead><tbody id="snow-month-rows"></tbody></table></div>
       </details>
+      <p class="card-source">Line chart</p>
     </section>
     <section class="overview-card" id="precip-card" aria-labelledby="precip-heading">
       <div class="card-heading">
         <div><h2 id="precip-heading">Precipitation since 1 October</h2><p>Rain and snow caught by the gauges at the measurement sites, added up from 1 October, and the snow water the same sites hold now. The bands show what the same sites measured by each date in earlier water years. Point to the chart, or select it and use the arrow keys, to read one day.</p></div>
-        <span class="sdk-badge">Line chart</span>
       </div>
+      <p class="card-source">Line chart</p>
     </section>
     <section class="overview-card" aria-labelledby="snow-basin-heading">
       <div class="card-heading">

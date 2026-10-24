@@ -6,13 +6,6 @@
   --app-surface-raised: #fffaf2;
   --app-text: #2f342f;
   --app-terracotta: #a65d43;
-  /* The same hue, dark enough for small bold type on the 9% terracotta tint
-     the badges use. `--app-terracotta` itself measures 4.23:1 there, which
-     axe-core reports and which is below the 4.5 AA wants for text this size;
-     this one measures 4.92. Kept as its own token rather than darkening the
-     terracotta everywhere, because that colour is also carrying "storage
-     fell" arrows on large type where it is already fine. */
-  --app-badge-text: #9a5339;
   /* One type ladder, shared by every page.
    *
    * Section headings carried 1rem in five rules and 1.05rem in a sixth, so
@@ -47,9 +40,6 @@
   --app-terracotta: #d38a6b;
   /* Already 4.9:1 on the dark card surface, so the dark theme keeps the
      token it had. */
-  /* #d38a6b measured 4.04:1 on a dark card's badge tint; this is 5.17:1 there
-   * and 6.08:1 on the page (WCAG AA is 4.5:1). Same hue, a little lighter. */
-  --app-badge-text: #e2a285;
 }
 
 * { box-sizing: border-box; }
