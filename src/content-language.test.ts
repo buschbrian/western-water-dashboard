@@ -294,8 +294,10 @@ describe("user text", () => {
     // A combined figure spans dates, and divides by mixed full levels.
     expect(methods).toMatch(/not all taken on the same day/i);
     expect(methods).toMatch(/do not all mean the same thing/i);
-    // The snow figure is about the sites, not the land.
-    expect(methods).toMatch(/every site counts once/i);
+    // The snow figure is about the sites, not the land, and it is the
+    // summed ratio of ADR-081, not an average of each site's percentage.
+    expect(methods).toMatch(/added up, divided by their normals added up/i);
+    expect(methods).not.toMatch(/plain average/i);
     expect(methods).toMatch(/not a measure of the snow lying across the whole area/i);
     // The colours are display bands rather than operating thresholds.
     expect(methods).toMatch(/display bands, not thresholds/i);
@@ -308,9 +310,11 @@ describe("user text", () => {
    * The snow page draws a choropleth from a station average, which is the one
    * place a reader is most likely to read it as a measure of the whole area.
    */
-  it("says the snow map's areas are averages of their sites", async () => {
+  it("says the snow map's areas are their sites' summed water over summed normals", async () => {
     const snow = await readFile(resolve(root, "src/snow.ts"), "utf8");
-    expect(snow).toMatch(/plain average of the sites reporting/i);
+    // ADR-081: a ratio of sums. "Plain average" described the method before it.
+    expect(snow).toMatch(/divided by their normal snow water added up/i);
+    expect(snow).not.toMatch(/plain average/i);
     expect(snow).toMatch(/not a measure of the snow lying across the whole area/i);
     // Snow is a source of inflow, not next summer's storage by itself.
     expect(snow).not.toMatch(/this winter's snow is next summer's storage/);

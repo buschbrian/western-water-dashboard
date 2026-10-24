@@ -161,12 +161,12 @@ export function methodsMarkup(search: string): string {
         service as the storage readings. Each reading is compared with the middle value for the
           same day in the years 1991 through 2020, the standard comparison period that
           service publishes.
-          <br /><strong>A drainage area's snow figure is the plain average of the sites
-          reporting in it, and every site counts once.</strong> It is a figure about the
-          measuring sites, not a measure of the snow lying across the whole area. The sites
-          are placed where snow can be measured reliably. That is neither evenly across the
-          land nor evenly up the mountainside. An area with four sites and an area with
-          thirty are each an average of what they have. Every area's figure is published
+          <br /><strong>A drainage area's snow figure is the snow water of the sites
+          reporting in it, added up, divided by their normals added up.</strong> So a site
+          with more normal snow counts for more than a site with very little. It is a figure
+          about the measuring sites, not a measure of the snow lying across the whole area.
+          The sites are placed where snow can be measured reliably. That is neither evenly
+          across the land nor evenly up the mountainside. Every area's figure is published
           with the number of sites reporting that day. No area is given a figure until at
           least two sites report.
           <br /><strong>Early and late in the season, a percent of normal means very

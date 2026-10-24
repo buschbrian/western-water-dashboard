@@ -193,7 +193,7 @@ export function createPrecipitationCard(
   const historyNote = text("p", "precip-coverage", "");
   historyKey.append(regions, historyNote);
   const axisTitle = document.createElement("p");
-  axisTitle.className = "precip-axis-title";
+  axisTitle.className = "chart-axis-title";
   const split = document.createElement("div");
   /* Two plain toggle buttons rather than a component: one choice, two
    * answers, and `aria-pressed` says which is on. */
@@ -237,7 +237,7 @@ export function createPrecipitationCard(
    * history rank, drawn. */
   const strip = document.createElement("div");
   strip.className = "precip-strip-block";
-  const stripTitle = text("p", "precip-axis-title", "");
+  const stripTitle = text("p", "chart-axis-title", "");
   const stripHost = document.createElement("div");
   stripHost.className = "precip-strip-host";
   const stripNote = text("p", "precip-coverage", "");
