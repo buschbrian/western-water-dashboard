@@ -54,7 +54,53 @@ body {
   background: var(--calcite-color-surface-highlight);
 }
 
+/* The answer block: storage first and largest, then percent full, then
+ * dated tiles. Everything else on the page sits lower. */
+.reservoir-storage { margin: 0 0 .75rem; }
+.reservoir-storage span {
+  display: block;
+  color: var(--app-muted);
+  font-size: .875rem;
+}
+.reservoir-storage strong {
+  display: block;
+  font-size: clamp(2rem, 7vw, 3rem);
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
 .detail-headline strong { font-size: 1.5rem; }
+
+.reservoir-tiles {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: .6rem;
+  margin: 1rem 0 0;
+}
+.reservoir-tiles > div {
+  min-inline-size: 0;
+  padding: .6rem .8rem;
+  border: 1px solid var(--app-border);
+  border-radius: .5rem;
+}
+.reservoir-tiles dt { color: var(--app-muted); font-size: .75rem; line-height: 1.35; }
+.reservoir-tiles dd {
+  margin: .15rem 0 0;
+  font-size: .95rem;
+  line-height: 1.4;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.reservoir-tiles { grid-auto-flow: dense; }
+@media (min-width: 40rem) {
+  .reservoir-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .reservoir-tiles > .reservoir-tile-wide { grid-column: span 2; }
+}
+@media (min-width: 56rem) {
+  .reservoir-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+}
+
+.reservoir-minorhead { font-size: .95rem; margin-block: 1.5rem .5rem; }
 
 /* The SVG chart draws its own gridlines from CSS variables the app sheet
  * defines, so it reads correctly on this background without local rules.
@@ -148,3 +194,5 @@ body {
 @media (max-width: 480px) {
   .reservoir-main { padding-inline: 1rem; }
 }
+
+.upstream-group-count { font-weight: 400; color: var(--app-muted); }
