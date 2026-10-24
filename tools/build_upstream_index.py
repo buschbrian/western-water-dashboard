@@ -99,7 +99,8 @@ class RateLimited(RuntimeError):
 RETRY_ATTEMPTS = 3
 
 
-def get_json(url: str):
+def get_json(url: str, *, timeout: float = TIMEOUT,
+             headers: dict | None = None):
     """GET JSON, with retries for transient failures.
 
     A 429 is not transient here: the quota that produced it will outlive any
@@ -107,10 +108,11 @@ def get_json(url: str):
     the caller stops the run rather than recording three hundred fake
     screens.
     """
-    request = urllib.request.Request(url, headers={"User-Agent": USER_AGENT})
+    request = urllib.request.Request(
+        url, headers={"User-Agent": USER_AGENT, **(headers or {})})
     for attempt in range(RETRY_ATTEMPTS):
         try:
-            with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
+            with urllib.request.urlopen(request, timeout=timeout) as response:
                 return json.loads(response.read())
         except urllib.error.HTTPError as error:
             if error.code == 429:
