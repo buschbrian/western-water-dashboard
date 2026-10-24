@@ -243,7 +243,10 @@ export function createPrecipitationCard(
   const stripNote = text("p", "precip-coverage", "");
   strip.append(stripTitle, stripHost, stripNote);
   strip.hidden = true;
-  section.append(top, strip, controls, axisTitle, host, historyKey, april, coverage, details);
+  const readNote = text("p", "card-note",
+    "The chart opens on the season so far. Choose Whole water year to see all of it. The bands show what the same sites measured by each date in earlier water years. " +
+    "Point to the chart, or select it and use the arrow keys, to read one day.");
+  section.append(top, strip, controls, axisTitle, host, historyKey, april, coverage, details, readNote);
   /* The card's credit line stays last, under everything this card adds. */
   const source = section.querySelector(":scope > .card-source");
   if (source) section.append(source);
