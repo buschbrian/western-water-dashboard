@@ -91,8 +91,13 @@ body {
   font-variant-numeric: tabular-nums;
   overflow-wrap: anywhere;
 }
+.reservoir-tiles { grid-auto-flow: dense; }
 @media (min-width: 40rem) {
   .reservoir-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .reservoir-tiles > .reservoir-tile-wide { grid-column: span 2; }
+}
+@media (min-width: 56rem) {
+  .reservoir-tiles { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 .reservoir-minorhead { font-size: .95rem; margin-block: 1.5rem .5rem; }
@@ -189,3 +194,5 @@ body {
 @media (max-width: 480px) {
   .reservoir-main { padding-inline: 1rem; }
 }
+
+.upstream-group-count { font-weight: 400; color: var(--app-muted); }

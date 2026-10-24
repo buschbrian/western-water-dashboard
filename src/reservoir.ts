@@ -91,11 +91,16 @@ function definitionList(rows: readonly { label: string; value: string }[],
 }
 
 /** The reading's dated facts as tiles: each label over its value. */
-function answerTiles(rows: readonly { label: string; value: string }[]): HTMLDListElement {
+function answerTiles(
+  rows: readonly { label: string; value: string }[], wide: (label: string) => boolean
+): HTMLDListElement {
   const list = document.createElement("dl");
   list.className = "reservoir-tiles";
   for (const row of rows) {
     const tile = document.createElement("div");
+    /* The seasonal comparison is the longest sentence; it takes two columns
+     * so five tiles fill whole rows at both grid widths. */
+    if (wide(row.label)) tile.className = "reservoir-tile-wide";
     const term = document.createElement("dt");
     term.textContent = row.label;
     const definition = document.createElement("dd");
@@ -182,7 +187,7 @@ async function renderFound(payload: ReservoirPayload,
     figure.append(label, amount);
     children.push(figure);
   }
-  children.push(headline, answerTiles(answerRows));
+  children.push(headline, answerTiles(answerRows, (label) => label === view.baseline.label));
 
   // The twelve months, drawn by the same SVG builder the details panel uses.
   const chartHost = document.createElement("div");
@@ -417,8 +422,13 @@ function upstreamStorage(stations: readonly string[], roster: readonly Reservoir
     const name = document.createElement("span");
     name.className = "upstream-group-name";
     name.textContent = group.name;
+    /* The count sits with the name, so the figure column holds the same two
+     * values as every row below it and the bars stay in one column. */
+    const count = document.createElement("span");
+    count.className = "upstream-group-count";
+    count.textContent = ` · ${group.rows.length} reservoir${group.rows.length === 1 ? "" : "s"}`;
+    name.append(count);
     head.append(name, fillBar(group.rollup.percentFull), note(
-      `${group.rows.length} reservoir${group.rows.length === 1 ? "" : "s"} · ` +
       `${group.rollup.percentFull === null ? "—" : `${Math.round(group.rollup.percentFull)}%`} · ` +
       `${formatAcreFeet(group.rollup.storageAf)} acre-feet`, "upstream-figure"));
     details.append(head, list(group.rows));
