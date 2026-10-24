@@ -95,7 +95,14 @@ describe("SDK architecture boundaries", () => {
 
     expect(calciteInstallations).toHaveLength(1);
     expect(calciteInstallations[0]?.path).toBe("node_modules/@esri/calcite-components");
-    expect(calciteInstallations[0]?.version).toMatch(/^5\.2\./);
+    /* Held on 5.1. Calcite 5.2 writes its theme colours with CSS
+     * `light-dark()`, and the charts SDK (@arcgis/charts-components 5.1.27)
+     * reads those colours and cannot parse that syntax: every chart threw
+     * "Unknown color syntax" and drew its legend with no marks. The browser
+     * suite cannot see chart drawing, so this test is the guard. Move to 5.2
+     * only with a charts release that draws under it, checked in a real
+     * browser. */
+    expect(calciteInstallations[0]?.version).toMatch(/^5\.1\./);
   });
 
   it("ships the small local Calcite asset contract used by the shell", async () => {

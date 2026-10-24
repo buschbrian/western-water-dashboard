@@ -11,6 +11,16 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ## [Unreleased]
 
+## [1.1.1] - 2026-10-24
+
+### Fixed
+
+- **The storage charts draw again.** 1.1.0 moved Calcite to 5.2, which writes
+  its theme colours with CSS `light-dark()`; the ArcGIS charts components
+  cannot read that syntax, so every chart on the storage charts page showed
+  its key and no bars. Calcite is held on 5.1 until a charts release draws
+  under 5.2.
+
 ## [1.1.0] - 2026-10-24
 
 
