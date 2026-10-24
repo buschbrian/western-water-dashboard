@@ -11,6 +11,8 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ## [Unreleased]
 
+## [1.1.0] - 2026-10-24
+
 
 ### Added
 
