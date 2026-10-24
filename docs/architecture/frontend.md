@@ -1,7 +1,7 @@
 # Frontend architecture
 
 The reader-facing application: strict TypeScript, Vite, ArcGIS Maps SDK 5.1,
-ArcGIS Charts 5.1, Calcite Components 5.2. Scoped agent rules for this area
+ArcGIS Charts 5.1, Calcite Components 5.1 (held; see [the Esri register](../operations/esri-register.md), E1). Scoped agent rules for this area
 are in [`.claude/rules/frontend.md`](../../.claude/rules/frontend.md) and
 [`src/AGENTS.md`](../../src/AGENTS.md).
 

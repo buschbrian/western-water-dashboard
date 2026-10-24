@@ -39,6 +39,7 @@ the test is right and the prose is the bug.
 | [Verification](operations/verification.md) | Which verify target to run, and what each suite can and cannot see. |
 | [Data refresh](operations/data-refresh.md) | The daily job, its failure behaviour, and the long-lived rebuilds. |
 | [Source admission](operations/source-admission.md) | Adding, replacing or reviewing a reservoir provider. |
+| [Esri register](operations/esri-register.md) | Every Esri SDK or Calcite defect we pin or work around, its reproduction, and what to ask Esri. |
 | [Landscape photographs](operations/landscape-photographs.md) | Adding a photograph to the drought-on-the-ground page, metadata first. |
 
 ## Maintained references
