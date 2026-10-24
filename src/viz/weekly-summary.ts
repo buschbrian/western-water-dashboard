@@ -132,7 +132,7 @@ export function describeSnow(snow: WeeklySnow): string[] {
       "against the middle value for the same day in 1991 through 2020. From " +
       "late summer into early autumn that value is zero or nearly zero at " +
       "these sites. That is too small a base for a fair comparison.",
-      "The snowpack view carries the whole season, including its high point."
+      "The precipitation and snow view carries the whole season, including its high point."
     ];
   }
   const change = (snow.percentNow as number) - (snow.percentBefore as number);

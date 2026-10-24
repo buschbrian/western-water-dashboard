@@ -259,7 +259,7 @@ root.innerHTML = `
   </calcite-navigation>
   <main class="overview-main">
     <header class="overview-intro">
-      <p>This page shows snow water equivalent: the depth of water the snow would make if it melted. The Natural Resources Conservation Service measures it every day at automatic mountain sites.</p>
+      <p>This page shows the rain and snow caught at automatic mountain sites since 1 October, and the water the snow holds now. Snow water equivalent is the depth of water the snow would make if it melted. The Natural Resources Conservation Service measures both every day.</p>
     </header>
     <section id="snow-content" aria-live="polite"><calcite-loader label="Loading snow measurements"></calcite-loader></section>
   </main>`;
@@ -320,7 +320,7 @@ function renderSnow(
     <div id="snow-upstream-summary" class="filter-status upstream-filter-status" role="status" hidden></div>
     <section class="dashboard-filterbar mobile-filterbar" aria-labelledby="snow-filter-heading">
       <div class="filterbar-head">
-        <div class="filterbar-title"><p class="eyebrow">Mountain snow</p><h2 id="snow-filter-heading">Choose a place</h2></div>
+        <div class="filterbar-title"><p class="eyebrow">Precipitation and snow</p><h2 id="snow-filter-heading">Choose a place</h2></div>
         <button id="snow-filter-toggle" class="mobile-filter-toggle" type="button"
           aria-controls="snow-filter-controls snow-site-options"
           aria-expanded="false">Show filters</button>
@@ -383,6 +383,12 @@ function renderSnow(
       <p class="card-note">Mountain snow is a major source of the spring and summer water that runs into western rivers and reservoirs. Not all of it gets there. Some evaporates and some soaks into the ground. What does arrive is stored, released or diverted by the people who operate the reservoirs. So read snow and storage together rather than as one measurement.</p>
       <p class="card-source">ArcGIS map</p>
     </section>
+    <section class="overview-card" id="precip-card" aria-labelledby="precip-heading">
+      <div class="card-heading">
+        <div><h2 id="precip-heading">Precipitation since 1 October</h2><p>Rain and snow caught by the gauges at the measurement sites, added up from 1 October. The snow water the same sites hold now is shown beside the figures.</p></div>
+      </div>
+      <p class="card-source">Line chart</p>
+    </section>
     <section class="overview-card" aria-labelledby="snow-curve-heading">
       <div class="card-heading">
         <div><h2 id="snow-curve-heading">The snow season, day by day</h2><p data-snow-curve-caption>The line shows snow as a percent of normal for each day. The dashed line marks normal.</p></div>
@@ -395,12 +401,6 @@ function renderSnow(
         <div class="table-scroll" tabindex="0" role="region" aria-label="First-of-month table, scrolls sideways"><table class="overview-table"><thead><tr id="snow-month-head"><th>Month</th><th>Of normal</th><th>Reporting sites</th></tr></thead><tbody id="snow-month-rows"></tbody></table></div>
       </details>
       <p class="card-note">The line is the mean of the site values for each day. Normal is the middle value for the same day in the years ${normalPeriodLabel(payload)}. Gaps are days with too few reporting sites, or too little normal snow, to give a fair mean.${season.previous !== null ? ` A thinner grey line shows the ${seasonName(season.previous)} season on the same dates.` : ""}</p>
-      <p class="card-source">Line chart</p>
-    </section>
-    <section class="overview-card" id="precip-card" aria-labelledby="precip-heading">
-      <div class="card-heading">
-        <div><h2 id="precip-heading">Precipitation since 1 October</h2><p>Rain and snow caught by the gauges at the measurement sites, added up from 1 October. The snow water the same sites hold now is shown beside the figures.</p></div>
-      </div>
       <p class="card-source">Line chart</p>
     </section>
     <section class="overview-card" aria-labelledby="snow-basin-heading">

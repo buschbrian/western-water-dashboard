@@ -156,7 +156,7 @@ export function methodsMarkup(search: string): string {
           reservoirs use a project record, where the inventory disagrees with the
           readings. Each reservoir's details name the figure used for it.</dd>
         <dt>Snow measurements</dt>
-        <dd>Daily snow water equivalent for the mountain sites on the snowpack page. It
+        <dd>Daily snow water equivalent for the mountain sites on the precipitation and snow page. It
         comes from the same Natural Resources Conservation Service water and climate
         service as the storage readings. Each reading is compared with the middle value for the
           same day in the years 1991 through 2020, the standard comparison period that
@@ -180,7 +180,7 @@ export function methodsMarkup(search: string): string {
         <dt>Precipitation</dt>
         <dd>Rain and snow caught by the gauge at the same mountain sites, added up from 1
           October. It comes from the same Natural Resources Conservation Service water and
-          climate service. The snowpack page compares it with every water year from 1991 to
+          climate service. The precipitation and snow page compares it with every water year from 1991 to
           the last one that ended.
           <br /><strong>Every year is measured at the same sites.</strong> Only sites with a
           full gauge record for every one of those years are used. So a wet or dry year in the

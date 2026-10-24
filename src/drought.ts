@@ -759,7 +759,7 @@ function renderDrought(
       mapLink.textContent = "Open on the storage map";
       const snowLink = document.createElement("a");
       snowLink.href = `./snow.html?area=${unit.huc6}`;
-      snowLink.textContent = "Open the snowpack view";
+      snowLink.textContent = "Open the precipitation and snow view";
       links.append(mapLink, snowLink);
 
       row.append(head, bar, reading, links);
