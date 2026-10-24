@@ -179,24 +179,25 @@ export function methodsMarkup(search: string): string {
           the percentage, because that is where the shape of a season is read.</dd>
         <dt>Precipitation</dt>
         <dd>Rain and snow caught by the gauge at the same mountain sites, added up from 1
-          October, from the same Natural Resources Conservation Service water and climate
-          service. The snowpack page compares it with every water year from 1991 to the last
-          one that ended.
+          October. It comes from the same Natural Resources Conservation Service water and
+          climate service. The snowpack page compares it with every water year from 1991 to
+          the last one that ended.
           <br /><strong>Every year is measured at the same sites.</strong> Only sites with a
-          full gauge record for every one of those years are used, so a wet or dry year in the
-          history is a fact about the weather and not about which sites were reporting. A
-          site with a shorter or broken record, or with late data, is counted on the page
-          and is not used.
+          full gauge record for every one of those years are used. So a wet or dry year in the
+          history is a fact about the weather. It is not a fact about which sites were
+          reporting. A site with a shorter or broken record, or with late data, is counted on
+          the page and is not used.
           <br /><strong>The history is kept once a week.</strong> Each past year is kept on
           1 October and every seventh day after it. On the days between, each year is read
           on a straight line between its two weekly values. That changes a comparison by
           less than one week's precipitation.
           <br /><strong>Inches come first.</strong> The page gives the inches since 1 October
           and the middle value for the date. It gives a percent of that middle value only
-          when the middle value is one inch or more, for the same reason as the snow figure.
-          <br /><strong>Precipitation is not snow.</strong> Beside the figures, one bar
-          splits this year's precipitation into the part that is snow water now at the same
-          sites, and the part that is not: rain, or snow that has melted.</dd>
+          when the middle value is one inch or more. The reason is the same as for the snow
+          figure.
+          <br /><strong>Precipitation is not snow.</strong> Beside the figures, the page gives
+          the snow water at the same sites. It also gives how much more the gauges caught than
+          the snow holds. These two values do not show where the rest of the water went.</dd>
         <dt>Drought conditions</dt>
         <dd>The U.S. Drought Monitor's weekly national map, produced by the National
           Drought Mitigation Center with the U.S. Department of Agriculture and the
