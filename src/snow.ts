@@ -259,7 +259,7 @@ root.innerHTML = `
   </calcite-navigation>
   <main class="overview-main">
     <header class="overview-intro">
-      <p>Mountain snow is a major source of the spring and summer water that runs into western rivers and reservoirs. Not all of it gets there. Some evaporates and some soaks into the ground. What does arrive is stored, released or diverted by the people who operate the reservoirs. So read snow and storage together rather than as one measurement. This page shows snow water equivalent: the depth of water the snow would make if it melted. The Natural Resources Conservation Service measures it every day at automatic mountain sites.</p>
+      <p>This page shows snow water equivalent: the depth of water the snow would make if it melted. The Natural Resources Conservation Service measures it every day at automatic mountain sites.</p>
     </header>
     <section id="snow-content" aria-live="polite"><calcite-loader label="Loading snow measurements"></calcite-loader></section>
   </main>`;
@@ -367,7 +367,7 @@ function renderSnow(
     </section>
     <section class="overview-card" aria-labelledby="snow-map-heading">
       <div class="card-heading">
-        <div><h2 id="snow-map-heading">Where the snow is</h2><p>Each drainage area takes its colour from the sites reporting inside it that day. Their snow water is added up and divided by their normal snow water added up. So a site with more normal snow counts for more. That is a figure about the measuring sites. It is not a measure of the snow lying across the whole area. The sites are placed where snow can be measured reliably. That is neither evenly across the land nor evenly up the mountainside. Each measurement site is a point on the same scale. Select an area to see how many sites its figure came from. The map opens on the day the season held the most snow, because the rest of the year measures against that day. A day counts only when the reporting sites have at least one inch of normal snow on average. Early in the season, the map opens on the newest day instead. Move the slider to see any other day. Areas and sites without a fair value for that day stay grey. The key shows apart the ones with too little normal snow to compare against.</p></div>
+        <div><h2 id="snow-map-heading">Where the snow is</h2><p>Each drainage area takes its colour from how its snow compares with normal on the day shown. Move the slider to see any other day.</p></div>
       </div>
       <div id="snow-map-host" class="view-map-host" aria-busy="true"
         aria-label="A map of the drainage areas and snow measurement sites. The chart and tables on this page carry the same values as text."></div>
@@ -378,11 +378,14 @@ function renderSnow(
         <span id="snow-day-reading" class="snow-day-reading">—</span>
       </div>
       <p id="snow-season-route" class="snow-season-route" hidden></p>
+      <p class="card-note">Each drainage area takes its colour from the sites reporting inside it that day. Their snow water is added up and divided by their normal snow water added up. So a site with more normal snow counts for more. That is a figure about the measuring sites. It is not a measure of the snow lying across the whole area. The sites are placed where snow can be measured reliably. That is neither evenly across the land nor evenly up the mountainside. Each measurement site is a point on the same scale. Select an area to see how many sites its figure came from.</p>
+      <p class="card-note">The map opens on the day the season held the most snow, because the rest of the year measures against that day. A day counts only when the reporting sites have at least one inch of normal snow on average. Early in the season, the map opens on the newest day instead. Areas and sites without a fair value for that day stay grey. The key shows apart the ones with too little normal snow to compare against.</p>
+      <p class="card-note">Mountain snow is a major source of the spring and summer water that runs into western rivers and reservoirs. Not all of it gets there. Some evaporates and some soaks into the ground. What does arrive is stored, released or diverted by the people who operate the reservoirs. So read snow and storage together rather than as one measurement.</p>
       <p class="card-source">ArcGIS map</p>
     </section>
     <section class="overview-card" aria-labelledby="snow-curve-heading">
       <div class="card-heading">
-        <div><h2 id="snow-curve-heading">The snow season, day by day</h2><p data-snow-curve-caption>The line is the mean of the site values, as a percent of normal for each day. The dashed line marks normal: the middle value for the same day in the years ${normalPeriodLabel(payload)}. Gaps are days with too few reporting sites, or too little normal snow, to give a fair mean.${season.previous !== null ? ` A thinner grey line shows the ${seasonName(season.previous)} season on the same dates.` : ""}</p></div>
+        <div><h2 id="snow-curve-heading">The snow season, day by day</h2><p data-snow-curve-caption>The line shows snow as a percent of normal for each day. The dashed line marks normal.</p></div>
       </div>
       <p class="chart-axis-title">Snow water as a percent of normal<span>Mean of the sites reporting each day. 100 is normal.</span></p>
       <div id="snow-curve-host" aria-busy="true"></div>
@@ -391,32 +394,36 @@ function renderSnow(
       <details class="snow-month-details"><summary>Values on the first day of each month</summary>
         <div class="table-scroll" tabindex="0" role="region" aria-label="First-of-month table, scrolls sideways"><table class="overview-table"><thead><tr id="snow-month-head"><th>Month</th><th>Of normal</th><th>Reporting sites</th></tr></thead><tbody id="snow-month-rows"></tbody></table></div>
       </details>
+      <p class="card-note">The line is the mean of the site values for each day. Normal is the middle value for the same day in the years ${normalPeriodLabel(payload)}. Gaps are days with too few reporting sites, or too little normal snow, to give a fair mean.${season.previous !== null ? ` A thinner grey line shows the ${seasonName(season.previous)} season on the same dates.` : ""}</p>
       <p class="card-source">Line chart</p>
     </section>
     <section class="overview-card" id="precip-card" aria-labelledby="precip-heading">
       <div class="card-heading">
-        <div><h2 id="precip-heading">Precipitation since 1 October</h2><p>Rain and snow caught by the gauges at the measurement sites, added up from 1 October, and the snow water the same sites hold now. The bands show what the same sites measured by each date in earlier water years. Point to the chart, or select it and use the arrow keys, to read one day.</p></div>
+        <div><h2 id="precip-heading">Precipitation since 1 October</h2><p>Rain and snow caught by the gauges at the measurement sites, added up from 1 October. The snow water the same sites hold now is shown beside the figures.</p></div>
       </div>
       <p class="card-source">Line chart</p>
     </section>
     <section class="overview-card" aria-labelledby="snow-basin-heading">
       <div class="card-heading">
-        <div><h2 id="snow-basin-heading">One drainage area through the season</h2><p>The mean of the chosen area's site values as a percent of normal, day by day. The dashed line is the middle value for the same day in the years ${normalPeriodLabel(payload)}. Choose an area here, or select one on the map above.</p></div>
+        <div><h2 id="snow-basin-heading">One drainage area through the season</h2><p>The mean of the chosen area's site values as a percent of normal, day by day. Choose an area here, or select one on the map above.</p></div>
         <label class="sort-control">Drainage area<select id="snow-basin-pick"><option value="">Choose a drainage area</option></select></label>
       </div>
       <div id="snow-basin-detail"><p class="chart-empty">Choose a drainage area above, or select one on the map.</p></div>
+      <p class="card-note">The dashed line is the middle value for the same day in the years ${normalPeriodLabel(payload)}.</p>
     </section>
     <section class="overview-card" aria-labelledby="snow-site-heading">
       <div class="card-heading">
-        <div><h2 id="snow-site-heading">One site through the season</h2><p>Snow water in inches at the chosen site, day by day, against the middle value for the same day in the years ${normalPeriodLabel(payload)}. The markers show the site's normal season: when snow usually starts to build, its usual highest value, and when it has usually melted.</p></div>
+        <div><h2 id="snow-site-heading">One site through the season</h2><p>Snow water in inches at the chosen site, day by day, against normal for the same day.</p></div>
         <label class="sort-control">Measurement site<select id="snow-site"><option value="">Choose a site</option></select></label>
       </div>
       <div id="snow-site-detail"><p class="chart-empty">Choose a measurement site above, or select one in the table below.</p></div>
+      <p class="card-note">Normal is the middle value for the same day in the years ${normalPeriodLabel(payload)}. The markers show the site's normal season: when snow usually starts to build, its usual highest value, and when it has usually melted.</p>
     </section>
     <section class="overview-card table-card" aria-labelledby="snow-table-heading">
-      <div class="card-heading"><div><h2 id="snow-table-heading">Measurement sites</h2><p>The newest value at each site, ordered by drainage area and name. Select a site name to see its season. A summer value near zero is normal: the snow melts each summer.</p></div><calcite-button id="snow-geojson" appearance="outline" icon-start="export" scale="s">Download these points (GeoJSON file)</calcite-button></div>
+      <div class="card-heading"><div><h2 id="snow-table-heading">Measurement sites</h2><p>The newest value at each site. Select a site name to see its season.</p></div><calcite-button id="snow-geojson" appearance="outline" icon-start="export" scale="s">Download these points (GeoJSON file)</calcite-button></div>
       <div class="snow-spread" id="snow-spread"></div>
       <div class="table-scroll" tabindex="0" role="region" aria-label="Measurement site table, scrolls sideways"><table class="overview-table"><thead><tr><th>Site</th><th>Drainage area</th><th>Elevation (feet)</th><th>Snow water (inches)</th><th>Normal (inches)</th><th>Of normal</th><th>Observed</th></tr></thead><tbody id="snow-site-rows"></tbody></table></div>
+      <p class="card-note">Sites are ordered by drainage area and name. A summer value near zero is normal: the snow melts each summer.</p>
     </section>`;
 
   const scopeSummaryEl = document.querySelector<HTMLElement>("#snow-scope-summary");
