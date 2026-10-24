@@ -11,8 +11,17 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ## [Unreleased]
 
+## [1.2.0] - 2026-10-24
+
 ### Added
 
+- **Find a place**, in the header of every page: type a reservoir, drainage
+  area or snow measurement site and go straight to it. Places that share a
+  name are told apart by state and area.
+- **A chart that fails to draw now says so.** Each storage chart is checked
+  for a drawing surface; one that never draws is replaced with a sentence
+  pointing to the table, and the browser suite reproduces the 1.1.0 colour
+  break to prove the check catches it.
 - **What is above a reservoir, as stored water** (ADR-127). A reservoir's
   page states the upstream reservoirs' combined storage, then groups them by
   drainage area with a total and a fill bar for each, in place of a wall of
@@ -24,12 +33,27 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Changed
 
+- **Every card leads with what it shows.** Each card opens with a one- or
+  two-sentence lead; how a figure is measured and what it does not say sit
+  in full as notes at the foot of the same card. The chart and map labels
+  ("ArcGIS map", "Bar chart") moved from beside each title to a quiet credit
+  under each card.
+- **The drought page is about a quarter of its length** (20,300 to about
+  5,300 pixels at desktop width): an "On this page" row, the three
+  comparison charts folded behind their own headings, and the area list
+  showing twelve until a reader asks for all.
+- **A reservoir's page leads with its water**: current storage, percent
+  full, its changes, the seasonal comparison and history rank, then the
+  twelve-month chart; location and sources follow.
+- **Summary cards align**: on every page and width, each card's label,
+  value and note sit on the same lines as its neighbours'.
 - The drought map's polygon file is about a third smaller (506 KB to 322 KB
   gzipped): its coordinates carry three decimal places, the grain the drought
   service already simplifies to, rather than five.
 
 ### Fixed
 
+- Badge and label contrast in the dark theme now meets 4.5:1.
 - The precipitation card's latest reading no longer lags when one station
   misses a day.
 - The snow map and methods page now describe an area's figure as the sites'
