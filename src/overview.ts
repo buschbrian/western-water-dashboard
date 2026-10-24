@@ -81,6 +81,7 @@ import type {
 } from "./types";
 import { brandMarkup, pageLinksMarkup, updatePageLinks } from "./ui/page-header";
 import { setupPlaceChooser } from "./ui/opening-splash";
+import { setupPlaceSearch } from "./ui/place-search";
 import {
   wireMobileDisclosure,
   wireMobileFilterDisclosure
@@ -117,6 +118,7 @@ root.innerHTML = `
   </main>`;
 wireTheme();
 void setupPlaceChooser();
+setupPlaceSearch("overview");
 
 /** The permanent map link for one reservoir. Qualified against the complete
  * roster so a filtered table never turns one of two shared names back into

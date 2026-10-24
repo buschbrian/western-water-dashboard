@@ -92,6 +92,7 @@ import { searchForSeason, snowStateFromSearch, writeSnowUrl } from "./state/snow
 import type { SnowpackPayload, SnowSite } from "./types";
 import { brandMarkup, pageLinksMarkup, updatePageLinks } from "./ui/page-header";
 import { setupPlaceChooser } from "./ui/opening-splash";
+import { setupPlaceSearch } from "./ui/place-search";
 import { createLocationFacts } from "./ui/location-facts";
 import {
   missingStationCount,
@@ -264,6 +265,7 @@ root.innerHTML = `
   </main>`;
 wireTheme();
 void setupPlaceChooser();
+setupPlaceSearch("snow");
 
 function formatFeet(value: number): string {
   return Math.round(value).toLocaleString("en-US");

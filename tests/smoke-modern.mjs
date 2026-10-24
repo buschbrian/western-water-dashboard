@@ -845,6 +845,7 @@ const browser = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
 }
 
 
+
 /*
  * Somebody else's outage, told apart from this application's own faults.
  *
@@ -949,6 +950,138 @@ function reportHostedOutage(label, hosted) {
     return named ? named[1] : "unnamed layer";
   }))];
   console.log(`  hosted layers unavailable (${hosted.length}): ${names.join(", ")}`);
+}
+
+/* Find a place, the header search. The names come from the published index,
+ * never a literal: the first reservoir and the first snow site whose names
+ * nothing else on the index shares, so a roster change picks another. */
+{
+  const places = JSON.parse(await readFile(
+    path.join(ROOT, "data", "assistant", "places.json"), "utf8"));
+  const allNames = [...places.reservoirs, ...places.areas, ...places.sites]
+    .map((entry) => entry.name);
+  const unique = (name) => allNames.filter((other) => other === name).length === 1;
+  const reservoir = places.reservoirs.find((entry) => unique(entry.name));
+  const site = places.sites.find((entry) => unique(entry.name));
+  const optionTexts = (tab) => tab.locator("#place-search-list [role=option]").allInnerTexts();
+
+  /* A reservoir, by keyboard, from a phone in the dark theme. */
+  {
+    const context = await browser.newContext({ viewport: VIEWPORTS[1], colorScheme: "dark" });
+    await context.addInitScript((key) => {
+      try { localStorage.setItem(key, "1"); } catch { /* storage refused */ }
+    }, SPLASH_DISMISSED_KEY);
+    const tab = await context.newPage();
+    const errors = [];
+    tab.on("pageerror", (error) => errors.push(`uncaught: ${error.message}`));
+    watchConsoleErrors(tab, errors);
+    const label = "Find a place: reservoir (dark, mobile)";
+    console.log(`\n=== ${label} -- ${reservoir.name}`);
+    await tab.goto(`${URL}drought.html`, { waitUntil: "domcontentloaded", timeout: 60000 });
+    const trigger = tab.locator("#place-search-trigger");
+    await trigger.waitFor({ state: "visible", timeout: 60000 });
+    const bar = await trigger.evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      return { left: box.left, right: box.right, viewport: document.documentElement.clientWidth };
+    });
+    check(bar.left >= 0 && bar.right <= bar.viewport + 1,
+      `${label}: the search action sits at ${bar.left}-${bar.right}, outside the viewport`);
+    await trigger.click();
+    const input = tab.locator("#place-search-input");
+    await input.waitFor({ state: "visible", timeout: 5000 });
+    check(await input.evaluate((element) => document.activeElement === element),
+      `${label}: opening the search did not put focus in the field`);
+    check(await tab.getByRole("combobox", { name: "Find a place" }).count() === 1,
+      `${label}: the field is not a combobox named "Find a place"`);
+    check(await input.getAttribute("aria-controls") === "place-search-list" &&
+      await tab.locator("#place-search-list[role=listbox]").count() === 1,
+    `${label}: the combobox does not control a listbox`);
+    await input.pressSequentially(reservoir.name, { delay: 10 });
+    await tab.waitForFunction((name) => [...document.querySelectorAll(
+      "#place-search-list [role=option]")].some((option) =>
+      option.textContent?.startsWith(`${name} · Reservoir`)),
+    reservoir.name, { timeout: 30000 });
+    check(await input.getAttribute("aria-expanded") === "true",
+      `${label}: the results are shown but the combobox says it is collapsed`);
+    check(!(await input.getAttribute("aria-activedescendant")),
+      `${label}: a result was chosen before the reader chose one`);
+    const texts = await optionTexts(tab);
+    console.log("  results:", JSON.stringify(texts));
+    check(texts.length <= 8, `${label}: ${texts.length} results, expected at most 8`);
+    check(texts.every((text) => !RETIRED_TERMS.test(text)),
+      `${label}: a result uses a retired term`);
+    await input.press("ArrowDown");
+    const active = await tab.evaluate(() => {
+      const id = document.getElementById("place-search-input")
+        ?.getAttribute("aria-activedescendant");
+      const option = id ? document.getElementById(id) : null;
+      return { text: option?.textContent ?? null, selected: option?.getAttribute("aria-selected") };
+    });
+    check(active.text?.startsWith(`${reservoir.name} · Reservoir`) && active.selected === "true",
+      `${label}: ArrowDown did not make the reservoir the active result (${JSON.stringify(active)})`);
+    /* Scored on the search alone in the dark theme: the whole page is
+     * scored with the results open in the light case below, and the rest
+     * of this page in the dark theme is not what this case is about. */
+    await tab.addScriptTag({ url: `${URL}__axe.js` });
+    const searchViolations = await tab.evaluate(async (tags) =>
+      (await window.axe.run({ include: [["#place-search"], ["#place-search-trigger"]] },
+        { runOnly: { type: "tag", values: tags } })).violations
+        .map((violation) => `${violation.id}: ${violation.nodes[0]?.html.slice(0, 120)}`),
+    AXE_TAGS);
+    check(searchViolations.length === 0,
+      `${label}: axe-core found violations in the search: ${searchViolations.join("; ")}`);
+    await input.press("Enter");
+    await tab.waitForURL(/reservoir\.html\?name=/, { timeout: 60000 });
+    const landed = await tab.waitForFunction(() => window.__reservoirReady?.status ?? null,
+      null, { timeout: 90000 }).then((handle) => handle.jsonValue()).catch(() => null);
+    check(landed === "found",
+      `${label}: the reservoir page did not find ${reservoir.name} (${landed}, ${tab.url()})`);
+    check(errors.length === 0, `${label}: console errors: ${errors.join(" | ")}`);
+    await context.close();
+  }
+
+  /* A snow site, by pointer, from a documentation page on a small phone;
+   * Escape closes the list first and the panel second. */
+  {
+    const context = await newPageContext(browser, VIEWPORTS[2]);
+    const tab = await context.newPage();
+    const errors = [];
+    tab.on("pageerror", (error) => errors.push(`uncaught: ${error.message}`));
+    watchConsoleErrors(tab, errors);
+    const label = "Find a place: snow site (small-phone)";
+    console.log(`\n=== ${label} -- ${site.name}`);
+    await tab.goto(`${URL}methods.html`, { waitUntil: "domcontentloaded", timeout: 60000 });
+    await tab.locator("#place-search-trigger").click();
+    const input = tab.locator("#place-search-input");
+    await input.pressSequentially(site.name, { delay: 10 });
+    const option = tab.locator("#place-search-list [role=option]",
+      { hasText: `${site.name} · Snow site` }).first();
+    await option.waitFor({ state: "visible", timeout: 30000 });
+    const panel = await tab.locator("#place-search").evaluate((element) => {
+      const box = element.getBoundingClientRect();
+      return { left: box.left, right: box.right, viewport: document.documentElement.clientWidth,
+        scroll: document.documentElement.scrollWidth };
+    });
+    check(panel.left >= 0 && panel.right <= panel.viewport + 1 && panel.scroll <= panel.viewport + 1,
+      `${label}: the search panel does not fit the screen (${JSON.stringify(panel)})`);
+    await checkAccessibility(tab, check, `${label}, results open`);
+    await input.press("Escape");
+    check(await input.getAttribute("aria-expanded") === "false" &&
+      await tab.locator("#place-search-list").isHidden(),
+    `${label}: Escape did not close the results`);
+    await input.press("Escape");
+    check(await tab.locator("#place-search").isHidden(),
+      `${label}: a second Escape did not close the search`);
+    await tab.locator("#place-search-trigger").click();
+    await input.press("ArrowDown");
+    await option.click();
+    await tab.waitForURL(/snow\.html\?state=all&site=/, { timeout: 60000 });
+    const landedSite = new globalThis.URL(tab.url()).searchParams.get("site");
+    check(landedSite === site.station,
+      `${label}: landed on site ${landedSite}, expected ${site.station}`);
+    check(errors.length === 0, `${label}: console errors: ${errors.join(" | ")}`);
+    await context.close();
+  }
 }
 
 for (const viewport of VIEWPORTS) {
@@ -1741,7 +1874,7 @@ for (const viewport of VIEWPORTS) {
       /* Whatever is actually on the bar at this width. The link buttons
        * swap for the menu below 64rem, so naming a fixed set here would
        * measure a control that is display:none and pass on a zero box. */
-      const ids = ["brand", "page-menu", "overview-link", "snow-link", "drought-link", "methods-link",
+      const ids = ["brand", "place-search-trigger", "page-menu", "overview-link", "snow-link", "drought-link", "methods-link",
         "controls-toggle", "detail-toggle", "table-toggle", "theme-toggle"]
         .filter((id) => {
           const element = document.getElementById(id);
@@ -2724,6 +2857,7 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
       `${label}: the overview promotes ${promotedComparisons} comparison-page links`);
     const navLinks = {
       "theme-toggle": null,
+      "place-search-trigger": null,
       // The header's own links swap for the menu below 64rem, so only
       // whichever is actually showing at this width is measured.
       ...(viewport.width >= 1024

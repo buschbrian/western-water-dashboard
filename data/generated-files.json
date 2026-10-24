@@ -317,6 +317,13 @@
       "note": "Current HUC2/4/6/8 drought facts and the newest 26 weeks of the HUC2/4/6 archives (DROUGHT_HISTORY_WEEKS)."
     },
     {
+      "path": "data/assistant/places.json",
+      "class": "generated-daily",
+      "writer": "tools/build_assistant_indexes.py",
+      "staged_by_refresh": true,
+      "note": "Names only, for the shared header's Find a place search: each reservoir and its state, each drawn drainage area at every level, and each current snow site."
+    },
+    {
       "path": "huc6.geojson",
       "class": "frozen",
       "writer": null,

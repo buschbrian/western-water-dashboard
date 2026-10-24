@@ -196,7 +196,13 @@ export function pageLinksMarkup(current: PageId, search: string = ""): string {
       appearance="transparent" kind="neutral" icon-start="${page.icon}"
       label="${page.label}"><span class="page-link-text">${page.text}</span></calcite-button>`).join("");
 
+  /* The search action is on the bar at every width, first in its group:
+   * finding a place is site navigation, like the page links beside it. Its
+   * panel is built by `place-search.ts` on the first open. */
   return `
+    <calcite-action id="place-search-trigger" class="place-search-trigger"
+      slot="content-end" icon="magnifying-glass" text="Find a place"
+      label="Find a reservoir, drainage area or snow site"></calcite-action>
     <calcite-dropdown id="page-menu" slot="content-end" placement="bottom-end" scale="m">
       <calcite-action slot="trigger" id="page-menu-trigger" icon="hamburger"
         text="Pages" label="Open the page menu"></calcite-action>

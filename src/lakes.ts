@@ -20,6 +20,7 @@ import type { LakePayload, TerminalLake } from "./types";
 import { lakesTemplate } from "./ui/lakes-template";
 import { createLocationFacts } from "./ui/location-facts";
 import { setupPlaceChooser } from "./ui/opening-splash";
+import { setupPlaceSearch } from "./ui/place-search";
 import { wireTheme } from "./ui/theme";
 import { coordinateText } from "./viz/coordinates";
 import { renderTrendChart, renderTrendTable } from "./viz/trend";
@@ -36,6 +37,7 @@ if (!root) throw new Error("Missing #lakes-app root");
 root.innerHTML = lakesTemplate(window.location.search);
 wireTheme();
 void setupPlaceChooser();
+setupPlaceSearch("lakes");
 
 const main = root.querySelector<HTMLElement>("#lakes-main");
 const list = root.querySelector<HTMLElement>("#lakes-list");

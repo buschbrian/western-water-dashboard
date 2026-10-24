@@ -44,6 +44,7 @@ import {
 } from "./state/baseline";
 import { reservoirTemplate } from "./ui/reservoir-template";
 import { setupPlaceChooser } from "./ui/opening-splash";
+import { setupPlaceSearch } from "./ui/place-search";
 import { createLocationFacts } from "./ui/location-facts";
 import { wireTheme } from "./ui/theme";
 import { coordinateText } from "./viz/coordinates";
@@ -56,6 +57,7 @@ if (!root) throw new Error("Missing #reservoir-app root");
 root.innerHTML = reservoirTemplate(window.location.search);
 wireTheme();
 void setupPlaceChooser();
+setupPlaceSearch("reservoir");
 
 const found = root.querySelector<HTMLElement>("#reservoir-main");
 if (!found) throw new Error("Missing #reservoir-main");

@@ -57,6 +57,9 @@ const userTextFiles = [
   // surrounding explanations on the page still follow ADR-006.
   "src/data-docs.ts",
   "src/ui/page-header.ts",
+  // The header search: its messages, and the type and place each result reads.
+  "src/ui/place-search.ts",
+  "src/ui/place-search-model.ts",
   // The terminal-lakes page (ADR-119): its frame, its entry point and the
   // model that words every row, including the datum names and the rank.
   "lakes.html",

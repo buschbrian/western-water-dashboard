@@ -800,13 +800,13 @@ arcgis-map > [slot="bottom-right"] {
    * looked wrong for. Subtracting the end controls' lane means the title
    * gives up characters to an ellipsis instead, which is visible.
    *
-   * The lane is this page's five 32px actions plus the brand's own padding,
-   * measured at 176px -- and it is the whole rule. There was a 13rem cap
-   * min()ed in front of it, which on a 390px phone was the binding term:
+   * The lane is this page's six 32px actions, 192px measured at 360px once
+   * the place search joined them -- and it is the whole rule. There was a
+   * 13rem cap min()ed in front of it, which on a 390px phone was the binding term:
    * the title gave up characters while the bar had room, an ellipsis with
    * nothing to point to. A cap that is not protecting the actions is only
    * eating the title, so the lane subtraction stands alone. */
-  #brand { max-width: calc(100vw - 11rem); }
+  #brand { max-width: calc(100vw - 12rem); }
   /* The `height="m"` preset leaves about two rows on a phone, which is a
      table only in the sense that it has a heading.
 
@@ -936,8 +936,93 @@ arcgis-map > [slot="bottom-right"] {
    * actions untouched; the 6rem lane is there for the title that does
    * not. */
   .overview-nav #brand,
-  .methods-nav #brand { max-width: calc(100vw - 6rem); }
+  .methods-nav #brand { max-width: calc(100vw - 8rem); }
 }
+
+/* Find a place: the panel the header's search action opens. It hangs from
+ * the bar's lower edge, which `place-search.ts` measures on each open, at
+ * the end of the bar on a wide screen and across it on a phone. Fixed, so
+ * the bar's clipping cannot cut it and the page under it never widens. */
+.place-search {
+  position: fixed;
+  z-index: var(--calcite-z-index-dropdown, 600);
+  inset-inline-end: .5rem;
+  inline-size: min(26rem, calc(100vw - 1rem));
+  padding: .75rem;
+  color: var(--app-text);
+  background: var(--app-surface-raised);
+  border: 1px solid var(--app-border);
+  border-radius: 4px;
+  box-shadow: 0 6px 18px rgb(0 0 0 / 18%);
+}
+.place-search[hidden],
+.place-search-list[hidden] { display: none; }
+.place-search-label {
+  display: block;
+  margin-block-end: .5rem;
+  color: var(--app-muted);
+  font-size: var(--app-control-label);
+  font-weight: 600;
+}
+.place-search-row { display: flex; gap: .375rem; align-items: center; min-width: 0; }
+.place-search-row input {
+  flex: 1 1 auto;
+  min-width: 0;
+  block-size: 2.75rem;
+  padding-inline: .75rem;
+  color: var(--app-text);
+  background: var(--app-surface);
+  border: 1px solid var(--app-border);
+  border-radius: 4px;
+  font: inherit;
+  font-size: var(--app-control-text);
+}
+.place-search-row input::placeholder { color: var(--app-muted); opacity: 1; }
+.place-search-row input:focus-visible,
+.place-search-close:focus-visible {
+  outline: 2px solid var(--app-accent);
+  outline-offset: 2px;
+}
+.place-search-close {
+  display: inline-grid;
+  flex: 0 0 auto;
+  place-items: center;
+  inline-size: 2.75rem;
+  block-size: 2.75rem;
+  padding: 0;
+  color: var(--app-text);
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+}
+.place-search-close:hover { background: var(--app-surface); }
+.place-search-list {
+  max-block-size: min(22rem, 55vh);
+  margin: .5rem 0 0;
+  padding: 0;
+  overflow-y: auto;
+  list-style: none;
+}
+.place-search-option,
+.place-search-message {
+  padding: .5rem .625rem;
+  border-radius: 4px;
+  font-size: var(--app-control-text);
+  line-height: 1.35;
+}
+.place-search-option { border-inline-start: 3px solid transparent; cursor: pointer; }
+.place-search-option:hover { background: var(--app-surface); }
+/* The active result is the combobox's focus, so it gets a focus ring. */
+.place-search-option[aria-selected="true"] {
+  background: color-mix(in srgb, var(--app-accent) 16%, var(--app-surface-raised));
+  border-inline-start-color: var(--app-accent);
+  outline: 2px solid var(--app-accent);
+  outline-offset: -2px;
+}
+.place-search-name { font-weight: 600; }
+.place-search-detail,
+.place-search-message { color: var(--app-muted); }
 
 /* The twelve-month slider. Sits between the analysis controls and the list,
  * because it changes what the list is showing. Its gap comes from the
