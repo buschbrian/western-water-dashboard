@@ -475,6 +475,19 @@ body {
 .card-heading { display: flex; gap: 1rem; align-items: start; justify-content: space-between; }
 .card-heading h2 { margin: 0; font-size: var(--app-section-heading); }
 .card-heading p { margin: .25rem 0 .65rem; color: var(--app-muted); font-size: .8rem; line-height: 1.4; }
+/* A card's fine print: how a figure is measured and what it does not say.
+ * It sits at the foot of the card, in full, so the title and a short lead
+ * carry the card and the caveats stay on the page rather than in a menu. */
+.card-note {
+  margin: .9rem 0 0;
+  max-inline-size: 75ch;
+  font-size: .8rem;
+  line-height: 1.5;
+  color: var(--app-muted);
+}
+.card-note + .card-note { margin-block-start: .4rem; }
+.card-note + .card-source { margin-block-start: .4rem; }
+
 /* What drew a card, as a quiet credit under it rather than a pill beside
  * its title: the title and the figures are what a reader came for. */
 .card-source {
