@@ -96,7 +96,12 @@ export default defineConfig({
   test: {
     // .atlas and .agents are gitignored local skill installs that carry their
     // own test files; CI never sees them, but a local run would collect them.
-    exclude: ["**/node_modules/**", "**/dist/**", ".claude/**", ".atlas/**", ".agents/**"]
+    exclude: ["**/node_modules/**", "**/dist/**", ".claude/**", ".atlas/**", ".agents/**"],
+    // The roster tests walk every published reservoir: about 2 s each on an
+    // idle laptop, past the 5 s default when the machine is loaded (measured
+    // 6.2 s at a load average of 40 on 2026-10-24). They test correctness,
+    // not speed, so a timeout there is noise that can redden a build.
+    testTimeout: 20000
   },
   build: {
     outDir,
