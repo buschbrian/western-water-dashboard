@@ -208,8 +208,11 @@ settles is a loading state that never ends, and a spinner that cannot resolve
 is an error the reader is not being told about. Runtime fetches go through
 `src/data/fetch.ts`; the basemap chain has its own deadline in
 `src/arcgis/fallback.ts`; the chart render races an SDK event that has been
-observed never to arrive against a timer. `aria-busy` reports one fact, so
-every way of no longer being busy has to clear it, the unhappy ones included.
+observed never to arrive against a timer, and then decides from the chart's
+drawing surface, not from the event, whether it drew. A chart that did not is
+replaced by the failure message and counted in `__overviewReady.chartsFailed`.
+`aria-busy` reports one fact, so every way of no longer being busy has to
+clear it, the unhappy ones included.
 
 **A readiness signal field reports one fact.** Current surfaces publish
 `window.__dashboardReady`. Two fields that read the same expression make two

@@ -2229,6 +2229,12 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
       (expected) => window.__overviewReady?.charts === expected, CHART_HOSTS.length,
       { timeout: 120000 });
     const overviewReady = await tab.evaluate(() => window.__overviewReady);
+    /* Every chart drew, as the page itself judged it: an SDK chart counts
+     * only once its drawing surface exists (`mountChart`). 1.1.0 shipped
+     * five charts with no marks while `charts` above still read six. */
+    check(overviewReady.chartsDrawn === CHART_HOSTS.length && overviewReady.chartsFailed === 0,
+      `${label}: ${overviewReady.chartsDrawn} of ${CHART_HOSTS.length} charts drew, ` +
+        `${overviewReady.chartsFailed} failed`);
     check(overviewReady.lakePowellExcluded === false,
       `${label}: readiness signal reports Lake Powell out of the opening scope`);
     check(await tab.locator("arcgis-chart").count() === SDK_CHART_HOSTS.length,
@@ -2421,13 +2427,11 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
       `${label}: ${host} has no arranged pointer summary`);
     }
 
-    /* The bar and box charts draw into SVG; the scatterplot and the
-     * histogram draw into a canvas, which paints nothing at all in a
-     * browser that is not compositing -- the same quirk that leaves the map
-     * canvas blank in headless Chromium. So the drawn check applies to the
-     * SVG charts, and the canvas ones are held to what they computed: the
-     * SDK reports its own statistics on `arcgisDataProcessComplete`, which
-     * is a stronger claim than "some pixels are lit" anyway. */
+    /* The bar and trend charts draw into SVG; the scatterplot and the
+     * histogram draw into a 2D canvas, which headless Chromium does paint
+     * (measured 2026-10-24: the histogram's canvas holds its teal bars),
+     * unlike the map's WebGL canvas. Whether each chart drew is the page's
+     * own `chartsDrawn`, checked where readiness is first read above. */
     /* The spread chart, on its own terms. It is hand-built SVG (ADR-075) and
      * the properties worth holding are the ones the SDK version could not
      * deliver: one colour per box, taken from the class table, and a row per
@@ -2918,6 +2922,86 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
   }
   reportHostedOutage(label, hostedOutage);
   for (const err of errors) failures.push(`${label}: ${err}`);
+  await context.close();
+}
+
+/* The drawn check, tested against the failure it exists for (E1). Calcite
+ * 5.2 declares its colour tokens as `light-dark()`, which the charts' colour
+ * parser cannot read; the component throws inside itself and draws nothing.
+ * That is reproduced here without Calcite 5.2 by setting one token the
+ * charts read to a `light-dark()` value, at two moments:
+ *
+ * - at page start, which is what Calcite 5.2's own tokens do: every chart
+ *   throws on its first update and `componentOnReady` rejects;
+ * - after the first chart is ready, the case where the throw comes on the
+ *   update after `layer` and `model` are set, so no promise of ours rejects.
+ *   That is how 1.1.0 published readiness over blank charts.
+ *
+ * Both have to end as the failure message, counted in readiness. */
+for (const timing of ["page-start", "after-first-chart"]) {
+  const context = await newPageContext(browser, VIEWPORTS[0]);
+  await context.addInitScript((late) => {
+    const unreadable = () => document.documentElement.style.setProperty(
+      "--calcite-color-foreground-1", "light-dark( #ffffff, #2b2b2b )");
+    const watch = setInterval(() => {
+      if (!late) {
+        if (!document.documentElement) return;
+        clearInterval(watch);
+        unreadable();
+        return;
+      }
+      const chart = document.querySelector("arcgis-chart");
+      if (!chart) return;
+      clearInterval(watch);
+      void chart.componentOnReady().then(unreadable);
+    }, 1);
+  }, timing === "after-first-chart");
+  const tab = await context.newPage();
+  const label = `Storage charts with an unreadable chart colour (${timing}, desktop)`;
+  console.log(`\n=== ${label}`);
+  const pageErrors = [];
+  tab.on("pageerror", (err) => pageErrors.push(err.message));
+  const consoleErrors = [];
+  tab.on("console", (msg) => {
+    if (msg.type() === "error") consoleErrors.push(msg.text());
+  });
+  try {
+    await tab.goto(`${URL}overview.html`, { waitUntil: "domcontentloaded", timeout: 60000 });
+    await tab.waitForFunction(() => window.__overviewReady?.charts === 6, null,
+      { timeout: 120000 });
+    const SDK_CHART_HOSTS = ["capacity-chart", "watershed-chart", "trend-chart",
+      "normal-chart", "distribution-chart"];
+    const ready = await tab.evaluate(() => window.__overviewReady);
+    check(ready.chartsFailed === SDK_CHART_HOSTS.length && ready.chartsDrawn === 1,
+      `${label}: readiness reports ${ready.chartsDrawn} drawn and ` +
+        `${ready.chartsFailed} failed, expected 1 and ${SDK_CHART_HOSTS.length}`);
+    const hosts = await tab.evaluate((ids) => ids.map((id) => {
+      const host = document.getElementById(id);
+      return {
+        id,
+        busy: host?.getAttribute("aria-busy"),
+        charts: host?.querySelectorAll("arcgis-chart").length ?? -1,
+        alert: host?.querySelector('[role="alert"]')?.textContent ?? null
+      };
+    }), SDK_CHART_HOSTS);
+    for (const host of hosts) {
+      check(host.alert === "This chart could not be drawn. The table below has the same values.",
+        `${label}: #${host.id} shows "${host.alert}" instead of the failure message`);
+      check(host.charts === 0, `${label}: #${host.id} still holds the blank chart`);
+      check(host.busy === "false", `${label}: #${host.id} still reports aria-busy`);
+    }
+    /* Proof the injection reproduced E1 rather than some other failure: the
+     * parser's own message, and nothing else uncaught. */
+    check(pageErrors.some((message) => message.includes("Unknown color syntax: light-dark(")),
+      `${label}: the charts never reported the colour they could not read`);
+    const unexpected = pageErrors.filter((message) =>
+      !message.includes("Unknown color syntax") && !message.includes("getComputedStyle"));
+    check(unexpected.length === 0, `${label}: uncaught ${unexpected.join(" | ")}`);
+    check(consoleErrors.some((text) => text.startsWith("A chart could not be drawn:")),
+      `${label}: the page did not log the chart failure`);
+  } catch (err) {
+    failures.push(`${label}: ${err.message}`);
+  }
   await context.close();
 }
 

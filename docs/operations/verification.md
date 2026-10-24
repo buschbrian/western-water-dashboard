@@ -71,6 +71,15 @@ over every page at every width and watches the font host — both catch things
 nothing else can, because Calcite and the ArcGIS components put their real
 controls inside shadow roots, and a mistyped label font 404s silently.
 
+It also checks that every storage chart drew. `__overviewReady.chartsDrawn`
+counts a charts-SDK chart only once its drawing surface (SVG or canvas) exists,
+so a chart that throws inside the component and draws nothing is counted in
+`chartsFailed` and replaced by the failure message. Two cases set a Calcite
+colour token to `light-dark()` (the Calcite 5.2 break, E1 in
+[`esri-register.md`](esri-register.md)) and expect five failures, so the check
+is itself tested. It proves a surface exists, not that every mark is right:
+whether the bars look correct still needs a person.
+
 `tests/smoke.mjs` is the smaller redirect suite: saved-link translation, and
 proof that no retired runtime is requested.
 
@@ -96,7 +105,8 @@ perfect score from a renderer that never drew. Leave the window in front.
 ## Two things automated tests cannot do
 
 - The ArcGIS map canvas renders **blank in headless Chromium**, CI included, so
-  uploaded screenshots prove much less than they look like they do. Colour
-  balance, density and visual hierarchy need a human at a real browser.
+  uploaded screenshots prove much less than they look like they do. The
+  storage charts are different: their SVG and 2D canvases do paint headless.
+  Colour balance, density and visual hierarchy need a human at a real browser.
 - Hover cannot be exercised in a hidden pane: `requestAnimationFrame` never
   fires there and `view.hitTest()` never settles.

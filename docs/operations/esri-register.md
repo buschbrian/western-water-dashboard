@@ -17,12 +17,12 @@ Observed on: @arcgis/core, map-components, charts-components, common-components 
 
 | ID | Product | Symptom | Our workaround | File | Report? |
 |---|---|---|---|---|---|
-| E1 | charts-components 5.1.27 + Calcite 5.2 | `Unknown color syntax: light-dark(...)`; legend, no marks | Pin Calcite `~5.1.2`; test guard | package.json:31, src/architecture.test.ts:98-105 | yes |
+| E1 | charts-components 5.1.27 + Calcite 5.2 | `Unknown color syntax: light-dark(...)`; legend, no marks | Pin Calcite `~5.1.2`; test guard; drawn check with fallback message | package.json:31, src/architecture.test.ts:98-105, src/overview-charts.ts (`hasDrawingSurface`) | yes |
 | E2 | charts-components | `aria-prohibited-attr`: inner div has `aria-label`, no role | Axe exception | tests/smoke-modern.mjs:387-389 | yes |
 | E3 | Calcite 5.1.x slider | Handle `role="slider"` has no accessible name | Write `aria-label` onto handle | src/ui/slider-label.ts:38-68; src/snow.ts:470-473 | yes |
 | E4 | charts-components | Needs `https://*.arcgis.com` in script-src (worker code) | Permissive CSP | index.html:27 (all pages) | yes (enhancement) |
 | E5 | charts-components | Compiles JSON schemas with `new Function` | `'unsafe-eval'` in CSP | index.html:27 | yes (enhancement) |
-| E6 | charts-components | `arcgisRenderingComplete` sometimes never fires | 8 s deadline race | src/overview-charts.ts:109-116, 366-382 | yes |
+| E6 | charts-components | `arcgisRenderingComplete` sometimes never fires, and can arrive late | 8 s and 30 s deadlines; verdict from the drawing surface | src/overview-charts.ts (`mountChart`) | yes |
 | E7 | charts-components | Teardown race: `getComputedStyle` on a disposed element | Test accepts one exact message | tests/smoke-modern.mjs:2062-2077 | yes |
 | E8 | charts-components box plot | One colour per series; no per-category colour | Hand-built SVG chart | src/viz/spread.ts (ADR-075) | unclear |
 | E9 | core IdentityManager | 401 builds sign-in modal; load promise hangs | Override `getCredential`, tear down modal | src/arcgis/auth.ts:83-111 | unclear |
@@ -42,7 +42,8 @@ Not defects (do not file): see the last section.
 ## E1. Calcite 5.2 `light-dark()` colours break every arcgis-chart
 
 - Product/version: @arcgis/charts-components 5.1.27 with @esri/calcite-components 5.2.x.
-- Symptom: `Unknown color syntax: light-dark( #ffffff, #2b2b2b )`. Each chart draws its legend and no marks. The browser suite cannot see chart drawing, so nothing failed in CI.
+- Symptom: `Unknown color syntax: light-dark( #ffffff, #2b2b2b )`. Each chart draws its legend and no marks. Nothing failed in CI.
+- Detection (added after 1.1.1): `mountChart` calls a chart drawn only when its shadow root holds the SVG or canvas the chart library draws into, and otherwise replaces it with the failure message and counts it in `__overviewReady.chartsFailed`. The smoke suite asserts every chart drew, and reproduces this defect by setting `--calcite-color-foreground-1` to a `light-dark()` value, at page start and after the first chart is ready. Measured 2026-10-24 in headless Chromium 155 against this build: the component's `render()` reads the tokens before any markup, so the throw leaves the shadow root with no SVG or canvas; `arcgisRuntimeError`, `arcgisDataProcessError` and `arcgisRenderingComplete` do not fire. With the token set before the first render, or with Calcite 5.2.0's own `main.css` tokens swapped into the served CSS, `componentOnReady` rejects and the 1.1.1 page's catch saw the error (readiness was never published). Only with the token set after the first chart was ready did the 1.1.1 page publish readiness over blank charts, which is what shipped. Why the shipped page took that path under Calcite 5.2 is not established: the Calcite 5.2 JavaScript was not installed for this measurement.
 - Workaround: Calcite held at `~5.1.2` (package.json:31, commit 0c83ae3, release 1.1.1). `src/architecture.test.ts:98-105` fails if the locked version is not 5.1.x, with the reason. Note: docs/architecture/frontend.md:4 still says "Calcite Components 5.2" and is stale.
 - Cost: Calcite 5.2 fixes and features unavailable. Calcite and charts packages must be upgraded together from here on. Each upgrade needs a real-browser look at the charts.
 - Whose bug: Esri's. Charts reads a computed Calcite theme colour and its parser has no `light-dark()` support. Calcite 5.2 emitting a syntax its own sibling package cannot read is a coordination defect between the two.
@@ -105,13 +106,13 @@ Not defects (do not file): see the last section.
 ## E6. `arcgisRenderingComplete` may never fire
 
 - Product: charts-components 5.1.x.
-- Symptom: a chart fully drawn (bars measurable in the shadow root) never emits `arcgisRenderingComplete`; the page waits forever, `aria-busy` stays on, readiness never publishes.
-- Workaround: `Promise.race` of the event and an 8000 ms timer (RENDER_SETTLE_MS, src/overview-charts.ts:109-116; race at :366-382). Also frontend.md:210-212.
-- Cost: up to 8 s of false "busy" if the event is missing; the deadline is a guess.
-- Whose bug: unclear. Observed intermittently; the trigger is not recorded in the repo (possibly our reuse of the host, possibly a charts race).
+- Symptom: a chart fully drawn (bars measurable in the shadow root) never emits `arcgisRenderingComplete`; the page waits forever, `aria-busy` stays on, readiness never publishes. Separately, measured 2026-10-24 on a heavily loaded machine (load average 34 on 12 cores): the event arrived 10 to 19 s after the chart was created, and the histogram's data step alone took 9 s.
+- Workaround: the event only decides when to look. `mountChart` waits for it up to 8 s (`RENDER_SETTLE_MS`), then checks for a drawing surface; with none, it waits up to 30 s in total (`CHART_DRAW_DEADLINE_MS`), checks again, and only then calls the chart failed. A drawn chart without the event is accepted at the first check. Also frontend.md, "Failure, readiness and accessibility".
+- Cost: a chart that draws nothing keeps `aria-busy` for 30 s before the failure message; a drawn chart without the event, up to 8 s. The deadlines are measured guesses.
+- Whose bug: unclear. Observed intermittently; the trigger is not recorded in the repo (possibly our reuse of the host, possibly a charts race). One known trigger is ours and fixed: setting `colorMatch` before the first render (comment in `renderArcgisBarChart`).
 - Repro: not captured. Needs: create chart, set `layer` then `model`, add the `arcgisRenderingComplete` listener with `{ once: true }` before assignment, repeat many times across filter changes; count runs where the event does not arrive although the DOM shows marks. Collect those first.
 - Ask: guarantee the event after every render or document the conditions.
-- Remove when: soak test shows the event always arrives; keep a deadline anyway (frontend.md:205-207 makes deadlines a project rule).
+- Remove when: soak test shows the event always arrives; keep a deadline anyway (frontend.md makes deadlines a project rule).
 
 ## E7. Chart teardown race
 
@@ -195,7 +196,7 @@ Not defects (do not file): see the last section.
 
 - E16: Calcite `calcite-label` ignores host font-size and color (frontend.md:274-280), `--calcite-label-margin-bottom` defaults to .75rem (:281-283), `calcite-navigation` clips overflow (:259-261), `calcite-sheet` height token (:266-267). Documented CSS limits; handled in app.css. Not defects.
 - E17: `arcgis-basemap-gallery` fetches the portal basemap group and a thumbnail per background on connect, so it is added on first open (frontend.md:100-104; src/ui/basemap-gallery.ts:28). Performance tolerance; could be an enhancement request for lazy loading.
-- E18: headless Chromium renders the ArcGIS canvas blank (CLAUDE.md:34-36), so screenshots are not evidence. Cause not diagnosed (GPU/WebGL in headless likely). Not reported; test with `--use-angle=swiftshader` or `--enable-unsafe-swiftshader` before filing.
+- E18: headless Chromium renders the ArcGIS canvas blank (CLAUDE.md:34-36), so screenshots are not evidence. Cause not diagnosed (GPU/WebGL in headless likely). Not reported; test with `--use-angle=swiftshader` or `--enable-unsafe-swiftshader` before filing. The charts are not affected: their SVG and 2D canvases do paint headless (2026-10-24, the histogram's canvas holds its bar colour), so the smoke suite can see whether a chart drew.
 
 ## E19. Charts peer range admits an unsupported Calcite
 

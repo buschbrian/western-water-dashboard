@@ -819,9 +819,36 @@ async function renderOverview(
         offScaleHost.append(lead, list);
       }
     }
-    try {
-      await Promise.all([
-        renderArcgisBarChart(capacityHost,
+    /* Each host settles on its own. One chart that threw used to abandon
+     * the others mid-draw, and a chart whose SDK component threw inside
+     * itself never reached a catch here at all: it stayed on the page blank
+     * while readiness reported success (E1). `mountChart` now rejects a chart
+     * that drew nothing, so both land here as one failure, on one host. */
+    const settleChart = async (host: HTMLElement, drawing: Promise<unknown>):
+      Promise<"drawn" | "empty" | "failed"> => {
+      try {
+        await drawing;
+      } catch (error) {
+        console.error("A chart could not be drawn:", error);
+        /* Say what happened and stop claiming to be busy; the table below
+         * still has every value. */
+        if (currentRevision === revision) {
+          const failed = document.createElement("p");
+          failed.className = "chart-empty";
+          failed.setAttribute("role", "alert");
+          failed.textContent =
+            "This chart could not be drawn. The table below has the same values.";
+          host.replaceChildren(failed);
+          host.setAttribute("aria-busy", "false");
+        }
+        return "failed";
+      }
+      /* Resolved: the host holds a chart checked as drawn, or its empty
+       * message. */
+      return host.querySelector("arcgis-chart, svg") ? "drawn" : "empty";
+    };
+    const outcomes = await Promise.all([
+      settleChart(capacityHost, renderArcgisBarChart(capacityHost,
           largestReservoirRecords(visible, {
             limit, measure, rank: chartRank.value as ChartRank,
             labelAmong: allReservoirs
@@ -840,8 +867,8 @@ async function renderOverview(
               const label = labels[0];
               if (label) window.location.assign(`./?reservoir=${encodeURIComponent(label)}`);
             }
-          }),
-        renderArcgisBarChart(watershedHost, watershedRecords(visible),
+          })),
+      settleChart(watershedHost, renderArcgisBarChart(watershedHost, watershedRecords(visible),
           "Combined percent full by drainage area in the filtered view", still, {
             categoryTitle: "Drainage area",
             onSelect: (labels) => {
@@ -850,17 +877,20 @@ async function renderOverview(
               reflectDrainage();
               void update();
             }
-          }),
-        renderArcgisTrendChart(trendHost, monthlyTrend(visible),
+          })),
+      settleChart(trendHost, renderArcgisTrendChart(trendHost, monthlyTrend(visible),
           "Combined storage for the filtered reservoirs over the last twelve months",
-          still, measure),
-        renderArcgisNormalChart(normalHost, normalPoints,
+          still, measure)),
+      settleChart(normalHost, renderArcgisNormalChart(normalHost, normalPoints,
           "Percent of the usual storage for this date against how large that usual "
           + "storage is, one point per reservoir",
-          still),
-        renderArcgisDistributionChart(distributionHost, values,
-          "How many reservoirs fall in each of ten equal bands of percent full", still),
-        Promise.resolve(renderSpread(spreadHost, spreadBoxes(values), {
+          still)),
+      settleChart(distributionHost, renderArcgisDistributionChart(distributionHost, values,
+          "How many reservoirs fall in each of ten equal bands of percent full", still)),
+      /* Deferred a microtask so a throw inside the hand-built chart rejects
+       * this promise instead of escaping the array. */
+      settleChart(spreadHost, Promise.resolve().then(() =>
+        renderSpread(spreadHost, spreadBoxes(values), {
           ariaLabel: "The spread of percent full within each drainage area, "
             + "driest first. Each row is a box for the middle half, a line at "
             + "the middle value, whiskers for the range and a dot for every "
@@ -874,29 +904,8 @@ async function renderOverview(
             spreadHost.append(empty);
           }
           spreadHost.setAttribute("aria-busy", "false");
-        })
-      ]);
-    } catch (error) {
-      /* A chart that throws used to leave both hosts reporting `aria-busy`
-       * with nothing in them and no readiness signal -- an empty box that
-       * announces itself as still loading, forever. Say what happened and
-       * stop claiming to be busy; the table below still has every value. */
-      console.error("A chart could not be drawn:", error);
-      if (currentRevision === revision) {
-        for (const host of chartHosts) {
-          host.setAttribute("aria-busy", "false");
-          if (host.childElementCount === 0) {
-            const failed = document.createElement("p");
-            failed.className = "chart-empty";
-            failed.setAttribute("role", "alert");
-            failed.textContent =
-              "This chart could not be drawn. The table below has the same values.";
-            host.replaceChildren(failed);
-          }
-        }
-      }
-      return;
-    }
+        }))
+    ]);
     // Only the winning revision owns these: a superseded run clearing them
     // would report "not busy" while its successor is still drawing.
     if (currentRevision !== revision) return;
@@ -913,6 +922,8 @@ async function renderOverview(
       reservoirs: scoped.length,
       visible: visible.length,
       charts: chartHosts.length,
+      chartsDrawn: outcomes.filter((outcome) => outcome === "drawn").length,
+      chartsFailed: outcomes.filter((outcome) => outcome === "failed").length,
       lakePowellExcluded: !visible.some(isLakePowell),
       lakeMeadExcluded: !visible.some(isLakeMead)
     };
