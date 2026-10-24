@@ -758,6 +758,58 @@ describe("the turn of the water year (ADR-121)", () => {
     }
   });
 
+  it("treats a zero normal as too little to compare, not as no reading", () => {
+    const day = "2026-10-16";
+    const values = mapDayValues(early, day);
+    const atRow = (site: SnowpackPayload["sites"][number]) =>
+      site.series.find((entry) => entry[0] === day);
+    const zeroNormal = early.sites.filter((site) => {
+      const row = atRow(site);
+      return row !== undefined && row[1] !== null && row[2] === 0;
+    });
+    /* Berthoud Summit stood at 0.2 in against a normal of 0 that day. */
+    expect(zeroNormal.map((site) => site.station)).toContain("335:CO:SNTL");
+    for (const site of zeroNormal) {
+      expect(values.sitesBelowFloor.has(site.station)).toBe(true);
+      expect(values.sites.get(site.station)).toBeNull();
+    }
+    const noReading = early.sites.filter((site) => atRow(site)?.[1] == null);
+    for (const site of noReading) {
+      expect(values.sitesBelowFloor.has(site.station)).toBe(false);
+    }
+    const spread = siteSpread(values.sites, SNOW_CLASSES.length, snowClassIndex,
+      values.sitesBelowFloor);
+    expect(spread.belowFloor).toBe(values.sitesBelowFloor.size);
+    expect(spread.noValue).toBeGreaterThanOrEqual(noReading.length);
+  });
+
+  it("holds an area on a zero mean normal below the floor, and one nobody reached out of it", () => {
+    const day = "2026-10-16";
+    const copy = structuredClone(early);
+    const rollup = copy.rollups.find((entry) =>
+      entry.series.some((point) => point.date === day && point.reporting_site_count > 0))!;
+    const members = copy.sites.filter((site) => site.huc6 === rollup.huc6);
+    for (const site of members) {
+      const row = site.series.find((entry) => entry[0] === day);
+      if (row) { row[1] = 0.2; row[2] = 0; }
+    }
+    const entry = rollup.series.find((point) => point.date === day)!;
+    entry.mean_percent_of_normal_median = null;
+    entry.reporting_site_count = rollup.minimum_reporting_sites;
+    const measured = mapDayValues(copy, day);
+    expect(measured.basinsBelowFloor.has(rollup.huc6)).toBe(true);
+    expect(measured.basins.get(rollup.huc6)).toBeNull();
+
+    for (const site of members) {
+      const row = site.series.find((point) => point[0] === day);
+      if (row) row[1] = null;
+    }
+    entry.reporting_site_count = 0;
+    const silent = mapDayValues(copy, day);
+    expect(silent.basinsBelowFloor.has(rollup.huc6)).toBe(false);
+    expect(silent.basins.get(rollup.huc6)).toBeNull();
+  });
+
   it("counts below-floor sites apart from sites with no value", () => {
     const values = mapDayValues(early, "2026-10-16");
     const spread = siteSpread(values.sites, SNOW_CLASSES.length, snowClassIndex,

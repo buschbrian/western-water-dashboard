@@ -115,16 +115,32 @@ export function renderSnowSeasonCurve(
   return drawSnowCurve(host, points, ariaLabel, comparison);
 }
 
+/**
+ * Which points the chart draws, scales to and counts.
+ *
+ * This season is a line, and one value is not a line: with a single valid
+ * point it is left out of the scale, the drawing, the newest-value marker
+ * and the count together, so the caller's zero means what it says. (A lone
+ * point inside a longer line is still a dot, `snow-line-dot`; that is a gap
+ * in a line, not a line of one.) The other season keeps its own two-point
+ * rule in `drawSnowCurve`.
+ */
+export function snowCurveOwnPoints(points: readonly CurvePoint[]): CurvePoint[] {
+  const drawable = points.filter((point) => point.percent !== null);
+  return drawable.length >= 2 ? [...points] : [];
+}
+
 function drawSnowCurve(
-  host: HTMLElement, points: readonly CurvePoint[], ariaLabel: string,
+  host: HTMLElement, rawPoints: readonly CurvePoint[], ariaLabel: string,
   comparison?: SnowCurveComparison
 ): { points: number; comparison: number } {
+  const points = snowCurveOwnPoints(rawPoints);
   const drawable = points.filter((point) => point.percent !== null);
   const others = comparison
     ? comparison.points.filter((point) => point.percent !== null
       && point.date >= comparison.start && point.date <= comparison.end)
     : [];
-  const ownLine = drawable.length >= 2 && points.length >= 2;
+  const ownLine = drawable.length >= 2;
   if (!ownLine && others.length < 2) {
     stopResponsiveChart(host);
     host.replaceChildren();

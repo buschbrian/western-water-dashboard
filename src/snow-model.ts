@@ -811,10 +811,13 @@ export interface MapDayValues {
    */
   depths: Map<string, SiteDayDepth>;
   /**
-   * Areas and sites with a percentage that day, but a normal too small to
-   * compare against (`normalIsComparable`). Their entry in `basins` or
-   * `sites` is null, so nothing classes them; these sets are how the map
-   * draws them apart from a place that reported nothing at all.
+   * Areas and sites with a measurement that day, but a normal too small to
+   * compare against (`normalIsComparable`), a normal of zero included: a
+   * zero normal gives no percentage at all, and the measurement is still
+   * there. Their entry in `basins` or `sites` is null, so nothing classes
+   * them; these sets are how the map draws them apart from a place that
+   * reported nothing at all. An area is in its set only when enough sites
+   * reported for it to have had a percentage on a usable normal.
    */
   basinsBelowFloor: Set<string>;
   sitesBelowFloor: Set<string>;
@@ -842,7 +845,7 @@ export function mapDayValues(
     const inches = row ? row[1] : null;
     const normal = row ? row[2] : null;
     const percent = percentOfNormal(inches, normal);
-    if (percent !== null && normal !== null && !normalIsComparable(normal)) {
+    if (inches !== null && normal !== null && !normalIsComparable(normal)) {
       sitesBelowFloor.add(site.station);
       sites.set(site.station, null);
     } else {
@@ -863,7 +866,9 @@ export function mapDayValues(
     const percent = day ? day.mean_percent_of_normal_median : null;
     const sums = normalSums.get(rollup.huc6);
     const meanNormal = sums && sums.count > 0 ? sums.normal / sums.count : null;
-    if (percent !== null && meanNormal !== null && !normalIsComparable(meanNormal)) {
+    const measured = day !== undefined
+      && day.reporting_site_count >= rollup.minimum_reporting_sites;
+    if (measured && meanNormal !== null && !normalIsComparable(meanNormal)) {
       basinsBelowFloor.add(rollup.huc6);
       basins.set(rollup.huc6, null);
     } else {
