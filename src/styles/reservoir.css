@@ -75,27 +75,58 @@ body {
 }
 .reservoir-imagery-host arcgis-map { display: block; inline-size: 100%; block-size: 100%; }
 
-/* The upstream reservoirs, as chips rather than a sentence of commas: 67
- * names -- Powell's whole headwater roster -- reads as a wall of text in
- * prose and as a scannable set here. */
-.upstream-links {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.4rem;
-  margin-block-start: 0.75rem;
+/* The upstream reservoirs as stored water (ADR-127): rows with a small fill
+ * bar in the storage colours, grouped by drainage area when there are many.
+ * They replaced a wall of chips -- Lake Powell's sixty-seven names -- that
+ * said what was above it and nothing about how much water. */
+.upstream-list { list-style: none; margin: .4rem 0 0; padding: 0; }
+.upstream-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 6rem 14rem;
+  align-items: center;
+  gap: .75rem;
+  padding-block: .3rem;
+  border-block-end: 1px solid color-mix(in srgb, var(--app-border) 60%, transparent);
 }
-.upstream-links a {
-  font-size: 0.9rem;
-  padding: 0.3rem 0.6rem;
+.upstream-row:last-child { border-block-end: 0; }
+.upstream-row a { color: var(--app-text); min-inline-size: 0; overflow-wrap: anywhere; }
+.upstream-row a:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 2px; }
+.upstream-bar {
+  display: block;
+  block-size: .5rem;
+  border-radius: .25rem;
+  overflow: hidden;
+  background: color-mix(in srgb, var(--app-muted) 18%, transparent);
+}
+.upstream-bar > span { display: block; block-size: 100%; }
+.upstream-figure {
+  margin: 0;
+  font-size: .85rem;
+  color: var(--app-muted);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  text-align: end;
+}
+.upstream-group {
+  margin-block-start: .6rem;
   border: 1px solid var(--app-border);
-  border-radius: 0.35rem;
-  background: var(--calcite-color-surface-highlight);
-  color: var(--app-text);
+  border-radius: .5rem;
+  padding: .2rem .8rem;
 }
-.upstream-links a:hover {
-  background: color-mix(in srgb, var(--app-accent) 12%, var(--app-surface));
+.upstream-group > summary {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 6rem 14rem;
+  align-items: center;
+  gap: .75rem;
+  padding-block: .45rem;
+  cursor: pointer;
 }
-.upstream-links a:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 2px; }
+.upstream-group > summary:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 2px; }
+.upstream-group-name { font-weight: 600; }
+@media (max-width: 480px) {
+  .upstream-row, .upstream-group > summary { grid-template-columns: minmax(0, 1fr) 4rem; }
+  .upstream-row .upstream-figure, .upstream-group > summary .upstream-figure { grid-column: 1 / -1; text-align: start; }
+}
 
 .reservoir-links { margin-block-start: 1.5rem; }
 

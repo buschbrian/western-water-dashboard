@@ -38,6 +38,7 @@ import {
   describeReservoir
 } from "./state/detail";
 import { reservoirLabel } from "./state/selection";
+import { GROUP_AFTER, upstreamSummary, type UpstreamRow } from "./upstream-model";
 import {
   baselineChoices
 } from "./state/baseline";
@@ -297,24 +298,79 @@ function upstreamSection(
     children.push(snowLink);
   }
   if (count > 0) {
-    const byStation = new Map(
-      roster.filter((r) => r.source_station_id)
-        .map((r) => [r.source_station_id as string, r]));
-    const links = document.createElement("div");
-    links.className = "upstream-links";
-    for (const station of trace.upstream_reservoirs) {
-      const target = byStation.get(station);
-      if (!target) continue;
-      const qualified = reservoirLabel(target, roster);
-      const chip = document.createElement("a");
-      chip.href =
-        `reservoir.html?name=${encodeURIComponent(qualified)}`;
-      chip.textContent = qualified;
-      links.append(chip);
-    }
-    children.push(links);
+    children.push(...upstreamStorage(trace.upstream_reservoirs, roster));
   }
   return children;
+}
+
+/** One reservoir as a row: its name, a small fill bar in the storage
+ * colours, percent full and acre-feet. */
+function upstreamRow(row: UpstreamRow): HTMLLIElement {
+  const item = document.createElement("li");
+  item.className = "upstream-row";
+  const link = document.createElement("a");
+  link.href = `reservoir.html?name=${encodeURIComponent(row.label)}`;
+  link.textContent = row.label;
+  item.append(link, fillBar(row.percent), note(
+    `${row.percent === null ? "—" : `${Math.round(row.percent)}%`} · ` +
+    `${formatAcreFeet(row.reservoir.current_storage_af)} acre-feet`, "upstream-figure"));
+  return item;
+}
+
+function fillBar(percent: number | null): HTMLElement {
+  const bar = document.createElement("span");
+  bar.className = "upstream-bar";
+  bar.setAttribute("aria-hidden", "true");
+  const fill = document.createElement("span");
+  fill.style.inlineSize = `${Math.min(100, Math.max(0, percent ?? 0))}%`;
+  fill.style.background = storageColor(percent);
+  bar.append(fill);
+  return bar;
+}
+
+/**
+ * The reservoirs above this one as stored water (ADR-127): one total, then
+ * the drainage areas they sit in, largest first, each with its own total and
+ * its reservoirs by size. The totals are `rollupOfScoped` over the upstream
+ * set, the storage map's own rule for any set of reservoirs.
+ */
+function upstreamStorage(stations: readonly string[], roster: readonly Reservoir[]): HTMLElement[] {
+  const summary = upstreamSummary(stations, roster, (reservoir) => reservoirLabel(reservoir, roster));
+  if (summary.rows.length === 0) return [];
+  const total = summary.rollup;
+  const out: HTMLElement[] = [note(
+    `Together they hold ${formatAcreFeet(total.storageAf)} acre-feet` +
+    (total.percentFull === null ? "." : `, ${Math.round(total.percentFull)}% of what they can hold.`) +
+    " Their readings are not all from the same day." +
+    (summary.notPublished > 0
+      ? ` ${summary.notPublished} more ${summary.notPublished === 1 ? "is" : "are"} above it but not published today.`
+      : ""), "reservoir-note")];
+  const list = (rows: readonly UpstreamRow[]): HTMLUListElement => {
+    const ul = document.createElement("ul");
+    ul.className = "upstream-list";
+    ul.append(...rows.map(upstreamRow));
+    return ul;
+  };
+  if (summary.rows.length < GROUP_AFTER) {
+    out.push(list(summary.rows));
+    return out;
+  }
+  summary.groups.forEach((group, index) => {
+    const details = document.createElement("details");
+    details.className = "upstream-group";
+    details.open = index < 2;
+    const head = document.createElement("summary");
+    const name = document.createElement("span");
+    name.className = "upstream-group-name";
+    name.textContent = group.name;
+    head.append(name, fillBar(group.rollup.percentFull), note(
+      `${group.rows.length} reservoir${group.rows.length === 1 ? "" : "s"} · ` +
+      `${group.rollup.percentFull === null ? "—" : `${Math.round(group.rollup.percentFull)}%`} · ` +
+      `${formatAcreFeet(group.rollup.storageAf)} acre-feet`, "upstream-figure"));
+    details.append(head, list(group.rows));
+    out.push(details);
+  });
+  return out;
 }
 
 /**

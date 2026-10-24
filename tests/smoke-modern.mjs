@@ -5201,7 +5201,10 @@ for (const failure of [
      * station id must land on the notice, not on "no reservoir by that name". */
     ["held", "reservoir.html?name=LRA", "Leroy Anderson"],
     ["unknown", "reservoir.html?name=Not%20A%20Reservoir", null],
-    ["none", "reservoir.html", null]
+    ["none", "reservoir.html", null],
+    /* ADR-127: Lake Powell's upstream set spans several basins in the
+     * committed trace, so its page must group them, not list chips. */
+    ["upstream", "reservoir.html?name=Lake%20Powell", "Lake Powell"]
   ];
   for (const viewport of VIEWPORTS) {
     const context = await browser.newContext({
@@ -5236,6 +5239,25 @@ for (const failure of [
       check(state.scroll <= state.viewport + 1,
         `Reservoir page (${viewport.name}, ${label}): scrolls sideways `
         + `(${state.scroll} > ${state.viewport})`);
+      if (label === "upstream") {
+        await tab.waitForSelector("#reservoir-main .upstream-group, #reservoir-main .reservoir-note",
+          { timeout: 30000 }).catch(() => {});
+        const upstream = await tab.evaluate(() => ({
+          traced: !/could not be traced/.test(document.body.innerText),
+          groups: document.querySelectorAll("#reservoir-main .upstream-group").length,
+          rows: document.querySelectorAll("#reservoir-main .upstream-row").length,
+          rowsWithBars: document.querySelectorAll("#reservoir-main .upstream-row .upstream-bar").length,
+          chips: document.querySelectorAll("#reservoir-main .upstream-links a").length,
+          total: /Together they hold [\d,]+ acre-feet/.test(document.body.innerText)
+        }));
+        console.log(`  upstream (${viewport.name}):`, JSON.stringify(upstream));
+        if (upstream.traced) {
+          check(upstream.groups >= 2 && upstream.rows > 0 && upstream.rows === upstream.rowsWithBars
+            && upstream.chips === 0 && upstream.total,
+            `Reservoir page (${viewport.name}): Lake Powell's upstream set is not grouped `
+            + `as stored water (${JSON.stringify(upstream)})`);
+        }
+      }
       if (label === "found") {
         check(state.text.includes("Flaming Gorge"),
           `Reservoir page (${viewport.name}): resolved a found state without `

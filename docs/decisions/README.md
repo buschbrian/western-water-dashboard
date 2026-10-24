@@ -46,6 +46,7 @@ denominator. **Start with ADR-070, then ADR-072, then ADR-003.**
   [ADR-072](ADR-072-divide-by-a-figure-the-water-has-not-been-seen-above.md),
   [ADR-077](ADR-077-publish-what-drains-to-a-reservoir-as-an-upstream-set.md),
   [ADR-097](ADR-097-filter-snow-by-the-committed-upstream-set.md),
+  [ADR-127](ADR-127-state-what-is-above-a-reservoir-as-stored-water.md),
   [ADR-102](ADR-102-admit-the-army-corps-of-engineers-as-a-provider.md),
   [ADR-104](ADR-104-admit-lake-pleasant-from-the-central-arizona-projects-endpoint.md),
   [ADR-106](ADR-106-confirm-a-point-by-dam-position-and-never-by-a-dams-name.md),
@@ -305,6 +306,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-124](ADR-124-bound-recent-conditions-to-a-static-data-pilot.md) | Bound recent conditions to a static-data pilot | Accepted; scheduled Utah pilot with static outputs, existing USGS access and isolated R2 storage; implementation pending |
 | [ADR-125](ADR-125-measure-precipitation-at-the-snow-stations-against-a-fixed-history.md) | Measure precipitation at the snow stations against a fixed history | Accepted; the record ADR-117 asks for to bring a new measured element into scope; keeps ADR-081's denominator floor |
 | [ADR-126](ADR-126-key-a-withdrawal-notice-by-its-station.md) | Key a withdrawal notice by its station | Accepted; extends ADR-056 and ADR-066; the notice gains `source_station_id`, an optional field with no schema bump, and an older notice falls back to its name for one run |
+| [ADR-127](ADR-127-state-what-is-above-a-reservoir-as-stored-water.md) | State what is above a reservoir as stored water | Accepted; applies `rollupOfScoped` to the ADR-077 upstream set; replaces the reservoir page's chips with basin groups and rows |
 
 ## Relationship to the historical journal
 
