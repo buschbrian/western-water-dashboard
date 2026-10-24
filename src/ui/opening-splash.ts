@@ -58,7 +58,7 @@ const DISMISSED_STORAGE_KEY = "utah-reservoir-dashboard-splash-dismissed";
 const SUBJECTS = [
   { key: "storage-map", href: "./index.html", label: "Storage map" },
   { key: "storage-charts", href: "./overview.html", label: "Storage charts" },
-  { key: "snow", href: "./snow.html", label: "Rain and snow" },
+  { key: "snow", href: "./snow.html", label: "Precipitation" },
   { key: "drought", href: "./drought.html", label: "Drought" }
 ] as const;
 

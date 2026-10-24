@@ -358,7 +358,7 @@ describe("a data-only commit deploys on its own", () => {
    * Two names per page, and they are not the same name.
    *
    * The bar's button text has to stay short because `calcite-navigation`
-   * clips rather than scrolls, so it says "Rain and snow". A browser tab has no
+   * clips rather than scrolls, so it says "Precipitation". A browser tab has no
    * bar around it to supply the context, so it says "Western Precipitation and Snow —
    * Western Water Dashboard". Both are checked here because the failure mode
    * is one of them being changed and the other forgotten, which nothing else

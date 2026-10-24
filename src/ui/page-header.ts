@@ -45,7 +45,7 @@ interface PageLink {
  * quietly losing an entry.
  *
  * These are longer than the bar's button text on purpose. The navigation
- * clips rather than scrolls, so "Rain and snow" is all that fits beside the other
+ * clips rather than scrolls, so "Precipitation" is all that fits beside the other
  * buttons; "Western Precipitation and Snow" is what a tab, a bookmark or a shared link
  * needs, where there is no bar around it to supply the context.
  */
@@ -86,7 +86,7 @@ const PAGES: readonly PageLink[] = [
   },
   {
     id: "snow", href: "./snow.html", icon: "snow",
-    text: "Rain and snow", menuText: "Precipitation and snow",
+    text: "Precipitation", menuText: "Precipitation and snow",
     label: "Open the precipitation and snow view"
   },
   {

@@ -14,7 +14,7 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 ### Changed
 
 - **The snow page is now "Precipitation and snow"**, with the precipitation
-  card directly under the map. The bar says "Rain and snow" where width is
+  card directly under the map. The bar says "Precipitation" where width is
   short. The `snow.html` address and its links are unchanged.
 
 ## [1.2.0] - 2026-10-24
