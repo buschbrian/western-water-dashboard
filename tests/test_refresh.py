@@ -882,13 +882,18 @@ def _previous_payload(path, reservoirs, withdrawn):
 
 def _carry(path, records, withdrawn, refreshed, today, roster):
     """main()'s carry step, with the same `answered` main() computes."""
-    answered = ({r.get("name") for r in records}
-                | {r.get("name") for r in withdrawn})
+    held = records + withdrawn
+    answered = {str(r["source_station_id"]) for r in held
+                if r.get("source_station_id") is not None}
+    answered_names = {r.get("name") for r in held}
+    roster_ids, roster_names = roster if isinstance(roster, tuple) else (roster, roster)
     withdrawn.extend(R.carry_withdrawals(
         R.load_previous_withdrawals(path), refreshed, today,
-        answered=answered, roster=roster))
+        answered=answered, roster=roster_ids,
+        answered_names=answered_names, roster_names=roster_names))
     withdrawn.sort(key=lambda r: -(r.get("days_stale") or 0))
-    return records, [R.withdrawal_notice(r) for r in withdrawn]
+    return records, [R.withdrawal_notice(r, with_station=True)
+                     for r in withdrawn]
 
 
 def _single_source_run(path, fetched, refreshed=(RISE,), today=TODAY, roster=None):
@@ -898,7 +903,8 @@ def _single_source_run(path, fetched, refreshed=(RISE,), today=TODAY, roster=Non
     does -- with notices rather than records -- so a failure here is the
     failure the pipeline would publish. `refreshed` is what main() reads off
     the records it fetched: the labels of the feeds it actually spoke to.
-    `roster` stands in for `ALL_RESERVOIR_NAMES`; None means unknown.
+    `roster` stands in for `ALL_RESERVOIR_IDS` and `ALL_RESERVOIR_NAMES`: a
+    set serves as both, a (ids, names) tuple names each; None means unknown.
     """
     previous = R.load_previous(path)
     stations = {r["source_station_id"] for r in fetched}
@@ -1131,6 +1137,97 @@ def test_a_full_run_states_a_refetched_withdrawal_once(tmp_path):
     assert withdrawn[0]["days_stale"] == age
 
 
+# --- a notice is keyed by its station, not its name (ADR-126) ------------
+
+OR_LOST_CREEK = {
+    "name": "Lost Creek", "source_station_id": "14335040:OR:BOR",
+    "as_of": "2026-06-01", "days_stale": 100, "source_label": AWDB,
+    "reason": "no reading inside the publication window",
+}
+UT_LOST_CREEK = {"name": "Lost Creek", "source_station_id": "544",
+                 "source_label": RISE, "days_stale": 0, "fetch_ok": True}
+
+
+def test_a_notice_states_its_station_and_still_no_measurement():
+    record = {"name": "Lost Creek", "source_station_id": 14335040,
+              "as_of": "2026-06-01", "days_stale": 100, "source_label": AWDB,
+              "current_storage_af": 5.0}
+    notice = R.withdrawal_notice(record, with_station=True)
+    assert notice["source_station_id"] == "14335040"
+    assert "current_storage_af" not in notice
+    assert "source_station_id" not in R.withdrawal_notice(record)
+
+
+def test_a_same_name_reservoir_from_another_source_does_not_answer_for_a_withdrawal(tmp_path):
+    """Oregon's Lost Creek is withdrawn; a RISE run publishes Utah's.
+
+    Matched on name, "Lost Creek" was answered and Oregon's notice dropped.
+    The roster holds both, so the dropped one was still a real reservoir.
+    """
+    path = _previous_payload(
+        tmp_path / "reservoirs.json", reservoirs=[], withdrawn=[OR_LOST_CREEK])
+
+    records, withdrawn = _single_source_run(
+        path, fetched=[UT_LOST_CREEK], refreshed=[AWDB],
+        roster={"14335040:OR:BOR", "544"})
+
+    assert [r["source_station_id"] for r in records] == ["544"]
+    assert [n["source_station_id"] for n in withdrawn] == ["14335040:OR:BOR"]
+
+
+def test_two_same_name_same_source_reservoirs_are_told_apart(tmp_path):
+    """Both Clear Lakes are AWDB, so name plus source label cannot do it."""
+    ca = {**OR_LOST_CREEK, "name": "Clear Lake", "source_station_id": "11470001:CA:BOR"}
+    oregon = {**OR_LOST_CREEK, "name": "Clear Lake", "source_station_id": "14097310:OR:BOR"}
+    path = _previous_payload(
+        tmp_path / "reservoirs.json", reservoirs=[], withdrawn=[ca, oregon])
+    roster = {"11470001:CA:BOR", "14097310:OR:BOR"}
+    back = {"name": "Clear Lake", "source_station_id": "11470001:CA:BOR",
+            "source_label": AWDB, "days_stale": 0, "fetch_ok": True}
+
+    _, withdrawn = _full_run(path, fetched=[back], roster=roster)
+
+    assert [n["source_station_id"] for n in withdrawn] == ["14097310:OR:BOR"]
+
+
+def test_a_withdrawal_that_this_run_re_derives_is_stated_once_by_station(tmp_path):
+    path = _previous_payload(
+        tmp_path / "reservoirs.json", reservoirs=[], withdrawn=[OR_LOST_CREEK])
+    age = R.WITHDRAW_AFTER_DAYS + 5
+    again = {"name": "Lost Creek", "source_station_id": "14335040:OR:BOR",
+             "source_label": AWDB, "days_stale": age,
+             "as_of": str((TODAY - pd.Timedelta(days=age)).date())}
+
+    _, withdrawn = _full_run(path, fetched=[again],
+                             roster={"14335040:OR:BOR", "544"})
+
+    assert [n["source_station_id"] for n in withdrawn] == ["14335040:OR:BOR"]
+    assert withdrawn[0]["days_stale"] == age
+
+
+def test_a_notice_without_a_station_falls_back_to_its_name_and_is_not_dropped(tmp_path):
+    """Transition: a payload written before ADR-126 has no station ids."""
+    old = {k: v for k, v in OR_LOST_CREEK.items() if k != "source_station_id"}
+    path = _previous_payload(
+        tmp_path / "reservoirs.json", reservoirs=[], withdrawn=[old])
+    roster = ({"14335040:OR:BOR", "544"}, {"Lost Creek"})
+
+    # Unanswered and on the roster: carried, as before the station id.
+    _, kept = _single_source_run(path, fetched=[], refreshed=[AWDB], roster=roster)
+    assert [n["name"] for n in kept] == ["Lost Creek"]
+    assert "source_station_id" not in kept[0]
+
+    # Answered by name: the legacy behaviour, for this notice only.
+    _, answered = _single_source_run(
+        path, fetched=[{**UT_LOST_CREEK, "source_label": AWDB}],
+        refreshed=[AWDB], roster=roster)
+    assert answered == []
+
+    # A source this run did not refresh: kept whole.
+    _, other = _single_source_run(path, fetched=[], refreshed=[RISE], roster=set())
+    assert [n["name"] for n in other] == ["Lost Creek"]
+
+
 def test_a_notice_naming_a_source_this_run_cannot_see_is_kept(tmp_path):
     """An older payload, or a feed since renamed.
 
@@ -1168,7 +1265,8 @@ def test_the_partial_refresh_path_actually_carries_the_notices():
     # for a withdrawn reservoir has nothing else to state it with.
     carry_line = partial[:partial.index("carry_withdrawals(")].splitlines()[-1]
     assert carry_line.startswith("    withdrawn.extend("), carry_line
-    assert "roster=set(ALL_RESERVOIR_NAMES)" in partial
+    assert "roster={str(s) for s in ALL_RESERVOIR_IDS}" in partial
+    assert "roster_names=set(ALL_RESERVOIR_NAMES)" in partial
     assert "answered=answered" in partial
     # Sorted after the carry, or the worst withdrawal is not stated first
     # whenever a carried notice is the worst one.

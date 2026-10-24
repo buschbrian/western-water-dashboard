@@ -84,6 +84,31 @@ describe("reservoir payload validation", () => {
     payload.reviewed_holds = [{ ...notice, source_url: "javascript:alert(1)" }];
     expect(() => validateReservoirPayload(payload)).toThrow(/reviewed hold/);
   });
+  it("accepts a withdrawal notice with and without its station id (ADR-126)", () => {
+    const notice = {
+      name: "Lost Creek", as_of: "2026-06-01", days_stale: 100,
+      source_label: "USDA NRCS AWDB", reason: "no reading inside the publication window"
+    };
+    const raw = validPayload();
+    raw.withdraw_after_days = 60;
+    raw.withdrawn_count = 2;
+    raw.withdrawn = [notice, { ...notice, source_station_id: "14335040:OR:BOR" }];
+    const payload = validateReservoirPayload(raw);
+    expect(payload.withdrawn?.map((n) => n.source_station_id))
+      .toEqual([undefined, "14335040:OR:BOR"]);
+  });
+
+  it("rejects a withdrawal notice whose station id is not text", () => {
+    const raw = validPayload();
+    raw.withdraw_after_days = 60;
+    raw.withdrawn_count = 1;
+    raw.withdrawn = [{
+      name: "Lost Creek", as_of: "2026-06-01", days_stale: 100,
+      source_label: "USDA NRCS AWDB", source_station_id: 544, reason: "x"
+    }];
+    expect(() => validateReservoirPayload(raw)).toThrow(/station id/);
+  });
+
   it("rejects a missing reservoirs array with a useful message", () => {
     expect(() => validateReservoirPayload({ generated_at: "2026-08-09" }))
       .toThrow("reservoirs array");

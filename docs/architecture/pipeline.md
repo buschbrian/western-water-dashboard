@@ -131,6 +131,13 @@ added into a total presented as now. A withdrawal is always stated
 (`withdrawn`, `withdrawn_count`, `withdraw_after_days`) and **must never carry
 a measurement**: the validator rejects a notice holding `current_storage_af`.
 
+A notice is keyed by its station (`source_station_id`, ADR-126), not its name:
+the roster holds two "Lost Creek" and two "Clear Lake", so `carry_withdrawals`
+matches `answered` and `roster` as sets of station ids. A station id is not a
+measurement. A notice from a payload written before ADR-126 has none and is
+matched by name for that notice only, never dropped. The field is optional, so
+`schema_version` does not move.
+
 Nothing is deleted. The roster is committed and the judgement is remade every
 run, so a reservoir returns on its own the morning its source resumes.
 **A drainage area may therefore be empty**; `storageAgainstDrought` omits it

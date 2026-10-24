@@ -11,6 +11,14 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ## [Unreleased]
 
+### Fixed
+
+- **A withdrawal notice no longer disappears when a same-named reservoir
+  publishes.** Notices were matched by name, and the roster holds two Lost
+  Creek and two Clear Lake. A notice now carries its station
+  (`source_station_id`) and is matched by it. Older notices without one fall
+  back to the name for one run (ADR-126).
+
 ## [1.0.0] - 2026-09-18
 
 The first tagged release, and the state the site has run in for several weeks.

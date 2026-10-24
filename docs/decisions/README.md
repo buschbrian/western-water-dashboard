@@ -54,7 +54,8 @@ denominator. **Start with ADR-070, then ADR-072, then ADR-003.**
   [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md)
 - Freshness and withdrawal:
   [ADR-056](ADR-056-withdraw-a-reading-that-belongs-to-another-season.md),
-  [ADR-115](ADR-115-state-a-reviewed-hold-where-the-reservoir-used-to-be.md)
+  [ADR-115](ADR-115-state-a-reviewed-hold-where-the-reservoir-used-to-be.md),
+  [ADR-126](ADR-126-key-a-withdrawal-notice-by-its-station.md)
 - Superseded, read only for history: ADR-099
 - Procedure: [`docs/operations/source-admission.md`](../operations/source-admission.md)
 
@@ -292,6 +293,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-118](ADR-118-publish-terminal-lakes-from-their-own-roster-and-payload.md) | Publish terminal lakes from their own roster and payload | Accepted; implements ADR-112 and extends ADR-056 and ADR-098; Walker Lake is the first lake, generated and not yet shown |
 | [ADR-119](ADR-119-show-terminal-lakes-on-their-own-page.md) | Show terminal lakes on their own page | Accepted; extends ADR-118 and ADR-045; reached from the methods and data pages, not the bar |
 | [ADR-120](ADR-120-ask-where-to-start-before-loading-the-map.md) | Ask where to start before loading the map | Accepted; extends ADR-086; the storage map fetches the map SDK only after the first-visit question closes without a choice |
+| [ADR-126](ADR-126-key-a-withdrawal-notice-by-its-station.md) | Key a withdrawal notice by its station | Accepted; extends ADR-056 and ADR-066; the notice gains `source_station_id`, an optional field with no schema bump, and an older notice falls back to its name for one run |
 
 ## Relationship to the historical journal
 

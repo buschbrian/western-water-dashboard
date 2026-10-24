@@ -1211,12 +1211,18 @@ def main() -> int:
     # (Lake Hemet, 2026-10-13). These are notices rather than records;
     # `withdrawal_notice` is written to pass one through unchanged, so the
     # envelope below does not need to know. Every run, not only partial ones.
-    answered = ({r.get("name") for r in records}
-                | {r.get("name") for r in withdrawn})
+    # Keyed by station, not name (ADR-126): two "Lost Creek" and two "Clear
+    # Lake" are published, so a name answers for the wrong reservoir. The name
+    # sets serve only a notice written before the station id was added.
+    held = records + withdrawn
+    answered = {str(r["source_station_id"]) for r in held
+                if r.get("source_station_id") is not None}
+    answered_names = {r.get("name") for r in held}
     withdrawn.extend(carry_withdrawals(
         load_previous_withdrawals(OUTPUT_PATH),
         refreshed_sources if args.source != "all" else None, today,
-        answered=answered, roster=set(ALL_RESERVOIR_NAMES)))
+        answered=answered, roster={str(s) for s in ALL_RESERVOIR_IDS},
+        answered_names=answered_names, roster_names=set(ALL_RESERVOIR_NAMES)))
     withdrawn.sort(key=lambda r: -(r.get("days_stale") or 0))
 
     watersheds = attach_watersheds(records)
@@ -1341,7 +1347,7 @@ def main() -> int:
         # reservoir that had never been here (ADR-056).
         "withdraw_after_days": WITHDRAW_AFTER_DAYS,
         "withdrawn_count": len(withdrawn),
-        "withdrawn": [withdrawal_notice(r) for r in withdrawn],
+        "withdrawn": [withdrawal_notice(r, with_station=True) for r in withdrawn],
         # Drainage areas are described in the envelope so a reader can tell
         # a run that assigned nothing (a missing boundary file) from one
         # where nothing needed assigning.
