@@ -6,7 +6,70 @@
  * inline by the page, never here, so this file cannot disagree with the
  * class table. */
 
-.drought-rows { display: grid; gap: .75rem; }
+.drought-rows {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 26rem), 1fr));
+  gap: .75rem;
+}
+.drought-row[hidden] { display: none; }
+.drought-rows-more { margin: .75rem 0 0; }
+.drought-show-all {
+  padding: .45rem .9rem;
+  color: var(--app-accent);
+  font: inherit;
+  font-size: .85rem;
+  font-weight: 600;
+  background: none;
+  border: 1px solid var(--app-border);
+  border-radius: .35rem;
+  cursor: pointer;
+}
+.drought-show-all:hover { border-color: var(--app-accent); }
+.drought-show-all:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 2px; }
+.drought-show-all[hidden] { display: none; }
+
+/* On this page: a short row of in-page links that wraps rather than scrolls. */
+.drought-toc { margin-block: .75rem; }
+.drought-toc-title { margin: 0 0 .35rem; font-size: var(--app-group-heading); }
+.drought-toc ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .35rem .5rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.drought-toc a {
+  display: inline-block;
+  padding: .35rem .7rem;
+  color: var(--app-accent);
+  font-size: .85rem;
+  text-decoration: none;
+  border: 1px solid var(--app-border);
+  border-radius: 1rem;
+}
+.drought-toc a:hover { border-color: var(--app-accent); text-decoration: underline; }
+.drought-toc a:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 2px; }
+
+/* A comparison behind a disclosure: the summary holds the heading and one
+   plain sentence on what the chart shows. */
+.drought-more { margin-block-start: .75rem; }
+.drought-more > summary { cursor: pointer; }
+.drought-more > summary:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 2px; }
+.drought-more > summary h2 {
+  display: inline;
+  margin: 0;
+  font-size: var(--app-section-heading);
+}
+.drought-more-hint {
+  display: block;
+  margin-block-start: .2rem;
+  color: var(--app-muted);
+  font-size: .8rem;
+  line-height: 1.4;
+}
+.drought-more-body { margin-block-start: .5rem; }
+.drought-more-copy { margin: .25rem 0 .65rem; color: var(--app-muted); font-size: .8rem; line-height: 1.4; }
 .drought-row {
   display: grid;
   gap: .45rem;

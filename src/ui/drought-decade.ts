@@ -53,17 +53,24 @@ export function droughtDecadeMarkup(): string {
       <details class="snow-month-details" id="drought-decade-years" hidden><summary>Highest share in each year</summary>
         <div class="table-scroll" tabindex="0" role="region" aria-label="Highest share in each year, scrolls sideways"><table class="overview-table"><thead><tr><th>Year</th><th>Weeks</th>${DROUGHT_CLASSES.map((entry) => `<th>${entry.code} or worse</th>`).join("")}</tr></thead><tbody id="drought-decade-year-rows"></tbody></table></div>
       </details>
-    </section>
-    <section class="overview-card" id="drought-calendar-card" aria-labelledby="drought-calendar-heading">
-      <div class="card-heading">
-        <div><h2 id="drought-calendar-heading">Ten years across the areas</h2><p>One row for each drainage area in view and one column for each week. A week takes the colour of the most severe class that at least half of the area's measured land is in, or worse. A hatched week had less than half of its land even abnormally dry. A grey week has no share, because there was no map that week or the monitor does not measure that land. The rows are in drainage code order, so areas on the same river system are together. A name marked with an asterisk is measured over only part of its area. Select a name to show that area in the chart above.</p></div>
-      </div>
+    </section>`;
+}
+
+/** The calendar sits behind a disclosure: it is a comparison across every
+ * area, and the chart above it already answers for one. */
+export function droughtCalendarMarkup(): string {
+  return `
+    <details class="overview-card drought-more" id="drought-calendar-card">
+      <summary><h2 id="drought-calendar-heading">Ten years across the areas</h2><span class="drought-more-hint">One row for each area and one column for each week, coloured by how dry the area was.</span></summary>
+      <div class="drought-more-body">
+        <p class="drought-more-copy">One row for each drainage area in view and one column for each week. A week takes the colour of the most severe class that at least half of the area's measured land is in, or worse. A hatched week had less than half of its land even abnormally dry. A grey week has no share, because there was no map that week or the monitor does not measure that land. The rows are in drainage code order, so areas on the same river system are together. A name marked with an asterisk is measured over only part of its area. Select a name to show that area in the chart above.</p>
       <div id="drought-calendar-host" class="drought-calendar-host" aria-busy="true"></div>
       <ul class="overlay-key" id="drought-calendar-key" aria-label="What each calendar colour means"></ul>
       <details class="snow-month-details" id="drought-calendar-table" hidden><summary>Weeks at each class, by area</summary>
         <div class="table-scroll" tabindex="0" role="region" aria-label="Weeks at each class by area, scrolls sideways"><table class="overview-table"><thead><tr><th>Drainage area</th><th>${NO_DROUGHT_LABEL}</th>${DROUGHT_CLASSES.map((entry) => `<th>${entry.code}</th>`).join("")}<th>No share</th></tr></thead><tbody id="drought-calendar-rows"></tbody></table></div>
       </details>
-    </section>`;
+      </div>
+    </details>`;
 }
 
 type DecadeState = "waiting" | "loaded" | "failed" | "not-kept";
@@ -132,8 +139,12 @@ export function mountDroughtDecade(content: HTMLElement, context: DroughtDecadeC
     start();
   }, { rootMargin: PREFETCH_MARGIN });
   observer.observe(card);
-  const calendarCard = content.querySelector<HTMLElement>("#drought-calendar-card");
-  if (calendarCard) observer.observe(calendarCard);
+  /* The calendar sits in a closed section, which is never on screen, so
+   * opening it starts the same single request if nothing has yet. */
+  content.querySelector<HTMLDetailsElement>("#drought-calendar-card")
+    ?.addEventListener("toggle", (event) => {
+      if ((event.target as HTMLDetailsElement).open) start();
+    });
 }
 
 function draw(content: HTMLElement, context: DroughtDecadeContext, history: DroughtHistory): void {

@@ -111,7 +111,7 @@ import { renderDroughtSeverity } from "./viz/drought-severity";
 import { renderResponsiveChart, stopResponsiveChart } from "./viz/responsive";
 import type { DroughtCoveragePayload, Reservoir } from "./types";
 import { createDroughtMap } from "./ui/drought-map";
-import { droughtDecadeMarkup, mountDroughtDecade } from "./ui/drought-decade";
+import { droughtCalendarMarkup, droughtDecadeMarkup, mountDroughtDecade } from "./ui/drought-decade";
 import { RESERVOIR_REFERENCE_LAYER_ID } from "./ui/layers";
 import type { ReservoirReference } from "./ui/layers";
 import { createViewMap, mapStatusNote } from "./ui/view-map";
@@ -446,7 +446,20 @@ function renderDrought(
       <article class="overview-kpi"><span>Map week</span><strong>${formatDate(payload.map_date)}</strong><small>Published ${formatDate(payload.release_date)}</small></article>
       <article class="overview-kpi"><span>Map age</span><strong${late ? ' class="late-badge"' : ""}>${age} ${age === 1 ? "day" : "days"}</strong><small>${late ? "Late data: a new weekly map has been missed" : "A new map is published each Thursday"}</small></article>
     </section>
-    <section class="overview-card" aria-labelledby="drought-map-heading">
+    <nav class="drought-toc" aria-label="On this page">
+      <h2 class="drought-toc-title">On this page</h2>
+      <ul>
+        <li><a href="#drought-map-card">The drought map</a></li>
+        <li><a href="#drought-severity-card">How the areas are divided</a></li>
+        <li><a href="#drought-change-card">What changed since last week</a></li>
+        <li><a href="#drought-decade-card">Ten years in one area</a></li>
+        <li><a href="#drought-scatter-details">Dry land against banked water</a></li>
+        <li><a href="#drought-gap-details">The same comparison, in order</a></li>
+        <li><a href="#drought-calendar-card">Ten years across the areas</a></li>
+        <li><a href="#drought-areas-card">Each drainage area</a></li>
+      </ul>
+    </nav>
+    <section class="overview-card" id="drought-map-card" aria-labelledby="drought-map-heading">
       <div class="card-heading">
         <div><h2 id="drought-map-heading">The drought map</h2><p id="drought-map-copy">The monitor's weekly national map in its own colours, for the week of ${formatDate(payload.map_date)}. The outlined shapes are the ${scopedUnits.length} drainage areas the figures below describe. Drought does not stop at their edges, so the map draws the wider pattern too.</p></div>
         <span class="sdk-badge">ArcGIS map</span>
@@ -454,26 +467,14 @@ function renderDrought(
       <div id="drought-map-host" class="view-map-host has-inset-legend" aria-busy="true"
         aria-label="A map of drought classes over the drainage areas. The bars and table on this page carry the same shares as text."></div>
     </section>
-    <section class="overview-card" aria-labelledby="drought-severity-heading">
+    <section class="overview-card" id="drought-severity-card" aria-labelledby="drought-severity-heading">
       <div class="card-heading">
         <div><h2 id="drought-severity-heading">How the areas are divided</h2><p>Every drainage area counted once, at the most severe class with land in it. The tile above says how many are at extreme drought or worse. This says where all ${scopedUnits.length} sit, which is a different question. Nine clear areas and nine areas one class below the line give the same count, and they are not the same week. Levels with no areas in them are still drawn, so one week can be compared with another.</p></div>
       </div>
       <div id="drought-severity-host" class="drought-severity-host"></div>
       <ul class="overlay-key" id="drought-severity-key" aria-label="What each severity level is called"></ul>
     </section>
-    <section class="overview-card" aria-labelledby="drought-join-heading">
-      <div class="card-heading">
-        <div><h2 id="drought-join-heading">Dry land against banked water</h2><p>Each drainage area is one point. How much of its land is in ${dryness.label.toLowerCase()} (${dryness.code}) or worse goes across the bottom. How full its reservoirs are goes up the side. The colour is the most severe class with land in it. The two do not have to agree, and where they disagree is the point. An area far to the right and high up draws on water banked in better years. One far to the right and low has neither the rain nor the savings. Read this as a description of how the two line up. It is not a test of one against the other. The Drought Monitor already weighs water supply conditions. And a reservoir is placed here by the area holding its dam, not by the land that fills it. A hollow point is measured over only part of its area.</p></div>
-      </div>
-      <div id="drought-scatter-host" class="drought-scatter-host"></div>
-    </section>
-    <section class="overview-card" aria-labelledby="drought-gap-heading">
-      <div class="card-heading">
-        <div><h2 id="drought-gap-heading">The same comparison, in order</h2><p>One row for each drainage area that has a reservoir reading. Both dots in a row sit on the same 0 to 100 scale, each one at its own value. Which dot is on the left therefore changes from row to row. The dot in the class colours is the share of land in ${dryness.label.toLowerCase()} (${dryness.code}) or worse. The dot in the storage colours is how full that area's reservoirs are. The line between them is the distance, and it is only a distance. The two shares divide by different things, one by land and one by reservoir capacity, so the site never states their difference as a number. The rows are ordered by that distance. The areas where the water dot sits furthest to the left of the dry dot lead the list. That is dry ground with little banked to draw on. A name marked with an asterisk is measured over only part of its area.</p></div>
-      </div>
-      <div id="drought-gap-host" class="drought-gap-host"></div>
-    </section>
-    <section class="overview-card" aria-labelledby="drought-change-heading">
+    <section class="overview-card" id="drought-change-card" aria-labelledby="drought-change-heading">
       <div class="card-heading">
         <div><h2 id="drought-change-heading">What changed since last week</h2><p>One bar for each drainage area, measured from the middle. A bar to the right means more of that area's land is in ${dryness.label.toLowerCase()} (${dryness.code}) or worse than a week ago. A bar to the left means less of it is. The unit is points of the area's own land, and both figures are the same measurement of the same ground a week apart. That is why this chart draws a bar and the one above it does not. The scale is the same distance either side of the middle, so a week where everything got wetter still puts no change in the middle.</p></div>
       </div>
@@ -481,9 +482,25 @@ function renderDrought(
       <p class="drought-chart-note" id="drought-change-note"></p>
     </section>
     ${droughtDecadeMarkup()}
-    <section class="overview-card table-card" aria-labelledby="drought-areas-heading">
+    <details class="overview-card drought-more" id="drought-scatter-details">
+      <summary><h2 id="drought-join-heading">Dry land against banked water</h2><span class="drought-more-hint">Each area is one point: how much of its land is dry, and how full its reservoirs are.</span></summary>
+      <div class="drought-more-body">
+        <p class="drought-more-copy">Each drainage area is one point. How much of its land is in ${dryness.label.toLowerCase()} (${dryness.code}) or worse goes across the bottom. How full its reservoirs are goes up the side. The colour is the most severe class with land in it. The two do not have to agree, and where they disagree is the point. An area far to the right and high up draws on water banked in better years. One far to the right and low has neither the rain nor the savings. Read this as a description of how the two line up. It is not a test of one against the other. The Drought Monitor already weighs water supply conditions. And a reservoir is placed here by the area holding its dam, not by the land that fills it. A hollow point is measured over only part of its area.</p>
+        <div id="drought-scatter-host" class="drought-scatter-host"></div>
+      </div>
+    </details>
+    <details class="overview-card drought-more" id="drought-gap-details">
+      <summary><h2 id="drought-gap-heading">The same comparison, in order</h2><span class="drought-more-hint">The same areas as a list, with the largest gap between dry land and full reservoirs first.</span></summary>
+      <div class="drought-more-body">
+        <p class="drought-more-copy">One row for each drainage area that has a reservoir reading. Both dots in a row sit on the same 0 to 100 scale, each one at its own value. Which dot is on the left therefore changes from row to row. The dot in the class colours is the share of land in ${dryness.label.toLowerCase()} (${dryness.code}) or worse. The dot in the storage colours is how full that area's reservoirs are. The line between them is the distance, and it is only a distance. The two shares divide by different things, one by land and one by reservoir capacity, so the site never states their difference as a number. The rows are ordered by that distance. The areas where the water dot sits furthest to the left of the dry dot lead the list. That is dry ground with little banked to draw on. A name marked with an asterisk is measured over only part of its area.</p>
+        <div id="drought-gap-host" class="drought-gap-host"></div>
+      </div>
+    </details>
+    ${droughtCalendarMarkup()}
+    <section class="overview-card table-card" id="drought-areas-card" aria-labelledby="drought-areas-heading">
       <div class="card-heading"><div><h2 id="drought-areas-heading">Each drainage area</h2><p>The bar is the share of the area's land in each class, in the same colours as the map above. The figure beside the name is the combined reservoir storage in that area, as a percent of the combined full level. Those full levels mix definitions, so a combined percent full is a working total rather than one measure of full. The severity index adds up the shares at each class or worse, so it runs from 0 to 500. Shares and index are shares of the land the monitor measures.</p></div><calcite-button id="download-drought-csv" appearance="outline" icon-start="export" scale="s">Download filtered table (CSV file)</calcite-button></div>
-      <div class="drought-rows"></div>
+      <div class="drought-rows" id="drought-rows"></div>
+      <p class="drought-rows-more"><button id="drought-show-all-areas" class="drought-show-all" type="button" aria-controls="drought-rows" aria-expanded="false" hidden>Show all areas</button></p>
       <details class="snow-month-details"><summary>Exact values for every class</summary>
         <div class="table-scroll" tabindex="0" role="region" aria-label="Drought class table, scrolls sideways"><table class="overview-table"><thead><tr><th>Drainage area</th><th>No drought</th><th>D0</th><th>D1</th><th>D2</th><th>D3</th><th>D4</th><th>Extreme or worse</th><th>Change since last week</th></tr></thead><tbody id="drought-table-rows"></tbody></table></div>
       </details>
@@ -513,6 +530,12 @@ function renderDrought(
   const filterbar = content.querySelector<HTMLElement>(".mobile-filterbar");
   const filterToggle = content.querySelector<HTMLButtonElement>("#drought-filter-toggle");
   if (filterbar && filterToggle) wireMobileFilterDisclosure(filterbar, filterToggle);
+  /* A link to a closed section opens it, so the reader lands on content. */
+  content.querySelector<HTMLElement>(".drought-toc")?.addEventListener("click", (event) => {
+    const link = (event.target as Element).closest<HTMLAnchorElement>("a[href^='#']");
+    const target = link ? content.querySelector(link.getAttribute("href")!) : null;
+    if (target instanceof HTMLDetailsElement) target.open = true;
+  });
   const scatterHost = content.querySelector<HTMLElement>("#drought-scatter-host");
   const gapHost = content.querySelector<HTMLElement>("#drought-gap-host");
   const changeHost = content.querySelector<HTMLElement>("#drought-change-host");
@@ -576,6 +599,65 @@ function renderDrought(
     droughtCsv(payload, exportUnits, storage),
     droughtCsvFilename(payload.map_date, level)
   ));
+
+  const scatterDetails = content.querySelector<HTMLDetailsElement>("#drought-scatter-details");
+  const gapDetails = content.querySelector<HTMLDetailsElement>("#drought-gap-details");
+  /* A chart in a closed section has a host with no width, and the chart
+   * measures its host. So it is drawn when its section is open, and the
+   * latest draw waits for the next opening otherwise. Nothing here waits on
+   * the network, so there is no busy state to leave behind: a drawing that
+   * fails says so in words and `aria-busy` is cleared on every exit. */
+  const waiting = new Map<HTMLDetailsElement, () => void>();
+  const whenOpen = (
+    details: HTMLDetailsElement | null, host: HTMLElement, drawChart: () => void
+  ): void => {
+    const run = (): void => {
+      host.setAttribute("aria-busy", "true");
+      try {
+        drawChart();
+      } catch (error) {
+        console.error("A comparison chart could not be drawn:", error);
+        host.replaceChildren(mapStatusNote("This chart could not be drawn just now."));
+      } finally {
+        host.setAttribute("aria-busy", "false");
+      }
+    };
+    if (!details || details.open) {
+      if (details) waiting.delete(details);
+      run();
+    } else {
+      waiting.set(details, run);
+    }
+  };
+  for (const details of [scatterDetails, gapDetails]) {
+    details?.addEventListener("toggle", () => {
+      if (!details.open) return;
+      const run = waiting.get(details);
+      waiting.delete(details);
+      run?.();
+    });
+  }
+
+  /* The first rows are drawn; the rest stay in the page, hidden, so every
+   * area is still one control away. */
+  const FIRST_AREAS = 12;
+  let showAllAreas = false;
+  const moreButton = content.querySelector<HTMLElement>("#drought-show-all-areas");
+  const limitRows = (): void => {
+    const all = rows?.querySelectorAll<HTMLElement>(".drought-row") ?? [];
+    all.forEach((row, index) => { row.hidden = !showAllAreas && index >= FIRST_AREAS; });
+    if (moreButton) {
+      moreButton.hidden = all.length <= FIRST_AREAS;
+      moreButton.textContent = showAllAreas
+        ? `Show the first ${FIRST_AREAS} areas`
+        : `Show all ${all.length} areas`;
+      moreButton.setAttribute("aria-expanded", String(showAllAreas));
+    }
+  };
+  moreButton?.addEventListener("click", () => {
+    showAllAreas = !showAllAreas;
+    limitRows();
+  });
 
   /**
    * Everything the filter controls change, in one place.
@@ -672,6 +754,7 @@ function renderDrought(
       row.append(head, bar, reading, links);
       return row;
     }));
+    limitRows();
   }
 
     if (tableBody) {
@@ -756,37 +839,43 @@ function renderDrought(
           `${missing} ${missing === 1 ? "has" : "have"} no reservoir reading to ` +
           "compare against."
         : `All ${points.length} areas shown have a reservoir reading.`;
-      if (points.length > 0) {
-        renderResponsiveChart(scatterHost, (width) => {
-          const chart = renderDroughtScatter(points, scatterOptions, width);
-          if (chart) scatterHost.replaceChildren(chart, note);
-        }, {
-          fallbackWidth: DROUGHT_SCATTER_FALLBACK_WIDTH,
-          minimumWidth: 140
-        });
-      } else {
-        stopResponsiveChart(scatterHost);
-        scatterHost.replaceChildren(mapStatusNote(
-          "No area in view has a reservoir reading to compare against."));
-      }
+      whenOpen(scatterDetails, scatterHost, () => {
+        if (points.length > 0) {
+          renderResponsiveChart(scatterHost, (width) => {
+            const chart = renderDroughtScatter(points, scatterOptions, width);
+            if (chart) scatterHost.replaceChildren(chart, note);
+          }, {
+            fallbackWidth: DROUGHT_SCATTER_FALLBACK_WIDTH,
+            minimumWidth: 140
+          });
+        } else {
+          stopResponsiveChart(scatterHost);
+          scatterHost.replaceChildren(mapStatusNote(
+            "No area in view has a reservoir reading to compare against."));
+        }
+      });
     }
 
     /* The same points the scatter drew, ranked. Built from `points` rather
      * than recomputed, so the two charts cannot disagree about which areas
-     * have a reservoir reading. */
+     * have a reservoir reading. `gapRows` counts the ranked rows; the
+     * chart itself is drawn when its section is opened. */
     let gapRows = 0;
     if (gapHost) {
       const ranked = byStorageGap(points);
-      gapRows = renderDroughtGap(gapHost, ranked, {
-        drynessLabel: `in ${dryness.label.toLowerCase()} (${dryness.code}) or worse`,
-        ariaLabel: `Each drainage area, worst first, showing the share of its ` +
-          `land in ${dryness.label.toLowerCase()} or worse beside how full its ` +
-          "reservoirs are. The table below carries both numbers for every area."
+      gapRows = ranked.length;
+      whenOpen(gapDetails, gapHost, () => {
+        const drawn = renderDroughtGap(gapHost, ranked, {
+          drynessLabel: `in ${dryness.label.toLowerCase()} (${dryness.code}) or worse`,
+          ariaLabel: `Each drainage area, worst first, showing the share of its ` +
+            `land in ${dryness.label.toLowerCase()} or worse beside how full its ` +
+            "reservoirs are. The table below carries both numbers for every area."
+        });
+        if (drawn === 0) {
+          gapHost.replaceChildren(mapStatusNote(
+            "No area in view has a reservoir reading to compare against."));
+        }
       });
-      if (gapRows === 0) {
-        gapHost.replaceChildren(mapStatusNote(
-          "No area in view has a reservoir reading to compare against."));
-      }
     }
 
     /* The week-over-week move, over the areas in scope rather than the

@@ -3537,6 +3537,47 @@ for (const viewport of VIEWPORTS) {
     await tab.waitForFunction(() => window.__droughtReady !== undefined, { timeout: 60000 });
     const droughtFiltersOpened = await exerciseMobileFilterDisclosure(
       tab, check, label, "drought", viewport);
+    /* The comparison charts sit in sections that start closed, and a chart
+     * measures its host, so none is drawn until its section is opened. Check
+     * both halves of that, then open them the way a reader does. */
+    const closedFirst = await tab.evaluate(() => ({
+      open: ["drought-scatter-details", "drought-gap-details", "drought-calendar-card"]
+        .map((id) => document.getElementById(id)?.open),
+      drawn: ["drought-scatter-host", "drought-gap-host"]
+        .map((id) => document.getElementById(id)?.querySelector("svg") !== null),
+      totalRows: document.querySelectorAll(".drought-row").length,
+      visibleRows: [...document.querySelectorAll(".drought-row")]
+        .filter((row) => !row.hidden).length,
+      toc: [...document.querySelectorAll(".drought-toc a")]
+        .map((link) => link.getAttribute("href")),
+      pageHeight: document.documentElement.scrollHeight
+    }));
+    console.log("  closed first:", JSON.stringify(closedFirst));
+    check(closedFirst.open.every((value) => value === false)
+      && closedFirst.drawn.every((value) => value === false),
+    `${label}: a comparison section starts open or drawn ${JSON.stringify(closedFirst)}`);
+    check(closedFirst.visibleRows === Math.min(12, closedFirst.totalRows),
+    `${label}: ${closedFirst.visibleRows} area rows show before the reader asks for more`);
+    check(closedFirst.toc.length > 0 && (await tab.evaluate((hrefs) =>
+      hrefs.every((href) => document.querySelector(href) !== null), closedFirst.toc)),
+    `${label}: an "On this page" link points at nothing ${JSON.stringify(closedFirst.toc)}`);
+    await tab.locator("#drought-scatter-details > summary").click();
+    await tab.locator("#drought-gap-details > summary").click();
+    await tab.waitForFunction(() =>
+      ["drought-scatter-host", "drought-gap-host"].every((id) => {
+        const host = document.getElementById(id);
+        return host?.querySelector("svg") !== null
+          && host?.getAttribute("aria-busy") !== "true";
+      }), { timeout: 10000 });
+    /* Every area stays reachable: the control shows the rest. */
+    const showAll = tab.locator("#drought-show-all-areas");
+    if (await showAll.isVisible()) {
+      await showAll.click();
+      const shown = await tab.evaluate(() => [...document.querySelectorAll(".drought-row")]
+        .filter((row) => !row.hidden).length);
+      check(shown === (await tab.evaluate(() => window.__droughtReady?.rows)),
+        `${label}: "Show all areas" shows ${shown} rows`);
+    }
     const state = await tab.evaluate(() => ({
       ready: window.__droughtReady,
       rows: document.querySelectorAll(".drought-row").length,
@@ -3885,6 +3926,7 @@ for (const viewport of VIEWPORTS) {
       ".drought-calendar-name")].map((button) => button.dataset.code)
       .find((code) => code !== shown), decade.ready?.decadeArea);
     if (other) {
+      await tab.locator("#drought-calendar-card > summary").click();
       await tab.locator(`.drought-calendar-name[data-code="${other}"]`).click();
       await tab.waitForFunction((code) => window.__droughtReady?.decadeArea === code,
         other, { timeout: 5000 });
