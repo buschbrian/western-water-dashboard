@@ -41,6 +41,13 @@ outputs, with R2 available for rasters and archives. It is not connected to the
 daily job or any public page yet. The scope, remaining work and credential
 setup are in [the pilot plan](../RECENT-CONDITIONS-PILOT.md).
 
+`tools/import_gauge_rulings.py` previews saved private review exports offline
+and writes the worksheet only with `--apply` (ADR-130). It changes only
+`reviewer_ruling` and `notes`, keyed by site number. Any existing review needs
+an explicit per-site replacement to change; invalid or unsaved records refuse
+the whole batch. The screen builder still preserves manual review fields.
+This workflow does not create an admitted roster or a published flow payload.
+
 The supported CI runtime is Python 3.14. The pipeline dependency set requires
 Python 3.12 or newer; all data workflows install the shared
 `requirements-pipeline.txt`. GIS audit tools use `requirements-gis.txt`

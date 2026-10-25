@@ -57,6 +57,41 @@ is sent to the Artifact.
 - No ruling establishes record completeness, a flow normal, a regulation
   finding or a corrected drainage boundary. Those remain separate gates.
 
+## Merge an exported review
+
+Keep the private export outside the checkout. Preview it first:
+
+```bash
+.venv/bin/python tools/import_gauge_rulings.py /path/to/gauge-rulings.csv
+```
+
+The JSON report lists the old and new ruling and notes for each changed site.
+It writes nothing. Review every change, then repeat with `--apply` to merge
+the saved records into `gauge-review.csv`. Rows absent from the export and
+all screen, trace and suggestion columns are preserved. Site numbers stay
+text, including leading zeroes. Notes may contain commas, quotes or newlines.
+
+Changing or clearing any existing ruling **or notes** needs `--replace SITE`,
+repeated for each intended replacement. For example:
+
+```bash
+.venv/bin/python tools/import_gauge_rulings.py /path/to/gauge-rulings.csv --replace 10163000
+.venv/bin/python tools/import_gauge_rulings.py /path/to/gauge-rulings.csv --replace 10163000 --apply
+```
+
+Any malformed record, duplicate/unknown site, unsaved draft, invalid tier or
+missing timestamp refuses the whole batch. A changed ruling that differs
+from its suggestion needs a reason in notes. Conflicts exit 2, including in
+preview; nothing is applied until every conflicting site is explicitly
+named. There is no blanket overwrite flag. Reapplying an unchanged export is
+a no-op. Use one worksheet editor at a time, and review the git diff after
+applying. No real export has been imported as part of building this tool.
+
+The export timestamp is shown as evidence, not used to decide which review
+wins: the worksheet has no per-row review timestamps. Inspect the current
+worksheet before choosing to replace its review. Importing a review does not
+admit a gauge or add observations to the public dashboard (ADR-130).
+
 ## Drainage area interpretation
 
 `tools/build_gauge_review.py` calls the gauge-indexed NLDI basin endpoint
@@ -101,3 +136,5 @@ DOM/store harness; it checks save failures, timeouts, navigation, drafts,
 snapshots, exports and area flags. It does not prove browser layout, real
 Artifact permissions, actual file delivery or the basin's hydrologic validity.
 Run the repository's `npm run verify:fast` for documentation/code integration.
+The importer's synthetic round-trip, refusal and replacement checks run in
+`npm run verify:pipeline` (`tests/test_import_gauge_rulings.py`).

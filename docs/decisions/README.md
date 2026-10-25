@@ -27,7 +27,8 @@ than bundled. **Start with ADR-002.**
   [ADR-052](ADR-052-write-the-snow-calendar-once.md),
   [ADR-121](ADR-121-keep-the-finished-snow-season-and-open-the-new-one-honestly.md),
   [ADR-031](ADR-031-retire-comparison-implementations-and-redirect-their-urls.md),
-  [ADR-124](ADR-124-bound-recent-conditions-to-a-static-data-pilot.md)
+  [ADR-124](ADR-124-bound-recent-conditions-to-a-static-data-pilot.md),
+  [ADR-130](ADR-130-merge-saved-gauge-reviews-with-explicit-replacement.md)
 - Superseded, read only for history: ADR-012, ADR-019,
   [ADR-117](ADR-117-close-the-scope-at-version-1-0-0.md) (pilot scope exception only)
 
@@ -311,6 +312,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-127](ADR-127-state-what-is-above-a-reservoir-as-stored-water.md) | State what is above a reservoir as stored water | Accepted; applies `rollupOfScoped` to the ADR-077 upstream set; replaces the reservoir page's chips with basin groups and rows |
 | [ADR-128](ADR-128-publish-compact-story-views-for-embedding.md) | Publish compact story views for embedding | Accepted; one entry page, three views, a theme that never persists, a view that fits its frame; computes nothing new (ADR-117's scope) |
 | [ADR-129](ADR-129-total-the-latest-storm-from-the-accumulated-precipitation.md) | Total the latest storm from the accumulated precipitation | Accepted; 1-, 3- and 7-day totals on the precipitation card; uses ADR-125's set day but not its fixed set; a falling accumulation is left out, never clipped |
+| [ADR-130](ADR-130-merge-saved-gauge-reviews-with-explicit-replacement.md) | Merge saved gauge reviews with explicit replacement | Accepted; offline preview, saved records only, per-site replacement of existing review; does not admit gauges |
 
 ## Relationship to the historical journal
 

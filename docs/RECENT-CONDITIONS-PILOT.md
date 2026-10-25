@@ -136,6 +136,12 @@ records before merging by USGS site number. A `natural` ruling is a candidate
 classification, not approval of a normal: completeness within 1991–2020 and
 the flow comparison method still need separate review.
 
+Saved exports can be previewed and explicitly merged with
+`tools/import_gauge_rulings.py` (ADR-130). The default is read-only; existing
+rulings or notes require a site-specific replacement flag. Invalid or unsaved
+records refuse the entire batch. Import does not admit gauges. See the
+[review source procedure](../tools/gauge-review/README.md#merge-an-exported-review).
+
 The area flag compares `(traced - published) / published`. Both numbers must
 refer to the same outlet and area definition before the difference is treated
 as a delineation error. NLDI's default basin is the full upstream network,
@@ -144,6 +150,76 @@ Thus the basin above Deer Creek includes the basin above Jordanelle. Land
 between reservoirs would require subtracting the union of verified upstream
 basins, and an area percentage is not a percentage of flow or storage.
 See the source notes for the worked example and USGS references.
+
+## Next slice: daily river response and Provo drainage review
+
+Brian selected daily river response and drainage review on 2026-10-24,
+ahead of basin precipitation/raster work. Start with observed daily means;
+the normal period, coverage gates and rank method are still undecided.
+
+### Candidate connected set
+
+Proposed first prototype: three gauges spanning the reservoir sequence.
+These are **candidates, not admissions**. The committed worksheet screen is
+dated 2026-10-23; it is not a fresh observation fetch. All seven rows in
+HUC8 `16020203` still have blank reviewer rulings at this checkpoint.
+
+| Candidate | Traced upstream reservoirs | Published / traced area (sq mi) |
+|---|---|---|
+| `10155000` Provo River near Hailstone | Lost, Trial and Washington lakes | 230 / 222 |
+| `10155200` Provo River at River Road Bridge near Heber | Jordanelle and those three lakes | 270 / 261 |
+| `10163000` Provo River at Provo | Deer Creek, Jordanelle and those three lakes | 673 / 675 |
+
+All three suggestions are `shaped`, based on the containment evidence. That
+does not establish the degree or timing of regulation. Their flows must be
+shown separately, never added or described as measured reservoir inflow.
+The middle gauge's record starts in 2001; no baseline claim follows from
+the longer records at the other two gauges either.
+
+Two tributary candidates need explicit drainage investigation before use:
+Snake Creek (`10156000`, 31.8 / 23 sq mi) and Daniels Creek (`10157500`,
+50.1 / 404 sq mi). Compare indexed outlets, flowlines and matching area
+definitions, then inspect full catchment versus split-catchment geometry.
+Do not diagnose a bad trace from area percentages alone. Record the actual
+geometry and source settings before computing an area between reservoirs.
+The existing reservoir index has areas and member IDs, not validated
+difference polygons.
+
+### Acceptance for the first observed-flow prototype
+
+1. Brian reviews the candidate gauges and their context. Saved rulings move
+   through the preview/import workflow; suggestions are never copied into
+   rulings automatically. A review tier alone is not a production roster.
+2. Request a bounded 30-day daily mean discharge series using the USGS v1
+   API and explicitly identified primary series. Preserve agency observation
+   dates, approval status, qualifiers, units and source identity. Keep
+   missing values missing and validate identity/unit/range mismatches before
+   they can become measurements.
+3. Fetch overlapping recent dates on refresh so revisions replace previous
+   values without duplicating days. Determine the overlap and failure/freshness
+   policy in a method decision before connecting a daily job. Keep the old
+   complete snapshot if the replacement fails validation.
+4. Exercise the provider, revision merge and payload validator with synthetic
+   fixtures first, including missing/provisional/estimated values, competing
+   series, duplicate dates, zero flow and provider failures. Real station
+   admission is a separate reviewed input, never a test fixture side effect.
+5. Show exact daily values, dates, quality and downloads in one accessible
+   map/history view. Label it as daily mean flow: it cannot establish a
+   sub-daily storm peak, a present rising-water alert or flood safety.
+6. Keep existing page opening data unchanged, measure the added JSON against
+   the 100 KB gzip budget, and verify the real browser before publication.
+
+The importer is implemented; the observed-flow provider, payload and view are
+not yet built. The three-gauge set and 30-day prototype are proposed for Brian's
+confirmation. Raster processing, R2 delivery, flow normals, automated gauge
+admission and edits to the private Artifact are outside this first slice.
+
+USGS documents daily observations separately from continuous readings and
+keeps approval status distinct from other qualifiers in the
+[OGC migration guide](https://api.waterdata.usgs.gov/docs/ogcapi/migration/)
+(checked 2026-10-24). Verify the v1 schema and exact series metadata when
+implementing the adapter; the current reservoir adapter still uses v0 and
+must not be migrated incidentally.
 
 ## Credentials and hosting
 
