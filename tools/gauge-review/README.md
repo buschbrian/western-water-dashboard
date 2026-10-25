@@ -92,6 +92,45 @@ wins: the worksheet has no per-row review timestamps. Inspect the current
 worksheet before choosing to replace its review. Importing a review does not
 admit a gauge or add observations to the public dashboard (ADR-130).
 
+## Open the daily-flow prototype
+
+The local prototype fetches one metadata record and 30 daily values for each
+of the three candidate gauges in the Provo pilot. It reads only the saved
+review bundle; the page makes no agency requests. It replaces the snapshot
+after all three series pass identity, date, unit and value checks. A full
+30-day refetch replaces older revisions. Failure leaves the last complete
+local snapshot in place. The prototype is not published, scheduled or an
+admitted gauge roster.
+
+```bash
+python3 tools/build_flow_prototype.py \
+  --review-bundle /home/brian/Documents/utah-gauge-review-2026-10-24 \
+  --output /home/brian/Documents/wwd-provo-flow-preview \
+  --end 2026-10-23
+python3 -m http.server 8761 \
+  --directory /home/brian/Documents/wwd-provo-flow-preview \
+  --bind 127.0.0.1
+```
+
+Open `http://127.0.0.1:8761/`. Stop the server with Ctrl+C. Choose an output
+directory outside the repository. `--demo` builds a clearly labelled,
+synthetic snapshot without contacting the service. Agency access uses the
+existing optional `USGS_API_KEY` environment variable, if present; never put
+it in a URL or a page. The official [daily collection schema](https://api.waterdata.usgs.gov/ogcapi/v1/collections/daily/schema?f=html)
+names the `time_series_id`, `approval_status`, `qualifier`, `time`, `value`
+and `unit_of_measure` fields. The page retains provisional status and other
+flags; it does not convert them into approval.
+
+Verify the offline provider and browser model without using the network:
+
+```bash
+PATH=/home/brian/Developer/western-water-dashboard/.venv/bin:$PATH npm run verify:pipeline
+node --test tools/flow-pilot/checks.mjs
+```
+
+Only the shared checked-in dashboard's published pages are covered by
+`npm run verify:browser`; its served `dist/` does not include this local preview.
+
 ## Drainage area interpretation
 
 `tools/build_gauge_review.py` calls the gauge-indexed NLDI basin endpoint

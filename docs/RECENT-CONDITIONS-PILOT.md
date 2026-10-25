@@ -209,10 +209,21 @@ difference polygons.
 6. Keep existing page opening data unchanged, measure the added JSON against
    the 100 KB gzip budget, and verify the real browser before publication.
 
-The importer is implemented; the observed-flow provider, payload and view are
-not yet built. The three-gauge set and 30-day prototype are proposed for Brian's
-confirmation. Raster processing, R2 delivery, flow normals, automated gauge
-admission and edits to the private Artifact are outside this first slice.
+The importer and local observed-flow prototype are built. Brian approved this
+three-gauge, 30-day preview on 2026-10-24. It uses the USGS daily mean
+discharge series, validates its site/series/date/unit, preserves daily
+approval statuses and qualifiers, and exports exact readings and flags. The
+window ends 2026-10-23: all 90 returned values are provisional, with no other
+qualifiers reported. The full response is approximately 4.1 KB gzipped. The
+preview output and cached maps remain outside the repository; nothing entered
+the public route or daily refresh. A browser rendering check is still open.
+
+The local prototype is a proof of the observed-value and review presentation,
+not a production delivery. Real roster admission, scheduled revision refresh,
+failure and freshness policy, payload ownership, map measurement, browser
+accessibility and a public view still need review. Raster processing, R2
+delivery, flow normals, automated gauge admission and edits to the private
+Artifact are outside this first slice.
 
 USGS documents daily observations separately from continuous readings and
 keeps approval status distinct from other qualifiers in the
