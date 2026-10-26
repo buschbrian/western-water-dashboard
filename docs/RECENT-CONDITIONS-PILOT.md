@@ -85,7 +85,14 @@ changes `reviewer_ruling` or `notes`.
 | `nldi_basin_sq_mi`, `trace_check` | The NLDI basin indexed to the gauge, and a note when it differs from the published drainage area by more than 25% |
 | `upstream_reservoirs`, `upstream_snow_sites` | Published reservoirs and snow sites inside that basin |
 | `usgs_page` | The gauge's U.S. Geological Survey page, for checking a row by hand |
+| `mean_flow_cfs`, `flow_years` | Mean of the water-year mean flows from 1991 on (the whole record when fewer than five fall there), from the U.S. Geological Survey annual statistics |
+| `dams_upstream`, `dam_storage_af`, `largest_dams` | Every National Inventory of Dams record inside the basin outline the review page draws, and their storage counted once per pool: a dike carrying its reservoir's storage within 10 km is not a second pool |
+| `storage_share_pct` | That storage as a percentage of one year's mean flow (the degree of regulation) |
+| `irrigation_dams` | Dams in the basin whose listed purposes include irrigation, a prompt to look for canals |
+| `dams_near_gauge` | Dams within 1 km of the gauge: the whole local catchment is traced, so one may sit below it |
+| `huc8_name` | The watershed name the review page groups by |
 | `suggested_ruling`, `suggestion_reason` | A tier worked out from the columns above, and every finding behind it. Recomputed on every write; never copied into the ruling |
+| `review_queue` | `bulk` when the suggestion is the safe one and may be agreed a watershed at a time; `check`; otherwise `review` |
 
 An upstream reservoir means storage can shape the flow. It is not a
 finding that the flow is regulated, and the gauge does not measure that
@@ -111,13 +118,15 @@ suggestions offline. Each row gets the strongest of its findings:
 |---|---|---|
 | `exclude` | The gauge's own name is a tunnel, drain or canal (`FAIRVIEW TUNNEL NEAR …`), not a river measured beside one | Not shown |
 | `check` | The basin was not traced, or the trace differs from the published drainage area by more than 25% | Unresolved until the basin is checked |
-| `shaped` | A published reservoir sits in the traced basin, or the name places the gauge below a diversion, canal, tunnel or powerplant | Flow shown and labelled as shaped upstream; not ranked against normal |
+| `shaped` | Inventoried dams in the basin hold at least 2% of a year's flow (or hold storage and the gauge has no mean flow; or, before the storage evidence runs, a published reservoir sits in the basin), or the name places the gauge below a diversion, canal, tunnel or powerplant | Flow shown and labelled as shaped upstream; not ranked against normal |
 | `short` | The record starts after 1 January 1991 | Flow shown; no comparison with normal |
-| `natural` | None of the above | Flow shown and compared with normal for the date |
+| `natural` | None of the above. Storage under 2% of a year's flow, irrigation dams and a dam beside the gauge are kept as findings for the reviewer | Flow shown and compared with normal for the date |
 
-The rules see only published reservoirs and diversions a gauge's name
-mentions. An unlisted reservoir, a canal that takes water upstream or a
-transbasin import can still make a `natural` row wrong. Write the ruling in
+The rules see inventoried dams, published reservoirs and diversions a
+gauge's name mentions. A canal that takes water out without a dam, a
+transbasin import or city use can still make a `natural` row wrong. The 2%
+line sorts rows; it is not a finding that smaller storage leaves the flow
+natural, and a small irrigation dam can take most of a dry-season flow. Write the ruling in
 `reviewer_ruling` as one of the five tiers (blank means not yet reviewed),
 and a reason in `notes` when it differs from the suggestion. How each tier
 is published is a method decision for the pilot's flow record, not settled
@@ -126,6 +135,26 @@ by this worksheet.
 First suggestions, 2026-10-24: 51 `natural`, 81 `shaped`, 18 `short`,
 11 `check`, 3 `exclude`. A useful order is the 14 `check` and `exclude`
 rows first, then the 51 `natural` rows, where a missed diversion costs most.
+
+**Storage evidence, 2026-10-26.** `tools/build_gauge_review.py --evidence
+--basins <bundle>/gauges.json` reads the outlines the review page draws,
+asks the dam inventory for every dam in their combined box (2,473; fetched
+by object id because the service's offset paging overlaps) and the annual
+statistics service for each gauge's water-year means (150 of 164 answered;
+ten sites per request is the service's limit). Suggestions moved to 26
+`natural`, 110 `shaped`, 14 `short`, 11 `check`, 3 `exclude`: 25 rows
+suggested natural had unpublished dams holding 2% or more of a year's flow
+(the Dirty Devil's Johnson, Mill Meadow and Forsyth hold 58%). Queues: 96
+`bulk`, 57 `review`, 11 `check`.
+
+**Agreeing the safe direction in bulk.** The two mistakes do not cost the
+same: a natural river ruled shaped loses only its comparison with normal;
+a shaped river ruled natural publishes a wrong one. So `bulk` holds only
+suggestions in the safe direction -- shaped by storage at or above the line
+or by a named diversion, or excluded by the gauge's own name -- with no dam
+near the gauge. The review page groups gauges by watershed and agrees a
+group's open `bulk` rows after a second press, with a note saying so. A
+ruling already made, or a local draft, is never overwritten.
 
 ### Private review page
 

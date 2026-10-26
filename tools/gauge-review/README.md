@@ -39,7 +39,30 @@ and serve the directory with `python3 -m http.server 8794 --bind 127.0.0.1`.
 Outside Claude the saved-review controls are read-only. No local mock record
 is sent to the Artifact.
 
+## Refresh the page's evidence
+
+The worksheet owns the suggestion, its reason, the review queue, the
+watershed name and the storage evidence. After
+`tools/build_gauge_review.py --evidence --basins <bundle>/gauges.json`,
+carry them into a copy of the bundle, offline:
+
+```bash
+python3 tools/build_gauge_review_page.py \
+  --bundle /home/brian/Documents/utah-gauge-review-2026-10-24/gauges.json \
+  --output /path/outside/the/repo/gauges.json
+```
+
+Outlines, map frames and nearby points are kept as they were. The tool
+refuses a bundle and worksheet that list different gauges. Publish the new
+`gauges.json` beside the page; the topographic maps do not change.
+
 ## Review safeguards
+
+- Gauges are grouped by watershed (HUC 8), and the queue can be narrowed to
+  the rows safe to agree as a group or the ones that need a look. A
+  watershed's "Agree with N safe suggestions" asks once and saves on a second
+  press within six seconds. It rules only open `bulk` rows the list shows,
+  each as its suggestion, and leaves rulings and drafts already made.
 
 - Editing waits for the initial saved-review snapshot and write permission.
 - Local drafts are retained through navigation and server snapshots. Failed

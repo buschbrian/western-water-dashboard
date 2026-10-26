@@ -1,3 +1,4 @@
+<meta charset="utf-8">
 <title>Utah Gauge Review</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -93,6 +94,11 @@ header.top { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 16p
   border: 1px solid var(--rc); color: var(--rc); white-space: nowrap; }
 .ruled.agree { background: var(--rc); color: var(--surface); }
 .list-empty { padding: 16px; color: var(--muted); font-size: 0.9rem; }
+.list li.group-head { padding: 12px 10px 4px; font-size: 0.76rem; color: var(--muted); display: grid; gap: 4px; border-top: 1px solid var(--line); }
+.list li.group-head:first-child { border-top: 0; }
+.list li.group-head b { color: var(--ink); font-size: 0.85rem; }
+.list li.group-head .btn { justify-self: start; width: auto; display: inline-block; font-size: 0.78rem; padding: 3px 9px; border: 1px solid var(--line); background: var(--bg); }
+.list li.group-head .btn.confirm { background: var(--shaped); color: var(--surface); border-color: var(--shaped); }
 
 .focus { display: grid; gap: 16px; min-width: 0; }
 .panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 16px; min-width: 0; }
@@ -194,7 +200,7 @@ details.more summary { cursor: pointer; color: var(--accent); font-weight: 600; 
   <header class="top">
     <div>
       <h1>Utah Gauge Review</h1>
-      <p>Each U.S. Geological Survey stream gauge that reported in Utah in the last week. For each one, decide whether its flow can be compared with its own normal for the date, and whether the basin traced for it is right. The suggestion comes from fixed rules; the ruling is yours. <span id="screened"></span></p>
+      <p>Each U.S. Geological Survey stream gauge that reported in Utah in the last week. For each one, decide whether its flow can be compared with its own normal for the date, and whether the basin traced for it is right. The suggestion comes from fixed rules; the ruling is yours. Gauges whose suggestion is the safe one (shaped by large storage or a named diversion, or a tunnel or drain) can be agreed a watershed at a time; a natural river ruled shaped loses only its comparison with normal. <span id="screened"></span></p>
     </div>
     <div class="progress" aria-live="polite">
       <div class="count"><span id="ruled-count">0</span> <small>of <span id="total-count">164</span> ruled</small></div>
@@ -236,7 +242,9 @@ details.more summary { cursor: pointer; color: var(--accent); font-weight: 600; 
           <button class="toggle" id="t-unruled" aria-pressed="false" type="button">Not yet ruled</button>
           <button class="toggle" id="t-differs" aria-pressed="false" type="button">Ruling differs</button>
           <button class="toggle" id="t-order" aria-pressed="true" type="button">Review order</button>
+          <button class="toggle" id="t-group" aria-pressed="true" type="button">Group by watershed</button>
         </div>
+        <div class="toggles" id="piles" role="group" aria-label="Review queue"></div>
       </div>
       <ul class="list" id="list"></ul>
     </aside>
@@ -251,18 +259,26 @@ details.more summary { cursor: pointer; color: var(--accent); font-weight: 600; 
 
 <script>
 const TIERS = [
-  { id: "natural", label: "Natural", key: "1", rule: "No published reservoir or named diversion upstream." },
-  { id: "shaped", label: "Shaped", key: "2", rule: "A published reservoir in the basin, or below a named diversion." },
+  { id: "natural", label: "Natural", key: "1", rule: "No large storage or named diversion upstream." },
+  { id: "shaped", label: "Shaped", key: "2", rule: "Dams upstream hold 2% or more of a year's flow, or below a named diversion." },
   { id: "short", label: "Short record", key: "3", rule: "Record starts after 1 January 1991." },
   { id: "check", label: "Check", key: "4", rule: "Basin not traced, or traced area far from the published one." },
   { id: "exclude", label: "Exclude", key: "5", rule: "The gauge measures a tunnel, drain or canal." },
 ];
 const TIER = Object.fromEntries(TIERS.map(t => [t.id, t]));
 const ORDER = { check: 0, exclude: 1, natural: 2, short: 3, shaped: 4 };
+/* The rule's line between small and large storage, in percent of a year's flow. */
+const LARGE_SHARE = 2;
+const AF_PER_CFS_YEAR = 724.45;
+const PILES = [
+  { id: "", label: "All" },
+  { id: "bulk", label: "Safe to agree as a group", test: g => g.queue === "bulk" },
+  { id: "look", label: "Needs a look", test: g => g.queue !== "bulk" },
+];
 
 const state = {
   gauges: [], outline: [], rulings: {}, selected: null, threshold: 0.25,
-  filter: null, unruled: false, differs: false, reviewOrder: true, query: "",
+  filter: null, unruled: false, differs: false, reviewOrder: true, grouped: true, pile: "", confirmGroup: null, query: "",
   mapView: "close", layers: { basin: true, res: true, snow: true },
   db: null, canWrite: false, ready: false, pending: {}, dirty: {}, failures: {}, mapZoom: 1,
 };
@@ -279,6 +295,12 @@ function areaDiff(g) {
 function areaFlag(g) { const d = areaDiff(g); return d != null && Math.abs(d) > state.threshold; }
 const conduit = g => /tunnel, drain or canal/.test(g.reason);
 const belowDiversion = g => /below a diversion/.test(g.reason);
+const share = g => Number.isFinite(g.share) ? g.share : null;
+const largeStorage = g => share(g) != null ? share(g) >= LARGE_SHARE : g.reservoirs.length > 0;
+const pct = n => `${Number(n).toLocaleString(undefined, { maximumFractionDigits: n < 10 ? 1 : 0 })}%`;
+const plural = (n, word) => `${fmt(n)} ${word}${n === 1 ? "" : "s"}`;
+const groupName = g => g.huc8Name || `HUC ${g.huc8}`;
+const bulkOpen = g => g.queue === "bulk" && !rulingOf(g.site) && !state.dirty[g.site];
 const years = g => g.begin ? Math.floor((Date.parse(g.last || "2026-10-24") - Date.parse(g.begin)) / 3.15576e10) : null;
 
 /* What the checks found, written out for one gauge. */
@@ -330,6 +352,27 @@ function findings(g) {
     found: `<b>${esc(g.name)}</b>`,
     why: "Water is taken out above the gauge, so its flow is less than what the basin produced, by an amount that changes with demand.",
     check: ["The gauge page remarks usually say how much is diverted and when.", "Rule Shaped unless the diversion is small or seasonal and you can say so."] });
+  if (g.dams) {
+    const s = share(g), large = largeStorage(g);
+    const yearly = Number.isFinite(g.flow) ? ` The mean flow is <b>${fmt(g.flow)} cubic feet per second</b> over ${plural(g.flowYears, "water year")}, about ${fmt(g.flow * AF_PER_CFS_YEAR)} acre-feet a year.` : " The gauge has no mean flow to compare with.";
+    out.push({ sev: large ? "caution" : "info",
+      title: s != null ? `Inventoried dams upstream hold ${pct(s)} of a year's flow` : `${plural(g.dams, "inventoried dam")} upstream; no flow to compare`,
+      found: `${plural(g.dams, "dam")} in the National Inventory of Dams sit inside the traced basin and hold about <b>${fmt(g.damAf)} acre-feet</b>, counting each reservoir once.${yearly}${g.largest?.length ? ` Largest: ${g.largest.map(esc).join(", ")}.` : ""}`,
+      why: large
+        ? "Storage this large next to the yearly flow lets operators hold water back and release it on a schedule, so the daily flow at the gauge follows operations as well as weather."
+        : "Storage this small next to the yearly flow changes the daily flow little. A small dam can still take most of a dry-season flow for irrigation.",
+      check: large
+        ? ["If the large dams sit outside the true basin, or on a side drainage that adds little, say so in the notes and rule on the flow itself."]
+        : ["Check the irrigation note below, if there is one, and the close-up map for canals leaving the river."] });
+  }
+  if (g.irrigation) out.push({ sev: "info", title: `${plural(g.irrigation, "irrigation dam")} upstream`,
+    found: `The National Inventory of Dams lists irrigation among the purposes of ${plural(g.irrigation, "dam")} inside the traced basin.`,
+    why: "An irrigation dam usually feeds a canal. Water taken into canals above the gauge makes its summer flow read low.",
+    check: ["Look for canals leaving the river above the red point on the close-up map.", "The gauge page remarks often name the diversions above it."] });
+  if (g.nearDams?.length) out.push({ sev: "caution", title: "A dam is within 1 km of the gauge",
+    found: `${g.nearDams.map(n => `<b>${esc(n)}</b>`).join(", ")}.`,
+    why: "The traced basin includes the whole small catchment the gauge sits in, and part of it can lie below the gauge. A dam there is counted upstream but may be downstream.",
+    check: ["On the close-up map, see whether the dam is above or below the red point.", "If it is below, its storage does not shape this flow: say so in the notes."] });
   if (!g.covers) {
     const y = years(g);
     out.push({ sev: "caution", title: `Record starts ${esc(g.begin || "on an unknown date")}${y != null ? `, about ${y} years` : ""}`,
@@ -338,8 +381,8 @@ function findings(g) {
       check: ["Rule Short record to show its flow without a comparison, unless another problem above rules it out."] });
   }
   if (!out.some(f => f.sev !== "info")) out.push({ sev: "info", title: "No problem found by the rules",
-    found: `No published reservoir or named diversion in the basin. Record from ${esc(g.begin)}. ${g.snow.length ? `${g.snow.length} snow site${g.snow.length > 1 ? "s" : ""} upstream.` : "No snow site upstream."}`,
-    why: "The rules only see the dashboard's published reservoirs and diversions named in the gauge name. Unlisted reservoirs, canals that take water out, imports from another basin and city water use are not checked.",
+    found: `No large storage, published reservoir or named diversion in the basin. Record from ${esc(g.begin)}. ${g.snow.length ? `${g.snow.length} snow site${g.snow.length > 1 ? "s" : ""} upstream.` : "No snow site upstream."}`,
+    why: "The rules see inventoried dams, the dashboard's published reservoirs and diversions named in the gauge name. Canals that take water out without a dam, imports from another basin and city water use are not checked.",
     check: ["Scan the close-up map inside the blue outline for lakes, canals and towns.", "Read the remarks on the gauge page for regulation or diversion.", "Natural is a candidate ruling only after checking upstream effects. Record completeness and the flow comparison method still need review."] });
   return out;
 }
@@ -348,7 +391,8 @@ function question(g) {
   if (conduit(g)) return "Is this gauge a river at all, or a man-made channel to leave out?";
   if (g.trace !== "traced") return "Can you verify the basin and upstream effects? Keep Check while they are unknown.";
   if (areaFlag(g)) return "Is the blue outline the real basin of this gauge? If not, the rest of its evidence is unreliable.";
-  if (g.reservoirs.length || belowDiversion(g)) return "Is the flow here shaped enough by storage or diversion that it should not be ranked against normal?";
+  if (largeStorage(g) || belowDiversion(g)) return "Is the flow here shaped enough by storage or diversion that it should not be ranked against normal?";
+  if (g.dams) return "The storage upstream is small next to the yearly flow. Is this flow natural enough to compare with its own normal for the date?";
   if (!g.covers) return "The record is too short for a 1991–2020 normal. Should the flow show without a comparison?";
   return "Is this flow natural enough to compare with its own normal for the date?";
 }
@@ -358,7 +402,8 @@ function options(g) {
   return [
     { id: "natural", what: "Candidate for a flow comparison, after record completeness and the flow method are approved. This ruling does not create a normal or publish a rank.",
       warn: !g.covers ? "The record does not start by 1991, or its start is unknown. A complete 1991–2020 baseline has not been established."
-        : res ? `${res} reservoir${res > 1 ? "s" : ""} upstream would be ranked as if the flow were natural.`
+        : largeStorage(g) && share(g) != null ? `Dams upstream hold ${pct(share(g))} of a year's flow; it would be ranked as if natural.`
+        : res && share(g) == null ? `${res} reservoir${res > 1 ? "s" : ""} upstream would be ranked as if the flow were natural.`
         : belowDiversion(g) ? "A diversion above the gauge would be ranked as if natural." : "" },
     { id: "shaped", what: "Its flow is shown and labelled as shaped by storage or diversion upstream. No rank against normal.", warn: "" },
     { id: "short", what: "Its flow is shown with no comparison with normal, because the record is too short.",
@@ -377,12 +422,17 @@ function visible() {
     const r = rulingOf(g.site);
     if (state.unruled && r && !state.dirty[g.site]) return false;
     if (state.differs && (!r || r === g.tier)) return false;
-    if (q && !(`${g.name} ${g.site} ${g.county} ${g.huc8}`.toLowerCase().includes(q))) return false;
+    const pile = PILES.find(p => p.id === state.pile);
+    if (pile?.test && !pile.test(g)) return false;
+    if (q && !(`${g.name} ${g.site} ${g.county} ${g.huc8} ${g.huc8Name || ""}`.toLowerCase().includes(q))) return false;
     return true;
   });
-  return rows.sort(state.reviewOrder
+  const within = state.reviewOrder
     ? (a, b) => (areaFlag(b) - areaFlag(a)) || (ORDER[a.tier] - ORDER[b.tier]) || a.huc8.localeCompare(b.huc8) || a.name.localeCompare(b.name)
-    : (a, b) => a.huc8.localeCompare(b.huc8) || a.site.localeCompare(b.site));
+    : (a, b) => a.huc8.localeCompare(b.huc8) || a.site.localeCompare(b.site);
+  return rows.sort(state.grouped
+    ? (a, b) => groupName(a).localeCompare(groupName(b)) || a.huc8.localeCompare(b.huc8) || within(a, b)
+    : within);
 }
 
 function renderHeader() {
@@ -395,6 +445,10 @@ function renderHeader() {
   $("ruled-bar").innerHTML = TIERS.map(t => {
     const n = state.gauges.filter(g => rulingOf(g.site) === t.id && !state.dirty[g.site]).length;
     return n ? `<span class="t-${t.id}" style="width:${(n / total) * 100}%"></span>` : "";
+  }).join("");
+  $("piles").innerHTML = PILES.map(p => {
+    const n = p.test ? state.gauges.filter(p.test).length : state.gauges.length;
+    return `<button class="toggle" type="button" data-pile="${p.id}" aria-pressed="${state.pile === p.id}">${esc(p.label)} (${n})</button>`;
   }).join("");
   const flagged = state.gauges.filter(areaFlag);
   $("tier-cards").innerHTML = TIERS.map(t => {
@@ -409,13 +463,27 @@ function renderHeader() {
 function renderList() {
   const rows = visible();
   if (!rows.length) { $("list").innerHTML = `<li class="list-empty">No gauge matches these filters.</li>`; return; }
+  const editable = state.ready && state.canWrite;
+  let group = null;
   $("list").innerHTML = rows.map(g => {
+    let head = "";
+    if (state.grouped && g.huc8 !== group) {
+      group = g.huc8;
+      const members = rows.filter(x => x.huc8 === g.huc8);
+      const open = members.filter(bulkOpen).length;
+      const ruled = members.filter(x => rulingOf(x.site) && !state.dirty[x.site]).length;
+      const confirm = state.confirmGroup === g.huc8;
+      head = `<li class="group-head"><span><b>${esc(groupName(g))}</b> · HUC <span class="mono">${g.huc8}</span></span>
+        <span>${plural(members.length, "gauge")} · ${ruled} ruled</span>
+        ${open && editable ? `<button class="btn${confirm ? " confirm" : ""}" type="button" data-group-agree="${g.huc8}">${confirm ? `Confirm: rule ${open} as suggested` : `Agree with ${plural(open, "safe suggestion")}`}</button>` : ""}</li>`;
+    }
     const r = rulingOf(g.site), d = areaDiff(g);
     const badge = r ? `<span class="ruled r-${r}${r === g.tier ? " agree" : ""}">${esc(TIER[r]?.label || r)}${state.dirty[g.site] ? " · unsaved" : ""}</span>` : "";
     const flag = areaFlag(g) ? ` · <span class="flag">area ${d > 0 ? "+" : "−"}${Math.round(Math.abs(d) * 100)}%</span>` : "";
-    return `<li><button type="button" class="t-${g.tier}" data-site="${g.site}" aria-current="${state.selected === g.site}">
+    const safe = g.queue === "bulk" ? " · safe as a group" : "";
+    return `${head}<li><button type="button" class="t-${g.tier}" data-site="${g.site}" aria-current="${state.selected === g.site}">
       <span class="dot"></span><span class="nm">${esc(g.name)}</span>${badge}
-      <span class="sub"><span class="mono">${g.site}</span> · ${esc(g.county)}${flag}</span></button></li>`;
+      <span class="sub"><span class="mono">${g.site}</span> · ${esc(g.county)}${flag}${safe}</span></button></li>`;
   }).join("");
 }
 
@@ -472,7 +540,7 @@ function renderGauge() {
     <div class="gauge-head">
       <div>
         <h2>${esc(g.name)}</h2>
-        <div class="ids"><span class="mono">USGS ${g.site}</span> · ${esc(g.county)} · HUC <span class="mono">${g.huc8}</span> ·
+        <div class="ids"><span class="mono">USGS ${g.site}</span> · ${esc(g.county)} · ${esc(groupName(g))} (HUC <span class="mono">${g.huc8}</span>) ·
           <a class="ext" href="${esc(g.page)}" target="_blank" rel="noopener">Open the gauge page</a></div>
       </div>
       <div class="nav-btns">
@@ -505,7 +573,9 @@ function renderGauge() {
       <div><dt>Traced basin</dt><dd class="${areaFlag(g) ? "flag" : ""}">${g.trace === "traced" ? `${fmt(g.traced)} sq mi${d != null ? ` (${d > 0 ? "+" : "−"}${Math.round(Math.abs(d) * 100)}%)` : ""}` : esc(g.trace || "Not run")}</dd></div>
       <div><dt>Record</dt><dd>${esc(g.begin || "Unknown")} to ${esc(g.last || "?")}</dd></div>
       <div><dt>Starts by 1991</dt><dd>${g.covers ? "Yes; gaps unchecked" : "No or unknown"}</dd></div>
-      <div><dt>Inside traced basin</dt><dd>${g.reservoirs.length} reservoirs · ${g.snow.length} snow sites</dd></div>
+      <div><dt>Inside traced basin</dt><dd>${g.reservoirs.length} published reservoirs · ${g.dams == null ? "dams not counted" : plural(g.dams, "inventoried dam")} · ${g.snow.length} snow sites</dd></div>
+      <div><dt>Mean flow since 1991</dt><dd>${Number.isFinite(g.flow) ? `${fmt(g.flow)} cubic feet per second (${plural(g.flowYears, "year")})` : "Not available"}</dd></div>
+      <div><dt>Dam storage, share of a year's flow</dt><dd class="${largeStorage(g) && share(g) != null ? "flag" : ""}">${share(g) != null ? `${pct(share(g))} (${fmt(g.damAf)} acre-feet)` : g.dams ? `${fmt(g.damAf)} acre-feet; no flow to compare` : "No storage counted"}</dd></div>
     </dl>
 
     <h3 class="sec">What the checks found</h3>
@@ -600,6 +670,28 @@ async function agreeNext() {
   const g = state.gauges.find(x => x.site === site);
   if (g && await rule(site, g.tier) && state.selected === site && next) select(next);
 }
+/* Rule every open safe suggestion in one watershed. The first press asks;
+ * the second, within six seconds, saves them one by one. */
+async function agreeGroup(huc8) {
+  const sites = visible().filter(g => g.huc8 === huc8 && bulkOpen(g)).map(g => g.site);
+  if (!sites.length || !state.ready || !state.canWrite) return 0;
+  if (state.confirmGroup !== huc8) {
+    state.confirmGroup = huc8; renderList();
+    setTimeout(() => { if (state.confirmGroup === huc8) { state.confirmGroup = null; renderList(); } }, 6000);
+    return 0;
+  }
+  state.confirmGroup = null;
+  let saved = 0;
+  for (const site of sites) {
+    const g = state.gauges.find(x => x.site === site);
+    setSave(`Saving ${saved + 1} of ${sites.length} in this watershed…`);
+    if (await write(site, { ruling: g.tier, notes: notesOf(site) || "Agreed with the safe suggestion for the watershed." })) saved++;
+  }
+  saveStatus();
+  if (saved < sites.length) setSave(`${sites.length - saved} of ${sites.length} did not save. Retry or export a backup.`, true);
+  renderGauge();
+  return saved;
+}
 async function download(name, text, type) {
   try {
     if (window.claude?.use) {
@@ -648,7 +740,7 @@ $("retry-save").addEventListener("click", () => {
   for (const site of Object.keys(state.failures)) write(site, {});
 });
 document.addEventListener("click", e => {
-  const el = e.target.closest("[data-site],[data-filter],[data-rule],[data-nav],[data-agree],[data-clear],[data-view],[data-layer],[data-zoom],[data-export-basin],#t-unruled,#t-differs,#t-order");
+  const el = e.target.closest("[data-site],[data-filter],[data-rule],[data-nav],[data-agree],[data-clear],[data-view],[data-layer],[data-zoom],[data-export-basin],[data-group-agree],[data-pile],#t-unruled,#t-differs,#t-order,#t-group");
   if (!el) return;
   if (el.disabled) return;
   if (el.dataset.zoom) { state.mapZoom = el.dataset.zoom === "fit" ? 1 : Math.max(1, Math.min(4, state.mapZoom * (el.dataset.zoom === "in" ? 2 : 0.5))); return renderGauge(); }
@@ -658,6 +750,8 @@ document.addEventListener("click", e => {
     return;
   }
   if (el.dataset.site) { state.mapView = el.closest("svg") ? "close" : state.mapView; return select(el.dataset.site, true); }
+  if (el.dataset.groupAgree) return agreeGroup(el.dataset.groupAgree);
+  if (el.dataset.pile !== undefined) { state.pile = el.dataset.pile; return renderAll(); }
   if (el.dataset.filter) { state.filter = state.filter === el.dataset.filter ? null : el.dataset.filter; return renderAll(); }
   if (el.dataset.rule) return rule(state.selected, el.dataset.rule);
   if (el.dataset.nav) return step(Number(el.dataset.nav));
@@ -668,7 +762,8 @@ document.addEventListener("click", e => {
   if (el.id === "t-unruled") state.unruled = !state.unruled;
   if (el.id === "t-differs") state.differs = !state.differs;
   if (el.id === "t-order") state.reviewOrder = !state.reviewOrder;
-  el.setAttribute("aria-pressed", String(el.id === "t-unruled" ? state.unruled : el.id === "t-differs" ? state.differs : state.reviewOrder));
+  if (el.id === "t-group") state.grouped = !state.grouped;
+  el.setAttribute("aria-pressed", String({ "t-unruled": state.unruled, "t-differs": state.differs, "t-order": state.reviewOrder, "t-group": state.grouped }[el.id]));
   renderList();
 });
 $("search").addEventListener("input", e => { state.query = e.target.value; renderList(); });

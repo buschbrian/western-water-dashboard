@@ -29,7 +29,7 @@ function harness() {
     clearTimeout(timer) { timers.delete(timer); },
     Date, Number, String, Math, Promise, Set, Map,
   });
-  vm.runInContext(`${script}\nthis.api = {state, write, draft, connect, rule, agreeNext, select, visible, areaDiff, areaFlag, reviewCSV, basinGeoJSON, findings, closeMap, renderHeader, download};`, context);
+  vm.runInContext(`${script}\nthis.api = {state, write, draft, connect, rule, agreeNext, agreeGroup, select, visible, areaDiff, areaFlag, reviewCSV, basinGeoJSON, findings, closeMap, renderHeader, download};`, context);
   const a = context.api;
   a.state.gauges = [gauge('001'), gauge('002'), gauge('003')];
   a.state.selected = '001'; a.state.canWrite = true; a.state.ready = true;
@@ -154,4 +154,63 @@ test('Artifact exports use the declared downloads capability', async () => {
   context.window.claude = { use: async () => ({ save: async request => { saved = request; } }) };
   await a.download('basin-001.json', '{}', 'application/geo+json');
   assert.equal(saved.filename, 'basin-001.json'); assert.equal(saved.data, '{}');
+});
+
+test('a watershed is agreed only on its open safe suggestions, and only after a second press', async () => {
+  const { a, writes, timers } = harness();
+  a.state.gauges = [
+    gauge('001', { tier: 'shaped', queue: 'bulk' }),
+    gauge('002', { tier: 'natural', queue: 'review' }),
+    gauge('003', { tier: 'exclude', queue: 'bulk' }),
+    gauge('004', { tier: 'shaped', queue: 'bulk' }),
+    gauge('005', { tier: 'shaped', queue: 'bulk', huc8: '16000002' }),
+  ];
+  a.state.rulings['004'] = { ruling: 'natural', notes: 'Mine' };
+  assert.equal(await a.agreeGroup('16000001'), 0);
+  assert.equal(writes.length, 0);
+  assert.equal(a.state.confirmGroup, '16000001');
+  assert.equal(await a.agreeGroup('16000001'), 2);
+  assert.deepEqual(writes.map(w => [w.site, w.body.ruling]), [['003', 'exclude'], ['001', 'shaped']]);
+  assert.match(writes[0].body.notes, /safe suggestion/);
+  assert.equal(a.state.rulings['004'].ruling, 'natural');
+  // An unconfirmed first press lapses.
+  await a.agreeGroup('16000002');
+  [...timers].filter(t => t.ms === 6000).at(-1).fn();
+  assert.equal(a.state.confirmGroup, null);
+});
+
+test('a read-only view cannot agree a watershed', async () => {
+  const { a, writes } = harness();
+  a.state.gauges = [gauge('001', { tier: 'shaped', queue: 'bulk' })];
+  a.state.canWrite = false;
+  await a.agreeGroup('16000001'); await a.agreeGroup('16000001');
+  assert.equal(writes.length, 0);
+});
+
+test('the queue filter and watershed grouping order the list', () => {
+  const { a } = harness();
+  a.state.gauges = [
+    gauge('001', { huc8: '16000002', huc8Name: 'Provo', queue: 'review' }),
+    gauge('002', { huc8: '16000001', huc8Name: 'Weber', queue: 'bulk', tier: 'shaped' }),
+    gauge('003', { huc8: '16000002', huc8Name: 'Provo', queue: 'bulk', tier: 'shaped' }),
+  ];
+  assert.deepEqual(a.visible().map(g => g.site), ['001', '003', '002']);
+  a.state.pile = 'bulk';
+  assert.deepEqual(a.visible().map(g => g.site), ['003', '002']);
+  a.state.pile = 'look';
+  assert.deepEqual(a.visible().map(g => g.site), ['001']);
+});
+
+test('dam evidence reads large storage as a caution and a dam beside the gauge as a question', () => {
+  const { a } = harness();
+  const large = a.findings(gauge('001', { dams: 4, damAf: 541138, share: 450.5, flow: 165.8, flowYears: 35,
+    largest: ['Jordanelle Dam (363,000 AF)'], irrigation: 2, nearDams: ['Weir'] }));
+  const titles = large.map(f => f.title).join(' | ');
+  assert.match(titles, /hold 451% of a year's flow/);
+  assert.equal(large.find(f => /hold 451/.test(f.title)).sev, 'caution');
+  assert.match(titles, /2 irrigation dams upstream/);
+  assert.match(titles, /within 1 km of the gauge/);
+  const small = a.findings(gauge('002', { dams: 3, damAf: 500, share: 1.6, flow: 40, flowYears: 30, largest: [] }));
+  assert.equal(small.find(f => /hold 1.6%/.test(f.title)).sev, 'info');
+  assert.ok(small.some(f => f.title === 'No problem found by the rules'));
 });
