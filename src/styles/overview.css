@@ -313,7 +313,11 @@ body {
  * lone card or a hole -- the reason this strip was once flex (6 cards: 2, 3,
  * 6 columns; 5: 2, 3 with the first spanning two, then 5; 4: 2, then 4).
  * Rows are separated by each card's own bottom margin rather than a row gap,
- * because a subgrid's rows would inherit the gap between its label and value. */
+ * because a subgrid's rows would inherit the gap between its label and value.
+ *
+ * Only a card directly in a strip takes the three rows. The drought page's
+ * area rows reuse the card's surface outside a strip and hold four blocks;
+ * on a subgrid of three, the fourth was laid over the third. */
 .overview-kpis {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -321,7 +325,7 @@ body {
   row-gap: 0;
   margin-block: .75rem .1rem;
 }
-.overview-kpi {
+.overview-kpis > .overview-kpi {
   grid-row: span 3;
   display: grid;
   grid-template-rows: subgrid;
@@ -395,16 +399,16 @@ body {
  * disappears with the viewport width rather than staying put.
  *
  * `subgrid` makes the cards share the row's tracks instead of each sizing
- * its own, so heading, chart, note and key line up across the row whatever
- * the text does. The span has to cover **every** slot a card can hold: at
- * `span 2` the note and the key of the card that has them collapse into the
- * chart's own row and draw on top of it. A card that has no note and no key
- * leaves those rows empty, which is the cost of the alignment and is
- * deliberate. */
+ * its own, so heading and chart line up across the row whatever the text
+ * does. A subgrid cannot add rows: a card with more children than its span
+ * draws the extras on top of its last row. At `span 4` the notes and the
+ * chart credit added later were drawn over one another on every card that
+ * had more than four blocks. So each card holds three: its heading, its
+ * chart, and a `.card-foot` with whatever follows the chart. */
 .overview-chart-grid > .overview-card {
   display: grid;
   grid-template-rows: subgrid;
-  grid-row: span 4;
+  grid-row: span 3;
 }
 /* The category-heavy charts need enough room for complete names, and the
  * histogram's key needs the same full row so it does not leave a half-row
@@ -487,6 +491,11 @@ body {
 }
 .card-note + .card-note { margin-block-start: .4rem; }
 .card-note + .card-source { margin-block-start: .4rem; }
+/* Long fine print, folded on a phone so the next figure is not a screen
+ * of text away. Pages open it on wide screens, where it is a few lines. */
+.card-more { margin-block-start: .9rem; }
+.card-more > summary { color: var(--app-muted); font-size: .8rem; cursor: pointer; }
+.card-more > .card-note:first-of-type { margin-block-start: .5rem; }
 
 /* What drew a card, as a quiet credit under it rather than a pill beside
  * its title: the title and the figures are what a reader came for. */
@@ -897,8 +906,11 @@ body {
    * pairing above is what makes it three rows rather than six; this is the
    * rest of what density can honestly give back. */
   .overview-kpis { column-gap: .5rem; }
-  .overview-kpi { padding: .65rem .8rem; margin-block-end: .5rem; }
+  .overview-kpi { padding: .65rem .8rem; }
+  .overview-kpis > .overview-kpi { margin-block-end: .5rem; }
   .card-heading { flex-wrap: wrap; }
+  /* A wrapped action has nothing under it but the card's next block. */
+  .card-heading > calcite-button { margin-block-end: .65rem; }
   .table-actions { width: 100%; justify-content: stretch; }
   .table-actions calcite-button { flex: 1 1 auto; }
   .sort-control { width: 100%; }

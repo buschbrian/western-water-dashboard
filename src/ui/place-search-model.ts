@@ -213,7 +213,8 @@ export function onlyMatch(results: readonly Place[], query: string): Place | nul
 
 /** Pages that draw a drainage area; the others send an area to the storage map. */
 const AREA_PAGES: Partial<Record<PageId, string>> = {
-  map: "./", overview: "./overview.html", snow: "./snow.html", drought: "./drought.html"
+  map: "./", overview: "./overview.html", precipitation: "./precipitation.html",
+  snow: "./snow.html", drought: "./drought.html"
 };
 
 /** Where a result goes from the page the reader is on. */

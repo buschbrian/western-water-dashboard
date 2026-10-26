@@ -22,7 +22,7 @@ import { openingAreaName, snowPlace } from "./snow-place";
 import { baselineChoices } from "./state/baseline";
 import { describeReservoir } from "./state/detail";
 import {
-  invalidSentence, reservoirPageHref, snowPageHref, storyRequestFromSearch,
+  invalidSentence, reservoirPageHref, precipitationPageHref, storyRequestFromSearch,
   type StoryInvalid, type StoryPlace, type StoryRequest
 } from "./state/story-url";
 import type { EffectiveTheme } from "./state/theme";
@@ -194,7 +194,7 @@ function precipitationPlan(card: PrecipitationCard, lead: HTMLElement, stripOnly
 }
 
 async function showPrecipitation(view: "precip" | "strip", place: StoryPlace): Promise<void> {
-  const href = snowPageHref(place);
+  const href = precipitationPageHref(place);
   setFooter(null, href);
   const [raw, rosters] = await Promise.all([
     loadSnowpack(),
@@ -374,7 +374,7 @@ async function run(current: StoryRequest): Promise<void> {
   } catch (error) {
     console.error("The story view could not load:", error);
     showFailure("The published data could not be read just now. Try again later.",
-      current.view === "upstream" ? null : snowPageHref(current.place));
+      current.view === "upstream" ? null : precipitationPageHref(current.place));
   }
 }
 

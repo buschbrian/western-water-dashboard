@@ -73,6 +73,9 @@ const userTextFiles = [
   "src/state/story-url.ts",
   "src/ui/upstream-section.ts",
   "src/ui/precipitation-card.ts",
+  // The precipitation view's own lead, place line and links.
+  "precipitation.html",
+  "src/precipitation.ts",
   // The snowpack view writes all of its own visible text, including the
   // seasonal caveat and the axis words on the curve.
   "snow.html",
@@ -153,7 +156,7 @@ const oldUnexplainedTerms = [
 describe("user text", () => {
   it("does not transform visible text in CSS", async () => {
     const publishedPages = [
-      "index.html", "modern.html", "overview.html", "snow.html", "drought.html",
+      "index.html", "modern.html", "overview.html", "precipitation.html", "snow.html", "drought.html",
       "methods.html", "data.html", "reservoir.html", "terms.html",
       "landscape.html", "explore.html", "lakes.html", "story.html",
       "legacy/index.html", "maplibre/index.html"

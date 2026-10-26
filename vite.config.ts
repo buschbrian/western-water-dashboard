@@ -111,6 +111,7 @@ export default defineConfig({
         index: resolve(root, "index.html"),
         modern: resolve(root, "modern.html"),
         overview: resolve(root, "overview.html"),
+        precipitation: resolve(root, "precipitation.html"),
         snow: resolve(root, "snow.html"),
         drought: resolve(root, "drought.html"),
         methods: resolve(root, "methods.html"),

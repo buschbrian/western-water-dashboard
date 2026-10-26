@@ -19,7 +19,7 @@ import "@esri/calcite-components/components/calcite-icon";
 import { linkHref, portableSearch } from "../state/portable-url";
 
 export type PageId =
-  | "map" | "overview" | "snow" | "drought" | "methods" | "data"
+  | "map" | "overview" | "precipitation" | "snow" | "drought" | "methods" | "data"
   | "reservoir" | "lakes";
 
 interface PageLink {
@@ -45,14 +45,15 @@ interface PageLink {
  * quietly losing an entry.
  *
  * These are longer than the bar's button text on purpose. The navigation
- * clips rather than scrolls, so "Precipitation" is all that fits beside the other
- * buttons; "Western Precipitation and Snow" is what a tab, a bookmark or a shared link
+ * clips rather than scrolls, so "Snowpack" is all that fits beside the other
+ * buttons; "Western Snowpack" is what a tab, a bookmark or a shared link
  * needs, where there is no bar around it to supply the context.
  */
 const PAGE_SUBJECTS: Record<PageId, string> = {
   map: "Western Reservoir Storage",
   overview: "Western Storage Charts",
-  snow: "Western Precipitation and Snow",
+  precipitation: "Western Precipitation",
+  snow: "Western Snowpack",
   drought: "Western Drought",
   methods: "Methods and Sources",
   data: "Public Data API",
@@ -85,9 +86,14 @@ const PAGES: readonly PageLink[] = [
     label: "Open the storage charts and table"
   },
   {
+    id: "precipitation", href: "./precipitation.html", icon: "rain",
+    text: "Precipitation", menuText: "Precipitation",
+    label: "Open the precipitation view"
+  },
+  {
     id: "snow", href: "./snow.html", icon: "snow",
-    text: "Precipitation", menuText: "Precipitation and snow",
-    label: "Open the precipitation and snow view"
+    text: "Snowpack", menuText: "Snowpack",
+    label: "Open the mountain snowpack view"
   },
   {
     id: "drought", href: "./drought.html", icon: "gauge",

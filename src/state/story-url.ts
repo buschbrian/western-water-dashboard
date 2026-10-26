@@ -107,11 +107,11 @@ export function invalidSentence(reason: StoryInvalid): string {
  * The state is always written, `all` included, so the link never defers to
  * the reader's stored place (docs/architecture/scopes.md).
  */
-export function snowPageHref(place: StoryPlace): string {
+export function precipitationPageHref(place: StoryPlace): string {
   const params = new URLSearchParams({ state: place.state });
   if (place.area !== null) params.set("area", place.area);
   writeLevel(params, place.level);
-  return `snow.html?${params.toString()}`;
+  return `precipitation.html?${params.toString()}`;
 }
 
 /** The full page an upstream view comes from, by the reservoir's label. */

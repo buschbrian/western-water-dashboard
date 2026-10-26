@@ -16,6 +16,7 @@ module that owns the behaviour and read the entry point only for the sequence.
 |---|---|---|
 | Storage map | `src/main.ts` | `src/ui/map.ts`, `src/ui/layers.ts`, `src/ui/shell.ts`, `src/state/filters.ts`, `src/state/url.ts`, `src/state/detail.ts`, `src/data/rollup.ts` |
 | Storage charts | `src/overview.ts` | `src/overview-model.ts` (all filtering and grouping), `src/overview-charts.ts`, `src/state/overview-url.ts`, `src/weekly-model.ts` |
+| Precipitation | `src/precipitation.ts` | `src/ui/precipitation-card.ts`, `src/precip-model.ts`, `src/precip-storm-model.ts`, `src/viz/precip-*.ts`; the place from `src/snow-place.ts`, as the snow page and story views narrow it (ADR-130) |
 | Snowpack | `src/snow.ts` | `src/snow-model.ts`, `src/ui/snow-map.ts`, `src/viz/snow-curve.ts`, `src/state/snow-url.ts` |
 | Drought | `src/drought.ts` | `src/drought-model.ts`, `src/ui/drought-map.ts`, `src/viz/drought-*.ts`, `src/state/drought-url.ts` |
 | One reservoir | `src/reservoir.ts` | `src/reservoir-model.ts` (link resolution, both baselines, provenance), `src/ui/reservoir-template.ts`; the reading itself is `describeReservoir`, shared with the map's details panel so the two cannot drift |
@@ -72,6 +73,7 @@ stored water and the stored-water groups above it. It computes nothing:
 the precipitation views take their stations from `snowPlace`, which the snow
 page uses too, and the upstream view draws with `upstreamSection`, which the
 reservoir page uses too. A link the views cannot draw shows one sentence.
+A precipitation view's full page is `precipitation.html` (ADR-130).
 
 The page is the frame. `html`, `body` and the app are the frame's height and
 never scroll, and nothing inside scrolls either. `fitContent`
@@ -263,6 +265,15 @@ Each was found by a failing test or a screenshot. Do not regress them.
 
 - The pages are tested at **1280, 390 and 360** pixels wide. No page may
   scroll sideways at any of them.
+- **No text is drawn over other text**, at any of those widths. A shared
+  class on a block of a different shape is the usual cause: `.overview-kpi`
+  gives a card in a summary strip three subgrid rows, and a drought area
+  row, which reuses the card's surface with four blocks, laid its fourth
+  over its third until the rule was limited to `.overview-kpis >
+  .overview-kpi`. The storage chart cards had the same fault at four rows
+  and up to seven blocks; each now holds a heading, a chart and one
+  `.card-foot`. *Enforced:* `checkTextOverlap` in the browser suite, on
+  every page it scores for accessibility.
 - **`innerText` returns what CSS transformed, not what the code wrote.** A
   `text-transform: uppercase` makes the page say `STORED NOW` to a screen
   reader and to the smoke suite alike. There is no `text-transform` anywhere

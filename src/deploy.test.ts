@@ -126,7 +126,7 @@ describe("a data-only commit deploys on its own", () => {
    * it -- a page added without one is a page with no policy at all.
    */
   it("gives every published page the same content policy", async () => {
-    const pages = ["index.html", "modern.html", "overview.html", "snow.html",
+    const pages = ["index.html", "modern.html", "overview.html", "precipitation.html", "snow.html",
       "drought.html", "methods.html", "data.html", "explore.html", "lakes.html",
       "reservoir.html", "story.html", "legacy/index.html", "maplibre/index.html"];
     const policies = new Set<string>();
@@ -288,7 +288,7 @@ describe("a data-only commit deploys on its own", () => {
   it("still checks the published output for every current URL, the shell included", async () => {
     const workflow = await read(".github/workflows/deploy-pages.yml");
     for (const path of ["index.html", "modern.html", "legacy/index.html",
-      "overview.html", "snow.html", "drought.html", "methods.html", "explore.html",
+      "overview.html", "precipitation.html", "snow.html", "drought.html", "methods.html", "explore.html",
       "data/drought/usdm-huc6.json",
       "data.html", "api/reservoirs.json", "api/snowpack.json", "api/reference.json",
       "maplibre/index.html", "retired-route.js",
@@ -360,8 +360,8 @@ describe("a data-only commit deploys on its own", () => {
    * Two names per page, and they are not the same name.
    *
    * The bar's button text has to stay short because `calcite-navigation`
-   * clips rather than scrolls, so it says "Precipitation". A browser tab has no
-   * bar around it to supply the context, so it says "Western Precipitation and Snow —
+   * clips rather than scrolls, so it says "Snowpack". A browser tab has no
+   * bar around it to supply the context, so it says "Western Snowpack —
    * Western Water Dashboard". Both are checked here because the failure mode
    * is one of them being changed and the other forgotten, which nothing else
    * sees.
@@ -376,7 +376,8 @@ describe("a data-only commit deploys on its own", () => {
       "index.html": "Western Reservoir Storage",
       "modern.html": "Western Reservoir Storage",
       "overview.html": "Western Storage Charts",
-      "snow.html": "Western Precipitation and Snow",
+      "precipitation.html": "Western Precipitation",
+      "snow.html": "Western Snowpack",
       "drought.html": "Western Drought",
       "methods.html": "Methods and Sources",
       "data.html": "Public Data API"

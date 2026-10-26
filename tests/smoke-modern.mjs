@@ -466,7 +466,106 @@ function checkLabelFonts(check, label, missing) {
     [...new Set(missing)].join(", "));
 }
 
+/*
+ * No text drawn over other text.
+ *
+ * axe and the width checks both passed a drought page whose area rows laid
+ * each reading over its links at every phone width: a shared card style gave
+ * a four-block row three grid rows. Neither check looks at where words land.
+ * This one measures every visible text run, as a reader sees it -- inside an
+ * open element, clipped by any scrolling or clipping box -- and fails when
+ * two runs from different elements share more than a sliver. Text in two
+ * different positioned layers is not compared: a menu, a sticky bar or an
+ * open panel covers what is under it on purpose. The map SDK's own controls
+ * are left out: they are not this site's layout.
+ */
+async function checkTextOverlap(tab, check, label) {
+  const found = await tab.evaluate(() => {
+    /* Up the tree the browser lays out: slotted content sits inside its
+     * slot, and a component's scrolling box is in its shadow root. */
+    const up = (node) => node.assignedSlot ?? node.parentElement ?? node.getRootNode().host;
+    const shown = (element) => {
+      for (let node = element; node && node !== document.documentElement;
+        node = up(node)) {
+        const style = getComputedStyle(node);
+        if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) === 0) return false;
+        const parent = node.parentElement;
+        if (parent?.tagName === "DETAILS" && !parent.open && node.tagName !== "SUMMARY") return false;
+      }
+      return true;
+    };
+    const clip = (rect, element) => {
+      let box = rect;
+      for (let node = element; node && node !== document.documentElement;
+        node = up(node)) {
+        const style = getComputedStyle(node);
+        if (style.overflowX === "visible" && style.overflowY === "visible") continue;
+        const edge = node.getBoundingClientRect();
+        const left = Math.max(box.left, edge.left), top = Math.max(box.top, edge.top);
+        box = new DOMRect(left, top, Math.max(0, Math.min(box.right, edge.right) - left),
+          Math.max(0, Math.min(box.bottom, edge.bottom) - top));
+      }
+      return box;
+    };
+    const layer = (element) => {
+      for (let node = element; node && node !== document.documentElement;
+        node = up(node)) {
+        if (["fixed", "absolute", "sticky"].includes(getComputedStyle(node).position)) return node;
+      }
+      return null;
+    };
+    const name = (element) => `${element.tagName.toLowerCase()}${element.id ? `#${element.id}` : ""}`
+      + (typeof element.className === "string" && element.className
+        ? `.${element.className.trim().split(/\s+/)[0]}` : "");
+    const runs = [];
+    const walk = (root) => {
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        const element = node.parentElement;
+        if (!element || !node.textContent.trim() || ["SCRIPT", "STYLE"].includes(element.tagName)) continue;
+        if (!shown(element)) continue;
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        /* A text box is the font's whole content area, which some fallback
+         * fonts make half again taller than the type. The letters sit in
+         * about one em at the middle of it. */
+        const em = parseFloat(getComputedStyle(element).fontSize) || 16;
+        for (const rect of range.getClientRects()) {
+          const height = Math.min(rect.height, em);
+          const middle = rect.top + rect.height / 2;
+          const box = clip(new DOMRect(rect.left, middle - height / 2, rect.width, height), element);
+          if (box.width >= 2 && box.height >= 2) {
+            runs.push({ element, layer: layer(element), text: node.textContent.trim().slice(0, 40), box });
+          }
+        }
+      }
+      for (const host of root.querySelectorAll("*")) {
+        if (host.shadowRoot && !host.tagName.startsWith("ARCGIS-")) walk(host.shadowRoot);
+      }
+    };
+    walk(document.body);
+    runs.sort((a, b) => a.box.top - b.box.top);
+    const overlaps = [];
+    for (let i = 0; i < runs.length; i++) {
+      for (let j = i + 1; j < runs.length && runs[j].box.top < runs[i].box.bottom; j++) {
+        const a = runs[i], b = runs[j];
+        if (a.element === b.element || a.layer !== b.layer) continue;
+        if (a.element.contains(b.element) || b.element.contains(a.element)) continue;
+        const wide = Math.min(a.box.right, b.box.right) - Math.max(a.box.left, b.box.left);
+        const tall = Math.min(a.box.bottom, b.box.bottom) - Math.max(a.box.top, b.box.top);
+        if (wide > 3 && tall > 2) {
+          overlaps.push(`${name(a.element)} "${a.text}" over ${name(b.element)} "${b.text}"`);
+        }
+      }
+    }
+    return [...new Set(overlaps)];
+  });
+  check(found.length === 0,
+    `${label}: ${found.length} text run(s) drawn over other text, e.g. ${found.slice(0, 3).join("; ")}`);
+}
+
 async function checkAccessibility(tab, check, label) {
+  await checkTextOverlap(tab, check, label);
   /*
    * Scored twice, and only a finding that survives both counts.
    *
@@ -1317,21 +1416,21 @@ for (const viewport of VIEWPORTS) {
       };
       return {
         menu: shown("#page-menu"),
-        buttons: ["#overview-link", "#snow-link", "#drought-link", "#methods-link"].filter(shown),
+        buttons: ["#overview-link", "#precipitation-link", "#snow-link", "#drought-link", "#methods-link"].filter(shown),
         menuItems: [...document.querySelectorAll("#page-menu calcite-dropdown-item[href]")]
           .map((item) => item.getAttribute("href")),
-        buttonHrefs: ["#overview-link", "#snow-link", "#drought-link", "#methods-link"]
+        buttonHrefs: ["#overview-link", "#precipitation-link", "#snow-link", "#drought-link", "#methods-link"]
           .map((selector) => document.querySelector(selector)?.getAttribute("href"))
       };
     });
     const wideBar = viewport.width >= 1024;
     check(pageLinks.menu === !wideBar,
       `${label}: the page menu is ${pageLinks.menu ? "showing" : "hidden"} at ${viewport.width}px`);
-    check(pageLinks.buttons.length === (wideBar ? 4 : 0),
+    check(pageLinks.buttons.length === (wideBar ? 5 : 0),
       `${label}: ${pageLinks.buttons.length} page link buttons are showing at ${viewport.width}px`);
-    check(pageLinks.menuItems.join(",") === "./,./overview.html,./snow.html,./drought.html,./methods.html",
+    check(pageLinks.menuItems.join(",") === "./,./overview.html,./precipitation.html,./snow.html,./drought.html,./methods.html",
       `${label}: the page menu offers ${pageLinks.menuItems.join(", ")}`);
-    check(pageLinks.buttonHrefs.join(",") === "./overview.html,./snow.html,./drought.html,./methods.html",
+    check(pageLinks.buttonHrefs.join(",") === "./overview.html,./precipitation.html,./snow.html,./drought.html,./methods.html",
       `${label}: the page link buttons point at ${pageLinks.buttonHrefs.join(", ")}`);
     check(await tab.locator(".map-stage > .map-alternative").count() === 0,
       `${label}: the old table and charts overlay still covers the map`);
@@ -2865,7 +2964,10 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
       // The header's own links swap for the menu below 64rem, so only
       // whichever is actually showing at this width is measured.
       ...(viewport.width >= 1024
-        ? { "map-link": "./", "snow-link": "./snow.html", "drought-link": "./drought.html", "methods-link": "./methods.html" }
+        ? {
+          "map-link": "./", "precipitation-link": "./precipitation.html", "snow-link": "./snow.html",
+          "drought-link": "./drought.html", "methods-link": "./methods.html"
+        }
         : { "page-menu-trigger": null })
     };
     const navControls = await tab.evaluate((ids) => ids.map((id) => {
@@ -3357,82 +3459,6 @@ for (const viewport of VIEWPORTS) {
     check(linked.tableRows < linked.ready?.sites,
       `${label}: a narrowed view shows ${linked.tableRows} of ${linked.ready?.sites} sites`);
 
-    /* The precipitation card loads on its own (ADR-125). Checked for what it
-     * drew against what it reported, never against today's numbers: on the
-     * first morning of a water year it may honestly have no line yet. It
-     * fetches only once it nears the screen, so it is scrolled to first. */
-    await tab.locator("#precip-card").scrollIntoViewIfNeeded();
-    await tab.waitForFunction(
-      () => window.__snowReady?.precipitation && window.__snowReady.precipitation.state !== "loading",
-      { timeout: 60000 });
-    const precip = await tab.evaluate(() => ({
-      status: window.__snowReady?.precipitation,
-      busy: document.querySelector(".precip-curve-host")?.getAttribute("aria-busy"),
-      svg: Boolean(document.querySelector(".precip-curve-host svg")),
-      empty: Boolean(document.querySelector(".precip-curve-host .chart-empty")),
-      monthRows: document.querySelectorAll("#precip-card tbody tr").length,
-      overflow: (() => {
-        const card = document.querySelector("#precip-card");
-        return card ? card.scrollWidth - card.clientWidth : -1;
-      })()
-    }));
-    console.log("  precipitation:", JSON.stringify(precip));
-    check(precip.status?.state === "ready",
-      `${label}: the precipitation card ended as ${precip.status?.state}`);
-    check(precip.busy === "false", `${label}: the precipitation chart left aria-busy ${precip.busy}`);
-    check(precip.status?.stations <= linked.tableRows,
-      `${label}: precipitation used ${precip.status?.stations} stations from ${linked.tableRows} in view`);
-    check(precip.status?.curveDays > 0 ? precip.svg && precip.status.bandDays >= 365 : precip.empty,
-      `${label}: precipitation drew ${precip.status?.curveDays} days and ${precip.status?.bandDays} steps, `
-        + `svg ${precip.svg}, empty message ${precip.empty}`);
-    check(precip.status?.curveDays === 0 || precip.monthRows === 13,
-      `${label}: the precipitation table has ${precip.monthRows} rows`);
-    check(precip.overflow <= 1, `${label}: the precipitation card overflows by ${precip.overflow}px`);
-    /* Recent totals (ADR-129): checked against what the card reported, never
-     * today's numbers. Every value is inches or a dash, never a percent. */
-    const storm = await tab.evaluate(() => {
-      const block = document.querySelector("#precip-card .precip-storm");
-      return {
-        shown: Boolean(block && !block.hidden),
-        values: [...(block?.querySelectorAll(".precip-storm-kpis strong") ?? [])].map((node) => node.textContent),
-        notes: [...(block?.querySelectorAll(".precip-storm-kpis small") ?? [])].map((node) => node.textContent),
-        listed: block?.querySelectorAll(".precip-storm-list li").length ?? 0,
-        text: block?.innerText ?? ""
-      };
-    });
-    const stormStatus = precip.status?.storm;
-    console.log("  storm totals:", JSON.stringify({ ...stormStatus, values: storm.values, listed: storm.listed }));
-    check(stormStatus && stormStatus.endDate !== undefined && stormStatus.leftOut >= 0,
-      `${label}: the readiness object has no storm totals`);
-    if (stormStatus?.endDate) {
-      check(storm.shown && storm.values.length === 3
-        && storm.values.every((value) => /^(\d+\.\d in|Less than 0\.1 in|—)$/.test(value)),
-      `${label}: the storm totals read ${JSON.stringify(storm.values)}`);
-      check(!storm.text.includes("%"), `${label}: the storm totals print a percent`);
-      check(storm.listed === stormStatus.rows && storm.listed <= 8,
-        `${label}: the storm list shows ${storm.listed} rows, readiness ${stormStatus.rows}`);
-      check(!stormStatus.available || stormStatus.stations === 0
-        || storm.notes.some((note) => note === `Mean of ${stormStatus.stations} station${stormStatus.stations === 1 ? "" : "s"}`),
-      `${label}: no storm total names its ${stormStatus.stations} stations`);
-      await tab.locator(".precip-storm .precip-range button", { hasText: "7 days" }).click();
-      await tab.waitForFunction(() => window.__snowReady?.precipitation?.storm?.window === 7, { timeout: 10000 });
-      await tab.locator(".precip-storm .precip-range button", { hasText: "3 days" }).click();
-    } else {
-      check(!storm.shown, `${label}: storm totals show with no end day`);
-    }
-    if (precip.status?.curveDays > 0) {
-      /* The chart opens on the season so far and can show the whole year;
-       * the whole year holds every band day the season view does not. */
-      check(precip.status.range === "season",
-        `${label}: the precipitation chart opened on ${precip.status.range}`);
-      await tab.locator(".precip-range button", { hasText: "Whole water year" }).click();
-      await tab.waitForFunction(() => window.__snowReady?.precipitation?.range === "year", { timeout: 10000 });
-      const pressed = await tab.evaluate(() => [...document.querySelectorAll(".precip-controls .precip-range button")]
-        .map((button) => button.getAttribute("aria-pressed")).join(","));
-      check(pressed === "false,true", `${label}: the range buttons report ${pressed}`);
-      await tab.locator(".precip-range button", { hasText: "Season so far" }).click();
-    }
-
     /* The visible site rows, as points. Same promise as the CSV download:
      * the file holds exactly the rows on screen, so it is checked against
      * the count the page just rendered rather than against the payload. */
@@ -3666,6 +3692,120 @@ for (const viewport of VIEWPORTS) {
     checkLabelFonts(check, label, labelFonts);
     await checkAccessibility(tab, check, label);
     await tab.screenshot({ path: `screenshots/snow-${viewport.name}.png`, fullPage: false });
+  } catch (err) {
+    failures.push(`${label}: ${err.message}`);
+  }
+  reportHostedOutage(label, hostedOutage);
+  for (const err of errors) failures.push(`${label}: ${err}`);
+  await context.close();
+}
+
+/* The precipitation view (ADR-130). Loaded through the same drainage-area
+ * deep link as the snowpack view, so the two pages are proven to read one
+ * place vocabulary. */
+for (const viewport of VIEWPORTS) {
+  const context = await newPageContext(browser, viewport);
+  const tab = await context.newPage();
+  const errors = [];
+  tab.on("pageerror", (err) => errors.push(`uncaught: ${err.message}`));
+  const hostedOutage = watchConsoleErrors(tab, errors);
+  const label = `Precipitation view (${viewport.name} ${viewport.width}px)`;
+  console.log(`\n=== ${label}`);
+  try {
+    await tab.goto(`${URL}precipitation.html?area=140100`, {
+      waitUntil: "domcontentloaded", timeout: 60000
+    });
+    await tab.waitForFunction(() => window.__precipReady !== undefined, { timeout: 60000 });
+    const linked = await tab.evaluate(() => ({
+      ready: window.__precipReady,
+      areaControl: document.querySelector(".drainage-menu calcite-select")?.value,
+      snowLink: document.querySelector("#precip-content a[href*='snow.html']")?.getAttribute("href") ?? null
+    }));
+    console.log("  ready:", JSON.stringify(linked.ready));
+    check(linked.ready?.area === "140100" && linked.areaControl === "140100",
+      `${label}: the shared link restored area ${linked.ready?.area}, control ${linked.areaControl}`);
+    check(linked.ready?.sites > 0, `${label}: the place holds ${linked.ready?.sites} sites`);
+    check(linked.snowLink?.includes("area=140100") === true,
+      `${label}: the snowpack link does not carry the place (${linked.snowLink})`);
+
+    /* The precipitation card loads on its own (ADR-125). Checked for what it
+     * drew against what it reported, never against today's numbers: on the
+     * first morning of a water year it may honestly have no line yet. It
+     * fetches only once it nears the screen, so it is scrolled to first. */
+    await tab.locator("#precip-card").scrollIntoViewIfNeeded();
+    await tab.waitForFunction(
+      () => window.__precipReady?.precipitation && window.__precipReady.precipitation.state !== "loading",
+      { timeout: 60000 });
+    const precip = await tab.evaluate(() => ({
+      status: window.__precipReady?.precipitation,
+      busy: document.querySelector(".precip-curve-host")?.getAttribute("aria-busy"),
+      svg: Boolean(document.querySelector(".precip-curve-host svg")),
+      empty: Boolean(document.querySelector(".precip-curve-host .chart-empty")),
+      monthRows: document.querySelectorAll("#precip-card tbody tr").length,
+      overflow: (() => {
+        const card = document.querySelector("#precip-card");
+        return card ? card.scrollWidth - card.clientWidth : -1;
+      })()
+    }));
+    console.log("  precipitation:", JSON.stringify(precip));
+    check(precip.status?.state === "ready",
+      `${label}: the precipitation card ended as ${precip.status?.state}`);
+    check(precip.busy === "false", `${label}: the precipitation chart left aria-busy ${precip.busy}`);
+    check(precip.status?.stations <= linked.ready?.sites,
+      `${label}: precipitation used ${precip.status?.stations} stations from ${linked.ready?.sites} in view`);
+    check(precip.status?.curveDays > 0 ? precip.svg && precip.status.bandDays >= 365 : precip.empty,
+      `${label}: precipitation drew ${precip.status?.curveDays} days and ${precip.status?.bandDays} steps, `
+        + `svg ${precip.svg}, empty message ${precip.empty}`);
+    check(precip.status?.curveDays === 0 || precip.monthRows === 13,
+      `${label}: the precipitation table has ${precip.monthRows} rows`);
+    check(precip.overflow <= 1, `${label}: the precipitation card overflows by ${precip.overflow}px`);
+    /* Recent totals (ADR-129): checked against what the card reported, never
+     * today's numbers. Every value is inches or a dash, never a percent. */
+    const storm = await tab.evaluate(() => {
+      const block = document.querySelector("#precip-card .precip-storm");
+      return {
+        shown: Boolean(block && !block.hidden),
+        values: [...(block?.querySelectorAll(".precip-storm-kpis strong") ?? [])].map((node) => node.textContent),
+        notes: [...(block?.querySelectorAll(".precip-storm-kpis small") ?? [])].map((node) => node.textContent),
+        listed: block?.querySelectorAll(".precip-storm-list li").length ?? 0,
+        text: block?.innerText ?? ""
+      };
+    });
+    const stormStatus = precip.status?.storm;
+    console.log("  storm totals:", JSON.stringify({ ...stormStatus, values: storm.values, listed: storm.listed }));
+    check(stormStatus && stormStatus.endDate !== undefined && stormStatus.leftOut >= 0,
+      `${label}: the readiness object has no storm totals`);
+    if (stormStatus?.endDate) {
+      check(storm.shown && storm.values.length === 3
+        && storm.values.every((value) => /^(\d+\.\d in|Less than 0\.1 in|—)$/.test(value)),
+      `${label}: the storm totals read ${JSON.stringify(storm.values)}`);
+      check(!storm.text.includes("%"), `${label}: the storm totals print a percent`);
+      check(storm.listed === stormStatus.rows && storm.listed <= 8,
+        `${label}: the storm list shows ${storm.listed} rows, readiness ${stormStatus.rows}`);
+      check(!stormStatus.available || stormStatus.stations === 0
+        || storm.notes.some((note) => note === `Mean of ${stormStatus.stations} station${stormStatus.stations === 1 ? "" : "s"}`),
+      `${label}: no storm total names its ${stormStatus.stations} stations`);
+      await tab.locator(".precip-storm .precip-range button", { hasText: "7 days" }).click();
+      await tab.waitForFunction(() => window.__precipReady?.precipitation?.storm?.window === 7, { timeout: 10000 });
+      await tab.locator(".precip-storm .precip-range button", { hasText: "3 days" }).click();
+    } else {
+      check(!storm.shown, `${label}: storm totals show with no end day`);
+    }
+    if (precip.status?.curveDays > 0) {
+      /* The chart opens on the season so far and can show the whole year;
+       * the whole year holds every band day the season view does not. */
+      check(precip.status.range === "season",
+        `${label}: the precipitation chart opened on ${precip.status.range}`);
+      await tab.locator(".precip-range button", { hasText: "Whole water year" }).click();
+      await tab.waitForFunction(() => window.__precipReady?.precipitation?.range === "year", { timeout: 10000 });
+      const pressed = await tab.evaluate(() => [...document.querySelectorAll(".precip-controls .precip-range button")]
+        .map((button) => button.getAttribute("aria-pressed")).join(","));
+      check(pressed === "false,true", `${label}: the range buttons report ${pressed}`);
+      await tab.locator(".precip-range button", { hasText: "Season so far" }).click();
+    }
+
+    await checkAccessibility(tab, check, label);
+    await tab.screenshot({ path: `screenshots/precipitation-${viewport.name}.png`, fullPage: false });
   } catch (err) {
     failures.push(`${label}: ${err.message}`);
   }
@@ -5689,8 +5829,8 @@ console.log(`\n=== Lakes page: ${VIEWPORTS.length} widths`);
     .sort((a, b) => b[1] - a[1])[0] ?? [null];
   check(upstreamStation !== null, "Story views: no published reservoir has a traced upstream set");
   const views = [
-    { name: "precip", query: "view=precip&state=UT", full: "snow.html?state=UT" },
-    { name: "strip", query: "view=strip&state=UT", full: "snow.html?state=UT" },
+    { name: "precip", query: "view=precip&state=UT", full: "precipitation.html?state=UT" },
+    { name: "strip", query: "view=strip&state=UT", full: "precipitation.html?state=UT" },
     { name: "upstream", query: `view=upstream&reservoir=${encodeURIComponent(upstreamStation)}`,
       full: "reservoir.html?name=" }
   ];
@@ -5886,6 +6026,7 @@ console.log(`\n=== Lakes page: ${VIEWPORTS.length} widths`);
   const pages = [
     ["Storage map", "", "__dashboardReady"],
     ["Storage charts", "overview.html", "__overviewReady"],
+    ["Precipitation", "precipitation.html", "__precipReady"],
     ["Snowpack", "snow.html", "__snowReady"],
     ["Drought", "drought.html", "__droughtReady"],
     ["Methods", "methods.html", null],
@@ -6646,6 +6787,7 @@ console.log(`\n=== Lakes page: ${VIEWPORTS.length} widths`);
     for (const page of [
       { name: "Storage map", url: `${URL}index.html`, signal: "__dashboardReady" },
       { name: "Storage Charts", url: `${URL}overview.html`, signal: "__overviewReady" },
+      { name: "Precipitation", url: `${URL}precipitation.html`, signal: "__precipReady" },
       { name: "Snowpack", url: `${URL}snow.html`, signal: "__snowReady" },
       { name: "Drought", url: `${URL}drought.html`, signal: "__droughtReady" }
     ]) {

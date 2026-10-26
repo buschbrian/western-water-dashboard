@@ -2,6 +2,10 @@
  * navigation, cards, filter bar and tables reuse the workspace stylesheet,
  * so the two data pages stay one design that is edited in one place. */
 
+/* Cards one after another. Without a gap each card's border sat on the
+ * next one's. */
+:is(#snow-content, #precip-content) > .overview-card + .overview-card { margin-block-start: .75rem; }
+
 /* The season curves render with a viewBox measured from their host rather
    than a fixed 640-unit canvas scaled to the card, so one unit is one CSS
    pixel at every width: the axis type and padding stay the size they were
