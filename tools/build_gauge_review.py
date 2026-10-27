@@ -216,6 +216,11 @@ def _adjustment(row: dict) -> float | None:
         return None
 
 
+def _water_added(row: dict) -> bool:
+    adjustment = _adjustment(row)
+    return adjustment is not None and adjustment <= -gauge_evidence.NRCS_MATERIAL_PCT
+
+
 def findings(row: dict) -> list[tuple[str, str]]:
     """Every finding behind a suggestion, as (tier, reason)."""
     name = row["site_name"].upper()
@@ -250,13 +255,17 @@ def findings(row: dict) -> list[tuple[str, str]]:
     if BELOW_DIVERSION_NAME.search(name):
         found.append(("diversion", "the name places it below a diversion"))
     adjustment = _adjustment(row)
-    if adjustment is not None and abs(adjustment) >= gauge_evidence.NRCS_MATERIAL_PCT:
-        effect = "removes or holds back water" if adjustment > 0 else "adds water"
+    if adjustment is not None and adjustment >= gauge_evidence.NRCS_MATERIAL_PCT:
         stored = any(tier == "reservoir" for tier, _ in found)
         found.append(("reservoir" if stored else "diversion",
                       f"the Natural Resources Conservation Service adjusts its yearly "
                       f"volume by {adjustment:+g}% for upstream projects (the work "
-                      f"{effect})" + ("" if stored else "; no storage explains it")))
+                      "removes or holds back water)"
+                      + ("" if stored else "; no storage explains it")))
+    elif _water_added(row):
+        found.append(("natural", f"the Natural Resources Conservation Service adjusts its "
+                      f"yearly volume by {adjustment:+g}%: water is added upstream "
+                      "(a transbasin import, for example), so review it"))
     irrigation = int(row.get("irrigation_dams") or 0)
     if irrigation:
         found.append(("natural", f"{irrigation} irrigation dam"
@@ -307,32 +316,37 @@ def resolve_ruling(row: dict) -> tuple[str, str]:
 def review_queue(row: dict, tier: str) -> str:
     """Which pile a row sits in: `bulk` may be agreed as a group (ADR-138).
 
-    Three outcomes are bulk, and each only when nothing else is in doubt: not
-    a river by the gauge's own name or site type; shaped by reservoirs (a
+    Three outcomes are bulk, each only when nothing else is in doubt: not a
+    river by the gauge's own name or site type; shaped by reservoirs (a
     published reservoir in the basin, or inventoried storage at or above the
-    small share); and natural (inventoried storage under the small share, and
-    no published reservoir, as the tier already says). Diversion
-    evidence, irrigation dams, a dam near the gauge, a record starting after
-    1991 or an untraced basin send the row to `review`, or `check`. A diversion
-    named in the gauge's own name is bulk when no reservoir finding competes
-    with it. An NRCS adjustment alone is not: it does not say what it adjusts.
+    small share); and natural (measured storage under the small share, and no
+    published reservoir, as the tier already says). A dam near the gauge, a
+    record starting after 1991, diversion evidence or water added upstream
+    (a negative NRCS adjustment) send the row to `review`; an untraced or
+    mismatched basin sends it to `check`. Irrigation dams hold back a natural
+    row but not a shaped one, which is shown without a rank either way. A
+    natural row GAGES-II lists as non-reference goes to `review`. A diversion
+    named in the gauge's own name is bulk when no reservoir finding competes;
+    an NRCS adjustment alone is not, because it does not say what it adjusts.
     """
     if tier == "check":
         return "check"
     if tier == "exclude":
         return "bulk"
-    found = findings(row)
-    tiers = {t for t, _ in found}
-    quiet = (not row.get("dams_near_gauge") and not int(row.get("irrigation_dams") or 0)
-             and row["covers_1991_2020"] == "yes")
+    tiers = {t for t, _ in findings(row)}
+    irrigation = int(row.get("irrigation_dams") or 0)
+    quiet = (not row.get("dams_near_gauge") and row["covers_1991_2020"] == "yes"
+             and not _water_added(row))
     if tier == "diversion":
         named = BELOW_DIVERSION_NAME.search(row["site_name"].upper())
-        return "bulk" if named and "reservoir" not in tiers and quiet else "review"
+        return "bulk" if named and "reservoir" not in tiers and quiet and not irrigation else "review"
     if tier == "reservoir":
         return "bulk" if "diversion" not in tiers and quiet else "review"
     if tier == "natural":
         share = _share(row)
-        return "bulk" if share is not None and share < SMALL_STORAGE_SHARE and quiet else "review"
+        measured = share is not None and share < SMALL_STORAGE_SHARE
+        listed = row.get("gages2_class") != "non_reference"
+        return "bulk" if measured and listed and quiet and not irrigation else "review"
     return "review"
 
 

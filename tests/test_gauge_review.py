@@ -385,15 +385,39 @@ def test_another_finding_sends_either_outcome_to_review():
     for base in ({"upstream_reservoirs": "Deer Creek"},
                  {"dams_upstream": "4", "storage_share_pct": "3"}):
         assert queue(**base) == "bulk"
-        assert queue(**base, irrigation_dams="2") == "review"
         assert queue(**base, dams_near_gauge="Weir") == "review"
         assert queue(**base, covers_1991_2020="no", record_begin="1999-01-01") == "review"
+        assert queue(**base, nrcs_adjustment_pct="-20") == "review"
         assert queue(**base, trace_check="traced about 404 sq mi") == "check"
         assert queue(**base, trace_screen="not_indexed") == "check"
     assert queue(site_name="BEAR RIVER BELOW O-LINE CANAL NR BRIGHAM CITY, UT",
                  upstream_reservoirs="Deer Creek") == "review"
     assert queue(site_name="BEAR RIVER BELOW O-LINE CANAL NR BRIGHAM CITY, UT",
                  dams_upstream="4", storage_share_pct="3") == "bulk"
+
+
+def test_irrigation_dams_hold_back_a_natural_row_but_not_a_reservoir_row():
+    assert queue(upstream_reservoirs="Deer Creek", irrigation_dams="2") == "bulk"
+    assert queue(dams_upstream="4", storage_share_pct="12", irrigation_dams="2") == "bulk"
+    assert queue(dams_upstream="4", storage_share_pct="3", irrigation_dams="2") == "review"
+
+
+def test_gages2_non_reference_holds_back_a_natural_row_and_not_listed_does_not():
+    small = {"dams_upstream": "4", "storage_share_pct": "3"}
+    assert queue(**small, gages2_class="non_reference") == "review"
+    assert queue(**small, gages2_class="reference") == "bulk"
+    assert queue(**small, gages2_class="not_listed") == "bulk"
+    assert queue(**small) == "bulk"
+    assert queue(upstream_reservoirs="Deer Creek", gages2_class="non_reference") == "bulk"
+
+
+def test_water_added_upstream_is_a_reviewed_note_and_never_a_diversion():
+    row = plain_row(nrcs_adjustment_pct="-50.4", dams_upstream="4", storage_share_pct="3")
+    tier, reason = G.suggest(row)
+    assert tier == "natural" and "water is added upstream" in reason
+    assert G.review_queue(row, tier) == "review"
+    assert not G.has_diversion(row)
+    assert G.TIER_WORDS["diversion"] == "Reduced by diversions"
 
 
 def test_an_exclusion_by_name_or_site_type_is_bulk_and_a_named_diversion_is_bulk_when_alone():
@@ -437,7 +461,7 @@ def test_an_nrcs_adjustment_with_no_storage_suggests_diversions_and_with_storage
     assert G.review_queue(alone, tier) == "review"
     stored = plain_row(nrcs_adjustment_pct="-11.2", upstream_reservoirs="Deer Creek")
     assert G.suggest(stored)[0] == "reservoir"
-    assert "adds water" in G.suggest(stored)[1]
+    assert "water is added upstream" in G.suggest(stored)[1]
     for value in ("0", "4.9", "-4.9", "no_pair", "no_data", ""):
         assert G.suggest(plain_row(nrcs_adjustment_pct=value))[0] == "natural"
 

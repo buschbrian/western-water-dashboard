@@ -123,7 +123,7 @@ suggestions offline. Each row gets the strongest of its findings:
 |---|---|---|
 | `exclude` | The gauge's own name is a tunnel, drain or canal (`FAIRVIEW TUNNEL NEAR …`), not a river measured beside one; or USGS lists the site as a canal or ditch (`ST-CA`, `ST-DCH`) | Not a river; not shown |
 | `check` | The basin was not traced, or the trace differs from the published drainage area by more than 25% | Unresolved until the basin is checked |
-| `diversion` | The name places the gauge below a diversion, canal, ditch, powerplant or tunnel; or NRCS adjusts the gauge's volume (5% or more) and no storage finding explains it | Flow shown and labelled as reduced by diversions upstream; not ranked against normal |
+| `diversion` | The name places the gauge below a diversion, canal, ditch, powerplant or tunnel; or NRCS adjusts the gauge's volume upward by 5% or more and no storage finding explains it (a negative adjustment is a review note) | Flow shown and labelled as reduced by diversions upstream; not ranked against normal |
 | `reservoir` | A published reservoir sits in the basin, whatever else is found; or inventoried dams hold at least 10% of a year's flow (or hold storage and the gauge has no mean flow) | Flow shown and labelled as shaped by reservoirs upstream; not ranked against normal |
 | `short` | The record starts after 1 January 1991 | Flow shown; no comparison with normal |
 | `natural` | None of the above. Storage under 10% of a year's flow with no published reservoir in the basin, irrigation dams and a dam beside the gauge are kept as findings for the reviewer | Flow shown and compared with normal for the date |
@@ -181,12 +181,13 @@ two tiers: `reservoir` (Shaped by reservoirs) and `diversion` (Reduced by
 diversions); `exclude` reads as Not a river. A saved `shaped` ruling stands as
 `reservoir` unless the row has a diversion finding; then it returns to review.
 Bulk covers three outcomes: not a river, shaped by reservoirs and natural by
-small storage, each only when no irrigation dam, near-gauge dam, short record
-or diversion evidence is in doubt. Utah moved from 39 `natural`, 96 `shaped`,
-15 `short`, 11 `check`, 3 `exclude` to 36, 91 `reservoir` + 8 `diversion`,
-15, 11, 3; queues from 79 `bulk`, 74 `review` to 19 and 134. Evidence
-coverage in Utah: 116 of 164 in GAGES-II (20 reference), 77 with an NRCS pair
-(16 adjusted by 5% or more), none a canal or ditch.
+measured small storage, each only when no near-gauge dam, short record,
+diversion evidence or added water is in doubt. Irrigation dams and GAGES-II
+non-reference hold back a natural row only. Utah moved from 39 `natural`, 96
+`shaped`, 15 `short`, 11 `check`, 3 `exclude` to 37, 91 `reservoir` + 7
+`diversion`, 15, 11, 3; queues from 79 `bulk`, 74 `review` to 72 and 81.
+Evidence coverage in Utah: 116 of 164 in GAGES-II (20 reference), 77 with an
+NRCS pair (16 adjusted by 5% or more), none a canal or ditch.
 
 ```bash
 .venv/bin/python tools/build_gauge_review.py --state UT --reference-evidence

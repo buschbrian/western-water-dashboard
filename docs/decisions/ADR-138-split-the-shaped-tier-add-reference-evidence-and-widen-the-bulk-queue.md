@@ -63,16 +63,18 @@ chooses. Exports carry the stored value. Nothing is rewritten on its own, and
 the worksheet's `reviewer_ruling` is only ever changed by the importer.
 
 **Bulk queue.** Three outcomes are `bulk`: not a river by name or site type;
-shaped by reservoirs; and natural (inventoried storage under 10% of a year's
-flow with no published reservoir, including a basin with no inventoried dam
-when a flow exists to compare). Each is `bulk` only when nothing else is in
-doubt. Irrigation dams, a dam within 1 km of the gauge, a record starting after
-1991, or diversion evidence (for the reservoir outcome) send the row to
-`review`; an untraced or mismatched basin sends it to `check`. A diversion
-named in the gauge's own name is `bulk` only when no reservoir finding competes
-and nothing else is in doubt. An NRCS adjustment alone is never `bulk`: it
-does not say what it adjusts. Rows with no storage comparison (no flow or
-evidence not yet run) are `review`.
+shaped by reservoirs; and natural (measured inventoried storage under 10% of a
+year's flow with no published reservoir). Each is `bulk` only when nothing else
+is in doubt. A dam within 1 km of the gauge, a record starting after 1991,
+diversion evidence, or water added upstream (a negative NRCS adjustment) send a
+row to `review`; an untraced or mismatched basin sends it to `check`.
+Irrigation dams hold a `natural` row out of `bulk` but not a `reservoir` row,
+which is shown without a rank either way (Brian, 2026-10-27). A `natural` row
+that GAGES-II lists as non-reference goes to `review`; not listed is not a
+disqualifier. A diversion named in the gauge's own name is `bulk` only when no
+reservoir finding competes and nothing else is in doubt. An NRCS adjustment
+alone is never `bulk`: it does not say what it adjusts. Rows with no storage
+comparison (no flow, or evidence not yet run) are `review`.
 
 **Reference evidence (R9), all keyless.**
 
@@ -89,11 +91,13 @@ evidence not yet run) are `review`.
   percent, over the months both exist since October 1991. `no_pair` and
   `no_data` are written as such. An absolute value of 5 or more is a finding
   (`NRCS_MATERIAL_PCT`); under that the volumes agree to rounding. Only an id
-  match counts: a station a kilometre away can measure other water. The pair
-  says the flow is altered, not by what, so with a reservoir finding it
-  corroborates the reservoir and without one it suggests `diversion`. A
-  negative value (water added, such as a transbasin import) lands on the same
-  tier; the reason says it adds water, and a person decides.
+  match counts: a station a kilometre away can measure other water. A
+  positive value says the flow is altered, not by what, so with a reservoir
+  finding it corroborates the reservoir and without one it suggests
+  `diversion`. A negative value (water added, such as a transbasin import)
+  never suggests `diversion`: it is a note that sends the row to `review`, and
+  the reason says water is added upstream. The reader words stay "Reduced by
+  diversions".
 - `usgs_site_type`: `ST-CA` or `ST-DCH` when USGS lists the site as a canal or
   ditch, otherwise `ST`, because the screen admits only `ST`. The lookup is two
   queries per state.
@@ -117,6 +121,8 @@ after a locator, where one opens a place ("near La Jara", "near Del Norte").
   disagreement, and the reader word would still need a lookup.
 - Rewrite saved `shaped` rulings to `reservoir`: the reviewer may have meant a
   diversion, and the page store is not the importer's to edit.
+- Treat water added upstream as a diversion: the word is wrong and a person
+  should look.
 - Turn irrigation dams into a diversion tier: they are common on large
   reservoirs and say nothing about this river's withdrawals.
 - Treat any NRCS pair as altered: 77 Utah gauges have a pair and 61 agree to
@@ -130,18 +136,13 @@ after a locator, where one opens a place ("near La Jara", "near Del Norte").
 ## Consequences
 
 Utah suggestions moved from 39 `natural`, 96 `shaped`, 15 `short`, 11 `check`
-and 3 `exclude` to 36 `natural`, 91 `reservoir`, 8 `diversion`, 15 `short`,
+and 3 `exclude` to 37 `natural`, 91 `reservoir`, 7 `diversion`, 15 `short`,
 11 `check` and 3 `exclude`. Of the five `shaped` rows that became `diversion`,
-all are named below a diversion; three `natural` rows became `diversion` on an
-NRCS adjustment. The queue moved from 79 `bulk`, 74 `review` and 11 `check` to
-19 `bulk` (15 `natural`, 3 `exclude`, 1 `reservoir`), 134 `review` and 11
-`check`. The drop is irrigation dams: 90 of the 91 `reservoir` rows and 19 of
-the 36 `natural` rows have one in the basin, and Brian's list of findings that
-send a row to review names them. Without that one condition on the
-`reservoir` outcome the queue would hold 78 `bulk` rows. The cost is review
-time; the benefit is that no natural row is agreed in bulk past a prompt to
-look for canals. A record starting after 1991 or a dam beside the gauge also
-keeps a row out of `bulk`.
+all are named below a diversion; two `natural` rows became `diversion` on a
+positive NRCS adjustment (Duchesne near Tabiona, Logan). Spanish Fork (-50.4%)
+stays `natural` with a review note. The queue moved from 79 `bulk`, 74
+`review` and 11 `check` to 72 `bulk` (58 `reservoir`, 11 `natural`, 3
+`exclude`), 81 `review` and 11 `check`.
 
 Colorado, New Mexico and Arizona worksheets pick up the tiers and columns when
 `--suggest` and `--reference-evidence` run on them after their traces end. The
@@ -150,10 +151,8 @@ this change needs one `--suggest` run before it can be merged. The review page
 needs its bundle refreshed with `tools/build_gauge_review_page.py` and a
 republish; its title still says Utah.
 
-Not decided here, and left to Brian: whether irrigation dams should hold a
-`reservoir` row out of `bulk` when the gauge is already shown without a rank;
-whether a `natural` row should be `bulk` on storage evidence alone, since a
-hidden diversion costs most there (15 Utah rows are, 4 of them GAGES-II
-non-reference); and whether five active Utah
-canal gauges that the `ST`-only screen never lists should be added as
-`exclude` rows.
+Decided with Brian on 2026-10-27, after the first draft of this record:
+irrigation dams do not hold a `reservoir` row out of `bulk`; GAGES-II
+non-reference holds a `natural` row out; a negative NRCS adjustment is a review
+note and not a `diversion`; the five active Utah canal gauges (`ST-CA`) that
+the `ST`-only screen never lists stay out, with no screen change.
