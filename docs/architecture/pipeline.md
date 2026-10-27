@@ -20,6 +20,8 @@ modules in `pipeline/`:
 | `pipeline/freshness.py` | Carry-forward, the withdrawal threshold and the withdrawal notice. |
 | `pipeline/geography.py` | County and drainage-area assignment onto finished records. |
 | `pipeline/lakes.py` | The natural terminal lakes (ADR-112, ADR-118): a record of elevation and volume with no full level, its validator, and the lake payload envelope. |
+| `pipeline/measurement.py` | One daily series summarised: current value, dated extremes, dated changes and the same-date rank. Shared by a lake's level and volume and a reservoir's surface level, so a level means one thing. |
+| `pipeline/elevation.py` | Reviewed reservoir surface elevation (ADR-135): the record's `elevation` block, the history entries, `elevation_history.json` and their checks. |
 | `refresh_reservoirs.py` | Fetch, summarize, assemble, validate, write, and report to CI. |
 
 `refresh_reservoirs` re-exports every public name from those modules, so
@@ -138,6 +140,26 @@ reservoir-only field, a notice carrying a measurement, and a roster lake absent
 from both lists. The file is generated and committed by the refresh; no page
 fetches it yet, and it is not copied into the build until the lake surface
 lands.
+
+**A reservoir level is published only above a reviewed datum** (ADR-135).
+`admitted_reservoir_elevations.json` is loaded on first use by
+`pipeline.roster.admitted_reservoir_elevations`, which refuses an entry with
+no datum, evidence with no checked date, an offset with no measurement date or
+a reference level with no authority or source. After the storage fetch,
+`refresh_elevations` reads each rostered reservoir's elevation item through
+`fetch_rise_series(..., column="elevation_ft")` -- the storage fetcher with
+the value column named -- from the provider's first reading, and attaches an
+optional `elevation` block in the lake level's shape. `RESERVOIR_SCHEMA_VERSION`
+stays 1: the block is optional and additive, as every field added to the
+payload has been. The daily series is written compact to
+`elevation_history.json` under `ELEVATION_HISTORY_SCHEMA_VERSION`, never into
+`reservoirs.json`. A failed level fetch keeps yesterday's block and history
+entry and never withholds the storage. `elevation.validate_records` refuses a
+block on a reservoir the roster does not name, a block with no datum and a
+block carrying a percentage, and names any rostered reservoir still without
+one. The history is written whenever the Reclamation source is refreshed
+(a full run or `--source rise`); a run of another source carries the blocks
+inside the records it keeps and leaves the history file alone.
 
 ## Freshness: late and withdrawn are different faults
 

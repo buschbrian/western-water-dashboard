@@ -1,0 +1,160 @@
+# ADR-135: Publish a reservoir level only above a reviewed datum
+
+## Status
+
+Accepted
+
+## Date
+
+2026-10-27
+
+## Relates to
+
+ADR-112 (a level is never a percentage of anything), ADR-117 (scope closed at
+1.0.0; a new published measurement needs its own record), ADR-118 and ADR-119
+(the terminal lake's level block and level card, reused here), ADR-002
+(payloads are copied, never imported), ADR-006 (visible language), ADR-008
+(colour comes from the class table), ADR-051 (payload cost is measured
+gzipped), ADR-075 (draw the chart rather than configure it).
+
+ADR-130 to ADR-134 are skipped: three branches collided on ADR-130 and
+ADR-134 is reserved for another planned record.
+
+## Context
+
+Charts of Lake Powell's level from the Bureau of Reclamation and from the
+U.S. Geological Survey are posted side by side and disagree by about three
+feet. On 2026-10-27 the reason was measured. The Geological Survey's site
+page for 09379900 charts parameter 62615, the level above NAVD 1988. That
+reads a steady 2.9 to 3.0 ft above parameter 62614, the level above NGVD 1929,
+at the same site and time (median 2.9 ft over 2,878 fifteen-minute readings).
+Reclamation's daily level (RISE item 508) matches 62614: over 91 days,
+2026-07-28 to 2026-10-26, RISE minus 62614 had a median of +0.14 ft against
+the reading nearest local midnight and +0.21 ft against the daily mean, and
+RISE minus 62615 a median of -2.76 ft. The rest of the gap is time:
+Reclamation publishes one end-of-day reading a day and the Survey one every
+fifteen minutes, so while the lake rose 1 to 1.8 ft a day (21 to 25 October)
+a daily mean and an end-of-day value were up to about a foot apart.
+
+Reclamation names no datum. The RISE item's `verticalDatum` field is null on
+every elevation item read, and RISE is not one datum throughout: Taylor Park
+(item 796) matches the Survey's NAVD 1988 series, not its NGVD 1929 one. A
+level published with no datum, or with the provider's datum assumed, is the
+disagreement this site would be adding to rather than explaining.
+
+The owner approved publishing the surface level of Lake Powell and Lake Mead.
+
+## Decision
+
+**A reservoir's surface level is published only from a reviewed roster entry
+that names its datum with evidence.** `admitted_reservoir_elevations.json` is
+reviewed by hand, keyed by the published reservoir's `source_station_id`, and
+loaded by `pipeline.roster.load_admitted_reservoir_elevations`, which refuses:
+
+- an entry with no datum, or a datum other than NGVD29 or NAVD88;
+- datum evidence with no checked date or a source without an HTTPS link;
+- a measured offset to the other datum with no measurement date;
+- a reference level with no authority or no HTTPS source, or one carrying a
+  percentage or a volume;
+- a station that is not a Reclamation reservoir already on the roster.
+
+Every entry carries its own datum evidence. No datum is assumed from the
+provider, because the provider is not one datum.
+
+**The record carries a summary; the series is its own file.** A rostered
+reservoir's record gains an optional `elevation` block with the shape a
+terminal lake's level has: unit, datum, current value, dated record readings,
+`first_obs`, `n_obs`, dated 7-, 30- and 365-day changes in feet with their
+reference dates and elapsed days, and the same-date history rank. The block
+adds the provider item, its page, the measured offset and the reference
+levels. Both are built by one function, `pipeline.measurement.
+summarize_measurement`, moved out of `pipeline.lakes`; the lake record is
+unchanged to the byte (a synthetic lake hashes the same before and after, and
+`tests/test_reservoir_elevation.py` pins it). The daily levels from the
+provider's first reading go to `elevation_history.json`, written compact, so
+`reservoirs.json`, which every page fetches, carries a summary and never a
+series. `fetch_rise_series` takes the value column's name; the storage
+callers are unchanged.
+
+**`RESERVOIR_SCHEMA_VERSION` stays 1.** The block is optional and additive,
+as every field added to the payload has been (`docs/architecture/pipeline.md`);
+nothing a consumer already reads changed shape, and the runtime validator
+accepts a record with or without it. The history file has its own
+`ELEVATION_HISTORY_SCHEMA_VERSION`, 1.
+
+**A failed level fetch costs the level, never the storage.** Yesterday's
+block and history entry are kept; the block's own `as_of` dates them, and the
+page says when the level reading is late.
+
+**The reservoir page shows a "Surface level" card, a water-year chart and a
+datum note.** The card is the lakes page's level card, shared
+(`src/measurement-model.ts`, `src/ui/measurement-card.ts`): feet above the
+datum spelled out in full, dated changes in feet, and no percentage of a
+level. The chart is hand-built SVG (ADR-075): the current water year strong,
+the year before lighter, four earlier years muted, so six lines read on a
+390-pixel phone and on a desktop. Reference levels are dashed lines named at
+the right end. A level more than half the readings' range away (and never
+less than ten feet) is named under the chart rather than drawn, because a line
+a hundred feet off flattens every year into a few pixels. No colour is a
+storage-class colour (ADR-008). The note, "Why the Geological Survey can show
+a different level", says in Simplified Technical English which datum
+Reclamation uses, that the Survey's page can show the other one and how far
+apart they read here with the measurement date, and that one reading a day
+and one every fifteen minutes differ while the water moves quickly. It links
+both sources.
+
+**Lake Powell is published; Lake Mead is withheld** (see Open: Lake Mead).
+
+## Rejected alternatives
+
+- **Assume the provider's datum.** RISE labels none and is not uniform; the
+  first wrong assumption would put this site among the charts that disagree.
+- **Convert to NAVD 1988 so the Survey's page and this one agree.** The
+  operator publishes and operates to NGVD 1929 figures, and every reference
+  level here is in those figures. The note explains the difference instead.
+- **Publish the daily series inside `reservoirs.json`.** Every page would pay
+  for two reservoirs' sixty years on every visit (ADR-051).
+- **Copy the lakes level code.** Two copies of one summary drift; the shared
+  function is the guarantee that a level means the same on both pages.
+- **Draw every reference level.** Water that cannot be released is 150 ft
+  below Powell's readings; drawing it squeezes six years into a third of the
+  plot.
+
+## Consequences
+
+- New: `admitted_reservoir_elevations.json` (reviewed by hand),
+  `pipeline/elevation.py`, `pipeline/measurement.py`, `elevation_history.json`
+  (generated daily, copied to the root, `data/` and `api/` like
+  `lakes.json`), `src/measurement-model.ts`, `src/ui/measurement-card.ts`,
+  `src/reservoir-elevation-model.ts`, `src/viz/elevation-years.ts`,
+  `src/data/elevation-validate.ts`, `window.__reservoirReady.elevation`, CSV
+  columns for a reservoir that publishes a level, and data-page sections.
+- `elevation_history.json` is 50 KB gzipped with Powell's record from
+  1963-12-28 (181 KB raw); `reservoirs.json` grows by about 1 KB gzipped. It is
+  fetched only by a page whose reservoir carries a level.
+- The full record is published, so the record low (May 1964) and the history
+  rank include the years Lake Powell was first filling. Whether to start the
+  summary after first fill is a separate decision with its own evidence.
+- A future elevation entry needs its own datum evidence and, where a second
+  datum is in public use, its own measured offset. RISE's Taylor Park item is
+  the standing example of why.
+
+## Open: Lake Mead
+
+Withheld until the owner decides how its datum is named. There is no active
+Geological Survey elevation series to compare (09421000 carried storage and
+ended 2017-09-30), Reclamation publishes no datum statement, and one secondary
+source describes a "Hoover Dam powerhouse datum" about 2 ft from NAVD 1988.
+The roster's `withheld` block records the finding. Prepared values, so that
+admitting Mead is one roster entry and a refresh:
+
+- RISE storage item 6124 (already published), elevation item 6123.
+- Reference levels from the Post-2026 Final EIS Technical Appendix 3,
+  https://www.usbr.gov/ColoradoRiverBasin/post2026/final-eis/docs/Vol-III/P26-FEIS_TA_03_Hydro_508.pdf :
+  1,229 ft full pool (top of the space kept empty for floods), 1,219.6 ft
+  maximum operating elevation, 950 ft minimum power pool.
+- 895 ft dead pool, from Technical Appendix 15,
+  https://www.usbr.gov/ColoradoRiverBasin/post2026/draft-eis/docs/vol-3/P26-DEIS-TA-15.pdf .
+- 1,075, 1,050 and 1,025 ft from the 24-Month Study,
+  https://www.usbr.gov/lc/region/g4000/24mo.pdf . No Reclamation table found
+  names them as shortage tiers, so they are not to be labelled "Level 1, 2, 3".

@@ -152,6 +152,35 @@ statement that every published water is a reservoir still holds for readers.
 Great Salt Lake requires an arm-aware representation; one point and one total
 would collapse separately measured waters.
 
+## Reservoir surface level
+
+A reservoir publishes its surface level only from a reviewed entry in
+`admitted_reservoir_elevations.json` that names the vertical datum with
+evidence (ADR-135). Lake Powell is the first: Reclamation's daily level
+(RISE item 508) is in feet above NGVD 1929, established by measurement because
+Reclamation names no datum -- over 91 days to 2026-10-26 it read a median
+0.14 ft from the Geological Survey's NGVD 1929 series at 09379900 (parameter
+62614) and 2.76 ft below its NAVD 1988 series (62615). The two Survey series
+differ by a median 2.9 ft (range 2.9 to 3.0), measured 2026-10-27, and that
+offset is published with its date.
+
+**Never assume a provider's datum.** RISE labels no datum on its elevation
+items and is not uniformly NGVD 1929: Taylor Park (item 796) matches the
+Survey's NAVD 1988 series. Every entry carries its own evidence. Lake Mead is
+withheld until its datum can be named with evidence.
+
+The level block is the terminal lake's level summary, built by the same
+function (`pipeline.measurement.summarize_measurement`): dated record
+readings, dated 7-, 30- and 365-day changes in feet, and the same-date history
+rank from the unchanged reservoir estimator. Its record starts at the
+provider's first reading, so Powell's extremes and rank include the years it
+was first filling (from 1963-12-28). No percentage of a level is published,
+and a reference level is a named elevation with its authority, never a
+denominator. A daily level from Reclamation is one end-of-day reading; the
+Survey publishes every fifteen minutes, so the two also differ while the
+water moves quickly, by up to about a foot when Powell rose 1 to 1.8 ft a day
+in October 2026.
+
 **Never subtract two shares with different denominators** (ADR-046) — see the
 drought section below for the case this exists for.
 

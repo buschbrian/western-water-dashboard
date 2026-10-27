@@ -54,7 +54,8 @@ denominator. **Start with ADR-070, then ADR-072, then ADR-003.**
   [ADR-111](ADR-111-use-the-current-operating-limit-as-full.md),
   [ADR-113](ADR-113-withhold-a-reservoir-whose-full-levels-cannot-be-reconciled.md),
   [ADR-114](ADR-114-publish-a-water-type-and-an-operating-character.md),
-  [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md)
+  [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md),
+  [ADR-135](ADR-135-publish-a-reservoir-level-only-above-a-reviewed-datum.md)
 - Freshness and withdrawal:
   [ADR-056](ADR-056-withdraw-a-reading-that-belongs-to-another-season.md),
   [ADR-115](ADR-115-state-a-reviewed-hold-where-the-reservoir-used-to-be.md),
@@ -122,7 +123,8 @@ ADR-041.**
   [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md),
   [ADR-122](ADR-122-measure-drought-from-the-monitors-full-resolution-archive.md),
   [ADR-125](ADR-125-measure-precipitation-at-the-snow-stations-against-a-fixed-history.md),
-  [ADR-129](ADR-129-total-the-latest-storm-from-the-accumulated-precipitation.md)
+  [ADR-129](ADR-129-total-the-latest-storm-from-the-accumulated-precipitation.md),
+  [ADR-135](ADR-135-publish-a-reservoir-level-only-above-a-reviewed-datum.md)
 - Current architecture: [`docs/architecture/hydrology-methods.md`](../architecture/hydrology-methods.md)
 
 ### Visible language, accessibility and naming
@@ -311,6 +313,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-127](ADR-127-state-what-is-above-a-reservoir-as-stored-water.md) | State what is above a reservoir as stored water | Accepted; applies `rollupOfScoped` to the ADR-077 upstream set; replaces the reservoir page's chips with basin groups and rows |
 | [ADR-128](ADR-128-publish-compact-story-views-for-embedding.md) | Publish compact story views for embedding | Accepted; one entry page, three views, a theme that never persists, a view that fits its frame; computes nothing new (ADR-117's scope) |
 | [ADR-129](ADR-129-total-the-latest-storm-from-the-accumulated-precipitation.md) | Total the latest storm from the accumulated precipitation | Accepted; 1-, 3- and 7-day totals on the precipitation card; uses ADR-125's set day but not its fixed set; a falling accumulation is left out, never clipped |
+| [ADR-135](ADR-135-publish-a-reservoir-level-only-above-a-reviewed-datum.md) | Publish a reservoir level only above a reviewed datum | Accepted; the record ADR-117 asks for; Lake Powell published, Lake Mead withheld pending its datum; optional `elevation` block with no schema bump, history in `elevation_history.json`; ADR-130 to ADR-134 unused here |
 
 ## Relationship to the historical journal
 
