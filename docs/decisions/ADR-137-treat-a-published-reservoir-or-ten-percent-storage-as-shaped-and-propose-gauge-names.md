@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted; the `shaped` tier is split and the bulk queue widened by ADR-138
 
 ## Date
 

@@ -21,7 +21,8 @@ private review records outside the public deployment.
 3. Preserve the existing `db` rules (read `view`, write `admin` at the root)
    and `user` capability, and add `downloads: {}`. A nonempty capabilities
    declaration is a full replacement: restate all three. The database document
-   schema stays `{ruling, notes, updatedAt}` keyed by USGS site number.
+   schema is `{ruling, notes, name, updatedAt}` keyed by USGS site number; `name`
+   is the accepted display name (ADR-138) and older records without it still load.
 4. CSV and GeoJSON exports use the documented Artifact `downloads.save` API.
    The basin's file extension is `.json`: the runtime permits JSON but does
    not list `.geojson` among its accepted extensions. The content is GeoJSON
@@ -42,7 +43,8 @@ is sent to the Artifact.
 ## Refresh the page's evidence
 
 The worksheet owns the suggestion, its reason, the review queue, the
-watershed name and the storage evidence. After
+watershed name, an accepted name already merged, and the storage and reference
+evidence (GAGES-II, NRCS, site type). After
 `tools/build_gauge_review.py --evidence --basins <bundle>/gauges.json`,
 carry them into a copy of the bundle, offline:
 
@@ -56,10 +58,24 @@ Outlines, map frames and nearby points are kept as they were. The tool
 refuses a bundle and worksheet that list different gauges. Publish the new
 `gauges.json` beside the page; the topographic maps do not change.
 
+## Tiers, old rulings and names (ADR-138)
+
+The page offers Natural, Shaped by reservoirs, Reduced by diversions, Short
+record, Check and Not a river (keys 1 to 6). The stored keys are `natural`,
+`reservoir`, `diversion`, `short`, `check` and `exclude`; the words come from
+`TIER_WORDS` in `tools/build_gauge_review.py` and a test holds the page to
+them. A saved record whose ruling is the earlier `shaped` is shown as Shaped by
+reservoirs, or as unruled with a note when the gauge has a diversion finding.
+The stored value is kept until a person chooses, and the export carries it; the
+importer maps it the same way and lists such sites under `returned_to_review`.
+"Accepted display name" saves with the record; "Accept the proposed name" copies
+the worksheet's proposal. Import it with the rulings.
+
 ## Review safeguards
 
 - Gauges are grouped by watershed (HUC 8), and the queue can be narrowed to
-  the rows safe to agree as a group or the ones that need a look. A
+  the rows safe to agree as a group (not a river, shaped by reservoirs, or
+  natural by small storage, with nothing else in doubt) or the ones that need a look. A
   watershed's "Agree with N safe suggestions" asks once and saves on a second
   press within six seconds. It rules only open `bulk` rows the list shows,
   each as its suggestion, and leaves rulings and drafts already made.
@@ -70,7 +86,7 @@ refuses a bundle and worksheet that list different gauges. Publish the new
 - Agree-next waits for success and uses the queue before its current row is
   removed by the unruled filter.
 - CSV exports contain only touched gauges, keyed by site number, including
-  notes-only and explicitly cleared records. `save_state=unsaved` marks local
+  notes-only, name-only and explicitly cleared records. `save_state=unsaved` marks local
   drafts. A fresh export must be reviewed and explicitly merged; it is not a
   pipeline input. Preserve site numbers as text in spreadsheet software.
 - Use one editing session at a time. This retains the existing last-write-wins

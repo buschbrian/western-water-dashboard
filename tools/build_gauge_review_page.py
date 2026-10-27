@@ -24,9 +24,10 @@ import build_gauge_review as worksheet  # noqa: E402
 
 
 def _number(value: str) -> float | int | None:
-    if value in ("", None):
+    try:
+        number = float(value)
+    except (TypeError, ValueError):
         return None
-    number = float(value)
     return int(number) if number.is_integer() else number
 
 
@@ -40,6 +41,10 @@ def page_fields(row: dict) -> dict:
         "tier": row["suggested_ruling"], "reason": row["suggestion_reason"],
         "queue": row["review_queue"], "huc8Name": row["huc8_name"],
         "proposedName": row["proposed_display_name"], "nameCheck": row["name_check"],
+        "acceptedName": row["accepted_display_name"],
+        "diversion": worksheet.has_diversion(row),
+        "gages2": row["gages2_class"] or None, "siteType": row["usgs_site_type"] or None,
+        "nrcs": _number(row["nrcs_adjustment_pct"]),
         "flow": _number(row["mean_flow_cfs"]), "flowYears": _number(row["flow_years"]),
         "dams": _number(row["dams_upstream"]), "damAf": _number(row["dam_storage_af"]),
         "share": _number(row["storage_share_pct"]),

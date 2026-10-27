@@ -29,7 +29,7 @@ function harness() {
     clearTimeout(timer) { timers.delete(timer); },
     Date, Number, String, Math, Promise, Set, Map,
   });
-  vm.runInContext(`${script}\nthis.api = {state, write, draft, connect, rule, agreeNext, agreeGroup, select, visible, areaDiff, areaFlag, reviewCSV, basinGeoJSON, findings, closeMap, renderHeader, download};`, context);
+  vm.runInContext(`${script}\nthis.api = {state, write, draft, connect, rule, agreeNext, agreeGroup, select, visible, areaDiff, areaFlag, reviewCSV, basinGeoJSON, findings, closeMap, renderHeader, download, rulingOf, legacyNote, nameOf, options, TIERS};`, context);
   const a = context.api;
   a.state.gauges = [gauge('001'), gauge('002'), gauge('003')];
   a.state.selected = '001'; a.state.canWrite = true; a.state.ready = true;
@@ -159,18 +159,18 @@ test('Artifact exports use the declared downloads capability', async () => {
 test('a watershed is agreed only on its open safe suggestions, and only after a second press', async () => {
   const { a, writes, timers } = harness();
   a.state.gauges = [
-    gauge('001', { tier: 'shaped', queue: 'bulk' }),
+    gauge('001', { tier: 'reservoir', queue: 'bulk' }),
     gauge('002', { tier: 'natural', queue: 'review' }),
     gauge('003', { tier: 'exclude', queue: 'bulk' }),
-    gauge('004', { tier: 'shaped', queue: 'bulk' }),
-    gauge('005', { tier: 'shaped', queue: 'bulk', huc8: '16000002' }),
+    gauge('004', { tier: 'reservoir', queue: 'bulk' }),
+    gauge('005', { tier: 'reservoir', queue: 'bulk', huc8: '16000002' }),
   ];
   a.state.rulings['004'] = { ruling: 'natural', notes: 'Mine' };
   assert.equal(await a.agreeGroup('16000001'), 0);
   assert.equal(writes.length, 0);
   assert.equal(a.state.confirmGroup, '16000001');
   assert.equal(await a.agreeGroup('16000001'), 2);
-  assert.deepEqual(writes.map(w => [w.site, w.body.ruling]), [['003', 'exclude'], ['001', 'shaped']]);
+  assert.deepEqual(writes.map(w => [w.site, w.body.ruling]), [['003', 'exclude'], ['001', 'reservoir']]);
   assert.match(writes[0].body.notes, /safe suggestion/);
   assert.equal(a.state.rulings['004'].ruling, 'natural');
   // An unconfirmed first press lapses.
@@ -181,7 +181,7 @@ test('a watershed is agreed only on its open safe suggestions, and only after a 
 
 test('a read-only view cannot agree a watershed', async () => {
   const { a, writes } = harness();
-  a.state.gauges = [gauge('001', { tier: 'shaped', queue: 'bulk' })];
+  a.state.gauges = [gauge('001', { tier: 'reservoir', queue: 'bulk' })];
   a.state.canWrite = false;
   await a.agreeGroup('16000001'); await a.agreeGroup('16000001');
   assert.equal(writes.length, 0);
@@ -191,8 +191,8 @@ test('the queue filter and watershed grouping order the list', () => {
   const { a } = harness();
   a.state.gauges = [
     gauge('001', { huc8: '16000002', huc8Name: 'Provo', queue: 'review' }),
-    gauge('002', { huc8: '16000001', huc8Name: 'Weber', queue: 'bulk', tier: 'shaped' }),
-    gauge('003', { huc8: '16000002', huc8Name: 'Provo', queue: 'bulk', tier: 'shaped' }),
+    gauge('002', { huc8: '16000001', huc8Name: 'Weber', queue: 'bulk', tier: 'reservoir' }),
+    gauge('003', { huc8: '16000002', huc8Name: 'Provo', queue: 'bulk', tier: 'reservoir' }),
   ];
   assert.deepEqual(a.visible().map(g => g.site), ['001', '003', '002']);
   a.state.pile = 'bulk';
@@ -213,4 +213,62 @@ test('dam evidence reads large storage as a caution and a dam beside the gauge a
   const small = a.findings(gauge('002', { dams: 3, damAf: 500, share: 1.6, flow: 40, flowYears: 30, largest: [] }));
   assert.equal(small.find(f => /hold 1.6%/.test(f.title)).sev, 'info');
   assert.ok(small.some(f => f.title === 'No problem found by the rules'));
+});
+
+test('an earlier shaped ruling counts as shaped by reservoirs, or returns to review beside a diversion finding', () => {
+  const { a } = harness();
+  a.state.gauges = [gauge('001'), gauge('002', { diversion: true })];
+  a.state.rulings['001'] = { ruling: 'shaped', notes: 'Old' };
+  a.state.rulings['002'] = { ruling: 'shaped', notes: 'Old' };
+  assert.equal(a.rulingOf('001'), 'reservoir');
+  assert.equal(a.rulingOf('002'), '');
+  assert.match(a.legacyNote('001'), /now counts as Shaped by reservoirs/);
+  assert.match(a.legacyNote('002'), /back in review/);
+  assert.equal(a.legacyNote('003'), '');
+  // A notes edit keeps the stored value, and the export carries it for the importer to map.
+  a.draft('002', { notes: 'Newer' });
+  assert.equal(a.state.rulings['002'].ruling, 'shaped');
+  assert.match(a.reviewCSV(), /"002","shaped","Newer"/);
+});
+
+test('the tiers use the worksheet keys and the reader words', () => {
+  const { a } = harness();
+  assert.deepEqual(JSON.parse(JSON.stringify(a.TIERS.map(t => [t.id, t.label]))), [
+    ['natural', 'Natural'], ['reservoir', 'Shaped by reservoirs'], ['diversion', 'Reduced by diversions'],
+    ['short', 'Short record'], ['check', 'Check'], ['exclude', 'Not a river']]);
+  assert.deepEqual([...a.options(gauge('001')).map(o => o.id)], [...a.TIERS.map(t => t.id)]);
+});
+
+test('an accepted name is saved with the record, survives a notes edit and is exported', async () => {
+  const { a, writes } = harness();
+  await a.write('001', { name: 'Cache la Poudre River' });
+  assert.equal(writes[0].body.name, 'Cache la Poudre River');
+  a.draft('001', { notes: 'Checked' });
+  assert.equal(a.nameOf('001'), 'Cache la Poudre River');
+  assert.match(a.reviewCSV(), /"accepted_display_name"/);
+  assert.match(a.reviewCSV(), /"Checked","[^"]+","unsaved","Cache la Poudre River"/);
+});
+
+test('typing a name trims it and saves after the same pause as notes', async () => {
+  const { a, handlers, timers, writes } = harness();
+  handlers.get('input')({ target: { id: 'accepted-name', value: '  Weber River near Peoa ' } });
+  assert.equal(a.state.dirty['001'].name, 'Weber River near Peoa');
+  for (const timer of [...timers].filter(t => t.ms === 700)) timer.fn();
+  await Promise.all(Object.values(a.state.pending));
+  assert.equal(writes.at(-1).body.name, 'Weber River near Peoa');
+});
+
+test('a canal or ditch site type reads as a man-made channel', () => {
+  const { a } = harness();
+  const found = a.findings(gauge('001', { tier: 'exclude', reason: 'the U.S. Geological Survey lists the site as a canal (ST-CA)', siteType: 'ST-CA' }));
+  assert.equal(found[0].title, 'The gauge measures a man-made channel');
+  assert.match(found[0].found, /lists this site as a canal \(ST-CA\)/);
+});
+
+test('an NRCS adjustment is a caution and a reference gauge is a note', () => {
+  const { a } = harness();
+  const found = a.findings(gauge('001', { nrcs: 25.9, gages2: 'reference' }));
+  assert.equal(found.find(f => /adjusts this gauge/.test(f.title)).sev, 'caution');
+  assert.equal(found.find(f => /reference gauge/.test(f.title)).sev, 'info');
+  assert.ok(!a.findings(gauge('002', { nrcs: 2 })).some(f => /adjusts this gauge/.test(f.title)));
 });

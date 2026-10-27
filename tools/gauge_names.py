@@ -40,6 +40,10 @@ ROMAN = {"II", "III", "IV", "VI", "VII", "VIII", "IX", "XI", "XII"}
 #: Lower case anywhere but the first word.
 LOWER = {"AT", "ABOVE", "BELOW", "NEAR", "OF", "THE", "AND", "IN", "ON", "TO",
          "FROM", "FOR", "BY"}
+#: Lower case inside a name ("Cache la Poudre", "Rio Pueblo de Taos") but
+#: capital at the start, or after a locator, where it opens a place name
+#: ("near La Jara", "near Del Norte").
+SPANISH_ARTICLES = {"DE", "LA", "DEL", "LOS", "LAS"}
 SAFE_SHORT = LOWER | {"DE", "EL", "LA", "LAS", "LOS", "DEL", "FE"}
 LOCATORS = {"NR", "AB", "ABV", "BL", "BLW", "BEL", "AT", "NEAR", "ABOVE",
             "BELOW", "@"}
@@ -161,6 +165,9 @@ def propose(site_name: str) -> tuple[str, str, str]:
             note(f"{upper}={word}")
         elif upper in LOWER and i > 0:
             word = upper.lower()
+        elif upper in SPANISH_ARTICLES and i > 0 and prev and prev not in LOCATORS:
+            word = upper.lower()
+            note("Spanish article lower-cased")
         else:
             parts = upper.split("-")
             for part in parts:

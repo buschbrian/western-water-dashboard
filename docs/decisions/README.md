@@ -29,7 +29,8 @@ than bundled. **Start with ADR-002.**
   [ADR-031](ADR-031-retire-comparison-implementations-and-redirect-their-urls.md),
   [ADR-124](ADR-124-bound-recent-conditions-to-a-static-data-pilot.md),
   [ADR-130](ADR-130-merge-saved-gauge-reviews-with-explicit-replacement.md),
-  [ADR-137](ADR-137-treat-a-published-reservoir-or-ten-percent-storage-as-shaped-and-propose-gauge-names.md)
+  [ADR-137](ADR-137-treat-a-published-reservoir-or-ten-percent-storage-as-shaped-and-propose-gauge-names.md),
+  [ADR-138](ADR-138-split-the-shaped-tier-add-reference-evidence-and-widen-the-bulk-queue.md)
 - Superseded, read only for history: ADR-012, ADR-019,
   [ADR-117](ADR-117-close-the-scope-at-version-1-0-0.md) (pilot scope exception only)
 
@@ -315,6 +316,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-129](ADR-129-total-the-latest-storm-from-the-accumulated-precipitation.md) | Total the latest storm from the accumulated precipitation | Accepted; 1-, 3- and 7-day totals on the precipitation card; uses ADR-125's set day but not its fixed set; a falling accumulation is left out, never clipped |
 | [ADR-130](ADR-130-merge-saved-gauge-reviews-with-explicit-replacement.md) | Merge saved gauge reviews with explicit replacement | Accepted; offline preview, saved records only, per-site replacement of existing review; does not admit gauges |
 | [ADR-137](ADR-137-treat-a-published-reservoir-or-ten-percent-storage-as-shaped-and-propose-gauge-names.md) | Treat a published reservoir or ten percent storage as shaped, and propose gauge names | Accepted; a published reservoir in the basin shapes the gauge, storage under 10% of a year's flow with none is natural; adds proposed display names to the worksheet; renames nothing published |
+| [ADR-138](ADR-138-split-the-shaped-tier-add-reference-evidence-and-widen-the-bulk-queue.md) | Split the shaped tier, add reference evidence, and widen the bulk queue | Accepted; extends ADR-137 and ADR-130; Shaped by reservoirs and Reduced by diversions, GAGES-II, NRCS adjustment and canal site type columns, an accepted display name, small-storage natural and shaped-by-reservoirs both bulk when nothing else is in doubt |
 
 ## Relationship to the historical journal
 

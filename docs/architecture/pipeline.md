@@ -43,7 +43,9 @@ setup are in [the pilot plan](../RECENT-CONDITIONS-PILOT.md).
 
 `tools/import_gauge_rulings.py` previews saved private review exports offline
 and writes the worksheet only with `--apply` (ADR-130). It changes only
-`reviewer_ruling` and `notes`, keyed by site number. Any existing review needs
+`reviewer_ruling`, `notes` and `accepted_display_name`, keyed by site number
+(an earlier `shaped` ruling reads as `reservoir`, or returns to review beside a
+diversion finding; ADR-138). Any existing review needs
 an explicit per-site replacement to change; invalid or unsaved records refuse
 the whole batch. The screen builder still preserves manual review fields.
 This workflow does not create an admitted roster or a published flow payload.

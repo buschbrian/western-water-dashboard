@@ -1,7 +1,9 @@
 """Preview or explicitly merge a saved private review export into the worksheet.
 
 No network requests, roster admissions or suggestion changes. Run without
---apply first; existing rulings/notes require --replace SITE to change them.
+--apply first; an existing ruling, note or accepted name requires
+--replace SITE to change it. An earlier `shaped` ruling is read as `reservoir`,
+or goes back to review when the row has a diversion finding (ADR-138).
 """
 
 from __future__ import annotations
@@ -18,18 +20,27 @@ import tempfile
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).resolve().parent))
-from build_gauge_review import FIELDS, OUTPUT_PATH, SUGGESTIONS  # noqa: E402
+from build_gauge_review import (  # noqa: E402
+    FIELDS, LEGACY_RULINGS, OUTPUT_PATH, SUGGESTIONS, VALID_RULINGS, resolve_ruling)
 
 EXPORT_FIELDS = ["usgs_site_no", "reviewer_ruling", "notes", "updated_at", "save_state"]
-REVIEW_FIELDS = ("reviewer_ruling", "notes")
+#: An export from the page before accepted names has no such column; its
+#: absence leaves each row's accepted name as it is.
+OPTIONAL_EXPORT_FIELDS = ["accepted_display_name"]
+REVIEW_FIELDS = ("reviewer_ruling", "notes", "accepted_display_name")
 SITE_NUMBER = re.compile(r"[0-9]{8,15}")
+MAX_NAME_LENGTH = 120
 
 
-def read_csv(content: bytes, fields: list[str]) -> list[dict[str, str]]:
+def read_csv(content: bytes, fields: list[str],
+             optional: list[str] | None = None) -> list[dict[str, str]]:
     reader = csv.DictReader(io.StringIO(content.decode("utf-8-sig"), newline=""),
                             strict=True)
-    if reader.fieldnames is None or sorted(reader.fieldnames) != sorted(fields):
-        raise ValueError(f"expected columns: {', '.join(fields)}")
+    names = sorted(reader.fieldnames or [])
+    allowed = [sorted(fields)] + ([sorted(fields + optional)] if optional else [])
+    if reader.fieldnames is None or names not in allowed:
+        raise ValueError(f"expected columns: {', '.join(fields)}"
+                         + (f" (and optionally {', '.join(optional)})" if optional else ""))
     rows = list(reader)
     seen: set[str] = set()
     for row in rows:
@@ -49,9 +60,9 @@ def merge(export: Path, worksheet: Path, *, apply: bool = False,
     original = worksheet.read_bytes()
     rows = read_csv(original, FIELDS)
     by_site = {row["usgs_site_no"]: row for row in rows}
-    imports = read_csv(export.read_bytes(), EXPORT_FIELDS)
+    imports = read_csv(export.read_bytes(), EXPORT_FIELDS, OPTIONAL_EXPORT_FIELDS)
     replace = replace or set()
-    changes, conflicts = [], []
+    changes, conflicts, returned = [], [], []
     for incoming in imports:
         site = incoming["usgs_site_no"]
         if site not in by_site:
@@ -65,16 +76,30 @@ def merge(export: Path, worksheet: Path, *, apply: bool = False,
         if updated.tzinfo is None:
             raise ValueError(f"{site}: updated_at needs a time zone")
         ruling = incoming["reviewer_ruling"]
-        if ruling and ruling not in SUGGESTIONS:
+        if ruling and ruling not in VALID_RULINGS:
             raise ValueError(f"{site}: invalid reviewer_ruling {ruling!r}")
+        name = incoming.get("accepted_display_name")
+        if name is not None and (len(name) > MAX_NAME_LENGTH or name != name.strip()
+                                 or any(ord(c) < 32 for c in name)):
+            raise ValueError(f"{site}: accepted_display_name must be one trimmed line "
+                             f"of at most {MAX_NAME_LENGTH} characters")
         current = by_site[site]
+        if ruling in LEGACY_RULINGS:
+            mapped, why = resolve_ruling({**current, "reviewer_ruling": ruling})
+            if not mapped:
+                returned.append({"usgs_site_no": site, "saved_ruling": ruling, "why": why})
+            ruling = mapped or current["reviewer_ruling"]
         before = {field: current[field] for field in REVIEW_FIELDS}
-        after = {field: incoming[field] for field in REVIEW_FIELDS}
+        after = {"reviewer_ruling": ruling, "notes": incoming["notes"],
+                 "accepted_display_name": current["accepted_display_name"] if name is None else name}
         if before == after:
             continue
         if ruling and ruling != current["suggested_ruling"] and not incoming["notes"].strip():
             raise ValueError(f"{site}: a ruling differing from the suggestion needs notes")
-        if any(before.values()) and site not in replace:
+        existing = (any(before[f] for f in ("reviewer_ruling", "notes"))
+                    or (before["accepted_display_name"]
+                        and before["accepted_display_name"] != after["accepted_display_name"]))
+        if existing and site not in replace:
             conflicts.append(site)
         changes.append({"usgs_site_no": site, "before": before, "after": after,
                         "updated_at": incoming["updated_at"]})
@@ -86,6 +111,7 @@ def merge(export: Path, worksheet: Path, *, apply: bool = False,
         raise ValueError(f"--replace has no change for: {', '.join(sorted(unused))}")
     report = {"applied": False, "exported_rows": len(imports),
               "unchanged_rows": len(imports) - len(changes),
+              "returned_to_review": returned,
               "conflicts": conflicts, "changes": changes}
     if apply and conflicts:
         raise ValueError("existing review would change; preview, then use --replace for: "
