@@ -140,12 +140,16 @@ def _get_json(params: dict) -> dict:
     return _retry_unreadable_body(read)
 
 
-def fetch_rise_series(item_id: int, start: str, end: str) -> pd.DataFrame:
+def fetch_rise_series(item_id: int, start: str, end: str, *,
+                      column: str = "storage_af") -> pd.DataFrame:
     """Pull one RISE catalog item's daily results, paginating as needed.
 
-    Returns a date-sorted frame with columns [date, storage_af], already
+    Returns a date-sorted frame with columns [date, column], already
     cleaned: null/non-numeric results dropped, duplicate dates collapsed to
-    the last reading, future-dated rows removed.
+    the last reading, future-dated rows removed. `column` names the value: a
+    storage item is `storage_af`, and a surface-elevation item read for the
+    reviewed elevation roster is `elevation_ft` (ADR-135). The cleaning is
+    the same for both.
     """
     rows = []
     page = 1
@@ -175,19 +179,19 @@ def fetch_rise_series(item_id: int, start: str, end: str) -> pd.DataFrame:
 
     if not rows:
         return pd.DataFrame({"date": pd.Series(dtype="datetime64[ns]"),
-                             "storage_af": pd.Series(dtype="float64")})
+                             column: pd.Series(dtype="float64")})
 
     df = pd.DataFrame([r["attributes"] for r in rows])
     df["date"] = pd.to_datetime(df["dateTime"], format="mixed", utc=True).dt.tz_localize(None).dt.normalize()
     # RISE returns null `result` for days the gage didn't report. Those used
     # to flow straight through: a trailing null became the "latest" reading
     # and poisoned every downstream metric with NaN.
-    df["storage_af"] = pd.to_numeric(df["result"], errors="coerce")
-    df = df.dropna(subset=["storage_af"])
+    df[column] = pd.to_numeric(df["result"], errors="coerce")
+    df = df.dropna(subset=[column])
 
     df = df[df["date"] <= local_today()]
     df = df.sort_values("date").drop_duplicates(subset="date", keep="last")
-    return df[["date", "storage_af"]].reset_index(drop=True)
+    return df[["date", column]].reset_index(drop=True)
 
 
 def _get_awdb_json(params: dict):
