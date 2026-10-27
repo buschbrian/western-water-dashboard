@@ -132,6 +132,9 @@ const observer = new ResizeObserver(scheduleFit);
 observer.observe(main);
 observer.observe(content);
 void document.fonts?.ready.then(scheduleFit);
+/* `ready` can resolve before a swapped web font has even started to load
+ * (ADR-133); the font's own arrival is the change that matters. */
+document.fonts?.addEventListener("loadingdone", scheduleFit);
 window.addEventListener("resize", scheduleFit);
 
 function finish(state: "ready" | "failed" | "invalid", fields: Partial<Ready> = {}): void {

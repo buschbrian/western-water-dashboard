@@ -4,7 +4,7 @@
 
 /* Cards one after another. Without a gap each card's border sat on the
  * next one's. */
-:is(#snow-content, #precip-content) > .overview-card + .overview-card { margin-block-start: .75rem; }
+:is(#snow-content, #precip-content) > .overview-card + .overview-card { margin-block-start: var(--space-3); }
 
 /* The season curves render with a viewBox measured from their host rather
    than a fixed 640-unit canvas scaled to the card, so one unit is one CSS
@@ -78,7 +78,7 @@
 
 /* A site name in the table is a real button; it looks like the link it
  * behaves as, and keeps the row's text metrics. */
-.site-name-button, button.precip-storm-name {
+.site-name-button, a.precip-storm-name {
   padding: 0;
   border: none;
   background: none;
@@ -382,3 +382,9 @@
 .precip-storm-value { grid-column: 3; grid-row: 1; font-variant-numeric: tabular-nums; }
 .precip-storm-area { grid-column: 2; font-size: .78rem; color: var(--app-muted); }
 .precip-storm-area:empty { display: none; }
+
+/* The precipitation map sits between the recent figures and the station
+ * list, so on a phone it stays shorter than the snow map's full card. */
+.precip-map-slot { margin-block: var(--space-2) var(--space-1); }
+.precip-map-slot .view-map-host { block-size: clamp(20rem, 58vh, 36rem); }
+.precip-map-key { margin-block-start: var(--space-2); }

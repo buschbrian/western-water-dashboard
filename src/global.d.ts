@@ -140,6 +140,14 @@ interface Window {
     /** Chart hosts showing "This chart could not be drawn" in place of a
      * chart. */
     chartsFailed: number;
+    /** Hosts showing their empty message, such as a search with no match. */
+    chartsEmpty?: number;
+    /** Hosts not yet drawn because they are off screen: each chart draws
+     * when it comes within a screen of view. */
+    chartsDeferred?: number;
+    /** Hosts with a draw in progress. drawn + empty + failed + deferred +
+     * pending is always `charts`. */
+    chartsPending?: number;
     lakePowellExcluded: boolean;
     /** Lake Mead's own control, reported beside Powell's (ADR-062). */
     lakeMeadExcluded: boolean;
@@ -228,6 +236,8 @@ interface Window {
     /** The precipitation card (ADR-125): its own load, so its own state. */
     precipitation: {
       state: "loading" | "ready" | "failed";
+      /** The recent totals, drawn from the daily file before the history. */
+      recent?: "loading" | "ready" | "failed";
       stations: number;
       curveDays: number;
       bandDays: number;
@@ -235,6 +245,21 @@ interface Window {
       date?: string | null;
       stripYears?: number;
     } | null;
+    /** The map of recent totals (ADR-131): waiting until there are totals
+     * and the map is near the screen, then loading, ready or failed. */
+    map?: {
+      state: "waiting" | "loading" | "ready" | "failed";
+      stations: number;
+      withValue: number;
+      notUsed: number;
+      /** Drainage areas drawn, and those with a mean for the window. */
+      basins: number;
+      basinsWithValue: number;
+      window: 1 | 3 | 7 | null;
+      basemap: boolean;
+      basemapDegraded: boolean;
+      viewReady: boolean;
+    };
   };
   /** The drought view finished drawing. `units` is what the coverage file
    * provided; `rows` is what the page rendered; `storageJoined` counts the

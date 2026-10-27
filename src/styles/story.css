@@ -52,6 +52,14 @@ html.story-page[data-theme] body { background: var(--app-surface-raised); }
 .story-page .story-figure > strong { display: block; font-size: 1.6rem; line-height: 1.15; font-variant-numeric: tabular-nums; }
 .story-page .story-reservoir .detail-headline strong { font-size: 1.6rem; }
 .story-page .story-date-line { margin: 0; flex-basis: 100%; color: var(--app-muted); font-size: .8rem; }
+/* The smallest frames a story uses (320 by 480): the headline type steps
+ * down so the stored figure, its date and the first group above it still
+ * fit once every optional row is left out. */
+@media (max-height: 520px) {
+  .story-page .story-title { font-size: 1rem; }
+  .story-page .story-figure > strong,
+  .story-page .story-reservoir .detail-headline strong { font-size: 1.3rem; }
+}
 .story-page .story-upstream .reservoir-subhead {
   margin-block: .6rem .3rem;
   padding-block-start: .5rem;

@@ -167,7 +167,10 @@ ADR-008, then ADR-032 and ADR-061.**
   [ADR-086](ADR-086-open-the-place-chooser-from-every-page-header.md),
   [ADR-120](ADR-120-ask-where-to-start-before-loading-the-map.md),
   [ADR-123](ADR-123-draw-ten-years-of-drought-on-the-drought-page.md),
-  [ADR-130](ADR-130-give-precipitation-its-own-page.md)
+  [ADR-130](ADR-130-give-precipitation-its-own-page.md),
+  [ADR-131](ADR-131-map-recent-precipitation-by-drainage-area-in-the-snow-colours.md),
+  [ADR-132](ADR-132-draw-storage-charts-when-they-near-the-screen.md),
+  [ADR-133](ADR-133-serve-atkinson-hyperlegible-next-from-this-site.md)
 - Superseded, read only for history: ADR-007, ADR-016, ADR-022, ADR-025,
   ADR-027, ADR-030, ADR-043, ADR-054
 - Current architecture: [`docs/architecture/frontend.md`](../architecture/frontend.md)
@@ -313,6 +316,9 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-128](ADR-128-publish-compact-story-views-for-embedding.md) | Publish compact story views for embedding | Accepted; one entry page, three views, a theme that never persists, a view that fits its frame; computes nothing new (ADR-117's scope) |
 | [ADR-129](ADR-129-total-the-latest-storm-from-the-accumulated-precipitation.md) | Total the latest storm from the accumulated precipitation | Accepted; 1-, 3- and 7-day totals on the precipitation card; uses ADR-125's set day but not its fixed set; a falling accumulation is left out, never clipped |
 | [ADR-130](ADR-130-give-precipitation-its-own-page.md) | Give precipitation its own page | Accepted; supersedes ADR-125's placement on the snow page; `snow.html` is the snowpack page again at the same address |
+| [ADR-131](ADR-131-map-recent-precipitation-by-drainage-area-in-the-snow-colours.md) | Map recent precipitation by drainage area, in the snow map's colours | Accepted; area mean of stations with a total, held to the snow floor; one set of breaks for 1, 3 and 7 days; the NWS scale was refused |
+| [ADR-132](ADR-132-draw-storage-charts-when-they-near-the-screen.md) | Draw the storage charts when they near the screen | Accepted; five chart states in readiness; charts are rebuilt, not reused |
+| [ADR-133](ADR-133-serve-atkinson-hyperlegible-next-from-this-site.md) | Serve Atkinson Hyperlegible Next from this site | Accepted; one 34 KB Latin variable file, `font-display: swap`, no preload, one `--app-font` token |
 
 ## Relationship to the historical journal
 

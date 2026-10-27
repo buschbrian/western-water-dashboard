@@ -1,4 +1,31 @@
+/* Atkinson Hyperlegible Next (Braille Institute), served from this site:
+ * the Latin set, every weight in one 34 KB variable file (OFL, licence
+ * beside it). Before it the page named Avenir Next and drew whatever each
+ * device had -- Avenir on Apple, Segoe UI on Windows, Roboto on Android.
+ * `swap`: text shows at once in the fallback and changes face when the
+ * file arrives, so a slow phone never waits on a font to read. */
+@font-face {
+  font-family: "Atkinson Hyperlegible Next";
+  font-style: normal;
+  font-weight: 200 800;
+  font-display: swap;
+  src: url("/fonts/atkinson-hyperlegible-next/latin-wght-normal.woff2") format("woff2");
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC,
+    U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215,
+    U+FEFF, U+FFFD;
+}
+
 :root {
+  --app-font: "Atkinson Hyperlegible Next", "Avenir Next", Avenir, "Segoe UI", sans-serif;
+  --calcite-font-family: var(--app-font);
+  /* One spacing scale. Gaps between blocks take a step from here rather
+   * than a fresh rem value, so two neighbours cannot drift a pixel apart
+   * and a phone layout can tighten every gap by changing the scale once. */
+  --space-1: .25rem;
+  --space-2: .5rem;
+  --space-3: .75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
   --app-accent: #356b6f;
   --app-border: #d4c5b2;
   --app-muted: #655f55;
@@ -27,7 +54,7 @@
   --app-control-label: .72rem;
   --app-control-text: .9rem;
   --calcite-color-brand: var(--app-accent);
-  font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+  font-family: var(--app-font);
 }
 
 :root[data-theme="dark"] {
@@ -876,7 +903,8 @@ arcgis-map > [slot="bottom-right"] {
 #brand-title,
 #site-name,
 #sdk-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.brand-title-narrow { display: none; }
+.brand-title-narrow,
+.brand-subject-short { display: none; }
 #sdk-name {
   color: var(--app-muted);
   font-size: .75rem;
@@ -913,6 +941,17 @@ arcgis-map > [slot="bottom-right"] {
    * in the narrow bar. */
   .brand-title-wide { display: none; }
   .brand-title-narrow { display: inline; }
+  /* The short page name shows; the full one stays the heading's text,
+   * hidden the way `.visually-hidden` hides, so a screen reader hears it. */
+  .brand-subject-short { display: inline; }
+  .brand-subject-full {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+  }
   /* Every page except the storage map carries two 32px end actions -- the
    * page menu and the theme toggle -- so their lane is 64px of controls
    * plus a small buffer for Calcite's own slot spacing, not the map's
