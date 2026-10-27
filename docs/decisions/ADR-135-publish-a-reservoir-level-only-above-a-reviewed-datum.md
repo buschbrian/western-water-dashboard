@@ -133,6 +133,26 @@ chart's host has the stable id `reservoir-elevation-chart`, ready when
 `window.__reservoirReady.elevation` is `drawn`, so a later share-image step
 can capture it alone.
 
+**The record starts after first filling.** Readings while a new reservoir
+first fills describe the filling, not the reservoir in use, and made Powell's
+"lowest reading" a 1964 value and its rank one of 63 years mostly of filling.
+An entry may name `record_starts`: the date, a short reason for the card, the
+basis, the source's own words and an HTTPS link; the loader refuses one
+without them. The record readings, the history rank, `first_obs` and `n_obs`
+start on that date; the history file and the chart keep every day, and the
+card says where the record starts and why.
+
+- Lake Powell: 1980-06-22. Reclamation's Glen Canyon Dam page,
+  https://www.usbr.gov/uc/rm/crsp/gc/ : "Lake Powell began filling on March
+  13, 1963 and completed filling on June 22, 1980 reaching elevation 3,700
+  feet above sea level".
+- Lake Mead: 1941-08-06. No Reclamation page found gives an end of first
+  filling. The 2001 Lake Mead Sedimentation Survey (cited below) gives the
+  first date the lake reached its spillway: "On August 6 of 1941, Lake Mead's
+  water level was within one-foot of the spillway crest when the Arizona
+  spillway gates were lowered allowing flows for the first time." This site
+  takes that date as the end of first filling, and the roster says so.
+
 **Lake Powell and Lake Mead are published.** Powell above NGVD 1929 on
 measured evidence; Mead above Reclamation's Hoover Dam powerhouse datum, by
 the owner's decision of 2026-10-27, on the evidence under Lake Mead below.
@@ -165,10 +185,9 @@ the owner's decision of 2026-10-27, on the evidence under Lake Mead below.
   from 1935-02-02 and Powell's from 1963-12-28; `reservoirs.json` grows by
   about 2 KB gzipped. It is fetched only by a page whose reservoir carries a
   level.
-- The full record is published, so the record lows (Powell, May 1964; Mead,
-  February 1935) and the history ranks include the years each lake was first
-  filling. Whether to start the summary after first fill is a separate
-  decision with its own evidence.
+- The record readings and history rank start after first filling, by the
+  owner's ruling of 2026-10-27 (see Start of the record). The daily history
+  and the chart keep every day from the first reading.
 - A future elevation entry needs its own datum evidence and, where a second
   datum is in public use, its own measured offset. RISE's Taylor Park item is
   the standing example of why.
@@ -217,6 +236,7 @@ authority Bureau of Reclamation:
   so they are not labelled "Level 1, 2, 3".
 
 Whether those reference levels are themselves stated on the powerhouse datum
-or on NGVD 1929 is not established. Operating documents for the lake are
-normally in Reclamation's own figures, but a 0.55 ft difference would sit
-between a reading and its line, so it is recorded here as open.
+or on NGVD 1929 is not established. By the owner's ruling they are drawn, and
+Mead's note says that Reclamation does not state which datum they use and
+that NGVD 1929 gives a number 0.55 ft higher (`reference_levels_datum_stated:
+false` in the roster).

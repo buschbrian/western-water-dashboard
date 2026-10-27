@@ -145,8 +145,10 @@ lands.
 `admitted_reservoir_elevations.json` is loaded on first use by
 `pipeline.roster.admitted_reservoir_elevations`, which refuses an entry with
 no datum, a project datum with no name or no sourced relation to a national
-datum, evidence with no checked date, an offset with no measurement date or a
-reference level with no authority or source. After the storage fetch,
+datum, evidence with no checked date, an offset with no measurement date, a
+record start (the end of first filling) with no quoted source, or a reference
+level with no authority or source. The summary's record starts at
+`record_starts`; the history file keeps every day. After the storage fetch,
 `refresh_elevations` reads each rostered reservoir's elevation item through
 `fetch_rise_series(..., column="elevation_ft")` -- the storage fetcher with
 the value column named -- from the provider's first reading, and attaches an

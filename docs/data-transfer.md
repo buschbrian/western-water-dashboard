@@ -78,7 +78,7 @@ each written once as a compact array (ADR-135). The full records were kept;
 nothing was cut. It is fetched only by a reservoir page whose reservoir
 carries a reviewed level, which is less than the 488 KB precipitation history
 the snow page fetches. The two level summaries added about 2 KB gzipped to
-`reservoirs.json` (276.9 KB before, 278.7 KB after, gzip -6, the same
+`reservoirs.json` (276.9 KB before, 279.1 KB after, gzip -6, the same
 morning's refresh included).
 
 ### The drought archives at a decade

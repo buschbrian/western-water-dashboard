@@ -56,7 +56,9 @@ levels dashed and named at the right end, and a level far from the readings
 named under the chart instead of drawn; then the note on why the Geological
 Survey (Powell) or other sources (Mead, on Reclamation's own project datum)
 can show a different level. A project datum is named, never called NGVD 1929,
-and a calculated datum difference says it is calculated.
+and a calculated datum difference says it is calculated. The card says where
+its record starts (after first filling); the chart draws every year it shows,
+and its labels sit on plates of the page colour so no line crosses text.
 `window.__reservoirReady.elevation` is `drawn`, `card` (the history could not
 be read) or `none`; the chart's host is `#reservoir-elevation-chart`, the
 stable target for a later share image.

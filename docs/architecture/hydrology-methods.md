@@ -183,8 +183,12 @@ The level block is the terminal lake's level summary, built by the same
 function (`pipeline.measurement.summarize_measurement`): dated record
 readings, dated 7-, 30- and 365-day changes in feet, and the same-date history
 rank from the unchanged reservoir estimator. Its record starts at the
-provider's first reading, so the extremes and rank include the years each
-lake was first filling (Powell from 1963-12-28, Mead from 1935-02-02). No percentage of a level is published,
+roster's `record_starts`, the published end of first filling, with its
+source: Powell 1980-06-22 (Reclamation: "completed filling on June 22,
+1980"), Mead 1941-08-06 (Reclamation's 2001 survey: the first time the lake
+reached its spillway). Readings while a lake first fills describe the filling
+and are left out of the record readings and the rank; the daily history and
+the chart keep them. A start with no published source is refused. No percentage of a level is published,
 and a reference level is a named elevation with its authority, never a
 denominator. A daily level from Reclamation is one end-of-day reading; the
 Survey publishes every fifteen minutes, so the two also differ while the
