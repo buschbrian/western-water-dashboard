@@ -127,6 +127,17 @@ published areas are almost entirely such pools -- Lower Snake at 97.6% of its
 combined full level and Middle Columbia at 94.9% -- so a combined percentage
 for either is close to a constant and reads as a drought signal.
 
+## Elevation datum
+
+A reservoir elevation carries a vertical datum the feed does not state. The
+datum is a reviewed fact, one per reservoir (ADR-139): NGVD29, NAVD88, or a
+project datum with its stated offset (Lake Mead's Hoover Dam powerhouse datum
+is 0.55 feet below NGVD29). The worksheet `datum-review.csv` holds the
+evidence; a suggestion needs a Reclamation statement or two agreeing U.S.
+Geological Survey locations, and the reviewer's ruling is the only thing a
+published elevation reads. NAVD88 minus NGVD29 is a shift of about three feet
+in the interior West and is never applied to move a project datum.
+
 ## Natural terminal lakes
 
 A natural terminal lake is a separate water type (ADR-112). It may publish
