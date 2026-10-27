@@ -31,7 +31,8 @@ at the same site and time (median 2.9 ft over 2,878 fifteen-minute readings).
 Reclamation's daily level (RISE item 508) matches 62614: over 91 days,
 2026-07-28 to 2026-10-26, RISE minus 62614 had a median of +0.14 ft against
 the reading nearest local midnight and +0.21 ft against the daily mean, and
-RISE minus 62615 a median of -2.76 ft. The rest of the gap is time:
+RISE minus 62615 a median of -2.76 ft, which is the 2.90 ft between the two
+Survey series less RISE's +0.14 ft over 62614. The rest of the gap is time:
 Reclamation publishes one end-of-day reading a day and the Survey one every
 fifteen minutes, so while the lake rose 1 to 1.8 ft a day (21 to 25 October)
 a daily mean and an end-of-day value were up to about a foot apart.
@@ -51,7 +52,12 @@ that names its datum with evidence.** `admitted_reservoir_elevations.json` is
 reviewed by hand, keyed by the published reservoir's `source_station_id`, and
 loaded by `pipeline.roster.load_admitted_reservoir_elevations`, which refuses:
 
-- an entry with no datum, or a datum other than NGVD29 or NAVD88;
+- an entry with no datum, or a datum other than NGVD29, NAVD88 or `project`;
+- a `project` datum (an operator's own, such as Hoover Dam's powerhouse datum
+  or Reclamation's project datums at Davis and Parker) without its name and a
+  stated relation to a national datum: the national datum, the feet to add,
+  the operator's own words and an HTTPS source; and a national datum carrying
+  either;
 - datum evidence with no checked date or a source without an HTTPS link;
 - a measured offset to the other datum with no measurement date;
 - a reference level with no authority or no HTTPS source, or one carrying a
@@ -60,6 +66,14 @@ loaded by `pipeline.roster.load_admitted_reservoir_elevations`, which refuses:
 
 Every entry carries its own datum evidence. No datum is assumed from the
 provider, because the provider is not one datum.
+
+A project datum is published by its own name with its relation stated
+("the Bureau of Reclamation's Hoover Dam powerhouse datum ... Add 0.55 feet to
+a level on this datum to give the level above the National Geodetic Vertical
+Datum of 1929"), never called by the national datum it is stated against.
+The relation is stored as the feet to add (`add_ft`), the operator's own
+instruction, rather than as a signed offset, because "a datum 0.55 feet lower"
+can be read in either direction.
 
 **The record carries a summary; the series is its own file.** A rostered
 reservoir's record gains an optional `elevation` block with the shape a
@@ -143,18 +157,43 @@ both sources.
 
 Withheld until the owner decides how its datum is named. There is no active
 Geological Survey elevation series to compare (09421000 carried storage and
-ended 2017-09-30), Reclamation publishes no datum statement, and one secondary
-source describes a "Hoover Dam powerhouse datum" about 2 ft from NAVD 1988.
-The roster's `withheld` block records the finding. Prepared values, so that
-admitting Mead is one roster entry and a refresh:
+ended 2017-09-30), and Reclamation's daily feed names no datum. Reclamation's
+2001 Lake Mead Sedimentation Survey (Ferrari, February 2008,
+https://www.usbr.gov/tsc/techreferences/reservoir/2001%20Lake%20Mead%20Sedimentation%20Survey.pdf)
+states: "All elevation data were tied to the Hoover Dam powerhouse datum that
+is 0.55 feet lower than NGVD29 (Lara and Sanders, 1970)", and of the reservoir
+water surface: "Tied to 'Power House' datum. Add 0.55 feet to convert to
+NGVD29, from leveling of 1935." That RISE item 6123 is on this datum is an
+inference from Reclamation's own reports that its stage data are tied to it,
+not a measurement: no independent series exists to measure it against. Lake
+Mohave and Lake Havasu likewise use Reclamation project datums (RPVD Davis =
+NAVD 1988 minus 3.39 ft; RPVD Parker = NAVD 1988 minus 2.72 ft; Reclamation
+2022 area-capacity report).
 
-- RISE storage item 6124 (already published), elevation item 6123.
-- Reference levels from the Post-2026 Final EIS Technical Appendix 3,
-  https://www.usbr.gov/ColoradoRiverBasin/post2026/final-eis/docs/Vol-III/P26-FEIS_TA_03_Hydro_508.pdf :
-  1,229 ft full pool (top of the space kept empty for floods), 1,219.6 ft
-  maximum operating elevation, 950 ft minimum power pool.
-- 895 ft dead pool, from Technical Appendix 15,
-  https://www.usbr.gov/ColoradoRiverBasin/post2026/draft-eis/docs/vol-3/P26-DEIS-TA-15.pdf .
-- 1,075, 1,050 and 1,025 ft from the 24-Month Study,
-  https://www.usbr.gov/lc/region/g4000/24mo.pdf . No Reclamation table found
-  names them as shortage tiers, so they are not to be labelled "Level 1, 2, 3".
+The roster's `withheld` block records the finding. A ready-to-add entry, so
+that admitting Mead is one roster entry and a refresh:
+
+- `source_station_id` 6124 (RISE storage item, already published),
+  `elevation_item_id` 6123, `source_key` rise, `unit` ft.
+- `vertical_datum` `project`, `datum_name` "Hoover Dam powerhouse datum",
+  `datum_relation` {`datum` NGVD29, `add_ft` 0.55, `quote` "Add 0.55 feet to
+  convert to NGVD29, from leveling of 1935.", `source_url` the survey above}.
+  The page would read "above the Bureau of Reclamation's Hoover Dam powerhouse
+  datum" with the conversion stated beside it.
+- `datum_offset` null: no Geological Survey series exists to measure one.
+- Reference levels, authority Bureau of Reclamation:
+  - 1,229 ft full pool (the top of the space kept empty for floods), 1,219.6 ft
+    maximum operating elevation and 950 ft minimum power pool, from the
+    Post-2026 Final EIS Technical Appendix 3,
+    https://www.usbr.gov/ColoradoRiverBasin/post2026/final-eis/docs/Vol-III/P26-FEIS_TA_03_Hydro_508.pdf ;
+  - 895 ft dead pool (water that cannot be released), from Technical
+    Appendix 15,
+    https://www.usbr.gov/ColoradoRiverBasin/post2026/draft-eis/docs/vol-3/P26-DEIS-TA-15.pdf ;
+  - 1,075, 1,050 and 1,025 ft from the 24-Month Study,
+    https://www.usbr.gov/lc/region/g4000/24mo.pdf . No Reclamation table found
+    names them as shortage tiers, so they are not to be labelled "Level 1, 2,
+    3".
+- Whether those reference levels are themselves stated on the powerhouse
+  datum or on NGVD 1929 is not established; the owner's review of the entry
+  should confirm it, since a 0.55 ft difference would sit between a reading
+  and its line.

@@ -166,8 +166,13 @@ offset is published with its date.
 
 **Never assume a provider's datum.** RISE labels no datum on its elevation
 items and is not uniformly NGVD 1929: Taylor Park (item 796) matches the
-Survey's NAVD 1988 series. Every entry carries its own evidence. Lake Mead is
-withheld until its datum can be named with evidence.
+Survey's NAVD 1988 series. Every entry carries its own evidence. An
+operator's own project datum (Hoover Dam's powerhouse datum; Reclamation's
+project datums at Davis and Parker) is admitted as `project`, by its name and
+with its stated relation to a national datum -- the feet to add, the
+operator's words and a source -- and is never called by the national datum.
+Lake Mead is withheld until the owner reviews its entry (ADR-135, Open: Lake
+Mead).
 
 The level block is the terminal lake's level summary, built by the same
 function (`pipeline.measurement.summarize_measurement`): dated record
