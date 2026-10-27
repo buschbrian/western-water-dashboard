@@ -29,20 +29,27 @@ sites sit inside it. A listed reservoir is evidence that storage is
 upstream, not a finding that the flow is regulated, and never a statement
 that the gauge measures the reservoir's inflow. When the traced area and the
 gauge's published drainage area differ by more than `AREA_CHECK_RATIO`, the
-row says so: the trace may be the wrong basin.
+row says so: the trace may be the wrong basin. A published reservoir inside the basin makes the gauge
+shaped, whatever else is found (ADR-137).
 
 **The storage evidence** (`--evidence`, offline apart from two services).
 Every dam the National Inventory of Dams places inside a gauge's basin, not
 only the reservoirs this site publishes, and their summed storage as a share
 of one year's mean flow at the gauge (the degree of regulation). The share
-sorts rows; it does not rule them. A share under `SMALL_STORAGE_SHARE` with
-storage upstream suggests natural for review; a share at or above it
-suggests shaped and, when nothing else is in doubt, puts the row in the
+sorts rows; it does not rule them. With no published reservoir in the basin, a
+share under `SMALL_STORAGE_SHARE` (10%, ADR-137) suggests natural; a share at
+or above it suggests shaped and, when nothing else is in doubt, puts the row in the
 `bulk` queue: a natural river wrongly ruled shaped loses only a comparison
 with normal, the other mistake publishes a wrong one. Basin outlines come
 from the review page's bundle (`--basins`), the simplified outlines the
 reviewer sees, so a dam within a few hundred metres of an edge can fall
 either side.
+
+**Display names.** `proposed_display_name`, `name_patterns` and `name_check`
+come from `tools/gauge_names.py` on every write: proper case, the agency's
+abbreviations spelled out, the state suffix dropped. A token the rules cannot
+settle stays as written and is named in `name_check`. It is a proposal for a
+person to accept; nothing published is renamed.
 
 **Every run merges.** `reviewer_ruling` and `notes` are never touched. A
 gauge that has stopped reporting keeps its row and its older `screened_on`
@@ -69,6 +76,7 @@ from typing import NamedTuple
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 import build_upstream_index as upstream  # noqa: E402
+import gauge_names  # noqa: E402
 
 OUTPUT_PATH = ROOT / "gauge-review.csv"
 
@@ -113,9 +121,10 @@ FLOW_START_WATER_YEAR = 1991
 MIN_FLOW_YEARS = 5
 #: One cubic foot per second for a year, in acre-feet.
 ACRE_FEET_PER_CFS_YEAR = 1.983471 * 365.25
-#: Storage under this share of a year's flow is small enough that the
-#: reviewer, not the rule, decides whether it shapes the daily flow.
-SMALL_STORAGE_SHARE = 2.0
+#: Brian's ruling of 2026-10-27 (ADR-137): inventoried storage under this
+#: share of a year's flow, with no published reservoir in the basin, is
+#: natural. At or above it the gauge is shaped.
+SMALL_STORAGE_SHARE = 10.0
 #: A dam this close to the gauge may sit in the part of the gauge's own
 #: catchment that lies below it, so the row is not bulk-ruled.
 NEAR_GAUGE_KM = 1.0
@@ -136,7 +145,8 @@ FIELDS = [
     "trace_check", "upstream_reservoirs", "upstream_snow_sites",
     "mean_flow_cfs", "flow_years", "dams_upstream", "dam_storage_af",
     "storage_share_pct", "largest_dams", "irrigation_dams", "dams_near_gauge",
-    "huc8_name", "usgs_page", "suggested_ruling", "suggestion_reason",
+    "huc8_name", "usgs_page", "proposed_display_name", "name_patterns",
+    "name_check", "suggested_ruling", "suggestion_reason",
     "review_queue", "reviewer_ruling", "notes",
 ]
 SCREEN_FIELDS = FIELDS[:FIELDS.index("trace_screen")]
@@ -185,7 +195,7 @@ def findings(row: dict) -> list[tuple[str, str]]:
                       "no mean flow to compare"))
     elif dams:
         found.append(("natural", f"{held} list no storage"))
-    elif reservoirs:
+    if reservoirs:
         found.append(("shaped", f"{len(reservoirs)} published reservoir"
                       f"{'s' if len(reservoirs) != 1 else ''} upstream"))
     if BELOW_DIVERSION_NAME.search(name):
@@ -527,6 +537,8 @@ def write_rows(rows: dict[str, dict], path: Path = OUTPUT_PATH) -> None:
     for row in rows.values():
         row["usgs_page"] = USGS_PAGE_URL.format(site=row["usgs_site_no"])
         row["huc8_name"] = names.get(row["huc8"], row.get("huc8_name", ""))
+        (row["proposed_display_name"], row["name_patterns"],
+         row["name_check"]) = gauge_names.propose(row["site_name"])
         row["suggested_ruling"], row["suggestion_reason"] = suggest(row)
         row["review_queue"] = review_queue(row, row["suggested_ruling"])
     ordered = sorted(rows.values(), key=lambda r: (r["huc8"], r["usgs_site_no"]))

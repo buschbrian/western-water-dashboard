@@ -4,8 +4,8 @@ The private review page (tools/gauge-review/) reads a `gauges.json` bundle
 whose outlines, topographic map frames and nearby points were prepared once
 and are not refetched to update the page. This tool rewrites only the
 fields the worksheet owns -- the suggestion, its reason, the review queue,
-the watershed name and the storage evidence -- and leaves everything else
-as it was. Offline; it writes the bundle and nothing in the
+the proposed display name and its check, the watershed name and the storage
+evidence -- and leaves everything else as it was. Offline; it writes the bundle and nothing in the
 repository.
 
     python3 tools/build_gauge_review_page.py --bundle DIR/gauges.json --output OUT/gauges.json
@@ -39,6 +39,7 @@ def page_fields(row: dict) -> dict:
     return {
         "tier": row["suggested_ruling"], "reason": row["suggestion_reason"],
         "queue": row["review_queue"], "huc8Name": row["huc8_name"],
+        "proposedName": row["proposed_display_name"], "nameCheck": row["name_check"],
         "flow": _number(row["mean_flow_cfs"]), "flowYears": _number(row["flow_years"]),
         "dams": _number(row["dams_upstream"]), "damAf": _number(row["dam_storage_af"]),
         "share": _number(row["storage_share_pct"]),

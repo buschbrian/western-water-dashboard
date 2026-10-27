@@ -92,6 +92,7 @@ changes `reviewer_ruling` or `notes`.
 | `dams_near_gauge` | Dams within 1 km of the gauge: the whole local catchment is traced, so one may sit below it |
 | `huc8_name` | The watershed name the review page groups by |
 | `suggested_ruling`, `suggestion_reason` | A tier worked out from the columns above, and every finding behind it. Recomputed on every write; never copied into the ruling |
+| `proposed_display_name`, `name_patterns`, `name_check` | A readable name worked out from the station name by `tools/gauge_names.py`, the rules that fired, and what a person must check (a token the rules cannot settle stays as written). A proposal to accept, as with the reservoir names worksheet; nothing published is renamed (ADR-137) |
 | `review_queue` | `bulk` when the suggestion is the safe one and may be agreed a watershed at a time; `check`; otherwise `review` |
 
 An upstream reservoir means storage can shape the flow. It is not a
@@ -118,14 +119,14 @@ suggestions offline. Each row gets the strongest of its findings:
 |---|---|---|
 | `exclude` | The gauge's own name is a tunnel, drain or canal (`FAIRVIEW TUNNEL NEAR …`), not a river measured beside one | Not shown |
 | `check` | The basin was not traced, or the trace differs from the published drainage area by more than 25% | Unresolved until the basin is checked |
-| `shaped` | Inventoried dams in the basin hold at least 2% of a year's flow (or hold storage and the gauge has no mean flow; or, before the storage evidence runs, a published reservoir sits in the basin), or the name places the gauge below a diversion, canal, tunnel or powerplant | Flow shown and labelled as shaped upstream; not ranked against normal |
+| `shaped` | A published reservoir sits in the basin, whatever else is found; or inventoried dams hold at least 10% of a year's flow (or hold storage and the gauge has no mean flow); or the name places the gauge below a diversion, canal, tunnel or powerplant | Flow shown and labelled as shaped upstream; not ranked against normal |
 | `short` | The record starts after 1 January 1991 | Flow shown; no comparison with normal |
-| `natural` | None of the above. Storage under 2% of a year's flow, irrigation dams and a dam beside the gauge are kept as findings for the reviewer | Flow shown and compared with normal for the date |
+| `natural` | None of the above. Storage under 10% of a year's flow with no published reservoir in the basin, irrigation dams and a dam beside the gauge are kept as findings for the reviewer | Flow shown and compared with normal for the date |
 
 The rules see inventoried dams, published reservoirs and diversions a
 gauge's name mentions. A canal that takes water out without a dam, a
-transbasin import or city use can still make a `natural` row wrong. The 2%
-line sorts rows; it is not a finding that smaller storage leaves the flow
+transbasin import or city use can still make a `natural` row wrong. The 10%
+line is Brian's ruling (ADR-137); it is not a finding that smaller storage leaves the flow
 natural, and a small irrigation dam can take most of a dry-season flow. Write the ruling in
 `reviewer_ruling` as one of the five tiers (blank means not yet reviewed),
 and a reason in `notes` when it differs from the suggestion. How each tier
@@ -155,6 +156,15 @@ or by a named diversion, or excluded by the gauge's own name -- with no dam
 near the gauge. The review page groups gauges by watershed and agrees a
 group's open `bulk` rows after a second press, with a note saying so. A
 ruling already made, or a local draft, is never overwritten.
+
+**Rulings of 2026-10-27 (ADR-137).** A published reservoir in the basin
+makes the gauge `shaped`, no matter what else is found. With none, inventoried
+storage under 10% of a year's flow is `natural`; at or above 10% it stays
+`shaped`. The Utah suggestions moved from 26 `natural`, 110 `shaped`, 14
+`short`, 11 `check`, 3 `exclude` to 39, 96, 15, 11, 3; queues from 96 `bulk`,
+57 `review` to 79 and 74. Five Utah names carry a `name_check`. Colorado, New
+Mexico and Arizona worksheets take the new rules and columns when
+`--suggest` runs on them after their traces end.
 
 ### Private review page
 

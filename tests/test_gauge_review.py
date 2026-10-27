@@ -321,12 +321,28 @@ def test_page_basins_read_each_ring_as_its_own_polygon(tmp_path):
 # --- the suggestion with storage evidence, and the queue -----------------------
 
 def test_small_storage_suggests_natural_and_large_storage_suggests_shaped():
-    small = plain_row(dams_upstream="3", dam_storage_af="500", storage_share_pct="1.6",
-                      upstream_reservoirs="Trial Lake")
+    small = plain_row(dams_upstream="3", dam_storage_af="500", storage_share_pct="1.6")
     tier, reason = G.suggest(small)
     assert tier == "natural"
     assert "hold 1.6% of a year's flow" in reason
-    assert G.suggest(plain_row(dams_upstream="1", storage_share_pct="2"))[0] == "shaped"
+    assert G.suggest(plain_row(dams_upstream="1", storage_share_pct="12"))[0] == "shaped"
+
+
+def test_a_published_reservoir_in_the_basin_shapes_the_gauge_whatever_else_is_found():
+    row = plain_row(dams_upstream="3", dam_storage_af="500", storage_share_pct="0.4",
+                    upstream_reservoirs="Trial Lake")
+    tier, reason = G.suggest(row)
+    assert tier == "shaped"
+    assert "1 published reservoir upstream" in reason
+    assert G.suggest(plain_row(dams_upstream="2", dam_storage_af="0",
+                               upstream_reservoirs="Trial Lake"))[0] == "shaped"
+
+
+def test_storage_under_ten_percent_with_no_published_reservoir_is_natural():
+    assert G.SMALL_STORAGE_SHARE == 10
+    assert G.suggest(plain_row(dams_upstream="4", storage_share_pct="9.9"))[0] == "natural"
+    assert G.suggest(plain_row(dams_upstream="4", storage_share_pct="10"))[0] == "shaped"
+    assert G.suggest(plain_row(dams_upstream="4", storage_share_pct="10.1"))[0] == "shaped"
 
 
 def test_storage_with_no_flow_to_compare_is_shaped_and_dams_without_storage_are_not():
@@ -417,3 +433,61 @@ def test_no_state_means_utah(monkeypatch, tmp_path):
 def test_an_unknown_state_is_refused(capsys):
     with pytest.raises(SystemExit):
         G.main(["--state", "WY"])
+
+
+# --- display names -----------------------------------------------------------
+
+def name(raw):
+    return G.gauge_names.propose(raw)
+
+
+def test_station_abbreviations_are_spelled_out_in_proper_case():
+    assert name("DIRTY DEVIL R AB POISON SP WSH NR HANKSVILLE UT")[0] == (
+        "Dirty Devil River above Poison Spring Wash near Hanksville")
+    assert name("SALT CRK BL NEPHI POWERPLANT DIV NR NEPHI, UT")[0] == (
+        "Salt Creek below Nephi Powerplant Diversion near Nephi")
+    assert name("N FK CACHE LA POUDRE R ABV HALLIGAN RES NR LIVERMORE, CO")[0].startswith(
+        "North Fork Cache La Poudre River above Halligan Reservoir near")
+    assert name("YELLOWSTONE R @ BRIDGE CMPGRND NR ALTONAH, UT")[0] == (
+        "Yellowstone River at Bridge Campground near Altonah")
+
+
+def test_a_state_suffix_is_dropped_and_recorded():
+    for raw in ("WEBER RIVER NEAR PEOA, UTAH", "WEBER RIVER NEAR PEOA, UT",
+                "WEBER RIVER NEAR PEOA UT", "WEBER RIVER NEAR PEOA, UT."):
+        display, patterns, check = name(raw)
+        assert display == "Weber River near Peoa" and check == ""
+        assert "state suffix dropped" in patterns
+    assert name("COLORADO RIVER AT LEES FERRY, AZ")[0] == "Colorado River at Lees Ferry"
+
+
+def test_proper_nouns_and_numerals_keep_their_form():
+    assert name("MCELMO CREEK NEAR BLUFF, UTAH")[0] == "McElmo Creek near Bluff"
+    assert name("ROAN CREEK AT DE BEQUE, CO.")[0] == "Roan Creek at De Beque"
+    assert name("ARKANSAS R AT PUMP STATION III")[0].endswith("Station III")
+    assert name("BOULDER CREEK AT NORTH 75TH ST. NEAR BOULDER, CO")[0] == (
+        "Boulder Creek at North 75th Street near Boulder")
+
+
+def test_an_ambiguous_token_is_named_and_a_name_that_is_not_ambiguous_has_no_check():
+    display, patterns, check = name("DIRTY DEVIL R AB POISON SP WSH NR HANKSVILLE UT")
+    assert check == "SP: Spring or Springs" and "SP=Spring" in patterns
+    display, _, check = name("TURKEY C EAST SEEP BL TELLER RES NR STONE CITY, CO")
+    assert display.startswith("Turkey C East Seep") and "C: " in check
+    assert name("SLATE R AB BAXTER GL @HWY 135 NR CRESTED BUTTE, CO")[2].startswith("GL: ")
+    assert name("ALAMITOS CREEK BLW FR 161H NR HOLMAN, NM")[0].count("FR 161H") == 1
+    assert name("WEBER RIVER NEAR PEOA, UTAH")[2] == ""
+
+
+def test_a_name_already_in_mixed_case_is_not_recased():
+    assert name("Middle Fork Beaver Creek near Lonetree, WY")[0] == (
+        "Middle Fork Beaver Creek near Lonetree")
+
+
+def test_writing_fills_the_proposed_name_and_leaves_site_name_alone(tmp_path):
+    path = tmp_path / "gauge-review.csv"
+    G.write_rows({"1": plain_row("DUCHESNE RIV ABV UINTA RIV, NR RANDLETT, UT")}, path)
+    row = G.read_rows(path)["1"]
+    assert row["site_name"] == "DUCHESNE RIV ABV UINTA RIV, NR RANDLETT, UT"
+    assert row["proposed_display_name"] == "Duchesne River above Uinta River, near Randlett"
+    assert row["name_check"] == ""

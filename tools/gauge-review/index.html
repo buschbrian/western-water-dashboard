@@ -540,6 +540,7 @@ function renderGauge() {
     <div class="gauge-head">
       <div>
         <h2>${esc(g.name)}</h2>
+        ${g.proposedName ? `<div class="ids">Proposed display name: <b>${esc(g.proposedName)}</b>${g.nameCheck ? ` · Check: ${esc(g.nameCheck)}` : ""}</div>` : ""}
         <div class="ids"><span class="mono">USGS ${g.site}</span> · ${esc(g.county)} · ${esc(groupName(g))} (HUC <span class="mono">${g.huc8}</span>) ·
           <a class="ext" href="${esc(g.page)}" target="_blank" rel="noopener">Open the gauge page</a></div>
       </div>
