@@ -318,6 +318,9 @@ export const RESERVOIR_GROUPS: readonly ApiFieldGroup[] = [
     f("datum_offset", "object",
       "The measured difference to another datum at a Geological Survey site, or null. "
       + "Fields are listed below."),
+    f("derived_offset", "object",
+      "A difference to another datum calculated from published figures, not measured at "
+      + "the reservoir, where no measured one exists. Fields are listed below.", true),
     f("reference_levels", "array",
       "Named levels with the authority that set them. Fields are listed below. Never a "
       + "share of anything. Empty when there are none.")
@@ -343,6 +346,16 @@ export const RESERVOIR_GROUPS: readonly ApiFieldGroup[] = [
         + "national datum, as the operator states it."),
       f("quote", "text", "The operator's own words that state the relation."),
       f("source_url", "web address", "Where those words are published.")
+    ]},
+  { id: "reservoir-elevation-derived", title: "Calculated datum difference",
+    path: "reservoirs[].elevation.derived_offset", fields: [
+      f("to_datum", "identifier", "The other datum, such as NAVD88."),
+      f("offset_ft", "feet",
+        "About how much higher a level above the other datum reads for the same water. "
+        + "Calculated, not measured."),
+      f("basis", "text", "How the difference was calculated, with the figures used."),
+      f("sources", "array", "Each figure's source: a citation and a web address."),
+      f("checked", "date", "Date the figures were read.")
     ]},
   { id: "reservoir-reference-level", title: "Reference level",
     path: "reservoirs[].elevation.reference_levels[]", fields: [

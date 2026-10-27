@@ -240,6 +240,9 @@ function fillElevationChart(host: HTMLElement, chart: ElevationChart | null): bo
   heading.textContent = chart.title;
   const svgHost = document.createElement("div");
   svgHost.className = "elevation-chart-host";
+  /* A stable target for a later screenshot of this chart alone, read with
+   * `window.__reservoirReady.elevation === "drawn"`. */
+  svgHost.id = "reservoir-elevation-chart";
   const parts: HTMLElement[] = [heading, svgHost];
   host.replaceChildren(...parts);
   renderElevationYears(svgHost, chart);

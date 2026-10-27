@@ -54,8 +54,12 @@ from `elevation_history.json`, fetched only for such a reservoir -- the current
 year strong, the year before lighter, four earlier years muted, reference
 levels dashed and named at the right end, and a level far from the readings
 named under the chart instead of drawn; then the note on why the Geological
-Survey can show a different level. `window.__reservoirReady.elevation` is
-`drawn`, `card` (the history could not be read) or `none`.
+Survey (Powell) or other sources (Mead, on Reclamation's own project datum)
+can show a different level. A project datum is named, never called NGVD 1929,
+and a calculated datum difference says it is calculated.
+`window.__reservoirReady.elevation` is `drawn`, `card` (the history could not
+be read) or `none`; the chart's host is `#reservoir-elevation-chart`, the
+stable target for a later share image.
 
 ### The terminal-lakes page
 

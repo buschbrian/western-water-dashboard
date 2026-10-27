@@ -73,7 +73,16 @@ a level on this datum to give the level above the National Geodetic Vertical
 Datum of 1929"), never called by the national datum it is stated against.
 The relation is stored as the feet to add (`add_ft`), the operator's own
 instruction, rather than as a signed offset, because "a datum 0.55 feet lower"
-can be read in either direction.
+can be read in either direction. `add_ft: 0.55` is the owner's "NGVD29 offset
+-0.55 ft": a level on the project datum reads 0.55 ft lower than the same
+water above NGVD 1929.
+
+**A difference that was calculated is never presented as measured.** Where no
+second series exists to measure against, an entry may carry a
+`derived_offset`: the other datum, the feet, how it was calculated, its
+sources and the date they were read. It is published apart from
+`datum_offset`, and the page says it is calculated and not a measurement at
+the reservoir.
 
 **The record carries a summary; the series is its own file.** A rostered
 reservoir's record gains an optional `elevation` block with the shape a
@@ -81,7 +90,8 @@ terminal lake's level has: unit, datum, current value, dated record readings,
 `first_obs`, `n_obs`, dated 7-, 30- and 365-day changes in feet with their
 reference dates and elapsed days, and the same-date history rank. The block
 adds the provider item, its page, the measured offset and the reference
-levels. Both are built by one function, `pipeline.measurement.
+levels, and, where present, the project datum's name and relation and a
+calculated offset. Both are built by one function, `pipeline.measurement.
 summarize_measurement`, moved out of `pipeline.lakes`; the lake record is
 unchanged to the byte (a synthetic lake hashes the same before and after, and
 `tests/test_reservoir_elevation.py` pins it). The daily levels from the
@@ -110,14 +120,22 @@ the year before lighter, four earlier years muted, so six lines read on a
 the right end. A level more than half the readings' range away (and never
 less than ten feet) is named under the chart rather than drawn, because a line
 a hundred feet off flattens every year into a few pixels. No colour is a
-storage-class colour (ADR-008). The note, "Why the Geological Survey can show
-a different level", says in Simplified Technical English which datum
-Reclamation uses, that the Survey's page can show the other one and how far
-apart they read here with the measurement date, and that one reading a day
-and one every fifteen minutes differ while the water moves quickly. It links
-both sources.
+storage-class colour (ADR-008). Where the Geological Survey measures the
+reservoir (Powell), the note "Why the Geological Survey can show a different
+level" says in Simplified Technical English which datum Reclamation uses,
+that the Survey's page can show the other one and how far apart they read
+here with the measurement date, and that one reading a day and one every
+fifteen minutes differ while the water moves quickly. Where it does not
+(Mead), the note "Why other sources can show a different level" names the
+project datum and its relation, gives the calculated NAVD 1988 difference as
+calculated, and claims no Survey series. Each note links its sources. The
+chart's host has the stable id `reservoir-elevation-chart`, ready when
+`window.__reservoirReady.elevation` is `drawn`, so a later share-image step
+can capture it alone.
 
-**Lake Powell is published; Lake Mead is withheld** (see Open: Lake Mead).
+**Lake Powell and Lake Mead are published.** Powell above NGVD 1929 on
+measured evidence; Mead above Reclamation's Hoover Dam powerhouse datum, by
+the owner's decision of 2026-10-27, on the evidence under Lake Mead below.
 
 ## Rejected alternatives
 
@@ -143,57 +161,62 @@ both sources.
   `src/reservoir-elevation-model.ts`, `src/viz/elevation-years.ts`,
   `src/data/elevation-validate.ts`, `window.__reservoirReady.elevation`, CSV
   columns for a reservoir that publishes a level, and data-page sections.
-- `elevation_history.json` is 50 KB gzipped with Powell's record from
-  1963-12-28 (181 KB raw); `reservoirs.json` grows by about 1 KB gzipped. It is
-  fetched only by a page whose reservoir carries a level.
-- The full record is published, so the record low (May 1964) and the history
-  rank include the years Lake Powell was first filling. Whether to start the
-  summary after first fill is a separate decision with its own evidence.
+- `elevation_history.json` is 117 KB gzipped (434 KB raw) with Mead's record
+  from 1935-02-02 and Powell's from 1963-12-28; `reservoirs.json` grows by
+  about 2 KB gzipped. It is fetched only by a page whose reservoir carries a
+  level.
+- The full record is published, so the record lows (Powell, May 1964; Mead,
+  February 1935) and the history ranks include the years each lake was first
+  filling. Whether to start the summary after first fill is a separate
+  decision with its own evidence.
 - A future elevation entry needs its own datum evidence and, where a second
   datum is in public use, its own measured offset. RISE's Taylor Park item is
   the standing example of why.
 
-## Open: Lake Mead
+## Lake Mead
 
-Withheld until the owner decides how its datum is named. There is no active
-Geological Survey elevation series to compare (09421000 carried storage and
-ended 2017-09-30), and Reclamation's daily feed names no datum. Reclamation's
-2001 Lake Mead Sedimentation Survey (Ferrari, February 2008,
+Published 2026-10-27 by the owner's decision, labelled with its project
+datum. There is no active Geological Survey elevation series to compare
+(09421000 carried storage and ended 2017-09-30), and Reclamation's daily feed
+names no datum. Reclamation's 2001 Lake Mead Sedimentation Survey (Ferrari,
+February 2008,
 https://www.usbr.gov/tsc/techreferences/reservoir/2001%20Lake%20Mead%20Sedimentation%20Survey.pdf)
 states: "All elevation data were tied to the Hoover Dam powerhouse datum that
 is 0.55 feet lower than NGVD29 (Lara and Sanders, 1970)", and of the reservoir
 water surface: "Tied to 'Power House' datum. Add 0.55 feet to convert to
-NGVD29, from leveling of 1935." That RISE item 6123 is on this datum is an
-inference from Reclamation's own reports that its stage data are tied to it,
-not a measurement: no independent series exists to measure it against. Lake
-Mohave and Lake Havasu likewise use Reclamation project datums (RPVD Davis =
-NAVD 1988 minus 3.39 ft; RPVD Parker = NAVD 1988 minus 2.72 ft; Reclamation
-2022 area-capacity report).
+NGVD29, from leveling of 1935."
 
-The roster's `withheld` block records the finding. A ready-to-add entry, so
-that admitting Mead is one roster entry and a refresh:
+**That RISE item 6123 is on this datum is an inference from Reclamation's own
+report that its stage data are tied to it, not a measurement**: no
+independent series exists to measure it against. Lake Mohave and Lake Havasu
+likewise use Reclamation project datums (RPVD Davis = NAVD 1988 minus 3.39 ft;
+RPVD Parker = NAVD 1988 minus 2.72 ft; Reclamation 2022 area-capacity report).
 
-- `source_station_id` 6124 (RISE storage item, already published),
-  `elevation_item_id` 6123, `source_key` rise, `unit` ft.
-- `vertical_datum` `project`, `datum_name` "Hoover Dam powerhouse datum",
-  `datum_relation` {`datum` NGVD29, `add_ft` 0.55, `quote` "Add 0.55 feet to
-  convert to NGVD29, from leveling of 1935.", `source_url` the survey above}.
-  The page would read "above the Bureau of Reclamation's Hoover Dam powerhouse
-  datum" with the conversion stated beside it.
-- `datum_offset` null: no Geological Survey series exists to measure one.
-- Reference levels, authority Bureau of Reclamation:
-  - 1,229 ft full pool (the top of the space kept empty for floods), 1,219.6 ft
-    maximum operating elevation and 950 ft minimum power pool, from the
-    Post-2026 Final EIS Technical Appendix 3,
-    https://www.usbr.gov/ColoradoRiverBasin/post2026/final-eis/docs/Vol-III/P26-FEIS_TA_03_Hydro_508.pdf ;
-  - 895 ft dead pool (water that cannot be released), from Technical
-    Appendix 15,
-    https://www.usbr.gov/ColoradoRiverBasin/post2026/draft-eis/docs/vol-3/P26-DEIS-TA-15.pdf ;
-  - 1,075, 1,050 and 1,025 ft from the 24-Month Study,
-    https://www.usbr.gov/lc/region/g4000/24mo.pdf . No Reclamation table found
-    names them as shortage tiers, so they are not to be labelled "Level 1, 2,
-    3".
-- Whether those reference levels are themselves stated on the powerhouse
-  datum or on NGVD 1929 is not established; the owner's review of the entry
-  should confirm it, since a 0.55 ft difference would sit between a reading
-  and its line.
+The NAVD 1988 difference is calculated: National Geodetic Survey benchmarks
+on the dam crest give NAVD 1988 minus NGVD 1929 as 2.35 ft at GR0577
+(1,234.87 against 1,232.52 ft) and 2.34 ft at GR0578 (1,234.91 against
+1,232.57 ft), read 2026-10-27; with the 0.55 ft relation, a level above NAVD
+1988 reads about 2.9 ft higher than Reclamation's number. It is published as
+`derived_offset`, never as `datum_offset`.
+
+The entry: elevation item 6123 beside storage item 6124; `vertical_datum`
+`project`, `datum_name` "Hoover Dam powerhouse datum", `datum_relation`
+{NGVD29, `add_ft` 0.55, the survey's words and link}. Reference levels,
+authority Bureau of Reclamation:
+
+- 1,229 ft, the top of the space kept empty for floods (full pool), 1,219.6 ft
+  maximum operating elevation and 950 ft minimum power pool, from the
+  Post-2026 Final EIS Technical Appendix 3,
+  https://www.usbr.gov/ColoradoRiverBasin/post2026/final-eis/docs/Vol-III/P26-FEIS_TA_03_Hydro_508.pdf ;
+- 895 ft dead pool (water that cannot be released), from Technical
+  Appendix 15,
+  https://www.usbr.gov/ColoradoRiverBasin/post2026/draft-eis/docs/vol-3/P26-DEIS-TA-15.pdf ;
+- 1,075, 1,050 and 1,025 ft from the 24-Month Study,
+  https://www.usbr.gov/lc/region/g4000/24mo.pdf , labelled "Level in the
+  24-Month Study". No Reclamation table found names them as shortage tiers,
+  so they are not labelled "Level 1, 2, 3".
+
+Whether those reference levels are themselves stated on the powerhouse datum
+or on NGVD 1929 is not established. Operating documents for the lake are
+normally in Reclamation's own figures, but a 0.55 ft difference would sit
+between a reading and its line, so it is recorded here as open.

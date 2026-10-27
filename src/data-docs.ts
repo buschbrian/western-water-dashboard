@@ -74,7 +74,8 @@ root.innerHTML = `
           record's <code>elevation</code> block; this file carries every day. Structure
           version 1. Refreshed each morning with the reservoirs. If a level request fails,
           the last good entry stays. Shown on the
-          <a href="./reservoir.html?name=Lake%20Powell">Lake Powell page</a>.</p>
+          <a href="./reservoir.html?name=Lake%20Powell">Lake Powell</a> and
+          <a href="./reservoir.html?name=Lake%20Mead">Lake Mead</a> pages.</p>
       </article>
       <article class="api-file">
         <h3>Terminal lakes</h3>

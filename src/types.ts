@@ -263,6 +263,19 @@ export interface DatumRelation {
   source_url: string;
 }
 
+/**
+ * A datum difference calculated from published figures, not measured at the
+ * reservoir: Lake Mead's NAVD 1988 difference, from survey marks on the dam
+ * and the project datum's stated relation.
+ */
+export interface DerivedOffset {
+  to_datum: string;
+  offset_ft: number;
+  basis: string;
+  sources: { citation: string; url: string }[];
+  checked: string;
+}
+
 /** A named level with the authority that set it: a line, never a share. */
 export interface ReferenceLevel {
   elevation_ft: number;
@@ -286,6 +299,7 @@ export interface ReservoirElevation extends MeasurementSummary {
   source_item_id: number;
   source_url: string;
   datum_offset: DatumOffset | null;
+  derived_offset?: DerivedOffset;
   reference_levels: ReferenceLevel[];
 }
 

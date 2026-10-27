@@ -54,6 +54,11 @@ export function syntheticProjectElevation(): ReservoirElevation {
       datum: "NGVD29", add_ft: 0.55, quote: "Add 0.55 feet to convert to NGVD29",
       source_url: "https://example.gov/survey.pdf"
     },
-    datum_offset: null
+    datum_offset: null,
+    derived_offset: {
+      to_datum: "NAVD88", offset_ft: 2.9, basis: "Calculated, not measured.",
+      sources: [{ citation: "Survey mark", url: "https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox=X" }],
+      checked: "2026-10-27"
+    }
   });
 }

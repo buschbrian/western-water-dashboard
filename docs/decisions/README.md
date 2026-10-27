@@ -313,7 +313,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-127](ADR-127-state-what-is-above-a-reservoir-as-stored-water.md) | State what is above a reservoir as stored water | Accepted; applies `rollupOfScoped` to the ADR-077 upstream set; replaces the reservoir page's chips with basin groups and rows |
 | [ADR-128](ADR-128-publish-compact-story-views-for-embedding.md) | Publish compact story views for embedding | Accepted; one entry page, three views, a theme that never persists, a view that fits its frame; computes nothing new (ADR-117's scope) |
 | [ADR-129](ADR-129-total-the-latest-storm-from-the-accumulated-precipitation.md) | Total the latest storm from the accumulated precipitation | Accepted; 1-, 3- and 7-day totals on the precipitation card; uses ADR-125's set day but not its fixed set; a falling accumulation is left out, never clipped |
-| [ADR-135](ADR-135-publish-a-reservoir-level-only-above-a-reviewed-datum.md) | Publish a reservoir level only above a reviewed datum | Accepted; the record ADR-117 asks for; Lake Powell published, Lake Mead withheld pending its datum; optional `elevation` block with no schema bump, history in `elevation_history.json`; ADR-130 to ADR-134 unused here |
+| [ADR-135](ADR-135-publish-a-reservoir-level-only-above-a-reviewed-datum.md) | Publish a reservoir level only above a reviewed datum | Accepted; the record ADR-117 asks for; Lake Powell above NGVD 1929, Lake Mead above Reclamation's Hoover Dam powerhouse datum; optional `elevation` block with no schema bump, history in `elevation_history.json`; ADR-130 to ADR-134 unused here |
 
 ## Relationship to the historical journal
 

@@ -78,9 +78,22 @@ describe("the datum note", () => {
       "Add 0.55 feet to a level on this datum to give the level above the "
       + "National Geodetic Vertical Datum of 1929.");
     const text = view.note.paragraphs[0]!;
-    expect(text).toContain("above the Bureau of Reclamation's Hoover Dam powerhouse datum.");
+    expect(text).toContain("in feet above its own Hoover Dam powerhouse datum.");
     expect(text).toContain("Add 0.55 feet");
     expect(text).not.toMatch(/feet above the National Geodetic/);
+  });
+
+  it("states a calculated difference as calculated, and claims no Geological Survey series", () => {
+    const note = datumNote("Testwater", syntheticProjectElevation());
+    const text = note.paragraphs.join(" ");
+    expect(note.heading).toBe("Why other sources can show a different level");
+    expect(text).toContain("about 2.9 feet higher than this number");
+    expect(text).toContain("It is not a measurement at the reservoir.");
+    expect(text).not.toMatch(/Geological Survey also measures|every 15 minutes|was measured on/);
+    expect(note.links.map((link) => link.text)).toEqual([
+      "Bureau of Reclamation readings for Testwater",
+      "Bureau of Reclamation report that states this datum",
+      "National Geodetic Survey marks on the dam"]);
   });
 
   it("says nothing about a difference that was never measured", () => {

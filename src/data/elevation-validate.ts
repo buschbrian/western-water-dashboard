@@ -45,6 +45,14 @@ function isOffset(value: unknown): boolean {
     && isHttps(value.source_url) && isDate(value.measured));
 }
 
+function isDerivedOffset(value: unknown): boolean {
+  return value === undefined || (isObject(value)
+    && isText(value.to_datum) && hasNumber(value.offset_ft) && isText(value.basis)
+    && isDate(value.checked) && Array.isArray(value.sources) && value.sources.length > 0
+    && value.sources.every((source) => isObject(source) && isText(source.citation)
+      && isHttps(source.url)));
+}
+
 function isReferenceLevel(value: unknown): boolean {
   return isObject(value) && hasNumber(value.elevation_ft)
     && isText(value.label) && isText(value.authority) && isHttps(value.url)
@@ -79,7 +87,7 @@ export function isReservoirElevation(value: unknown): value is ReservoirElevatio
   if (!hasNullableNumber(value.seasonal_rank) || !hasNullableNumber(value.seasonal_rank_of)) {
     return false;
   }
-  return isOffset(value.datum_offset)
+  return isOffset(value.datum_offset) && isDerivedOffset(value.derived_offset)
     && Array.isArray(value.reference_levels) && value.reference_levels.every(isReferenceLevel);
 }
 

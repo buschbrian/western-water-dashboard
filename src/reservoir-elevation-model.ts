@@ -114,13 +114,20 @@ export function datumNote(name: string, elevation: ReservoirElevation): Elevatio
   const relation = datumRelationSentence(elevation);
   const paragraphs = [
     `The Bureau of Reclamation gives the level of ${name} in feet above `
-      + `${elevationDatum(elevation)}. A datum is the zero point that a level is measured from.`
+      + `${elevation.vertical_datum === "project" && elevation.datum_name
+        ? `its own ${elevation.datum_name}` : elevationDatum(elevation)}. `
+      + "A datum is the zero point that a level is measured from."
       + (relation ? ` ${relation}` : "")
   ];
   const links: NoteLink[] = [
     { text: `Bureau of Reclamation readings for ${name}`, href: elevation.source_url }
   ];
+  if (elevation.datum_relation) {
+    links.push({ text: "Bureau of Reclamation report that states this datum",
+      href: elevation.datum_relation.source_url });
+  }
   const offset = elevation.datum_offset;
+  const derived = elevation.derived_offset;
   if (offset) {
     const direction = offset.offset_ft >= 0 ? "higher" : "lower";
     paragraphs.push(
@@ -130,13 +137,26 @@ export function datumNote(name: string, elevation: ReservoirElevation): Elevatio
       + `${direction} for the same water. This difference was measured on `
       + `${formatDate(offset.measured)}.`);
     links.push({ text: `U.S. Geological Survey site ${offset.usgs_site}`, href: offset.source_url });
+  } else if (derived) {
+    const direction = derived.offset_ft >= 0 ? "higher" : "lower";
+    paragraphs.push(
+      `A level above the ${datumName(derived.to_datum)} is about `
+      + `${Math.abs(derived.offset_ft).toFixed(1)} feet ${direction} than this number for the `
+      + "same water. This difference is calculated from survey marks of the National Geodetic "
+      + "Survey on the dam and from the datum relation above. It is not a measurement at "
+      + "the reservoir.");
+    const marks = derived.sources.find((source) => source.url.includes("ngs.noaa.gov"));
+    if (marks) links.push({ text: "National Geodetic Survey marks on the dam", href: marks.url });
   }
-  paragraphs.push(
-    "The Bureau of Reclamation publishes one reading each day. The Geological Survey "
-    + "publishes a reading every 15 minutes. When the water rises or falls quickly, "
-    + "two readings taken at different times of the day are also different.");
+  paragraphs.push(offset
+    ? "The Bureau of Reclamation publishes one reading each day. The Geological Survey "
+      + "publishes a reading every 15 minutes. When the water rises or falls quickly, "
+      + "two readings taken at different times of the day are also different."
+    : "The Bureau of Reclamation publishes one reading each day. A source that publishes "
+      + "readings more often can show a different level while the water rises or falls quickly.");
   return {
-    heading: "Why the Geological Survey can show a different level",
+    heading: offset ? "Why the Geological Survey can show a different level"
+      : "Why other sources can show a different level",
     paragraphs,
     links
   };
@@ -256,12 +276,17 @@ export function levelFeet(level: ReferenceLevel): string {
 
 /** One sentence per reference level, with who set it. */
 export function referenceLevelText(level: ReferenceLevel): string {
-  return `${levelFeet(level)} feet: ${level.label}. Set by the ${level.authority}.`;
+  return `${levelFeet(level)} feet: ${level.label}. Published by the ${level.authority}.`;
 }
 
 /** The label drawn on the chart: the reference level's name to its first comma. */
 export function shortLevelLabel(level: ReferenceLevel): string {
   return level.label.split(",")[0]!.trim();
+}
+
+/** The label beside a reference line: its short name and its height. */
+export function chartLevelLabel(level: ReferenceLevel): string {
+  return `${shortLevelLabel(level)}, ${levelFeet(level)} feet`;
 }
 
 /** The sentence under the chart for levels it does not draw, or null. */

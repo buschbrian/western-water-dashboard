@@ -6,13 +6,14 @@
  * width, so the type stays its size on a phone. Each line runs from
  * 1 October to 30 September so the years lie over one another. The current
  * year is the strong line, the year before it a lighter one, and earlier
- * years are muted. Reference levels are dashed lines named at the right end.
+ * years are muted. Reference levels are dashed lines named, with their
+ * height, at the right end.
  *
  * Every colour comes from CSS, and none is a storage-class colour (ADR-008):
  * a level has no percent full to be coloured by.
  */
 import type { ElevationChart } from "../reservoir-elevation-model";
-import { shortLevelLabel } from "../reservoir-elevation-model";
+import { chartLevelLabel } from "../reservoir-elevation-model";
 import { renderResponsiveChart, stopResponsiveChart } from "./responsive";
 
 const SVG = "http://www.w3.org/2000/svg";
@@ -109,7 +110,7 @@ export function renderElevationYears(host: HTMLElement, chart: ElevationChart | 
         class: "elevation-reference-label", x: chartWidth - PAD_RIGHT - 4,
         y: (lineY < PAD_TOP + 14 ? lineY + 13 : lineY - 4).toFixed(1), "text-anchor": "end"
       });
-      label.textContent = shortLevelLabel(level);
+      label.textContent = chartLevelLabel(level);
       svg.append(label);
     }
 

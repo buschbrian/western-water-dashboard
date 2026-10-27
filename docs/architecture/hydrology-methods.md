@@ -171,15 +171,20 @@ operator's own project datum (Hoover Dam's powerhouse datum; Reclamation's
 project datums at Davis and Parker) is admitted as `project`, by its name and
 with its stated relation to a national datum -- the feet to add, the
 operator's words and a source -- and is never called by the national datum.
-Lake Mead is withheld until the owner reviews its entry (ADR-135, Open: Lake
-Mead).
+Lake Mead is the first: Reclamation's 2001 sedimentation survey ties its
+elevations to the Hoover Dam powerhouse datum ("Add 0.55 feet to convert to
+NGVD29"). That RISE item 6123 is on it is an inference from that report, not a
+measurement, because no second series exists at Mead. Its NAVD 1988
+difference, about 2.9 ft, is calculated from two National Geodetic Survey
+benchmarks on the dam (NAVD 88 minus NGVD 29 = 2.35 ft) plus the 0.55 ft, and
+is published as `derived_offset`, never as a measured `datum_offset`.
 
 The level block is the terminal lake's level summary, built by the same
 function (`pipeline.measurement.summarize_measurement`): dated record
 readings, dated 7-, 30- and 365-day changes in feet, and the same-date history
 rank from the unchanged reservoir estimator. Its record starts at the
-provider's first reading, so Powell's extremes and rank include the years it
-was first filling (from 1963-12-28). No percentage of a level is published,
+provider's first reading, so the extremes and rank include the years each
+lake was first filling (Powell from 1963-12-28, Mead from 1935-02-02). No percentage of a level is published,
 and a reference level is a named elevation with its authority, never a
 denominator. A daily level from Reclamation is one end-of-day reading; the
 Survey publishes every fifteen minutes, so the two also differ while the
