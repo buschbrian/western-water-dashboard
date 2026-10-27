@@ -1,8 +1,12 @@
 # Recent conditions pilot
 
-Status: authorized scope and implementation plan, 2026-10-23.
-Decision: [ADR-124](decisions/ADR-124-bound-recent-conditions-to-a-static-data-pilot.md).
-No pilot observations, uploader or raster layer are published yet.
+Status: authorized scope and implementation plan, 2026-10-23; first
+published river flow, 2026-10-27.
+Decision: [ADR-124](decisions/ADR-124-bound-recent-conditions-to-a-static-data-pilot.md);
+river flow, [ADR-136](decisions/ADR-136-publish-daily-flow-at-four-rivers-toward-lake-powell.md).
+Daily flow at four gauges is published (see
+[First published flow](#first-published-flow-four-rivers-toward-lake-powell)).
+No precipitation raster, uploader or archive is published yet.
 
 ## What the first view answers
 
@@ -260,6 +264,33 @@ keeps approval status distinct from other qualifiers in the
 (checked 2026-10-24). Verify the v1 schema and exact series metadata when
 implementing the adapter; the current reservoir adapter still uses v0 and
 must not be migrated incidentally.
+
+## First published flow: four rivers toward Lake Powell
+
+Brian directed the first published set on 2026-10-27, ahead of the full
+review: San Juan River near Bluff (09379500), Colorado River near Cisco
+(09180500), Green River at Green River (09315000) and Dirty Devil River above
+Poison Spring Wash near Hanksville (09333500). All four are suggested
+`shaped` in the worksheet and publish under that tier, pending his formal
+ruling in the review page; `reviewer_ruling` stays blank. Three have
+published reservoirs in their traced basins, which is `shaped` under the
+ruling recorded as ADR-137. The Dirty Devil has none: its tier rests on 58% of
+a year's flow held by unpublished inventoried dams, which ADR-137's two rules
+do not decide.
+
+ADR-136 settles the open policy items above for these gauges. The roster is
+`admitted_river_gauges.json`; `refresh_rivers.py` runs daily as stage 5c of
+the refresh, re-reads 90 days of the v1 daily collection so revisions land,
+keeps approval status and qualifiers, carries a failed gauge forward late and
+withdraws it after 60 days, and writes `rivers.json` (2.2 KB gzipped on its
+first run). `rivers.html` shows each gauge's last 30 days, its review status,
+why it has no comparison with normal, and its survey page, with a CSV
+download. Nothing adds two gauges together or calls one an inflow.
+
+Still open for this slice: Brian's formal rulings for the four rows; R8
+(whether `shaped` splits into storage and diversion); how a `natural` or
+`short` gauge is published; and the Provo preview's gauges, which are not on
+the roster.
 
 ## Credentials and hosting
 

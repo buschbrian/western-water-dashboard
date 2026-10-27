@@ -20,6 +20,7 @@ modules in `pipeline/`:
 | `pipeline/freshness.py` | Carry-forward, the withdrawal threshold and the withdrawal notice. |
 | `pipeline/geography.py` | County and drainage-area assignment onto finished records. |
 | `pipeline/lakes.py` | The natural terminal lakes (ADR-112, ADR-118): a record of elevation and volume with no full level, its validator, and the lake payload envelope. |
+| `pipeline/rivers.py` | Daily river flow (ADR-136): a gauge's 30-day record with no normal, rank or total, its validator, and the river payload envelope. |
 | `refresh_reservoirs.py` | Fetch, summarize, assemble, validate, write, and report to CI. |
 
 `refresh_reservoirs` re-exports every public name from those modules, so
@@ -28,7 +29,8 @@ had to learn a new import path.
 
 Other entry points: `refresh_snowpack.py` (snow payload),
 `refresh_station_readings.py` (precipitation at the snow stations, ADR-125), `refresh_lakes.py`
-(the terminal-lake payload, `lakes.json`), `watershed_scopes.py`
+(the terminal-lake payload, `lakes.json`), `refresh_rivers.py` (daily river
+flow, `rivers.json`), `watershed_scopes.py`
 and `huc.py` (named scopes, drainage assignment, grouping), `admission.py`
 (candidate screening), `tools/` (audits, boundary fetches, drought
 computation, normals).
@@ -145,6 +147,25 @@ reservoir-only field, a notice carrying a measurement, and a roster lake absent
 from both lists. The file is generated and committed by the refresh; no page
 fetches it yet, and it is not copied into the build until the lake surface
 lands.
+
+**River flow is published from its own roster to its own payload**
+(ADR-136). `admitted_river_gauges.json` is loaded by
+`pipeline.roster.load_admitted_river_gauges`, which requires a plain display
+name beside the survey's station name, the reviewed primary `time_series_id`,
+a tier with its basis and who directed it, and evidence for any water named
+downstream; it accepts only the `shaped` tier. `refresh_rivers.py` confirms
+each series against the v1 `time-series-metadata` collection and reads the
+last `RIVER_FETCH_DAYS` (90) days from the v1 `daily` collection through
+`fetch_usgs_flow_series`, which keeps approval status and qualifiers and
+refuses the whole series on an identity, unit, date or value fault. Unlike
+the v0 storage adapter it sends the key only when one is configured.
+`pipeline.rivers.summarize_gauge` keeps the 30 days ending on the newest day
+with a value; every run re-reads the whole window, so revisions land without
+a merge. Freshness is ADR-056's, with the notice keyed by station (ADR-126).
+`pipeline.rivers.validate_payload` refuses a normal, rank, capacity, inflow or
+total on a record or the envelope, `compared_with_normal` other than false, a
+window that is not 30 consecutive days ending on the current value, a notice
+carrying a measurement, and a roster gauge in neither list.
 
 ## Freshness: late and withdrawn are different faults
 

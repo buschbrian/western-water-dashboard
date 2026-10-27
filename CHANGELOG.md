@@ -13,6 +13,14 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
+- **River flow** (ADR-136): `rivers.html` shows the daily mean flow of four
+  rivers that flow toward Lake Powell -- the San Juan near Bluff, the
+  Colorado near Cisco, the Green at Green River and the Dirty Devil near
+  Hanksville -- for the last 30 days, with the review status of each value
+  and a link to each gauge's U.S. Geological Survey page. Dams upstream
+  store and release water, so no flow is compared with normal, and the
+  gauges are never added together. Published as `/api/rivers.json` and as
+  a CSV download. Reached from the methods and data pages.
 - **Story views** (ADR-128): `story.html` shows one figure alone, for a
   story to embed: the precipitation card or its "Where this year stands"
   strip for a state or drainage area, or the water stored above a

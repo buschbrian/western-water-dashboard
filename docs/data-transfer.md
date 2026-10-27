@@ -41,6 +41,7 @@ No recent-conditions payload or raster is included in this comparison.
 | `reservoirs.json` | 2,055 KB | 220.8 KB |
 | `snow_sites.json` | 143 KB | 22 KB |
 | `lakes.json` | 7.1 KB | 1.4 KB |
+| `rivers.json` | 23.9 KB | 2.2 KB |
 | `precipitation.json` | 155 KB | 8.9 KB |
 | `precipitation_history.json` | 1,639 KB | 488 KB |
 | `reference.json` | 193 KB | 38.4 KB |
@@ -69,6 +70,12 @@ precipitation card nears the screen.
 
 `lakes.json` was measured 2026-09-06 on its first generated file, one lake
 (ADR-118); it is fetched only by the terminal-lakes page (ADR-119).
+
+`rivers.json` was measured 2026-10-27 on its first generated file (gzip -6):
+four gauges, 30 days each with approval status and qualifiers (ADR-136). It
+is fetched only by the river-flow page, so it adds 2.2 KB to that page's
+opening data against the pilot's 100 KB budget (ADR-124) and nothing to any
+other page.
 
 ### The drought archives at a decade
 

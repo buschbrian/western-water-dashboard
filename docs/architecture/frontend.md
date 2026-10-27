@@ -21,6 +21,7 @@ module that owns the behaviour and read the entry point only for the sequence.
 | One reservoir | `src/reservoir.ts` | `src/reservoir-model.ts` (link resolution, both baselines, provenance), `src/ui/reservoir-template.ts`; the reading itself is `describeReservoir`, shared with the map's details panel so the two cannot drift |
 | Methods, data, terms | `src/methods.ts`, `src/data-docs.ts` | `src/data-docs-schema.ts` is the field-by-field contract |
 | Terminal lakes | `src/lakes.ts` | `src/lakes-model.ts` (every sentence and row), `src/data/lakes-validate.ts`, `src/ui/lakes-template.ts`; reached from the methods and data pages, not the bar (ADR-119) |
+| River flow | `src/rivers.ts` | `src/rivers-model.ts` (every sentence, row and the CSV), `src/data/rivers-validate.ts`, `src/ui/rivers-template.ts`, `src/viz/flow-chart.ts`; reached from the methods and data pages, not the bar (ADR-136) |
 | Story views | `src/story.ts` | `src/state/story-url.ts` (the link), `src/snow-place.ts` (the snow page's place narrowing), `src/ui/precipitation-card.ts`, `src/ui/upstream-section.ts`, `src/ui/story-fit.ts`; for embedding, not in the bar (ADR-128) |
 
 Shared by all of them: `src/data/` (fetch, validate, scope, rollup),
@@ -61,6 +62,24 @@ Readiness is `window.__lakesReady`: `lakes` is what the payload published,
 `rendered` what the page drew, `withdrawn` the notices, `failed` a fetch that
 did not answer. The page is linked from the methods glossary and the data
 page and deliberately not from the navigation bar yet.
+
+### The river-flow page
+
+One reading page, `rivers.html`, for every published gauge (ADR-136). It
+fetches `rivers.json` through `loadRivers`, whose validator refuses a normal,
+a rank, an inflow or a total on a gauge or the envelope, a comparison with
+normal, a window that is not 30 consecutive days ending on the current value,
+and a notice carrying a measurement. Each gauge is one article: its plain
+name, where it is and that the river flows on toward the reviewed water
+downstream, the shaped sentence ("Dams upstream store and release water, so
+this flow is not compared with normal."), lateness, today's mean flow in cubic
+feet per second with its date and review status, the 7-day change and the
+window's extremes, the 30-day chart (`renderFlowChart`, hand-built SVG from
+zero, one colour from `--flow-bar`, a missing day as a gap) with every value
+in a collapsed table, the survey's station name and its monitoring-location
+page. One CSV button downloads every gauge's days. Readiness is
+`window.__riversReady`: `gauges` published, `rendered` drawn, `charts` drawn,
+`withdrawn` notices, `failed` a fetch that did not answer.
 
 ### The story views
 

@@ -40,6 +40,11 @@ scripts/refresh-daily.sh          # everything, exactly as the workflow does
    stages the whole `data/snow` directory, so the new file goes with it.
    **Precipitation** — `refresh_station_readings.py` (ADR-125), after snow and
    independent of it. A failure keeps the last complete `precipitation.json`.
+   **River flow** — `refresh_rivers.py` (ADR-136), after the terminal lakes
+   and independent of every other stage. A failed gauge is carried forward
+   late inside the script; a payload that fails validation keeps the last
+   complete `rivers.json`. Probe one gauge with
+   `.venv/bin/python refresh_rivers.py --only 09379500`, which never writes.
 6. **Commit** — the published set, staged together, so the drought files can
    never be committed apart. The list lives in `data/generated-files.json` and
    `scripts/refresh-daily.sh` reads it; do not retype it into a workflow.
