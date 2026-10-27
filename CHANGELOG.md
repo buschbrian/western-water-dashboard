@@ -60,6 +60,9 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Fixed
 
+- A long reservoir name in the storage map's list wraps to a second line
+  on a phone instead of ending in an ellipsis. The browser suite now fails
+  when any box cuts its text short.
 - On the drought page, each area's reading no longer covers its links on a
   phone. A summary-card rule from 1.2.0 gave every area row three grid rows
   for four blocks.

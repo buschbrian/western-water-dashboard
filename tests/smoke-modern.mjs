@@ -598,9 +598,33 @@ async function checkHeaderTitle(tab, check, label) {
   if (title) check(!title.cut, `${label}: the page name in the bar is cut short ("${title.text}")`);
 }
 
+/* No shown text is cut off by its own box. A box that clips (overflow hidden
+ * or clip, or an ellipsis) and holds text wider than itself has lost words
+ * a reader needed: "Bear River At Camp Far West Dam" ended in an ellipsis in
+ * the reservoir list at 360 pixels. Scrolling boxes are not clipped, and the
+ * map and chart components draw their own text, so both are left out. The
+ * bar's alternate full title is a hidden phone/wide pair, not a cut. */
+async function checkTextFits(tab, check, label) {
+  const cut = await tab.evaluate(() => {
+    const skip = ".visually-hidden, .brand-subject-full, arcgis-map, arcgis-scene, arcgis-chart, calcite-navigation";
+    const out = [];
+    for (const element of document.querySelectorAll("body *")) {
+      if (element.closest(skip) || !element.clientWidth || !(element.innerText ?? "").trim()) continue;
+      const style = getComputedStyle(element);
+      if (!/hidden|clip/.test(style.overflowX) && style.textOverflow !== "ellipsis") continue;
+      if (element.scrollWidth > element.clientWidth + 1 && element.getClientRects().length) {
+        out.push(`${element.tagName.toLowerCase()}${element.className ? `.${String(element.className).split(" ")[0]}` : ""} "${element.innerText.trim().slice(0, 40)}"`);
+      }
+    }
+    return out;
+  });
+  check(cut.length === 0, `${label}: ${cut.length} text box(es) cut text short, e.g. ${cut.slice(0, 3).join("; ")}`);
+}
+
 async function checkAccessibility(tab, check, label) {
   await checkTextOverlap(tab, check, label);
   await checkHeaderTitle(tab, check, label);
+  await checkTextFits(tab, check, label);
   /*
    * Scored twice, and only a finding that survives both counts.
    *
@@ -1734,6 +1758,7 @@ for (const viewport of VIEWPORTS) {
       "#detail-panel [data-detail]";
     const firstButton = tab.locator(listSelector).first();
     check(await firstButton.isVisible(), `${label}: the active reservoir list is not visible`);
+    await checkTextFits(tab, check, `${label}, reservoir list`);
     const firstName = await firstButton.getAttribute("data-reservoir");
     await firstButton.click();
     const selected = await tab.evaluate(() => window.__dashboardReady.selected);
