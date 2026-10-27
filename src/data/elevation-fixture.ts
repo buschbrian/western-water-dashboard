@@ -55,6 +55,11 @@ export function syntheticProjectElevation(): ReservoirElevation {
       source_url: "https://example.gov/survey.pdf"
     },
     datum_offset: null,
+    reference_levels_datum_stated: false,
+    record_starts: {
+      date: "1941-08-06", reason: "when Testwater first rose to the spillway",
+      basis: "Synthetic.", quote: "Synthetic.", source_url: "https://example.gov/survey.pdf"
+    },
     derived_offset: {
       to_datum: "NAVD88", offset_ft: 2.9, basis: "Calculated, not measured.",
       sources: [{ citation: "Survey mark", url: "https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox=X" }],

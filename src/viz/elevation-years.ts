@@ -49,6 +49,77 @@ export function feetStep(range: number): number {
   return 500;
 }
 
+interface PlatedLabel {
+  className: string;
+  text: string;
+  x: number;
+  /** The text's baseline. */
+  y: number;
+  anchor: "start" | "end";
+}
+
+const PLATE_PAD = 3;
+const LABEL_CHAR_WIDTH = 6.9;
+
+function leastCovering(text: string, lineY: number, chartWidth: number,
+  marks: readonly [number, number, number][]): PlatedLabel {
+  const width = text.length * LABEL_CHAR_WIDTH + PLATE_PAD * 2;
+  const right = chartWidth - PAD_RIGHT - 4;
+  const left = PAD_LEFT + 4 + width;
+  const middle = (PAD_LEFT + chartWidth - PAD_RIGHT + width) / 2;
+  const above = lineY < PAD_TOP + 14 ? lineY + 13 : lineY - 4;
+  const below = lineY + 15 > HEIGHT - PAD_BOTTOM ? above : lineY + 15;
+  let best: PlatedLabel | null = null;
+  let bestCost = Infinity;
+  for (const baseline of [above, below]) {
+    for (const end of [right, left, middle]) {
+      const top = baseline - 12.5;
+      const cost = marks.reduce((sum, [mx, my, weight]) =>
+        sum + (mx >= end - width && mx <= end && my >= top && my <= top + 16 ? weight : 0), 0);
+      if (cost < bestCost) {
+        bestCost = cost;
+        best = { className: "elevation-reference-label", text, x: end, y: baseline, anchor: "end" };
+      }
+    }
+  }
+  return best!;
+}
+
+/**
+ * A label on a plate of the page colour. Lines and labels cross wherever a
+ * year passes a reference level, and text drawn over a line is read as part
+ * of it; the plate hides the few pixels of line behind the words instead.
+ */
+function drawPlatedLabel(svg: SVGSVGElement, label: PlatedLabel
+): { plate: SVGRectElement; text: SVGTextElement } {
+  const estimate = label.text.length * LABEL_CHAR_WIDTH;
+  const left = label.anchor === "end" ? label.x - estimate : label.x;
+  const plate = element("rect", {
+    class: "elevation-label-plate", x: (left - PLATE_PAD).toFixed(1),
+    y: (label.y - 12.5).toFixed(1), width: (estimate + PLATE_PAD * 2).toFixed(1),
+    height: 16, rx: 3
+  });
+  const text = element("text", {
+    class: label.className, x: label.x.toFixed(1), y: label.y.toFixed(1), "text-anchor": label.anchor
+  });
+  text.textContent = label.text;
+  svg.append(plate, text);
+  return { plate, text };
+}
+
+function fitPlate(plate: SVGRectElement, text: SVGTextElement): void {
+  try {
+    const box = text.getBBox();
+    if (!(box.width > 0)) return;
+    plate.setAttribute("x", (box.x - PLATE_PAD).toFixed(1));
+    plate.setAttribute("y", (box.y - 1).toFixed(1));
+    plate.setAttribute("width", (box.width + PLATE_PAD * 2).toFixed(1));
+    plate.setAttribute("height", (box.height + 2).toFixed(1));
+  } catch {
+    /* A host not yet laid out keeps the estimate. */
+  }
+}
+
 export function renderElevationYears(host: HTMLElement, chart: ElevationChart | null): boolean {
   if (!chart || chart.lines.length === 0) {
     stopResponsiveChart(host);
@@ -98,20 +169,22 @@ export function renderElevationYears(host: HTMLElement, chart: ElevationChart | 
       svg.append(label);
     });
 
+    /* Every drawn reading, in chart units, weighted by how much it matters:
+     * a label may cover a muted year's line before the current year's. */
+    const marks: [number, number, number][] = chart.lines.flatMap((line) => line.points
+      .filter((point): point is [number, number] => point[1] !== null)
+      .map(([day, feet]) => [x(day), y(feet), line.tier === "earlier" ? 1 : 4]));
+    const labels: PlatedLabel[] = [];
     for (const level of chart.drawn) {
       const lineY = y(level.elevation_ft);
       svg.append(element("line", {
         class: "elevation-reference", x1: PAD_LEFT, y1: lineY.toFixed(1),
         x2: chartWidth - PAD_RIGHT, y2: lineY.toFixed(1)
       }));
-      /* At the right end: the current year starts on the left each October,
-       * where a label would sit on its newest readings. */
-      const label = element("text", {
-        class: "elevation-reference-label", x: chartWidth - PAD_RIGHT - 4,
-        y: (lineY < PAD_TOP + 14 ? lineY + 13 : lineY - 4).toFixed(1), "text-anchor": "end"
-      });
-      label.textContent = chartLevelLabel(level);
-      svg.append(label);
+      /* Drawn last, over a plate, so no line runs through the words; placed
+       * where it hides the fewest readings, at the right end above the line
+       * when nothing is better. */
+      labels.push(leastCovering(chartLevelLabel(level), lineY, chartWidth, marks));
     }
 
     const ordered = [...chart.lines].sort((a, b) => TIER_ORDER[a.tier] - TIER_ORDER[b.tier]);
@@ -141,15 +214,17 @@ export function renderElevationYears(host: HTMLElement, chart: ElevationChart | 
         class: "elevation-latest", cx: dotX.toFixed(1), cy: dotY.toFixed(1), r: 4
       }));
       const flip = dotX > chartWidth - PAD_RIGHT - 70;
-      const label = element("text", {
-        class: "elevation-end-label", x: (flip ? dotX - 8 : dotX + 8).toFixed(1),
-        y: (dotY - 8).toFixed(1), "text-anchor": flip ? "end" : "start"
+      labels.push({
+        className: "elevation-end-label", text: current.label,
+        x: flip ? dotX - 8 : dotX + 8, y: dotY - 8, anchor: flip ? "end" : "start"
       });
-      label.textContent = current.label;
-      svg.append(label);
     }
 
+    const plated = labels.map((label) => drawPlatedLabel(svg, label));
     host.replaceChildren(svg);
+    /* Once on the page the text can be measured; the estimate only had to
+     * be close enough to draw before then. */
+    for (const { plate, text } of plated) fitPlate(plate, text);
     return true;
   }, { fallbackWidth: FALLBACK_WIDTH, minimumWidth: MINIMUM_WIDTH });
   return true;

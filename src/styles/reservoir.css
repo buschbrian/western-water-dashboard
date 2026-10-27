@@ -186,10 +186,9 @@ body {
 .elevation-tick { stroke: var(--app-border); stroke-width: 1; }
 .elevation-axis { font-size: 12px; fill: var(--app-muted); }
 .elevation-reference { stroke: var(--app-text); stroke-opacity: .55; stroke-width: 1; stroke-dasharray: 6 4; }
-.elevation-reference-label, .elevation-end-label {
-  font-size: 12px; fill: var(--app-text);
-  paint-order: stroke; stroke: var(--app-surface); stroke-width: 3px; stroke-linejoin: round;
-}
+.elevation-reference-label, .elevation-end-label { font-size: 12px; fill: var(--app-text); }
+/* The page colour in both themes, so a label never sits on a line. */
+.elevation-label-plate { fill: var(--app-surface); fill-opacity: .94; stroke: none; }
 .elevation-end-label { font-weight: 600; fill: var(--elevation-current); }
 .elevation-line { fill: none; stroke-linejoin: round; stroke-linecap: round; }
 .elevation-line-earlier { stroke: var(--app-muted); stroke-opacity: .45; stroke-width: 1.25; }

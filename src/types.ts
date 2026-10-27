@@ -276,6 +276,16 @@ export interface DerivedOffset {
   checked: string;
 }
 
+/** The published end of a reservoir's first filling, with its source. */
+export interface RecordStart {
+  date: string;
+  /** A short clause for the card: "when Lake Powell first filled". */
+  reason: string;
+  basis: string;
+  quote: string;
+  source_url: string;
+}
+
 /** A named level with the authority that set it: a line, never a share. */
 export interface ReferenceLevel {
   elevation_ft: number;
@@ -301,6 +311,10 @@ export interface ReservoirElevation extends MeasurementSummary {
   datum_offset: DatumOffset | null;
   derived_offset?: DerivedOffset;
   reference_levels: ReferenceLevel[];
+  /** Where the record readings and the rank start: after first filling. */
+  record_starts?: RecordStart;
+  /** False where the operator does not say which datum its reference levels use. */
+  reference_levels_datum_stated?: boolean;
 }
 
 /** One reservoir's daily levels: `values[i]` is the level `i` days after `start`. */

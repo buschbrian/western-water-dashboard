@@ -87,6 +87,11 @@ export function isReservoirElevation(value: unknown): value is ReservoirElevatio
   if (!hasNullableNumber(value.seasonal_rank) || !hasNullableNumber(value.seasonal_rank_of)) {
     return false;
   }
+  const starts = value.record_starts;
+  if (starts !== undefined && !(isObject(starts) && isDate(starts.date) && isText(starts.reason)
+      && isText(starts.basis) && isText(starts.quote) && isHttps(starts.source_url))) return false;
+  if (value.reference_levels_datum_stated !== undefined
+      && typeof value.reference_levels_datum_stated !== "boolean") return false;
   return isOffset(value.datum_offset) && isDerivedOffset(value.derived_offset)
     && Array.isArray(value.reference_levels) && value.reference_levels.every(isReferenceLevel);
 }

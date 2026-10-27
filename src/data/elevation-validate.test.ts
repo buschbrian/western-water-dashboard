@@ -51,6 +51,8 @@ describe("a reservoir's surface level (ADR-135)", () => {
       ...project.datum_relation!, source_url: "" } })).toBe(false);
     expect(isReservoirElevation({ ...syntheticElevation(),
       datum_relation: project.datum_relation })).toBe(false);
+    expect(isReservoirElevation({ ...project, record_starts: {
+      ...project.record_starts!, source_url: "" } })).toBe(false);
     expect(isReservoirElevation({ ...project, derived_offset: {
       ...project.derived_offset!, sources: [] } })).toBe(false);
   });

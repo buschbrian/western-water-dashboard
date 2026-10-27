@@ -148,6 +148,11 @@ export function datumNote(name: string, elevation: ReservoirElevation): Elevatio
     const marks = derived.sources.find((source) => source.url.includes("ngs.noaa.gov"));
     if (marks) links.push({ text: "National Geodetic Survey marks on the dam", href: marks.url });
   }
+  if (elevation.reference_levels_datum_stated === false && elevation.datum_relation) {
+    paragraphs.push("The Bureau of Reclamation does not state whether the reference levels "
+      + `on the chart use this datum or the ${datumName(elevation.datum_relation.datum)}, `
+      + `which gives a number ${Math.abs(elevation.datum_relation.add_ft)} feet higher.`);
+  }
   paragraphs.push(offset
     ? "The Bureau of Reclamation publishes one reading each day. The Geological Survey "
       + "publishes a reading every 15 minutes. When the water rises or falls quickly, "
@@ -162,6 +167,19 @@ export function datumNote(name: string, elevation: ReservoirElevation): Elevatio
   };
 }
 
+/**
+ * Where the card's record starts. After first filling, said with its date:
+ * the readings before it describe a lake filling, not one being run, and
+ * stay on the chart only.
+ */
+export function recordStartText(elevation: ReservoirElevation): string {
+  const starts = elevation.record_starts;
+  if (!starts) return formatDate(elevation.first_obs);
+  return `${formatDate(starts.date)}, ${starts.reason}. The highest and lowest readings and `
+    + "the history rank start on this date. Readings from the first filling are on the "
+    + "chart only.";
+}
+
 /** The card, a late message and the datum note, or null with no level. */
 export function describeElevation(reservoir: Reservoir, runDate: string): ElevationView | null {
   const elevation = reservoir.elevation;
@@ -170,7 +188,7 @@ export function describeElevation(reservoir: Reservoir, runDate: string): Elevat
   card.basis = `above ${elevationDatum(elevation)}`;
   const relation = datumRelationSentence(elevation);
   if (relation) card.rows.push({ label: "Level datum", value: relation });
-  card.rows.push({ label: "Record starts", value: formatDate(elevation.first_obs) });
+  card.rows.push({ label: "Record starts", value: recordStartText(elevation) });
   return {
     card,
     late: elevationLate(elevation, runDate, reservoir.stale_after_days),

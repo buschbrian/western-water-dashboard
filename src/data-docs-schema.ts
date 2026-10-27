@@ -318,6 +318,12 @@ export const RESERVOIR_GROUPS: readonly ApiFieldGroup[] = [
     f("datum_offset", "object",
       "The measured difference to another datum at a Geological Survey site, or null. "
       + "Fields are listed below."),
+    f("record_starts", "object",
+      "Where the highest and lowest readings, the history rank, first_obs and n_obs start: "
+      + "after the reservoir first filled, with its published source. Fields are listed "
+      + "below. The daily history file keeps every day.", true),
+    f("reference_levels_datum_stated", "true or false",
+      "False when the operator does not state which datum its reference levels use.", true),
     f("derived_offset", "object",
       "A difference to another datum calculated from published figures, not measured at "
       + "the reservoir, where no measured one exists. Fields are listed below.", true),
@@ -356,6 +362,14 @@ export const RESERVOIR_GROUPS: readonly ApiFieldGroup[] = [
       f("basis", "text", "How the difference was calculated, with the figures used."),
       f("sources", "array", "Each figure's source: a citation and a web address."),
       f("checked", "date", "Date the figures were read.")
+    ]},
+  { id: "reservoir-elevation-record-start", title: "Start of the record",
+    path: "reservoirs[].elevation.record_starts", fields: [
+      f("date", "date", "First date in the record readings and the rank."),
+      f("reason", "text", "Why the record starts there, in a few words."),
+      f("basis", "text", "The reasoning in full."),
+      f("quote", "text", "The words of the source that give the date."),
+      f("source_url", "web address", "Where those words are published.")
     ]},
   { id: "reservoir-reference-level", title: "Reference level",
     path: "reservoirs[].elevation.reference_levels[]", fields: [

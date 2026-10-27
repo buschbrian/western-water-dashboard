@@ -83,6 +83,24 @@ describe("the datum note", () => {
     expect(text).not.toMatch(/feet above the National Geodetic/);
   });
 
+  it("says the record starts after first filling, with the date", () => {
+    const view = describeElevation(reservoir({ elevation: syntheticProjectElevation() }), "2026-10-21")!;
+    expect(view.card.rows.find((row) => row.label === "Record starts")!.value).toBe(
+      "Aug 6, 1941, when Testwater first rose to the spillway. The highest and lowest "
+      + "readings and the history rank start on this date. Readings from the first filling "
+      + "are on the chart only.");
+    expect(describeElevation(reservoir(), "2026-10-21")!.card.rows
+      .find((row) => row.label === "Record starts")!.value).toBe("Jan 1, 1965");
+  });
+
+  it("says when the operator does not state the reference levels' datum", () => {
+    const text = datumNote("Testwater", syntheticProjectElevation()).paragraphs.join(" ");
+    expect(text).toContain("does not state whether the reference levels on the chart use this "
+      + "datum or the National Geodetic Vertical Datum of 1929, which gives a number 0.55 feet higher.");
+    expect(datumNote("Testwater", syntheticElevation()).paragraphs.join(" "))
+      .not.toContain("does not state whether");
+  });
+
   it("states a calculated difference as calculated, and claims no Geological Survey series", () => {
     const note = datumNote("Testwater", syntheticProjectElevation());
     const text = note.paragraphs.join(" ");

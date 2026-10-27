@@ -73,6 +73,10 @@ describe("public API field documentation", () => {
       if (offsets.length) expectFields(RESERVOIR_GROUPS, "reservoir-elevation-offset", merged(offsets));
       const derived = levels.map((block) => block.derived_offset).filter(Boolean);
       if (derived.length) expectFields(RESERVOIR_GROUPS, "reservoir-elevation-derived", merged(derived));
+      const starts = levels.map((block) => block.record_starts).filter(Boolean);
+      if (starts.length) {
+        expectFields(RESERVOIR_GROUPS, "reservoir-elevation-record-start", merged(starts));
+      }
       const relations = levels.map((block) => block.datum_relation).filter(Boolean);
       if (relations.length) {
         expectFields(RESERVOIR_GROUPS, "reservoir-elevation-relation", merged(relations));
