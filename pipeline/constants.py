@@ -44,6 +44,14 @@ ADMITTED_CAP_RESERVOIRS_PATH = ROOT / "admitted_cap_reservoirs.json"
 #: payload (ADR-112). Never merged into the reservoir file above.
 ADMITTED_TERMINAL_LAKES_PATH = ROOT / "admitted_terminal_lakes.json"
 LAKES_OUTPUT_PATH = ROOT / "lakes.json"
+#: Reviewed reservoir surface elevations (ADR-135): which reservoirs publish a
+#: level, above which datum, on what evidence. The daily history the reservoir
+#: page charts is its own payload, never part of reservoirs.json.
+ADMITTED_RESERVOIR_ELEVATIONS_PATH = ROOT / "admitted_reservoir_elevations.json"
+ELEVATION_HISTORY_PATH = ROOT / "elevation_history.json"
+#: The first date asked of a reviewed elevation item. Earlier than any
+#: Reclamation record, so the provider's own first reading starts the series.
+ELEVATION_START_DATE = "19000101"
 SOURCE_HISTORY_PATH = ROOT / "data" / "reservoir-source-history.json"
 NORMALS_PATH = ROOT / "normals.json"
 COUNTIES_PATH = ROOT / "counties.json"
@@ -222,7 +230,14 @@ EXPORT_SCHEMA_VERSION = 4
 # Still 1 after `reviewed_holds` (ADR-115): the array is optional and
 # additive, as every field added to this payload has been, and a bump is
 # how a consumer is told something it reads has changed shape.
+#
+# Still 1 after the optional `elevation` block (ADR-135), for the same reason:
+# only reservoirs on the reviewed elevation roster carry it, and nothing a
+# consumer already reads changed shape.
 RESERVOIR_SCHEMA_VERSION = 1
+
+#: The shape of `elevation_history.json` (ADR-135).
+ELEVATION_HISTORY_SCHEMA_VERSION = 1
 
 #: The shape of `lakes.json`, versioned apart from the reservoir payload: a
 #: lake record has no capacity or percent full to share a contract with.

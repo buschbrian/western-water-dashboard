@@ -20,6 +20,7 @@ from .constants import (
     ADMITTED_DNRC_RESERVOIRS_PATH,
     ADMITTED_RESERVOIRS_PATH, ADMITTED_RISE_RESERVOIRS_PATH,
     ADMITTED_SRP_RESERVOIRS_PATH, ADMITTED_USGS_RESERVOIRS_PATH, ADMITTED_TERMINAL_LAKES_PATH,
+    ADMITTED_RESERVOIR_ELEVATIONS_PATH,
     BASE_AWDB_RESERVOIRS,
     BASE_RISE_RESERVOIRS, CAPACITY_PATH,
 )
@@ -627,6 +628,121 @@ def admitted_terminal_lakes() -> dict[str, dict]:
     payload, never the reservoir refresh. Only `refresh_lakes.py` calls this.
     """
     return load_admitted_terminal_lakes()
+
+
+#: The datums an elevation entry may name. A level is meaningless without its
+#: datum, and an unknown code is a review that has not happened yet.
+ELEVATION_DATUMS = frozenset({"NGVD29", "NAVD88"})
+
+
+def _https(value: object) -> bool:
+    return isinstance(value, str) and value.startswith("https://")
+
+
+def load_admitted_reservoir_elevations(
+    path: Path = ADMITTED_RESERVOIR_ELEVATIONS_PATH,
+    rise_stations: set[str] | None = None,
+) -> dict[str, dict]:
+    """Load the reviewed reservoir surface elevations (ADR-135).
+
+    Keyed by the published reservoir's `source_station_id`, which must be a
+    Reclamation reservoir on the roster: the elevation is a second measurement
+    of a reservoir already published, never a way in. The loader refuses an
+    entry with no datum or one it does not know, datum evidence with no
+    checked date or no HTTPS source, a measured offset to the other datum with
+    no measurement date, and a reference level with no authority or no HTTPS
+    source. A reference level is a named elevation and nothing else: no share
+    of it is published, and one spelled with a percentage or a volume is
+    refused.
+    """
+    document = json.loads(path.read_text(encoding="utf-8"))
+    rows = document.get("reservoirs")
+    if not isinstance(rows, dict):
+        raise ValueError(f"{path.name} must contain a reservoirs object")
+    stations = set(RESERVOIRS) if rise_stations is None else rise_stations
+    for station, row in rows.items():
+        if not isinstance(row, dict):
+            raise ValueError(f"invalid elevation entry in {path.name}")
+        name = row.get("name")
+        if not isinstance(name, str) or not name:
+            raise ValueError(f"{station}: an elevation entry needs the reservoir's name")
+        if row.get("source_station_id") != station:
+            raise ValueError(
+                f"{name}: keyed by {station} and configured for "
+                f"{row.get('source_station_id')!r}")
+        if row.get("source_key") != "rise" or station not in stations:
+            raise ValueError(
+                f"{name}: an elevation is published only beside a Reclamation "
+                "reservoir already on the roster")
+        if not isinstance(row.get("elevation_item_id"), int) or isinstance(
+                row.get("elevation_item_id"), bool):
+            raise ValueError(f"{name}: elevation_item_id must be the provider's item number")
+        if row.get("unit") != "ft":
+            raise ValueError(f"{name}: an elevation is published in feet")
+        datum = row.get("vertical_datum")
+        if not isinstance(datum, str) or not datum:
+            raise ValueError(f"{name}: an elevation is meaningless without its datum")
+        if datum not in ELEVATION_DATUMS:
+            raise ValueError(f"{name}: unknown vertical datum {datum!r}")
+        if not _https(row.get("source_url")):
+            raise ValueError(f"{name}: the elevation item needs an HTTPS source")
+        evidence = row.get("datum_evidence")
+        if not isinstance(evidence, dict) or not isinstance(evidence.get("summary"), str) \
+                or not evidence["summary"]:
+            raise ValueError(f"{name}: the datum needs its evidence")
+        _reviewed_date(name, "datum_evidence.checked", evidence.get("checked"))
+        sources = evidence.get("sources")
+        if not isinstance(sources, list) or not sources or not all(
+                isinstance(item, dict) and isinstance(item.get("citation"), str)
+                and item["citation"] and _https(item.get("url")) for item in sources):
+            raise ValueError(f"{name}: datum evidence cites each source with an HTTPS link")
+        offset = row.get("datum_offset")
+        if offset is not None:
+            if not isinstance(offset, dict):
+                raise ValueError(f"{name}: datum_offset must be an object or null")
+            if offset.get("to_datum") not in ELEVATION_DATUMS - {datum}:
+                raise ValueError(f"{name}: an offset is measured to the other datum")
+            if not isinstance(offset.get("offset_ft"), (int, float)) or isinstance(
+                    offset.get("offset_ft"), bool):
+                raise ValueError(f"{name}: an offset is a number of feet")
+            if "measured" not in offset:
+                raise ValueError(f"{name}: an offset without its measurement date is a guess")
+            _reviewed_date(name, "datum_offset.measured", offset.get("measured"))
+            for field in ("usgs_site", "method"):
+                if not isinstance(offset.get(field), str) or not offset[field]:
+                    raise ValueError(f"{name}: datum_offset needs {field}")
+            if not isinstance(offset.get("parameters"), dict) or not offset["parameters"]:
+                raise ValueError(f"{name}: datum_offset names the parameters it compared")
+            if not _https(offset.get("source_url")):
+                raise ValueError(f"{name}: datum_offset needs an HTTPS source")
+        levels = row.get("reference_levels")
+        if not isinstance(levels, list):
+            raise ValueError(f"{name}: reference_levels must be a list, empty when there are none")
+        for level in levels:
+            if not isinstance(level, dict):
+                raise ValueError(f"{name}: a reference level is an object")
+            if not isinstance(level.get("elevation_ft"), (int, float)) or isinstance(
+                    level.get("elevation_ft"), bool):
+                raise ValueError(f"{name}: a reference level is an elevation in feet")
+            for field in ("label", "authority"):
+                if not isinstance(level.get(field), str) or not level[field]:
+                    raise ValueError(
+                        f"{name}: a reference level names its {field}; missing {field}")
+            if not _https(level.get("url")):
+                raise ValueError(f"{name}: a reference level needs an HTTPS source")
+            if any(key in level for key in ("pct", "capacity_af", "volume_af")):
+                raise ValueError(f"{name}: a reference level is a level, never a share")
+    return rows
+
+
+@functools.cache
+def admitted_reservoir_elevations() -> dict[str, dict]:
+    """The elevation roster, loaded on first use rather than at import.
+
+    Tools that import this module never need it, and a refusal is raised
+    where the refresh starts, before any provider is asked for anything.
+    """
+    return load_admitted_reservoir_elevations()
 
 
 USGS_RESERVOIRS = {

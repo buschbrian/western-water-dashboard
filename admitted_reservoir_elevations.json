@@ -1,0 +1,83 @@
+{
+  "reviewed": "2026-10-27",
+  "selection": "Reservoirs that publish a daily surface elevation beside their storage (ADR-135). An entry names the published reservoir by its source_station_id, the provider's elevation item, the vertical datum the level is measured above, the evidence for that datum with the date it was checked, the measured difference to the other datum a reader is likely to meet, and any reference levels with the authority that set them. Reclamation's RISE service does not label a datum on its elevation items and is not one datum throughout (Taylor Park, item 796, matches the Geological Survey's NAVD 1988 series), so every entry carries its own datum evidence and none is assumed from the provider.",
+  "keyed_by": "source_station_id",
+  "reservoirs": {
+    "509": {
+      "name": "Lake Powell",
+      "source_key": "rise",
+      "source_station_id": "509",
+      "elevation_item_id": 508,
+      "unit": "ft",
+      "vertical_datum": "NGVD29",
+      "source_url": "https://data.usbr.gov/catalog/2362/item/508",
+      "datum_evidence": {
+        "checked": "2026-10-27",
+        "summary": "No Reclamation page names the datum, and the RISE item's verticalDatum field is null. Over 91 days, 2026-07-28 to 2026-10-26, RISE item 508 minus USGS 09379900 parameter 62614 (NGVD 1929) had a median of +0.14 ft (the instantaneous reading nearest local midnight) and +0.21 ft (the daily mean); RISE minus parameter 62615 (NAVD 1988) had a median of -2.76 ft. Larger gaps fall only on fast-rising days, where an end-of-day value and a daily mean differ in time. USGS SIR 2022-5017, written with Reclamation, gives full pool as 3,702.91 ft above NAVD 88 against Reclamation's 3,700 ft, an offset of about 2.9 ft consistent with NGVD 1929.",
+        "sources": [
+          {
+            "citation": "Bureau of Reclamation RISE, catalog item 508, Lake Powell daily lake/reservoir elevation",
+            "url": "https://data.usbr.gov/catalog/2362/item/508"
+          },
+          {
+            "citation": "U.S. Geological Survey, monitoring location 09379900, Lake Powell at Glen Canyon Dam, parameters 62614 and 62615",
+            "url": "https://waterdata.usgs.gov/monitoring-location/USGS-09379900/"
+          },
+          {
+            "citation": "U.S. Geological Survey Scientific Investigations Report 2022-5017",
+            "url": "https://pubs.usgs.gov/publication/sir20225017"
+          }
+        ]
+      },
+      "datum_offset": {
+        "to_datum": "NAVD88",
+        "offset_ft": 2.9,
+        "range_ft": [2.9, 3.0],
+        "readings": 2878,
+        "usgs_site": "09379900",
+        "parameters": {"NAVD88": "62615", "NGVD29": "62614"},
+        "method": "NAVD 1988 minus NGVD 1929, fifteen-minute readings at the same site; the median is published",
+        "source_url": "https://waterdata.usgs.gov/monitoring-location/USGS-09379900/",
+        "measured": "2026-10-27"
+      },
+      "reference_levels": [
+        {
+          "elevation_ft": 3700,
+          "label": "Top of the spillway",
+          "source_term": "Spillway",
+          "authority": "Bureau of Reclamation",
+          "url": "https://www.usbr.gov/ColoradoRiverBasin/post2026/final-eis/docs/Vol-III/P26-FEIS_TA_03_Hydro_508.pdf"
+        },
+        {
+          "elevation_ft": 3525,
+          "label": "Drought response target, a planning target and not a physical limit",
+          "source_term": "target elevation",
+          "authority": "Bureau of Reclamation",
+          "url": "https://www.usbr.gov/uc/rm/crsp/gc/"
+        },
+        {
+          "elevation_ft": 3490,
+          "label": "Lowest level for making power",
+          "source_term": "Minimum Power Pool",
+          "authority": "Bureau of Reclamation",
+          "url": "https://www.usbr.gov/ColoradoRiverBasin/post2026/final-eis/docs/Vol-III/P26-FEIS_TA_03_Hydro_508.pdf"
+        },
+        {
+          "elevation_ft": 3370,
+          "label": "Water below this level cannot be released",
+          "source_term": "Dead Pool",
+          "authority": "Bureau of Reclamation",
+          "url": "https://www.usbr.gov/ColoradoRiverBasin/post2026/final-eis/docs/Vol-III/P26-FEIS_TA_03_Hydro_508.pdf"
+        }
+      ]
+    }
+  },
+  "withheld": {
+    "6124": {
+      "name": "Lake Mead",
+      "elevation_item_id": 6123,
+      "reviewed": "2026-10-27",
+      "finding": "No datum can be stated with evidence yet. No active U.S. Geological Survey elevation series exists to compare (09421000 carried storage only and ended 2017-09-30), Reclamation publishes no datum statement, and one secondary source describes a Hoover Dam powerhouse datum about 2 ft from NAVD 1988. The owner decides the label; the prepared values are in ADR-135 under Open: Lake Mead."
+    }
+  }
+}
