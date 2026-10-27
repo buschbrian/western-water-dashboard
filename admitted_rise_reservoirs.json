@@ -589,5 +589,36 @@
         "match_confirmed_by": "name and position"
       }
     }
+  },
+  "excluded_readings": {
+    "134092": [
+      {
+        "sensor": 134092,
+        "stamp": "2026-10-24T07:00:00+00:00",
+        "value": 253.47,
+        "reason": "RISE storage and elevation both fell in one day, from 1,250.26 acre-feet and 5,913.20 feet, while USGS 09091900 shows the lake still rising to 5,913.97 feet on 26 October. RISE and USGS agreed within 0.12 feet for the previous 88 days.",
+        "source_url": "https://waterdata.usgs.gov/monitoring-location/09091900/",
+        "reviewed_on": "2026-10-27",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/PENDING"
+      },
+      {
+        "sensor": 134092,
+        "stamp": "2026-10-25T07:00:00+00:00",
+        "value": 262.15,
+        "reason": "RISE storage and elevation both fell in one day, from 1,250.26 acre-feet and 5,913.20 feet, while USGS 09091900 shows the lake still rising to 5,913.97 feet on 26 October. RISE and USGS agreed within 0.12 feet for the previous 88 days.",
+        "source_url": "https://waterdata.usgs.gov/monitoring-location/09091900/",
+        "reviewed_on": "2026-10-27",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/PENDING"
+      },
+      {
+        "sensor": 134092,
+        "stamp": "2026-10-26T07:00:00+00:00",
+        "value": 263.24,
+        "reason": "RISE storage and elevation both fell in one day, from 1,250.26 acre-feet and 5,913.20 feet, while USGS 09091900 shows the lake still rising to 5,913.97 feet on 26 October. RISE and USGS agreed within 0.12 feet for the previous 88 days.",
+        "source_url": "https://waterdata.usgs.gov/monitoring-location/09091900/",
+        "reviewed_on": "2026-10-27",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/PENDING"
+      }
+    ]
   }
 }

@@ -69,7 +69,15 @@ file does not know, a missing or extra field, a foreign sensor, a non-HTTPS
 URL, a malformed date, and any replacement value. The match is on station,
 sensor, day **and** raw value, so a corrected reading returns by itself.
 
-Five readings are excluded today, all California: Lake Havasu's 5,913,000 and
+Reclamation's RISE API uses the same mechanism with the item as both station
+key and sensor (`load_excluded_readings(path, None)`), applied in
+`fetch_rise_series`. Three Rifle Gap Reservoir results (item 134092, 24 to 26
+October 2026) are excluded against USGS 09091900. Each day's value is its own
+exclusion, so a further false day needs its own reviewed record; the series
+then ends at the last good reading and the ordinary stale and withdrawal rules
+(`STALE_AFTER_DAYS`, `WITHDRAW_AFTER_DAYS`) apply.
+
+Five California readings are excluded: Lake Havasu's 5,913,000 and
 5,775,421 acre-feet against the then-reviewed total capacity of 646,200
 (the current denominator remains held; see the HVS review below),
 O'Neill Forebay's 443,348 against a 56,400
