@@ -40,6 +40,10 @@ scripts/refresh-daily.sh          # everything, exactly as the workflow does
    stages the whole `data/snow` directory, so the new file goes with it.
    **Precipitation** — `refresh_station_readings.py` (ADR-125), after snow and
    independent of it. A failure keeps the last complete `precipitation.json`.
+   **Soil moisture** — `refresh_soil_moisture.py` (ADR-142), after the
+   terminal lakes and independent of both snow files. A failure keeps the
+   last complete `soil_moisture.json`. It refuses the day when more than a
+   tenth of the stations with the standard sensors send nothing.
 6. **Commit** — the published set, staged together, so the drought files can
    never be committed apart. The list lives in `data/generated-files.json` and
    `scripts/refresh-daily.sh` reads it; do not retype it into a workflow.

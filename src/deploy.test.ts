@@ -51,7 +51,8 @@ const SOURCE_ONLY_ROSTERS = [
 
 const RUNTIME_DATA = [
   "reservoirs.json", "lakes.json", "snow_sites.json", "snowpack.json",
-  "reference.json", "capacities.json", "precipitation.json", "precipitation_history.json"
+  "reference.json", "capacities.json", "precipitation.json", "precipitation_history.json",
+  "soil_moisture.json"
 ];
 
 describe("a data-only commit deploys on its own", () => {

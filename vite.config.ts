@@ -62,7 +62,9 @@ function preserveRuntimeDataAndRedirects(): Plugin {
         "reservoirs.json", "lakes.json", "snow_sites.json", "snowpack.json",
         "reference.json", "capacities.json", "upstream_index.json",
         // ADR-125: the daily precipitation file and its committed history.
-        "precipitation.json", "precipitation_history.json"
+        "precipitation.json", "precipitation_history.json",
+        // ADR-142: the daily soil-moisture file.
+        "soil_moisture.json"
       ]) {
         await copyFile(resolve(root, file), resolve(outDir, file));
         await copyFile(resolve(root, file), resolve(outDir, "data", file));

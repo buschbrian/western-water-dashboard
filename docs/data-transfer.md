@@ -43,6 +43,7 @@ No recent-conditions payload or raster is included in this comparison.
 | `lakes.json` | 7.1 KB | 1.4 KB |
 | `precipitation.json` | 155 KB | 8.9 KB |
 | `precipitation_history.json` | 1,639 KB | 488 KB |
+| `soil_moisture.json` | 161 KB | 26.8 KB |
 | `reference.json` | 193 KB | 38.4 KB |
 | `data/drought/usdm-huc6.json` | 24.5 KB | 3.4 KB |
 | `data/drought/usdm-huc4.json` | 10.6 KB | 2.1 KB |
@@ -66,6 +67,10 @@ shows, so at the widest zoom a clip edge would be on screen.
 The two precipitation files were measured 2026-10-24 on their first generated
 copies (ADR-125). The history is fetched only when the snow page's
 precipitation card nears the screen.
+
+`soil_moisture.json` was measured 2026-10-27 on its first generated copy
+(gzip -6; ADR-142): 369 stations, three depths over fifteen days. It is
+fetched only when a reader turns the precipitation map to soil moisture.
 
 `lakes.json` was measured 2026-09-06 on its first generated file, one lake
 (ADR-118); it is fetched only by the terminal-lakes page (ADR-119).
