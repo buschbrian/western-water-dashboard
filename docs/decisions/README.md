@@ -27,7 +27,8 @@ than bundled. **Start with ADR-002.**
   [ADR-052](ADR-052-write-the-snow-calendar-once.md),
   [ADR-121](ADR-121-keep-the-finished-snow-season-and-open-the-new-one-honestly.md),
   [ADR-031](ADR-031-retire-comparison-implementations-and-redirect-their-urls.md),
-  [ADR-124](ADR-124-bound-recent-conditions-to-a-static-data-pilot.md)
+  [ADR-124](ADR-124-bound-recent-conditions-to-a-static-data-pilot.md),
+  [ADR-141](ADR-141-publish-a-share-page-and-a-daily-picture-for-a-reservoir-link.md)
 - Superseded, read only for history: ADR-012, ADR-019,
   [ADR-117](ADR-117-close-the-scope-at-version-1-0-0.md) (pilot scope exception only)
 
@@ -314,6 +315,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-128](ADR-128-publish-compact-story-views-for-embedding.md) | Publish compact story views for embedding | Accepted; one entry page, three views, a theme that never persists, a view that fits its frame; computes nothing new (ADR-117's scope) |
 | [ADR-129](ADR-129-total-the-latest-storm-from-the-accumulated-precipitation.md) | Total the latest storm from the accumulated precipitation | Accepted; 1-, 3- and 7-day totals on the precipitation card; uses ADR-125's set day but not its fixed set; a falling accumulation is left out, never clipped |
 | [ADR-135](ADR-135-publish-a-reservoir-level-only-above-a-reviewed-datum.md) | Publish a reservoir level only above a reviewed datum | Accepted; the record ADR-117 asks for; Lake Powell above NGVD 1929, Lake Mead above Reclamation's Hoover Dam powerhouse datum; optional `elevation` block with no schema bump, history in `elevation_history.json`; ADR-130 to ADR-134 unused here |
+| [ADR-141](ADR-141-publish-a-share-page-and-a-daily-picture-for-a-reservoir-link.md) | Publish a share page and a daily picture for a reservoir link | Accepted; two hand-kept share pages in `public/share/`, a `view=share` layout of the reservoir page, a picture captured in each deploy with a committed fallback; ADR-136 to ADR-140 and ADR-142 are other records |
 
 ## Relationship to the historical journal
 

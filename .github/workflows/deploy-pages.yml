@@ -73,6 +73,8 @@ jobs:
                       data/drought/usdm-current.geojson data/drought/usdm-huc6.json \
                       explore.html maplibre/index.html retired-route.js \
                       terms.html landscape.html story.html \
+                      share/lake-powell.html share/lake-mead.html \
+                      share/lake-powell.png share/lake-mead.png \
                       reservoirs.json capacities.json \
                       snow_sites.json snowpack.json reference.json \
                       data/reservoirs.json data/capacities.json \
@@ -101,6 +103,18 @@ jobs:
             missing=1
           fi
           exit $missing
+
+      # ADR-141: the picture behind a shared Lake Powell or Lake Mead link,
+      # captured from the site just built. dist/share/*.png already holds the
+      # committed fallback images, so this step can only replace a good image
+      # with a fresher one. It installs what the browser-smoke job installs:
+      # the Playwright package (scripts/install-playwright.sh, outside the
+      # lockfile) and Playwright's Chromium with its system libraries. If
+      # either cannot be installed, or a frame does not draw, the fallback
+      # stays and a warning is logged; the step fails only when an image is
+      # missing or is not a 1200 by 630 PNG.
+      - name: Capture the share images (a failure keeps the committed fallbacks)
+        run: bash scripts/share-images.sh
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

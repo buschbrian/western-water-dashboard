@@ -54,6 +54,10 @@ browser tool back with the same installer CI runs:
 bash scripts/install-playwright.sh
 ```
 
+The share pictures (ADR-141) are the third use of it: after a build,
+`npm run share:images` captures `dist/share/*.png` the way the deploy does,
+and leaves the committed fallback in place if it cannot.
+
 All three browser tools take `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. A machine
 with Google Chrome installed does not need a second Chromium:
 

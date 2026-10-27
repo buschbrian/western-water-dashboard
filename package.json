@@ -16,6 +16,7 @@
     "verify:browser": "scripts/verify-browser.sh",
     "verify:all": "npm run verify:frontend && npm run verify:pipeline && npm run verify:worker && npm run verify:browser",
     "budget:sdk": "node scripts/check-sdk-bundle.mjs",
+    "share:images": "bash scripts/share-images.sh",
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "smoke": "node tests/smoke.mjs",

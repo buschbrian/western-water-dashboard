@@ -61,14 +61,14 @@ interface PlatedLabel {
 const PLATE_PAD = 3;
 const LABEL_CHAR_WIDTH = 6.9;
 
-function leastCovering(text: string, lineY: number, chartWidth: number,
+function leastCovering(text: string, lineY: number, chartWidth: number, chartHeight: number,
   marks: readonly [number, number, number][]): PlatedLabel {
   const width = text.length * LABEL_CHAR_WIDTH + PLATE_PAD * 2;
   const right = chartWidth - PAD_RIGHT - 4;
   const left = PAD_LEFT + 4 + width;
   const middle = (PAD_LEFT + chartWidth - PAD_RIGHT + width) / 2;
   const above = lineY < PAD_TOP + 14 ? lineY + 13 : lineY - 4;
-  const below = lineY + 15 > HEIGHT - PAD_BOTTOM ? above : lineY + 15;
+  const below = lineY + 15 > chartHeight - PAD_BOTTOM ? above : lineY + 15;
   let best: PlatedLabel | null = null;
   let bestCost = Infinity;
   for (const baseline of [above, below]) {
@@ -120,23 +120,38 @@ function fitPlate(plate: SVGRectElement, text: SVGTextElement): void {
   }
 }
 
-export function renderElevationYears(host: HTMLElement, chart: ElevationChart | null): boolean {
+/**
+ * A chart drawn larger than its host measures: `scale` draws everything,
+ * type and strokes included, that many times its size in a viewBox that is
+ * `scale` times narrower than the host, and `height` is that viewBox's own.
+ * The share frame (ADR-141) reads at a quarter of its size on a timeline,
+ * where 12-pixel axis type would not be read at all.
+ */
+export interface ElevationDrawOptions {
+  scale?: number;
+  height?: number;
+}
+
+export function renderElevationYears(host: HTMLElement, chart: ElevationChart | null,
+  options: ElevationDrawOptions = {}): boolean {
+  const scale = options.scale ?? 1;
+  const height = options.height ?? HEIGHT;
   if (!chart || chart.lines.length === 0) {
     stopResponsiveChart(host);
     host.replaceChildren();
     return false;
   }
   renderResponsiveChart(host, (width) => {
-    const chartWidth = Math.max(MINIMUM_WIDTH, width);
+    const chartWidth = Math.max(MINIMUM_WIDTH, width / scale);
     const plotWidth = chartWidth - PAD_LEFT - PAD_RIGHT;
-    const plotHeight = HEIGHT - PAD_TOP - PAD_BOTTOM;
+    const plotHeight = height - PAD_TOP - PAD_BOTTOM;
     const plotBottom = PAD_TOP + plotHeight;
     const x = (day: number): number => PAD_LEFT + (Math.min(day, YEAR_DAYS) / YEAR_DAYS) * plotWidth;
     const y = (feet: number): number =>
       PAD_TOP + plotHeight - ((feet - chart.low) / (chart.high - chart.low)) * plotHeight;
 
     const svg = element("svg", {
-      class: "elevation-years", viewBox: `0 0 ${chartWidth} ${HEIGHT}`,
+      class: "elevation-years", viewBox: `0 0 ${chartWidth} ${height}`,
       role: "img", "aria-label": chart.ariaLabel
     });
 
@@ -163,7 +178,7 @@ export function renderElevationYears(host: HTMLElement, chart: ElevationChart | 
       }));
       if (index % every !== 0) return;
       const label = element("text", {
-        class: "elevation-axis", x: (x(day) + 2).toFixed(1), y: HEIGHT - 8, "text-anchor": "start"
+        class: "elevation-axis", x: (x(day) + 2).toFixed(1), y: height - 8, "text-anchor": "start"
       });
       label.textContent = name;
       svg.append(label);
@@ -184,7 +199,7 @@ export function renderElevationYears(host: HTMLElement, chart: ElevationChart | 
       /* Drawn last, over a plate, so no line runs through the words; placed
        * where it hides the fewest readings, at the right end above the line
        * when nothing is better. */
-      labels.push(leastCovering(chartLevelLabel(level), lineY, chartWidth, marks));
+      labels.push(leastCovering(chartLevelLabel(level), lineY, chartWidth, height, marks));
     }
 
     const ordered = [...chart.lines].sort((a, b) => TIER_ORDER[a.tier] - TIER_ORDER[b.tier]);
