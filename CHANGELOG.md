@@ -60,6 +60,9 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Fixed
 
+- On the storage charts page, the scatter plot no longer prints "Usual level"
+  over the biggest reservoirs' dots, and the combined-storage and change
+  figures say "acre-feet".
 - A long reservoir name in the storage map's list wraps to a second line
   on a phone instead of ending in an ellipsis. The browser suite now fails
   when any box cuts its text short.

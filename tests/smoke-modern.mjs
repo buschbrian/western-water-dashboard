@@ -2400,6 +2400,18 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
     check(overviewReady.chartsDrawn === CHART_HOSTS.length && overviewReady.chartsFailed === 0,
       `${label}: ${overviewReady.chartsDrawn} of ${CHART_HOSTS.length} charts drew, ` +
         `${overviewReady.chartsFailed} failed`);
+    /* Every large number names its unit, and the scatter's guide carries no
+     * label: the SDK draws it at the line's right end with no offset, over
+     * the biggest reservoirs' dots, so text is kept off the plot instead. */
+    const unitsAndGuide = await tab.evaluate(() => ({
+      change: document.querySelector('[data-kpi="change"]')?.textContent ?? "",
+      volume: document.querySelector('[data-kpi="volume"]')?.textContent ?? "",
+      guideLabel: document.querySelector("#normal-chart arcgis-chart")?.model?.getGuideLabelText(0, "y")
+    }));
+    check(/acre-feet/i.test(unitsAndGuide.change) && /acre-feet/i.test(unitsAndGuide.volume),
+      `${label}: a storage figure has no unit (${JSON.stringify(unitsAndGuide)})`);
+    check(unitsAndGuide.guideLabel === "",
+      `${label}: the scatter's guide line carries the label "${unitsAndGuide.guideLabel}" over its marks`);
     check(overviewReady.lakePowellExcluded === false,
       `${label}: readiness signal reports Lake Powell out of the opening scope`);
     check(await tab.locator("arcgis-chart").count() === SDK_CHART_HOSTS.length,
