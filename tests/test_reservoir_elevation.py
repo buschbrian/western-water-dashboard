@@ -62,10 +62,15 @@ def test_the_committed_roster_loads_and_names_published_reservoirs():
         assert row["vertical_datum"] in roster.ELEVATION_DATUMS | {roster.PROJECT_DATUM}
 
 
-def test_lake_mead_is_withheld_with_its_finding():
-    document = json.loads((ROOT / "admitted_reservoir_elevations.json").read_text())
-    assert "6124" not in document["reservoirs"]
-    assert document["withheld"]["6124"]["finding"]
+def test_lake_mead_is_on_its_project_datum_and_claims_no_measured_offset():
+    """Mead's level is tied to Reclamation's Hoover Dam powerhouse datum, by
+    Reclamation's own report; no Geological Survey series exists to measure
+    against, so its NAVD 1988 difference is derived and says so."""
+    row = roster.admitted_reservoir_elevations()["6124"]
+    assert row["vertical_datum"] == roster.PROJECT_DATUM
+    assert row["datum_relation"]["datum"] == "NGVD29"
+    assert row["datum_offset"] is None
+    assert row["derived_offset"]["basis"].startswith("Calculated, not measured")
 
 
 def test_the_loader_accepts_the_committed_entry(tmp_path):
@@ -129,6 +134,15 @@ def test_a_project_datum_travels_into_the_block_and_a_national_one_adds_nothing(
     assert block["datum_name"] == "Hoover Dam powerhouse datum"
     assert block["datum_relation"]["add_ft"] == 0.55
     assert "datum_relation" not in elevation.summarize_elevation(entry(), levels())
+
+
+@pytest.mark.parametrize("field", ["basis", "checked", "sources"])
+def test_the_loader_refuses_a_derived_offset_without_its_basis_or_sources(tmp_path, field):
+    row = json.loads(json.dumps(roster.admitted_reservoir_elevations()["6124"]))
+    row["source_station_id"] = POWELL
+    del row["derived_offset"][field]
+    with pytest.raises(ValueError, match="derived offset|checked"):
+        load(write_roster(tmp_path, row))
 
 
 def test_the_loader_refuses_an_offset_with_no_measurement_date(tmp_path):

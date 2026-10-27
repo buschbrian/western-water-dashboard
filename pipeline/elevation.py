@@ -52,6 +52,9 @@ def summarize_elevation(entry: dict, frame: pd.DataFrame) -> dict:
         **summarize_measurement(levels, levels.index[-1], places=2, with_pct=False),
         "datum_offset": (None if offset is None else
                          {key: offset[key] for key in OFFSET_FIELDS if key in offset}),
+        # Calculated, not measured: published apart from `datum_offset`.
+        **({"derived_offset": dict(entry["derived_offset"])}
+           if entry.get("derived_offset") else {}),
         "reference_levels": [{key: level[key] for key in LEVEL_FIELDS if key in level}
                              for level in entry.get("reference_levels") or []],
     }

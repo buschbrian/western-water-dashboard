@@ -32,10 +32,16 @@
       "datum_offset": {
         "to_datum": "NAVD88",
         "offset_ft": 2.9,
-        "range_ft": [2.9, 3.0],
+        "range_ft": [
+          2.9,
+          3.0
+        ],
         "readings": 2878,
         "usgs_site": "09379900",
-        "parameters": {"NAVD88": "62615", "NGVD29": "62614"},
+        "parameters": {
+          "NAVD88": "62615",
+          "NGVD29": "62614"
+        },
         "method": "NAVD 1988 minus NGVD 1929, fifteen-minute readings at the same site; the median is published",
         "source_url": "https://waterdata.usgs.gov/monitoring-location/USGS-09379900/",
         "measured": "2026-10-27"
@@ -70,14 +76,106 @@
           "url": "https://www.usbr.gov/ColoradoRiverBasin/post2026/final-eis/docs/Vol-III/P26-FEIS_TA_03_Hydro_508.pdf"
         }
       ]
-    }
-  },
-  "withheld": {
+    },
     "6124": {
       "name": "Lake Mead",
+      "source_key": "rise",
+      "source_station_id": "6124",
       "elevation_item_id": 6123,
-      "reviewed": "2026-10-27",
-      "finding": "Awaiting the owner's review of a project datum. Reclamation's 2001 Lake Mead Sedimentation Survey (2008, https://www.usbr.gov/tsc/techreferences/reservoir/2001%20Lake%20Mead%20Sedimentation%20Survey.pdf) ties reservoir elevations to the Hoover Dam powerhouse datum: 'Add 0.55 feet to convert to NGVD29, from leveling of 1935.' That RISE item 6123 is on it is an inference from those reports, not a measurement: no active U.S. Geological Survey elevation series exists to compare (09421000 carried storage only and ended 2017-09-30). The ready-to-add entry is in ADR-135 under Open: Lake Mead."
+      "unit": "ft",
+      "vertical_datum": "project",
+      "datum_name": "Hoover Dam powerhouse datum",
+      "datum_relation": {
+        "datum": "NGVD29",
+        "add_ft": 0.55,
+        "quote": "Elevation of reservoir water surface. Tied to 'Power House' datum. Add 0.55 feet to convert to NGVD29, from leveling of 1935.",
+        "source_url": "https://www.usbr.gov/tsc/techreferences/reservoir/2001%20Lake%20Mead%20Sedimentation%20Survey.pdf"
+      },
+      "source_url": "https://data.usbr.gov/catalog/4370/item/6123",
+      "datum_evidence": {
+        "checked": "2026-10-27",
+        "summary": "Reclamation's 2001 Lake Mead Sedimentation Survey (Ferrari, February 2008) states: 'All elevation data were tied to the Hoover Dam powerhouse datum that is 0.55 feet lower than NGVD29 (Lara and Sanders, 1970)', and of the reservoir water surface: 'Add 0.55 feet to convert to NGVD29, from leveling of 1935.' That RISE item 6123 is on this datum is an inference from Reclamation's own reports that its stage data are tied to it, not a measurement: no active U.S. Geological Survey elevation series exists to compare (09421000 carried storage only and ended 2017-09-30). RISE's verticalDatum field is null. Owner decision to publish on this basis: 2026-10-27.",
+        "sources": [
+          {
+            "citation": "Bureau of Reclamation, 2001 Lake Mead Sedimentation Survey (Ferrari, February 2008)",
+            "url": "https://www.usbr.gov/tsc/techreferences/reservoir/2001%20Lake%20Mead%20Sedimentation%20Survey.pdf"
+          },
+          {
+            "citation": "Bureau of Reclamation RISE, catalog item 6123, Lake Mead daily lake/reservoir elevation",
+            "url": "https://data.usbr.gov/catalog/4370/item/6123"
+          }
+        ]
+      },
+      "datum_offset": null,
+      "derived_offset": {
+        "to_datum": "NAVD88",
+        "offset_ft": 2.9,
+        "basis": "Calculated, not measured at the lake: NAVD 88 minus NGVD 29 is 2.35 ft at National Geodetic Survey benchmark GR0577 (1,234.87 ft against 1,232.52 ft) and 2.34 ft at GR0578 (1,234.91 against 1,232.57), both on the Hoover Dam crest; adding the 0.55 ft between the powerhouse datum and NGVD 29 gives about 2.9 ft.",
+        "sources": [
+          {
+            "citation": "National Geodetic Survey datasheet GR0577, Hoover Dam Block T=V 4",
+            "url": "https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox=GR0577"
+          },
+          {
+            "citation": "National Geodetic Survey datasheet GR0578, Nevada Base",
+            "url": "https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox=GR0578"
+          },
+          {
+            "citation": "Bureau of Reclamation, 2001 Lake Mead Sedimentation Survey (Ferrari, February 2008)",
+            "url": "https://www.usbr.gov/tsc/techreferences/reservoir/2001%20Lake%20Mead%20Sedimentation%20Survey.pdf"
+          }
+        ],
+        "checked": "2026-10-27"
+      },
+      "reference_levels": [
+        {
+          "elevation_ft": 1229,
+          "label": "Top of the space kept empty for floods",
+          "source_term": "Full pool (top of flood control space)",
+          "authority": "Bureau of Reclamation",
+          "url": "https://www.usbr.gov/ColoradoRiverBasin/post2026/final-eis/docs/Vol-III/P26-FEIS_TA_03_Hydro_508.pdf"
+        },
+        {
+          "elevation_ft": 1219.6,
+          "label": "Highest normal operating level",
+          "source_term": "Maximum operating elevation",
+          "authority": "Bureau of Reclamation",
+          "url": "https://www.usbr.gov/ColoradoRiverBasin/post2026/final-eis/docs/Vol-III/P26-FEIS_TA_03_Hydro_508.pdf"
+        },
+        {
+          "elevation_ft": 1075,
+          "label": "Level in the 24-Month Study",
+          "authority": "Bureau of Reclamation",
+          "url": "https://www.usbr.gov/lc/region/g4000/24mo.pdf"
+        },
+        {
+          "elevation_ft": 1050,
+          "label": "Level in the 24-Month Study",
+          "authority": "Bureau of Reclamation",
+          "url": "https://www.usbr.gov/lc/region/g4000/24mo.pdf"
+        },
+        {
+          "elevation_ft": 1025,
+          "label": "Level in the 24-Month Study",
+          "authority": "Bureau of Reclamation",
+          "url": "https://www.usbr.gov/lc/region/g4000/24mo.pdf"
+        },
+        {
+          "elevation_ft": 950,
+          "label": "Lowest level for making power",
+          "source_term": "Minimum Power Pool",
+          "authority": "Bureau of Reclamation",
+          "url": "https://www.usbr.gov/ColoradoRiverBasin/post2026/final-eis/docs/Vol-III/P26-FEIS_TA_03_Hydro_508.pdf"
+        },
+        {
+          "elevation_ft": 895,
+          "label": "Water below this level cannot be released",
+          "source_term": "Dead Pool",
+          "authority": "Bureau of Reclamation",
+          "url": "https://www.usbr.gov/ColoradoRiverBasin/post2026/draft-eis/docs/vol-3/P26-DEIS-TA-15.pdf"
+        }
+      ]
     }
-  }
+  },
+  "withheld": {}
 }

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "method_version": "storage-normal-annual-3",
-  "generated_at": "2026-10-27T15:09:14+00:00",
+  "generated_at": "2026-10-27T16:06:46+00:00",
   "start_date": "2015-01-01",
   "normal_period": {
     "start_year": 2015,
@@ -1465,6 +1465,107 @@
       "first_obs": "2015-01-01",
       "n_obs": 4317,
       "years_of_record": 11.8,
+      "elevation": {
+        "unit": "ft",
+        "vertical_datum": "project",
+        "datum_name": "Hoover Dam powerhouse datum",
+        "datum_relation": {
+          "datum": "NGVD29",
+          "add_ft": 0.55,
+          "quote": "Elevation of reservoir water surface. Tied to 'Power House' datum. Add 0.55 feet to convert to NGVD29, from leveling of 1935.",
+          "source_url": "https://www.usbr.gov/tsc/techreferences/reservoir/2001%20Lake%20Mead%20Sedimentation%20Survey.pdf"
+        },
+        "source_item_id": 6123,
+        "source_url": "https://data.usbr.gov/catalog/4370/item/6123",
+        "current": 1038.18,
+        "as_of": "2026-10-26",
+        "record_high": 1225.83,
+        "record_high_date": "1983-07-24",
+        "record_low": 670.0,
+        "record_low_date": "1935-02-02",
+        "first_obs": "1935-02-02",
+        "n_obs": 33505,
+        "change_7d": 1.0,
+        "change_7d_reference_date": "2026-10-19",
+        "change_7d_elapsed_days": 7,
+        "change_30d": 0.3,
+        "change_30d_reference_date": "2026-09-26",
+        "change_30d_elapsed_days": 30,
+        "change_365d": -19.52,
+        "change_365d_reference_date": "2025-10-26",
+        "change_365d_elapsed_days": 365,
+        "seasonal_rank": 3,
+        "seasonal_rank_of": 92,
+        "datum_offset": null,
+        "derived_offset": {
+          "to_datum": "NAVD88",
+          "offset_ft": 2.9,
+          "basis": "Calculated, not measured at the lake: NAVD 88 minus NGVD 29 is 2.35 ft at National Geodetic Survey benchmark GR0577 (1,234.87 ft against 1,232.52 ft) and 2.34 ft at GR0578 (1,234.91 against 1,232.57), both on the Hoover Dam crest; adding the 0.55 ft between the powerhouse datum and NGVD 29 gives about 2.9 ft.",
+          "sources": [
+            {
+              "citation": "National Geodetic Survey datasheet GR0577, Hoover Dam Block T=V 4",
+              "url": "https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox=GR0577"
+            },
+            {
+              "citation": "National Geodetic Survey datasheet GR0578, Nevada Base",
+              "url": "https://www.ngs.noaa.gov/cgi-bin/ds_mark.prl?PidBox=GR0578"
+            },
+            {
+              "citation": "Bureau of Reclamation, 2001 Lake Mead Sedimentation Survey (Ferrari, February 2008)",
+              "url": "https://www.usbr.gov/tsc/techreferences/reservoir/2001%20Lake%20Mead%20Sedimentation%20Survey.pdf"
+            }
+          ],
+          "checked": "2026-10-27"
+        },
+        "reference_levels": [
+          {
+            "elevation_ft": 1229,
+            "label": "Top of the space kept empty for floods",
+            "source_term": "Full pool (top of flood control space)",
+            "authority": "Bureau of Reclamation",
+            "url": "https://www.usbr.gov/ColoradoRiverBasin/post2026/final-eis/docs/Vol-III/P26-FEIS_TA_03_Hydro_508.pdf"
+          },
+          {
+            "elevation_ft": 1219.6,
+            "label": "Highest normal operating level",
+            "source_term": "Maximum operating elevation",
+            "authority": "Bureau of Reclamation",
+            "url": "https://www.usbr.gov/ColoradoRiverBasin/post2026/final-eis/docs/Vol-III/P26-FEIS_TA_03_Hydro_508.pdf"
+          },
+          {
+            "elevation_ft": 1075,
+            "label": "Level in the 24-Month Study",
+            "authority": "Bureau of Reclamation",
+            "url": "https://www.usbr.gov/lc/region/g4000/24mo.pdf"
+          },
+          {
+            "elevation_ft": 1050,
+            "label": "Level in the 24-Month Study",
+            "authority": "Bureau of Reclamation",
+            "url": "https://www.usbr.gov/lc/region/g4000/24mo.pdf"
+          },
+          {
+            "elevation_ft": 1025,
+            "label": "Level in the 24-Month Study",
+            "authority": "Bureau of Reclamation",
+            "url": "https://www.usbr.gov/lc/region/g4000/24mo.pdf"
+          },
+          {
+            "elevation_ft": 950,
+            "label": "Lowest level for making power",
+            "source_term": "Minimum Power Pool",
+            "authority": "Bureau of Reclamation",
+            "url": "https://www.usbr.gov/ColoradoRiverBasin/post2026/final-eis/docs/Vol-III/P26-FEIS_TA_03_Hydro_508.pdf"
+          },
+          {
+            "elevation_ft": 895,
+            "label": "Water below this level cannot be released",
+            "source_term": "Dead Pool",
+            "authority": "Bureau of Reclamation",
+            "url": "https://www.usbr.gov/ColoradoRiverBasin/post2026/draft-eis/docs/vol-3/P26-DEIS-TA-15.pdf"
+          }
+        ]
+      },
       "in_utah": false,
       "intersects_utah": false,
       "huc6": "150100",
@@ -11791,8 +11892,8 @@
       "stale_after_days": 2,
       "lat": 37.001,
       "lon": -119.705,
-      "as_of": "2026-10-25",
-      "days_stale": 2,
+      "as_of": "2026-10-26",
+      "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
       "current_storage_af": 222833.0,
@@ -11817,25 +11918,25 @@
           "first_obs": "2015-01-01"
         },
         "climate": {
-          "normal_af": 212533.0,
-          "pct_of_normal": 104.8,
+          "normal_af": 211801.5,
+          "pct_of_normal": 105.2,
           "sample_years": 30,
           "covers_full_period": true,
           "first_obs": "1991-01-01"
         },
         "default": "climate"
       },
-      "change_7d_af": -6538.0,
-      "change_7d_pct": -2.9,
-      "change_7d_reference_date": "2026-10-18",
+      "change_7d_af": -5958.0,
+      "change_7d_pct": -2.6,
+      "change_7d_reference_date": "2026-10-19",
       "change_7d_elapsed_days": 7,
-      "change_30d_af": -7087.0,
+      "change_30d_af": -7239.0,
       "change_30d_pct": -3.1,
-      "change_30d_reference_date": "2026-09-25",
+      "change_30d_reference_date": "2026-09-26",
       "change_30d_elapsed_days": 30,
-      "change_365d_af": -33925.0,
+      "change_365d_af": -33794.0,
       "change_365d_pct": -13.2,
-      "change_365d_reference_date": "2025-10-25",
+      "change_365d_reference_date": "2025-10-26",
       "change_365d_elapsed_days": 365,
       "peak_this_year_af": 502225.0,
       "peak_this_year_date": "2026-05-18",
@@ -11964,18 +12065,18 @@
         },
         {
           "month": "2026-10",
-          "mean_af": 227434.84,
+          "mean_af": 227257.85,
           "min_af": 222833.0,
           "max_af": 232529.0,
           "end_af": 222833.0,
-          "days": 25,
+          "days": 26,
           "normal_af": 252926.45,
           "normal_years": 10,
           "climate_normal_af": 216396.45
         }
       ],
       "first_obs": "2015-01-01",
-      "n_obs": 4313,
+      "n_obs": 4314,
       "years_of_record": 11.8,
       "in_utah": false,
       "intersects_utah": false,

@@ -733,6 +733,23 @@ def load_admitted_reservoir_elevations(
                 raise ValueError(f"{name}: datum_offset names the parameters it compared")
             if not _https(offset.get("source_url")):
                 raise ValueError(f"{name}: datum_offset needs an HTTPS source")
+        derived = row.get("derived_offset")
+        if derived is not None:
+            # A difference calculated from published figures rather than
+            # measured at the reservoir: kept apart from `datum_offset` so it
+            # is never presented as a measurement.
+            if not isinstance(derived, dict) or derived.get("to_datum") not in ELEVATION_DATUMS \
+                    or not isinstance(derived.get("offset_ft"), (int, float)) \
+                    or isinstance(derived.get("offset_ft"), bool) \
+                    or not isinstance(derived.get("basis"), str) or not derived["basis"]:
+                raise ValueError(
+                    f"{name}: a derived offset names its datum, its feet and how it was derived")
+            _reviewed_date(name, "derived_offset.checked", derived.get("checked"))
+            sources = derived.get("sources")
+            if not isinstance(sources, list) or not sources or not all(
+                    isinstance(item, dict) and isinstance(item.get("citation"), str)
+                    and item["citation"] and _https(item.get("url")) for item in sources):
+                raise ValueError(f"{name}: a derived offset cites each source with an HTTPS link")
         levels = row.get("reference_levels")
         if not isinstance(levels, list):
             raise ValueError(f"{name}: reference_levels must be a list, empty when there are none")
