@@ -362,3 +362,58 @@ def test_writing_names_the_watershed_and_the_queue(tmp_path, monkeypatch):
     row = G.read_rows(path)["1"]
     assert row["huc8_name"] == "Provo"
     assert row["review_queue"] == "review"
+
+
+# --- states ----------------------------------------------------------------
+
+def test_utah_keeps_the_worksheet_the_importer_and_the_page_read():
+    assert G.STATES["UT"].output == G.OUTPUT_PATH
+    assert G.OUTPUT_PATH.name == "gauge-review.csv"
+
+
+def test_each_state_has_its_own_code_box_and_worksheet():
+    assert {k: v.code for k, v in G.STATES.items()} == {
+        "UT": "49", "CO": "08", "NM": "35", "AZ": "04"}
+    assert len({v.output for v in G.STATES.values()}) == len(G.STATES)
+    for key, state in G.STATES.items():
+        west, south, east, north = map(float, state.bbox.split(","))
+        assert west < east and south < north
+        if key != "UT":
+            assert state.output.name == f"gauge-review-{key.lower()}.csv"
+
+
+def test_the_screen_asks_for_the_chosen_states_box_and_code(monkeypatch):
+    urls = []
+    monkeypatch.setattr(G, "usgs_features", lambda url: urls.append(url) or [])
+    G.fetch_screen_inputs(G.STATES["CO"])
+    queries = [urllib.parse.parse_qs(urllib.parse.urlparse(u).query) for u in urls]
+    assert queries[0]["bbox"] == [G.STATES["CO"].bbox]
+    assert queries[1]["state_code"] == ["08"]
+    G.fetch_screen_inputs()
+    assert urllib.parse.parse_qs(urllib.parse.urlparse(urls[3]).query)["state_code"] == ["49"]
+
+
+def _run(monkeypatch, tmp_path, *argv):
+    paths = {key: tmp_path / s.output.name for key, s in G.STATES.items()}
+    monkeypatch.setattr(G, "STATES", {k: s._replace(output=paths[k])
+                                      for k, s in G.STATES.items()})
+    monkeypatch.setattr(G, "fetch_screen_inputs", lambda state=None: (
+        [series("9")], [location("9")]))
+    assert G.main([*argv, "--no-trace"]) == 0
+    return paths
+
+
+def test_a_state_run_writes_only_its_own_worksheet(monkeypatch, tmp_path):
+    paths = _run(monkeypatch, tmp_path, "--state", "NM")
+    assert paths["NM"].exists()
+    assert [k for k, p in paths.items() if p.exists()] == ["NM"]
+
+
+def test_no_state_means_utah(monkeypatch, tmp_path):
+    paths = _run(monkeypatch, tmp_path)
+    assert [k for k, p in paths.items() if p.exists()] == ["UT"]
+
+
+def test_an_unknown_state_is_refused(capsys):
+    with pytest.raises(SystemExit):
+        G.main(["--state", "WY"])

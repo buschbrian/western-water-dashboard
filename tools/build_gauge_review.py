@@ -1,18 +1,21 @@
-"""Build the Utah river-gauge review worksheet for the recent-conditions pilot.
+"""Build a river-gauge review worksheet for the recent-conditions pilot.
 
 Step 2 of docs/RECENT-CONDITIONS-PILOT.md: a small reviewed gauge roster,
 with its regulation context, before anything is fetched daily. This tool
 gathers the evidence; the ruling is a person's (ADR-124). It writes
-`gauge-review.csv` and nothing else.
+`gauge-review.csv` (Utah) or, with `--state`, `gauge-review-<state>.csv`, and
+nothing else.
 
     .venv/bin/python tools/build_gauge_review.py              # screen, then trace every row
     .venv/bin/python tools/build_gauge_review.py --no-trace   # screen only
     .venv/bin/python tools/build_gauge_review.py --missing    # trace rows not yet traced
     .venv/bin/python tools/build_gauge_review.py --only 10163000
+    .venv/bin/python tools/build_gauge_review.py --state CO    # gauge-review-co.csv
 
 **The screen.** Two U.S. Geological Survey OGC v1 queries: the daily mean
-discharge series (parameter 00060, statistic 00003) inside Utah's bounding
-box, joined to the stream monitoring locations whose state is Utah. A gauge
+discharge series (parameter 00060, statistic 00003) inside the state's
+bounding box, joined to the stream monitoring locations whose state is that
+state (`STATES`: Utah, Colorado, New Mexico, Arizona). A gauge
 is listed when its primary series has a value within `ACTIVE_WITHIN_DAYS`
 of the run. `covers_1991_2020` says whether the record starts by 1 January
 1991, the start of the closed period ADR-041 publishes; it does not check
@@ -61,6 +64,7 @@ import urllib.error
 import urllib.parse
 import urllib.request
 from pathlib import Path
+from typing import NamedTuple
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
@@ -70,10 +74,22 @@ OUTPUT_PATH = ROOT / "gauge-review.csv"
 
 USGS_BASE = "https://api.waterdata.usgs.gov/ogcapi/v1/collections"
 USGS_TIMEOUT = 120
-#: West, south, east, north, padded slightly past the state line; the
-#: monitoring-location state code decides membership, not the box.
-UTAH_BBOX = "-114.06,36.99,-109.04,42.01"
-UTAH_STATE_CODE = "49"
+
+class State(NamedTuple):
+    code: str
+    #: West, south, east, north, padded slightly past the state line; the
+    #: monitoring-location state code decides membership, not the box.
+    bbox: str
+    output: Path
+
+
+#: Utah keeps `gauge-review.csv`: the importer and the review page read it.
+STATES = {
+    "UT": State("49", "-114.06,36.99,-109.04,42.01", OUTPUT_PATH),
+    "CO": State("08", "-109.06,36.99,-102.04,41.01", ROOT / "gauge-review-co.csv"),
+    "NM": State("35", "-109.06,31.33,-103.00,37.01", ROOT / "gauge-review-nm.csv"),
+    "AZ": State("04", "-114.82,31.33,-109.04,37.01", ROOT / "gauge-review-az.csv"),
+}
 DISCHARGE_PARAMETER = "00060"
 DAILY_MEAN_STATISTIC = "00003"
 ACTIVE_WITHIN_DAYS = 7
@@ -240,15 +256,15 @@ def usgs_features(url: str) -> list[dict]:
     return features
 
 
-def fetch_screen_inputs() -> tuple[list[dict], list[dict]]:
+def fetch_screen_inputs(state: State = STATES["UT"]) -> tuple[list[dict], list[dict]]:
     series = usgs_features(
         f"{USGS_BASE}/time-series-metadata/items?" + urllib.parse.urlencode({
             "f": "json", "parameter_code": DISCHARGE_PARAMETER,
-            "statistic_id": DAILY_MEAN_STATISTIC, "bbox": UTAH_BBOX,
+            "statistic_id": DAILY_MEAN_STATISTIC, "bbox": state.bbox,
             "limit": 10000}))
     locations = usgs_features(
         f"{USGS_BASE}/monitoring-locations/items?" + urllib.parse.urlencode({
-            "f": "json", "state_code": UTAH_STATE_CODE,
+            "f": "json", "state_code": state.code,
             "site_type_code": "ST", "limit": 10000}))
     return series, locations
 
@@ -259,7 +275,7 @@ def _date(value: str | None) -> dt.date | None:
 
 def screen(series: list[dict], locations: list[dict],
            today: dt.date) -> dict[str, dict]:
-    """Active Utah stream gauges, keyed by site number, screen fields only."""
+    """Active stream gauges, keyed by site number, screen fields only."""
     by_id = {feature["id"]: feature for feature in locations
              if str(feature.get("id", "")).startswith("USGS-")}
     rows: dict[str, dict] = {}
@@ -536,6 +552,9 @@ def merge_screen(existing: dict[str, dict], screened: dict[str, dict],
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser.add_argument("--state", choices=sorted(STATES), default="UT",
+                        help="the state to screen; Utah writes gauge-review.csv, "
+                        "the others gauge-review-<state>.csv")
     parser.add_argument("--only", action="append", default=[], metavar="SITE",
                         help="screen and trace only these site numbers")
     parser.add_argument("--missing", action="store_true",
@@ -550,8 +569,10 @@ def main(argv: list[str] | None = None) -> int:
                         help="the review page's gauges.json, for --evidence")
     args = parser.parse_args(argv)
     only = set(args.only) or None
+    state = STATES[args.state]
+    output = state.output
 
-    rows = read_rows()
+    rows = read_rows(output)
     if args.evidence:
         if not args.basins:
             parser.error("--evidence needs --basins")
@@ -564,21 +585,21 @@ def main(argv: list[str] | None = None) -> int:
         for site in targets:
             rows[site].update(storage_evidence(rows[site], basins.get(site, []),
                                                dams, means.get(site)))
-        write_rows(rows)
+        write_rows(rows, output)
         print(f"{len(dams)} inventoried dams; evidence for {len(targets)} rows; "
               f"{sum(1 for s in targets if rows[s]['mean_flow_cfs'] != '')} with a mean flow")
         return 0
     if args.suggest:
-        write_rows(rows)
-        print(f"suggested a ruling for {len(rows)} rows in {OUTPUT_PATH.name}")
+        write_rows(rows, output)
+        print(f"suggested a ruling for {len(rows)} rows in {output.name}")
         return 0
     if not args.missing:
-        series, locations = fetch_screen_inputs()
+        series, locations = fetch_screen_inputs(state)
         screened = screen(series, locations, dt.date.today())
         rows = merge_screen(rows, screened, only)
-        write_rows(rows)
-        print(f"screened {len(screened)} active Utah gauges; "
-              f"{len(rows)} rows in {OUTPUT_PATH.name}")
+        write_rows(rows, output)
+        print(f"screened {len(screened)} active {args.state} gauges; "
+              f"{len(rows)} rows in {output.name}")
     if args.no_trace:
         return 0
 
@@ -593,7 +614,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"stopped at {site}: {error}; rerun with --missing later")
             return 1
         rows[site].update(result)
-        write_rows(rows)
+        write_rows(rows, output)
         print(f"[{count}/{len(targets)}] {site} {result['trace_screen']}"
               f" {result['upstream_reservoirs']}", flush=True)
     return 0
