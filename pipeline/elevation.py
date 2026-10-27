@@ -42,6 +42,11 @@ def summarize_elevation(entry: dict, frame: pd.DataFrame) -> dict:
     return {
         "unit": "ft",
         "vertical_datum": entry["vertical_datum"],
+        # An operator's project datum travels with its name and its stated
+        # relation to a national datum, so no page has to call it NGVD 1929.
+        **({"datum_name": entry["datum_name"],
+            "datum_relation": dict(entry["datum_relation"])}
+           if "datum_relation" in entry else {}),
         "source_item_id": entry["elevation_item_id"],
         "source_url": entry["source_url"],
         **summarize_measurement(levels, levels.index[-1], places=2, with_pct=False),

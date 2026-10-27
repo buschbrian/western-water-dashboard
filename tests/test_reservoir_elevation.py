@@ -59,7 +59,7 @@ def test_the_committed_roster_loads_and_names_published_reservoirs():
     assert rows, "the elevation roster is empty"
     for station, row in rows.items():
         assert station in R.RESERVOIRS, f"{row['name']} is not a Reclamation reservoir"
-        assert row["vertical_datum"] in roster.ELEVATION_DATUMS
+        assert row["vertical_datum"] in roster.ELEVATION_DATUMS | {roster.PROJECT_DATUM}
 
 
 def test_lake_mead_is_withheld_with_its_finding():
@@ -83,6 +83,52 @@ def test_the_loader_refuses_an_entry_without_a_datum(tmp_path, field):
 def test_the_loader_refuses_an_unknown_datum(tmp_path):
     with pytest.raises(ValueError, match="unknown vertical datum"):
         load(write_roster(tmp_path, entry(vertical_datum="local")))
+
+
+MEAD_STYLE = {
+    "vertical_datum": "project",
+    "datum_name": "Hoover Dam powerhouse datum",
+    "datum_relation": {
+        "datum": "NGVD29", "add_ft": 0.55,
+        "quote": "Add 0.55 feet to convert to NGVD29",
+        "source_url": "https://example.gov/survey.pdf",
+    },
+    "datum_offset": None,
+}
+
+
+def test_the_loader_accepts_a_project_datum_with_its_stated_relation(tmp_path):
+    assert POWELL in load(write_roster(tmp_path, entry(**MEAD_STYLE)))
+
+
+@pytest.mark.parametrize("missing", ["datum_name", "datum_relation"])
+def test_the_loader_refuses_a_project_datum_without_its_name_or_relation(tmp_path, missing):
+    row = entry(**json.loads(json.dumps(MEAD_STYLE)))
+    del row[missing]
+    with pytest.raises(ValueError, match="project datum"):
+        load(write_roster(tmp_path, row))
+
+
+@pytest.mark.parametrize("field", ["source_url", "quote", "add_ft"])
+def test_the_loader_refuses_a_project_relation_without_its_source(tmp_path, field):
+    row = entry(**json.loads(json.dumps(MEAD_STYLE)))
+    del row["datum_relation"][field]
+    with pytest.raises(ValueError, match="stated relation"):
+        load(write_roster(tmp_path, row))
+
+
+def test_a_national_datum_carries_no_project_relation(tmp_path):
+    row = entry(datum_relation=MEAD_STYLE["datum_relation"])
+    with pytest.raises(ValueError, match="only a project datum"):
+        load(write_roster(tmp_path, row))
+
+
+def test_a_project_datum_travels_into_the_block_and_a_national_one_adds_nothing():
+    block = elevation.summarize_elevation(entry(**MEAD_STYLE), levels())
+    assert block["vertical_datum"] == "project"
+    assert block["datum_name"] == "Hoover Dam powerhouse datum"
+    assert block["datum_relation"]["add_ft"] == 0.55
+    assert "datum_relation" not in elevation.summarize_elevation(entry(), levels())
 
 
 def test_the_loader_refuses_an_offset_with_no_measurement_date(tmp_path):

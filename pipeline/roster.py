@@ -630,9 +630,13 @@ def admitted_terminal_lakes() -> dict[str, dict]:
     return load_admitted_terminal_lakes()
 
 
-#: The datums an elevation entry may name. A level is meaningless without its
-#: datum, and an unknown code is a review that has not happened yet.
+#: The national datums an elevation entry may name. A level is meaningless
+#: without its datum, and an unknown code is a review that has not happened yet.
 ELEVATION_DATUMS = frozenset({"NGVD29", "NAVD88"})
+#: An operator's own project datum (Hoover Dam's powerhouse datum, the
+#: Reclamation project datums at Davis and Parker). Admitted only with its name
+#: and a stated, sourced relation to a national datum.
+PROJECT_DATUM = "project"
 
 
 def _https(value: object) -> bool:
@@ -682,8 +686,22 @@ def load_admitted_reservoir_elevations(
         datum = row.get("vertical_datum")
         if not isinstance(datum, str) or not datum:
             raise ValueError(f"{name}: an elevation is meaningless without its datum")
-        if datum not in ELEVATION_DATUMS:
+        if datum == PROJECT_DATUM:
+            if not isinstance(row.get("datum_name"), str) or not row["datum_name"]:
+                raise ValueError(f"{name}: a project datum needs its name")
+            relation = row.get("datum_relation")
+            if not isinstance(relation, dict) or relation.get("datum") not in ELEVATION_DATUMS \
+                    or not isinstance(relation.get("add_ft"), (int, float)) \
+                    or isinstance(relation.get("add_ft"), bool) \
+                    or not isinstance(relation.get("quote"), str) or not relation["quote"] \
+                    or not _https(relation.get("source_url")):
+                raise ValueError(
+                    f"{name}: a project datum needs its stated relation to a national "
+                    "datum, with the feet to add, the words that state it and an HTTPS source")
+        elif datum not in ELEVATION_DATUMS:
             raise ValueError(f"{name}: unknown vertical datum {datum!r}")
+        elif "datum_relation" in row or "datum_name" in row:
+            raise ValueError(f"{name}: only a project datum carries a name and a relation")
         if not _https(row.get("source_url")):
             raise ValueError(f"{name}: the elevation item needs an HTTPS source")
         evidence = row.get("datum_evidence")
