@@ -1,0 +1,186 @@
+{
+  "measurement": "daily_mean_flow",
+  "source": "U.S. Geological Survey",
+  "source_url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/daily/items",
+  "reviewed": "2026-10-27",
+  "selection": "The first published river gauges (ADR-136): the four rivers that flow toward Lake Powell named in the recent-conditions plan, directed by Brian Busch on 2026-10-27 as the first set to publish. Each is a Utah gauge from gauge-review.csv with a 1991-2020 record, a traced basin within 25% of its published drainage area, and published reservoirs inside that basin. Under the tier ruling recorded as ADR-137 (a gauge with a published reservoir inside its basin is shaped), each is shaped: its daily mean flow is published without a comparison with normal and without a rank. The tier was taken from the worksheet's suggestion at Brian's direction and is pending his formal ruling in the review page; reviewer_ruling in gauge-review.csv is still blank for all four. No gauge here is a reservoir's inflow, and no two are ever added together.",
+  "keyed_by": "usgs_site_no",
+  "gauges": {
+    "09379500": {
+      "station": "09379500",
+      "display_name": "San Juan River near Bluff",
+      "usgs_name": "SAN JUAN RIVER NEAR BLUFF, UT",
+      "state": "UT",
+      "lat": 37.1506777777778,
+      "lon": -109.866688888889,
+      "drainage_area_sq_mi": 23000.0,
+      "huc8": "14080205",
+      "huc8_name": "Lower San Juan",
+      "usgs_page": "https://waterdata.usgs.gov/monitoring-location/USGS-09379500/",
+      "series": {
+        "time_series_id": "f7e8bccdf498474c844492c2790cdf9a",
+        "parameter_code": "00060",
+        "statistic_id": "00003",
+        "unit": "ft^3/s",
+        "record_begin": "1914-10-30",
+        "source_url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/time-series-metadata/items?f=json&monitoring_location_id=USGS-09379500&parameter_code=00060&statistic_id=00003",
+        "checked": "2026-10-27"
+      },
+      "tier": {
+        "tier": "shaped",
+        "basis": "ADR-137: a published reservoir sits inside the traced basin. Navajo Reservoir is the largest.",
+        "directed_by": "Brian Busch",
+        "directed_on": "2026-10-27",
+        "status": "pending_formal_ruling",
+        "evidence": {
+          "worksheet": "gauge-review.csv",
+          "screened_on": "2026-10-23",
+          "suggested_ruling": "shaped",
+          "published_reservoirs_upstream": ["Haviland Lake Reservoir", "Jackson Gulch Reservoir", "Lake Nighthorse", "Lemon Reservoir", "Long Hollow Reservoir", "Narraguinnep Reservoir", "Navajo Reservoir", "Red Mesa Reservoir", "Vallecito Reservoir"],
+          "dams_upstream": 158,
+          "dam_storage_af": 2557612,
+          "storage_share_pct": 231.4,
+          "largest_dams": "Navajo Dam (1,986,600 AF); Vallecito Dam (136,200 AF); Ridges Basin Dam (135,721 AF)",
+          "trace": "traced; NLDI basin 22,667 sq mi against a published 23,000"
+        }
+      },
+      "flows_toward": {
+        "name": "Lake Powell",
+        "evidence": "The gauge is in subbasin 14080205, inside the Upper Colorado region (HUC 14), which is the Colorado River basin above Lee Ferry. The San Juan River below the gauge ends in Lake Powell's San Juan arm. Lake Powell is a reservoir on the storage map; this gauge is not its inflow.",
+        "reviewed": "2026-10-27"
+      }
+    },
+    "09180500": {
+      "station": "09180500",
+      "display_name": "Colorado River near Cisco",
+      "usgs_name": "COLORADO RIVER NEAR CISCO, UT",
+      "state": "UT",
+      "lat": 38.8105409546215,
+      "lon": -109.293449329319,
+      "drainage_area_sq_mi": 24100.0,
+      "huc8": "14030005",
+      "huc8_name": "Upper Colorado-Kane Springs",
+      "usgs_page": "https://waterdata.usgs.gov/monitoring-location/USGS-09180500/",
+      "series": {
+        "time_series_id": "7b4a68e1bca9411c935fa4c53504ddf2",
+        "parameter_code": "00060",
+        "statistic_id": "00003",
+        "unit": "ft^3/s",
+        "record_begin": "1913-10-01",
+        "source_url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/time-series-metadata/items?f=json&monitoring_location_id=USGS-09180500&parameter_code=00060&statistic_id=00003",
+        "checked": "2026-10-27"
+      },
+      "tier": {
+        "tier": "shaped",
+        "basis": "ADR-137: published reservoirs sit inside the traced basin. Blue Mesa Reservoir and Lake Granby are the largest.",
+        "directed_by": "Brian Busch",
+        "directed_on": "2026-10-27",
+        "status": "pending_formal_ruling",
+        "evidence": {
+          "worksheet": "gauge-review.csv",
+          "screened_on": "2026-10-23",
+          "suggested_ruling": "shaped",
+          "published_reservoirs_upstream": ["Alsbury Reservoir", "Blue Mesa Reservoir", "Buckeye Reservoir", "Crawford Reservoir", "Crystal Reservoir", "Dillon Reservoir", "Fruitgrowers Reservoir", "Green Mountain Reservoir", "Groundhog Reservoir", "Heart Lake Reservoir", "Homestake Reservoir", "Lake Granby", "Mcphee Reservoir", "Morrow Point Reservoir", "Overland Reservoir", "Paonia Reservoir", "Ridgway Reservoir", "Rifle Gap Reservoir", "Ruedi Reservoir", "Shadow Mountain Reservoir", "Silverjack Reservoir", "Taylor Park Reservoir", "Upper Blue Reservoir", "Vega Reservoir", "Vouga Reservoir", "Williams Fork Reservoir", "Willow Creek Reservoir", "Wolford Mountain Reservoir"],
+          "dams_upstream": 518,
+          "dam_storage_af": 3918975,
+          "storage_share_pct": 90.7,
+          "largest_dams": "Blue Mesa Dam (940,700 AF); Granby Dam (539,760 AF); Mcphee Dam (399,200 AF)",
+          "trace": "traced; NLDI basin 23,898 sq mi against a published 24,100"
+        }
+      },
+      "flows_toward": {
+        "name": "Lake Powell",
+        "evidence": "The gauge is in subbasin 14030005, inside the Upper Colorado region (HUC 14), which is the Colorado River basin above Lee Ferry. Below the gauge the Green River joins the Colorado River, which then reaches Lake Powell. Lake Powell is a reservoir on the storage map; this gauge is not its inflow.",
+        "reviewed": "2026-10-27"
+      }
+    },
+    "09315000": {
+      "station": "09315000",
+      "display_name": "Green River at Green River",
+      "usgs_name": "GREEN RIVER AT GREEN RIVER, UT",
+      "state": "UT",
+      "lat": 38.98886944444445,
+      "lon": -110.15035555555556,
+      "drainage_area_sq_mi": 44850.0,
+      "huc8": "14060008",
+      "huc8_name": "Lower Green",
+      "usgs_page": "https://waterdata.usgs.gov/monitoring-location/USGS-09315000/",
+      "series": {
+        "time_series_id": "7d6ec090c30d4c93a28349f9f2ff1524",
+        "parameter_code": "00060",
+        "statistic_id": "00003",
+        "unit": "ft^3/s",
+        "record_begin": "1894-10-01",
+        "source_url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/time-series-metadata/items?f=json&monitoring_location_id=USGS-09315000&parameter_code=00060&statistic_id=00003",
+        "checked": "2026-10-27"
+      },
+      "tier": {
+        "tier": "shaped",
+        "basis": "ADR-137: published reservoirs sit inside the traced basin. Flaming Gorge Reservoir is the largest.",
+        "directed_by": "Brian Busch",
+        "directed_on": "2026-10-27",
+        "status": "pending_formal_ruling",
+        "evidence": {
+          "worksheet": "gauge-review.csv",
+          "screened_on": "2026-10-23",
+          "suggested_ruling": "shaped",
+          "published_reservoirs_upstream": ["Big Sand Wash", "Big Sandy", "Browns Draw", "Currant Creek", "Eden Reservoir", "Flaming Gorge", "Fontenelle", "High Savery Reservoir", "Lake Viva Naughton", "Meeks Cabin", "Moon Lake", "Pearl Lake", "Red Fleet", "Scofield", "Stagecoach Reservoir nr Oak Creek", "Starvation", "Stateline", "Steinaker", "Stillwater Reservoir", "Strawberry", "Upper Stillwater", "Yamcolo Reservoir"],
+          "dams_upstream": 387,
+          "dam_storage_af": 6997369,
+          "storage_share_pct": 201.7,
+          "largest_dams": "Flaming Gorge Dam (4,003,100 AF); Soldier Creek Dam (1,127,610 AF); Fontenelle Dam (405,160 AF)",
+          "trace": "traced; NLDI basin 40,005 sq mi against a published 44,850"
+        }
+      },
+      "flows_toward": {
+        "name": "Lake Powell",
+        "evidence": "The gauge is in subbasin 14060008, inside the Upper Colorado region (HUC 14), which is the Colorado River basin above Lee Ferry. Below the gauge the Green River joins the Colorado River, which then reaches Lake Powell. Lake Powell is a reservoir on the storage map; this gauge is not its inflow.",
+        "reviewed": "2026-10-27"
+      }
+    },
+    "09333500": {
+      "station": "09333500",
+      "display_name": "Dirty Devil River above Poison Spring Wash near Hanksville",
+      "usgs_name": "DIRTY DEVIL R AB POISON SP WSH NR HANKSVILLE UT",
+      "state": "UT",
+      "lat": 38.0971222222222,
+      "lon": -110.407416666667,
+      "drainage_area_sq_mi": 4159.0,
+      "huc8": "14070004",
+      "huc8_name": "Dirty Devil",
+      "usgs_page": "https://waterdata.usgs.gov/monitoring-location/USGS-09333500/",
+      "series": {
+        "time_series_id": "97280c70f6444911b96d3dd8ca796939",
+        "parameter_code": "00060",
+        "statistic_id": "00003",
+        "unit": "ft^3/s",
+        "record_begin": "1948-06-07",
+        "source_url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/time-series-metadata/items?f=json&monitoring_location_id=USGS-09333500&parameter_code=00060&statistic_id=00003",
+        "checked": "2026-10-27"
+      },
+      "tier": {
+        "tier": "shaped",
+        "basis": "ADR-137 needs a published reservoir inside the traced basin, and the worksheet lists none for this gauge. Its shaped tier is the worksheet's suggestion: 26 inventoried dams in the basin hold 58% of a year's flow (Johnson, Mill Meadow and Forsyth are the largest). Brian directed it into the first set on 2026-10-27 with that tier.",
+        "directed_by": "Brian Busch",
+        "directed_on": "2026-10-27",
+        "status": "pending_formal_ruling",
+        "evidence": {
+          "worksheet": "gauge-review.csv",
+          "screened_on": "2026-10-23",
+          "suggested_ruling": "shaped",
+          "published_reservoirs_upstream": [],
+          "dams_upstream": 26,
+          "dam_storage_af": 38660,
+          "storage_share_pct": 58.0,
+          "largest_dams": "Johnson (14,770 AF); Mill Meadow (6,870 AF); Forsyth (5,670 AF)",
+          "trace": "traced; NLDI basin 4,121 sq mi against a published 4,159"
+        }
+      },
+      "flows_toward": {
+        "name": "Lake Powell",
+        "evidence": "The gauge is in subbasin 14070004, inside the Upper Colorado region (HUC 14), which is the Colorado River basin above Lee Ferry. Below the gauge the Dirty Devil River reaches Lake Powell. Lake Powell is a reservoir on the storage map; this gauge is not its inflow.",
+        "reviewed": "2026-10-27"
+      }
+    }
+  }
+}

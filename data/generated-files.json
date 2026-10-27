@@ -147,6 +147,13 @@
       "note": "A median over a period that has ended cannot change. Network job; every run merges."
     },
     {
+      "path": "rivers.json",
+      "class": "generated-daily",
+      "writer": "refresh_rivers.py",
+      "staged_by_refresh": true,
+      "note": "Daily mean river flow at the reviewed gauges in admitted_river_gauges.json (ADR-136): 30 days per gauge with approval status and qualifiers. No normal, no rank and no total across gauges."
+    },
+    {
       "path": "precipitation_history.json",
       "class": "derived-on-demand",
       "writer": "tools/build_precipitation_history.py",
@@ -280,6 +287,13 @@
       "writer": null,
       "staged_by_refresh": false,
       "note": "Reviewed Central Arizona Project admission of Lake Pleasant, with the reviewed full-level finding (ADR-104)."
+    },
+    {
+      "path": "admitted_river_gauges.json",
+      "class": "reviewed-by-hand",
+      "writer": null,
+      "staged_by_refresh": false,
+      "note": "The reviewed river gauges (ADR-136): display and survey names, the primary daily mean series, the tier with its basis and who directed it, and the evidence for any water named downstream. The loader refuses an entry without them."
     },
     {
       "path": "admitted_terminal_lakes.json",

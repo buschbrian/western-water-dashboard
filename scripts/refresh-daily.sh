@@ -73,6 +73,7 @@ if [ "$dry_run" = 1 ]; then
   note "  5. snow             $python_bin refresh_snowpack.py"
   note "  5a. precipitation $python_bin refresh_station_readings.py (keeps the last complete file on failure)"
   note "  5b. terminal lakes  $python_bin refresh_lakes.py (keeps the last complete lake payload on failure)"
+  note "  5c. river flow     $python_bin refresh_rivers.py (keeps the last complete river payload on failure)"
   note "  6. assistant indexes $python_bin tools/build_assistant_indexes.py (keeps the last accepted set on failure)"
   note "  7. commit the published set:"
   published_files plan | sed 's/^/       /'
@@ -194,6 +195,13 @@ fi
 # last complete file rather than publishing a partial one.
 if ! "$python_bin" refresh_lakes.py; then
   warn "Terminal lake refresh failed" "Keeping the last complete lake payload"
+fi
+
+# 5c. Daily mean river flow at the reviewed gauges (ADR-136). Its own file and
+# its own failure: a gauge that fails is carried forward late inside the
+# script, and a payload that fails validation keeps the last complete file.
+if ! "$python_bin" refresh_rivers.py; then
+  warn "River flow refresh failed" "Keeping the last complete river payload"
 fi
 
 # 6. Compact assistant indexes are an optional reader surface. Their builder
