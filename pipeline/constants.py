@@ -187,6 +187,15 @@ SOURCE_COVERAGE = {
 # through. ADR-056.
 WITHDRAW_AFTER_DAYS = 60
 
+# Storage gained since the low (ADR-134): each daily reservoir's own lowest
+# reading in the last 120 days, ending on its reading date. Long enough to
+# reach back past the late-summer low in autumn and the winter low in June;
+# short enough that the low is this season's, not last year's. A window
+# holding fewer than 100 daily readings has a gap the low could sit in, so it
+# publishes none rather than a low it may have missed.
+LOW_WINDOW_DAYS = 120
+LOW_MIN_READINGS = 100
+
 # Which baseline the site opens on.
 #
 # "climate" is the 1991-2020 standard, and it is the default because the

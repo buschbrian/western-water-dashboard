@@ -4,6 +4,7 @@ import type { OpeningRosters, OpeningSelection } from "./data/opening-scope";
 import {
   spreadBoxes,
   countyOptions,
+  describeSinceLowTotal,
   placeAxesAfterPick,
   distributionKeyLines,
   distributionStats,
@@ -772,5 +773,29 @@ describe("placeAxesAfterPick", () => {
     expect(placeAxesAfterPick({ state: "UT", county: "49043" },
       { kind: "state", value: "all" }, countyStateOf))
       .toEqual({ state: "all", county: "all" });
+  });
+});
+
+/* ADR-134 and Brian's ruling R2: the place total always says how many of the
+ * daily reservoirs it holds. */
+describe("the place summary's gain since the low", () => {
+  it("gives the sum and its coverage", () => {
+    expect(describeSinceLowTotal({ af: 1_912_345.4, measured: 41, daily: 52 })).toEqual({
+      value: "+1,912,345",
+      note: "Acre-feet since each reservoir's 4-month low, for 41 of 52 daily reservoirs"
+    });
+  });
+
+  it("says of when every daily reservoir is measured, and reads zero as zero", () => {
+    expect(describeSinceLowTotal({ af: 0, measured: 3, daily: 3 })).toEqual({
+      value: "0",
+      note: "Acre-feet since each reservoir's 4-month low, for 3 of 3 daily reservoirs"
+    });
+  });
+
+  it("shows no figure when nothing is measured", () => {
+    expect(describeSinceLowTotal({ af: 0, measured: 0, daily: 5 }).value).toBe("—");
+    expect(describeSinceLowTotal({ af: 0, measured: 0, daily: 0 }))
+      .toEqual({ value: "—", note: "No daily reservoirs in view" });
   });
 });

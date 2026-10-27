@@ -236,6 +236,9 @@ function isReservoir(value: unknown): value is Reservoir {
     optionalNullableString(value.change_7d_reference_date) &&
     optionalNullableString(value.change_30d_reference_date) &&
     optionalNullableString(value.change_365d_reference_date) &&
+    optionalNullableNumber(value.low_120d_af) &&
+    optionalNullableString(value.low_120d_date) &&
+    optionalNullableNumber(value.change_since_low_af) &&
     hasNullableNumber(value.seasonal_normal_af) &&
     hasNullableNumber(value.pct_of_seasonal_normal) &&
     hasNumber(value.seasonal_sample_years) &&

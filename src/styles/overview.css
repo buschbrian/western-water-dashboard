@@ -346,6 +346,8 @@ body {
 }
 @media (min-width: 72rem) {
   .overview-kpis:has(> .overview-kpi:nth-child(6)) { grid-template-columns: repeat(6, minmax(0, 1fr)); }
+  /* Seven cards: the first spans two of four, so two full rows. */
+  .overview-kpis:has(> .overview-kpi:nth-child(7)) { grid-template-columns: repeat(4, minmax(0, 1fr)); }
 }
 .overview-kpi, .overview-card {
   background: var(--app-surface-raised);

@@ -227,6 +227,13 @@ export const RESERVOIR_GROUPS: readonly ApiFieldGroup[] = [
     f("change_365d_elapsed_days", "days",
       "Days between that reading and this one. A month-end feed can be up to "
       + "45 days from the date asked for.", true),
+    f("low_120d_af", "acre-feet",
+      "Lowest daily storage in the 120 days to the reading date. Null for a "
+      + "monthly feed, a late record, or fewer than 100 readings in the 120 days.",
+      true),
+    f("low_120d_date", "date", "Date of that low. On a tie, the latest date.", true),
+    f("change_since_low_af", "acre-feet",
+      "Storage gained since that low. Zero when the newest reading is the low.", true),
     f("seasonal_normal_af", "acre-feet",
       "Middle of one value per earlier year near the same date, for the recent "
       + "period only. Read `baselines` instead where the period matters."),

@@ -73,6 +73,18 @@ describe("the storage map card", () => {
     expect(storageReservoirLines(reservoir({ change_30d_pct: null })))
       .toEqual(["62.5% of capacity", "123,456 acre-feet stored", "Reading Aug 14, 2026"]);
   });
+
+  /* ADR-134: one line on a daily reservoir, none where no low is published. */
+  it("adds the gain since the low only where the payload has one", () => {
+    expect(storageReservoirLines(reservoir({ change_since_low_af: 809_000.4 })))
+      .toContain("Up 809,000 acre-feet since its 4-month low");
+    expect(storageReservoirLines(reservoir({ change_since_low_af: 0 })))
+      .toContain("At its lowest in 4 months");
+    const without = ["62.5% of capacity", "123,456 acre-feet stored",
+      "-3.5% over 30 days", "Reading Aug 14, 2026"];
+    expect(storageReservoirLines(reservoir({ change_since_low_af: null }))).toEqual(without);
+    expect(storageReservoirLines(reservoir({}))).toEqual(without);
+  });
 });
 
 describe("a reservoir used as reference on another map", () => {

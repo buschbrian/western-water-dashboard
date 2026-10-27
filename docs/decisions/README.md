@@ -122,7 +122,8 @@ ADR-041.**
   [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md),
   [ADR-122](ADR-122-measure-drought-from-the-monitors-full-resolution-archive.md),
   [ADR-125](ADR-125-measure-precipitation-at-the-snow-stations-against-a-fixed-history.md),
-  [ADR-129](ADR-129-total-the-latest-storm-from-the-accumulated-precipitation.md)
+  [ADR-129](ADR-129-total-the-latest-storm-from-the-accumulated-precipitation.md),
+  [ADR-134](ADR-134-state-storage-gained-since-each-reservoirs-recent-low.md)
 - Current architecture: [`docs/architecture/hydrology-methods.md`](../architecture/hydrology-methods.md)
 
 ### Visible language, accessibility and naming
@@ -311,6 +312,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-127](ADR-127-state-what-is-above-a-reservoir-as-stored-water.md) | State what is above a reservoir as stored water | Accepted; applies `rollupOfScoped` to the ADR-077 upstream set; replaces the reservoir page's chips with basin groups and rows |
 | [ADR-128](ADR-128-publish-compact-story-views-for-embedding.md) | Publish compact story views for embedding | Accepted; one entry page, three views, a theme that never persists, a view that fits its frame; computes nothing new (ADR-117's scope) |
 | [ADR-129](ADR-129-total-the-latest-storm-from-the-accumulated-precipitation.md) | Total the latest storm from the accumulated precipitation | Accepted; 1-, 3- and 7-day totals on the precipitation card; uses ADR-125's set day but not its fixed set; a falling accumulation is left out, never clipped |
+| [ADR-134](ADR-134-state-storage-gained-since-each-reservoirs-recent-low.md) | State storage gained since each reservoir's recent low | Accepted; each daily reservoir's own lowest reading in 120 days, ties to the latest date; null for monthly, late or gappy records; totals say "N of M daily reservoirs"; no version moves |
 
 ## Relationship to the historical journal
 

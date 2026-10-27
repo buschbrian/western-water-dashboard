@@ -21,6 +21,7 @@ import requests
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import huc  # noqa: E402
 import refresh_reservoirs as R  # noqa: E402
+from pipeline.constants import LOW_WINDOW_DAYS  # noqa: E402
 
 # The provider adapters live in `pipeline.providers`, re-exported through R.
 # A stub has to replace the name the fetcher actually calls, so these tests
@@ -2229,6 +2230,97 @@ def test_a_change_that_cannot_be_made_names_no_reference():
     assert record["change_365d_elapsed_days"] is None
     json.dumps(record)
 
+
+
+# --- storage gained since the low (ADR-134) --------------------------------
+
+def _daily_frame(values, end=TODAY):
+    index = pd.date_range(end=end, periods=len(values), freq="D")
+    return pd.DataFrame({"date": index, "storage_af": np.asarray(values, dtype="float64")})
+
+
+def test_the_gain_is_measured_from_a_low_inside_the_window():
+    """Falling for 140 days, then rising for 60: the low is 60 days back."""
+    values = list(np.linspace(9000, 2000, 140)) + list(np.linspace(2100, 8000, 60))
+    record = R.summarize("Storm", 980, 40.0, -111.0, _daily_frame(values), TODAY)
+
+    assert record["low_120d_af"] == 2000
+    assert record["low_120d_date"] == (TODAY - pd.Timedelta(days=60)).date().isoformat()
+    assert record["change_since_low_af"] == 6000
+    json.dumps(record)
+
+
+def test_a_low_older_than_the_window_is_not_the_low():
+    """The low is this season's: a deeper one 179 days back is outside it."""
+    values = [100.0] + [5000.0] * 29 + list(np.linspace(4000, 6000, 150))
+    record = R.summarize("Old low", 979, 40.0, -111.0, _daily_frame(values), TODAY)
+
+    start = TODAY - pd.Timedelta(days=LOW_WINDOW_DAYS)
+    assert pd.Timestamp(record["low_120d_date"]) > start
+    assert record["low_120d_af"] > 100
+
+
+def test_a_reservoir_at_its_low_today_has_gained_nothing():
+    values = list(np.linspace(9000, 3000, 200))
+    record = R.summarize("Falling", 978, 40.0, -111.0, _daily_frame(values), TODAY)
+
+    assert record["low_120d_date"] == record["as_of"]
+    assert record["change_since_low_af"] == 0
+
+
+def test_a_tie_takes_the_latest_date():
+    """Held flat at the low, the gain is measured from the last day there."""
+    values = [6000.0] * 100 + [2500.0] * 10 + [3000.0] * 5 + [2500.0] * 3 + [4000.0] * 2
+    record = R.summarize("Flat", 977, 40.0, -111.0, _daily_frame(values), TODAY)
+
+    assert record["low_120d_af"] == 2500
+    assert record["low_120d_date"] == (TODAY - pd.Timedelta(days=2)).date().isoformat()
+    assert record["change_since_low_af"] == 1500
+
+
+def test_a_gap_in_the_window_publishes_no_low():
+    """99 readings in 120 days: the missing 21 are where the low could be."""
+    frame = _daily_frame(list(np.linspace(9000, 3000, 200)))
+    gap = frame["date"].between(TODAY - pd.Timedelta(days=60),
+                                TODAY - pd.Timedelta(days=40))
+    assert int(gap.sum()) == 21
+    record = R.summarize("Gappy", 976, 40.0, -111.0, frame[~gap], TODAY)
+
+    assert record["low_120d_af"] is None
+    assert record["low_120d_date"] is None
+    assert record["change_since_low_af"] is None
+    # One reading fewer missing is enough.
+    record = R.summarize("Gappy", 976, 40.0, -111.0,
+                         frame[~gap].pipe(lambda f: pd.concat(
+                             [f, frame[gap].head(1)]).sort_values("date")), TODAY)
+    assert record["change_since_low_af"] is not None
+
+
+def test_a_monthly_record_publishes_no_low():
+    index = pd.DatetimeIndex(pd.date_range("2015-01-31", TODAY, freq="ME"))
+    frame = pd.DataFrame({"date": index, "storage_af": np.arange(len(index), dtype="float64")})
+    record = R.summarize("Monthly", 975, 40.0, -111.0, frame, TODAY,
+                         data_frequency="monthly", change_tolerance_days=45)
+
+    assert record["low_120d_af"] is None
+    assert record["low_120d_date"] is None
+    assert record["change_since_low_af"] is None
+
+
+def test_a_late_record_publishes_no_low():
+    values = list(np.linspace(9000, 3000, 200))
+    late = R.summarize("Late", 974, 40.0, -111.0,
+                       _daily_frame(values, end=TODAY - pd.Timedelta(days=5)), TODAY)
+    assert late["is_stale"] is True
+    assert late["change_since_low_af"] is None
+
+    fresh = R.summarize("Fresh", 973, 40.0, -111.0, _daily_frame(values), TODAY)
+    assert fresh["change_since_low_af"] is not None
+    carried = R.carry_forward(fresh, TODAY, "fetch failed")
+    assert carried["low_120d_af"] is None
+    assert carried["low_120d_date"] is None
+    assert carried["change_since_low_af"] is None
+    assert carried["current_storage_af"] == fresh["current_storage_af"]
 
 # --- the fourth provider: Colorado's telemetry service ----------------------
 

@@ -30,6 +30,11 @@ def carry_forward(previous: dict, today: pd.Timestamp, reason: str) -> dict:
     record["is_stale"] = True
     record["fetch_ok"] = False
     record["fetch_error"] = reason
+    # A late record publishes no gain since the low (ADR-134): the window it
+    # was measured over has moved on without it.
+    for key in ("low_120d_af", "low_120d_date", "change_since_low_af"):
+        if key in record:
+            record[key] = None
     return record
 
 
