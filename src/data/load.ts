@@ -1,4 +1,7 @@
-import type { LakePayload, ReservoirPayload, UpstreamIndex } from "../types";
+import type {
+  ElevationHistoryPayload, LakePayload, ReservoirPayload, UpstreamIndex
+} from "../types";
+import { validateElevationHistory } from "./elevation-validate";
 import { fetchWithin } from "./fetch";
 import { validateLakePayload } from "./lakes-validate";
 import { validateReservoirPayload, validateUpstreamIndex } from "./validate";
@@ -25,4 +28,12 @@ export async function loadLakes(
 ): Promise<LakePayload> {
   const response = await fetchWithin(url);
   return validateLakePayload(await response.json() as unknown);
+}
+
+/** The daily levels the reservoir page charts (ADR-135); fetched only there. */
+export async function loadElevationHistory(
+  url = import.meta.env.DEV ? "./elevation_history.json" : "./data/elevation_history.json"
+): Promise<ElevationHistoryPayload> {
+  const response = await fetchWithin(url);
+  return validateElevationHistory(await response.json() as unknown);
 }

@@ -139,6 +139,75 @@ body {
   padding-block-end: 2rem;
 }
 
+/* Measurement cards: the terminal-lakes page and a reservoir's surface level
+ * (ADR-135) share one card. */
+.lake-measurements,
+.measurement-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(17rem, 1fr));
+  gap: 1rem;
+  margin-block: 1rem 0;
+}
+.lake-measurements > section,
+.measurement-cards > section {
+  min-width: 0;
+  padding: 1rem;
+  border: 1px solid var(--app-border);
+  border-radius: 0.5rem;
+  background: var(--app-surface-raised);
+}
+.lake-measurements h3,
+.measurement-cards h2 {
+  margin: 0 0 0.5rem;
+  font-size: var(--app-section-heading);
+}
+.lake-measurements .detail-headline,
+.measurement-cards .detail-headline { margin-block: 0 0.75rem; }
+.lake-measurements .detail-headline strong,
+.measurement-cards .detail-headline strong { font-size: 1.35rem; }
+
+
+/* A reservoir's surface level by water year (ADR-135). The current year is
+ * the strong line and earlier years recede. No colour here is a storage
+ * class colour (ADR-008): a level has no percent full. */
+:root {
+  --elevation-current: #1d4e6b;
+  --elevation-previous: #6f8fa3;
+}
+:root[data-theme="dark"] {
+  --elevation-current: #9fd0ee;
+  --elevation-previous: #61798a;
+}
+.reservoir-elevation { margin-block-start: 1.5rem; }
+.measurement-cards h2 { margin-block-start: 0; padding-block-start: 0; border-block-start: 0; }
+.elevation-chart-host { inline-size: 100%; margin-block-start: 0.5rem; }
+.elevation-years { display: block; inline-size: 100%; block-size: auto; overflow: visible; }
+.elevation-grid { stroke: var(--app-text); stroke-opacity: .12; stroke-width: 1; }
+.elevation-tick { stroke: var(--app-border); stroke-width: 1; }
+.elevation-axis { font-size: 12px; fill: var(--app-muted); }
+.elevation-reference { stroke: var(--app-text); stroke-opacity: .55; stroke-width: 1; stroke-dasharray: 6 4; }
+.elevation-reference-label, .elevation-end-label {
+  font-size: 12px; fill: var(--app-text);
+  paint-order: stroke; stroke: var(--app-surface); stroke-width: 3px; stroke-linejoin: round;
+}
+.elevation-end-label { font-weight: 600; fill: var(--elevation-current); }
+.elevation-line { fill: none; stroke-linejoin: round; stroke-linecap: round; }
+.elevation-line-earlier { stroke: var(--app-muted); stroke-opacity: .45; stroke-width: 1.25; }
+.elevation-line-previous { stroke: var(--elevation-previous); stroke-width: 2; }
+.elevation-line-current { stroke: var(--elevation-current); stroke-width: 3.25; }
+.elevation-latest { fill: var(--elevation-current); stroke: var(--app-surface); stroke-width: 2; }
+.elevation-key, .elevation-levels, .elevation-sources {
+  margin: 0.5rem 0 0; padding: 0; list-style: none;
+  display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; font-size: 0.85rem;
+}
+.elevation-levels, .elevation-sources { flex-direction: column; }
+.elevation-key li { display: inline-flex; align-items: center; gap: 0.4rem; min-width: 0; }
+.elevation-swatch { display: inline-block; inline-size: 1.4rem; block-size: 0; border-block-start: 3px solid; }
+.elevation-swatch-current { border-color: var(--elevation-current); }
+.elevation-swatch-previous { border-block-start-width: 2px; border-color: var(--elevation-previous); }
+.elevation-swatch-earlier { border-block-start-width: 1.5px; border-color: var(--app-muted); opacity: .6; }
+.elevation-swatch-reference { border-block-start: 1.5px dashed var(--app-text); opacity: .7; }
+
 @media (max-width: 480px) {
   .reservoir-main { padding-inline: 1rem; }
 }
