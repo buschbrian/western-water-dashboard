@@ -709,3 +709,79 @@ export const LAKE_GROUPS: readonly ApiFieldGroup[] = [
     f("reason", "text", "Why the lake is held back. Contains no measurement.")
   ]}
 ];
+
+/* The river-flow payload (ADR-136). */
+export const RIVER_GROUPS: readonly ApiFieldGroup[] = [
+  { id: "river-header", title: "File header", path: "root", fields: [
+    f("schema_version", "version number", "Version of this JSON structure."),
+    f("measurement", "identifier", "Always daily_mean_flow."),
+    f("fetched_at", "date and time", "Time the file was generated, in coordinated universal time."),
+    f("run_date", "date", "Local date of the refresh."),
+    f("window_days", "days", "Number of days in each gauge's daily list."),
+    f("stale_after_days", "days", "Days allowed before a daily reading is late."),
+    f("withdraw_after_days", "days", "The most days a reading can be old and still be published."),
+    f("gauge_count", "gauges", "Number of records in the gauges array."),
+    f("stale_count", "gauges", "Number of records with late data."),
+    f("withdrawn_count", "gauges", "Number of gauges held back for old data."),
+    f("gauges", "array", "Current gauge records. No field adds two gauges together."),
+    f("withdrawn", "array", "Gauges held back because their newest reading is too old. Each entry carries no measurement.")
+  ]},
+  { id: "river-gauge", title: "Gauge record", path: "gauges[]", fields: [
+    f("name", "text", "Name of the gauge in plain words."),
+    f("usgs_name", "text", "The station name as the U.S. Geological Survey writes it."),
+    f("measurement", "identifier", "Always daily_mean_flow."),
+    f("source_key", "identifier", "Provider key. Always usgs."),
+    f("source_label", "text", "Publisher's name in full."),
+    f("source_station_id", "identifier", "Publisher's site number."),
+    f("source_url", "web address", "Service the daily values came from."),
+    f("usgs_page", "web address", "The publisher's page for the gauge."),
+    f("time_series_id", "identifier", "The publisher's identifier of the reviewed daily mean series."),
+    f("parameter_code", "identifier", "Publisher's code for the measured quantity. Always 00060, flow."),
+    f("statistic_id", "identifier", "Publisher's code for the daily statistic. Always 00003, the mean."),
+    f("unit", "identifier", "Always ft^3/s, cubic feet per second."),
+    f("state", "code", "Two-letter state code of the gauge."),
+    f("lat", "degrees", "Latitude of the gauge."),
+    f("lon", "degrees", "Longitude of the gauge."),
+    f("drainage_area_sq_mi", "square miles", "Drainage area the publisher gives for the gauge, or null."),
+    f("huc8", "code", "Eight-digit subbasin that contains the gauge."),
+    f("huc8_name", "text", "Name of that subbasin."),
+    f("flows_toward", "text", "A reviewed name of water the river flows on toward, or null. Never a claim that the gauge measures what goes into it."),
+    f("tier", "identifier", "The review tier. Always shaped: dams upstream store and release water."),
+    f("compared_with_normal", "true or false", "Always false. A shaped gauge has no normal and no rank."),
+    f("data_frequency", "identifier", "Always daily."),
+    f("stale_after_days", "days", "Days allowed before this gauge's reading is late."),
+    f("as_of", "date", "Date of the newest day with a value."),
+    f("days_stale", "days", "Age of that day on the refresh date."),
+    f("is_stale", "true or false", "True when the reading is late."),
+    f("fetch_ok", "true or false", "False when today's request failed and the last record was kept."),
+    f("fetch_error", "text", "Why today's request failed.", true),
+    f("current_cfs", "cubic feet per second", "Mean flow on the as_of date."),
+    f("current_approval", "text", "The publisher's review status for that value, such as Provisional or Approved, or null."),
+    f("current_qualifiers", "array", "The publisher's qualifiers for that value, such as ESTIMATED. Empty when there are none."),
+    f("change_7d_cfs", "cubic feet per second", "Change from the value 7 days earlier, or null when that day has no value."),
+    f("change_7d_reference_date", "date", "Date of the earlier value, or null."),
+    f("window_start", "date", "First day in the daily list."),
+    f("window_end", "date", "Last day in the daily list. Always the as_of date."),
+    f("window_high_cfs", "cubic feet per second", "Highest value in the daily list."),
+    f("window_high_date", "date", "Most recent day with that value."),
+    f("window_low_cfs", "cubic feet per second", "Lowest value in the daily list."),
+    f("window_low_date", "date", "Most recent day with that value."),
+    f("reported_days", "days", "Days in the list that have a value."),
+    f("provisional_days", "days", "Days in the list with a provisional value."),
+    f("daily", "array", "One entry for each day, oldest first. Fields are listed below.")
+  ]},
+  { id: "river-day", title: "Day", path: "gauges[].daily[]", fields: [
+    f("date", "date", "The day the mean belongs to."),
+    f("cfs", "cubic feet per second", "Mean flow for the day, or null when the day has no value."),
+    f("approval", "text", "The publisher's review status, or null when the day has no record."),
+    f("qualifiers", "array", "The publisher's qualifiers for the day. Empty when there are none.")
+  ]},
+  { id: "river-withdrawn", title: "Withdrawn gauges", path: "withdrawn[]", fields: [
+    f("name", "text", "Name of the gauge."),
+    f("as_of", "date", "Date of the last value before the feed went quiet."),
+    f("days_stale", "days", "Age of that value on the refresh date."),
+    f("source_label", "text", "Publisher's name, or null."),
+    f("source_station_id", "identifier", "Publisher's site number."),
+    f("reason", "text", "Why the gauge is held back. Contains no measurement.")
+  ]}
+];

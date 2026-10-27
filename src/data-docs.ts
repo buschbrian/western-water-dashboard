@@ -8,6 +8,7 @@ import {
   LAKE_GROUPS,
   REFERENCE_GROUPS,
   RESERVOIR_GROUPS,
+  RIVER_GROUPS,
   SNOW_GROUPS,
   type ApiFieldGroup
 } from "./data-docs-schema";
@@ -44,6 +45,7 @@ root.innerHTML = `
         <li><a href="#files">Published files</a></li>
         <li><a href="#reservoir-fields">Reservoir fields</a></li>
         <li><a href="#lake-fields">Terminal lake fields</a></li>
+        <li><a href="#river-fields">River flow fields</a></li>
         <li><a href="#snow-fields">Snow fields</a></li>
         <li><a href="#drought-fields">Drought fields</a></li>
         <li><a href="#reference-fields">Reference fields</a></li>
@@ -72,6 +74,20 @@ root.innerHTML = `
           full, because none is defined for a terminal lake. Structure version 1.
           Refreshed each morning, separately from the reservoirs, and never added to a
           reservoir total. Shown on the <a href="./lakes.html">terminal lakes page</a>.</p>
+      </article>
+      <article class="api-file">
+        <h3>River flow</h3>
+        <p><a href="./api/rivers.json"><code>/api/rivers.json</code></a></p>
+        <p>Daily mean flow in cubic feet per second at a small reviewed set of U.S.
+          Geological Survey gauges. Each gauge carries its last 30 days. Each day has the
+          survey's review status and qualifiers. A gauge also carries the change from 7
+          days earlier, and the survey's own station name and page. Structure version 1. Refreshed each morning;
+          every refresh reads the last 90 days again, so a revised provisional value
+          replaces the earlier one. Where dams upstream store and release water, a gauge
+          has no comparison with normal and no rank. The file has no total across gauges,
+          because one gauge can measure water that another measured upstream, and no gauge
+          is a reservoir's inflow. Shown on the <a href="./rivers.html">river flow page</a>,
+          which also offers the values as a CSV file.</p>
       </article>
       <article class="api-file">
         <h3>Snow monitoring</h3>
@@ -144,6 +160,10 @@ root.innerHTML = `
     <section class="methods-section api-fields" id="lake-fields"
       aria-labelledby="lake-fields-heading">
       <h2 id="lake-fields-heading">Terminal lake fields</h2>
+    </section>
+    <section class="methods-section api-fields" id="river-fields"
+      aria-labelledby="river-fields-heading">
+      <h2 id="river-fields-heading">River flow fields</h2>
     </section>
     <section class="methods-section api-fields" id="snow-fields"
       aria-labelledby="snow-fields-heading">
@@ -246,6 +266,7 @@ function renderGroups(hostId: string, groups: readonly ApiFieldGroup[]): void {
 
 renderGroups("reservoir-fields", RESERVOIR_GROUPS);
 renderGroups("lake-fields", LAKE_GROUPS);
+renderGroups("river-fields", RIVER_GROUPS);
 renderGroups("snow-fields", SNOW_GROUPS);
 renderGroups("drought-fields", DROUGHT_GROUPS);
 renderGroups("reference-fields", REFERENCE_GROUPS);
@@ -255,6 +276,7 @@ setupPlaceSearch("data");
 
 window.__dataDocsReady = {
   files: document.querySelectorAll(".api-file").length,
-  groups: RESERVOIR_GROUPS.length + LAKE_GROUPS.length + SNOW_GROUPS.length
+  groups: RESERVOIR_GROUPS.length + LAKE_GROUPS.length + RIVER_GROUPS.length
+    + SNOW_GROUPS.length
     + DROUGHT_GROUPS.length + REFERENCE_GROUPS.length
 };

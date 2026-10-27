@@ -1,6 +1,7 @@
-import type { LakePayload, ReservoirPayload, UpstreamIndex } from "../types";
+import type { LakePayload, ReservoirPayload, RiverPayload, UpstreamIndex } from "../types";
 import { fetchWithin } from "./fetch";
 import { validateLakePayload } from "./lakes-validate";
+import { validateRiverPayload } from "./rivers-validate";
 import { validateReservoirPayload, validateUpstreamIndex } from "./validate";
 
 export async function loadReservoirs(
@@ -25,4 +26,12 @@ export async function loadLakes(
 ): Promise<LakePayload> {
   const response = await fetchWithin(url);
   return validateLakePayload(await response.json() as unknown);
+}
+
+/** Daily river flow (ADR-136): its own file, never added into anything. */
+export async function loadRivers(
+  url = import.meta.env.DEV ? "./rivers.json" : "./data/rivers.json"
+): Promise<RiverPayload> {
+  const response = await fetchWithin(url);
+  return validateRiverPayload(await response.json() as unknown);
 }

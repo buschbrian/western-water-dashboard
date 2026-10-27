@@ -51,7 +51,8 @@ const SOURCE_ONLY_ROSTERS = [
 
 const RUNTIME_DATA = [
   "reservoirs.json", "lakes.json", "snow_sites.json", "snowpack.json",
-  "reference.json", "capacities.json", "precipitation.json", "precipitation_history.json"
+  "reference.json", "capacities.json", "precipitation.json", "precipitation_history.json",
+  "rivers.json"
 ];
 
 describe("a data-only commit deploys on its own", () => {
@@ -128,7 +129,7 @@ describe("a data-only commit deploys on its own", () => {
   it("gives every published page the same content policy", async () => {
     const pages = ["index.html", "modern.html", "overview.html", "snow.html",
       "drought.html", "methods.html", "data.html", "explore.html", "lakes.html",
-      "reservoir.html", "story.html", "legacy/index.html", "maplibre/index.html"];
+      "rivers.html", "reservoir.html", "story.html", "legacy/index.html", "maplibre/index.html"];
     const policies = new Set<string>();
 
     for (const page of pages) {
@@ -300,6 +301,8 @@ describe("a data-only commit deploys on its own", () => {
       // The terminal lakes (ADR-119): their page and their payload, at the
       // root, under data/ and as an API alias, like the reservoirs'.
       "lakes.html", "lakes.json", "data/lakes.json", "api/lakes.json",
+      // River flow (ADR-136), published the same way.
+      "rivers.html", "rivers.json", "data/rivers.json", "api/rivers.json",
       // The story views (ADR-128): a public URL a published story embeds.
       "story.html"]) {
       expect(workflow, `the deploy must verify dist/${path}`).toContain(path);
@@ -313,7 +316,8 @@ describe("a data-only commit deploys on its own", () => {
     const config = await read("vite.config.ts");
     expect(config).toContain('resolve(outDir, "api")');
     expect(config).toContain('resolve(outDir, "api", file)');
-    for (const file of ["reservoirs.json", "lakes.json", "snowpack.json", "reference.json"]) {
+    for (const file of ["reservoirs.json", "lakes.json", "rivers.json", "snowpack.json",
+      "reference.json"]) {
       expect(config, `the API alias list must name ${file}`).toContain(`"${file}"`);
     }
     expect(config).toContain('data: resolve(root, "data.html")');

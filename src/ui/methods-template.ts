@@ -379,6 +379,13 @@ export function methodsMarkup(search: string): string {
           for one. A terminal lake is not counted in any reservoir total. A
           restoration or regulatory level is shown as a target, not as a full
           level.</dd>
+        <dt>River flow</dt>
+        <dd>The mean flow of a river for one day, in cubic feet per second, at a
+          U.S. Geological Survey gauge. The <a href="./rivers.html">river flow page</a>
+          shows the last 30 days at a small reviewed set of gauges. Each value has its
+          review status. Where dams upstream store and release
+          water, the flow is not compared with normal. This site never adds two gauges
+          together, and never calls a gauge the flow into a reservoir.</dd>
         <dt>Capacity</dt>
         <dd>The amount of water that a reservoir is designed to hold.</dd>
         <dt>Acre-foot</dt>

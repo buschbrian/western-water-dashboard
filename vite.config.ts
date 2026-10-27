@@ -62,14 +62,17 @@ function preserveRuntimeDataAndRedirects(): Plugin {
         "reservoirs.json", "lakes.json", "snow_sites.json", "snowpack.json",
         "reference.json", "capacities.json", "upstream_index.json",
         // ADR-125: the daily precipitation file and its committed history.
-        "precipitation.json", "precipitation_history.json"
+        "precipitation.json", "precipitation_history.json",
+        // ADR-136: daily river flow at the reviewed gauges.
+        "rivers.json"
       ]) {
         await copyFile(resolve(root, file), resolve(outDir, file));
         await copyFile(resolve(root, file), resolve(outDir, "data", file));
       }
       // Stable public API aliases. These are second copies of the same
       // runtime files, never imports and never a second source of truth.
-      for (const file of ["reservoirs.json", "lakes.json", "snowpack.json", "reference.json"]) {
+      for (const file of ["reservoirs.json", "lakes.json", "rivers.json", "snowpack.json",
+        "reference.json"]) {
         await copyFile(resolve(root, file), resolve(outDir, "api", file));
       }
       await copyFile(resolve(root, "legacy", "index.html"),
@@ -117,6 +120,7 @@ export default defineConfig({
         data: resolve(root, "data.html"),
         reservoir: resolve(root, "reservoir.html"),
         lakes: resolve(root, "lakes.html"),
+        rivers: resolve(root, "rivers.html"),
         // ADR-128: the story views, for embedding. Not in the navigation.
         story: resolve(root, "story.html"),
         explore: resolve(root, "explore.html"),

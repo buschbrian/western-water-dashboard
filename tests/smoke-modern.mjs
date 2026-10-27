@@ -3031,7 +3031,7 @@ for (const viewport of VIEWPORTS) {
       scroll: document.documentElement.scrollWidth
     }));
     console.log("  ready:", JSON.stringify(state.ready));
-    check(state.ready?.files === 6 && state.files === 6,
+    check(state.ready?.files === 7 && state.files === 7,
       `${label}: rendered ${state.files} file cards, readiness reported ${state.ready?.files}`);
     check(state.ready?.groups === state.groups && state.groups >= 20,
       `${label}: rendered ${state.groups} field groups, readiness reported ${state.ready?.groups}`);
@@ -3039,6 +3039,8 @@ for (const viewport of VIEWPORTS) {
       "./api/reservoirs.json", "./",
       // The terminal lakes (ADR-118, ADR-119): their own file and page.
       "./api/lakes.json", "./lakes.html",
+      // Daily river flow (ADR-136): its own file and page.
+      "./api/rivers.json", "./rivers.html",
       "./api/snowpack.json", "./snow.html",
       // Each finished snow season, frozen (ADR-121).
       "./data/snow/snowpack-wy2026.json",
@@ -5666,6 +5668,72 @@ for (const viewport of VIEWPORTS) {
 console.log(`\n=== Lakes page: ${VIEWPORTS.length} widths`);
 
 /*
+ * The river-flow page (ADR-136), at every width.
+ *
+ * What the payload published is what the page drew, one chart per gauge,
+ * each gauge saying why it has no comparison with normal and linking to
+ * the survey's own page. Nothing names a gauge as an inflow or adds gauges
+ * together; nothing scrolls sideways; the provider's initials stay out of
+ * visible text. No number is read: the payload's own count is the oracle.
+ */
+for (const viewport of VIEWPORTS) {
+  const context = await newPageContext(browser,
+    { width: viewport.width, height: viewport.height });
+  const tab = await context.newPage();
+  const errors = [];
+  tab.on("pageerror", (error) => errors.push(String(error)));
+  watchConsoleErrors(tab, errors);
+  await tab.goto(`${URL}rivers.html`, { waitUntil: "load", timeout: 90000 });
+  await tab.waitForFunction(() => window.__riversReady !== undefined,
+    null, { timeout: 90000 }).catch(() => {});
+  const state = await tab.evaluate(() => ({
+    ready: window.__riversReady ?? null,
+    busy: document.querySelector("#rivers-main")?.getAttribute("aria-busy"),
+    text: document.body.innerText,
+    articles: document.querySelectorAll("#rivers-main article.river[data-station]").length,
+    charts: document.querySelectorAll("#rivers-main svg.flow-chart").length,
+    explanations: [...document.querySelectorAll("#rivers-main .river-shaped")]
+      .map((node) => node.textContent ?? ""),
+    pageLinks: [...document.querySelectorAll("#rivers-main a[href]")]
+      .filter((link) => link.href.startsWith("https://waterdata.usgs.gov/monitoring-location/"))
+      .length,
+    scroll: document.documentElement.scrollWidth,
+    viewport: document.documentElement.clientWidth
+  }));
+  check(state.ready !== null && state.busy === "false",
+    `Rivers page (${viewport.name}): readiness ${JSON.stringify(state.ready)} `
+    + `with aria-busy="${state.busy}" -- every exit clears it`);
+  check(state.ready?.failed === false && state.ready?.gauges > 0
+    && state.ready?.rendered === state.ready?.gauges && state.articles === state.ready?.gauges,
+  `Rivers page (${viewport.name}): published ${state.ready?.gauges} gauge(s), drew `
+    + `${state.ready?.rendered}, found ${state.articles} articles`);
+  check(state.charts === state.articles && state.ready?.charts === state.articles,
+    `Rivers page (${viewport.name}): ${state.charts} charts for ${state.articles} gauges`);
+  check(state.explanations.length === state.articles && state.explanations.every((text) =>
+    text.includes("not compared with normal")),
+  `Rivers page (${viewport.name}): a gauge is missing the explanation of why it has no normal`);
+  check(state.pageLinks === state.articles,
+    `Rivers page (${viewport.name}): ${state.pageLinks} survey page links for ${state.articles} gauges`);
+  check(state.text.includes("cubic feet per second"),
+    `Rivers page (${viewport.name}): the flow unit is not written out`);
+  check(!/\binflow\b|\btotal flow\b|combined flow/i.test(state.text),
+    `Rivers page (${viewport.name}): a gauge was named an inflow or added to another`);
+  check(state.scroll <= state.viewport + 1,
+    `Rivers page (${viewport.name}): scrolls sideways (${state.scroll} > ${state.viewport})`);
+  const visible = await tab.evaluate(COLLECT_SHADOW_TEXT);
+  const retired = RETIRED_TERMS.exec(visible);
+  check(retired === null,
+    `Rivers page (${viewport.name}): visible text uses a retired term: "${retired?.[0]}"`);
+  await checkAccessibility(tab, check, `Rivers page (${viewport.name})`);
+  await tab.screenshot({ path: `screenshots/rivers-${viewport.name}.png`, fullPage: true });
+  for (const message of errors) {
+    failures.push(`Rivers page (${viewport.name}): ${message}`);
+  }
+  await context.close();
+}
+console.log(`\n=== Rivers page: ${VIEWPORTS.length} widths`);
+
+/*
  * The story views (ADR-128): one figure, alone, filling the frame a story
  * embeds it in.
  *
@@ -5892,7 +5960,8 @@ console.log(`\n=== Lakes page: ${VIEWPORTS.length} widths`);
     ["Data reference", "data.html", "__dataDocsReady"],
     ["Terms", "terms.html", null],
     ["Drought on the ground", "landscape.html", null],
-    ["Reservoir page", "reservoir.html?name=Pearl%20Lake", "__reservoirReady"]
+    ["Reservoir page", "reservoir.html?name=Pearl%20Lake", "__reservoirReady"],
+    ["River flow", "rivers.html", "__riversReady"]
   ];
   console.log("\n=== Simplified Technical English");
   for (const [label, path, signal] of pages) {

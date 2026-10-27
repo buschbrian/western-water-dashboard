@@ -20,7 +20,7 @@ import { linkHref, portableSearch } from "../state/portable-url";
 
 export type PageId =
   | "map" | "overview" | "snow" | "drought" | "methods" | "data"
-  | "reservoir" | "lakes";
+  | "reservoir" | "lakes" | "rivers";
 
 interface PageLink {
   id: PageId;
@@ -64,7 +64,9 @@ const PAGE_SUBJECTS: Record<PageId, string> = {
   /* The natural terminal lakes (ADR-119). Reached from the methods and data
    * pages rather than from the bar: the bar clips rather than scrolls, and
    * whether one lake earns a place in it is a decision not yet made. */
-  lakes: "Terminal Lakes"
+  lakes: "Terminal Lakes",
+  /* Daily river flow (ADR-136), reached like the lakes page. */
+  rivers: "River Flow"
 };
 
 /**
