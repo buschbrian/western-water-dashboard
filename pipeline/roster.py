@@ -750,6 +750,21 @@ def load_admitted_reservoir_elevations(
                     isinstance(item, dict) and isinstance(item.get("citation"), str)
                     and item["citation"] and _https(item.get("url")) for item in sources):
                 raise ValueError(f"{name}: a derived offset cites each source with an HTTPS link")
+        starts = row.get("record_starts")
+        if starts is not None:
+            # Where the summary's record begins: after first filling, never a
+            # date nobody published.
+            if not isinstance(starts, dict):
+                raise ValueError(f"{name}: record_starts must be an object")
+            _reviewed_date(name, "record_starts.date", starts.get("date"))
+            for field in ("reason", "basis", "quote"):
+                if not isinstance(starts.get(field), str) or not starts[field]:
+                    raise ValueError(f"{name}: record_starts needs its {field}")
+            if not _https(starts.get("source_url")):
+                raise ValueError(f"{name}: record_starts needs an HTTPS source")
+        stated = row.get("reference_levels_datum_stated")
+        if stated is not None and not isinstance(stated, bool):
+            raise ValueError(f"{name}: reference_levels_datum_stated is true or false")
         levels = row.get("reference_levels")
         if not isinstance(levels, list):
             raise ValueError(f"{name}: reference_levels must be a list, empty when there are none")

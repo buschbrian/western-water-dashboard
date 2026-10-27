@@ -145,6 +145,29 @@ def test_the_loader_refuses_a_derived_offset_without_its_basis_or_sources(tmp_pa
         load(write_roster(tmp_path, row))
 
 
+@pytest.mark.parametrize("field", ["source_url", "quote", "date"])
+def test_the_loader_refuses_a_record_start_without_its_source(tmp_path, field):
+    row = entry()
+    del row["record_starts"][field]
+    with pytest.raises(ValueError, match="record_starts"):
+        load(write_roster(tmp_path, row))
+
+
+def test_the_summary_starts_after_first_filling_and_the_history_keeps_every_day():
+    frame = levels(years=8)
+    start = (TODAY - pd.Timedelta(days=365 * 3)).date().isoformat()
+    row = entry()
+    row["record_starts"] = {**row["record_starts"], "date": start}
+    block = elevation.summarize_elevation(row, frame)
+    assert block["first_obs"] == start
+    assert block["record_starts"]["date"] == start
+    assert block["seasonal_rank_of"] == 4
+    assert block["n_obs"] < len(frame)
+    history = elevation.history_entry(POWELL, row, frame)
+    assert history["start"] == frame["date"].iloc[0].date().isoformat()
+    assert len(history["values"]) == len(frame)
+
+
 def test_the_loader_refuses_an_offset_with_no_measurement_date(tmp_path):
     row = entry()
     del row["datum_offset"]["measured"]

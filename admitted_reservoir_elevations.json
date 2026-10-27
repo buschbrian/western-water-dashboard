@@ -75,7 +75,14 @@
           "authority": "Bureau of Reclamation",
           "url": "https://www.usbr.gov/ColoradoRiverBasin/post2026/final-eis/docs/Vol-III/P26-FEIS_TA_03_Hydro_508.pdf"
         }
-      ]
+      ],
+      "record_starts": {
+        "date": "1980-06-22",
+        "reason": "when Lake Powell first filled",
+        "basis": "End of first filling. Readings from the closure of the dam in 1963 to this date describe the lake filling, not its operation, and are left out of the record readings and the history rank; they stay in the daily history.",
+        "quote": "Lake Powell began filling on March 13, 1963 and completed filling on June 22, 1980 reaching elevation 3,700 feet above sea level",
+        "source_url": "https://www.usbr.gov/uc/rm/crsp/gc/"
+      }
     },
     "6124": {
       "name": "Lake Mead",
@@ -174,7 +181,15 @@
           "authority": "Bureau of Reclamation",
           "url": "https://www.usbr.gov/ColoradoRiverBasin/post2026/draft-eis/docs/vol-3/P26-DEIS-TA-15.pdf"
         }
-      ]
+      ],
+      "record_starts": {
+        "date": "1941-08-06",
+        "reason": "when Lake Mead first rose to the spillway",
+        "basis": "The first date Reclamation reports the lake at its spillway, which this site takes as the end of first filling. Readings from the closure of the dam in 1935 to this date are left out of the record readings and the history rank; they stay in the daily history.",
+        "quote": "On August 6 of 1941, Lake Mead’s water level was within one-foot of the spillway crest when the Arizona spillway gates were lowered allowing flows for the first time.",
+        "source_url": "https://www.usbr.gov/tsc/techreferences/reservoir/2001%20Lake%20Mead%20Sedimentation%20Survey.pdf"
+      },
+      "reference_levels_datum_stated": false
     }
   },
   "withheld": {}

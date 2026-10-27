@@ -32,10 +32,16 @@ def summarize_elevation(entry: dict, frame: pd.DataFrame) -> dict:
 
     `frame` is [date, elevation_ft] as `fetch_rise_series(..., column=
     "elevation_ft")` returns it, from the provider's first reading. Record
-    extremes and the history rank are over that whole record, and the block's
-    own `first_obs` says where it starts.
+    extremes and the history rank start at the roster's `record_starts`
+    (the end of first filling) where it names one, and the block's own
+    `first_obs` says where they start.
     """
     levels = _series(frame)
+    starts = entry.get("record_starts")
+    if starts:
+        # The record readings and the rank start after first filling; the
+        # history file keeps every day (`history_entry`).
+        levels = levels[levels.index >= pd.Timestamp(starts["date"])]
     if levels.empty:
         raise ValueError(f"{entry['name']}: no elevation readings")
     offset = entry.get("datum_offset")
@@ -57,6 +63,11 @@ def summarize_elevation(entry: dict, frame: pd.DataFrame) -> dict:
            if entry.get("derived_offset") else {}),
         "reference_levels": [{key: level[key] for key in LEVEL_FIELDS if key in level}
                              for level in entry.get("reference_levels") or []],
+        **({"record_starts": {key: starts[key] for key in
+                              ("date", "reason", "basis", "quote", "source_url")}}
+           if starts else {}),
+        **({"reference_levels_datum_stated": entry["reference_levels_datum_stated"]}
+           if "reference_levels_datum_stated" in entry else {}),
     }
 
 

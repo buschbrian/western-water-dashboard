@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "method_version": "storage-normal-annual-3",
-  "generated_at": "2026-10-27T16:06:46+00:00",
+  "generated_at": "2026-10-27T16:53:47+00:00",
   "start_date": "2015-01-01",
   "normal_period": {
     "start_year": 2015,
@@ -1481,10 +1481,10 @@
         "as_of": "2026-10-26",
         "record_high": 1225.83,
         "record_high_date": "1983-07-24",
-        "record_low": 670.0,
-        "record_low_date": "1935-02-02",
-        "first_obs": "1935-02-02",
-        "n_obs": 33505,
+        "record_low": 1037.16,
+        "record_low_date": "2026-10-22",
+        "first_obs": "1941-08-06",
+        "n_obs": 31128,
         "change_7d": 1.0,
         "change_7d_reference_date": "2026-10-19",
         "change_7d_elapsed_days": 7,
@@ -1494,8 +1494,8 @@
         "change_365d": -19.52,
         "change_365d_reference_date": "2025-10-26",
         "change_365d_elapsed_days": 365,
-        "seasonal_rank": 3,
-        "seasonal_rank_of": 92,
+        "seasonal_rank": 1,
+        "seasonal_rank_of": 86,
         "datum_offset": null,
         "derived_offset": {
           "to_datum": "NAVD88",
@@ -1564,7 +1564,15 @@
             "authority": "Bureau of Reclamation",
             "url": "https://www.usbr.gov/ColoradoRiverBasin/post2026/draft-eis/docs/vol-3/P26-DEIS-TA-15.pdf"
           }
-        ]
+        ],
+        "record_starts": {
+          "date": "1941-08-06",
+          "reason": "when Lake Mead first rose to the spillway",
+          "basis": "The first date Reclamation reports the lake at its spillway, which this site takes as the end of first filling. Readings from the closure of the dam in 1935 to this date are left out of the record readings and the history rank; they stay in the daily history.",
+          "quote": "On August 6 of 1941, Lake Mead\u2019s water level was within one-foot of the spillway crest when the Arizona spillway gates were lowered allowing flows for the first time.",
+          "source_url": "https://www.usbr.gov/tsc/techreferences/reservoir/2001%20Lake%20Mead%20Sedimentation%20Survey.pdf"
+        },
+        "reference_levels_datum_stated": false
       },
       "in_utah": false,
       "intersects_utah": false,
@@ -1797,10 +1805,10 @@
         "as_of": "2026-10-26",
         "record_high": 3708.34,
         "record_high_date": "1983-07-14",
-        "record_low": 3394.5,
-        "record_low_date": "1964-05-11",
-        "first_obs": "1963-12-28",
-        "n_obs": 22949,
+        "record_low": 3516.62,
+        "record_low_date": "2026-09-15",
+        "first_obs": "1980-06-22",
+        "n_obs": 16928,
         "change_7d": 7.95,
         "change_7d_reference_date": "2026-10-19",
         "change_7d_elapsed_days": 7,
@@ -1810,8 +1818,8 @@
         "change_365d": -16.96,
         "change_365d_reference_date": "2025-10-26",
         "change_365d_elapsed_days": 365,
-        "seasonal_rank": 4,
-        "seasonal_rank_of": 63,
+        "seasonal_rank": 1,
+        "seasonal_rank_of": 47,
         "datum_offset": {
           "to_datum": "NAVD88",
           "offset_ft": 2.9,
@@ -1857,7 +1865,14 @@
             "authority": "Bureau of Reclamation",
             "url": "https://www.usbr.gov/ColoradoRiverBasin/post2026/final-eis/docs/Vol-III/P26-FEIS_TA_03_Hydro_508.pdf"
           }
-        ]
+        ],
+        "record_starts": {
+          "date": "1980-06-22",
+          "reason": "when Lake Powell first filled",
+          "basis": "End of first filling. Readings from the closure of the dam in 1963 to this date describe the lake filling, not its operation, and are left out of the record readings and the history rank; they stay in the daily history.",
+          "quote": "Lake Powell began filling on March 13, 1963 and completed filling on June 22, 1980 reaching elevation 3,700 feet above sea level",
+          "source_url": "https://www.usbr.gov/uc/rm/crsp/gc/"
+        }
       },
       "in_utah": true,
       "intersects_utah": true,
