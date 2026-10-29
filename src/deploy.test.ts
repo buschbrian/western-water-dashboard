@@ -535,12 +535,13 @@ describe("a shared link shows a picture", () => {
     expect(upload).toBeGreaterThan(capture);
 
     const script = await read("scripts/share-images.sh");
-    /* The browser is the one the smoke job installs; nothing new is downloaded. */
+    /* The repo's own Playwright package against a browser already on the
+     * runner: no browser is downloaded for the morning's capture. */
     expect(script).toContain("scripts/install-playwright.sh");
-    expect(script).toContain("playwright/cli.js install --with-deps chromium");
+    expect(script).toContain("PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH");
     expect(script).toContain("capture-share-images.mjs");
-    expect(await read(".github/workflows/ci.yml"))
-      .toContain("node node_modules/playwright/cli.js install --with-deps chromium");
+    expect(script, "the capture must not download a browser").not.toMatch(/cli\.js install|playwright install/);
+    expect(workflow.slice(capture - 200, capture + 100)).not.toMatch(/install --with-deps/);
   });
 
   it("replaces a fallback only with a capture that drew, and fails only on a missing image", async () => {

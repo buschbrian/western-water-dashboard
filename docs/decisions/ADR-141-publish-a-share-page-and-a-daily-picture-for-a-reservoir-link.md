@@ -67,11 +67,14 @@ picture captured in each deploy that falls back to a committed one.**
    reservoir and carries no figure, so a fallback kept for months is never a
    stale level. `scripts/share-fallback.html` is its source.
 5. The Pages workflow runs `bash scripts/share-images.sh` after it checks the
-   build and before it uploads. The script installs what the browser-smoke job
-   installs (`scripts/install-playwright.sh`, then Playwright's Chromium with
-   its system libraries) unless a Chromium path is set, and then captures. A
-   failed install or capture is a warning and the fallback stays. The step
-   fails only when an image is missing or not a 1200 by 630 PNG.
+   build and before it uploads. The script installs the repo's own Playwright
+   package with `scripts/install-playwright.sh` (npm only) and drives a
+   Chromium or Chrome already on the machine: `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`,
+   else `google-chrome`, `chromium` and their variants on `PATH`. The runner
+   image carries Google Chrome. No browser is downloaded. With no browser, a
+   failed install or a frame that does not draw, the fallback stays and a
+   warning is logged. The step fails only when an image is missing or not a
+   1200 by 630 PNG.
 
 ## Rejected
 
@@ -105,8 +108,8 @@ picture captured in each deploy that falls back to a committed one.**
 - Adding a reservoir to the cards means a share page, a fallback picture and
   an entry in the capture script's list, and `src/deploy.test.ts` fails until
   all three agree.
-- The workflow downloads Chromium each morning, as the browser-smoke job
-  does. If that ever fails, the fallbacks are published.
+- The capture depends on the runner image keeping a Chrome. If it stops, the
+  fallbacks are published and a warning says so.
 - Nothing new is published as data; no schema changes.
 
 ## Supersedes

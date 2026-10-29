@@ -17,7 +17,8 @@
  *
  * Uses the browser the browser suites use: Playwright (installed by
  * scripts/install-playwright.sh, never a package dependency) and the Chromium
- * named by PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH, or Playwright's own.
+ * named by PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH. scripts/share-images.sh finds one
+ * on the machine when it is unset; nothing is downloaded.
  */
 import { createServer } from "node:http";
 import { readFile, rename, rm, stat } from "node:fs/promises";
