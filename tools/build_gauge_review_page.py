@@ -9,6 +9,10 @@ evidence -- and leaves everything else as it was. Offline; it writes the bundle 
 repository.
 
     python3 tools/build_gauge_review_page.py --bundle DIR/gauges.json --output OUT/gauges.json
+    python3 tools/build_gauge_review_page.py --state CO --bundle ... --output ...
+
+Each gauge is tagged with the state whose worksheet it came from, so one page
+can carry every state's bundle.
 """
 
 from __future__ import annotations
@@ -54,7 +58,7 @@ def page_fields(row: dict) -> dict:
     }
 
 
-def refresh(bundle: dict, rows: dict[str, dict]) -> dict:
+def refresh(bundle: dict, rows: dict[str, dict], state: str = "UT") -> dict:
     """The bundle with each gauge's worksheet fields replaced.
 
     A gauge missing from either side is an error, not a silent gap: the page
@@ -65,7 +69,7 @@ def refresh(bundle: dict, rows: dict[str, dict]) -> dict:
         missing = sorted(sites ^ set(rows))
         raise ValueError(f"the bundle and the worksheet disagree on {len(missing)} "
                          f"gauges: {', '.join(missing[:5])}")
-    return {**bundle, "gauges": [{**gauge, **page_fields(rows[gauge["site"]])}
+    return {**bundle, "gauges": [{**gauge, **page_fields(rows[gauge["site"]]), "state": state}
                                  for gauge in bundle["gauges"]]}
 
 
@@ -73,9 +77,10 @@ def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--bundle", type=Path, required=True)
     parser.add_argument("--output", type=Path, required=True)
+    parser.add_argument("--state", choices=sorted(worksheet.STATES), default="UT")
     args = parser.parse_args(argv)
     bundle = json.loads(args.bundle.read_text(encoding="utf-8"))
-    page = refresh(bundle, worksheet.read_rows())
+    page = refresh(bundle, worksheet.read_rows(worksheet.STATES[args.state].output), args.state)
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(page, separators=(",", ":")), encoding="utf-8")
     print(f"wrote {len(page['gauges'])} gauges to {args.output}")

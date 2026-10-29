@@ -39,6 +39,12 @@ def test_worksheet_fields_replace_the_old_suggestion_and_the_page_keeps_its_own(
     assert page["screened"] == "2026-10-23" and page["outline"] == [[0, 0]]
 
 
+def test_each_gauge_carries_the_state_of_its_worksheet():
+    bundle = {"gauges": [{"site": "1"}]}
+    assert P.refresh(bundle, {"1": row("1")})["gauges"][0]["state"] == "UT"
+    assert P.refresh(bundle, {"1": row("1")}, "CO")["gauges"][0]["state"] == "CO"
+
+
 def test_missing_evidence_is_null_not_zero():
     gauge = P.page_fields(row("1", mean_flow_cfs="", storage_share_pct="", dams_upstream=""))
     assert gauge["flow"] is None and gauge["share"] is None and gauge["dams"] is None

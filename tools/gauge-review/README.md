@@ -10,7 +10,14 @@ private review records outside the public deployment.
 
 ## Prepare and publish
 
-1. Use the existing Artifact's `gauges.json` and `maps/*.jpg` assets. Do not
+1. Use the existing Artifact's `gauges.json` and `maps/*.jpg` assets. Utah's
+   maps are published files (`maps/<site>.jpg`). Colorado, New Mexico and
+   Arizona's maps are in the artifact's asset store, because one version holds
+   at most 511 files; each of those gauges carries its map's `mapUrl` in the
+   bundle. `tools/build_gauge_review_page.py --state XX` refreshes one state's
+   bundle and tags each gauge with its state; the per-state bundles are then
+   merged into one `gauges.json` with an `outlines` list of state rings. The
+   cached bundles live in `~/.local/share/claudex/runs/western-water-dashboard/gauge-review-page/`. Do not
    replace them with a new network fetch simply to update the page. The local
    preview currently links to Claude's cached assets; copy that bundle to
    durable local storage before deleting the scratch directory.
@@ -18,9 +25,9 @@ private review records outside the public deployment.
    identity, existing assets, runtime contract and private access. Do not create
    a new Artifact or clear its database. Read back the existing `rulings`
    collection before and after, without writing probe records.
-3. Preserve the existing `db` rules (read `view`, write `admin` at the root)
-   and `user` capability, and add `downloads: {}`. A nonempty capabilities
-   declaration is a full replacement: restate all three. The database document
+3. Preserve the existing `db` rules (read `view`, write `admin` at the root),
+   the `user` and `downloads` capabilities and `assets: {}`. A nonempty
+   capabilities declaration is a full replacement: restate all four. The database document
    schema is `{ruling, notes, name, updatedAt}` keyed by USGS site number; `name`
    is the accepted display name (ADR-138) and older records without it still load.
 4. CSV and GeoJSON exports use the documented Artifact `downloads.save` API.

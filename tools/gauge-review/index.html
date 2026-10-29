@@ -1,5 +1,5 @@
 <meta charset="utf-8">
-<title>Utah Gauge Review</title>
+<title>Four-State Gauge Review</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -203,8 +203,8 @@ details.more summary { cursor: pointer; color: var(--accent); font-weight: 600; 
 <main class="wrap">
   <header class="top">
     <div>
-      <h1>Utah Gauge Review</h1>
-      <p>Each U.S. Geological Survey stream gauge that reported in Utah in the last week. For each one, decide whether its flow can be compared with its own normal for the date, and whether the basin traced for it is right. The suggestion comes from fixed rules; the ruling is yours. Gauges whose suggestion is the safe one (shaped by a published reservoir or large storage, natural with small storage, or not a river) can be agreed a watershed at a time when nothing else is in doubt; a natural river ruled shaped loses only its comparison with normal. <span id="screened"></span></p>
+      <h1>Four-State Gauge Review</h1>
+      <p>Each U.S. Geological Survey stream gauge that reported in Utah, Colorado, New Mexico or Arizona in the week before it was screened. For each one, decide whether its flow can be compared with its own normal for the date, and whether the basin traced for it is right. The suggestion comes from fixed rules; the ruling is yours. Gauges whose suggestion is the safe one (shaped by a published reservoir or large storage, natural with small storage, or not a river) can be agreed a watershed at a time when nothing else is in doubt; a natural river ruled shaped loses only its comparison with normal. <span id="screened"></span></p>
     </div>
     <div class="progress" aria-live="polite">
       <div class="count"><span id="ruled-count">0</span> <small>of <span id="total-count">164</span> ruled</small></div>
@@ -232,7 +232,7 @@ details.more summary { cursor: pointer; color: var(--accent); font-weight: 600; 
   <div class="desk">
     <aside class="queue" aria-label="Gauges to review">
       <div class="queue-tools">
-        <input type="search" id="search" placeholder="Name, site number, county or HUC" aria-label="Search gauges">
+        <input type="search" id="search" placeholder="Name, site number, state, county or HUC" aria-label="Search gauges">
         <div class="threshold">
           <label for="threshold">Flag a traced basin that differs from the published area by more than</label>
           <select id="threshold">
@@ -285,7 +285,7 @@ const PILES = [
 ];
 
 const state = {
-  gauges: [], outline: [], rulings: {}, selected: null, threshold: 0.25,
+  gauges: [], outlines: [], rulings: {}, selected: null, threshold: 0.25,
   filter: null, unruled: false, differs: false, reviewOrder: true, grouped: true, pile: "", confirmGroup: null, query: "",
   mapView: "close", layers: { basin: true, res: true, snow: true },
   db: null, canWrite: false, ready: false, pending: {}, dirty: {}, failures: {}, mapZoom: 1,
@@ -464,7 +464,7 @@ function visible() {
     if (state.differs && (!r || r === g.tier)) return false;
     const pile = PILES.find(p => p.id === state.pile);
     if (pile?.test && !pile.test(g)) return false;
-    if (q && !(`${g.name} ${g.site} ${g.county} ${g.huc8} ${g.huc8Name || ""}`.toLowerCase().includes(q))) return false;
+    if (q && !(`${g.name} ${g.site} ${g.state || ""} ${g.county} ${g.huc8} ${g.huc8Name || ""}`.toLowerCase().includes(q))) return false;
     return true;
   });
   const within = state.reviewOrder
@@ -523,7 +523,7 @@ function renderList() {
     const safe = g.queue === "bulk" ? " · safe as a group" : "";
     return `${head}<li><button type="button" class="t-${g.tier}" data-site="${g.site}" aria-current="${state.selected === g.site}">
       <span class="dot"></span><span class="nm">${esc(g.name)}</span>${badge}
-      <span class="sub"><span class="mono">${g.site}</span> · ${esc(g.county)}${flag}${safe}</span></button></li>`;
+      <span class="sub"><span class="mono">${g.site}</span> · ${esc(g.county)}${g.state ? `, ${g.state}` : ""}${flag}${safe}</span></button></li>`;
   }).join("");
 }
 
@@ -542,7 +542,7 @@ function closeMap(g) {
   const snow = state.layers.snow ? g.nearSnow.map(s => { const [x, y] = px(s.lon, s.lat);
     return `<path class="snow-pt${s.up ? " up" : ""}" d="M${x.toFixed(1)},${(y - 8).toFixed(1)}L${(x + 7).toFixed(1)},${(y + 5).toFixed(1)}L${(x - 7).toFixed(1)},${(y + 5).toFixed(1)}Z"><title>${esc(s.name)} snow site${s.up ? " (inside the traced basin)" : ""}</title></path>`; }).join("") : "";
   const [gx, gy] = px(g.lon, g.lat);
-  return `<div class="map-frame map-scroll" tabindex="0" aria-label="Gauge map. Zoom, then scroll to inspect the basin."><div class="map-content" style="width:${state.mapZoom * 100}%"><img src="maps/${g.site}.jpg" width="${W}" height="${H}" alt="USGS topographic map around ${esc(g.name)}">
+  return `<div class="map-frame map-scroll" tabindex="0" aria-label="Gauge map. Zoom, then scroll to inspect the basin."><div class="map-content" style="width:${state.mapZoom * 100}%"><img src="${g.mapUrl || `maps/${g.site}.jpg`}" width="${W}" height="${H}" alt="USGS topographic map around ${esc(g.name)}">
     <svg viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" aria-hidden="true">${basin}${res}${snow}
       <circle class="gauge-pt" cx="${gx.toFixed(1)}" cy="${gy.toFixed(1)}" r="8"><title>${esc(g.name)}</title></circle></svg></div></div>`;
 }
@@ -554,19 +554,19 @@ const LEGEND = `<span><svg width="16" height="12"><rect x="1" y="1" width="14" h
   <span><svg width="14" height="14"><path d="M7,1L13,12L1,12Z" fill="#fff" stroke="#4338ca" stroke-width="1.5"/></svg>Outside it</span>`;
 
 function overviewMap() {
-  const pts = state.outline.concat(state.gauges.map(g => [g.lon, g.lat]));
+  const pts = state.outlines.flat().concat(state.gauges.map(g => [g.lon, g.lat]));
   const lons = pts.map(p => p[0]), lats = pts.map(p => p[1]);
   const minX = Math.min(...lons) - 0.15, maxX = Math.max(...lons) + 0.15, minY = Math.min(...lats) - 0.15, maxY = Math.max(...lats) + 0.15;
   const k = Math.cos(((minY + maxY) / 2) * Math.PI / 180), W = 1000, H = Math.round(W * (maxY - minY) / ((maxX - minX) * k));
   const p = ([x, y]) => [((x - minX) / (maxX - minX)) * W, ((maxY - y) / (maxY - minY)) * H];
-  const d = state.outline.map((q, i) => (i ? "L" : "M") + p(q).map(v => v.toFixed(1)).join(",")).join("") + "Z";
+  const d = state.outlines.map(ring => ring.map((q, i) => (i ? "L" : "M") + p(q).map(v => v.toFixed(1)).join(",")).join("") + "Z").join("");
   const shown = new Set(visible().map(g => g.site));
   const dots = [...state.gauges].sort((a, b) => (a.site === state.selected) - (b.site === state.selected)).map(g => {
     const [x, y] = p([g.lon, g.lat]);
     const cls = [shown.has(g.site) ? "" : "dim", g.site === state.selected ? "sel" : ""].join(" ");
     return `<circle class="ov-dot t-${g.tier} ${cls}" cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="${g.site === state.selected ? 10 : 6}" data-site="${g.site}"><title>${esc(g.name)}</title></circle>`;
   }).join("");
-  return `<div class="map-frame overview"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Utah with each gauge coloured by its suggested tier"><path class="ov-outline" d="${d}"></path>${dots}</svg></div>`;
+  return `<div class="map-frame overview"><svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Utah, Colorado, New Mexico and Arizona with each gauge coloured by its suggested tier"><path class="ov-outline" d="${d}"></path>${dots}</svg></div>`;
 }
 
 function renderGauge() {
@@ -598,7 +598,7 @@ function renderGauge() {
     <div class="mapbox">
       <div class="map-tabs" role="group" aria-label="Map">
         <button class="toggle" type="button" data-view="close" aria-pressed="${close}">This gauge</button>
-        <button class="toggle" type="button" data-view="overview" aria-pressed="${!close}">All of Utah</button>
+        <button class="toggle" type="button" data-view="overview" aria-pressed="${!close}">All four states</button>
         <span class="sep"></span>
         ${close ? `<button class="toggle" type="button" data-layer="basin" aria-pressed="${state.layers.basin}">Basin</button>
         <button class="toggle" type="button" data-layer="res" aria-pressed="${state.layers.res}">Reservoirs</button>
@@ -871,7 +871,7 @@ fetch("gauges.json", { signal: AbortSignal.timeout(15000) }).then(r => {
   return r.json();
 }).then(data => {
   state.gauges = data.gauges;
-  state.outline = data.outline;
+  state.outlines = data.outlines ?? [data.outline];
   $("screened").textContent = `Screened ${data.screened}. Area difference is (traced − published) / published. Changing the area threshold only changes flags; it does not change suggestions or rulings.`;
   state.selected = visible()[0]?.site ?? null;
   renderAll();
