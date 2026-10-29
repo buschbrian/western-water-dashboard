@@ -42,8 +42,10 @@ A reservoir with no elevation item keeps its row and says so.
 
 **The suggestion.** `suggested_datum` is one of `NGVD29`, `NAVD88`,
 `project datum` or `unverified`. A label is suggested only when a Reclamation
-statement names exactly one datum (the RISE location or a report), or when two
-checks at different USGS monitoring locations agree within `TOLERANCE_FT`. A
+report names exactly one datum, when the RISE location's datum is confirmed by
+a report or a USGS series that agrees with it, or when two checks at different
+USGS monitoring locations agree within `TOLERANCE_FT`. The location field alone
+never gives a label (ADR-139). A
 series whose difference from RISE moves by more than `DRIFT_FT` (10th to 90th percentile) across the window
 gives no check. Statements that disagree, or any other state of the evidence,
 give `unverified`. A suggestion is arithmetic over the columns beside it.
@@ -282,7 +284,8 @@ def window_series(results: list[dict]) -> dict[str, float]:
 # --- the suggestion --------------------------------------------------------
 
 def suggest(row: dict) -> tuple[str, str]:
-    """(suggested_datum, reason). A label needs a statement or two agreeing checks."""
+    """(suggested_datum, reason). A label needs a report, a RISE location datum with a
+    second agreeing source, or two agreeing checks."""
     location = row.get("rise_location_datum_family", "")
     reported = [f for f in (row.get("report_datum") or "").split("; ") if f]
     checks = _parse_checks(row.get("usgs_series_checks", ""))
@@ -314,6 +317,9 @@ def suggest(row: dict) -> tuple[str, str]:
         if contrary:
             return "unverified", (f"{source} names {label} but USGS series say "
                                   + " and ".join(contrary))
+        if location and not reported and label not in by_label:
+            return "unverified", (f"{source} names {label}, and no Reclamation report "
+                                  "or USGS series agrees")
         agree = f"; USGS site {', '.join(sorted(by_label[label]))} agrees" if label in by_label else ""
         return label, f"{source} names {label}{agree}{note}"
 

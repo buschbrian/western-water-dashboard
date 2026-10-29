@@ -69,9 +69,13 @@ Per row it records:
    highest elevation in the window. Evidence for the reviewer only.
 
 `suggested_datum` is `NGVD29`, `NAVD88`, `project datum` or `unverified`, with
-`suggestion_reason`. A label is suggested only when a Reclamation statement
-(the RISE location or a report) names exactly one datum, or when USGS checks
-at two different monitoring locations agree on one label within 0.2 feet.
+`suggestion_reason`. A label is suggested only when a Reclamation report
+names exactly one datum, when the RISE location's datum is confirmed by a
+report or a USGS series that agrees with it, or when USGS checks at two
+different monitoring locations agree on one label within 0.2 feet. The RISE
+location field alone never gives a label: Brian ruled on 2026-10-27 that it
+counts "only with a second check", after Hyrum and Rifle Gap showed it can be
+wrong.
 Disagreeing statements, a USGS series that contradicts the statement, one USGS
 location, a drifting series, or no evidence give `unverified`. The columns `reviewer_ruling` and `reviewer_notes` are
 Brian's; `checked_on` records the run. Every run merges, so `--only`,
@@ -128,3 +132,8 @@ elevation. The suggestion never reaches a payload.
   62615 series fits NGVD29 (within 0.17 feet of minus S, S being 2.90 feet),
   one monitoring location, so the tool does not suggest a label. The expected
   NGVD29 rests on Brian's ruling.
+- After the second-check ruling, the same evidence recomputed offline gives
+  1 `NAVD88` (Millerton Lake, whose report also names NAVD88), 1
+  `project datum` (Lake Mead) and 53 `unverified`. The 20 labels that fell
+  came from the RISE location field alone; their rows keep the field's text
+  for the reviewer.

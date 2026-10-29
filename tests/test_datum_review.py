@@ -130,10 +130,19 @@ def row(**fields):
     return base
 
 
-def test_a_single_statement_gives_its_datum():
-    label, reason = D.suggest(row(rise_location_datum_family="project datum"))
-    assert label == "project datum" and "RISE location" in reason
+def test_a_single_report_gives_its_datum():
     assert D.suggest(row(report_datum="NGVD29"))[0] == "NGVD29"
+
+
+def test_the_rise_location_datum_alone_gives_no_label():
+    label, reason = D.suggest(row(rise_location_datum_family="NAVD88"))
+    assert label == "unverified" and "no Reclamation report or USGS series agrees" in reason
+
+
+def test_the_rise_location_datum_with_an_agreeing_report_gives_its_datum():
+    label, reason = D.suggest(row(rise_location_datum_family="project datum",
+                                  report_datum="project datum"))
+    assert label == "project datum" and "and a Reclamation report" in reason
 
 
 def test_statements_that_disagree_are_unverified():
@@ -247,7 +256,8 @@ def test_write_then_read_round_trips_and_suggests_offline(tmp_path):
     path = tmp_path / "datum-review.csv"
     one = dict.fromkeys(D.FIELDS, "")
     one.update(station="6124", name="Lake Mead", reviewer_ruling="project datum",
-               rise_location_datum="Power House Datum. Add 0.55 foot to convert to NGVD 1929.")
+               rise_location_datum="Power House Datum. Add 0.55 foot to convert to NGVD 1929.",
+               report_datum="project datum")
     two = dict.fromkeys(D.FIELDS, "")
     two.update(station="509", name="Lake Powell")
     D.write_rows({"6124": one, "509": two}, path)
