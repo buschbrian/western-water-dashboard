@@ -122,7 +122,8 @@ ADR-041.**
   [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md),
   [ADR-122](ADR-122-measure-drought-from-the-monitors-full-resolution-archive.md),
   [ADR-125](ADR-125-measure-precipitation-at-the-snow-stations-against-a-fixed-history.md),
-  [ADR-129](ADR-129-total-the-latest-storm-from-the-accumulated-precipitation.md)
+  [ADR-129](ADR-129-total-the-latest-storm-from-the-accumulated-precipitation.md),
+  [ADR-142](ADR-142-show-the-weeks-change-in-mountain-soil-moisture.md)
 - Current architecture: [`docs/architecture/hydrology-methods.md`](../architecture/hydrology-methods.md)
 
 ### Visible language, accessibility and naming
@@ -170,7 +171,8 @@ ADR-008, then ADR-032 and ADR-061.**
   [ADR-130](ADR-130-give-precipitation-its-own-page.md),
   [ADR-131](ADR-131-map-recent-precipitation-by-drainage-area-in-the-snow-colours.md),
   [ADR-132](ADR-132-draw-storage-charts-when-they-near-the-screen.md),
-  [ADR-133](ADR-133-serve-atkinson-hyperlegible-next-from-this-site.md)
+  [ADR-133](ADR-133-serve-atkinson-hyperlegible-next-from-this-site.md),
+  [ADR-142](ADR-142-show-the-weeks-change-in-mountain-soil-moisture.md)
 - Superseded, read only for history: ADR-007, ADR-016, ADR-022, ADR-025,
   ADR-027, ADR-030, ADR-043, ADR-054
 - Current architecture: [`docs/architecture/frontend.md`](../architecture/frontend.md)
@@ -319,6 +321,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-131](ADR-131-map-recent-precipitation-by-drainage-area-in-the-snow-colours.md) | Map recent precipitation by drainage area, in the snow map's colours | Accepted; area mean of stations with a total, held to the snow floor; one set of breaks for 1, 3 and 7 days; the NWS scale was refused |
 | [ADR-132](ADR-132-draw-storage-charts-when-they-near-the-screen.md) | Draw the storage charts when they near the screen | Accepted; five chart states in readiness; charts are rebuilt, not reused |
 | [ADR-133](ADR-133-serve-atkinson-hyperlegible-next-from-this-site.md) | Serve Atkinson Hyperlegible Next from this site | Accepted; one 34 KB Latin variable file, `font-display: swap`, no preload, one `--app-font` token |
+| [ADR-142](ADR-142-show-the-weeks-change-in-mountain-soil-moisture.md) | Show the week's change in mountain soil moisture | Accepted; seven-day change in points at the snow stations, mean of 2 (or 4), 8 and 20 in, frozen readings dropped, snow floor per area; a "Rain \| Soil moisture" switch on the precipitation map; percent of median is phase 2 |
 
 ## Relationship to the historical journal
 

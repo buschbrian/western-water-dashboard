@@ -791,6 +791,51 @@ export interface PrecipitationPayload {
   sites: PrecipitationSite[];
 }
 
+/** Why a soil station has no seven-day change (ADR-142). */
+export type SoilNoChangeReason = "missing_reading" | "frozen" | "no_temperature";
+
+/** One station's soil moisture over the last fifteen days (ADR-142). */
+export interface SoilMoistureSite {
+  station: string;
+  /** The shallow, middle and deep sensors, in inches below the ground. */
+  depths_inches: [number, number, number];
+  latest_date: string | null;
+  late: boolean;
+  /** Percent of the soil's volume on the end and start days; null without all three depths. */
+  end_percent: number | null;
+  start_percent: number | null;
+  /** Percentage points, end minus start; null with a reason. */
+  change_points: number | null;
+  no_change_reason: SoilNoChangeReason | null;
+}
+
+export interface SoilMoistureRollup {
+  huc6: string;
+  huc6_name: string;
+  site_count: number;
+  measured_site_count: number;
+  minimum_reporting_sites: number;
+  mean_change_points: number | null;
+}
+
+export interface SoilMoisturePayload {
+  schema_version: number;
+  generated_at: string;
+  as_of: string;
+  change_days: number;
+  /** The day the week ends and starts; null when too few stations report. */
+  end_date: string | null;
+  start_date: string | null;
+  minimum_reporting_sites: number;
+  site_count: number;
+  measured_site_count: number;
+  frozen_site_count: number;
+  late_site_count: number;
+  missing_site_count: number;
+  rollups: SoilMoistureRollup[];
+  sites: SoilMoistureSite[];
+}
+
 /**
  * Every water year in the window at each station whose record covers all of
  * them, decoded to inches: `years[y][s]` is year `first_water_year + y` at

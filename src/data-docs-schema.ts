@@ -417,6 +417,57 @@ export const SNOW_GROUPS: readonly ApiFieldGroup[] = [
   ]}
 ];
 
+/* ADR-142: the week's change in soil moisture at the snow stations. */
+export const SOIL_GROUPS: readonly ApiFieldGroup[] = [
+  { id: "soil-header", title: "File header", path: "root", fields: [
+    f("schema_version", "version number", "Version of this JSON structure."),
+    f("generated_at", "date and time", "Time the file was generated."),
+    f("as_of", "date", "Newest date requested from the provider."),
+    f("element", "identifier", "Provider's code for soil moisture. Always SMS."),
+    f("units", "text", "Unit of the readings and of the changes."),
+    f("source", "web address", "Provider service address."),
+    f("depth_rule", "text", "Which sensors a station's value is the mean of."),
+    f("frozen_rule", "object", "The soil temperature element and the temperature in degrees Fahrenheit at or below which a reading is not used."),
+    f("change_days", "days", "Days between the start and the end of the change. Always 7."),
+    f("end_date", "date", "The day every station's change ends on, or null when too few stations sent readings."),
+    f("start_date", "date", "The day every station's change starts on, or null."),
+    f("minimum_reporting_sites", "sites", "Stations with a change an area needs for a figure. The same floor as the snow figure."),
+    f("series_dates", "array", "The fifteen days the readings index into, ascending."),
+    f("site_count", "sites", "Number of stations in the sites array."),
+    f("measured_site_count", "sites", "Number of stations with a change."),
+    f("frozen_site_count", "sites", "Number of stations with no change because the soil was frozen."),
+    f("late_site_count", "sites", "Number of stations with late readings."),
+    f("missing_site_count", "sites", "Number of stations with the standard sensors that sent nothing and are absent from this file."),
+    f("other_depth_sites", "array", "Stations with soil sensors that do not have the standard set, with their depths in inches. Not used."),
+    f("rollups", "array", "Drainage-area figures over every station in the area."),
+    f("sites", "array", "Station records.")
+  ]},
+  { id: "soil-rollup", title: "Drainage-area figure", path: "rollups[]", fields: [
+    f("huc6", "code", "Six-digit drainage-area code."),
+    f("huc6_name", "text", "Name of that drainage area."),
+    f("site_count", "sites", "Stations in the area in this file."),
+    f("measured_site_count", "sites", "Of those, stations with a change."),
+    f("minimum_reporting_sites", "sites", "Stations with a change the area needs for a figure."),
+    f("mean_change_points", "percentage points", "Mean of the stations' changes, or null below the floor.")
+  ]},
+  { id: "soil-site", title: "Station record", path: "sites[]", fields: [
+    f("station", "identifier", "Provider station identifier."),
+    f("depths_inches", "array", "The shallow, middle and deep sensors used, in inches below the ground."),
+    f("latest_date", "date", "Newest day with all three readings, or null."),
+    f("late", "true or false", "True when that day is more than two days before as_of."),
+    f("readings", "array", "Three arrays, one per depth in depths_inches order, of percent of the soil's volume for each day in series_dates. Null where there is no reading or the reading was not used."),
+    f("frozen_days", "array", "Positions in series_dates on which a reading was not used because the soil was frozen."),
+    f("end_percent", "percent", "The station's value on end_date: the mean of its three readings, or null."),
+    f("start_percent", "percent", "The same on start_date, or null."),
+    f("change_points", "percentage points", "end_percent minus start_percent, or null."),
+    f("no_change_reason", "identifier", "Why change_points is null: missing_reading, frozen or no_temperature. Null when there is a change.")
+  ]},
+  { id: "soil-other-depth-site", title: "Station with other sensor depths", path: "other_depth_sites[]", fields: [
+    f("station", "identifier", "Provider station identifier."),
+    f("depths_inches", "array", "The station's active soil sensor depths, in inches below the ground.")
+  ]}
+];
+
 export const DROUGHT_GROUPS: readonly ApiFieldGroup[] = [
   { id: "drought-header", title: "File header", path: "root", fields: [
     f("schema_version", "version number", "Version of this JSON structure."),

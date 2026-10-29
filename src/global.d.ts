@@ -259,6 +259,16 @@ interface Window {
       basemap: boolean;
       basemapDegraded: boolean;
       viewReady: boolean;
+      /** The "Rain | Soil moisture" switch (ADR-142), and the soil file it
+       * loads on first use: idle until then. */
+      mode?: "rain" | "soil";
+      soil?: {
+        state: "idle" | "loading" | "ready" | "failed";
+        endDate: string | null;
+        stations: number;
+        withChange: number;
+        rows: number;
+      };
     };
   };
   /** The drought view finished drawing. `units` is what the coverage file

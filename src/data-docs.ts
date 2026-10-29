@@ -9,6 +9,7 @@ import {
   REFERENCE_GROUPS,
   RESERVOIR_GROUPS,
   SNOW_GROUPS,
+  SOIL_GROUPS,
   type ApiFieldGroup
 } from "./data-docs-schema";
 import { brandMarkup, pageLinksMarkup } from "./ui/page-header";
@@ -45,6 +46,7 @@ root.innerHTML = `
         <li><a href="#reservoir-fields">Reservoir fields</a></li>
         <li><a href="#lake-fields">Terminal lake fields</a></li>
         <li><a href="#snow-fields">Snow fields</a></li>
+        <li><a href="#soil-fields">Soil moisture fields</a></li>
         <li><a href="#drought-fields">Drought fields</a></li>
         <li><a href="#reference-fields">Reference fields</a></li>
         <li><a href="#examples">Examples</a></li>
@@ -86,6 +88,17 @@ root.innerHTML = `
           named for the water year it ends in. It is the file as it was published on the
           season's last day, with the same fields as the current file. The first refresh
           of each October adds the season that ended, and no file is changed after that.</p>
+      </article>
+      <article class="api-file">
+        <h3>Soil moisture</h3>
+        <p><a href="./data/soil_moisture.json"><code>/data/soil_moisture.json</code></a></p>
+        <p>Soil moisture at the snow monitoring sites for the last fifteen days, in percent
+          of the soil's volume. Each site's change over 7 days, in percentage points.
+          A site's value is the mean of its 2 in (or 4 in), 8 in and 20 in sensors. A
+          reading is not used on a day the soil at that depth is frozen. No median and no
+          comparison with normal. Structure version 1. Refreshed independently each
+          morning. A failed refresh does not replace the last complete file. Shown on the
+          <a href="./precipitation.html">precipitation page</a>.</p>
       </article>
       <article class="api-file">
         <h3>Drought coverage by drainage area</h3>
@@ -148,6 +161,10 @@ root.innerHTML = `
     <section class="methods-section api-fields" id="snow-fields"
       aria-labelledby="snow-fields-heading">
       <h2 id="snow-fields-heading">Snow fields</h2>
+    </section>
+    <section class="methods-section api-fields" id="soil-fields"
+      aria-labelledby="soil-fields-heading">
+      <h2 id="soil-fields-heading">Soil moisture fields</h2>
     </section>
     <section class="methods-section api-fields" id="drought-fields"
       aria-labelledby="drought-fields-heading">
@@ -247,6 +264,7 @@ function renderGroups(hostId: string, groups: readonly ApiFieldGroup[]): void {
 renderGroups("reservoir-fields", RESERVOIR_GROUPS);
 renderGroups("lake-fields", LAKE_GROUPS);
 renderGroups("snow-fields", SNOW_GROUPS);
+renderGroups("soil-fields", SOIL_GROUPS);
 renderGroups("drought-fields", DROUGHT_GROUPS);
 renderGroups("reference-fields", REFERENCE_GROUPS);
 wireTheme();
@@ -256,5 +274,5 @@ setupPlaceSearch("data");
 window.__dataDocsReady = {
   files: document.querySelectorAll(".api-file").length,
   groups: RESERVOIR_GROUPS.length + LAKE_GROUPS.length + SNOW_GROUPS.length
-    + DROUGHT_GROUPS.length + REFERENCE_GROUPS.length
+    + SOIL_GROUPS.length + DROUGHT_GROUPS.length + REFERENCE_GROUPS.length
 };
