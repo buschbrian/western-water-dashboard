@@ -237,11 +237,47 @@ def test_a_dam_without_a_position_is_dropped_and_irrigation_is_read_from_purpose
     assert record["storage_af"] == 6870 and record["irrigation"] is True
 
 
-def test_annual_means_are_read_from_the_rdb_answer():
-    rdb = ("# comment\nagency_cd\tsite_no\tparameter_cd\tts_id\tloc_web_ds\tyear_nu\tmean_va\n"
-           "5s\t15s\t5s\t10n\t15s\t4s\t12n\n"
-           "USGS\t09379500\t00060\t1\t\t1990\t3000\nUSGS\t09379500\t00060\t1\t\t1991\t2000\n")
-    assert G.parse_annual_means(rdb) == {"09379500": {1990: 3000.0, 1991: 2000.0}}
+def stats_value(start, end, count, value):
+    return {"start_date": start, "end_date": end, "interval_type": "water_year",
+            "value": value, "sample_count": count, "computation": "arithmetic_mean"}
+
+
+def stats_page(site, values, *, parameter="00060", statistic="00003"):
+    return {"features": [{"properties": {
+        "monitoring_location_id": f"USGS-{site}",
+        "data": [{"parameter_code": parameter, "parent_statistic_id": statistic,
+                  "values": values}]}}]}
+
+
+def test_annual_means_keep_only_complete_water_years():
+    page = stats_page("09379500", [
+        stats_value("1990-10-01", "1991-09-30", 365, "3000.5"),
+        stats_value("1991-10-01", "1992-09-30", 366, "2000.0"),
+        stats_value("1992-10-01", "1993-09-29", 363, "10.0"),
+        stats_value("1993-04-03", "1993-09-30", 181, "10.0"),
+        stats_value("1994-10-01", "1995-09-30", 300, "10.0"),
+        stats_value("1995-10-01", "1996-09-30", 366, "bad"),
+    ])
+    assert G.parse_annual_means(page) == {"09379500": {1991: 3000.5, 1992: 2000.0}}
+
+
+def test_annual_means_ignore_other_parameters_and_statistics():
+    values = [stats_value("1990-10-01", "1991-09-30", 365, "5")]
+    assert G.parse_annual_means(stats_page("09379500", values, parameter="00010")) == {}
+    assert G.parse_annual_means(stats_page("09379500", values, statistic="00001")) == {}
+
+
+def test_annual_means_follow_the_next_token_and_send_ids_as_parameters(monkeypatch):
+    pages = [{**stats_page("111", [stats_value("1990-10-01", "1991-09-30", 365, "1")]),
+              "next": "tok"},
+             stats_page("222", [stats_value("1990-10-01", "1991-09-30", 365, "2")])]
+    urls = []
+    monkeypatch.setattr(G.upstream, "get_json",
+                        lambda url, **kwargs: urls.append(url) or pages.pop(0))
+    monkeypatch.delenv("USGS_API_KEY", raising=False)
+    assert G.fetch_annual_means(["111", "222"]) == {"111": {1991: 1.0}, "222": {1991: 2.0}}
+    assert "monitoring_location_id=USGS-111&monitoring_location_id=USGS-222" in urls[0]
+    assert "next_token" not in urls[0] and urls[1].count("next_token=tok") == 1
 
 
 def test_mean_flow_prefers_1991_on_and_falls_back_to_the_whole_record():

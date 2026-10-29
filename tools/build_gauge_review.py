@@ -119,11 +119,12 @@ AREA_CHECK_RATIO = 0.25
 NID_LAYER = ("https://geospatial.sec.usace.army.mil/dls/rest/services/NID/"
              "National_Inventory_of_Dams_Public_Service/FeatureServer/0")
 NID_BATCH = 250
-#: The legacy statistics service: keyless, and the only one serving
-#: annual means per water year today.
-ANNUAL_STATS_URL = "https://waterservices.usgs.gov/nwis/stat/"
-#: The service refuses more than ten sites per request.
+#: The Water Data Statistics API (beta) replaces the retired legacy
+#: `nwis/stat` service. It also returns a year that is still open or missing
+#: days, which the legacy service never did (ADR-143).
+ANNUAL_STATS_URL = "https://api.waterdata.usgs.gov/statistics/v0/observationIntervals"
 STATS_BATCH = 10
+STATS_PAGE_SIZE = 10000
 FLOW_START_WATER_YEAR = 1991
 MIN_FLOW_YEARS = 5
 #: One cubic foot per second for a year, in acre-feet.
@@ -514,24 +515,42 @@ def dam_record(attributes: dict) -> dict | None:
             "irrigation": "irrigation" in (attributes.get("PURPOSES") or "").lower()}
 
 
-def parse_annual_means(rdb: str) -> dict[str, dict[int, float]]:
-    """Site number to {water year: mean discharge} from the RDB answer."""
+def _complete_water_year(value: dict) -> int | None:
+    """The water year of a whole 1 October to 30 September interval, else None."""
+    try:
+        start = dt.date.fromisoformat(value["start_date"])
+        end = dt.date.fromisoformat(value["end_date"])
+        count = int(value["sample_count"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    whole = (start.month, start.day, end.month, end.day) == (10, 1, 9, 30) \
+        and start.year == end.year - 1
+    return end.year if whole and count == (end - start).days + 1 else None
+
+
+def parse_annual_means(payload: dict) -> dict[str, dict[int, float]]:
+    """Site number to {water year: mean discharge} from one statistics page.
+
+    Only complete water years count: the legacy service published no other,
+    and an open year would pull a mean toward one season.
+    """
     means: dict[str, dict[int, float]] = {}
-    header: list[str] | None = None
-    for line in rdb.splitlines():
-        if not line or line.startswith("#"):
-            continue
-        cells = line.split("\t")
-        if header is None:
-            header = cells
-            continue
-        if cells[0].endswith("s") and cells[0][:-1].isdigit():
-            continue
-        row = dict(zip(header, cells))
-        try:
-            means.setdefault(row["site_no"], {})[int(row["year_nu"])] = float(row["mean_va"])
-        except (KeyError, ValueError):
-            continue
+    for feature in payload.get("features") or []:
+        properties = feature.get("properties") or {}
+        site = str(properties.get("monitoring_location_id") or "").removeprefix("USGS-")
+        for series in properties.get("data") or []:
+            if series.get("parameter_code") != DISCHARGE_PARAMETER \
+                    or series.get("parent_statistic_id") != DAILY_MEAN_STATISTIC:
+                continue
+            for value in series.get("values") or []:
+                year = _complete_water_year(value)
+                if year is None or value.get("computation") != "arithmetic_mean" \
+                        or value.get("interval_type") != "water_year":
+                    continue
+                try:
+                    means.setdefault(site, {})[year] = float(value["value"])
+                except (KeyError, TypeError, ValueError):
+                    continue
     return means
 
 
@@ -546,16 +565,31 @@ def mean_flow(years: dict[int, float]) -> tuple[float | None, int]:
 
 
 def fetch_annual_means(sites: list[str]) -> dict[str, dict[int, float]]:
+    key = os.environ.get("USGS_API_KEY", "").strip()
+    headers = {"X-Api-Key": key} if key else None
     means: dict[str, dict[int, float]] = {}
     for start in range(0, len(sites), STATS_BATCH):
-        query = urllib.parse.urlencode({
-            "format": "rdb", "sites": ",".join(sites[start:start + STATS_BATCH]),
-            "statReportType": "annual", "statYearType": "water",
-            "statTypeCd": "mean", "parameterCd": DISCHARGE_PARAMETER})
-        request = urllib.request.Request(f"{ANNUAL_STATS_URL}?{query}",
-                                         headers={"User-Agent": upstream.USER_AGENT})
-        with urllib.request.urlopen(request, timeout=USGS_TIMEOUT) as response:
-            means.update(parse_annual_means(response.read().decode("utf-8")))
+        params: list[tuple[str, str]] = [
+            ("monitoring_location_id", f"USGS-{site}")
+            for site in sites[start:start + STATS_BATCH]]
+        params += [("parameter_code", DISCHARGE_PARAMETER),
+                   ("computation_type", "arithmetic_mean"),
+                   ("interval_type", "WY"), ("page_size", str(STATS_PAGE_SIZE))]
+        pages = 0
+        while True:
+            pages += 1
+            if pages > 50:
+                raise RuntimeError("USGS statistics pagination exceeded 50 pages")
+            payload = upstream.get_json(
+                f"{ANNUAL_STATS_URL}?{urllib.parse.urlencode(params)}",
+                timeout=USGS_TIMEOUT, headers=headers)
+            for site, years in parse_annual_means(payload).items():
+                means.setdefault(site, {}).update(years)
+            token = payload.get("next")
+            if not token:
+                break
+            params = [(name, value) for name, value in params if name != "next_token"]
+            params.append(("next_token", token))
     return means
 
 
