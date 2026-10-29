@@ -62,16 +62,16 @@ def test_the_four_rivers_are_admitted_with_display_and_survey_names():
         assert row["series"]["parameter_code"] == "00060"
 
 
-def test_every_gauge_named_by_the_published_reservoir_rule_has_one():
-    """ADR-137's rule is a published reservoir inside the basin. A basis that
-    cites it must have the reservoir in its evidence; one that does not have
-    any must say what its tier rests on instead."""
+def test_every_shaped_gauge_meets_an_adr_137_rule():
+    """ADR-137 makes a gauge shaped when a published reservoir sits inside
+    its basin, or when inventoried dams hold at least 10% of a year's flow.
+    Every basis cites the ruling, and the evidence must meet one of them."""
     for row in roster.admitted_river_gauges().values():
-        upstream = row["tier"]["evidence"]["published_reservoirs_upstream"]
-        if upstream:
-            assert "ADR-137" in row["tier"]["basis"]
-        else:
-            assert "suggestion" in row["tier"]["basis"]
+        evidence = row["tier"]["evidence"]
+        assert "ADR-137" in row["tier"]["basis"]
+        if not evidence["published_reservoirs_upstream"]:
+            assert evidence["storage_share_pct"] >= 10.0
+            assert "10%" in row["tier"]["basis"]
 
 
 def write_roster(tmp_path, row) -> Path:

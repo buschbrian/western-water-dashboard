@@ -40,11 +40,10 @@ published drainage area, and one primary daily mean discharge series
 ## Decision
 
 **Publish daily mean flow at these four gauges, each as `shaped`, with no
-comparison with normal and no rank.** Three are `shaped` under ADR-137's rule.
-The Dirty Devil has no published reservoir in its basin, so that rule does
-not reach it, and its 58% storage is outside the `natural` rule too. It is
-`shaped` on the worksheet's own suggestion (inventoried dams holding 2% or
-more of a year's flow), which Brian directed into this set. Every tier is
+comparison with normal and no rank.** Three are `shaped` because a
+published reservoir sits inside their basins (ADR-137). The Dirty Devil has no
+published reservoir in its basin, but its inventoried dams hold 58% of a
+year's flow, at or above ADR-137's 10% line, so it is `shaped` too. Every tier is
 recorded as directed on 2026-10-27 from the worksheet's suggestion and
 pending his formal ruling in the review page; nothing here writes
 `reviewer_ruling`.

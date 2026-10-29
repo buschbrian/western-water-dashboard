@@ -3,7 +3,7 @@
   "source": "U.S. Geological Survey",
   "source_url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/daily/items",
   "reviewed": "2026-10-27",
-  "selection": "The first published river gauges (ADR-136): the four rivers that flow toward Lake Powell named in the recent-conditions plan, directed by Brian Busch on 2026-10-27 as the first set to publish. Each is a Utah gauge from gauge-review.csv with a 1991-2020 record, a traced basin within 25% of its published drainage area, and published reservoirs inside that basin. Under the tier ruling recorded as ADR-137 (a gauge with a published reservoir inside its basin is shaped), each is shaped: its daily mean flow is published without a comparison with normal and without a rank. The tier was taken from the worksheet's suggestion at Brian's direction and is pending his formal ruling in the review page; reviewer_ruling in gauge-review.csv is still blank for all four. No gauge here is a reservoir's inflow, and no two are ever added together.",
+  "selection": "The first published river gauges (ADR-136): the four rivers that flow toward Lake Powell named in the recent-conditions plan, directed by Brian Busch on 2026-10-27 as the first set to publish. Each is a Utah gauge from gauge-review.csv with a 1991-2020 record and a traced basin within 25% of its published drainage area. Under the tier ruling recorded as ADR-137, each is shaped: three have a published reservoir inside the basin, and the Dirty Devil's inventoried dams hold at least 10% of a year's flow. Each gauge's daily mean flow is published without a comparison with normal and without a rank. The tier was taken from the worksheet's suggestion at Brian's direction and is pending his formal ruling in the review page; reviewer_ruling in gauge-review.csv is still blank for all four. No gauge here is a reservoir's inflow, and no two are ever added together.",
   "keyed_by": "usgs_site_no",
   "gauges": {
     "09379500": {
@@ -160,7 +160,7 @@
       },
       "tier": {
         "tier": "shaped",
-        "basis": "ADR-137 needs a published reservoir inside the traced basin, and the worksheet lists none for this gauge. Its shaped tier is the worksheet's suggestion: 26 inventoried dams in the basin hold 58% of a year's flow (Johnson, Mill Meadow and Forsyth are the largest). Brian directed it into the first set on 2026-10-27 with that tier.",
+        "basis": "ADR-137: no published reservoir sits inside the traced basin, but 26 inventoried dams hold 58% of a year's flow, at or above the 10% line, so the gauge is shaped. Johnson, Mill Meadow and Forsyth are the largest.",
         "directed_by": "Brian Busch",
         "directed_on": "2026-10-27",
         "status": "pending_formal_ruling",
