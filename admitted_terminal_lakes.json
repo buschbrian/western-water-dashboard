@@ -1,7 +1,7 @@
 {
   "water_type": "natural_terminal_lake",
   "storage_source": "U.S. Geological Survey",
-  "storage_source_url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/daily/items",
+  "storage_source_url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/daily/items",
   "reviewed": "2026-09-06",
   "selection": "Natural terminal lakes that ADR-112 permits as a separate water type: a closed basin with no dam and no engineered full pool, an owner-operated daily series of both surface elevation and volume, a published elevation-volume relation, and a reviewed waterbody point that resolves to exactly one NHDPlus HR waterbody at the project's 100-metre tolerance. No capacity, percent full, dam point or reservoir-rollup membership is recorded for any lake here, and a restoration or regulatory level is only ever a named target with its authority and date. Walker Lake is the first admission; the candidates ADR-112 named and kept out are in the withheld block with their findings.",
   "keyed_by": "usgs_site_no",
