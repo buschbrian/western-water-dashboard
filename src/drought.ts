@@ -469,7 +469,6 @@ function renderDrought(
         aria-label="A map of drought classes over the drainage areas. The bars and table on this page carry the same shares as text."></div>
       <p class="card-note" id="drought-map-edge-note">Drought does not stop at the edges of the drainage areas, so the map draws the wider pattern too.</p>
       <p class="card-note">The monitor's map is a weekly expert judgement rather than a single instrument reading. Its authors weigh many kinds of evidence together, including water-supply records.</p>
-      <p class="card-source">ArcGIS map</p>
     </section>
     <section class="overview-card" id="drought-severity-card" aria-labelledby="drought-severity-heading">
       <div class="card-heading">
@@ -759,7 +758,7 @@ function renderDrought(
       mapLink.textContent = "Open on the storage map";
       const snowLink = document.createElement("a");
       snowLink.href = `./snow.html?area=${unit.huc6}`;
-      snowLink.textContent = "Open the precipitation and snow view";
+      snowLink.textContent = "Open the snowpack view";
       links.append(mapLink, snowLink);
 
       row.append(head, bar, reading, links);

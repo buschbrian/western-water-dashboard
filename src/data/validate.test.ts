@@ -239,6 +239,37 @@ describe("reservoir payload validation", () => {
     expect(validateReservoirPayload(payload).reservoir_count).toBe(1);
   });
 
+  /* ADR-134: optional, so a payload written before them still loads, and
+   * null, because a monthly or late record publishes no low. */
+  it("accepts the gain since the low, null, or absent", () => {
+    const withGain = validPayload();
+    Object.assign((withGain.reservoirs as Record<string, unknown>[])[0]!, {
+      low_120d_af: 1200, low_120d_date: "2026-09-14", change_since_low_af: 300
+    });
+    expect(validateReservoirPayload(withGain).reservoirs[0]?.change_since_low_af).toBe(300);
+
+    const withNull = validPayload();
+    Object.assign((withNull.reservoirs as Record<string, unknown>[])[0]!, {
+      low_120d_af: null, low_120d_date: null, change_since_low_af: null
+    });
+    expect(validateReservoirPayload(withNull).reservoir_count).toBe(1);
+
+    const older = validPayload();
+    const record = (older.reservoirs as Record<string, unknown>[])[0]!;
+    expect(record).not.toHaveProperty("change_since_low_af");
+    expect(validateReservoirPayload(older).reservoir_count).toBe(1);
+  });
+
+  it("rejects a gain since the low of the wrong type", () => {
+    for (const [field, value] of [["low_120d_af", "1200"], ["low_120d_date", 20_260_914],
+      ["change_since_low_af", "300"]] as const) {
+      const payload = validPayload();
+      (payload.reservoirs as Record<string, unknown>[])[0]![field] = value;
+      expect(() => validateReservoirPayload(payload), field)
+        .toThrow("Invalid reservoir record at index 0 (Testwater)");
+    }
+  });
+
   it("rejects a non-integer structure version", () => {
     const payload = validPayload();
     payload.schema_version = 1.5;

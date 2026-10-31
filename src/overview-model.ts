@@ -10,7 +10,8 @@ import {
   type ScopedReservoirs,
   sizeBasis,
   type LakePowellChoice,
-  type ReservoirInclusion
+  type ReservoirInclusion,
+  type SinceLowTotal
 } from "./data/rollup";
 import { stateName, usStatesOnly } from "./data/state-vocabulary";
 import {
@@ -1113,4 +1114,20 @@ export function watershedRecords(reservoirs: readonly Reservoir[]): OverviewChar
     };
   }).sort((a, b) => b.capacityAf - a.capacityAf)
     .map((record, index) => ({ ...record, id: index + 1 }));
+}
+
+/**
+ * The place summary's gain since the low (ADR-134): a sum over the daily
+ * reservoirs that publish one, and always how many of them that is. A
+ * reservoir with no figure is left out of the sum, never counted as zero.
+ */
+export function describeSinceLowTotal(total: SinceLowTotal): { value: string; note: string } {
+  if (total.daily === 0) return { value: "—", note: "No daily reservoirs in view" };
+  const rounded = Math.round(total.af);
+  return {
+    value: total.measured === 0
+      ? "—" : `${rounded > 0 ? "+" : ""}${formatAcreFeet(rounded)}`,
+    note: `Acre-feet since each reservoir's 4-month low, for ${total.measured} `
+      + `of ${total.daily} daily reservoirs`
+  };
 }

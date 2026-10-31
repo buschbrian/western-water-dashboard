@@ -11,6 +11,7 @@ import type {
   UpstreamTrace
 } from "../types";
 import { HUC_CODE } from "./huc";
+import { isReservoirElevation } from "./elevation-validate";
 import { capacityVersionOn } from "./capacity";
 
 function isDate(value: unknown): value is string {
@@ -236,6 +237,9 @@ function isReservoir(value: unknown): value is Reservoir {
     optionalNullableString(value.change_7d_reference_date) &&
     optionalNullableString(value.change_30d_reference_date) &&
     optionalNullableString(value.change_365d_reference_date) &&
+    optionalNullableNumber(value.low_120d_af) &&
+    optionalNullableString(value.low_120d_date) &&
+    optionalNullableNumber(value.change_since_low_af) &&
     hasNullableNumber(value.seasonal_normal_af) &&
     hasNullableNumber(value.pct_of_seasonal_normal) &&
     hasNumber(value.seasonal_sample_years) &&
@@ -267,7 +271,10 @@ function isReservoir(value: unknown): value is Reservoir {
     (value.state === undefined || hasNullableString(value.state)) &&
     (value.operator === undefined || hasNullableString(value.operator)) &&
     isOptionalStateList(value.waterbody_states) &&
-    isOptionalStateList(value.connected_states);
+    isOptionalStateList(value.connected_states) &&
+    /* A reviewed level (ADR-135), on rostered reservoirs only. A malformed
+     * one, or one carrying a percentage, refuses the record. */
+    (value.elevation === undefined || isReservoirElevation(value.elevation));
 }
 
 export function validateReservoirPayload(value: unknown): ReservoirPayload {

@@ -19,7 +19,10 @@ import {
 } from "../viz/precip-curve";
 
 export interface PrecipitationStatus {
+  /** The season figures, which need the history as well as the daily file. */
   state: "loading" | "ready" | "failed";
+  /** The recent totals, which need only the daily file and draw first. */
+  recent: "loading" | "ready" | "failed";
   /** Stations every figure is a mean over, for the place shown. */
   stations: number;
   /** Days of this year's line drawn. */
@@ -57,8 +60,13 @@ export interface PrecipitationCardOptions {
    * at once rather than when it nears the screen, and a failure does not
    * point at other figures on the page. */
   standalone?: boolean;
-  /** Called when a reader selects a station in the recent totals' list. */
-  onSelectSite?: (station: string) => void;
+  /** Where a station's name in the recent totals' list leads, or nothing
+   * for plain text. */
+  siteHref?: (station: string) => string;
+  /** Leave a place for a map of the recent totals between the figures and
+   * the station list, with the day buttons above it (ADR-131). The page
+   * fills `parts.mapSlot`. */
+  recentMap?: boolean;
 }
 
 export interface PrecipitationCard {
@@ -73,9 +81,19 @@ export interface PrecipitationCard {
   /** Redraw the chart at this height in pixels, and keep it for later
    * draws. The card's own default is the chart's full height. */
   setChartHeight(height: number): void;
+  /** The recent totals as drawn, and the window the buttons choose; null
+   * totals until the daily file is in. */
+  readonly recent: { window: StormWindow; totals: StormTotals | null };
+  /** Show or hide the day buttons and the station list of recent totals,
+   * for a map that is showing something else (ADR-142). */
+  showRecentList(shown: boolean): void;
 }
 
 export interface PrecipitationCardParts {
+  /** Where a page puts its map of the recent totals, or null. */
+  mapSlot: HTMLElement | null;
+  /** The day buttons above the map, or null without a map. */
+  recentChooser: HTMLElement | null;
   top: HTMLElement;
   kpis: HTMLElement;
   split: HTMLElement;
@@ -318,7 +336,20 @@ export function createPrecipitationCard(
   stormList.className = "precip-storm-list";
   const stormEmpty = text("p", "precip-note", "");
   const stormNote = text("p", "precip-coverage", "");
-  storm.append(stormTitle, stormKpiRow, stormEnd, stormListHead, stormList, stormEmpty, stormNote);
+  const mapSlot = withStorm && options.recentMap ? document.createElement("div") : null;
+  const chooser = mapSlot ? document.createElement("div") : null;
+  if (mapSlot && chooser) {
+    /* The buttons choose what the map and the list both show, so they sit
+     * above the map rather than beside the list's title under it. */
+    mapSlot.className = "precip-map-slot";
+    chooser.className = "precip-storm-head";
+    chooser.append(text("p", "chart-axis-title", "Map and list for the last"), stormWindows);
+    stormWindows.setAttribute("aria-label", "Days in the map and the station list");
+    stormListHead.replaceChildren(stormListTitle);
+    storm.append(stormTitle, stormKpiRow, stormEnd, chooser, mapSlot, stormListHead, stormList, stormEmpty, stormNote);
+  } else {
+    storm.append(stormTitle, stormKpiRow, stormEnd, stormListHead, stormList, stormEmpty, stormNote);
+  }
   const kpis = document.createElement("div");
   kpis.className = "overview-kpis precip-kpis";
   const legend = document.createElement("div");
@@ -399,13 +430,10 @@ export function createPrecipitationCard(
   }
   if (stripOnly) section.append(strip, host);
   else section.append(...(withStorm ? [storm] : []), top, strip, controls, axisTitle, host, historyKey, april, coverage, details, readNote);
-  /* The card's credit line stays last, under everything this card adds. */
-  const source = section.querySelector(":scope > .card-source");
-  if (source) section.append(source);
   const tbody = details.querySelector("tbody")!;
 
   const status: PrecipitationStatus = {
-    state: "loading", stations: 0, curveDays: 0, bandDays: 0, range: "season",
+    state: "loading", recent: "loading", stations: 0, curveDays: 0, bandDays: 0, range: "season",
     date: null, stripYears: 0,
     storm: { window: 3, endDate: null, available: false, stations: 0, leftOut: 0, rows: 0 }
   };
@@ -413,43 +441,51 @@ export function createPrecipitationCard(
   /* The last chart drawn, kept so a new height redraws the chart alone and
    * leaves the figures above it as they are. */
   let curve: (() => void) | null = null;
-  let data: { daily: PrecipitationPayload; history: PrecipitationHistory } | null = null;
+  /* Held apart: the daily file is 10 KB gzipped and answers the recent
+   * totals; the history is about 500 KB and answers everything else. */
+  let daily: PrecipitationPayload | null = null;
+  let history: PrecipitationHistory | null = null;
   let wanted: {
     stations: readonly string[]; snowSites: readonly SnowSite[]; finishedSeason: string | null;
   } | null = null;
 
   let stormView: StormTotals | null = null;
+  let recentListShown = true;
+  const applyRecentListShown = (): void => {
+    if (recentListShown) return;
+    if (chooser) chooser.hidden = true;
+    stormListHead.hidden = true;
+    stormList.hidden = true;
+    stormEmpty.hidden = true;
+    stormNote.hidden = true;
+  };
 
   const drawStorm = (): void => {
     const totals = stormView;
     const shown = totals?.windows.find((total) => total.days === status.storm.window);
     status.storm.endDate = totals?.endDate ?? null;
-    if (!totals || !data || totals.endDate === null || !shown) {
+    if (!totals || !daily || totals.endDate === null || !shown) {
       storm.hidden = true;
       Object.assign(status.storm, { available: false, stations: 0, leftOut: 0, rows: 0 });
       return;
     }
-    stormKpiRow.replaceChildren(...stormKpis(totals, data.daily));
+    stormKpiRow.replaceChildren(...stormKpis(totals, daily));
     stormEnd.textContent = `The totals end on ${formatDate(totals.endDate)}. ` +
       "Each value is a mean of the stations that measured both days.";
     stormListTitle.textContent = `Most precipitation, ${windowName(shown.days).toLowerCase()}`;
     const rows = shown.totals.filter((total) => total.inches > 0).slice(0, STORM_ROWS);
     const sites = new Map((wanted?.snowSites ?? []).map((site) => [site.station, site]));
-    const onSelectSite = options.onSelectSite;
+    const siteHref = options.siteHref;
     stormList.replaceChildren(...rows.map((total, index) => {
       const site = sites.get(total.station);
       const name = site?.name ?? total.station;
       const item = document.createElement("li");
       const rank = text("span", "precip-storm-rank", `${index + 1}`);
       rank.setAttribute("aria-hidden", "true");
-      const label = document.createElement(onSelectSite ? "button" : "span");
+      const label = document.createElement(siteHref ? "a" : "span");
       label.className = "precip-storm-name";
       label.textContent = name;
-      if (label instanceof HTMLButtonElement) {
-        label.type = "button";
-        label.setAttribute("aria-label", `Show the season for ${name}`);
-        label.addEventListener("click", () => onSelectSite?.(total.station));
-      }
+      if (label instanceof HTMLAnchorElement && siteHref) label.href = siteHref(total.station);
       const where = text("span", "precip-storm-area", site?.huc6_name ?? "");
       item.append(rank, label, where, text("strong", "precip-storm-value", inches(total.inches)));
       return item;
@@ -464,12 +500,21 @@ export function createPrecipitationCard(
     stormNote.textContent = [stormLeftOut(shown),
       "0.1 in is the smallest step a gauge measures."].filter(Boolean).join(" ");
     storm.hidden = false;
+    if (chooser) chooser.hidden = false;
+    stormListHead.hidden = false;
+    stormNote.hidden = false;
+    applyRecentListShown();
     Object.assign(status.storm, {
       available: shown.available,
       stations: shown.totals.length,
       leftOut: shown.withoutValue + shown.falling,
       rows: rows.length
     });
+  };
+
+  const drawRecent = (): void => {
+    stormView = withStorm && daily && wanted ? stormTotals(wanted.stations, daily) : null;
+    drawStorm();
   };
 
   const draw = (): void => {
@@ -503,10 +548,9 @@ export function createPrecipitationCard(
       onChange();
       return;
     }
-    if (!data || !wanted) return;
-    const view = precipitationView(wanted.stations, data.daily, data.history, wanted.snowSites);
-    stormView = withStorm ? stormTotals(wanted.stations, data.daily) : null;
-    drawStorm();
+    drawRecent();
+    if (!daily || !history || !wanted) return;
+    const view = precipitationView(wanted.stations, daily, history, wanted.snowSites);
     status.stations = view.stations.length;
     status.bandDays = view.bands.length;
     if (!view.headline) {
@@ -595,9 +639,23 @@ export function createPrecipitationCard(
   };
 
   const load = (): void => {
-    Promise.all([loadPrecipitation(), loadPrecipitationHistory()])
-      .then(([daily, history]) => {
-        data = { daily, history };
+    const dailyLoad = loadPrecipitation();
+    /* The recent totals draw as soon as the small file arrives, before the
+     * history. A slow history no longer holds back the answer to "how much
+     * fell this week". */
+    dailyLoad.then((loaded) => {
+      daily = loaded;
+      status.recent = "ready";
+      drawRecent();
+      onChange();
+    }, () => {
+      status.recent = "failed";
+      onChange();
+    });
+    Promise.all([dailyLoad, loadPrecipitationHistory()])
+      .then(([loadedDaily, loadedHistory]) => {
+        daily = loadedDaily;
+        history = loadedHistory;
         draw();
       })
       .catch((error: unknown) => {
@@ -605,9 +663,9 @@ export function createPrecipitationCard(
         status.state = "failed";
         legend.hidden = true;
         ranges.hidden = true;
-        host.replaceChildren(text("p", "chart-empty", options.standalone
-          ? "The precipitation values could not load."
-          : "The precipitation values could not load. The snow figures on this page are not affected."));
+        host.replaceChildren(text("p", "chart-empty", status.recent === "failed" || !daily
+          ? "The precipitation values could not load. Try again later."
+          : "The history could not load, so this year cannot be compared with earlier years. Try again later."));
         host.hidden = false;
         host.setAttribute("aria-busy", "false");
         onChange();
@@ -633,8 +691,13 @@ export function createPrecipitationCard(
       draw();
     },
     get status() { return { ...status, storm: { ...status.storm } }; },
+    get recent() { return { window: status.storm.window, totals: stormView }; },
+    showRecentList(shown) {
+      recentListShown = shown;
+      drawStorm();
+    },
     parts: {
-      top, kpis, split, strip, stripNote, stripKey, controls, axisTitle, chart: host,
+      mapSlot, recentChooser: chooser, top, kpis, split, strip, stripNote, stripKey, controls, axisTitle, chart: host,
       historyKey, april, coverage, table: details, readNote
     },
     setChartHeight(height) {

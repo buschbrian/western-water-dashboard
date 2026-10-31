@@ -13,6 +13,49 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
+- **Three natural river gauges compared with normal** (ADR-144) on the river
+  flow page: Mill Creek near Moab, Blacks Fork near Robertson and South Creek
+  near Monticello. Each gauge's newest daily flow is placed in one of five
+  classes, from much below normal to much above normal, against the U.S.
+  Geological Survey's percentiles of approved daily values for the same date.
+  The page shows the normal range, the median and how many years they rest
+  on. A date with fewer than 30 years gets no comparison, and the page says
+  why. Middle Fork Beaver Creek is held out at 22 years. The four rivers
+  toward Lake Powell are unchanged and are still not compared with normal.
+  `rivers.json` moves to structure version 2 with `normal_band`, `flow_class`
+  and `normal_withheld` on natural gauges; the percentiles are a committed
+  reference file, `river_normals.json`, rebuilt by
+  `tools/build_river_normals.py`.
+- **A picture for a shared Lake Powell or Lake Mead link** (ADR-141). Two
+  share pages, `share/lake-powell.html` and `share/lake-mead.html`, carry the
+  card tags and send a person on to the reservoir page. The picture on the
+  card is the reservoir's name, surface level with its datum, reading date and
+  water-year chart, captured from the site in each morning's deploy; a
+  committed picture is published if the capture fails. The same frame opens
+  at `reservoir.html?name=...&view=share`.
+- **Surface level for Lake Powell and Lake Mead** (ADR-135) on their
+  reservoir pages: a "Surface level" card with dated changes and record
+  readings, a chart of the current water year against five earlier ones
+  with Reclamation's reference levels, and a note on why another source can
+  show a different number. Powell is above the National Geodetic Vertical
+  Datum of 1929; Mead is above Reclamation's own Hoover Dam powerhouse
+  datum, named as such. Published from a reviewed roster that must name each
+  datum with evidence; the daily record is `elevation_history.json`, also at
+  `/api/elevation_history.json`, and the reservoir's CSV file gains the
+  level's columns.
+- **River flow** (ADR-136): `rivers.html` shows the daily mean flow of four
+  rivers that flow toward Lake Powell -- the San Juan near Bluff, the
+  Colorado near Cisco, the Green at Green River and the Dirty Devil near
+  Hanksville -- for the last 30 days, with the review status of each value
+  and a link to each gauge's U.S. Geological Survey page. Dams upstream
+  store and release water, so no flow is compared with normal, and the
+  gauges are never added together. Published as `/api/rivers.json` and as
+  a CSV download. Reached from the methods and data pages.
+- **Storage gained since the low** (ADR-134): each daily reservoir's gain
+  since its own lowest reading in the last 120 days, with the date of that
+  low, in the reservoir details and on the storage map hover. The storage
+  charts page totals it for the place and says how many of its daily
+  reservoirs the total holds. Monthly reservoirs show none.
 - **Story views** (ADR-128): `story.html` shows one figure alone, for a
   story to embed: the precipitation card or its "Where this year stands"
   strip for a state or drainage area, or the water stored above a
@@ -24,17 +67,73 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   3 and 7 days for the place shown, each the mean of the stations that
   measured both days, and the eight stations with the most. A gauge total
   that falls is left out and counted, never shown as zero (ADR-129).
+- **Soil moisture this week** (ADR-142): a "Rain | Soil moisture" switch on
+  the precipitation map turns the same map to the change in soil moisture
+  over 7 days at the snow stations, in percentage points, brown drier and
+  blue wetter. A station's value is the mean of its 2 in (or 4 in), 8 in and
+  20 in sensors; a reading is not used on a day the soil there is frozen.
+  Its own key, a list of the stations that changed most, and a table of
+  every station. A new daily file, `soil_moisture.json` (27 KB gzipped),
+  fetched only when a reader turns the switch.
 
 ### Changed
 
-- **The snow page is now "Precipitation and snow"**, with the precipitation
-  card directly under the map. The bar says "Precipitation" where width is
-  short. The `snow.html` address and its links are unchanged.
+- **Precipitation has its own page**, `precipitation.html` (ADR-130): the
+  recent totals, the season since 1 October and the history chart, for the
+  place in the link, with a link to the snowpack view for the same place.
+  `snow.html` is the snowpack page again, at the same address, and its map
+  notes fold on a phone so the season chart follows the map.
+- **A map of recent precipitation** on the precipitation page (ADR-131):
+  each drainage area filled by the mean of its stations for the last 1, 3
+  or 7 days, every station on the same scale, in the snow map's colours so
+  blue is wet on every map. A table under it lists every station's value.
+  The map and its SDK load only after the totals are drawn and only when a
+  reader scrolls near it.
+- The recent totals draw from the 10 KB daily file before the 500 KB
+  history arrives.
+- Station names in the precipitation list open that site on the snowpack
+  page.
+- **The storage charts draw when they near the screen** (ADR-132). On a
+  390 px screen the page was busy for about 13 seconds after load; it is
+  now busy for about 3.
+- The page name in the bar is short on a phone ("Storage map"), so it is
+  never cut to an ellipsis. Screen readers still hear the full name.
+- **Atkinson Hyperlegible Next** is the site's typeface (ADR-133), served
+  from this site in one 34 KB file. Before, each device drew its own system
+  font. Text shows at once and changes face when the file arrives.
+- The chart-type labels at the foot of each card ("Bar chart", "ArcGIS
+  map" and the rest) are gone.
+- On a phone, the storage charts' opened sections have room: the Lake
+  Powell and Lake Mead switches and Reset view no longer touch, and an
+  opened section's button no longer sits on its content.
+- A snow site's card, and a drainage area's, lead with the newest value and
+  the chart; where the site is follows them.
 - **The U.S. Geological Survey provider reads `v1` of the agency's modern
   service**, which the agency now names its current version. Every series
   the site publishes from it was read from both versions first, day by day
   since 2015, and no reading changed. A terminal lake's `source_url` in
   `lakes.json` names the new address from the next morning's refresh.
+
+### Fixed
+
+- On the storage charts page, the scatter plot no longer prints "Usual level"
+  over the biggest reservoirs' dots, and the combined-storage and change
+  figures say "acre-feet".
+- A long reservoir name in the storage map's list wraps to a second line
+  on a phone instead of ending in an ellipsis. The browser suite now fails
+  when any box cuts its text short.
+- On the drought page, each area's reading no longer covers its links on a
+  phone. A summary-card rule from 1.2.0 gave every area row three grid rows
+  for four blocks.
+- On the storage charts page, the notes, key and chart credit under each
+  chart no longer draw over one another. Each card had four shared grid
+  rows and up to seven blocks.
+- The precipitation chart's first date no longer runs into its inch labels,
+  and the "Where this year stands" year names sit clear of the axis.
+- Cards on the snow page no longer sit border to border, and a card's
+  download button no longer touches the block under it on a phone.
+- The browser suite now fails when text is drawn over other text, at every
+  tested width.
 
 ## [1.2.0] - 2026-10-24
 

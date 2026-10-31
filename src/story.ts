@@ -22,7 +22,7 @@ import { openingAreaName, snowPlace } from "./snow-place";
 import { baselineChoices } from "./state/baseline";
 import { describeReservoir } from "./state/detail";
 import {
-  invalidSentence, reservoirPageHref, snowPageHref, storyRequestFromSearch,
+  invalidSentence, reservoirPageHref, precipitationPageHref, storyRequestFromSearch,
   type StoryInvalid, type StoryPlace, type StoryRequest
 } from "./state/story-url";
 import type { EffectiveTheme } from "./state/theme";
@@ -132,6 +132,9 @@ const observer = new ResizeObserver(scheduleFit);
 observer.observe(main);
 observer.observe(content);
 void document.fonts?.ready.then(scheduleFit);
+/* `ready` can resolve before a swapped web font has even started to load
+ * (ADR-133); the font's own arrival is the change that matters. */
+document.fonts?.addEventListener("loadingdone", scheduleFit);
 window.addEventListener("resize", scheduleFit);
 
 function finish(state: "ready" | "failed" | "invalid", fields: Partial<Ready> = {}): void {
@@ -194,7 +197,7 @@ function precipitationPlan(card: PrecipitationCard, lead: HTMLElement, stripOnly
 }
 
 async function showPrecipitation(view: "precip" | "strip", place: StoryPlace): Promise<void> {
-  const href = snowPageHref(place);
+  const href = precipitationPageHref(place);
   setFooter(null, href);
   const [raw, rosters] = await Promise.all([
     loadSnowpack(),
@@ -374,7 +377,7 @@ async function run(current: StoryRequest): Promise<void> {
   } catch (error) {
     console.error("The story view could not load:", error);
     showFailure("The published data could not be read just now. Try again later.",
-      current.view === "upstream" ? null : snowPageHref(current.place));
+      current.view === "upstream" ? null : precipitationPageHref(current.place));
   }
 }
 

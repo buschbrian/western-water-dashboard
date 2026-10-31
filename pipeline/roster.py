@@ -20,6 +20,8 @@ from .constants import (
     ADMITTED_DNRC_RESERVOIRS_PATH,
     ADMITTED_RESERVOIRS_PATH, ADMITTED_RISE_RESERVOIRS_PATH,
     ADMITTED_SRP_RESERVOIRS_PATH, ADMITTED_USGS_RESERVOIRS_PATH, ADMITTED_TERMINAL_LAKES_PATH,
+    ADMITTED_RESERVOIR_ELEVATIONS_PATH,
+    ADMITTED_RIVER_GAUGES_PATH,
     BASE_AWDB_RESERVOIRS,
     BASE_RISE_RESERVOIRS, CAPACITY_PATH,
 )
@@ -629,6 +631,286 @@ def admitted_terminal_lakes() -> dict[str, dict]:
     return load_admitted_terminal_lakes()
 
 
+#: The national datums an elevation entry may name. A level is meaningless
+#: without its datum, and an unknown code is a review that has not happened yet.
+ELEVATION_DATUMS = frozenset({"NGVD29", "NAVD88"})
+#: An operator's own project datum (Hoover Dam's powerhouse datum, the
+#: Reclamation project datums at Davis and Parker). Admitted only with its name
+#: and a stated, sourced relation to a national datum.
+PROJECT_DATUM = "project"
+
+
+def _https(value: object) -> bool:
+    return isinstance(value, str) and value.startswith("https://")
+
+
+def load_admitted_reservoir_elevations(
+    path: Path = ADMITTED_RESERVOIR_ELEVATIONS_PATH,
+    rise_stations: set[str] | None = None,
+) -> dict[str, dict]:
+    """Load the reviewed reservoir surface elevations (ADR-135).
+
+    Keyed by the published reservoir's `source_station_id`, which must be a
+    Reclamation reservoir on the roster: the elevation is a second measurement
+    of a reservoir already published, never a way in. The loader refuses an
+    entry with no datum or one it does not know, datum evidence with no
+    checked date or no HTTPS source, a measured offset to the other datum with
+    no measurement date, and a reference level with no authority or no HTTPS
+    source. A reference level is a named elevation and nothing else: no share
+    of it is published, and one spelled with a percentage or a volume is
+    refused.
+    """
+    document = json.loads(path.read_text(encoding="utf-8"))
+    rows = document.get("reservoirs")
+    if not isinstance(rows, dict):
+        raise ValueError(f"{path.name} must contain a reservoirs object")
+    stations = set(RESERVOIRS) if rise_stations is None else rise_stations
+    for station, row in rows.items():
+        if not isinstance(row, dict):
+            raise ValueError(f"invalid elevation entry in {path.name}")
+        name = row.get("name")
+        if not isinstance(name, str) or not name:
+            raise ValueError(f"{station}: an elevation entry needs the reservoir's name")
+        if row.get("source_station_id") != station:
+            raise ValueError(
+                f"{name}: keyed by {station} and configured for "
+                f"{row.get('source_station_id')!r}")
+        if row.get("source_key") != "rise" or station not in stations:
+            raise ValueError(
+                f"{name}: an elevation is published only beside a Reclamation "
+                "reservoir already on the roster")
+        if not isinstance(row.get("elevation_item_id"), int) or isinstance(
+                row.get("elevation_item_id"), bool):
+            raise ValueError(f"{name}: elevation_item_id must be the provider's item number")
+        if row.get("unit") != "ft":
+            raise ValueError(f"{name}: an elevation is published in feet")
+        datum = row.get("vertical_datum")
+        if not isinstance(datum, str) or not datum:
+            raise ValueError(f"{name}: an elevation is meaningless without its datum")
+        if datum == PROJECT_DATUM:
+            if not isinstance(row.get("datum_name"), str) or not row["datum_name"]:
+                raise ValueError(f"{name}: a project datum needs its name")
+            relation = row.get("datum_relation")
+            if not isinstance(relation, dict) or relation.get("datum") not in ELEVATION_DATUMS \
+                    or not isinstance(relation.get("add_ft"), (int, float)) \
+                    or isinstance(relation.get("add_ft"), bool) \
+                    or not isinstance(relation.get("quote"), str) or not relation["quote"] \
+                    or not _https(relation.get("source_url")):
+                raise ValueError(
+                    f"{name}: a project datum needs its stated relation to a national "
+                    "datum, with the feet to add, the words that state it and an HTTPS source")
+        elif datum not in ELEVATION_DATUMS:
+            raise ValueError(f"{name}: unknown vertical datum {datum!r}")
+        elif "datum_relation" in row or "datum_name" in row:
+            raise ValueError(f"{name}: only a project datum carries a name and a relation")
+        if not _https(row.get("source_url")):
+            raise ValueError(f"{name}: the elevation item needs an HTTPS source")
+        evidence = row.get("datum_evidence")
+        if not isinstance(evidence, dict) or not isinstance(evidence.get("summary"), str) \
+                or not evidence["summary"]:
+            raise ValueError(f"{name}: the datum needs its evidence")
+        _reviewed_date(name, "datum_evidence.checked", evidence.get("checked"))
+        sources = evidence.get("sources")
+        if not isinstance(sources, list) or not sources or not all(
+                isinstance(item, dict) and isinstance(item.get("citation"), str)
+                and item["citation"] and _https(item.get("url")) for item in sources):
+            raise ValueError(f"{name}: datum evidence cites each source with an HTTPS link")
+        offset = row.get("datum_offset")
+        if offset is not None:
+            if not isinstance(offset, dict):
+                raise ValueError(f"{name}: datum_offset must be an object or null")
+            if offset.get("to_datum") not in ELEVATION_DATUMS - {datum}:
+                raise ValueError(f"{name}: an offset is measured to the other datum")
+            if not isinstance(offset.get("offset_ft"), (int, float)) or isinstance(
+                    offset.get("offset_ft"), bool):
+                raise ValueError(f"{name}: an offset is a number of feet")
+            if "measured" not in offset:
+                raise ValueError(f"{name}: an offset without its measurement date is a guess")
+            _reviewed_date(name, "datum_offset.measured", offset.get("measured"))
+            for field in ("usgs_site", "method"):
+                if not isinstance(offset.get(field), str) or not offset[field]:
+                    raise ValueError(f"{name}: datum_offset needs {field}")
+            if not isinstance(offset.get("parameters"), dict) or not offset["parameters"]:
+                raise ValueError(f"{name}: datum_offset names the parameters it compared")
+            if not _https(offset.get("source_url")):
+                raise ValueError(f"{name}: datum_offset needs an HTTPS source")
+        derived = row.get("derived_offset")
+        if derived is not None:
+            # A difference calculated from published figures rather than
+            # measured at the reservoir: kept apart from `datum_offset` so it
+            # is never presented as a measurement.
+            if not isinstance(derived, dict) or derived.get("to_datum") not in ELEVATION_DATUMS \
+                    or not isinstance(derived.get("offset_ft"), (int, float)) \
+                    or isinstance(derived.get("offset_ft"), bool) \
+                    or not isinstance(derived.get("basis"), str) or not derived["basis"]:
+                raise ValueError(
+                    f"{name}: a derived offset names its datum, its feet and how it was derived")
+            _reviewed_date(name, "derived_offset.checked", derived.get("checked"))
+            sources = derived.get("sources")
+            if not isinstance(sources, list) or not sources or not all(
+                    isinstance(item, dict) and isinstance(item.get("citation"), str)
+                    and item["citation"] and _https(item.get("url")) for item in sources):
+                raise ValueError(f"{name}: a derived offset cites each source with an HTTPS link")
+        starts = row.get("record_starts")
+        if starts is not None:
+            # Where the summary's record begins: after first filling, never a
+            # date nobody published.
+            if not isinstance(starts, dict):
+                raise ValueError(f"{name}: record_starts must be an object")
+            _reviewed_date(name, "record_starts.date", starts.get("date"))
+            for field in ("reason", "basis", "quote"):
+                if not isinstance(starts.get(field), str) or not starts[field]:
+                    raise ValueError(f"{name}: record_starts needs its {field}")
+            if not _https(starts.get("source_url")):
+                raise ValueError(f"{name}: record_starts needs an HTTPS source")
+        stated = row.get("reference_levels_datum_stated")
+        if stated is not None and not isinstance(stated, bool):
+            raise ValueError(f"{name}: reference_levels_datum_stated is true or false")
+        levels = row.get("reference_levels")
+        if not isinstance(levels, list):
+            raise ValueError(f"{name}: reference_levels must be a list, empty when there are none")
+        for level in levels:
+            if not isinstance(level, dict):
+                raise ValueError(f"{name}: a reference level is an object")
+            if not isinstance(level.get("elevation_ft"), (int, float)) or isinstance(
+                    level.get("elevation_ft"), bool):
+                raise ValueError(f"{name}: a reference level is an elevation in feet")
+            for field in ("label", "authority"):
+                if not isinstance(level.get(field), str) or not level[field]:
+                    raise ValueError(
+                        f"{name}: a reference level names its {field}; missing {field}")
+            if not _https(level.get("url")):
+                raise ValueError(f"{name}: a reference level needs an HTTPS source")
+            if any(key in level for key in ("pct", "capacity_af", "volume_af")):
+                raise ValueError(f"{name}: a reference level is a level, never a share")
+    return rows
+
+
+#: The tiers the river payload publishes: `shaped` as flow alone (ADR-136),
+#: `natural` against the survey's day-of-year percentiles (ADR-144). How a
+#: `short` gauge is published is its own method decision.
+PUBLISHED_RIVER_TIERS = frozenset({"shaped", "natural"})
+#: ADR-137's storage line: at or above it a gauge is shaped.
+RIVER_NATURAL_STORAGE_SHARE_PCT = 10.0
+#: A gauge's display name is the reader's; a survey abbreviation or an
+#: all-capitals station name is refused as one.
+_SURVEY_ABBREVIATIONS = (" NR ", " AB ", " BL ", " R ", " WSH ", " SP ", " CR ")
+
+
+def load_admitted_river_gauges(
+    path: Path = ADMITTED_RIVER_GAUGES_PATH,
+) -> dict[str, dict]:
+    """Load the reviewed river gauges (ADR-136, ADR-144).
+
+    A gauge measures a rate of flow, not storage, so nothing here is a
+    reservoir field and the loader refuses one. Each entry must carry a
+    display name a reader can read, the survey's own station name beside it,
+    the reviewed primary series, a tier with its basis, who directed it and
+    when, and -- when it names water downstream -- the evidence for that.
+    """
+    document = json.loads(path.read_text(encoding="utf-8"))
+    if document.get("measurement") != "daily_mean_flow":
+        raise ValueError(f"{path.name} must declare measurement daily_mean_flow")
+    _reviewed_date(path.name, "reviewed", document.get("reviewed"))
+    rows = document.get("gauges")
+    if not isinstance(rows, dict) or not rows:
+        raise ValueError(f"{path.name} must contain a non-empty gauges object")
+    forbidden = {"capacity", "capacity_af", "pct_of_capacity", "nid_id", "dam_lat",
+                 "dam_lon", "normal_cfs", "pct_of_normal", "seasonal_rank"}
+    for station, row in rows.items():
+        if not isinstance(station, str) or not station.isdigit() or not isinstance(row, dict):
+            raise ValueError(f"invalid gauge entry in {path.name}")
+        if row.get("station") != station:
+            raise ValueError(
+                f"{station}: keyed by one station and configured for {row.get('station')!r}")
+        usgs_name = row.get("usgs_name")
+        if not isinstance(usgs_name, str) or not usgs_name.strip():
+            raise ValueError(f"{station}: the survey's station name is required")
+        name = row.get("display_name")
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError(f"{station}: a gauge needs a display name to be called by")
+        if name == name.upper() or name.strip() != name \
+                or any(a in f" {name.upper()} " for a in _SURVEY_ABBREVIATIONS):
+            raise ValueError(
+                f"{station}: {name!r} is not a display name; write it out in plain words")
+        spelled = forbidden & set(row)
+        if spelled:
+            raise ValueError(f"{name}: a river gauge has no {sorted(spelled)}")
+        if not isinstance(row.get("lat"), (int, float)) or not isinstance(
+                row.get("lon"), (int, float)):
+            raise ValueError(f"{name}: coordinates are required")
+        for field in ("state", "huc8", "huc8_name"):
+            if not isinstance(row.get(field), str) or not row[field]:
+                raise ValueError(f"{name}: {field} is required")
+        if not isinstance(row.get("usgs_page"), str) \
+                or not row["usgs_page"].startswith("https://"):
+            raise ValueError(f"{name}: the survey's page for the gauge must be HTTPS")
+        series = row.get("series")
+        if not isinstance(series, dict):
+            raise ValueError(f"{name}: the reviewed series is required")
+        if (series.get("parameter_code"), series.get("statistic_id"),
+                series.get("unit")) != ("00060", "00003", "ft^3/s"):
+            raise ValueError(f"{name}: the series must be daily mean flow in ft^3/s")
+        if not isinstance(series.get("time_series_id"), str) or not series["time_series_id"]:
+            raise ValueError(f"{name}: the reviewed time_series_id is required")
+        if not isinstance(series.get("source_url"), str) \
+                or not series["source_url"].startswith("https://"):
+            raise ValueError(f"{name}: the series must name an HTTPS source")
+        _reviewed_date(name, "series.checked", series.get("checked"))
+        tier = row.get("tier")
+        if not isinstance(tier, dict) or tier.get("tier") not in PUBLISHED_RIVER_TIERS:
+            raise ValueError(
+                f"{name}: tier must be one of {sorted(PUBLISHED_RIVER_TIERS)}; another "
+                "tier needs its own publication decision")
+        for field in ("basis", "directed_by", "status"):
+            if not isinstance(tier.get(field), str) or not tier[field]:
+                raise ValueError(f"{name}: tier.{field} is required")
+        _reviewed_date(name, "tier.directed_on", tier.get("directed_on"))
+        evidence = tier.get("evidence")
+        if not isinstance(evidence, dict) or not evidence.get("worksheet") \
+                or not isinstance(evidence.get("published_reservoirs_upstream"), list):
+            raise ValueError(f"{name}: tier.evidence must name the worksheet and its findings")
+        _reviewed_date(name, "tier.evidence.screened_on", evidence.get("screened_on"))
+        if tier["tier"] == "natural":
+            # ADR-137, checked rather than trusted: no published reservoir in
+            # the traced basin, and inventoried storage under 10% of a year's flow.
+            share = evidence.get("storage_share_pct")
+            if evidence["published_reservoirs_upstream"] or isinstance(share, bool) \
+                    or not isinstance(share, (int, float)) \
+                    or share >= RIVER_NATURAL_STORAGE_SHARE_PCT:
+                raise ValueError(
+                    f"{name}: a natural gauge has no published reservoir upstream and "
+                    "inventoried storage under 10% of a year's flow (ADR-137)")
+            _reviewed_date(name, "tier.tier_ruled_on", tier.get("tier_ruled_on"))
+        toward = row.get("flows_toward")
+        if toward is not None:
+            if not isinstance(toward, dict) or not toward.get("name") \
+                    or not toward.get("evidence"):
+                raise ValueError(f"{name}: flows_toward needs a name and its evidence")
+            _reviewed_date(name, "flows_toward.reviewed", toward.get("reviewed"))
+    names = [row["display_name"] for row in rows.values()]
+    if len(set(names)) != len(names):
+        raise ValueError(f"{path.name}: two gauges share a display name")
+    return rows
+
+
+@functools.cache
+def admitted_reservoir_elevations() -> dict[str, dict]:
+    """The elevation roster, loaded on first use rather than at import.
+
+    Tools that import this module never need it, and a refusal is raised
+    where the refresh starts, before any provider is asked for anything.
+    """
+    return load_admitted_reservoir_elevations()
+
+
+@functools.cache
+def admitted_river_gauges() -> dict[str, dict]:
+    """The river roster, loaded on first use: only `refresh_rivers.py` calls
+    this, so a roster that fails review costs the river payload alone."""
+    return load_admitted_river_gauges()
+
+
 USGS_RESERVOIRS = {
     site_no: (
         row["name"], row["lat"], row["lon"],
@@ -795,7 +1077,7 @@ EXCLUDED_READING_FIELDS = {
 }
 
 
-def load_excluded_readings(path: Path, sensor: int) -> dict[str, list[dict]]:
+def load_excluded_readings(path: Path, sensor: int | None) -> dict[str, list[dict]]:
     """Reviewed exclusions of single provider readings, by station (ADR-116).
 
     A confirmed provider anomaly is dropped from the series, named, and left
@@ -813,7 +1095,9 @@ def load_excluded_readings(path: Path, sensor: int) -> dict[str, list[dict]]:
     that is working.
 
     `sensor` is the caller's own storage sensor, so an exclusion cannot
-    silently name a different measurement of the same station.
+    silently name a different measurement of the same station. A provider
+    whose station key is itself the storage series (Reclamation's RISE item)
+    passes None, and the record's `sensor` must then equal that key.
 
     Returns `{station: [exclusion, ...]}`, empty when the file carries none.
     """
@@ -835,9 +1119,10 @@ def load_excluded_readings(path: Path, sensor: int) -> dict[str, list[dict]]:
                 raise ValueError(
                     f"{station}: an excluded reading carries the reading and "
                     f"the evidence against it, and never a replacement value")
-            if record["sensor"] != sensor:
+            expected = sensor if sensor is not None else int(station)
+            if record["sensor"] != expected:
                 raise ValueError(
-                    f"{station}: an excluded reading must name sensor {sensor}")
+                    f"{station}: an excluded reading must name sensor {expected}")
             if not isinstance(record["stamp"], str) or not record["stamp"].strip():
                 raise ValueError(
                     f"{station}: an excluded reading needs the stamp the "

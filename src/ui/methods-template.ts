@@ -156,7 +156,7 @@ export function methodsMarkup(search: string): string {
           reservoirs use a project record, where the inventory disagrees with the
           readings. Each reservoir's details name the figure used for it.</dd>
         <dt>Snow measurements</dt>
-        <dd>Daily snow water equivalent for the mountain sites on the precipitation and snow page. It
+        <dd>Daily snow water equivalent for the mountain sites on the snowpack page. It
         comes from the same Natural Resources Conservation Service water and climate
         service as the storage readings. Each reading is compared with the middle value for the
           same day in the years 1991 through 2020, the standard comparison period that
@@ -180,7 +180,7 @@ export function methodsMarkup(search: string): string {
         <dt>Precipitation</dt>
         <dd>Rain and snow caught by the gauge at the same mountain sites, added up from 1
           October. It comes from the same Natural Resources Conservation Service water and
-          climate service. The precipitation and snow page compares it with every water year from 1991 to
+          climate service. The precipitation page compares it with every water year from 1991 to
           the last one that ended.
           <br /><strong>Every year is measured at the same sites.</strong> Only sites with a
           full gauge record for every one of those years are used. So a wet or dry year in the
@@ -379,6 +379,16 @@ export function methodsMarkup(search: string): string {
           for one. A terminal lake is not counted in any reservoir total. A
           restoration or regulatory level is shown as a target, not as a full
           level.</dd>
+        <dt>River flow</dt>
+        <dd>The mean flow of a river for one day, in cubic feet per second, at a
+          U.S. Geological Survey gauge. The <a href="./rivers.html">river flow page</a>
+          shows the last 30 days at a small reviewed set of gauges. Each value has its
+          review status. Where dams upstream store and release
+          water, the flow is not compared with normal. Where little or no water is
+          stored upstream, the newest flow is compared with the normal range for the
+          same date. That range is the middle half of the daily values the U.S.
+          Geological Survey approved, from 30 years or more. This site never adds two gauges
+          together, and never calls a gauge the flow into a reservoir.</dd>
         <dt>Capacity</dt>
         <dd>The amount of water that a reservoir is designed to hold.</dd>
         <dt>Acre-foot</dt>

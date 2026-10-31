@@ -73,7 +73,7 @@ export function renderPrecipitationStrip(
     const rows = stackRows(years.map((year) => x(year.inches)), DOT * 2 + 1);
     const rowCount = Math.max(1, ...rows.map((row) => row + 1));
     const baseline = 30 + rowCount * ROW;
-    const height = baseline + 34;
+    const height = baseline + 40;
 
     const svg = element("svg", {
       class: "precip-strip", viewBox: `0 0 ${chartWidth} ${height}`, role: "img", "aria-label": ariaLabel
@@ -108,7 +108,7 @@ export function renderPrecipitationStrip(
     ];
     for (const end of ends) {
       const label = element("text", {
-        class: "precip-note-label", x: x(end.year.inches).toFixed(1), y: baseline + 30,
+        class: "precip-note-label", x: x(end.year.inches).toFixed(1), y: baseline + 34,
         "text-anchor": end.anchor
       });
       label.textContent = `${end.name}: ${end.year.waterYear}`;

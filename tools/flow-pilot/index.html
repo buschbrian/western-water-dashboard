@@ -1,0 +1,52 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self'; img-src 'self' data:; connect-src 'self'; object-src 'none'; base-uri 'none'">
+  <title>Provo River · Daily flow preview</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="styles.css">
+  <script type="module" src="view.mjs"></script>
+</head>
+<body>
+  <a class="skip" href="#detail">Skip to gauge</a>
+  <header><p class="eyebrow">Western Water Dashboard · Local preview</p><h1>Provo River</h1>
+    <p>Daily river flow across three places in the watershed.</p>
+    <p id="notice" role="status">Loading the saved readings…</p>
+  </header>
+  <main id="app" aria-busy="true">
+    <section aria-labelledby="choose-heading"><h2 id="choose-heading">Choose a gauge</h2>
+      <div id="stations" class="stations"></div>
+    </section>
+    <section id="detail" tabindex="-1" hidden aria-labelledby="gauge-name">
+      <div class="heading"><div><p id="site-number" class="eyebrow"></p><h2 id="gauge-name"></h2></div>
+        <a id="source" rel="noopener" target="_blank">Open the source gauge page</a></div>
+      <div class="facts"><div><h3>Latest value in this window</h3><p id="latest" class="reading"></p><p id="latest-date"></p></div>
+        <div><h3>Readings in the window</h3><p id="coverage" class="reading"></p><p id="window"></p></div>
+        <div><h3>Review status</h3><p>Candidate gauge</p><p>Not admitted for public use.</p></div></div>
+      <p class="note">These are daily mean values. They do not show the highest flow during a storm or the flow now. Do not add the values from these gauges.</p>
+      <section aria-labelledby="history-heading"><div class="heading"><h3 id="history-heading">Daily mean flow</h3><p>Cubic feet per second</p></div>
+        <div id="chart" class="chart"></div><p id="quality-summary"></p>
+        <p>Gaps are days without a value. Source quality flags appear in the table below.</p></section>
+      <div class="context"><section aria-labelledby="map-heading"><h3 id="map-heading">Gauge and upstream basin</h3>
+        <div id="map" class="map"></div><p>Filled outline: cached basin trace. Dot: gauge. Base map: U.S. Geological Survey National Map.</p>
+        <p id="areas"></p><p id="map-date"></p>
+        <p>This simplified outline needs review. It is the full upstream basin, including land above upstream dams. It is not a map of the land between dams.</p></section>
+        <section aria-labelledby="upstream-heading"><h3 id="upstream-heading">Published reservoirs in the traced basin</h3><ul id="reservoirs"></ul>
+          <p>Upstream storage can shape flow. This list does not show how much each reservoir changes the flow, or measure its inflow.</p>
+          <h3>Source and download</h3><p id="fetched"></p><p id="series"></p>
+          <p><a id="metadata" rel="noopener" target="_blank">Source series metadata</a></p>
+          <div class="downloads"><button id="csv" type="button">Download readings CSV</button><button id="json" type="button">Download snapshot JSON</button></div>
+        </section></div>
+      <section aria-labelledby="table-heading"><h3 id="table-heading">Exact daily readings</h3>
+        <div class="table-wrap" tabindex="0" role="region" aria-label="Daily readings table"><table><caption id="caption"></caption>
+          <thead><tr><th scope="col">Date</th><th scope="col">Cubic feet per second</th><th scope="col">Source approval</th><th scope="col">Other source flags</th></tr></thead>
+          <tbody id="readings"></tbody></table></div>
+      </section>
+    </section>
+  </main>
+  <footer><p>Local prototype. Gauge review and publication are separate steps. Source: U.S. Geological Survey.</p></footer>
+</body>
+</html>

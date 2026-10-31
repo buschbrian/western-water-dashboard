@@ -156,6 +156,14 @@ export interface Reservoir {
   change_30d_elapsed_days?: NullableNumber;
   change_365d_reference_date?: string | null;
   change_365d_elapsed_days?: NullableNumber;
+  /**
+   * The reservoir's own lowest daily reading in the last 120 days, its date,
+   * and the storage gained since (ADR-134). Null for a month-end feed, a late
+   * record, or a window with a gap; optional for payloads written before them.
+   */
+  low_120d_af?: NullableNumber;
+  low_120d_date?: string | null;
+  change_since_low_af?: NullableNumber;
   seasonal_normal_af: NullableNumber;
   pct_of_seasonal_normal: NullableNumber;
   seasonal_sample_years: number;
@@ -235,6 +243,105 @@ export interface Reservoir {
   state?: string | null;
   waterbody_states?: string[];
   connected_states?: string[];
+  /** The reviewed surface level (ADR-135); absent for every other reservoir. */
+  elevation?: ReservoirElevation;
+}
+
+/** The measured difference between two vertical datums at one site. */
+export interface DatumOffset {
+  to_datum: string;
+  /** The other datum's reading minus this one's, in feet. */
+  offset_ft: number;
+  range_ft?: [number, number];
+  readings?: number;
+  usgs_site: string;
+  parameters: Record<string, string>;
+  source_url: string;
+  measured: string;
+}
+
+/**
+ * An operator's own project datum stated against a national one: add
+ * `add_ft` to a level on the project datum to give the level above `datum`.
+ */
+export interface DatumRelation {
+  datum: string;
+  add_ft: number;
+  quote: string;
+  source_url: string;
+}
+
+/**
+ * A datum difference calculated from published figures, not measured at the
+ * reservoir: Lake Mead's NAVD 1988 difference, from survey marks on the dam
+ * and the project datum's stated relation.
+ */
+export interface DerivedOffset {
+  to_datum: string;
+  offset_ft: number;
+  basis: string;
+  sources: { citation: string; url: string }[];
+  checked: string;
+}
+
+/** The published end of a reservoir's first filling, with its source. */
+export interface RecordStart {
+  date: string;
+  /** A short clause for the card: "when Lake Powell first filled". */
+  reason: string;
+  basis: string;
+  quote: string;
+  source_url: string;
+}
+
+/** A named level with the authority that set it: a line, never a share. */
+export interface ReferenceLevel {
+  elevation_ft: number;
+  label: string;
+  source_term?: string;
+  authority: string;
+  url: string;
+}
+
+/**
+ * A reservoir's surface level, for reservoirs on the reviewed elevation
+ * roster only (ADR-135). No percentage of a level, ever (ADR-112).
+ */
+export interface ReservoirElevation extends MeasurementSummary {
+  unit: "ft";
+  /** NGVD29, NAVD88, or "project" for an operator's own datum. */
+  vertical_datum: string;
+  /** A project datum's name, and its relation to a national datum. */
+  datum_name?: string;
+  datum_relation?: DatumRelation;
+  source_item_id: number;
+  source_url: string;
+  datum_offset: DatumOffset | null;
+  derived_offset?: DerivedOffset;
+  reference_levels: ReferenceLevel[];
+  /** Where the record readings and the rank start: after first filling. */
+  record_starts?: RecordStart;
+  /** False where the operator does not say which datum its reference levels use. */
+  reference_levels_datum_stated?: boolean;
+}
+
+/** One reservoir's daily levels: `values[i]` is the level `i` days after `start`. */
+export interface ElevationHistoryEntry {
+  name: string;
+  source_station_id: string;
+  source_item_id: number;
+  vertical_datum: string;
+  start: string;
+  end: string;
+  values: NullableNumber[];
+}
+
+export interface ElevationHistoryPayload {
+  schema_version: number;
+  fetched_at: string;
+  run_date: string;
+  unit: "ft";
+  reservoirs: ElevationHistoryEntry[];
 }
 
 export interface ReservoirSource {
@@ -661,8 +768,13 @@ export interface UpstreamIndex {
  * consumers ever see one.
  */
 
-/** One measured series: its current value, extremes, dated changes and rank. */
-export interface LakeMeasurement {
+/**
+ * One measured daily series: its current value, extremes, dated changes and
+ * rank. The shape a terminal lake's level and volume publish, and the shape
+ * a reviewed reservoir level publishes (ADR-135); the pipeline builds all of
+ * them with one function.
+ */
+export interface MeasurementSummary {
   current: number;
   as_of: string;
   record_high: number;
@@ -682,6 +794,9 @@ export interface LakeMeasurement {
   change_365d_elapsed_days: NullableNumber;
   seasonal_rank: NullableNumber;
   seasonal_rank_of: NullableNumber;
+}
+
+export interface LakeMeasurement extends MeasurementSummary {
   parameter_code: string;
   statistic_id: string;
 }
@@ -791,6 +906,51 @@ export interface PrecipitationPayload {
   sites: PrecipitationSite[];
 }
 
+/** Why a soil station has no seven-day change (ADR-142). */
+export type SoilNoChangeReason = "missing_reading" | "frozen" | "no_temperature";
+
+/** One station's soil moisture over the last fifteen days (ADR-142). */
+export interface SoilMoistureSite {
+  station: string;
+  /** The shallow, middle and deep sensors, in inches below the ground. */
+  depths_inches: [number, number, number];
+  latest_date: string | null;
+  late: boolean;
+  /** Percent of the soil's volume on the end and start days; null without all three depths. */
+  end_percent: number | null;
+  start_percent: number | null;
+  /** Percentage points, end minus start; null with a reason. */
+  change_points: number | null;
+  no_change_reason: SoilNoChangeReason | null;
+}
+
+export interface SoilMoistureRollup {
+  huc6: string;
+  huc6_name: string;
+  site_count: number;
+  measured_site_count: number;
+  minimum_reporting_sites: number;
+  mean_change_points: number | null;
+}
+
+export interface SoilMoisturePayload {
+  schema_version: number;
+  generated_at: string;
+  as_of: string;
+  change_days: number;
+  /** The day the week ends and starts; null when too few stations report. */
+  end_date: string | null;
+  start_date: string | null;
+  minimum_reporting_sites: number;
+  site_count: number;
+  measured_site_count: number;
+  frozen_site_count: number;
+  late_site_count: number;
+  missing_site_count: number;
+  rollups: SoilMoistureRollup[];
+  sites: SoilMoistureSite[];
+}
+
 /**
  * Every water year in the window at each station whose record covers all of
  * them, decoded to inches: `years[y][s]` is year `first_water_year + y` at
@@ -805,4 +965,119 @@ export interface PrecipitationHistory {
   site_count: number;
   available_site_count: number;
   sites: ReadonlyMap<string, number[][]>;
+}
+
+/*
+ * Daily mean river flow at a reviewed gauge (ADR-136). A rate, not a stored
+ * volume: no full level, no normal, no rank, and never a total across gauges.
+ */
+
+/** One day in a gauge's window. `cfs` is null on a day with no value. */
+export interface RiverDay {
+  date: string;
+  cfs: number | null;
+  approval: string | null;
+  qualifiers: string[];
+}
+
+/** One calendar day's flow percentiles from the U.S. Geological Survey's
+ * statistics service, over the whole approved record (ADR-144). */
+export interface RiverNormalBand {
+  day: string;
+  p10: number;
+  p25: number;
+  p50: number;
+  p75: number;
+  p90: number;
+  years: number;
+  retrieved: string;
+  source_url: string;
+}
+
+export type RiverFlowClass =
+  | "much_below_normal" | "below_normal" | "normal" | "above_normal" | "much_above_normal";
+
+export type RiverNormalWithheld = "fewer_than_30_years" | "percentile_missing";
+
+interface RiverGaugeBase {
+  name: string;
+  usgs_name: string;
+  measurement: "daily_mean_flow";
+  source_key: "usgs";
+  source_label: string;
+  source_station_id: string;
+  source_url: string;
+  usgs_page: string;
+  time_series_id: string;
+  parameter_code: string;
+  statistic_id: string;
+  unit: "ft^3/s";
+  state: string;
+  lat: number;
+  lon: number;
+  drainage_area_sq_mi: number | null;
+  huc8: string;
+  huc8_name: string;
+  flows_toward: string | null;
+  data_frequency: "daily";
+  stale_after_days: number;
+  as_of: string;
+  days_stale: number;
+  is_stale: boolean;
+  fetch_ok: boolean;
+  fetch_error?: string;
+  current_cfs: number;
+  current_approval: string | null;
+  current_qualifiers: string[];
+  change_7d_cfs: number | null;
+  change_7d_reference_date: string | null;
+  window_start: string;
+  window_end: string;
+  window_high_cfs: number;
+  window_high_date: string;
+  window_low_cfs: number;
+  window_low_date: string;
+  reported_days: number;
+  provisional_days: number;
+  daily: RiverDay[];
+}
+
+/** Dams upstream store and release water: flow alone (ADR-136). */
+export interface ShapedRiverGauge extends RiverGaugeBase {
+  tier: "shaped";
+  compared_with_normal: false;
+}
+
+/** Little or no water stored upstream: compared with the day's percentiles
+ * when they rest on 30 years or more (ADR-144). */
+export type NaturalRiverGauge = RiverGaugeBase & { tier: "natural" } & (
+  | { compared_with_normal: true; normal_band: RiverNormalBand; flow_class: RiverFlowClass;
+      normal_withheld: null }
+  | { compared_with_normal: false; normal_band: null; flow_class: null;
+      normal_withheld: RiverNormalWithheld });
+
+export type RiverGauge = ShapedRiverGauge | NaturalRiverGauge;
+
+export interface WithdrawnGauge {
+  name: string;
+  as_of: string;
+  days_stale: number;
+  source_label: string | null;
+  reason: string;
+  source_station_id?: string;
+}
+
+export interface RiverPayload {
+  schema_version: number;
+  measurement: "daily_mean_flow";
+  fetched_at: string;
+  run_date: string;
+  window_days: number;
+  stale_after_days: number;
+  withdraw_after_days: number;
+  gauge_count: number;
+  stale_count: number;
+  withdrawn_count: number;
+  gauges: RiverGauge[];
+  withdrawn: WithdrawnGauge[];
 }

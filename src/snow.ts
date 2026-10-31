@@ -121,7 +121,6 @@ import {
 import { formatDate, formatPercent } from "./viz/format";
 import { renderSiteCurve } from "./viz/site-curve";
 import { renderSnowCurve, renderSnowSeasonCurve } from "./viz/snow-curve";
-import { createPrecipitationCard } from "./ui/precipitation-card";
 import "./styles/overview.css";
 import "./styles/snow.css";
 
@@ -182,7 +181,7 @@ root.innerHTML = `
   </calcite-navigation>
   <main class="overview-main">
     <header class="overview-intro">
-      <p>This page shows the rain and snow caught at automatic mountain sites since 1 October, and the water the snow holds now. Snow water equivalent is the depth of water the snow would make if it melted. The Natural Resources Conservation Service measures both every day.</p>
+      <p>This page shows snow water equivalent: the depth of water the snow would make if it melted. The Natural Resources Conservation Service measures it every day at automatic mountain sites.</p>
     </header>
     <section id="snow-content" aria-live="polite"><calcite-loader label="Loading snow measurements"></calcite-loader></section>
   </main>`;
@@ -243,7 +242,7 @@ function renderSnow(
     <div id="snow-upstream-summary" class="filter-status upstream-filter-status" role="status" hidden></div>
     <section class="dashboard-filterbar mobile-filterbar" aria-labelledby="snow-filter-heading">
       <div class="filterbar-head">
-        <div class="filterbar-title"><p class="eyebrow">Precipitation and snow</p><h2 id="snow-filter-heading">Choose a place</h2></div>
+        <div class="filterbar-title"><p class="eyebrow">Mountain snow</p><h2 id="snow-filter-heading">Choose a place</h2></div>
         <button id="snow-filter-toggle" class="mobile-filter-toggle" type="button"
           aria-controls="snow-filter-controls snow-site-options"
           aria-expanded="false">Show filters</button>
@@ -301,16 +300,12 @@ function renderSnow(
         <span id="snow-day-reading" class="snow-day-reading">—</span>
       </div>
       <p id="snow-season-route" class="snow-season-route" hidden></p>
-      <p class="card-note">Each drainage area takes its colour from the sites reporting inside it that day. Their snow water is added up and divided by their normal snow water added up. So a site with more normal snow counts for more. That is a figure about the measuring sites. It is not a measure of the snow lying across the whole area. The sites are placed where snow can be measured reliably. That is neither evenly across the land nor evenly up the mountainside. Each measurement site is a point on the same scale. Select an area to see how many sites its figure came from.</p>
-      <p class="card-note">The map opens on the day the season held the most snow, because the rest of the year measures against that day. A day counts only when the reporting sites have at least one inch of normal snow on average. Early in the season, the map opens on the newest day instead. Areas and sites without a fair value for that day stay grey. The key shows apart the ones with too little normal snow to compare against.</p>
-      <p class="card-note">Mountain snow is a major source of the spring and summer water that runs into western rivers and reservoirs. Not all of it gets there. Some evaporates and some soaks into the ground. What does arrive is stored, released or diverted by the people who operate the reservoirs. So read snow and storage together rather than as one measurement.</p>
-      <p class="card-source">ArcGIS map</p>
-    </section>
-    <section class="overview-card" id="precip-card" aria-labelledby="precip-heading">
-      <div class="card-heading">
-        <div><h2 id="precip-heading">Precipitation since 1 October</h2><p>Rain and snow caught by the gauges at the measurement sites, added up from 1 October. The snow water the same sites hold now is shown beside the figures.</p></div>
-      </div>
-      <p class="card-source">Line chart</p>
+      <details class="card-more">
+        <summary>How the map is coloured</summary>
+        <p class="card-note">Each drainage area takes its colour from the sites reporting inside it that day. Their snow water is added up and divided by their normal snow water added up. So a site with more normal snow counts for more. That is a figure about the measuring sites. It is not a measure of the snow lying across the whole area. The sites are placed where snow can be measured reliably. That is neither evenly across the land nor evenly up the mountainside. Each measurement site is a point on the same scale. Select an area to see how many sites its figure came from.</p>
+        <p class="card-note">The map opens on the day the season held the most snow, because the rest of the year measures against that day. A day counts only when the reporting sites have at least one inch of normal snow on average. Early in the season, the map opens on the newest day instead. Areas and sites without a fair value for that day stay grey. The key shows apart the ones with too little normal snow to compare against.</p>
+        <p class="card-note">Mountain snow is a major source of the spring and summer water that runs into western rivers and reservoirs. Not all of it gets there. Some evaporates and some soaks into the ground. What does arrive is stored, released or diverted by the people who operate the reservoirs. So read snow and storage together rather than as one measurement.</p>
+      </details>
     </section>
     <section class="overview-card" aria-labelledby="snow-curve-heading">
       <div class="card-heading">
@@ -324,7 +319,6 @@ function renderSnow(
         <div class="table-scroll" tabindex="0" role="region" aria-label="First-of-month table, scrolls sideways"><table class="overview-table"><thead><tr id="snow-month-head"><th>Month</th><th>Of normal</th><th>Reporting sites</th></tr></thead><tbody id="snow-month-rows"></tbody></table></div>
       </details>
       <p class="card-note">The line is the mean of the site values for each day. Normal is the middle value for the same day in the years ${normalPeriodLabel(payload)}. Gaps are days with too few reporting sites, or too little normal snow, to give a fair mean.${season.previous !== null ? ` A thinner grey line shows the ${seasonName(season.previous)} season on the same dates.` : ""}</p>
-      <p class="card-source">Line chart</p>
     </section>
     <section class="overview-card" aria-labelledby="snow-basin-heading">
       <div class="card-heading">
@@ -348,6 +342,11 @@ function renderSnow(
       <div class="table-scroll" tabindex="0" role="region" aria-label="Measurement site table, scrolls sideways"><table class="overview-table"><thead><tr><th>Site</th><th>Drainage area</th><th>Elevation (feet)</th><th>Snow water (inches)</th><th>Normal (inches)</th><th>Of normal</th><th>Observed</th></tr></thead><tbody id="snow-site-rows"></tbody></table></div>
       <p class="card-note">Sites are ordered by drainage area and name. A summer value near zero is normal: the snow melts each summer.</p>
     </section>`;
+
+  /* The phone layout's width (overview.css): fine print folds below it. */
+  if (!window.matchMedia("(max-width: 42rem)").matches) {
+    for (const more of content.querySelectorAll<HTMLDetailsElement>("details.card-more")) more.open = true;
+  }
 
   const scopeSummaryEl = document.querySelector<HTMLElement>("#snow-scope-summary");
   if (scopeSummaryEl) {
@@ -411,15 +410,6 @@ function renderSnow(
    * the card around them. Each carries a ResizeObserver that keeps its curve
    * fitted (`viz/responsive.ts`), and a fresh host every time the reader
    * picked a different site would leave a fresh observer behind with it. */
-  const precipSection = document.querySelector<HTMLElement>("#precip-card");
-  const precipCard = precipSection
-    ? createPrecipitationCard(precipSection, () => publishReady(), {
-      onSelectSite: (station) => {
-        renderSiteDetail(station);
-        siteDetail?.closest("section")?.scrollIntoView({ block: "start" });
-      }
-    })
-    : null;
   const siteCurveHost = document.createElement("div");
   siteCurveHost.className = "snow-curve-host";
   const basinCurveHost = document.createElement("div");
@@ -631,7 +621,6 @@ function renderSnow(
       siteCurvePoints: lastSiteCurvePoints,
       basin: currentBasin,
       basinCurvePoints: lastBasinCurvePoints,
-      ...(precipCard ? { precipitation: precipCard.status } : {}),
       level,
       levelsOffered,
       /* The season on screen and the one drawn behind it (ADR-121). */
@@ -769,9 +758,10 @@ function renderSnow(
       scroller.append(tableElement);
       table.append(summary, scroller);
 
-      const children: Node[] = [stats];
+      /* The answer and its chart first; where the site is is reference. */
+      const children: Node[] = [stats, reading, siteCurveHost, timingLine];
       if (location) children.push(location);
-      children.push(siteCurveHost, reading, timingLine, table);
+      children.push(table);
       siteDetail.replaceChildren(...children);
 
       /* Drawn once the host is in the document, so it can be measured. A
@@ -886,7 +876,7 @@ function renderSnow(
       scroller.append(tableElement);
       table.append(summary, scroller);
 
-      const children: Node[] = [stats, basinCurveHost, reading, table];
+      const children: Node[] = [stats, reading, basinCurveHost, table];
       basinDetail.replaceChildren(...children);
 
       /* Drawn once the host is in the document, for the same reason as the
@@ -938,8 +928,6 @@ function renderSnow(
       ? regionPoints
       : basinCurve(payload, chosen)) ?? regionPoints;
     const rows = siteRows(payload, chosen);
-    precipCard?.update(rows.map((row) => row.station), payload.sites,
-      season.shown === season.current ? null : seasonName(season.shown));
 
     /* Headlines hold to a stronger floor than the curve: at least half the
      * sites in view. Without it, October's first flurries and June's last

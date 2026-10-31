@@ -15,6 +15,35 @@ export interface ApiFieldGroup {
 const f = (key: string, units: string, meaning: string, optional = false): ApiField =>
   ({ key, units, meaning, optional });
 
+/*
+ * One measured daily series, as a lake's level and volume and a reviewed
+ * reservoir level publish it (ADR-118, ADR-135): one summary, documented once.
+ */
+function measurementFields(unit: string): readonly ApiField[] {
+  return [
+  f("current", unit, "Newest reading."),
+  f("as_of", "date", "Date of the newest reading."),
+  f("record_high", unit, "Highest reading in the published record."),
+  f("record_high_date", "date", "Date of the highest reading."),
+  f("record_low", unit, "Lowest reading in the published record."),
+  f("record_low_date", "date", "Date of the lowest reading."),
+  f("change_7d", unit, "Change from the reading about 7 days earlier, or null."),
+  f("change_7d_reference_date", "date", "Date of the earlier reading, or null."),
+  f("change_7d_elapsed_days", "days", "Days between the two readings, or null."),
+  f("change_30d", unit, "Change from the reading about 30 days earlier, or null."),
+  f("change_30d_reference_date", "date", "Date of the earlier reading, or null."),
+  f("change_30d_elapsed_days", "days", "Days between the two readings, or null."),
+  f("change_365d", unit, "Change from the reading about 365 days earlier, or null."),
+  f("change_365d_reference_date", "date", "Date of the earlier reading, or null."),
+  f("change_365d_elapsed_days", "days", "Days between the two readings, or null."),
+  f("seasonal_rank", "position",
+    "Position of the newest reading among earlier years near the same date, counted from the lowest, or null."),
+  f("seasonal_rank_of", "count", "Number of years in that comparison, this one included, or null."),
+  f("first_obs", "date", "First date in the published record."),
+  f("n_obs", "readings", "Number of readings held.")
+  ];
+}
+
 export const RESERVOIR_GROUPS: readonly ApiFieldGroup[] = [
   { id: "reservoir-reviewed-holds", title: "Reviewed removals", path: "reviewed_holds[]", fields: [
     f("name", "text", "Name of a previously published reservoir."),
@@ -227,6 +256,13 @@ export const RESERVOIR_GROUPS: readonly ApiFieldGroup[] = [
     f("change_365d_elapsed_days", "days",
       "Days between that reading and this one. A month-end feed can be up to "
       + "45 days from the date asked for.", true),
+    f("low_120d_af", "acre-feet",
+      "Lowest daily storage in the 120 days to the reading date. Null for a "
+      + "monthly feed, a late record, or fewer than 100 readings in the 120 days.",
+      true),
+    f("low_120d_date", "date", "Date of that low. On a tie, the latest date.", true),
+    f("change_since_low_af", "acre-feet",
+      "Storage gained since that low. Zero when the newest reading is the low.", true),
     f("seasonal_normal_af", "acre-feet",
       "Middle of one value per earlier year near the same date, for the recent "
       + "period only. Read `baselines` instead where the period matters."),
@@ -266,8 +302,90 @@ export const RESERVOIR_GROUPS: readonly ApiFieldGroup[] = [
     f("connected_states", "array of state codes",
       "Every state the drainage area reaches, which is where the water comes from."),
     f("county_fips", "identifier", "Five-digit county code holding the published point."),
-    f("county_name", "text", "County name. Read it with the state: several names repeat.")
+    f("county_name", "text", "County name. Read it with the state: several names repeat."),
+    f("elevation", "object",
+      "Surface level block, only for a reservoir whose datum has been reviewed. "
+      + "Fields are listed below.", true)
   ]},
+  { id: "reservoir-elevation", title: "Surface level", path: "reservoirs[].elevation", fields: [
+    f("unit", "identifier", "Always ft."),
+    f("vertical_datum", "identifier",
+      "Datum the level is measured above: NGVD29 for the National Geodetic Vertical "
+      + "Datum of 1929, NAVD88 for the North American Vertical Datum of 1988, or project "
+      + "for an operator's own datum. Reviewed for each reservoir, never assumed from "
+      + "the provider."),
+    f("datum_name", "text", "Name of a project datum. Present only when vertical_datum is project.",
+      true),
+    f("datum_relation", "object",
+      "How a project datum relates to a national datum. Present only when vertical_datum "
+      + "is project. Fields are listed below.", true),
+    f("source_item_id", "identifier", "The Bureau of Reclamation's item number for the daily level."),
+    f("source_url", "web address", "Page for that item."),
+    ...measurementFields("feet"),
+    f("datum_offset", "object",
+      "The measured difference to another datum at a Geological Survey site, or null. "
+      + "Fields are listed below."),
+    f("record_starts", "object",
+      "Where the highest and lowest readings, the history rank, first_obs and n_obs start: "
+      + "after the reservoir first filled, with its published source. Fields are listed "
+      + "below. The daily history file keeps every day.", true),
+    f("reference_levels_datum_stated", "true or false",
+      "False when the operator does not state which datum its reference levels use.", true),
+    f("derived_offset", "object",
+      "A difference to another datum calculated from published figures, not measured at "
+      + "the reservoir, where no measured one exists. Fields are listed below.", true),
+    f("reference_levels", "array",
+      "Named levels with the authority that set them. Fields are listed below. Never a "
+      + "share of anything. Empty when there are none.")
+  ]},
+  { id: "reservoir-elevation-offset", title: "Datum difference",
+    path: "reservoirs[].elevation.datum_offset", fields: [
+      f("to_datum", "identifier", "The other datum, such as NAVD88."),
+      f("offset_ft", "feet",
+        "The level above the other datum minus the level above this one, at the same "
+        + "site and time. The middle value of the comparison."),
+      f("range_ft", "feet", "Lowest and highest difference in the comparison.", true),
+      f("readings", "readings", "Number of readings compared.", true),
+      f("usgs_site", "identifier", "Geological Survey site number the comparison used."),
+      f("parameters", "object", "The Geological Survey's parameter code for each datum."),
+      f("source_url", "web address", "Page for that site."),
+      f("measured", "date", "Date the difference was measured.")
+    ]},
+  { id: "reservoir-elevation-relation", title: "Project datum relation",
+    path: "reservoirs[].elevation.datum_relation", fields: [
+      f("datum", "identifier", "The national datum the project datum is stated against."),
+      f("add_ft", "feet",
+        "Feet to add to a level on the project datum to give the level above that "
+        + "national datum, as the operator states it."),
+      f("quote", "text", "The operator's own words that state the relation."),
+      f("source_url", "web address", "Where those words are published.")
+    ]},
+  { id: "reservoir-elevation-derived", title: "Calculated datum difference",
+    path: "reservoirs[].elevation.derived_offset", fields: [
+      f("to_datum", "identifier", "The other datum, such as NAVD88."),
+      f("offset_ft", "feet",
+        "About how much higher a level above the other datum reads for the same water. "
+        + "Calculated, not measured."),
+      f("basis", "text", "How the difference was calculated, with the figures used."),
+      f("sources", "array", "Each figure's source: a citation and a web address."),
+      f("checked", "date", "Date the figures were read.")
+    ]},
+  { id: "reservoir-elevation-record-start", title: "Start of the record",
+    path: "reservoirs[].elevation.record_starts", fields: [
+      f("date", "date", "First date in the record readings and the rank."),
+      f("reason", "text", "Why the record starts there, in a few words."),
+      f("basis", "text", "The reasoning in full."),
+      f("quote", "text", "The words of the source that give the date."),
+      f("source_url", "web address", "Where those words are published.")
+    ]},
+  { id: "reservoir-reference-level", title: "Reference level",
+    path: "reservoirs[].elevation.reference_levels[]", fields: [
+      f("elevation_ft", "feet", "The level, above the same datum as the readings."),
+      f("label", "text", "What the level is, in plain words."),
+      f("source_term", "text", "The authority's own name for the level.", true),
+      f("authority", "text", "Who set the level."),
+      f("url", "web address", "Where the level is published.")
+    ]},
   { id: "reservoir-capacity-version", title: "Full-level version",
     path: "reservoirs[].capacity_history[]", fields: [
       f("capacity_af", "acre-feet", "The full level this version publishes."),
@@ -414,6 +532,57 @@ export const SNOW_GROUPS: readonly ApiFieldGroup[] = [
   { id: "snow-date", title: "Normal onset or melt-out date", path: "sites[].normal_timing.onset or meltout", fields: [
     f("month", "month number", "Usual month."),
     f("day", "day number", "Usual day.")
+  ]}
+];
+
+/* ADR-142: the week's change in soil moisture at the snow stations. */
+export const SOIL_GROUPS: readonly ApiFieldGroup[] = [
+  { id: "soil-header", title: "File header", path: "root", fields: [
+    f("schema_version", "version number", "Version of this JSON structure."),
+    f("generated_at", "date and time", "Time the file was generated."),
+    f("as_of", "date", "Newest date requested from the provider."),
+    f("element", "identifier", "Provider's code for soil moisture. Always SMS."),
+    f("units", "text", "Unit of the readings and of the changes."),
+    f("source", "web address", "Provider service address."),
+    f("depth_rule", "text", "Which sensors a station's value is the mean of."),
+    f("frozen_rule", "object", "The soil temperature element and the temperature in degrees Fahrenheit at or below which a reading is not used."),
+    f("change_days", "days", "Days between the start and the end of the change. Always 7."),
+    f("end_date", "date", "The day every station's change ends on, or null when too few stations sent readings."),
+    f("start_date", "date", "The day every station's change starts on, or null."),
+    f("minimum_reporting_sites", "sites", "Stations with a change an area needs for a figure. The same floor as the snow figure."),
+    f("series_dates", "array", "The fifteen days the readings index into, ascending."),
+    f("site_count", "sites", "Number of stations in the sites array."),
+    f("measured_site_count", "sites", "Number of stations with a change."),
+    f("frozen_site_count", "sites", "Number of stations with no change because the soil was frozen."),
+    f("late_site_count", "sites", "Number of stations with late readings."),
+    f("missing_site_count", "sites", "Number of stations with the standard sensors that sent nothing and are absent from this file."),
+    f("other_depth_sites", "array", "Stations with soil sensors that do not have the standard set, with their depths in inches. Not used."),
+    f("rollups", "array", "Drainage-area figures over every station in the area."),
+    f("sites", "array", "Station records.")
+  ]},
+  { id: "soil-rollup", title: "Drainage-area figure", path: "rollups[]", fields: [
+    f("huc6", "code", "Six-digit drainage-area code."),
+    f("huc6_name", "text", "Name of that drainage area."),
+    f("site_count", "sites", "Stations in the area in this file."),
+    f("measured_site_count", "sites", "Of those, stations with a change."),
+    f("minimum_reporting_sites", "sites", "Stations with a change the area needs for a figure."),
+    f("mean_change_points", "percentage points", "Mean of the stations' changes, or null below the floor.")
+  ]},
+  { id: "soil-site", title: "Station record", path: "sites[]", fields: [
+    f("station", "identifier", "Provider station identifier."),
+    f("depths_inches", "array", "The shallow, middle and deep sensors used, in inches below the ground."),
+    f("latest_date", "date", "Newest day with all three readings, or null."),
+    f("late", "true or false", "True when that day is more than two days before as_of."),
+    f("readings", "array", "Three arrays, one per depth in depths_inches order, of percent of the soil's volume for each day in series_dates. Null where there is no reading or the reading was not used."),
+    f("frozen_days", "array", "Positions in series_dates on which a reading was not used because the soil was frozen."),
+    f("end_percent", "percent", "The station's value on end_date: the mean of its three readings, or null."),
+    f("start_percent", "percent", "The same on start_date, or null."),
+    f("change_points", "percentage points", "end_percent minus start_percent, or null."),
+    f("no_change_reason", "identifier", "Why change_points is null: missing_reading, frozen or no_temperature. Null when there is a change.")
+  ]},
+  { id: "soil-other-depth-site", title: "Station with other sensor depths", path: "other_depth_sites[]", fields: [
+    f("station", "identifier", "Provider station identifier."),
+    f("depths_inches", "array", "The station's active soil sensor depths, in inches below the ground.")
   ]}
 ];
 
@@ -621,26 +790,7 @@ export const REFERENCE_GROUPS: readonly ApiFieldGroup[] = [
  * fields, so the block is documented once and named twice.
  */
 const LAKE_MEASUREMENT = (unit: string): readonly ApiField[] => [
-  f("current", unit, "Newest reading."),
-  f("as_of", "date", "Date of the newest reading."),
-  f("record_high", unit, "Highest reading in the published record."),
-  f("record_high_date", "date", "Date of the highest reading."),
-  f("record_low", unit, "Lowest reading in the published record."),
-  f("record_low_date", "date", "Date of the lowest reading."),
-  f("change_7d", unit, "Change from the reading about 7 days earlier, or null."),
-  f("change_7d_reference_date", "date", "Date of the earlier reading, or null."),
-  f("change_7d_elapsed_days", "days", "Days between the two readings, or null."),
-  f("change_30d", unit, "Change from the reading about 30 days earlier, or null."),
-  f("change_30d_reference_date", "date", "Date of the earlier reading, or null."),
-  f("change_30d_elapsed_days", "days", "Days between the two readings, or null."),
-  f("change_365d", unit, "Change from the reading about 365 days earlier, or null."),
-  f("change_365d_reference_date", "date", "Date of the earlier reading, or null."),
-  f("change_365d_elapsed_days", "days", "Days between the two readings, or null."),
-  f("seasonal_rank", "position",
-    "Position of the newest reading among earlier years near the same date, counted from the lowest, or null."),
-  f("seasonal_rank_of", "count", "Number of years in that comparison, this one included, or null."),
-  f("first_obs", "date", "First date in the published record."),
-  f("n_obs", "readings", "Number of readings held."),
+  ...measurementFields(unit),
   f("parameter_code", "identifier", "Publisher's code for the measured quantity."),
   f("statistic_id", "identifier", "Publisher's code for the daily statistic.")
 ];
@@ -707,5 +857,120 @@ export const LAKE_GROUPS: readonly ApiFieldGroup[] = [
     f("days_stale", "days", "Age of that reading on the refresh date."),
     f("source_label", "text", "Publisher's name, or null."),
     f("reason", "text", "Why the lake is held back. Contains no measurement.")
+  ]}
+];
+
+/*
+ * The daily surface levels behind a reservoir page's chart (ADR-135).
+ */
+export const ELEVATION_HISTORY_GROUPS: readonly ApiFieldGroup[] = [
+  { id: "elevation-header", title: "File header", path: "root", fields: [
+    f("schema_version", "version number", "Version of this JSON structure."),
+    f("fetched_at", "date and time", "Time the file was generated, in coordinated universal time."),
+    f("run_date", "date", "Local date of the refresh."),
+    f("unit", "identifier", "Always ft."),
+    f("reservoirs", "array", "One entry for each reservoir with a reviewed surface level.")
+  ]},
+  { id: "elevation-entry", title: "One reservoir's levels", path: "reservoirs[]", fields: [
+    f("name", "text", "Name of the reservoir."),
+    f("source_station_id", "identifier",
+      "The reservoir's identifier in the reservoir file, which joins the two."),
+    f("source_item_id", "identifier", "The Bureau of Reclamation's item number for the daily level."),
+    f("vertical_datum", "identifier", "Datum every value is measured above."),
+    f("start", "date", "Date of the first value."),
+    f("end", "date", "Date of the last value."),
+    f("values", "feet",
+      "One level for each day from start to end, in order. The value at position n is "
+      + "the level n days after start. Null is a day with no reading.")
+  ]}
+];
+
+/* The river-flow payload (ADR-136). */
+export const RIVER_GROUPS: readonly ApiFieldGroup[] = [
+  { id: "river-header", title: "File header", path: "root", fields: [
+    f("schema_version", "version number", "Version of this JSON structure."),
+    f("measurement", "identifier", "Always daily_mean_flow."),
+    f("fetched_at", "date and time", "Time the file was generated, in coordinated universal time."),
+    f("run_date", "date", "Local date of the refresh."),
+    f("window_days", "days", "Number of days in each gauge's daily list."),
+    f("stale_after_days", "days", "Days allowed before a daily reading is late."),
+    f("withdraw_after_days", "days", "The most days a reading can be old and still be published."),
+    f("gauge_count", "gauges", "Number of records in the gauges array."),
+    f("stale_count", "gauges", "Number of records with late data."),
+    f("withdrawn_count", "gauges", "Number of gauges held back for old data."),
+    f("gauges", "array", "Current gauge records. No field adds two gauges together."),
+    f("withdrawn", "array", "Gauges held back because their newest reading is too old. Each entry carries no measurement.")
+  ]},
+  { id: "river-gauge", title: "Gauge record", path: "gauges[]", fields: [
+    f("name", "text", "Name of the gauge in plain words."),
+    f("usgs_name", "text", "The station name as the U.S. Geological Survey writes it."),
+    f("measurement", "identifier", "Always daily_mean_flow."),
+    f("source_key", "identifier", "Provider key. Always usgs."),
+    f("source_label", "text", "Publisher's name in full."),
+    f("source_station_id", "identifier", "Publisher's site number."),
+    f("source_url", "web address", "Service the daily values came from."),
+    f("usgs_page", "web address", "The publisher's page for the gauge."),
+    f("time_series_id", "identifier", "The publisher's identifier of the reviewed daily mean series."),
+    f("parameter_code", "identifier", "Publisher's code for the measured quantity. Always 00060, flow."),
+    f("statistic_id", "identifier", "Publisher's code for the daily statistic. Always 00003, the mean."),
+    f("unit", "identifier", "Always ft^3/s, cubic feet per second."),
+    f("state", "code", "Two-letter state code of the gauge."),
+    f("lat", "degrees", "Latitude of the gauge."),
+    f("lon", "degrees", "Longitude of the gauge."),
+    f("drainage_area_sq_mi", "square miles", "Drainage area the publisher gives for the gauge, or null."),
+    f("huc8", "code", "Eight-digit subbasin that contains the gauge."),
+    f("huc8_name", "text", "Name of that subbasin."),
+    f("flows_toward", "text", "A reviewed name of water the river flows on toward, or null. Never a claim that the gauge measures what goes into it."),
+    f("tier", "identifier", "The review tier: shaped (dams upstream store and release water) or natural (little or no water is stored upstream)."),
+    f("compared_with_normal", "true or false", "True when the newest value is compared with normal for its date. Always false for a shaped gauge, which has no normal and no rank."),
+    f("normal_band", "object", "A natural gauge's normal for the as_of date, or null when it is not compared today. Fields are listed below. Never on a shaped gauge.", true),
+    f("flow_class", "identifier", "Where current_cfs falls in normal_band: much_below_normal (under p10), below_normal (under p25), normal (p25 to p75), above_normal (up to p90) or much_above_normal (over p90). A value on a boundary takes the class nearer normal. Null when not compared. Never on a shaped gauge.", true),
+    f("normal_withheld", "identifier", "Why a natural gauge is not compared today: fewer_than_30_years or percentile_missing. Null when compared. Never on a shaped gauge.", true),
+    f("data_frequency", "identifier", "Always daily."),
+    f("stale_after_days", "days", "Days allowed before this gauge's reading is late."),
+    f("as_of", "date", "Date of the newest day with a value."),
+    f("days_stale", "days", "Age of that day on the refresh date."),
+    f("is_stale", "true or false", "True when the reading is late."),
+    f("fetch_ok", "true or false", "False when today's request failed and the last record was kept."),
+    f("fetch_error", "text", "Why today's request failed.", true),
+    f("current_cfs", "cubic feet per second", "Mean flow on the as_of date."),
+    f("current_approval", "text", "The publisher's review status for that value, such as Provisional or Approved, or null."),
+    f("current_qualifiers", "array", "The publisher's qualifiers for that value, such as ESTIMATED. Empty when there are none."),
+    f("change_7d_cfs", "cubic feet per second", "Change from the value 7 days earlier, or null when that day has no value."),
+    f("change_7d_reference_date", "date", "Date of the earlier value, or null."),
+    f("window_start", "date", "First day in the daily list."),
+    f("window_end", "date", "Last day in the daily list. Always the as_of date."),
+    f("window_high_cfs", "cubic feet per second", "Highest value in the daily list."),
+    f("window_high_date", "date", "Most recent day with that value."),
+    f("window_low_cfs", "cubic feet per second", "Lowest value in the daily list."),
+    f("window_low_date", "date", "Most recent day with that value."),
+    f("reported_days", "days", "Days in the list that have a value."),
+    f("provisional_days", "days", "Days in the list with a provisional value."),
+    f("daily", "array", "One entry for each day, oldest first. Fields are listed below.")
+  ]},
+  { id: "river-day", title: "Day", path: "gauges[].daily[]", fields: [
+    f("date", "date", "The day the mean belongs to."),
+    f("cfs", "cubic feet per second", "Mean flow for the day, or null when the day has no value."),
+    f("approval", "text", "The publisher's review status, or null when the day has no record."),
+    f("qualifiers", "array", "The publisher's qualifiers for the day. Empty when there are none.")
+  ]},
+  { id: "river-normal-band", title: "Normal band", path: "gauges[].normal_band", fields: [
+    f("day", "month and day", "The calendar day the band is for, as MM-DD. Always the month and day of as_of."),
+    f("p10", "cubic feet per second", "10th percentile of the approved daily means on this calendar day."),
+    f("p25", "cubic feet per second", "25th percentile. The low end of the normal range."),
+    f("p50", "cubic feet per second", "50th percentile, the median."),
+    f("p75", "cubic feet per second", "75th percentile. The high end of the normal range."),
+    f("p90", "cubic feet per second", "90th percentile."),
+    f("years", "years", "Years with an approved value on this calendar day. Always 30 or more."),
+    f("retrieved", "date", "Date the percentiles were read from the publisher."),
+    f("source_url", "web address", "The publisher's statistics request the percentiles came from.")
+  ]},
+  { id: "river-withdrawn", title: "Withdrawn gauges", path: "withdrawn[]", fields: [
+    f("name", "text", "Name of the gauge."),
+    f("as_of", "date", "Date of the last value before the feed went quiet."),
+    f("days_stale", "days", "Age of that value on the refresh date."),
+    f("source_label", "text", "Publisher's name, or null."),
+    f("source_station_id", "identifier", "Publisher's site number."),
+    f("reason", "text", "Why the gauge is held back. Contains no measurement.")
   ]}
 ];

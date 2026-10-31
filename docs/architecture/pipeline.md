@@ -20,6 +20,9 @@ modules in `pipeline/`:
 | `pipeline/freshness.py` | Carry-forward, the withdrawal threshold and the withdrawal notice. |
 | `pipeline/geography.py` | County and drainage-area assignment onto finished records. |
 | `pipeline/lakes.py` | The natural terminal lakes (ADR-112, ADR-118): a record of elevation and volume with no full level, its validator, and the lake payload envelope. |
+| `pipeline/measurement.py` | One daily series summarised: current value, dated extremes, dated changes and the same-date rank. Shared by a lake's level and volume and a reservoir's surface level, so a level means one thing. |
+| `pipeline/elevation.py` | Reviewed reservoir surface elevation (ADR-135): the record's `elevation` block, the history entries, `elevation_history.json` and their checks. |
+| `pipeline/rivers.py` | Daily river flow (ADR-136): a gauge's 30-day record with no rank or total, its validator, and the river payload envelope; for a natural gauge, the committed day-of-year percentiles' loader and WaterWatch's class (ADR-144). |
 | `refresh_reservoirs.py` | Fetch, summarize, assemble, validate, write, and report to CI. |
 
 `refresh_reservoirs` re-exports every public name from those modules, so
@@ -27,8 +30,10 @@ modules in `pipeline/`:
 had to learn a new import path.
 
 Other entry points: `refresh_snowpack.py` (snow payload),
-`refresh_station_readings.py` (precipitation at the snow stations, ADR-125), `refresh_lakes.py`
-(the terminal-lake payload, `lakes.json`), `watershed_scopes.py`
+`refresh_station_readings.py` (precipitation at the snow stations, ADR-125),
+`refresh_soil_moisture.py` (the week's soil-moisture change at the same stations, ADR-142), `refresh_lakes.py`
+(the terminal-lake payload, `lakes.json`), `refresh_rivers.py` (daily river
+flow, `rivers.json`), `watershed_scopes.py`
 and `huc.py` (named scopes, drainage assignment, grouping), `admission.py`
 (candidate screening), `tools/` (audits, boundary fetches, drought
 computation, normals).
@@ -40,6 +45,15 @@ Its chosen delivery model is scheduled Python ingestion and static, versioned
 outputs, with R2 available for rasters and archives. It is not connected to the
 daily job or any public page yet. The scope, remaining work and credential
 setup are in [the pilot plan](../RECENT-CONDITIONS-PILOT.md).
+
+`tools/import_gauge_rulings.py` previews saved private review exports offline
+and writes the worksheet only with `--apply` (ADR-130). It changes only
+`reviewer_ruling`, `notes` and `accepted_display_name`, keyed by site number
+(an earlier `shaped` ruling reads as `reservoir`, or returns to review beside a
+diversion finding; ADR-138). Any existing review needs
+an explicit per-site replacement to change; invalid or unsaved records refuse
+the whole batch. The screen builder still preserves manual review fields.
+This workflow does not create an admitted roster or a published flow payload.
 
 The supported CI runtime is Python 3.14. The pipeline dependency set requires
 Python 3.12 or newer; all data workflows install the shared
@@ -138,6 +152,63 @@ reservoir-only field, a notice carrying a measurement, and a roster lake absent
 from both lists. The file is generated and committed by the refresh; no page
 fetches it yet, and it is not copied into the build until the lake surface
 lands.
+
+**A reservoir level is published only above a reviewed datum** (ADR-135).
+`admitted_reservoir_elevations.json` is loaded on first use by
+`pipeline.roster.admitted_reservoir_elevations`, which refuses an entry with
+no datum, a project datum with no name or no sourced relation to a national
+datum, evidence with no checked date, an offset with no measurement date, a
+record start (the end of first filling) with no quoted source, or a reference
+level with no authority or source. The summary's record starts at
+`record_starts`; the history file keeps every day. After the storage fetch,
+`refresh_elevations` reads each rostered reservoir's elevation item through
+`fetch_rise_series(..., column="elevation_ft")` -- the storage fetcher with
+the value column named -- from the provider's first reading, and attaches an
+optional `elevation` block in the lake level's shape. `RESERVOIR_SCHEMA_VERSION`
+stays 1: the block is optional and additive, as every field added to the
+payload has been. The daily series is written compact to
+`elevation_history.json` under `ELEVATION_HISTORY_SCHEMA_VERSION`, never into
+`reservoirs.json`. A failed level fetch keeps yesterday's block and history
+entry and never withholds the storage. `elevation.validate_records` refuses a
+block on a reservoir the roster does not name, a block with no datum and a
+block carrying a percentage, and names any rostered reservoir still without
+one. The history is written whenever the Reclamation source is refreshed
+(a full run or `--source rise`); a run of another source carries the blocks
+inside the records it keeps and leaves the history file alone.
+
+**River flow is published from its own roster to its own payload**
+(ADR-136). `admitted_river_gauges.json` is loaded by
+`pipeline.roster.load_admitted_river_gauges`, which requires a plain display
+name beside the survey's station name, the reviewed primary `time_series_id`,
+a tier with its basis and who directed it, and evidence for any water named
+downstream; it accepts `shaped`, and `natural` only when the evidence meets
+ADR-137 (no published reservoir, storage under 10%) and names `tier_ruled_on`
+(ADR-144). `refresh_rivers.py` confirms
+each series against the v1 `time-series-metadata` collection and reads the
+last `RIVER_FETCH_DAYS` (90) days from the v1 `daily` collection through
+`fetch_usgs_flow_series`, which keeps approval status and qualifiers and
+refuses the whole series on an identity, unit, date or value fault. Unlike
+the storage adapter it sends the key only when one is configured.
+`pipeline.rivers.summarize_gauge` keeps the 30 days ending on the newest day
+with a value; every run re-reads the whole window, so revisions land without
+a merge. Freshness is ADR-056's, with the notice keyed by station (ADR-126).
+`pipeline.rivers.validate_payload` refuses a rank, capacity, inflow or
+total on a record or the envelope, a band or class on a shaped gauge, a
+natural record whose class does not follow from its flow and band or whose
+band is for another date, out of order or under 30 years, a tier other than
+the roster's, a window that is not 30 consecutive days ending on the current
+value, a notice carrying a measurement, and a roster gauge in neither list.
+
+**A natural gauge's percentiles are committed, not fetched daily** (ADR-144).
+`tools/build_river_normals.py` reads them from the Statistics API through
+`fetch_usgs_flow_normals` (the key in a header only when configured), refuses
+a reply for another series or with a missing day, keeps `nan` as missing, and
+merges into `river_normals.json` with the date it read them. The refresh
+loads the file through `pipeline.rivers.load_river_normals`, which refuses it
+when a natural roster gauge has no entry or an entry fails a check; the
+refresh then writes nothing, so no class is published against a band that did
+not load. `summarize_gauge` takes the band for the newest value's calendar
+day or records why there is none.
 
 ## Freshness: late and withdrawn are different faults
 

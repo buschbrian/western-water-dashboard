@@ -16,11 +16,13 @@ module that owns the behaviour and read the entry point only for the sequence.
 |---|---|---|
 | Storage map | `src/main.ts` | `src/ui/map.ts`, `src/ui/layers.ts`, `src/ui/shell.ts`, `src/state/filters.ts`, `src/state/url.ts`, `src/state/detail.ts`, `src/data/rollup.ts` |
 | Storage charts | `src/overview.ts` | `src/overview-model.ts` (all filtering and grouping), `src/overview-charts.ts`, `src/state/overview-url.ts`, `src/weekly-model.ts` |
+| Precipitation | `src/precipitation.ts` | `src/ui/precipitation-card.ts`, `src/precip-model.ts`, `src/precip-storm-model.ts`, `src/viz/precip-*.ts`; the place from `src/snow-place.ts`, as the snow page and story views narrow it (ADR-130); the map is `src/ui/precip-map-section.ts` (lazy, no static SDK import), `src/ui/precip-map.ts` and `src/precip-map-model.ts` (ADR-131); its "Rain \| Soil moisture" switch is `src/ui/precip-map-mode-model.ts`, `src/soil-map-model.ts`, `src/viz/soil-classes.ts` and `src/data/soil-load.ts`, the soil file fetched on first use (ADR-142) |
 | Snowpack | `src/snow.ts` | `src/snow-model.ts`, `src/ui/snow-map.ts`, `src/viz/snow-curve.ts`, `src/state/snow-url.ts` |
 | Drought | `src/drought.ts` | `src/drought-model.ts`, `src/ui/drought-map.ts`, `src/viz/drought-*.ts`, `src/state/drought-url.ts` |
-| One reservoir | `src/reservoir.ts` | `src/reservoir-model.ts` (link resolution, both baselines, provenance), `src/ui/reservoir-template.ts`; the reading itself is `describeReservoir`, shared with the map's details panel so the two cannot drift |
+| One reservoir | `src/reservoir.ts` | `src/reservoir-model.ts` (link resolution, both baselines, provenance), `src/reservoir-elevation-model.ts` (the surface level, ADR-135), `src/viz/elevation-years.ts`, `src/ui/reservoir-template.ts`; the reading itself is `describeReservoir`, shared with the map's details panel so the two cannot drift |
 | Methods, data, terms | `src/methods.ts`, `src/data-docs.ts` | `src/data-docs-schema.ts` is the field-by-field contract |
 | Terminal lakes | `src/lakes.ts` | `src/lakes-model.ts` (every sentence and row), `src/data/lakes-validate.ts`, `src/ui/lakes-template.ts`; reached from the methods and data pages, not the bar (ADR-119) |
+| River flow | `src/rivers.ts` | `src/rivers-model.ts` (every sentence, row and the CSV), `src/data/rivers-validate.ts`, `src/ui/rivers-template.ts`, `src/viz/flow-chart.ts`; reached from the methods and data pages, not the bar (ADR-136) |
 | Story views | `src/story.ts` | `src/state/story-url.ts` (the link), `src/snow-place.ts` (the snow page's place narrowing), `src/ui/precipitation-card.ts`, `src/ui/upstream-section.ts`, `src/ui/story-fit.ts`; for embedding, not in the bar (ADR-128) |
 
 Shared by all of them: `src/data/` (fetch, validate, scope, rollup),
@@ -46,6 +48,43 @@ the source -- again with nothing a rollup could add up. Readiness is
 `window.__reservoirReady.status`, one of found, withdrawn, held, unknown and
 none, and the browser suite visits every one.
 
+A reservoir on the reviewed elevation roster also shows its surface level
+(ADR-135): the lakes page's level card, shared through
+`src/measurement-model.ts` and `src/ui/measurement-card.ts`, with the datum
+spelled out and changes in feet, never a percentage; then a water-year chart
+from `elevation_history.json`, fetched only for such a reservoir -- the current
+year strong, the year before lighter, four earlier years muted, reference
+levels dashed and named at the right end, and a level far from the readings
+named under the chart instead of drawn; then the note on why the Geological
+Survey (Powell) or other sources (Mead, on Reclamation's own project datum)
+can show a different level. A project datum is named, never called NGVD 1929,
+and a calculated datum difference says it is calculated. The card says where
+its record starts (after first filling); the chart draws every year it shows,
+and its labels sit on plates of the page colour so no line crosses text.
+`window.__reservoirReady.elevation` is `drawn`, `card` (the history could not
+be read) or `none`; the chart's host is `#reservoir-elevation-chart`.
+
+#### The share frame and the share pages
+
+`reservoir.html?name=...&view=share` (ADR-141) is the same page in a picture
+mode: one 1200 by 630 frame of the name, the surface level with its datum, the
+reading date and the water-year chart, drawn twice its size so its type reads
+on a link card. No navigation, no place chooser, no map, always the light
+theme, nothing stored. Its words come from the page's own level card
+(`reservoir-share-model.ts`). A reservoir with no reviewed level, or an
+unreadable history, signals `elevation` as `none` or `card`, never `drawn`.
+
+The pictures behind a shared link are made from it. `public/share/` holds, for
+Lake Powell and Lake Mead, a hand-kept page (`lake-powell.html`) with the
+Open Graph and Twitter card tags, a canonical link to the reservoir page and
+a meta refresh on to it, and a committed fallback picture of the same name.
+The pages state no figure, and are not generated, because a generated page
+would go with a withdrawn reservoir (ADR-056). The Pages workflow runs
+`scripts/share-images.sh` after the build: `scripts/capture-share-images.mjs`
+photographs the frame from `dist/` and replaces `dist/share/*.png` only with a
+valid capture, so a failure publishes the fallback. `scripts/share-fallback.html`
+is the fallback's source.
+
 ### The terminal-lakes page
 
 One reading page, `lakes.html`, for every published natural terminal lake
@@ -62,6 +101,30 @@ Readiness is `window.__lakesReady`: `lakes` is what the payload published,
 did not answer. The page is linked from the methods glossary and the data
 page and deliberately not from the navigation bar yet.
 
+### The river-flow page
+
+One reading page, `rivers.html`, for every published gauge (ADR-136). It
+fetches `rivers.json` through `loadRivers`, whose validator refuses a rank,
+an inflow or a total on a gauge or the envelope, a band or class on a shaped
+gauge, a natural gauge's class that does not follow from its flow and band, a
+window that is not 30 consecutive days ending on the current value,
+and a notice carrying a measurement. Each gauge is one article: its plain
+name, where it is and that the river flows on toward the reviewed water
+downstream, the shaped sentence ("Dams upstream store and release water, so
+this flow is not compared with normal.") or, for a natural gauge, "Little or
+no water is stored upstream, so this flow is compared with normal for the
+date." (ADR-144), lateness, today's mean flow in cubic feet per second with
+its date and review status, a natural gauge's class in words for the date with
+the normal range (p25 to p75) and its years, the median and the much-below and
+much-above lines, or why there is no comparison today; the 7-day change and the
+window's extremes, the 30-day chart (`renderFlowChart`, hand-built SVG from
+zero, one colour from `--flow-bar`, a missing day as a gap) with every value
+in a collapsed table, the survey's station name and its monitoring-location
+page. One CSV button downloads every gauge's days. Readiness is
+`window.__riversReady`: `gauges` published, `rendered` drawn, `charts` drawn,
+`withdrawn` notices, `compared` natural gauges with a class, `failed` a fetch
+that did not answer. Each article carries `data-tier`.
+
 ### The story views
 
 One entry page, `story.html`, for a story to embed in an iframe (ADR-128).
@@ -72,6 +135,7 @@ stored water and the stored-water groups above it. It computes nothing:
 the precipitation views take their stations from `snowPlace`, which the snow
 page uses too, and the upstream view draws with `upstreamSection`, which the
 reservoir page uses too. A link the views cannot draw shows one sentence.
+A precipitation view's full page is `precipitation.html` (ADR-130).
 
 The page is the frame. `html`, `body` and the app are the frame's height and
 never scroll, and nothing inside scrolls either. `fitContent`
@@ -263,6 +327,26 @@ Each was found by a failing test or a screenshot. Do not regress them.
 
 - The pages are tested at **1280, 390 and 360** pixels wide. No page may
   scroll sideways at any of them.
+- **A heavy chart or map loads when it nears the screen, not with the
+  page.** The storage charts draw within one screen of view (ADR-132) and
+  the precipitation map imports the SDK only after the totals are drawn
+  (ADR-131). The suite cannot see an unresponsive page, only readiness, so
+  the measure is a trace: main-thread busy seconds at 390 px.
+- **One typeface and one spacing scale.** `--app-font` (ADR-133) is the
+  only font family a stylesheet names; Calcite takes it through
+  `--calcite-font-family`. Gaps between blocks take a step from
+  `--space-1` to `--space-5` in `app.css` rather than a fresh rem value.
+  Older rules still carry literal values; move them to the scale when they
+  are next touched.
+- **No text is drawn over other text**, at any of those widths. A shared
+  class on a block of a different shape is the usual cause: `.overview-kpi`
+  gives a card in a summary strip three subgrid rows, and a drought area
+  row, which reuses the card's surface with four blocks, laid its fourth
+  over its third until the rule was limited to `.overview-kpis >
+  .overview-kpi`. The storage chart cards had the same fault at four rows
+  and up to seven blocks; each now holds a heading, a chart and one
+  `.card-foot`. *Enforced:* `checkTextOverlap` in the browser suite, on
+  every page it scores for accessibility.
 - **`innerText` returns what CSS transformed, not what the code wrote.** A
   `text-transform: uppercase` makes the page say `STORED NOW` to a screen
   reader and to the smoke suite alike. There is no `text-transform` anywhere

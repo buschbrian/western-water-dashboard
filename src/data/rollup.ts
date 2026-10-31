@@ -86,6 +86,31 @@ export function basisLabel(basis: string): string {
   return BASIS_LABELS[basis] ?? "Highest recorded storage";
 }
 
+/**
+ * Storage gained since each daily reservoir's own recent low (ADR-134).
+ *
+ * `af` sums only the reservoirs that publish a figure. A missing figure is a
+ * gap, not a gain of zero, so the total carries how many of the daily
+ * reservoirs it holds and the text always says so.
+ */
+export interface SinceLowTotal {
+  af: number;
+  measured: number;
+  daily: number;
+}
+
+export function sinceLowTotal(reservoirs: readonly Reservoir[]): SinceLowTotal {
+  const daily = reservoirs.filter((reservoir) => reservoir.data_frequency === "daily");
+  const gains = daily
+    .map((reservoir) => reservoir.change_since_low_af)
+    .filter((value): value is number => typeof value === "number" && Number.isFinite(value));
+  return {
+    af: gains.reduce((total, value) => total + value, 0),
+    measured: gains.length,
+    daily: daily.length
+  };
+}
+
 export interface StatewideRollup {
   count: number;
   storageAf: number;
@@ -93,6 +118,7 @@ export interface StatewideRollup {
   percentFull: number | null;
   change30dAf: number;
   change365dAf: number;
+  sinceLow: SinceLowTotal;
   normalAf: number;
   percentOfNormal: number | null;
   normalCovers: number;
@@ -387,6 +413,7 @@ export function statewideRollup(
     percentFull: capacityAf > 0 ? storageAf / capacityAf * 100 : null,
     change30dAf: sum((reservoir) => reservoir.change_30d_af),
     change365dAf: sum((reservoir) => reservoir.change_365d_af),
+    sinceLow: sinceLowTotal(reservoirs),
     normalAf,
     percentOfNormal: normalAf > 0 ? storageWithNormal / normalAf * 100 : null,
     normalCovers: withNormal.length,

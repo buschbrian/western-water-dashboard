@@ -127,6 +127,17 @@ published areas are almost entirely such pools -- Lower Snake at 97.6% of its
 combined full level and Middle Columbia at 94.9% -- so a combined percentage
 for either is close to a constant and reads as a drought signal.
 
+## Elevation datum
+
+A reservoir elevation carries a vertical datum the feed does not state. The
+datum is a reviewed fact, one per reservoir (ADR-139): NGVD29, NAVD88, or a
+project datum with its stated offset (Lake Mead's Hoover Dam powerhouse datum
+is 0.55 feet below NGVD29). The worksheet `datum-review.csv` holds the
+evidence; a suggestion needs a Reclamation statement or two agreeing U.S.
+Geological Survey locations, and the reviewer's ruling is the only thing a
+published elevation reads. NAVD88 minus NGVD29 is a shift of about three feet
+in the interior West and is never applied to move a project datum.
+
 ## Natural terminal lakes
 
 A natural terminal lake is a separate water type (ADR-112). It may publish
@@ -151,6 +162,76 @@ type. The payload is `lakes.json`; no page shows it yet, so the glossary's
 statement that every published water is a reservoir still holds for readers.
 Great Salt Lake requires an arm-aware representation; one point and one total
 would collapse separately measured waters.
+
+## Reservoir surface level
+
+A reservoir publishes its surface level only from a reviewed entry in
+`admitted_reservoir_elevations.json` that names the vertical datum with
+evidence (ADR-135). Lake Powell is the first: Reclamation's daily level
+(RISE item 508) is in feet above NGVD 1929, established by measurement because
+Reclamation names no datum -- over 91 days to 2026-10-26 it read a median
+0.14 ft from the Geological Survey's NGVD 1929 series at 09379900 (parameter
+62614) and 2.76 ft below its NAVD 1988 series (62615). The two Survey series
+differ by a median 2.9 ft (range 2.9 to 3.0), measured 2026-10-27, and that
+offset is published with its date.
+
+**Never assume a provider's datum.** RISE labels no datum on its elevation
+items and is not uniformly NGVD 1929: Taylor Park (item 796) matches the
+Survey's NAVD 1988 series. Every entry carries its own evidence. An
+operator's own project datum (Hoover Dam's powerhouse datum; Reclamation's
+project datums at Davis and Parker) is admitted as `project`, by its name and
+with its stated relation to a national datum -- the feet to add, the
+operator's words and a source -- and is never called by the national datum.
+Lake Mead is the first: Reclamation's 2001 sedimentation survey ties its
+elevations to the Hoover Dam powerhouse datum ("Add 0.55 feet to convert to
+NGVD29"). That RISE item 6123 is on it is an inference from that report, not a
+measurement, because no second series exists at Mead. Its NAVD 1988
+difference, about 2.9 ft, is calculated from two National Geodetic Survey
+benchmarks on the dam (NAVD 88 minus NGVD 29 = 2.35 ft) plus the 0.55 ft, and
+is published as `derived_offset`, never as a measured `datum_offset`.
+
+The level block is the terminal lake's level summary, built by the same
+function (`pipeline.measurement.summarize_measurement`): dated record
+readings, dated 7-, 30- and 365-day changes in feet, and the same-date history
+rank from the unchanged reservoir estimator. Its record starts at the
+roster's `record_starts`, the published end of first filling, with its
+source: Powell 1980-06-22 (Reclamation: "completed filling on June 22,
+1980"), Mead 1941-08-06 (Reclamation's 2001 survey: the first time the lake
+reached its spillway). Readings while a lake first fills describe the filling
+and are left out of the record readings and the rank; the daily history and
+the chart keep them. A start with no published source is refused. No percentage of a level is published,
+and a reference level is a named elevation with its authority, never a
+denominator. A daily level from Reclamation is one end-of-day reading; the
+Survey publishes every fifteen minutes, so the two also differ while the
+water moves quickly, by up to about a foot when Powell rose 1 to 1.8 ft a day
+in October 2026.
+
+## River flow
+
+A gauge publishes the survey's daily mean flow (parameter 00060, statistic
+00003) in cubic feet per second, as reported (ADR-136). Nothing is estimated:
+a reported day with no value stays empty, an approval status and qualifiers
+travel with each day, and the 7-day change is the difference from the value
+exactly seven days earlier, null when that day has none. A `shaped` gauge
+(dams upstream store and release water) is never compared with normal or
+ranked. Gauges are never added together and no gauge is a reservoir's inflow
+(ADR-124). A daily mean cannot show a peak inside the day.
+
+**A natural gauge's newest flow is placed among the survey's own day-of-year
+percentiles** (ADR-144). The U.S. Geological Survey's Statistics API
+(`observationNormals`, beta) computes them from approved daily means sharing a
+calendar day over the whole approved record, gaps included -- not a fixed
+normal period like the storage normals' 1991-2020 -- with the Weibull
+position (rank / (n + 1)); the formula is not documented and was measured
+against Mill Creek's daily record. The project keeps the 10th, 25th, 50th,
+75th and 90th and computes none. The class is WaterWatch's, for the band of
+the reading's own calendar day: under p10 much below normal, under p25 below,
+p25 to p75 normal, up to p90 above, over p90 much above; a value on a
+boundary takes the class nearer normal. A day whose band rests on fewer than
+30 years (`RIVER_NORMAL_MIN_YEARS`, WaterWatch's rule; the service has no
+minimum) or lacks a percentile (the service answers `nan`) is not compared,
+and the record says why. 29 February is that day at every current gauge. The
+newest value is usually provisional while the band is approved.
 
 **Never subtract two shares with different denominators** (ADR-046) — see the
 drought section below for the case this exists for.
@@ -226,10 +307,49 @@ snow so far".
 The payload's `method.version` names the estimator behind these figures; two
 files written under different versions are not one series.
 
+## Recent precipitation by drainage area
+
+**An area's figure is the mean of its stations with a total** (ADR-131), by
+ADR-129's rule: a station needs a reading on both days, and a falling gauge
+total is left out, never counted as dry. An area needs as many such stations
+as its snow reporting floor (`minimum_reporting_sites`), or it has no figure.
+The map's breaks are amounts in inches, the same for 1, 3 and 7 days.
+
+## The week's change in soil moisture
+
+**The published figure is a change at the same sensors, never a level**
+(ADR-142). A percent of the soil's volume is not comparable between two
+soils, so `soil_moisture.json` carries each station's seven-day change in
+percentage points and no median.
+
+- **Station value:** the mean of the 2 in (or 4 in where there is no 2 in
+  sensor), 8 in and 20 in readings for the day. All three or no value. A
+  station without the three sensors is listed in `other_depth_sites` and
+  not used.
+- **Frozen soil:** a depth's reading is dropped on a day its soil
+  temperature (`STO`) is at or below 32 °F, or has no temperature. The day's
+  indices are in the station's `frozen_days`. No month is hidden: soil
+  temperature is at nearly every station.
+- **The week:** one end day for every station, the newest day on which nine
+  in ten on-time stations have all three depths (ADR-129's set-day share);
+  the start is seven days before. The change is the end value minus the
+  start value, both rounded to a tenth first. No value on either day means
+  no change and a `no_change_reason`.
+- **Area value:** the mean of the stations with a change, held to the snow
+  reporting floor (`MIN_ROLLUP_SITES`). The page regroups from the place's
+  own stations (ADR-064); over every station that equals the file's
+  `rollups`, summed in the file's order with half-up rounding on both sides.
+- **Classes:** drier by 5 or more, 2 to 5, within 2, wetter by 2 to 5, 5 to
+  10, 10 or more (`src/viz/soil-classes.ts`).
+
+Not a claim to match the Natural Resources Conservation Service's own
+basin percent-of-median maps, whose method is unpublished. Percent of median
+over each station's own record is a later phase with its own record.
+
 ## Precipitation against its own history
 
 **One fixed set of stations, and every number a mean over it** (ADR-125).
-The snow page's precipitation card compares this water year with every
+The precipitation page's card compares this water year with every
 water year from 1991 through the last finished one, at the stations whose
 gauge record covers all of them. A place's set is its stations in that
 history that are not reporting late; the line, the bands, the median, the
@@ -298,6 +418,29 @@ tolerance of ten days for a daily feed and forty-five for a month-end one, so
 "change in 1 year" has covered 320 days to 410. `change_*_reference_date` and
 `change_*_elapsed_days` publish the interval, and the details panel prints the
 measured one whenever it differs from the name.
+
+## Storage gained since the low
+
+**A gain is measured from the reservoir's own low, not from a date someone
+picked** (ADR-134). `low_120d_af` is the lowest daily reading in the 120 days
+ending on the reading date, `low_120d_date` is its date, and
+`change_since_low_af` is the newest reading minus it. In autumn the window
+reaches the late-summer low, so the figure is the storm gain; in June it
+reaches the winter low, so it is the runoff gain. A tie takes the latest date.
+
+All three are null for a month-end feed (it cannot place a low inside a
+month), for a late record (`is_stale`, including one carried forward), and for
+a window holding fewer than 100 readings (the gap is where the low may be).
+Readings excluded under ADR-116 are already gone from the series.
+
+**A total counts its coverage.** The place summary sums only the daily
+reservoirs that publish a figure and always says "N of M daily reservoirs".
+A missing figure is not a gain of zero. The figure is in the details panel,
+the storage-charts place summary and the map hover, and not in the weekly
+summary.
+
+It invalidates no normal, so `METHOD_VERSION` does not move; the fields are
+optional and additive, so `schema_version` does not move either.
 
 ## Dates and calendars
 

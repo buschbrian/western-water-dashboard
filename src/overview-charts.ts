@@ -1014,14 +1014,14 @@ export async function renderArcgisNormalChart(
   model.addYAxisGuide("At the usual level");
   model.setGuideStart(100, 0, "y");
   model.setGuideEnd(null, 0, "y");
-  /* Two words, because the label has nowhere to go. The SDK draws a guide's
-   * label at the right-hand end of the line with no alignment control, so
-   * "Usual level for this date" started inside the plot and ran off it --
-   * the reader saw "ual level for this date" lying across the axis. The card
-   * above the chart and the axis title either side of it both already say
-   * "usual storage for this date"; the line only has to be named, not
-   * explained a third time. */
-  model.setGuideLabelText("Usual level", 0, "y");
+  /* No label on the line. The SDK draws a guide's label at the right-hand
+   * end of the line with no alignment or offset control, and that end is
+   * where the biggest reservoirs sit: "Usual level" lay on top of their
+   * dots at every width, and "Usual level for this date" ran off the plot
+   * before that. Text never sits on marks, so the line is named in the
+   * words above the chart ("Dots below the dashed line hold less than they
+   * usually do on this date") and in the axis title, not on the plot. */
+  model.setGuideLabelText("", 0, "y");
   model.setGuideStyle({
     type: "esriSLS", style: "esriSLSDash", width: 1.6, color: [...CHART_INK.mean]
   }, 0, "y");

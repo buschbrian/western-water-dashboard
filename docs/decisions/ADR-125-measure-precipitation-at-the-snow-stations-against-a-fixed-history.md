@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted. Its placement on the snow page is superseded by ADR-130.
 
 ## Date
 

@@ -61,12 +61,26 @@
       "note": "Accumulated precipitation since 1 October at the snow stations (ADR-125). Separate from snowpack.json so a failure costs only this file."
     },
     {
+      "path": "soil_moisture.json",
+      "class": "generated-daily",
+      "writer": "refresh_soil_moisture.py",
+      "staged_by_refresh": true,
+      "note": "The last fifteen days of soil moisture at the snow stations and each station's seven-day change (ADR-142). Separate from snowpack.json and precipitation.json so a failure costs only this file."
+    },
+    {
       "path": "lakes.json",
       "class": "generated-daily",
       "writer": "refresh_lakes.py",
       "staged_by_refresh": true,
       "appears_when": "the first daily refresh after refresh_lakes.py lands writes it from admitted_terminal_lakes.json",
       "note": "The natural terminal lakes payload (ADR-112): elevation and volume, no capacity or percent full. Separate from reservoirs.json on purpose; a lake joins no reservoir rollup."
+    },
+    {
+      "path": "elevation_history.json",
+      "class": "generated-daily",
+      "writer": "refresh_reservoirs.py",
+      "staged_by_refresh": true,
+      "note": "The daily surface level of each reservoir on admitted_reservoir_elevations.json, from the provider's first reading (ADR-135). Fetched only by those reservoirs' pages; reservoirs.json carries the summary and never the series."
     },
     {
       "path": "data/drought/usdm-current.geojson",
@@ -147,6 +161,20 @@
       "note": "A median over a period that has ended cannot change. Network job; every run merges."
     },
     {
+      "path": "rivers.json",
+      "class": "generated-daily",
+      "writer": "refresh_rivers.py",
+      "staged_by_refresh": true,
+      "note": "Daily mean river flow at the reviewed gauges in admitted_river_gauges.json (ADR-136): 30 days per gauge with approval status and qualifiers. A natural gauge's newest value carries its day-of-year percentile band and class from river_normals.json (ADR-144); a shaped gauge has no normal. No rank and no total across gauges."
+    },
+    {
+      "path": "river_normals.json",
+      "class": "derived-on-demand",
+      "writer": "tools/build_river_normals.py",
+      "staged_by_refresh": false,
+      "note": "Day-of-year flow percentiles (10th to 90th) for the natural river gauges, read from the U.S. Geological Survey's statistics service (ADR-144). The daily refresh reads it and never fetches it. Moves when the survey approves another year of values; network job; every run merges. Never copied to dist."
+    },
+    {
       "path": "precipitation_history.json",
       "class": "derived-on-demand",
       "writer": "tools/build_precipitation_history.py",
@@ -178,6 +206,13 @@
       "writer": "tools/build_operating_character_census.py",
       "staged_by_refresh": false,
       "note": "Proposed operating characters (ADR-114) and natural-lake flags for every published reservoir, with the inventory and hydrography evidence behind each. Candidates for a reviewer: nothing here is applied to a roster or a payload, and no page fetches it. Rebuild when the roster changes or a service is asked again."
+    },
+    {
+      "path": "data/reviews/new-mexico-admission-screen.json",
+      "class": "derived-on-demand",
+      "writer": "tools/audit_new_mexico_reservoirs.py",
+      "staged_by_refresh": false,
+      "note": "One run of the New Mexico admission screen (R11): every storage series the state has on USGS, RISE and the Corps' Albuquerque District, matched to its dam, with the drawn-scope check and a suggestion. Candidates for a reviewer: nothing here is applied to a roster or a payload, and no page fetches it."
     },
     {
       "path": "data/us-land.geojson",
@@ -282,11 +317,25 @@
       "note": "Reviewed Central Arizona Project admission of Lake Pleasant, with the reviewed full-level finding (ADR-104)."
     },
     {
+      "path": "admitted_river_gauges.json",
+      "class": "reviewed-by-hand",
+      "writer": null,
+      "staged_by_refresh": false,
+      "note": "The reviewed river gauges (ADR-136): display and survey names, the primary daily mean series, the tier with its basis and who directed it, and the evidence for any water named downstream. The loader refuses an entry without them."
+    },
+    {
       "path": "admitted_terminal_lakes.json",
       "class": "reviewed-by-hand",
       "writer": null,
       "staged_by_refresh": false,
       "note": "The reviewed natural terminal lakes (ADR-112): a waterbody point, a closed-basin assignment and two measured series with the volume's relation named. No capacity is recorded for any lake; the loader refuses one."
+    },
+    {
+      "path": "admitted_reservoir_elevations.json",
+      "class": "reviewed-by-hand",
+      "writer": null,
+      "staged_by_refresh": false,
+      "note": "The reviewed reservoir surface elevations (ADR-135): the provider's elevation item, the vertical datum with its evidence and checked date, the measured offset to the other datum with its measurement date, and reference levels with their authority. The loader refuses an entry missing any of them."
     },
     {
       "path": "data/reservoir-source-history.json",

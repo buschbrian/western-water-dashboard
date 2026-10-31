@@ -182,7 +182,12 @@ export function renderPrecipitationCurve(
       svg.append(element("line", {
         class: "precip-tick", x1: tickX, y1: plotBottom, x2: tickX, y2: plotBottom + 4
       }));
-      const label = element("text", { class: "precip-axis", x: tickX, y: height - 8, "text-anchor": "middle" });
+      /* A date centred on the plot's edge runs half its width into the
+       * inch labels; at the edges it reads inward from its tick instead. */
+      const half = tick.text.length * 3.4;
+      const anchor = Number(tickX) - PAD_LEFT < half ? "start"
+        : chartWidth - PAD_RIGHT - Number(tickX) < half ? "end" : "middle";
+      const label = element("text", { class: "precip-axis", x: tickX, y: height - 8, "text-anchor": anchor });
       label.textContent = tick.text;
       svg.append(label);
     }

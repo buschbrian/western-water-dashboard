@@ -10,6 +10,7 @@ and deduplicated.
 """
 
 import datetime as dt
+import math
 import os
 import time
 
@@ -19,7 +20,8 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from .constants import (
-    ADMITTED_CDEC_RESERVOIRS_PATH, AWDB_DATA_URL, RISE_RESULT_URL,
+    ADMITTED_CDEC_RESERVOIRS_PATH, ADMITTED_RISE_RESERVOIRS_PATH,
+    AWDB_DATA_URL, RISE_RESULT_URL,
     local_today,
 )
 from .roster import load_excluded_readings
@@ -140,12 +142,16 @@ def _get_json(params: dict) -> dict:
     return _retry_unreadable_body(read)
 
 
-def fetch_rise_series(item_id: int, start: str, end: str) -> pd.DataFrame:
+def fetch_rise_series(item_id: int, start: str, end: str, *,
+                      column: str = "storage_af") -> pd.DataFrame:
     """Pull one RISE catalog item's daily results, paginating as needed.
 
-    Returns a date-sorted frame with columns [date, storage_af], already
+    Returns a date-sorted frame with columns [date, column], already
     cleaned: null/non-numeric results dropped, duplicate dates collapsed to
-    the last reading, future-dated rows removed.
+    the last reading, future-dated rows removed. `column` names the value: a
+    storage item is `storage_af`, and a surface-elevation item read for the
+    reviewed elevation roster is `elevation_ft` (ADR-135). The cleaning is
+    the same for both.
     """
     rows = []
     page = 1
@@ -175,19 +181,31 @@ def fetch_rise_series(item_id: int, start: str, end: str) -> pd.DataFrame:
 
     if not rows:
         return pd.DataFrame({"date": pd.Series(dtype="datetime64[ns]"),
-                             "storage_af": pd.Series(dtype="float64")})
+                             column: pd.Series(dtype="float64")})
 
     df = pd.DataFrame([r["attributes"] for r in rows])
     df["date"] = pd.to_datetime(df["dateTime"], format="mixed", utc=True).dt.tz_localize(None).dt.normalize()
     # RISE returns null `result` for days the gage didn't report. Those used
     # to flow straight through: a trailing null became the "latest" reading
     # and poisoned every downstream metric with NaN.
-    df["storage_af"] = pd.to_numeric(df["result"], errors="coerce")
-    df = df.dropna(subset=["storage_af"])
+    df[column] = pd.to_numeric(df["result"], errors="coerce")
+    df = df.dropna(subset=[column])
+
+    # A reviewed exclusion is applied where RISE readings are read (ADR-116).
+    gone = [excluded_reading(str(item_id), stamp, reading, RISE_EXCLUDED_READINGS)
+            for stamp, reading in zip(df["dateTime"], df[column])]
+    if any(found is not None for found in gone):
+        dropped = [found for found in gone if found is not None]
+        print(f"  item {item_id}: {len(dropped)} reviewed reading(s) excluded "
+              f"(ADR-116)")
+        for record in dropped:
+            print(f"    {record['stamp']}  {record['value']:,.2f} acre-feet  "
+                  f"{record['issue_url']}")
+        df = df[[found is None for found in gone]]
 
     df = df[df["date"] <= local_today()]
     df = df.sort_values("date").drop_duplicates(subset="date", keep="last")
-    return df[["date", "storage_af"]].reset_index(drop=True)
+    return df[["date", column]].reset_index(drop=True)
 
 
 def _get_awdb_json(params: dict):
@@ -278,6 +296,11 @@ CDEC_EXCLUDED_READINGS = load_excluded_readings(
     ADMITTED_CDEC_RESERVOIRS_PATH, CDEC_STORAGE_SENSOR)
 
 
+#: Reviewed exclusions of RISE results, by item (ADR-116). The item is the
+#: station key, so a record names the item as its own `sensor`.
+RISE_EXCLUDED_READINGS = load_excluded_readings(ADMITTED_RISE_RESERVOIRS_PATH, None)
+
+
 def _reading_day(stamp):
     """One stamp's own calendar day, or None where it does not parse.
 
@@ -290,7 +313,8 @@ def _reading_day(stamp):
     return None if pd.isna(parsed) else parsed.normalize()
 
 
-def excluded_reading(station_id: str, stamp, reading) -> dict | None:
+def excluded_reading(station_id: str, stamp, reading,
+                     table: dict | None = None) -> dict | None:
     """The reviewed exclusion this reading is, or None (ADR-116).
 
     A reading is excluded only where the station, the day and the **raw
@@ -302,7 +326,9 @@ def excluded_reading(station_id: str, stamp, reading) -> dict | None:
     day = _reading_day(stamp)
     if day is None:
         return None
-    for record in CDEC_EXCLUDED_READINGS.get(station_id, ()):
+    if table is None:
+        table = CDEC_EXCLUDED_READINGS
+    for record in table.get(station_id, ()):
         if _reading_day(record["stamp"]) == day \
                 and float(record["value"]) == float(reading):
             return record
@@ -651,6 +677,229 @@ def fetch_usgs_parameter_series(site_no: str, parameter_code: str,
     df = df[df["date"] <= local_today()]
     return (df.sort_values("date").drop_duplicates(subset="date", keep="last")
               [["date", column]].reset_index(drop=True))
+
+
+#: The v1 OGC collections, read only for river flow (ADR-136). The reservoir
+#: and lake adapters above stay on v0 until that move is reviewed on its own.
+USGS_OGC_V1_URL = "https://api.waterdata.usgs.gov/ogcapi/v1/collections"
+USGS_FLOW_PARAMETER = "00060"
+USGS_DAILY_MEAN_STATISTIC = "00003"
+USGS_FLOW_UNIT = "ft^3/s"
+
+
+def usgs_flow_metadata_url(site_no: str) -> str:
+    return (f"{USGS_OGC_V1_URL}/time-series-metadata/items?f=json"
+            f"&monitoring_location_id=USGS-{site_no}"
+            f"&parameter_code={USGS_FLOW_PARAMETER}"
+            f"&statistic_id={USGS_DAILY_MEAN_STATISTIC}")
+
+
+def usgs_flow_daily_url(time_series_id: str) -> str:
+    return (f"{USGS_OGC_V1_URL}/daily/items?f=json"
+            f"&time_series_id={time_series_id}")
+
+
+def _get_usgs_v1_json(url: str, params: dict | None = None):
+    """GET one v1 page, keyed whenever a key is configured (ADR-098).
+
+    The daily job always has the key. Without one -- a contributor's
+    machine -- the request is anonymous, as the gauge-review tools' are:
+    eight requests a day are inside the anonymous allowance (ADR-136).
+    """
+    headers = {"User-Agent": "western-water-dashboard/refresh "
+                             "(+https://github.com/buschbrian)"}
+    if os.environ.get(USGS_API_KEY_ENV, "").strip():
+        headers["X-Api-Key"] = _usgs_api_key()
+
+    def read():
+        resp = SESSION.get(url, params=params, timeout=60, headers=headers)
+        resp.raise_for_status()
+        return resp.json()
+    return _retry_unreadable_body(read)
+
+
+def _usgs_v1_features(url: str, params: dict | None = None) -> list[dict]:
+    features: list[dict] = []
+    next_url: str | None = url
+    page = 0
+    while next_url and page < MAX_PAGES:
+        payload = _get_usgs_v1_json(next_url, params)
+        params = None
+        page += 1
+        features.extend(payload.get("features") or [])
+        next_url = next((link.get("href") for link in payload.get("links") or []
+                         if link.get("rel") == "next" and link.get("href")), None)
+    if next_url:
+        raise RuntimeError(f"USGS OGC pagination exceeded {MAX_PAGES} pages")
+    return features
+
+
+def confirm_usgs_flow_series(site_no: str, time_series_id: str, *,
+                             features: list[dict] | None = None) -> None:
+    """Refuse a reviewed series id that is no longer the primary daily mean.
+
+    The roster commits the id a person checked. If the survey retires it or
+    names another series primary, the gauge fails this run and its last
+    record is carried forward as late, rather than reading the wrong series.
+    """
+    if features is None:
+        features = _usgs_v1_features(usgs_flow_metadata_url(site_no))
+    primary = [f for f in features
+               if (f.get("properties") or {}).get("primary") == "Primary"
+               and (f.get("properties") or {}).get("unit_of_measure") == USGS_FLOW_UNIT]
+    ids = [f.get("id") for f in primary]
+    if ids != [time_series_id]:
+        raise ValueError(
+            f"{site_no}: expected primary daily mean flow series {time_series_id}, "
+            f"the survey lists {ids}")
+
+
+def fetch_usgs_flow_series(site_no: str, time_series_id: str,
+                           start: dt.date, end: dt.date, *,
+                           features: list[dict] | None = None) -> list[dict]:
+    """One gauge's daily mean flow, one dict per reported day, oldest first.
+
+    Unlike the storage adapter, a row is kept with its approval status and
+    qualifiers, and a reported day with no value stays a day with no value.
+    A row naming another site, series, parameter, statistic or unit refuses
+    the whole series: a flow is published or it is not, never patched.
+    """
+    if features is None:
+        features = _usgs_v1_features(
+            f"{USGS_OGC_V1_URL}/daily/items",
+            {"f": "json", "time_series_id": time_series_id,
+             "datetime": f"{start.isoformat()}/{end.isoformat()}",
+             "limit": USGS_PAGE_LIMIT})
+    expected = {"monitoring_location_id": f"USGS-{site_no}",
+                "time_series_id": time_series_id,
+                "parameter_code": USGS_FLOW_PARAMETER,
+                "statistic_id": USGS_DAILY_MEAN_STATISTIC,
+                "unit_of_measure": USGS_FLOW_UNIT}
+    rows: dict[str, dict] = {}
+    for feature in features:
+        p = feature.get("properties") or {}
+        for key, value in expected.items():
+            if p.get(key) != value:
+                raise ValueError(f"{site_no}: a daily row has {key} {p.get(key)!r}")
+        stamp = p.get("time")
+        try:
+            day = dt.date.fromisoformat(stamp)
+        except (TypeError, ValueError):
+            raise ValueError(f"{site_no}: a daily row has no calendar date") from None
+        if day.isoformat() != stamp or not start <= day <= end:
+            raise ValueError(f"{site_no}: {stamp} is outside the requested window")
+        raw = p.get("value")
+        if raw is None:
+            cfs = None
+        else:
+            if isinstance(raw, bool):
+                raise ValueError(f"{site_no}: {stamp} has a non-numeric flow")
+            try:
+                cfs = float(raw)
+            except (TypeError, ValueError):
+                raise ValueError(f"{site_no}: {stamp} has a non-numeric flow") from None
+            if not math.isfinite(cfs) or cfs < 0:
+                raise ValueError(f"{site_no}: {stamp} has an impossible flow {raw!r}")
+        approval = p.get("approval_status")
+        if approval is not None and not isinstance(approval, str):
+            raise ValueError(f"{site_no}: {stamp} has an unreadable approval status")
+        qualifier = p.get("qualifier")
+        if qualifier is None:
+            qualifiers: list[str] = []
+        elif isinstance(qualifier, str):
+            qualifiers = [qualifier]
+        elif isinstance(qualifier, list) and all(isinstance(q, str) for q in qualifier):
+            qualifiers = list(qualifier)
+        else:
+            raise ValueError(f"{site_no}: {stamp} has an unreadable qualifier")
+        row = {"date": stamp, "cfs": cfs, "approval": approval, "qualifiers": qualifiers}
+        if stamp in rows and rows[stamp] != row:
+            raise ValueError(f"{site_no}: two different flows for {stamp}")
+        rows[stamp] = row
+    return [rows[key] for key in sorted(rows)]
+
+
+#: The survey's statistics service (beta), read only for the natural river
+#: gauges' day-of-year percentiles (ADR-144). Its percentiles are computed
+#: from approved daily means alone, over the whole approved record.
+USGS_STATISTICS_NORMALS_URL = "https://api.waterdata.usgs.gov/statistics/v0/observationNormals"
+#: Every calendar day of a leap year, the set the service answers with.
+DAYS_OF_YEAR = tuple(
+    (dt.date(2024, 1, 1) + dt.timedelta(days=offset)).strftime("%m-%d")
+    for offset in range(366))
+
+
+def usgs_flow_normals_url(site_no: str) -> str:
+    return (f"{USGS_STATISTICS_NORMALS_URL}?monitoring_location_id=USGS-{site_no}"
+            f"&parameter_code={USGS_FLOW_PARAMETER}&computation_type=percentile"
+            f"&normal_type=DOY&page_size=1000")
+
+
+def fetch_usgs_flow_normals(site_no: str, time_series_id: str, percentiles: tuple[int, ...],
+                            *, payload: dict | None = None) -> dict[str, dict]:
+    """One gauge's day-of-year flow percentiles, keyed by "MM-DD".
+
+    Each day is `{"years": n, "p10": value, ...}` for the asked percentiles;
+    a percentile the service answers as "nan" is None, so the caller can
+    withhold that day. Anything else unexpected refuses the gauge whole: the
+    wrong series, a missing day, an unapproved or non-percentile value, or
+    percentiles out of order.
+    """
+    if payload is None:
+        payload = _get_usgs_v1_json(usgs_flow_normals_url(site_no))
+    if payload.get("next"):
+        raise ValueError(f"{site_no}: the percentiles span more than one page")
+    features = [f for f in payload.get("features") or []
+                if (f.get("properties") or {}).get("monitoring_location_id") == f"USGS-{site_no}"]
+    if len(features) != 1 or len(payload.get("features") or []) != 1:
+        raise ValueError(f"{site_no}: expected one monitoring location in the percentiles")
+    series = [d for d in features[0]["properties"].get("data") or []
+              if d.get("parameter_code") == USGS_FLOW_PARAMETER]
+    if len(series) != 1:
+        raise ValueError(f"{site_no}: expected one flow series in the percentiles")
+    data = series[0]
+    if (data.get("parent_time_series_id"), data.get("parent_statistic_id"),
+            data.get("unit_of_measure")) != (time_series_id, USGS_DAILY_MEAN_STATISTIC,
+                                             USGS_FLOW_UNIT):
+        raise ValueError(
+            f"{site_no}: the percentiles belong to series {data.get('parent_time_series_id')!r} "
+            f"({data.get('parent_statistic_id')!r}, {data.get('unit_of_measure')!r}), "
+            f"not the reviewed daily mean {time_series_id}")
+    wanted = [str(p) for p in percentiles]
+    days: dict[str, dict] = {}
+    for value in data.get("values") or []:
+        day = value.get("time_of_year")
+        if (value.get("time_of_year_type"), value.get("computation"),
+                value.get("approval_status")) != ("day_of_year", "percentile", "approved"):
+            raise ValueError(f"{site_no}: {day} is not an approved day-of-year percentile")
+        if day not in DAYS_OF_YEAR or day in days:
+            raise ValueError(f"{site_no}: unexpected or repeated day {day!r}")
+        labels, numbers = value.get("percentiles"), value.get("values")
+        years = value.get("sample_count")
+        if not isinstance(labels, list) or not isinstance(numbers, list) \
+                or len(labels) != len(numbers) or not set(wanted) <= set(labels) \
+                or isinstance(years, bool) or not isinstance(years, int) or years < 0:
+            raise ValueError(f"{site_no}: {day} has unreadable percentiles")
+        entry: dict = {"years": years}
+        for label in wanted:
+            raw = numbers[labels.index(label)]
+            if isinstance(raw, str) and raw.strip().lower() == "nan":
+                entry[f"p{label}"] = None
+                continue
+            try:
+                number = float(raw)
+            except (TypeError, ValueError):
+                raise ValueError(f"{site_no}: {day} p{label} is {raw!r}") from None
+            if not math.isfinite(number) or number < 0:
+                raise ValueError(f"{site_no}: {day} p{label} is {raw!r}")
+            entry[f"p{label}"] = number
+        present = [entry[f"p{label}"] for label in wanted if entry[f"p{label}"] is not None]
+        if present != sorted(present):
+            raise ValueError(f"{site_no}: {day} percentiles are out of order")
+        days[day] = entry
+    if set(days) != set(DAYS_OF_YEAR):
+        raise ValueError(f"{site_no}: the percentiles cover {len(days)} of 366 days")
+    return {day: days[day] for day in DAYS_OF_YEAR}
 
 
 def reduce_to_daily_last(frame: pd.DataFrame) -> pd.DataFrame:

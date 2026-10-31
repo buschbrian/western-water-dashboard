@@ -8,6 +8,7 @@ measured is published beside it.
 
 import pandas as pd
 
+from .constants import LOW_MIN_READINGS, LOW_WINDOW_DAYS
 from .numbers import _round
 
 
@@ -31,6 +32,25 @@ def value_asof(series: pd.Series, when: pd.Timestamp,
     if (when - sub.index[-1]).days > tolerance_days:
         return None
     return float(sub.iloc[-1]), sub.index[-1]
+
+
+def recent_low(series: pd.Series, last_date: pd.Timestamp,
+               window_days: int = LOW_WINDOW_DAYS,
+               min_readings: int = LOW_MIN_READINGS
+               ) -> tuple[float, pd.Timestamp] | None:
+    """Lowest reading in the `window_days` ending on `last_date`, and its date.
+
+    A tie takes the latest date: a reservoir held flat at its low has been at
+    the low until the last of those days, and the gain is measured from there.
+    None when the window holds fewer than `min_readings` values, because a gap
+    is where the real low may be.
+    """
+    start = last_date - pd.Timedelta(days=window_days)
+    window = series[(series.index > start) & (series.index <= last_date)].dropna()
+    if len(window) < min_readings:
+        return None
+    low = float(window.min())
+    return low, window[window == low].index.max()
 
 
 def monthly_history(series: pd.Series, months: int = 12,

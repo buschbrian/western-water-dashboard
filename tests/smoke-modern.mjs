@@ -106,6 +106,10 @@ function unevenRows(cards) {
 }
 
 const payload = JSON.parse(await readFile(path.join(REPO_ROOT, "reservoirs.json"), "utf8"));
+/* The reviewed elevation roster (ADR-135): which reservoir pages must show a
+ * surface level. Read from the roster, never inferred from the payload. */
+const elevationRoster = JSON.parse(await readFile(
+  path.join(REPO_ROOT, "admitted_reservoir_elevations.json"), "utf8")).reservoirs;
 const snowPayload = JSON.parse(
   await readFile(path.join(REPO_ROOT, "snowpack.json"), "utf8"));
 const upstreamIndex = JSON.parse(
@@ -466,7 +470,165 @@ function checkLabelFonts(check, label, missing) {
     [...new Set(missing)].join(", "));
 }
 
+/*
+ * No text drawn over other text.
+ *
+ * axe and the width checks both passed a drought page whose area rows laid
+ * each reading over its links at every phone width: a shared card style gave
+ * a four-block row three grid rows. Neither check looks at where words land.
+ * This one measures every visible text run, as a reader sees it -- inside an
+ * open element, clipped by any scrolling or clipping box -- and fails when
+ * two runs from different elements share more than a sliver. Text in two
+ * different positioned layers is not compared: a menu, a sticky bar or an
+ * open panel covers what is under it on purpose. The map SDK's own controls
+ * are left out: they are not this site's layout.
+ */
+async function checkTextOverlap(tab, check, label) {
+  const found = await tab.evaluate(() => {
+    /* Up the tree the browser lays out: slotted content sits inside its
+     * slot, and a component's scrolling box is in its shadow root. */
+    const up = (node) => node.assignedSlot ?? node.parentElement ?? node.getRootNode().host;
+    const shown = (element) => {
+      for (let node = element; node && node !== document.documentElement;
+        node = up(node)) {
+        const style = getComputedStyle(node);
+        if (style.display === "none" || style.visibility === "hidden" || Number(style.opacity) === 0) return false;
+        const parent = node.parentElement;
+        if (parent?.tagName === "DETAILS" && !parent.open && node.tagName !== "SUMMARY") return false;
+      }
+      return true;
+    };
+    const clip = (rect, element) => {
+      let box = rect;
+      for (let node = element; node && node !== document.documentElement;
+        node = up(node)) {
+        const style = getComputedStyle(node);
+        if (style.overflowX === "visible" && style.overflowY === "visible") continue;
+        const edge = node.getBoundingClientRect();
+        const left = Math.max(box.left, edge.left), top = Math.max(box.top, edge.top);
+        box = new DOMRect(left, top, Math.max(0, Math.min(box.right, edge.right) - left),
+          Math.max(0, Math.min(box.bottom, edge.bottom) - top));
+      }
+      return box;
+    };
+    const layer = (element) => {
+      for (let node = element; node && node !== document.documentElement;
+        node = up(node)) {
+        if (["fixed", "absolute", "sticky"].includes(getComputedStyle(node).position)) return node;
+      }
+      return null;
+    };
+    const name = (element) => `${element.tagName.toLowerCase()}${element.id ? `#${element.id}` : ""}`
+      + (typeof element.className === "string" && element.className
+        ? `.${element.className.trim().split(/\s+/)[0]}` : "");
+    const runs = [];
+    const walk = (root) => {
+      const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        const element = node.parentElement;
+        if (!element || !node.textContent.trim() || ["SCRIPT", "STYLE"].includes(element.tagName)) continue;
+        if (!shown(element)) continue;
+        const range = document.createRange();
+        range.selectNodeContents(node);
+        /* A text box is the font's whole content area, which some fallback
+         * fonts make half again taller than the type. The letters sit in
+         * about one em at the middle of it. */
+        const em = parseFloat(getComputedStyle(element).fontSize) || 16;
+        for (const rect of range.getClientRects()) {
+          const height = Math.min(rect.height, em);
+          const middle = rect.top + rect.height / 2;
+          const box = clip(new DOMRect(rect.left, middle - height / 2, rect.width, height), element);
+          if (box.width >= 2 && box.height >= 2) {
+            runs.push({ element, layer: layer(element), text: node.textContent.trim().slice(0, 40), box });
+          }
+        }
+      }
+      for (const host of root.querySelectorAll("*")) {
+        if (host.shadowRoot && !host.tagName.startsWith("ARCGIS-")) walk(host.shadowRoot);
+      }
+    };
+    walk(document.body);
+    runs.sort((a, b) => a.box.top - b.box.top);
+    const overlaps = [];
+    for (let i = 0; i < runs.length; i++) {
+      for (let j = i + 1; j < runs.length && runs[j].box.top < runs[i].box.bottom; j++) {
+        const a = runs[i], b = runs[j];
+        if (a.element === b.element || a.layer !== b.layer) continue;
+        if (a.element.contains(b.element) || b.element.contains(a.element)) continue;
+        const wide = Math.min(a.box.right, b.box.right) - Math.max(a.box.left, b.box.left);
+        const tall = Math.min(a.box.bottom, b.box.bottom) - Math.max(a.box.top, b.box.top);
+        if (wide > 3 && tall > 2) {
+          overlaps.push(`${name(a.element)} "${a.text}" over ${name(b.element)} "${b.text}"`);
+        }
+      }
+    }
+    return [...new Set(overlaps)];
+  });
+  check(found.length === 0,
+    `${label}: ${found.length} text run(s) drawn over other text, e.g. ${found.slice(0, 3).join("; ")}`);
+}
+
+/* The storage charts draw when they come within a screen of view, so a
+ * check of every chart first brings each one near and waits until none is
+ * left deferred or drawing. Also holds the readiness sum: every host is in
+ * exactly one state. */
+async function drawEveryChart(tab, check, label, hostIds) {
+  /* More than one pass: a redraw asked for while the reader is further
+   * down leaves a chart above waiting until it is near again. */
+  for (let pass = 0; pass < 3; pass += 1) {
+    for (const id of hostIds) {
+      await tab.locator(id).scrollIntoViewIfNeeded();
+      await tab.waitForFunction(() => window.__overviewReady?.chartsPending === 0, null, { timeout: 120000 });
+    }
+    if (await tab.evaluate(() => window.__overviewReady?.chartsDeferred === 0)) break;
+  }
+  await tab.waitForFunction(() => window.__overviewReady?.chartsDeferred === 0
+    && window.__overviewReady?.chartsPending === 0, null, { timeout: 120000 });
+  await tab.evaluate(() => window.scrollTo(0, 0));
+  const ready = await tab.evaluate(() => window.__overviewReady);
+  check(ready.chartsDrawn + ready.chartsEmpty + ready.chartsFailed + ready.chartsDeferred
+    + ready.chartsPending === ready.charts,
+  `${label}: chart states do not add up to ${ready.charts} (${JSON.stringify(ready)})`);
+}
+
+/* The page's name in the bar is whole. It ends in an ellipsis when the bar
+ * runs out of room, which is how "Western Reservoir Storage" read
+ * "Western Reserv…" on a phone beside six actions. */
+async function checkHeaderTitle(tab, check, label) {
+  const title = await tab.evaluate(() => {
+    const element = document.getElementById("brand-title");
+    return element ? { cut: element.scrollWidth > element.clientWidth + 1, text: element.innerText } : null;
+  });
+  if (title) check(!title.cut, `${label}: the page name in the bar is cut short ("${title.text}")`);
+}
+
+/* No shown text is cut off by its own box. A box that clips (overflow hidden
+ * or clip, or an ellipsis) and holds text wider than itself has lost words
+ * a reader needed: "Bear River At Camp Far West Dam" ended in an ellipsis in
+ * the reservoir list at 360 pixels. Scrolling boxes are not clipped, and the
+ * map and chart components draw their own text, so both are left out. The
+ * bar's alternate full title is a hidden phone/wide pair, not a cut. */
+async function checkTextFits(tab, check, label) {
+  const cut = await tab.evaluate(() => {
+    const skip = ".visually-hidden, .brand-subject-full, arcgis-map, arcgis-scene, arcgis-chart, calcite-navigation";
+    const out = [];
+    for (const element of document.querySelectorAll("body *")) {
+      if (element.closest(skip) || !element.clientWidth || !(element.innerText ?? "").trim()) continue;
+      const style = getComputedStyle(element);
+      if (!/hidden|clip/.test(style.overflowX) && style.textOverflow !== "ellipsis") continue;
+      if (element.scrollWidth > element.clientWidth + 1 && element.getClientRects().length) {
+        out.push(`${element.tagName.toLowerCase()}${element.className ? `.${String(element.className).split(" ")[0]}` : ""} "${element.innerText.trim().slice(0, 40)}"`);
+      }
+    }
+    return out;
+  });
+  check(cut.length === 0, `${label}: ${cut.length} text box(es) cut text short, e.g. ${cut.slice(0, 3).join("; ")}`);
+}
+
 async function checkAccessibility(tab, check, label) {
+  await checkTextOverlap(tab, check, label);
+  await checkHeaderTitle(tab, check, label);
+  await checkTextFits(tab, check, label);
   /*
    * Scored twice, and only a finding that survives both counts.
    *
@@ -1317,21 +1479,21 @@ for (const viewport of VIEWPORTS) {
       };
       return {
         menu: shown("#page-menu"),
-        buttons: ["#overview-link", "#snow-link", "#drought-link", "#methods-link"].filter(shown),
+        buttons: ["#overview-link", "#precipitation-link", "#snow-link", "#drought-link", "#methods-link"].filter(shown),
         menuItems: [...document.querySelectorAll("#page-menu calcite-dropdown-item[href]")]
           .map((item) => item.getAttribute("href")),
-        buttonHrefs: ["#overview-link", "#snow-link", "#drought-link", "#methods-link"]
+        buttonHrefs: ["#overview-link", "#precipitation-link", "#snow-link", "#drought-link", "#methods-link"]
           .map((selector) => document.querySelector(selector)?.getAttribute("href"))
       };
     });
     const wideBar = viewport.width >= 1024;
     check(pageLinks.menu === !wideBar,
       `${label}: the page menu is ${pageLinks.menu ? "showing" : "hidden"} at ${viewport.width}px`);
-    check(pageLinks.buttons.length === (wideBar ? 4 : 0),
+    check(pageLinks.buttons.length === (wideBar ? 5 : 0),
       `${label}: ${pageLinks.buttons.length} page link buttons are showing at ${viewport.width}px`);
-    check(pageLinks.menuItems.join(",") === "./,./overview.html,./snow.html,./drought.html,./methods.html",
+    check(pageLinks.menuItems.join(",") === "./,./overview.html,./precipitation.html,./snow.html,./drought.html,./methods.html",
       `${label}: the page menu offers ${pageLinks.menuItems.join(", ")}`);
-    check(pageLinks.buttonHrefs.join(",") === "./overview.html,./snow.html,./drought.html,./methods.html",
+    check(pageLinks.buttonHrefs.join(",") === "./overview.html,./precipitation.html,./snow.html,./drought.html,./methods.html",
       `${label}: the page link buttons point at ${pageLinks.buttonHrefs.join(", ")}`);
     check(await tab.locator(".map-stage > .map-alternative").count() === 0,
       `${label}: the old table and charts overlay still covers the map`);
@@ -1600,6 +1762,7 @@ for (const viewport of VIEWPORTS) {
       "#detail-panel [data-detail]";
     const firstButton = tab.locator(listSelector).first();
     check(await firstButton.isVisible(), `${label}: the active reservoir list is not visible`);
+    await checkTextFits(tab, check, `${label}, reservoir list`);
     const firstName = await firstButton.getAttribute("data-reservoir");
     await firstButton.click();
     const selected = await tab.evaluate(() => window.__dashboardReady.selected);
@@ -2228,6 +2391,12 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
     await tab.waitForFunction(
       (expected) => window.__overviewReady?.charts === expected, CHART_HOSTS.length,
       { timeout: 120000 });
+    /* Off-screen charts wait until they are near; at load, only those near
+     * the screen draw. */
+    const atLoad = await tab.evaluate(() => window.__overviewReady);
+    console.log("  charts at load:", JSON.stringify({
+      drawn: atLoad.chartsDrawn, deferred: atLoad.chartsDeferred, pending: atLoad.chartsPending }));
+    await drawEveryChart(tab, check, label, CHART_HOSTS);
     const overviewReady = await tab.evaluate(() => window.__overviewReady);
     /* Every chart drew, as the page itself judged it: an SDK chart counts
      * only once its drawing surface exists (`mountChart`). 1.1.0 shipped
@@ -2235,6 +2404,18 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
     check(overviewReady.chartsDrawn === CHART_HOSTS.length && overviewReady.chartsFailed === 0,
       `${label}: ${overviewReady.chartsDrawn} of ${CHART_HOSTS.length} charts drew, ` +
         `${overviewReady.chartsFailed} failed`);
+    /* Every large number names its unit, and the scatter's guide carries no
+     * label: the SDK draws it at the line's right end with no offset, over
+     * the biggest reservoirs' dots, so text is kept off the plot instead. */
+    const unitsAndGuide = await tab.evaluate(() => ({
+      change: document.querySelector('[data-kpi="change"]')?.textContent ?? "",
+      volume: document.querySelector('[data-kpi="volume"]')?.textContent ?? "",
+      guideLabel: document.querySelector("#normal-chart arcgis-chart")?.model?.getGuideLabelText(0, "y")
+    }));
+    check(/acre-feet/i.test(unitsAndGuide.change) && /acre-feet/i.test(unitsAndGuide.volume),
+      `${label}: a storage figure has no unit (${JSON.stringify(unitsAndGuide)})`);
+    check(unitsAndGuide.guideLabel === "",
+      `${label}: the scatter's guide line carries the label "${unitsAndGuide.guideLabel}" over its marks`);
     check(overviewReady.lakePowellExcluded === false,
       `${label}: readiness signal reports Lake Powell out of the opening scope`);
     check(await tab.locator("arcgis-chart").count() === SDK_CHART_HOSTS.length,
@@ -2350,6 +2531,10 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
     check(/^Middle half \d+\.\d% to \d+\.\d%$/.test(histogramKey.lines[2] ?? ""),
       `${label}: the key's middle half reads "${histogramKey.lines[2]}"`);
 
+    /* The disclosures above moved the charts and may have asked for a
+     * redraw while they were far off; a chart draws when it is near
+     * (ADR-132), so the ones read below are brought near first. */
+    await drawEveryChart(tab, check, `${label}, after the disclosures`, CHART_HOSTS);
     const rankedChart = await tab.locator("#capacity-chart arcgis-chart").evaluate((chart) => ({
       sort: chart.model?.getSortOrder(),
       categoryFormat: chart.model?.getAxisValueFormat(0),
@@ -2545,6 +2730,11 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
     const openingRows = (await tab.locator("#reservoir-rows").innerText()).split("\n");
     check(namedRows(openingRows, "Lake Powell") === 1,
       `${label}: Lake Powell is missing from the default overview table`);
+    /* ADR-134 and ruling R2: the place total always names its coverage. */
+    const sinceLowNote = (await tab.locator('[data-kpi="since-low-note"]').innerText()).trim();
+    check(/for \d+ of \d+ daily reservoirs$/.test(sinceLowNote),
+      `${label}: the gain since the low does not say how many daily reservoirs it holds `
+      + `("${sinceLowNote}")`);
     const overviewExport = tab.locator("#download-overview-csv");
     check(await overviewExport.count() === 1,
       `${label}: filtered overview has no CSV file control`);
@@ -2742,6 +2932,13 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
       check(kept.state === filterState.code && kept.drainage === filterSubregion.code,
         `${label}: a keystroke reset the geographic filters ` +
         `(${kept.state}, ${kept.drainage})`);
+      /* Nothing matches: every chart, once near, settles on its empty
+       * message or an empty drawing, and none fails. */
+      await drawEveryChart(tab, check, `${label}, no match`, CHART_HOSTS);
+      const noMatch = await tab.evaluate(() => window.__overviewReady);
+      check(noMatch.chartsFailed === 0 && noMatch.chartsDrawn + noMatch.chartsEmpty === noMatch.charts,
+        `${label}: with no match the charts report ${JSON.stringify({
+          drawn: noMatch.chartsDrawn, empty: noMatch.chartsEmpty, failed: noMatch.chartsFailed })}`);
 
       /* A shared link carrying the state and the subregion restores both --
        * the subregion needs its options to exist before the restore runs,
@@ -2865,7 +3062,10 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
       // The header's own links swap for the menu below 64rem, so only
       // whichever is actually showing at this width is measured.
       ...(viewport.width >= 1024
-        ? { "map-link": "./", "snow-link": "./snow.html", "drought-link": "./drought.html", "methods-link": "./methods.html" }
+        ? {
+          "map-link": "./", "precipitation-link": "./precipitation.html", "snow-link": "./snow.html",
+          "drought-link": "./drought.html", "methods-link": "./methods.html"
+        }
         : { "page-menu-trigger": null })
     };
     const navControls = await tab.evaluate((ids) => ids.map((id) => {
@@ -2901,6 +3101,7 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
     /* Drive the actual chart-selection contract last because success leaves
      * this page: selecting its first bar must navigate to the map's public
      * `?reservoir=` link, not turn the chart into a hidden extra filter. */
+    await drawEveryChart(tab, check, `${label}, before the chart selection`, CHART_HOSTS);
     const chartTarget = await tab.locator("#capacity-chart arcgis-chart").evaluate((chart) => {
       const graphic = chart.layer?.source?.toArray()?.[0];
       return {
@@ -2971,6 +3172,8 @@ for (const timing of ["page-start", "after-first-chart"]) {
       { timeout: 120000 });
     const SDK_CHART_HOSTS = ["capacity-chart", "watershed-chart", "trend-chart",
       "normal-chart", "distribution-chart"];
+    await drawEveryChart(tab, check, label,
+      [...SDK_CHART_HOSTS, "spread-chart"].map((id) => `#${id}`));
     const ready = await tab.evaluate(() => window.__overviewReady);
     check(ready.chartsFailed === SDK_CHART_HOSTS.length && ready.chartsDrawn === 1,
       `${label}: readiness reports ${ready.chartsDrawn} drawn and ` +
@@ -3031,17 +3234,24 @@ for (const viewport of VIEWPORTS) {
       scroll: document.documentElement.scrollWidth
     }));
     console.log("  ready:", JSON.stringify(state.ready));
-    check(state.ready?.files === 6 && state.files === 6,
+    check(state.ready?.files === 9 && state.files === 9,
       `${label}: rendered ${state.files} file cards, readiness reported ${state.ready?.files}`);
     check(state.ready?.groups === state.groups && state.groups >= 20,
       `${label}: rendered ${state.groups} field groups, readiness reported ${state.ready?.groups}`);
     check(JSON.stringify(state.links) === JSON.stringify([
       "./api/reservoirs.json", "./",
+      // The reviewed reservoir levels, day by day (ADR-135).
+      "./api/elevation_history.json", "./reservoir.html?name=Lake%20Powell",
+      "./reservoir.html?name=Lake%20Mead",
       // The terminal lakes (ADR-118, ADR-119): their own file and page.
       "./api/lakes.json", "./lakes.html",
+      // Daily river flow (ADR-136): its own file and page.
+      "./api/rivers.json", "./rivers.html",
       "./api/snowpack.json", "./snow.html",
       // Each finished snow season, frozen (ADR-121).
       "./data/snow/snowpack-wy2026.json",
+      // The week's change in soil moisture (ADR-142).
+      "./data/soil_moisture.json", "./precipitation.html",
       "./data/drought/usdm-huc6.json", "./drought.html",
       "./data/drought/usdm-current.geojson",
       // The same week over larger areas, published because the reader can
@@ -3357,82 +3567,6 @@ for (const viewport of VIEWPORTS) {
     check(linked.tableRows < linked.ready?.sites,
       `${label}: a narrowed view shows ${linked.tableRows} of ${linked.ready?.sites} sites`);
 
-    /* The precipitation card loads on its own (ADR-125). Checked for what it
-     * drew against what it reported, never against today's numbers: on the
-     * first morning of a water year it may honestly have no line yet. It
-     * fetches only once it nears the screen, so it is scrolled to first. */
-    await tab.locator("#precip-card").scrollIntoViewIfNeeded();
-    await tab.waitForFunction(
-      () => window.__snowReady?.precipitation && window.__snowReady.precipitation.state !== "loading",
-      { timeout: 60000 });
-    const precip = await tab.evaluate(() => ({
-      status: window.__snowReady?.precipitation,
-      busy: document.querySelector(".precip-curve-host")?.getAttribute("aria-busy"),
-      svg: Boolean(document.querySelector(".precip-curve-host svg")),
-      empty: Boolean(document.querySelector(".precip-curve-host .chart-empty")),
-      monthRows: document.querySelectorAll("#precip-card tbody tr").length,
-      overflow: (() => {
-        const card = document.querySelector("#precip-card");
-        return card ? card.scrollWidth - card.clientWidth : -1;
-      })()
-    }));
-    console.log("  precipitation:", JSON.stringify(precip));
-    check(precip.status?.state === "ready",
-      `${label}: the precipitation card ended as ${precip.status?.state}`);
-    check(precip.busy === "false", `${label}: the precipitation chart left aria-busy ${precip.busy}`);
-    check(precip.status?.stations <= linked.tableRows,
-      `${label}: precipitation used ${precip.status?.stations} stations from ${linked.tableRows} in view`);
-    check(precip.status?.curveDays > 0 ? precip.svg && precip.status.bandDays >= 365 : precip.empty,
-      `${label}: precipitation drew ${precip.status?.curveDays} days and ${precip.status?.bandDays} steps, `
-        + `svg ${precip.svg}, empty message ${precip.empty}`);
-    check(precip.status?.curveDays === 0 || precip.monthRows === 13,
-      `${label}: the precipitation table has ${precip.monthRows} rows`);
-    check(precip.overflow <= 1, `${label}: the precipitation card overflows by ${precip.overflow}px`);
-    /* Recent totals (ADR-129): checked against what the card reported, never
-     * today's numbers. Every value is inches or a dash, never a percent. */
-    const storm = await tab.evaluate(() => {
-      const block = document.querySelector("#precip-card .precip-storm");
-      return {
-        shown: Boolean(block && !block.hidden),
-        values: [...(block?.querySelectorAll(".precip-storm-kpis strong") ?? [])].map((node) => node.textContent),
-        notes: [...(block?.querySelectorAll(".precip-storm-kpis small") ?? [])].map((node) => node.textContent),
-        listed: block?.querySelectorAll(".precip-storm-list li").length ?? 0,
-        text: block?.innerText ?? ""
-      };
-    });
-    const stormStatus = precip.status?.storm;
-    console.log("  storm totals:", JSON.stringify({ ...stormStatus, values: storm.values, listed: storm.listed }));
-    check(stormStatus && stormStatus.endDate !== undefined && stormStatus.leftOut >= 0,
-      `${label}: the readiness object has no storm totals`);
-    if (stormStatus?.endDate) {
-      check(storm.shown && storm.values.length === 3
-        && storm.values.every((value) => /^(\d+\.\d in|Less than 0\.1 in|—)$/.test(value)),
-      `${label}: the storm totals read ${JSON.stringify(storm.values)}`);
-      check(!storm.text.includes("%"), `${label}: the storm totals print a percent`);
-      check(storm.listed === stormStatus.rows && storm.listed <= 8,
-        `${label}: the storm list shows ${storm.listed} rows, readiness ${stormStatus.rows}`);
-      check(!stormStatus.available || stormStatus.stations === 0
-        || storm.notes.some((note) => note === `Mean of ${stormStatus.stations} station${stormStatus.stations === 1 ? "" : "s"}`),
-      `${label}: no storm total names its ${stormStatus.stations} stations`);
-      await tab.locator(".precip-storm .precip-range button", { hasText: "7 days" }).click();
-      await tab.waitForFunction(() => window.__snowReady?.precipitation?.storm?.window === 7, { timeout: 10000 });
-      await tab.locator(".precip-storm .precip-range button", { hasText: "3 days" }).click();
-    } else {
-      check(!storm.shown, `${label}: storm totals show with no end day`);
-    }
-    if (precip.status?.curveDays > 0) {
-      /* The chart opens on the season so far and can show the whole year;
-       * the whole year holds every band day the season view does not. */
-      check(precip.status.range === "season",
-        `${label}: the precipitation chart opened on ${precip.status.range}`);
-      await tab.locator(".precip-range button", { hasText: "Whole water year" }).click();
-      await tab.waitForFunction(() => window.__snowReady?.precipitation?.range === "year", { timeout: 10000 });
-      const pressed = await tab.evaluate(() => [...document.querySelectorAll(".precip-controls .precip-range button")]
-        .map((button) => button.getAttribute("aria-pressed")).join(","));
-      check(pressed === "false,true", `${label}: the range buttons report ${pressed}`);
-      await tab.locator(".precip-range button", { hasText: "Season so far" }).click();
-    }
-
     /* The visible site rows, as points. Same promise as the CSV download:
      * the file holds exactly the rows on screen, so it is checked against
      * the count the page just rendered rather than against the payload. */
@@ -3670,6 +3804,264 @@ for (const viewport of VIEWPORTS) {
     failures.push(`${label}: ${err.message}`);
   }
   reportHostedOutage(label, hostedOutage);
+  for (const err of errors) failures.push(`${label}: ${err}`);
+  await context.close();
+}
+
+/* The precipitation view (ADR-130). Loaded through the same drainage-area
+ * deep link as the snowpack view, so the two pages are proven to read one
+ * place vocabulary. */
+for (const viewport of VIEWPORTS) {
+  const context = await newPageContext(browser, viewport);
+  const tab = await context.newPage();
+  const errors = [];
+  tab.on("pageerror", (err) => errors.push(`uncaught: ${err.message}`));
+  const hostedOutage = watchConsoleErrors(tab, errors);
+  const label = `Precipitation view (${viewport.name} ${viewport.width}px)`;
+  console.log(`\n=== ${label}`);
+  try {
+    await tab.goto(`${URL}precipitation.html?area=140100`, {
+      waitUntil: "domcontentloaded", timeout: 60000
+    });
+    await tab.waitForFunction(() => window.__precipReady !== undefined, { timeout: 60000 });
+    const linked = await tab.evaluate(() => ({
+      ready: window.__precipReady,
+      areaControl: document.querySelector(".drainage-menu calcite-select")?.value,
+      snowLink: document.querySelector("#precip-content a[href*='snow.html']:not(.precip-storm-name)")?.getAttribute("href") ?? null
+    }));
+    console.log("  ready:", JSON.stringify(linked.ready));
+    check(linked.ready?.area === "140100" && linked.areaControl === "140100",
+      `${label}: the shared link restored area ${linked.ready?.area}, control ${linked.areaControl}`);
+    check(linked.ready?.sites > 0, `${label}: the place holds ${linked.ready?.sites} sites`);
+    check(linked.snowLink?.includes("area=140100") === true,
+      `${label}: the snowpack link does not carry the place (${linked.snowLink})`);
+
+    /* The precipitation card loads on its own (ADR-125). Checked for what it
+     * drew against what it reported, never against today's numbers: on the
+     * first morning of a water year it may honestly have no line yet. It
+     * fetches only once it nears the screen, so it is scrolled to first. */
+    await tab.locator("#precip-card").scrollIntoViewIfNeeded();
+    await tab.waitForFunction(
+      () => window.__precipReady?.precipitation && window.__precipReady.precipitation.state !== "loading",
+      { timeout: 60000 });
+    const precip = await tab.evaluate(() => ({
+      status: window.__precipReady?.precipitation,
+      busy: document.querySelector(".precip-curve-host")?.getAttribute("aria-busy"),
+      svg: Boolean(document.querySelector(".precip-curve-host svg")),
+      empty: Boolean(document.querySelector(".precip-curve-host .chart-empty")),
+      monthRows: document.querySelectorAll("#precip-card tbody tr").length,
+      overflow: (() => {
+        const card = document.querySelector("#precip-card");
+        return card ? card.scrollWidth - card.clientWidth : -1;
+      })()
+    }));
+    console.log("  precipitation:", JSON.stringify(precip));
+    check(precip.status?.state === "ready",
+      `${label}: the precipitation card ended as ${precip.status?.state}`);
+    check(precip.busy === "false", `${label}: the precipitation chart left aria-busy ${precip.busy}`);
+    check(precip.status?.stations <= linked.ready?.sites,
+      `${label}: precipitation used ${precip.status?.stations} stations from ${linked.ready?.sites} in view`);
+    check(precip.status?.curveDays > 0 ? precip.svg && precip.status.bandDays >= 365 : precip.empty,
+      `${label}: precipitation drew ${precip.status?.curveDays} days and ${precip.status?.bandDays} steps, `
+        + `svg ${precip.svg}, empty message ${precip.empty}`);
+    check(precip.status?.curveDays === 0 || precip.monthRows === 13,
+      `${label}: the precipitation table has ${precip.monthRows} rows`);
+    check(precip.overflow <= 1, `${label}: the precipitation card overflows by ${precip.overflow}px`);
+    /* Recent totals (ADR-129): checked against what the card reported, never
+     * today's numbers. Every value is inches or a dash, never a percent. */
+    const storm = await tab.evaluate(() => {
+      const block = document.querySelector("#precip-card .precip-storm");
+      return {
+        shown: Boolean(block && !block.hidden),
+        values: [...(block?.querySelectorAll(".precip-storm-kpis strong") ?? [])].map((node) => node.textContent),
+        notes: [...(block?.querySelectorAll(".precip-storm-kpis small") ?? [])].map((node) => node.textContent),
+        listed: block?.querySelectorAll(".precip-storm-list li").length ?? 0,
+        text: block?.innerText ?? ""
+      };
+    });
+    const stormStatus = precip.status?.storm;
+    console.log("  storm totals:", JSON.stringify({ ...stormStatus, values: storm.values, listed: storm.listed }));
+    check(stormStatus && stormStatus.endDate !== undefined && stormStatus.leftOut >= 0,
+      `${label}: the readiness object has no storm totals`);
+    if (stormStatus?.endDate) {
+      check(storm.shown && storm.values.length === 3
+        && storm.values.every((value) => /^(\d+\.\d in|Less than 0\.1 in|—)$/.test(value)),
+      `${label}: the storm totals read ${JSON.stringify(storm.values)}`);
+      check(!storm.text.includes("%"), `${label}: the storm totals print a percent`);
+      check(storm.listed === stormStatus.rows && storm.listed <= 8,
+        `${label}: the storm list shows ${storm.listed} rows, readiness ${stormStatus.rows}`);
+      const stationLinks = await tab.evaluate(() => [...document.querySelectorAll("#precip-card .precip-storm-list a.precip-storm-name")]
+        .map((link) => link.getAttribute("href") ?? ""));
+      check(stationLinks.length === storm.listed
+        && stationLinks.every((href) => href.startsWith("./snow.html?state=all&site=")),
+      `${label}: the station names link to ${JSON.stringify(stationLinks.slice(0, 2))}`);
+      check(!stormStatus.available || stormStatus.stations === 0
+        || storm.notes.some((note) => note === `Mean of ${stormStatus.stations} station${stormStatus.stations === 1 ? "" : "s"}`),
+      `${label}: no storm total names its ${stormStatus.stations} stations`);
+      await tab.locator(".precip-storm .precip-range button", { hasText: "7 days" }).click();
+      await tab.waitForFunction(() => window.__precipReady?.precipitation?.storm?.window === 7, { timeout: 10000 });
+      await tab.locator(".precip-storm .precip-range button", { hasText: "3 days" }).click();
+    } else {
+      check(!storm.shown, `${label}: storm totals show with no end day`);
+    }
+    if (precip.status?.curveDays > 0) {
+      /* The chart opens on the season so far and can show the whole year;
+       * the whole year holds every band day the season view does not. */
+      check(precip.status.range === "season",
+        `${label}: the precipitation chart opened on ${precip.status.range}`);
+      await tab.locator(".precip-range button", { hasText: "Whole water year" }).click();
+      await tab.waitForFunction(() => window.__precipReady?.precipitation?.range === "year", { timeout: 10000 });
+      const pressed = await tab.evaluate(() => [...document.querySelectorAll(".precip-controls .precip-range button")]
+        .map((button) => button.getAttribute("aria-pressed")).join(","));
+      check(pressed === "false,true", `${label}: the range buttons report ${pressed}`);
+      await tab.locator(".precip-range button", { hasText: "Season so far" }).click();
+    }
+
+    /* The map of recent totals (ADR-131). It starts only near the screen
+     * and after the totals; the canvas is blank headless, so this checks
+     * what the map reports and the text beside it, never its pixels. */
+    await tab.locator("#precip-map-host").scrollIntoViewIfNeeded();
+    await tab.waitForFunction(() => ["ready", "failed"].includes(window.__precipReady?.map?.state), { timeout: 60000 });
+    const precipMap = await tab.evaluate(() => ({
+      map: window.__precipReady?.map,
+      busy: document.querySelector("#precip-map-host")?.getAttribute("aria-busy"),
+      keyItems: document.querySelectorAll(".precip-map-key [role='listitem']").length
+    }));
+    console.log("  precipitation map:", JSON.stringify(precipMap));
+    check(precipMap.map?.state === "ready", `${label}: the precipitation map ended as ${precipMap.map?.state}`);
+    check(precipMap.busy === "false", `${label}: the map host left aria-busy ${precipMap.busy}`);
+    check(precipMap.map?.stations === linked.ready?.sites
+      && precipMap.map.withValue + precipMap.map.notUsed === precipMap.map.stations,
+    `${label}: the map counts ${JSON.stringify(precipMap.map)} for ${linked.ready?.sites} sites`);
+    check(precipMap.map?.basins > 0 && precipMap.map.basinsWithValue <= precipMap.map.basins,
+      `${label}: the map drew ${precipMap.map?.basins} drainage areas`);
+    check(precipMap.keyItems === 7, `${label}: the map key has ${precipMap.keyItems} entries, not 7`);
+    if (stormStatus?.endDate) {
+      await tab.locator(".precip-storm .precip-range button", { hasText: "7 days" }).click();
+      await tab.waitForFunction(() => window.__precipReady?.map?.window === 7, { timeout: 10000 });
+      await tab.locator(".precip-storm .precip-range button", { hasText: "3 days" }).click();
+      await tab.waitForFunction(() => window.__precipReady?.map?.window === 3, { timeout: 10000 });
+    }
+    await tab.locator(".precip-map-table summary").click();
+    /* The rows are built on the toggle event, which follows the click. */
+    await tab.waitForFunction(() => document.querySelectorAll(".precip-map-table tbody tr").length > 0,
+      null, { timeout: 10000 }).catch(() => {});
+    const tableRows = await tab.locator(".precip-map-table tbody tr").count();
+    check(tableRows === linked.ready?.sites,
+      `${label}: the values table has ${tableRows} rows for ${linked.ready?.sites} sites`);
+    await tab.locator(".precip-map-table summary").click();
+
+    /* The soil-moisture mode (ADR-142): the same map turned to the week's
+     * change. Checked against what the page reports, never today's numbers;
+     * the canvas is blank headless. Switching must not fetch the SDK or the
+     * areas again: the soil file is the only new request. */
+    const switchRequests = [];
+    const onSwitchRequest = (request) => switchRequests.push(request.url());
+    tab.on("request", onSwitchRequest);
+    await tab.locator(".precip-map-mode-head button", { hasText: "Soil moisture" }).click();
+    await tab.waitForFunction(() => ["ready", "failed"].includes(window.__precipReady?.map?.soil?.state),
+      { timeout: 30000 });
+    tab.off("request", onSwitchRequest);
+    const soilView = await tab.evaluate(() => {
+      const visible = (element) => Boolean(element && element.getClientRects().length > 0);
+      const card = document.querySelector("#precip-card");
+      return {
+        map: window.__precipReady?.map,
+        pressed: [...document.querySelectorAll(".precip-map-mode-head button")]
+          .map((button) => button.getAttribute("aria-pressed")).join(","),
+        keyItems: [...document.querySelectorAll(".precip-soil-key [role='listitem']")].map((item) => item.textContent),
+        keyShown: visible(document.querySelector(".precip-soil-key")),
+        rainKeyShown: visible(document.querySelector(".precip-map-key")),
+        dayButtonsShown: visible(document.querySelector("[aria-label='Days in the map and the station list']")),
+        rainListShown: visible(document.querySelector(".precip-storm-list")),
+        listed: document.querySelectorAll(".precip-soil-list li").length,
+        values: [...document.querySelectorAll(".precip-soil-list .precip-storm-value")].map((node) => node.textContent),
+        busy: document.querySelector(".precip-map-mode-soil")?.getAttribute("aria-busy"),
+        overflow: card ? card.scrollWidth - card.clientWidth : -1
+      };
+    });
+    console.log("  soil mode:", JSON.stringify({ ...soilView.map?.soil, mode: soilView.map?.mode, listed: soilView.listed }));
+    check(soilView.map?.soil?.state === "ready", `${label}: the soil file ended as ${soilView.map?.soil?.state}`);
+    check(soilView.map?.mode === "soil" && soilView.pressed === "false,true",
+      `${label}: the switch reports ${soilView.map?.mode}, pressed ${soilView.pressed}`);
+    check(soilView.busy === "false", `${label}: the soil block left aria-busy ${soilView.busy}`);
+    check(soilView.keyShown && !soilView.rainKeyShown && soilView.keyItems.length === 7
+      && soilView.keyItems.includes("Within 2 points: steady")
+      && soilView.keyItems.includes("No change measured, or too few stations"),
+    `${label}: the soil key reads ${JSON.stringify(soilView.keyItems)}`);
+    check(!soilView.dayButtonsShown && !soilView.rainListShown,
+      `${label}: soil mode still shows the day buttons (${soilView.dayButtonsShown}) or the rain list (${soilView.rainListShown})`);
+    check(soilView.listed === soilView.map?.soil?.rows && soilView.listed <= 8
+      && soilView.values.every((value) => /^(\d+\.\d points? (wetter|drier)|No change)$/.test(value)),
+    `${label}: the soil list shows ${soilView.listed} rows (${JSON.stringify(soilView.values.slice(0, 3))})`);
+    check(soilView.map?.withValue + soilView.map?.notUsed === soilView.map?.stations
+      && soilView.map?.soil?.withChange <= soilView.map?.soil?.stations,
+    `${label}: soil mode counts ${JSON.stringify(soilView.map)}`);
+    check(soilView.overflow <= 1, `${label}: the card overflows by ${soilView.overflow}px in soil mode`);
+    /* The SDK may still pull its own worker chunks and ask the area service
+     * for a count; what must not happen is the page's map module loading
+     * again or the area shapes being fetched again. */
+    const refetched = switchRequests.filter((url) => url.includes("reference.json")
+      || /\/assets\/(precip-map|view-map)-[^/]*\.js/.test(url)
+      || (/FeatureServer\/\d+\/query/.test(url) && !url.includes("returnGeometry=false")));
+    check(refetched.length === 0, `${label}: switching to soil fetched ${JSON.stringify(refetched.slice(0, 3))}`);
+    await tab.locator(".precip-soil-table summary").click();
+    await tab.waitForFunction(() => document.querySelectorAll(".precip-soil-table tbody tr").length > 0,
+      null, { timeout: 10000 }).catch(() => {});
+    const soilRows = await tab.locator(".precip-soil-table tbody tr").count();
+    check(soilRows === soilView.map?.soil?.stations,
+      `${label}: the soil table has ${soilRows} rows for ${soilView.map?.soil?.stations} stations`);
+    await tab.locator(".precip-soil-table summary").click();
+    await checkAccessibility(tab, check, `${label}, soil mode`);
+    await tab.locator(".precip-map-mode-head button", { hasText: "Rain" }).click();
+    await tab.waitForFunction(() => window.__precipReady?.map?.mode === "rain", { timeout: 10000 });
+    const backToRain = await tab.evaluate(() => ({
+      dayButtons: Boolean(document.querySelector("[aria-label='Days in the map and the station list']")?.getClientRects().length),
+      rainKey: Boolean(document.querySelector(".precip-map-key")?.getClientRects().length)
+    }));
+    check(backToRain.dayButtons && backToRain.rainKey,
+      `${label}: back on rain, day buttons ${backToRain.dayButtons}, rain key ${backToRain.rainKey}`);
+    await checkAccessibility(tab, check, label);
+    await tab.screenshot({ path: `screenshots/precipitation-${viewport.name}.png`, fullPage: false });
+  } catch (err) {
+    failures.push(`${label}: ${err.message}`);
+  }
+  reportHostedOutage(label, hostedOutage);
+  for (const err of errors) failures.push(`${label}: ${err}`);
+  await context.close();
+}
+
+/* The recent totals need only the 10 KB daily file. They must not wait for
+ * the half-megabyte history: held back here for eight seconds, the totals
+ * still draw while the season figures are loading. */
+{
+  const context = await newPageContext(browser, VIEWPORTS[2]);
+  const tab = await context.newPage();
+  const errors = [];
+  tab.on("pageerror", (err) => errors.push(`uncaught: ${err.message}`));
+  const label = "Precipitation view, slow history (small-phone)";
+  console.log(`\n=== ${label}`);
+  await context.route("**/precipitation_history.json", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 8000));
+    await route.continue();
+  });
+  try {
+    await tab.goto(`${URL}precipitation.html?state=UT`, { waitUntil: "domcontentloaded", timeout: 60000 });
+    await tab.waitForFunction(() => window.__precipReady?.precipitation?.recent === "ready", { timeout: 30000 });
+    const early = await tab.evaluate(() => ({
+      season: window.__precipReady?.precipitation?.state,
+      figures: document.querySelectorAll("#precip-card .precip-storm-kpis strong").length,
+      listed: document.querySelectorAll("#precip-card .precip-storm-list li").length
+    }));
+    console.log("  before the history:", JSON.stringify(early));
+    check(early.season === "loading",
+      `${label}: the season figures were ${early.season} before the held history arrived`);
+    check(early.figures === 3 && early.listed > 0,
+      `${label}: ${early.figures} recent figures and ${early.listed} stations drew before the history`);
+    await tab.waitForFunction(() => window.__precipReady?.precipitation?.state === "ready", { timeout: 60000 });
+  } catch (err) {
+    failures.push(`${label}: ${err.message}`);
+  }
   for (const err of errors) failures.push(`${label}: ${err}`);
   await context.close();
 }
@@ -4293,6 +4685,52 @@ for (const viewport of VIEWPORTS) {
   } finally {
     await context.close();
   }
+}
+
+/* The precipitation map under the same refusal (ADR-131): its sign-in
+ * policy is installed in its own lazy start, not by any other page, so a
+ * 401 on the first background must fall to the next one with no prompt,
+ * and the totals beside it must not notice. */
+{
+  const context = await newPageContext(browser, VIEWPORTS[0]);
+  const tab = await context.newPage();
+  const errors = [];
+  tab.on("pageerror", (err) => errors.push(`uncaught: ${err.message}`));
+  let firstItem = null;
+  await tab.route(/\/sharing\/rest\/content\/items\/[0-9a-f]+/i, async (route) => {
+    const id = /items\/([0-9a-f]+)/i.exec(route.request().url())?.[1];
+    if (firstItem === null) firstItem = id;
+    if (id !== firstItem) return route.continue();
+    return route.fulfill({
+      status: 401,
+      contentType: "application/json",
+      body: JSON.stringify({ error: { code: 401, message: "You do not have permissions to access this resource." } })
+    });
+  });
+  const label = "Precipitation map (first basemap refused)";
+  console.log(`\n=== ${label}`);
+  try {
+    await tab.goto(`${URL}precipitation.html?state=UT`, { waitUntil: "domcontentloaded", timeout: 60000 });
+    await tab.waitForFunction(() => window.__precipReady?.precipitation?.recent === "ready", { timeout: 60000 });
+    await tab.locator("#precip-map-host").scrollIntoViewIfNeeded();
+    await tab.waitForFunction(() => ["ready", "failed"].includes(window.__precipReady?.map?.state), { timeout: 60000 });
+    await tab.waitForTimeout(2000);
+    const state = await tab.evaluate(() => ({
+      map: window.__precipReady?.map,
+      figures: document.querySelectorAll("#precip-card .precip-storm-kpis strong").length
+    }));
+    console.log("  map:", JSON.stringify(state.map));
+    check(firstItem !== null, `${label}: nothing was refused, so nothing was tested`);
+    check(state.map?.state === "ready" && (state.map.basemapDegraded || !state.map.basemap),
+      `${label}: the map did not fall back (${JSON.stringify(state.map)})`);
+    check(state.figures === 3, `${label}: ${state.figures} recent figures beside the refused map`);
+    const credentialUi = await tab.evaluate(FIND_CREDENTIAL_UI);
+    check(credentialUi.length === 0, `${label}: a credential prompt appeared (${credentialUi.join(", ")})`);
+  } catch (err) {
+    failures.push(`${label}: ${err.message}`);
+  }
+  for (const err of errors) failures.push(`${label}: ${err}`);
+  await context.close();
 }
 
 /*
@@ -5496,7 +5934,11 @@ for (const failure of [
     ["none", "reservoir.html", null],
     /* ADR-127: Lake Powell's upstream set spans several basins in the
      * committed trace, so its page must group them, not list chips. */
-    ["upstream", "reservoir.html?name=Lake%20Powell", "Lake Powell"]
+    ["upstream", "reservoir.html?name=Lake%20Powell", "Lake Powell"],
+    /* ADR-135: Lake Mead's level is on Reclamation's own project datum;
+     * Lake Powell's (the upstream case above) is above NGVD 1929. Both draw a
+     * surface level; Flaming Gorge (found) does not. */
+    ["level", "reservoir.html?name=Lake%20Mead", "Lake Mead"]
   ];
   for (const viewport of VIEWPORTS) {
     const context = await browser.newContext({
@@ -5523,8 +5965,50 @@ for (const failure of [
         coordinateCopy: Boolean(document.querySelector(
           "#reservoir-main .coordinate-copy")),
         scroll: document.documentElement.scrollWidth,
-        viewport: document.documentElement.clientWidth
+        viewport: document.documentElement.clientWidth,
+        elevation: window.__reservoirReady?.elevation ?? null,
+        levelCards: document.querySelectorAll(
+          "#reservoir-main .reservoir-elevation .measurement-cards > section").length,
+        levelLines: document.querySelectorAll(
+          "#reservoir-main .elevation-years .elevation-line").length,
+        currentLines: document.querySelectorAll(
+          "#reservoir-main .elevation-years .elevation-line-current").length,
+        referenceLines: document.querySelectorAll(
+          "#reservoir-main .elevation-years .elevation-reference").length,
+        chartBusy: document.querySelector("#reservoir-main .elevation-chart")
+          ?.getAttribute("aria-busy") ?? null,
+        levelText: document.querySelector("#reservoir-main .reservoir-elevation")
+          ?.textContent ?? "",
+        chartTarget: Boolean(document.querySelector("#reservoir-elevation-chart svg"))
       }));
+      const caseName = cases.find(([caseLabel]) => caseLabel === label)?.[2];
+      const elevationExpected = Boolean(elevationRoster[payload.reservoirs.find(
+        (r) => r.name === caseName)?.source_station_id]);
+      if (["found", "upstream", "level"].includes(label)) {
+        if (elevationExpected) {
+          check(state.elevation === "drawn" && state.levelCards === 1
+            && state.levelLines >= 2 && state.currentLines >= 1 && state.referenceLines >= 1
+            && state.chartBusy === null,
+          `Reservoir page (${viewport.name}, ${label}): the surface level did not draw `
+            + JSON.stringify({ ready: state.elevation, cards: state.levelCards,
+              lines: state.levelLines, references: state.referenceLines, busy: state.chartBusy }));
+          check(state.text.includes("Surface level")
+            && state.text.includes("National Geodetic Vertical Datum of 1929")
+            && /Why (the Geological Survey|other sources) can show a different level/
+              .test(state.text)
+            && state.chartTarget,
+          `Reservoir page (${viewport.name}, ${label}): the card or the datum note is missing`);
+          check(!/\bNGVD29\b|\bNAVD88\b/.test(state.text),
+            `Reservoir page (${viewport.name}, ${label}): the datum reaches a reader as its initials`);
+          check(!state.levelText.includes("%"),
+            `Reservoir page (${viewport.name}, ${label}): a level was given a percentage`);
+        } else {
+          check(state.elevation === "none" && state.levelCards === 0 && state.levelLines === 0
+            && !/can show a different level/.test(state.text),
+          `Reservoir page (${viewport.name}, ${label}): a reservoir with no reviewed level `
+            + `shows one (${state.elevation}, ${state.levelCards} cards)`);
+        }
+      }
       check(state.ready !== null && state.busy === "false",
         `Reservoir page (${viewport.name}, ${label}): state "${state.ready}" `
         + `with aria-busy="${state.busy}" -- every exit clears it`);
@@ -5532,6 +6016,13 @@ for (const failure of [
         `Reservoir page (${viewport.name}, ${label}): scrolls sideways `
         + `(${state.scroll} > ${state.viewport})`);
       if (label === "upstream") {
+        /* ADR-134: the row is there exactly when the payload has a figure. */
+        const powell = payload.reservoirs.find((row) => row.name === "Lake Powell");
+        const sinceLow = /Since the 4-month low\s+(Up [\d,]+ acre-feet since its low on |At its lowest in 4 months)/
+          .test(state.text);
+        check(sinceLow === (typeof powell?.change_since_low_af === "number"),
+          `Reservoir page (${viewport.name}): Lake Powell's gain since the low is `
+          + `${sinceLow ? "shown without a published figure" : "missing"}`);
         await tab.waitForSelector("#reservoir-main .upstream-group, #reservoir-main .reservoir-note",
           { timeout: 30000 }).catch(() => {});
         const upstream = await tab.evaluate(() => ({
@@ -5589,8 +6080,69 @@ for (const failure of [
     }
     await context.close();
   }
-  console.log("\n=== Reservoir page: five link states at "
+  console.log("\n=== Reservoir page: five link states and the surface level at "
     + `${VIEWPORTS.length} widths`);
+}
+
+/*
+ * The share frame (ADR-141): `reservoir.html?name=...&view=share` is the
+ * picture a shared link shows, and the deploy photographs it at 1200 by 630.
+ * What only a browser can answer: it fits that window without scrolling, it
+ * has no navigation, the chart drew, and it says the name, the level with
+ * its datum and the date. A reservoir with no reviewed level must not signal
+ * a drawn chart, because that signal is what lets the deploy keep a capture.
+ */
+{
+  const context = await newPageContext(browser, { width: 1200, height: 630 });
+  const tab = await context.newPage();
+  const errors = [];
+  tab.on("pageerror", (error) => errors.push(String(error)));
+  watchConsoleErrors(tab, errors);
+  for (const [name, drawn] of [["Lake Powell", true], ["Lake Mead", true],
+    ["Flaming Gorge", false]]) {
+    await tab.goto(`${URL}reservoir.html?name=${encodeURIComponent(name)}&view=share`,
+      { waitUntil: "load", timeout: 90000 });
+    await tab.waitForFunction(() => window.__reservoirReady !== undefined,
+      null, { timeout: 90000 }).catch(() => {});
+    const share = await tab.evaluate(() => ({
+      elevation: window.__reservoirReady?.elevation ?? null,
+      busy: document.querySelector("#reservoir-main")?.getAttribute("aria-busy"),
+      text: document.body.innerText,
+      navigation: document.querySelectorAll("calcite-navigation").length,
+      lines: document.querySelectorAll("#reservoir-elevation-chart .elevation-line").length,
+      fitsHeight: document.documentElement.scrollHeight <= window.innerHeight,
+      fitsWidth: document.documentElement.scrollWidth <= window.innerWidth,
+      level: document.querySelector(".share-figure")?.textContent ?? "",
+      axis: (() => {
+        const svg = document.querySelector("#reservoir-elevation-chart svg");
+        const label = svg?.querySelector(".elevation-axis");
+        return svg && label ? Number.parseFloat(getComputedStyle(label).fontSize)
+          * (svg.getBoundingClientRect().width / svg.viewBox.baseVal.width) : 0;
+      })()
+    }));
+    check(share.busy === "false" && share.navigation === 0 && share.fitsHeight && share.fitsWidth,
+      `Share frame (${name}): busy ${share.busy}, ${share.navigation} navigation bars, `
+      + `fits ${share.fitsWidth}x${share.fitsHeight}`);
+    if (drawn) {
+      check(share.elevation === "drawn" && share.lines >= 2
+        && share.text.includes(name) && /[\d,.]+ feet/.test(share.level)
+        && share.text.includes("Reading date:") && share.text.includes("above the "),
+      `Share frame (${name}): the name, level, datum, date and chart are not all there `
+        + JSON.stringify({ elevation: share.elevation, lines: share.lines, level: share.level }));
+      check(share.axis >= 20,
+        `Share frame (${name}): the axis type is ${share.axis}px; a link card shrinks it to a fifth`);
+      check(!/\bNGVD29\b|\bNAVD88\b/.test(share.text) && !share.text.includes("%"),
+        `Share frame (${name}): the datum reaches a reader as its initials, or a level has a percent`);
+      const retired = RETIRED_TERMS.exec(share.text);
+      check(retired === null, `Share frame (${name}): uses a retired term: "${retired?.[0]}"`);
+    } else {
+      check(share.elevation === "none" && share.lines === 0,
+        `Share frame (${name}): a reservoir with no reviewed level signalled ${share.elevation}`);
+    }
+  }
+  for (const message of errors) failures.push(`Share frame: ${message}`);
+  await context.close();
+  console.log("\n=== Share frame: two reviewed levels and one reservoir without");
 }
 
 /*
@@ -5666,6 +6218,91 @@ for (const viewport of VIEWPORTS) {
 console.log(`\n=== Lakes page: ${VIEWPORTS.length} widths`);
 
 /*
+ * The river-flow page (ADR-136, ADR-144), at every width.
+ *
+ * What the payload published is what the page drew, one chart per gauge,
+ * each shaped gauge saying why it has no comparison with normal, each
+ * natural gauge saying it is compared and then either its class or why not
+ * today, and every gauge linking to the survey's own page. Nothing names a gauge as an inflow or adds gauges
+ * together; nothing scrolls sideways; the provider's initials stay out of
+ * visible text. No number is read: the payload's own count is the oracle.
+ */
+for (const viewport of VIEWPORTS) {
+  const context = await newPageContext(browser,
+    { width: viewport.width, height: viewport.height });
+  const tab = await context.newPage();
+  const errors = [];
+  tab.on("pageerror", (error) => errors.push(String(error)));
+  watchConsoleErrors(tab, errors);
+  await tab.goto(`${URL}rivers.html`, { waitUntil: "load", timeout: 90000 });
+  await tab.waitForFunction(() => window.__riversReady !== undefined,
+    null, { timeout: 90000 }).catch(() => {});
+  const state = await tab.evaluate(() => ({
+    ready: window.__riversReady ?? null,
+    busy: document.querySelector("#rivers-main")?.getAttribute("aria-busy"),
+    text: document.body.innerText,
+    articles: document.querySelectorAll("#rivers-main article.river[data-station]").length,
+    charts: document.querySelectorAll("#rivers-main svg.flow-chart").length,
+    tiers: [...document.querySelectorAll("#rivers-main article.river[data-station]")]
+      .map((article) => ({
+        tier: article.getAttribute("data-tier"),
+        shaped: article.querySelector(".river-shaped")?.textContent ?? null,
+        natural: article.querySelector(".river-natural")?.textContent ?? null,
+        verdict: article.querySelector(".river-class")?.textContent ?? null,
+        withheld: article.querySelector(".river-withheld")?.textContent ?? null
+      })),
+    pageLinks: [...document.querySelectorAll("#rivers-main a[href]")]
+      .filter((link) => link.href.startsWith("https://waterdata.usgs.gov/monitoring-location/"))
+      .length,
+    scroll: document.documentElement.scrollWidth,
+    viewport: document.documentElement.clientWidth
+  }));
+  check(state.ready !== null && state.busy === "false",
+    `Rivers page (${viewport.name}): readiness ${JSON.stringify(state.ready)} `
+    + `with aria-busy="${state.busy}" -- every exit clears it`);
+  check(state.ready?.failed === false && state.ready?.gauges > 0
+    && state.ready?.rendered === state.ready?.gauges && state.articles === state.ready?.gauges,
+  `Rivers page (${viewport.name}): published ${state.ready?.gauges} gauge(s), drew `
+    + `${state.ready?.rendered}, found ${state.articles} articles`);
+  check(state.charts === state.articles && state.ready?.charts === state.articles,
+    `Rivers page (${viewport.name}): ${state.charts} charts for ${state.articles} gauges`);
+  const shaped = state.tiers.filter((a) => a.tier === "shaped");
+  const natural = state.tiers.filter((a) => a.tier === "natural");
+  check(shaped.length + natural.length === state.articles,
+    `Rivers page (${viewport.name}): an article has no tier`);
+  check(shaped.every((a) => a.shaped?.includes("not compared with normal")
+    && a.natural === null && a.verdict === null && a.withheld === null),
+  `Rivers page (${viewport.name}): a shaped gauge is missing why it has no normal, or shows one`);
+  check(natural.every((a) => a.natural?.includes("compared with normal") && a.shaped === null
+    && ((a.verdict !== null && /\bnormal for [A-Z][a-z]+ \d{1,2}$/i.test(a.verdict)
+      && a.withheld === null)
+      || (a.verdict === null && a.withheld?.includes("not compared with normal")))),
+  `Rivers page (${viewport.name}): a natural gauge shows neither its class nor why it has none`);
+  check(natural.filter((a) => a.verdict !== null).length === state.ready?.compared,
+    `Rivers page (${viewport.name}): ${state.ready?.compared} compared in readiness, `
+    + `${natural.filter((a) => a.verdict !== null).length} classes drawn`);
+  check(state.pageLinks === state.articles,
+    `Rivers page (${viewport.name}): ${state.pageLinks} survey page links for ${state.articles} gauges`);
+  check(state.text.includes("cubic feet per second"),
+    `Rivers page (${viewport.name}): the flow unit is not written out`);
+  check(!/\binflow\b|\btotal flow\b|combined flow/i.test(state.text),
+    `Rivers page (${viewport.name}): a gauge was named an inflow or added to another`);
+  check(state.scroll <= state.viewport + 1,
+    `Rivers page (${viewport.name}): scrolls sideways (${state.scroll} > ${state.viewport})`);
+  const visible = await tab.evaluate(COLLECT_SHADOW_TEXT);
+  const retired = RETIRED_TERMS.exec(visible);
+  check(retired === null,
+    `Rivers page (${viewport.name}): visible text uses a retired term: "${retired?.[0]}"`);
+  await checkAccessibility(tab, check, `Rivers page (${viewport.name})`);
+  await tab.screenshot({ path: `screenshots/rivers-${viewport.name}.png`, fullPage: true });
+  for (const message of errors) {
+    failures.push(`Rivers page (${viewport.name}): ${message}`);
+  }
+  await context.close();
+}
+console.log(`\n=== Rivers page: ${VIEWPORTS.length} widths`);
+
+/*
  * The story views (ADR-128): one figure, alone, filling the frame a story
  * embeds it in.
  *
@@ -5689,8 +6326,8 @@ console.log(`\n=== Lakes page: ${VIEWPORTS.length} widths`);
     .sort((a, b) => b[1] - a[1])[0] ?? [null];
   check(upstreamStation !== null, "Story views: no published reservoir has a traced upstream set");
   const views = [
-    { name: "precip", query: "view=precip&state=UT", full: "snow.html?state=UT" },
-    { name: "strip", query: "view=strip&state=UT", full: "snow.html?state=UT" },
+    { name: "precip", query: "view=precip&state=UT", full: "precipitation.html?state=UT" },
+    { name: "strip", query: "view=strip&state=UT", full: "precipitation.html?state=UT" },
     { name: "upstream", query: `view=upstream&reservoir=${encodeURIComponent(upstreamStation)}`,
       full: "reservoir.html?name=" }
   ];
@@ -5886,13 +6523,15 @@ console.log(`\n=== Lakes page: ${VIEWPORTS.length} widths`);
   const pages = [
     ["Storage map", "", "__dashboardReady"],
     ["Storage charts", "overview.html", "__overviewReady"],
+    ["Precipitation", "precipitation.html", "__precipReady"],
     ["Snowpack", "snow.html", "__snowReady"],
     ["Drought", "drought.html", "__droughtReady"],
     ["Methods", "methods.html", null],
     ["Data reference", "data.html", "__dataDocsReady"],
     ["Terms", "terms.html", null],
     ["Drought on the ground", "landscape.html", null],
-    ["Reservoir page", "reservoir.html?name=Pearl%20Lake", "__reservoirReady"]
+    ["Reservoir page", "reservoir.html?name=Pearl%20Lake", "__reservoirReady"],
+    ["River flow", "rivers.html", "__riversReady"]
   ];
   console.log("\n=== Simplified Technical English");
   for (const [label, path, signal] of pages) {
@@ -6646,6 +7285,7 @@ console.log(`\n=== Lakes page: ${VIEWPORTS.length} widths`);
     for (const page of [
       { name: "Storage map", url: `${URL}index.html`, signal: "__dashboardReady" },
       { name: "Storage Charts", url: `${URL}overview.html`, signal: "__overviewReady" },
+      { name: "Precipitation", url: `${URL}precipitation.html`, signal: "__precipReady" },
       { name: "Snowpack", url: `${URL}snow.html`, signal: "__snowReady" },
       { name: "Drought", url: `${URL}drought.html`, signal: "__droughtReady" }
     ]) {
