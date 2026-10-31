@@ -3955,6 +3955,14 @@ for (const viewport of VIEWPORTS) {
      * change. Checked against what the page reports, never today's numbers;
      * the canvas is blank headless. Switching must not fetch the SDK or the
      * areas again: the soil file is the only new request. */
+    /* The map starts when the card nears the screen, and its area layer asks
+     * for its shapes after the section reports ready. Wait for that first
+     * load to finish so it is not counted as the switch's request. */
+    await tab.waitForFunction(() => {
+      const map = window.__precipReady?.map;
+      const view = document.querySelector("#precip-map-host arcgis-map")?.view;
+      return map?.state === "ready" && map.viewReady && view?.updating === false;
+    }, null, { timeout: 30000 });
     const switchRequests = [];
     const onSwitchRequest = (request) => switchRequests.push(request.url());
     tab.on("request", onSwitchRequest);
@@ -3998,6 +4006,9 @@ for (const viewport of VIEWPORTS) {
       && soilView.map?.soil?.withChange <= soilView.map?.soil?.stations,
     `${label}: soil mode counts ${JSON.stringify(soilView.map)}`);
     check(soilView.overflow <= 1, `${label}: the card overflows by ${soilView.overflow}px in soil mode`);
+    const soilSearch = new URLSearchParams(await tab.evaluate(() => window.location.search));
+    check(soilSearch.get("layer") === "soil" && soilSearch.get("area") === "140100",
+      `${label}: the link reads ${soilSearch} in soil mode`);
     /* The SDK may still pull its own worker chunks and ask the area service
      * for a count; what must not happen is the page's map module loading
      * again or the area shapes being fetched again. */
@@ -4021,8 +4032,28 @@ for (const viewport of VIEWPORTS) {
     }));
     check(backToRain.dayButtons && backToRain.rainKey,
       `${label}: back on rain, day buttons ${backToRain.dayButtons}, rain key ${backToRain.rainKey}`);
+    const rainSearch = new URLSearchParams(await tab.evaluate(() => window.location.search));
+    check(!rainSearch.has("layer") && rainSearch.get("area") === "140100",
+      `${label}: the link reads ${rainSearch} back on rain`);
     await checkAccessibility(tab, check, label);
     await tab.screenshot({ path: `screenshots/precipitation-${viewport.name}.png`, fullPage: false });
+    /* A shared soil link opens in soil mode (ADR-142), area kept; an unknown
+     * value opens on rain. */
+    await tab.goto(`${URL}precipitation.html?area=140100&layer=soil`, { waitUntil: "domcontentloaded", timeout: 60000 });
+    await tab.waitForFunction(() => window.__precipReady?.map?.soil?.state === "ready", null, { timeout: 60000 });
+    const soilLink = await tab.evaluate(() => ({
+      map: window.__precipReady?.map,
+      area: window.__precipReady?.area,
+      pressed: [...document.querySelectorAll(".precip-map-mode-head button")].map((b) => b.getAttribute("aria-pressed")).join(","),
+      search: window.location.search
+    }));
+    check(soilLink.map?.mode === "soil" && soilLink.pressed === "false,true" && soilLink.area === "140100"
+      && soilLink.search === "?area=140100&layer=soil",
+    `${label}: the soil link opened ${JSON.stringify(soilLink)}`);
+    await tab.goto(`${URL}precipitation.html?area=140100&layer=snow`, { waitUntil: "domcontentloaded", timeout: 60000 });
+    await tab.waitForFunction(() => window.__precipReady?.map !== undefined, null, { timeout: 60000 });
+    const oddLink = await tab.evaluate(() => window.__precipReady?.map?.mode);
+    check(oddLink === "rain", `${label}: an unknown layer opened ${oddLink}`);
   } catch (err) {
     failures.push(`${label}: ${err.message}`);
   }
@@ -4058,7 +4089,7 @@ for (const viewport of VIEWPORTS) {
       `${label}: the season figures were ${early.season} before the held history arrived`);
     check(early.figures === 3 && early.listed > 0,
       `${label}: ${early.figures} recent figures and ${early.listed} stations drew before the history`);
-    await tab.waitForFunction(() => window.__precipReady?.precipitation?.state === "ready", { timeout: 60000 });
+    await tab.waitForFunction(() => window.__precipReady?.precipitation?.state === "ready", null, { timeout: 60000 });
   } catch (err) {
     failures.push(`${label}: ${err.message}`);
   }
@@ -4711,7 +4742,7 @@ for (const viewport of VIEWPORTS) {
   console.log(`\n=== ${label}`);
   try {
     await tab.goto(`${URL}precipitation.html?state=UT`, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__precipReady?.precipitation?.recent === "ready", { timeout: 60000 });
+    await tab.waitForFunction(() => window.__precipReady?.precipitation?.recent === "ready", null, { timeout: 60000 });
     await tab.locator("#precip-map-host").scrollIntoViewIfNeeded();
     await tab.waitForFunction(() => ["ready", "failed"].includes(window.__precipReady?.map?.state), { timeout: 60000 });
     await tab.waitForTimeout(2000);
