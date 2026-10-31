@@ -71,9 +71,9 @@ sensor, day **and** raw value, so a corrected reading returns by itself.
 
 Reclamation's RISE API uses the same mechanism with the item as both station
 key and sensor (`load_excluded_readings(path, None)`), applied in
-`fetch_rise_series`. Three Rifle Gap Reservoir results (item 134092, 26 to 28
-October 2026) are excluded against USGS 09091900; RISE corrected its 24 and
-25 October results itself. Each day's value is its own
+`fetch_rise_series`. Three Rifle Gap Reservoir results (item 134092, 28 to 30
+October 2026) are excluded against USGS 09091900; RISE corrected its 24 to
+27 October results itself. Each day's value is its own
 exclusion, so a further false day needs its own reviewed record; the series
 then ends at the last good reading and the ordinary stale and withdrawal rules
 (`STALE_AFTER_DAYS`, `WITHDRAW_AFTER_DAYS`) apply.
