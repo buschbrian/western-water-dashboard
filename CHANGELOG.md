@@ -30,6 +30,11 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 - **The snow page is now "Precipitation and snow"**, with the precipitation
   card directly under the map. The bar says "Precipitation" where width is
   short. The `snow.html` address and its links are unchanged.
+- **The U.S. Geological Survey provider reads `v1` of the agency's modern
+  service**, which the agency now names its current version. Every series
+  the site publishes from it was read from both versions first, day by day
+  since 2015, and no reading changed. A terminal lake's `source_url` in
+  `lakes.json` names the new address from the next morning's refresh.
 
 ## [1.2.0] - 2026-10-24
 
