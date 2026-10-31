@@ -162,3 +162,24 @@ export function provenanceRows(reservoir: Reservoir): ProvenanceRow[] {
   });
   return rows;
 }
+
+/**
+ * The details rows that answer the reader, in the order this page shows them
+ * as tiles under the headline: the reading date, the changes, the gain since
+ * the 4-month low (ADR-134), the comparison with normal, then the history
+ * rank. Every other row belongs to a section lower down.
+ */
+export function answerRows<Row extends { label: string }>(
+  rows: readonly Row[], baselineLabel: string
+): Row[] {
+  const rank = (label: string): number | null => {
+    if (label === "Reading date") return 0;
+    if (label.startsWith("Change in")) return 1;
+    if (label === "Since the 4-month low") return 2;
+    if (label === baselineLabel) return 3;
+    if (label === "History rank") return 4;
+    return null;
+  };
+  return rows.filter((row) => rank(row.label) !== null)
+    .sort((a, b) => (rank(a.label) ?? 0) - (rank(b.label) ?? 0));
+}

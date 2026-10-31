@@ -87,8 +87,8 @@ export function methodsMarkup(search: string): string {
 
     <section class="methods-section" id="sources" aria-labelledby="sources-heading">
       <h2 id="sources-heading">Where the numbers come from</h2>
-      <p>Storage observations come from five programmes. Three are federal and two are
-        run by a state. Each reservoir record names the one it came from, with the identifier that
+      <p>Storage readings come from the publishers below: federal agencies, state agencies
+        and water operators. Each reservoir record names its publisher, with the identifier that
         requested it. Any value on this site therefore traces back to its publisher.</p>
       <dl class="methods-list">
         <dt>Bureau of Reclamation</dt>
@@ -198,6 +198,18 @@ export function methodsMarkup(search: string): string {
           <br /><strong>Precipitation is not snow.</strong> Beside the figures, the page gives
           the snow water at the same sites. It also gives how much more the gauges caught than
           the snow holds. These two values do not show where the rest of the water went.</dd>
+        <dt>Soil moisture change</dt>
+        <dd>The change in soil moisture over 7 days, in percentage points, at the same
+          mountain sites. The Natural Resources Conservation Service measures the water in
+          the soil as a percent of its volume. A site's value is the mean of its readings at
+          three depths: 2 inches (or 4 inches), 8 inches and 20 inches.
+          <br /><strong>Frozen soil reads falsely dry.</strong> This site does not use a
+          reading when the soil temperature is 32 degrees Fahrenheit or lower, or when the
+          site sends no temperature.
+          <br />A drainage area's figure is the mean change of its sites, and needs at least
+          two sites. The precipitation map shows it with its "Soil moisture" switch. This site
+          does not compare the amount of water between sites. The same percent means
+          different wetness in sand and in clay.</dd>
         <dt>Drought conditions</dt>
         <dd>The U.S. Drought Monitor's weekly national map, produced by the National
           Drought Mitigation Center with the U.S. Department of Agriculture and the
@@ -314,7 +326,7 @@ export function methodsMarkup(search: string): string {
         <dt>History rank</dt>
         <dd>How this reading compares with readings near the same date in earlier years.
           90% means it is higher than 90% of them. The current year is not counted against
-          itself.
+          itself. At the lowest or highest position, the details give the position only.
           <br />The record starts in 2015, so every rank rests on eight to eleven earlier
           years. That is a small number to take a position in, and two ranks a few points
           apart are not meaningfully different. Each reservoir's details give the number of
@@ -324,6 +336,20 @@ export function methodsMarkup(search: string): string {
         <dd>The difference between the newest reading and the reading nearest 7, 30 or 365
         days before it. Shown where the provider publishes often enough to support
         it.</dd>
+        <dt>Since the 4-month low</dt>
+        <dd>The storage a reservoir gained since its lowest daily reading in the last 120
+          days, with the date of that low. Where the newest reading is the low, the details
+          say "At its lowest in 4 months".
+          <br />This site gives the figure only for reservoirs that report every day. It
+          gives no figure for late data, or for fewer than 100 daily readings in the 120
+          days. A gap can hide the real low. A total says how many of the daily reservoirs
+          give a figure.</dd>
+        <dt>Surface level</dt>
+        <dd>The height of the water surface, in feet above a named datum. A datum is the
+          zero point that a level is measured from. Two national datums are in use, and in
+          this region they differ by about 3 feet.
+          <br />This site shows a level only where a person checked the datum against
+          evidence. Each reservoir page names the datum of its level.</dd>
         <dt>The last 12 months</dt>
         <dd>For each month, the average, lowest, highest and closing storage, and the normal
           value for that month against whichever period is selected. The chart in the
@@ -425,14 +451,14 @@ export function methodsMarkup(search: string): string {
         Every figure on the page is measured again at the size chosen. The drought shares cover the larger areas, and the reservoir totals add up
         over them. The snow figures are the mean over the same measurement sites in a
         different grouping. No figure is an average of the smaller areas' figures.</p>
-      <p><strong>A reservoir is included when one of the five programmes above
+      <p><strong>A reservoir is included when one of the publishers above
         publishes its storage, and this project can trace a full level for it.</strong>
         There is no separate geographic test beyond the west itself. The roster used to be
         narrower — a reservoir had to be connected to Utah by drainage — and it is not any
         more.</p>
       <p data-live="scope-counts" class="methods-live"></p>
       <p><strong>These are the reservoirs this site tracks. They are not all the stored
-        water in the west.</strong> The three federal programmes cover the large federal
+        water in the west.</strong> The federal agencies cover the large federal
         projects well and cover other reservoirs unevenly. California and Colorado publish
         their own reservoir records and this site reads both. Other states publish records
         this site does not yet read. A drainage area can therefore
@@ -446,7 +472,7 @@ export function methodsMarkup(search: string): string {
 
     <section class="methods-section" id="coverage" aria-labelledby="coverage-heading">
       <h2 id="coverage-heading">How complete this is</h2>
-      <p>The three federal programmes cover the large federal projects well. They cover
+      <p>The federal agencies cover the large federal projects well. They cover
         everything else unevenly, so the reservoirs this site tracks and the stored water
         in a state are different quantities. In some states they are very different.</p>
       <p>The table says what this site holds for each state, and what it is known to be
@@ -519,11 +545,12 @@ export function methodsMarkup(search: string): string {
           commonly uses. One extra division is added so the highest values can be told
           apart.</li>
         <li><strong>This site measures water supply, not the health of a river or a
-          lake.</strong> It carries three things: how much water is stored, how much is
-          lying as mountain snow, and how dry the land is. A full reservoir is not a
-          healthy river, and a dry drainage area is not a failing one. Water temperature,
-          streamflow, groundwater, water quality and the condition of habitat are all
-          absent, and nothing here should be read as standing in for them.</li>
+          lake.</strong> It shows reservoir storage and surface level, mountain snow,
+          precipitation and soil moisture. It also shows daily flow at a few river gauges,
+          and the weekly drought map. A full reservoir is not a healthy river, and a dry
+          drainage area is not a failing one. Water temperature, groundwater, water quality
+          and the condition of habitat are not on this site. Do not use these numbers in
+          place of them.</li>
         <li>Nothing here is a forecast. Every number is a measurement, a published
           assessment, or an arithmetic comparison of those.</li>
       </ul>

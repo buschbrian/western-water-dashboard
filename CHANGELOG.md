@@ -134,6 +134,20 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Fixed
 
+- On a reservoir page, "Since the 4-month low" (ADR-134) sits with the other
+  answers under the headline, after the changes. It had fallen into the
+  Sources section below the satellite view.
+- The history rank reads "Lowest of 12 years", "3rd-lowest of 12 years" or
+  "2nd-highest of 12 years", counted from the nearer end. At either end it
+  no longer adds "0.0%" or "100.0%", which only repeated the position.
+- The weekly card on the storage charts page no longer says its storage
+  figures follow the reservoir filters. They follow the Lake Powell and Lake
+  Mead switches and the drainage area, as the note now says, and not the
+  state, county, search, reporting or storage class filters.
+- The Methods page names what the site shows, river flow included, and no
+  longer counts its storage publishers wrongly. It gains entries for the
+  soil moisture change (ADR-142), the gain since the 4-month low (ADR-134)
+  and surface level and its datum (ADR-135, ADR-139).
 - On the storage charts page, the scatter plot no longer prints "Usual level"
   over the biggest reservoirs' dots, and the combined-storage and change
   figures say "acre-feet".
