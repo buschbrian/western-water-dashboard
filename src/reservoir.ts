@@ -51,7 +51,11 @@ import { setupPlaceSearch } from "./ui/place-search";
 import { createLocationFacts } from "./ui/location-facts";
 import { measurementCard } from "./ui/measurement-card";
 import { renderElevationYears } from "./viz/elevation-years";
+import {
+  isShareView, SHARE_CHART_HEIGHT, SHARE_CHART_SCALE, shareFrame
+} from "./reservoir-share-model";
 import { wireTheme } from "./ui/theme";
+import { stampTheme } from "./ui/theme-stamp";
 import { coordinateText } from "./viz/coordinates";
 import "./styles/reservoir.css";
 
@@ -59,10 +63,19 @@ setCalciteAssetPath(new URL(/* @vite-ignore */ "../", import.meta.url).href);
 const root = document.querySelector<HTMLElement>("#reservoir-app");
 if (!root) throw new Error("Missing #reservoir-app root");
 
-root.innerHTML = reservoirTemplate(window.location.search);
-wireTheme();
-void setupPlaceChooser();
-setupPlaceSearch("reservoir");
+/* The share frame (ADR-141) is the page's picture mode, not another page: no
+ * navigation, no chooser, always the light theme, and nothing stored. */
+const shareView = isShareView(window.location.search);
+if (shareView) {
+  stampTheme("light");
+  document.documentElement.classList.add("share-view");
+  root.innerHTML = `<main class="reservoir-share" id="reservoir-main" aria-busy="true"></main>`;
+} else {
+  root.innerHTML = reservoirTemplate(window.location.search);
+  wireTheme();
+  void setupPlaceChooser();
+  setupPlaceSearch("reservoir");
+}
 
 const found = root.querySelector<HTMLElement>("#reservoir-main");
 if (!found) throw new Error("Missing #reservoir-main");
@@ -478,6 +491,58 @@ async function renderFound(payload: ReservoirPayload,
 }
 
 /**
+ * The share frame (ADR-141): the name, the level with its datum, the reading
+ * date and the water-year chart, drawn large enough to read on a link card.
+ * A reservoir with no reviewed level, or a history that cannot be read, gets
+ * its name and one sentence, so the deploy never saves an empty frame as a
+ * success: readiness says `drawn` only when the chart is on the page.
+ */
+async function renderShare(payload: ReservoirPayload,
+  state: Extract<ReservoirPageState, { status: "found" }>): Promise<void> {
+  const { reservoir, label } = state;
+  document.title = `${label} — Western Water Dashboard`;
+  const history = await loadElevationHistory().catch((error: unknown) => {
+    console.warn("The elevation history could not be read; the share frame is omitted:", error);
+    return null;
+  });
+  const entry = history?.reservoirs.find(
+    (candidate) => candidate.source_station_id === reservoir.source_station_id);
+  const chart = entry ? elevationChart(reservoir, entry) : null;
+  const frame = chart ? shareFrame(reservoir, label, payload.generated_at, chart) : null;
+  if (!chart || !frame) {
+    const heading = document.createElement("h1");
+    heading.className = "reservoir-name";
+    heading.textContent = label;
+    main.replaceChildren(heading, note("No surface level can be shown for this reservoir."));
+    finish("found", reservoir.elevation ? "card" : "none");
+    return;
+  }
+
+  const text = (tag: "p" | "h1", className: string, content: string): HTMLElement => {
+    const element = document.createElement(tag);
+    element.className = className;
+    element.textContent = content;
+    return element;
+  };
+  const title = document.createElement("div");
+  title.append(text("p", "share-site", "Western Water Dashboard"),
+    text("h1", "reservoir-name", frame.name), text("p", "share-date", frame.readingDate));
+  const level = document.createElement("div");
+  level.className = "share-level";
+  level.append(text("p", "share-figure", frame.level), text("p", "share-basis", frame.basis));
+  const head = document.createElement("header");
+  head.className = "share-head";
+  head.append(title, level);
+  const chartHost = document.createElement("div");
+  chartHost.className = "elevation-chart-host";
+  chartHost.id = "reservoir-elevation-chart";
+  main.replaceChildren(head, chartHost, text("p", "share-caption", frame.caption));
+  const drawn = renderElevationYears(chartHost, chart,
+    { scale: SHARE_CHART_SCALE, height: SHARE_CHART_HEIGHT });
+  finish("found", drawn ? "drawn" : "card");
+}
+
+/**
  * The page for a reservoir the roster withdrew (ADR-056).
  *
  * The notice carries no measurement, so neither does this page: the name,
@@ -573,7 +638,7 @@ async function run(): Promise<void> {
     const payload = await loadReservoirs();
     const state = resolveReservoirPage(payload, window.location.search);
     switch (state.status) {
-      case "found": return renderFound(payload, state);
+      case "found": return shareView ? renderShare(payload, state) : renderFound(payload, state);
       case "withdrawn": return renderWithdrawn(state);
       case "held": return renderHeld(state);
       case "unknown": return renderUnknown(state);

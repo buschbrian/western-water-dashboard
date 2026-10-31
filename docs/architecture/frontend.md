@@ -61,8 +61,28 @@ and a calculated datum difference says it is calculated. The card says where
 its record starts (after first filling); the chart draws every year it shows,
 and its labels sit on plates of the page colour so no line crosses text.
 `window.__reservoirReady.elevation` is `drawn`, `card` (the history could not
-be read) or `none`; the chart's host is `#reservoir-elevation-chart`, the
-stable target for a later share image.
+be read) or `none`; the chart's host is `#reservoir-elevation-chart`.
+
+#### The share frame and the share pages
+
+`reservoir.html?name=...&view=share` (ADR-141) is the same page in a picture
+mode: one 1200 by 630 frame of the name, the surface level with its datum, the
+reading date and the water-year chart, drawn twice its size so its type reads
+on a link card. No navigation, no place chooser, no map, always the light
+theme, nothing stored. Its words come from the page's own level card
+(`reservoir-share-model.ts`). A reservoir with no reviewed level, or an
+unreadable history, signals `elevation` as `none` or `card`, never `drawn`.
+
+The pictures behind a shared link are made from it. `public/share/` holds, for
+Lake Powell and Lake Mead, a hand-kept page (`lake-powell.html`) with the
+Open Graph and Twitter card tags, a canonical link to the reservoir page and
+a meta refresh on to it, and a committed fallback picture of the same name.
+The pages state no figure, and are not generated, because a generated page
+would go with a withdrawn reservoir (ADR-056). The Pages workflow runs
+`scripts/share-images.sh` after the build: `scripts/capture-share-images.mjs`
+photographs the frame from `dist/` and replaces `dist/share/*.png` only with a
+valid capture, so a failure publishes the fallback. `scripts/share-fallback.html`
+is the fallback's source.
 
 ### The terminal-lakes page
 

@@ -210,3 +210,36 @@ body {
 @media (max-width: 480px) {
   .reservoir-main { padding-inline: 1rem; }
 }
+
+/* The share frame (ADR-141): `reservoir.html?name=...&view=share` fills a
+ * 1200 by 630 window with the name, the level, the date and the chart, and
+ * never scrolls. The deploy saves it as the picture a link card shows. The
+ * chart is drawn at twice its size (`SHARE_CHART_SCALE`), so its type is 24
+ * pixels here. Colours are the page's own tokens, in the light theme. */
+html.share-view, html.share-view body { height: 100%; overflow: hidden; }
+html.share-view body { background: var(--app-surface); }
+.reservoir-share {
+  box-sizing: border-box;
+  inline-size: 100%;
+  block-size: 100vh;
+  padding: 34px 48px 28px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  overflow: hidden;
+}
+.share-head { display: flex; justify-content: space-between; align-items: flex-end; gap: 32px; }
+.share-head > div:first-child { flex: none; }
+.reservoir-share .reservoir-name {
+  font-size: 68px; line-height: 1.05; margin: 0; white-space: nowrap;
+}
+.share-site { margin: 0 0 4px; font-size: 22px; font-weight: 600; color: var(--app-muted); }
+.share-date { margin: 10px 0 0; font-size: 26px; color: var(--app-muted); }
+.share-level { text-align: end; min-inline-size: 0; }
+.share-figure {
+  margin: 0; font-size: 76px; line-height: 1; font-weight: 700;
+  font-variant-numeric: tabular-nums; color: var(--elevation-current);
+}
+.share-basis { margin: 10px 0 0; font-size: 22px; line-height: 1.2; color: var(--app-text); }
+.reservoir-share .elevation-chart-host { margin-block-start: 6px; }
+.share-caption { margin: 0; font-size: 22px; color: var(--app-muted); }

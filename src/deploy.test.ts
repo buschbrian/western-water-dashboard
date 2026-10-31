@@ -10,7 +10,7 @@
  * and bundles cleanly, a build step that stops copying the payload. None of
  * them fail a browser test; all of them freeze the published numbers.
  */
-import { readFile } from "node:fs/promises";
+import { readdir, readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -130,7 +130,8 @@ describe("a data-only commit deploys on its own", () => {
   it("gives every published page the same content policy", async () => {
     const pages = ["index.html", "modern.html", "overview.html", "precipitation.html", "snow.html",
       "drought.html", "methods.html", "data.html", "explore.html", "lakes.html",
-      "reservoir.html", "story.html", "legacy/index.html", "maplibre/index.html"];
+      "reservoir.html", "story.html", "legacy/index.html", "maplibre/index.html",
+      "public/share/lake-powell.html", "public/share/lake-mead.html"];
     const policies = new Set<string>();
 
     for (const page of pages) {
@@ -305,7 +306,11 @@ describe("a data-only commit deploys on its own", () => {
       // The reviewed reservoir levels (ADR-135), like the lakes'.
       "elevation_history.json", "data/elevation_history.json", "api/elevation_history.json",
       // The story views (ADR-128): a public URL a published story embeds.
-      "story.html"]) {
+      "story.html",
+      // The shared-link pages and their pictures (ADR-141): permanent URLs
+      // posted elsewhere, and an image each that must exist after the build.
+      "share/lake-powell.html", "share/lake-mead.html",
+      "share/lake-powell.png", "share/lake-mead.png"]) {
       expect(workflow, `the deploy must verify dist/${path}`).toContain(path);
     }
     // The rule that makes a data-only deploy meaningful, checked in CI as
@@ -438,5 +443,115 @@ describe("a data-only commit deploys on its own", () => {
     for (const file of SOURCE_ONLY_ROSTERS) {
       expect(config, `${file} is copied into the deploy`).not.toContain(`"${file}"`);
     }
+  });
+});
+
+/*
+ * The picture behind a shared link (ADR-141). The pages are committed and
+ * hand-kept, because a generated page whose reservoir left the roster would
+ * delete a URL someone has posted (ADR-056); the picture is captured at the
+ * deploy and falls back to a committed one.
+ */
+const SHARE_PAGES = ["lake-powell", "lake-mead"] as const;
+
+/* The share pages carry the site's address literally, as a crawler needs it.
+ * The one place the code states it is the data reference's `base`, and the
+ * pages are held to that rather than to a second copy of it here. */
+async function siteBase(): Promise<string> {
+  const base = /const base = "(https:\/\/[^"]+)\/api"/.exec(await read("src/data-docs.ts"))?.[1];
+  expect(base, "src/data-docs.ts no longer states the site's address").toBeDefined();
+  return base!;
+}
+
+function pngSize(bytes: Buffer): { width: number; height: number } | null {
+  const signature = [0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a];
+  if (bytes.length < 24 || signature.some((byte, index) => bytes[index] !== byte)) return null;
+  return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
+}
+
+function meta(html: string, attribute: "property" | "name", key: string): string {
+  const match = new RegExp(`<meta ${attribute}="${key}" content="([^"]*)"`).exec(html);
+  return match?.[1] ?? "";
+}
+
+describe("a shared link shows a picture", () => {
+  it("holds the site's address the data reference holds", async () => {
+    expect(await siteBase()).toMatch(/^https:\/\/[a-z0-9.-]+\/[a-z-]+$/);
+    expect(await read("README.md")).toContain(`<${await siteBase()}/>`);
+  });
+
+  for (const file of SHARE_PAGES) {
+    it(`carries absolute card tags and a way on for share/${file}.html`, async () => {
+      const html = await read(`public/share/${file}.html`);
+      const base = await siteBase();
+      expect(meta(html, "property", "og:image")).toBe(`${base}/share/${file}.png`);
+      expect(meta(html, "name", "twitter:image")).toBe(`${base}/share/${file}.png`);
+      expect(meta(html, "property", "og:url")).toBe(`${base}/share/${file}.html`);
+      expect(meta(html, "name", "twitter:card")).toBe("summary_large_image");
+      expect(meta(html, "property", "og:image:width")).toBe("1200");
+      expect(meta(html, "property", "og:image:height")).toBe("630");
+      for (const key of ["og:title", "og:description", "og:image:alt"]) {
+        expect(meta(html, "property", key), `${file} has no ${key}`).not.toBe("");
+      }
+      for (const key of ["twitter:image:alt", "twitter:title", "twitter:description"]) {
+        expect(meta(html, "name", key), `${file} has no ${key}`).not.toBe("");
+      }
+      const name = meta(html, "property", "og:title").replace(" surface level", "");
+      const target = `reservoir.html?name=${encodeURIComponent(name)}`;
+      expect(html).toContain(`<link rel="canonical" href="${base}/${target}" />`);
+      expect(html).toContain(`<meta http-equiv="refresh" content="0; url=../${target}" />`);
+      expect(html, "a visible link is the way on when a refresh is blocked")
+        .toContain(`<a href="../${target}">`);
+      /* A hand-kept page cannot know today's level: a figure here would be
+       * a stale claim on every card shared after the day it was written. */
+      expect(html).not.toMatch(/\d[\d,.]* feet/);
+      expect(html).not.toContain("<script");
+      expect(html, "no tracking and no third-party address in the page")
+        .not.toMatch(/(src|href)="https?:\/\/(?!buschbrian\.github\.io)/);
+    });
+
+    it(`commits a fallback image for share/${file}.png that is a 1200 by 630 PNG`, async () => {
+      const bytes = await readFile(resolve(root, `public/share/${file}.png`));
+      expect(pngSize(bytes)).toEqual({ width: 1200, height: 630 });
+      /* A blank frame compresses to a few kilobytes. */
+      expect(bytes.length).toBeGreaterThan(15_000);
+    });
+  }
+
+  it("keeps the committed pages, the fallbacks and the capture list in step", async () => {
+    const files = (await readdir(resolve(root, "public/share"))).sort();
+    expect(files).toEqual(SHARE_PAGES.flatMap((file) => [`${file}.html`, `${file}.png`]).sort());
+    const capture = await read("scripts/capture-share-images.mjs");
+    const captured = [...capture.matchAll(/file: "([a-z-]+)"/g)].map((match) => match[1]);
+    expect(captured).toEqual([...SHARE_PAGES]);
+  });
+
+  it("captures after the build is checked and before it is uploaded, through one script", async () => {
+    const workflow = await read(".github/workflows/deploy-pages.yml");
+    const verify = workflow.indexOf("Verify the published output");
+    const capture = workflow.indexOf("bash scripts/share-images.sh");
+    const upload = workflow.indexOf("actions/upload-pages-artifact");
+    expect(verify).toBeGreaterThanOrEqual(0);
+    expect(capture).toBeGreaterThan(verify);
+    expect(upload).toBeGreaterThan(capture);
+
+    const script = await read("scripts/share-images.sh");
+    /* The repo's own Playwright package against a browser already on the
+     * runner: no browser is downloaded for the morning's capture. */
+    expect(script).toContain("scripts/install-playwright.sh");
+    expect(script).toContain("PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH");
+    expect(script).toContain("capture-share-images.mjs");
+    expect(script, "the capture must not download a browser").not.toMatch(/cli\.js install|playwright install/);
+    expect(workflow.slice(capture - 200, capture + 100)).not.toMatch(/install --with-deps/);
+  });
+
+  it("replaces a fallback only with a capture that drew, and fails only on a missing image", async () => {
+    const capture = await read("scripts/capture-share-images.mjs");
+    expect(capture).toContain('window.__reservoirReady?.elevation === "drawn"');
+    expect(capture).toContain("view=share");
+    expect(capture).toContain("PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH");
+    /* Written beside the fallback and renamed over it, never written in place. */
+    expect(capture).toContain("rename(temporary");
+    expect(capture).toContain("process.exit(missing ? 1 : 0)");
   });
 });

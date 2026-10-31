@@ -6071,6 +6071,67 @@ for (const failure of [
 }
 
 /*
+ * The share frame (ADR-141): `reservoir.html?name=...&view=share` is the
+ * picture a shared link shows, and the deploy photographs it at 1200 by 630.
+ * What only a browser can answer: it fits that window without scrolling, it
+ * has no navigation, the chart drew, and it says the name, the level with
+ * its datum and the date. A reservoir with no reviewed level must not signal
+ * a drawn chart, because that signal is what lets the deploy keep a capture.
+ */
+{
+  const context = await newPageContext(browser, { width: 1200, height: 630 });
+  const tab = await context.newPage();
+  const errors = [];
+  tab.on("pageerror", (error) => errors.push(String(error)));
+  watchConsoleErrors(tab, errors);
+  for (const [name, drawn] of [["Lake Powell", true], ["Lake Mead", true],
+    ["Flaming Gorge", false]]) {
+    await tab.goto(`${URL}reservoir.html?name=${encodeURIComponent(name)}&view=share`,
+      { waitUntil: "load", timeout: 90000 });
+    await tab.waitForFunction(() => window.__reservoirReady !== undefined,
+      null, { timeout: 90000 }).catch(() => {});
+    const share = await tab.evaluate(() => ({
+      elevation: window.__reservoirReady?.elevation ?? null,
+      busy: document.querySelector("#reservoir-main")?.getAttribute("aria-busy"),
+      text: document.body.innerText,
+      navigation: document.querySelectorAll("calcite-navigation").length,
+      lines: document.querySelectorAll("#reservoir-elevation-chart .elevation-line").length,
+      fitsHeight: document.documentElement.scrollHeight <= window.innerHeight,
+      fitsWidth: document.documentElement.scrollWidth <= window.innerWidth,
+      level: document.querySelector(".share-figure")?.textContent ?? "",
+      axis: (() => {
+        const svg = document.querySelector("#reservoir-elevation-chart svg");
+        const label = svg?.querySelector(".elevation-axis");
+        return svg && label ? Number.parseFloat(getComputedStyle(label).fontSize)
+          * (svg.getBoundingClientRect().width / svg.viewBox.baseVal.width) : 0;
+      })()
+    }));
+    check(share.busy === "false" && share.navigation === 0 && share.fitsHeight && share.fitsWidth,
+      `Share frame (${name}): busy ${share.busy}, ${share.navigation} navigation bars, `
+      + `fits ${share.fitsWidth}x${share.fitsHeight}`);
+    if (drawn) {
+      check(share.elevation === "drawn" && share.lines >= 2
+        && share.text.includes(name) && /[\d,.]+ feet/.test(share.level)
+        && share.text.includes("Reading date:") && share.text.includes("above the "),
+      `Share frame (${name}): the name, level, datum, date and chart are not all there `
+        + JSON.stringify({ elevation: share.elevation, lines: share.lines, level: share.level }));
+      check(share.axis >= 20,
+        `Share frame (${name}): the axis type is ${share.axis}px; a link card shrinks it to a fifth`);
+      check(!/\bNGVD29\b|\bNAVD88\b/.test(share.text) && !share.text.includes("%"),
+        `Share frame (${name}): the datum reaches a reader as its initials, or a level has a percent`);
+      const retired = RETIRED_TERMS.exec(share.text);
+      check(retired === null, `Share frame (${name}): uses a retired term: "${retired?.[0]}"`);
+    } else {
+      check(share.elevation === "none" && share.lines === 0,
+        `Share frame (${name}): a reservoir with no reviewed level signalled ${share.elevation}`);
+    }
+  }
+  for (const message of errors) failures.push(`Share frame: ${message}`);
+  await context.close();
+  console.log("\n=== Share frame: two reviewed levels and one reservoir without");
+}
+
+/*
  * The terminal-lakes page (ADR-119), at every width.
  *
  * One page for every published lake, so the contract is the readiness

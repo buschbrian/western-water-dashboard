@@ -1,0 +1,36 @@
+<!doctype html>
+<!-- The committed fallback share images (ADR-141) are screenshots of this
+     page at 1200 by 630: open it with ?name=Lake%20Powell and with
+     ?name=Lake%20Mead. It names the reservoir and carries no figure, so a
+     fallback kept for months is never a stale level. -->
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Share image fallback</title>
+  <style>
+    html, body { margin: 0; width: 1200px; height: 630px; overflow: hidden; }
+    body { box-sizing: border-box; padding: 48px 64px; background: #f3eee6; color: #2f342f;
+      font-family: "Avenir Next", Avenir, "Segoe UI", sans-serif;
+      display: flex; flex-direction: column; justify-content: space-between; }
+    p { margin: 0; }
+    .site { font-size: 30px; font-weight: 600; color: #655f55; }
+    h1 { margin: 0; font-size: 120px; line-height: 1.05; }
+    .what { margin-top: 20px; font-size: 44px; color: #1d4e6b; font-weight: 600; }
+    .more { font-size: 30px; color: #655f55; }
+    .rule { block-size: 0; border-block-start: 6px solid #1d4e6b; inline-size: 120px; margin-bottom: 28px; }
+  </style>
+</head>
+<body>
+  <p class="site">Western Water Dashboard</p>
+  <div>
+    <div class="rule"></div>
+    <h1 id="name"></h1>
+    <p class="what">Surface level by water year</p>
+  </div>
+  <p class="more">Open the page to see the level now and the chart.</p>
+  <script>
+    document.getElementById("name").textContent =
+      new URLSearchParams(location.search).get("name") ?? "";
+  </script>
+</body>
+</html>

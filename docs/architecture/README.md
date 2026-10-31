@@ -46,6 +46,7 @@ oracle, and two Python pipelines.
 | `methods.html`, `data.html`, `terms.html` | Methods, public data API, terms. |
 | `legacy/`, `maplibre/`, `explore.html` | Compatibility redirects only (ADR-031). |
 | `public/retired-route.js` | Allowlisted URL-state translation for those redirects. |
+| `public/share/` | Hand-kept share pages and fallback pictures for a shared reservoir link (ADR-141). |
 | `shared/reservoir-viz.js` | Frozen source-only colour-table owner and test oracle. Never published. |
 | `src/` | Strict TypeScript, including the complete runtime data validator. |
 | `pipeline/`, `refresh_reservoirs.py`, `refresh_snowpack.py` | Reservoir and snow refresh pipelines. |

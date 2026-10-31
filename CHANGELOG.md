@@ -13,6 +13,13 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
+- **A picture for a shared Lake Powell or Lake Mead link** (ADR-141). Two
+  share pages, `share/lake-powell.html` and `share/lake-mead.html`, carry the
+  card tags and send a person on to the reservoir page. The picture on the
+  card is the reservoir's name, surface level with its datum, reading date and
+  water-year chart, captured from the site in each morning's deploy; a
+  committed picture is published if the capture fails. The same frame opens
+  at `reservoir.html?name=...&view=share`.
 - **Surface level for Lake Powell and Lake Mead** (ADR-135) on their
   reservoir pages: a "Surface level" card with dated changes and record
   readings, a chart of the current water year against five earlier ones
