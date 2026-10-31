@@ -282,16 +282,36 @@ def test_daily_flow_keeps_only_the_daily_mean_discharge():
     assert G.parse_daily_flow(page) == {dt.date(2026, 7, 15): 145.0}
 
 
-def test_legacy_daily_flow_drops_the_missing_value_sentinel():
-    payload = {"value": {"timeSeries": [
-        {"name": "USGS:09302000:00060:00003", "values": [{"value": [
-            {"dateTime": "1991-10-01T00:00:00.000", "value": "312"},
-            {"dateTime": "1991-10-02T00:00:00.000", "value": "-999999"}]}]},
-        {"name": "USGS:09302000:00010:00003", "values": [{"value": [
-            {"dateTime": "1991-10-01T00:00:00.000", "value": "9.5"}]}]}]}}
-    assert G.parse_legacy_daily_flow(payload) == {dt.date(1991, 10, 1): 312.0}
+def test_flow_reference_fills_the_years_v1_lacks_and_v1_wins_where_it_has_a_year(
+        tmp_path, monkeypatch):
+    path = tmp_path / "reference.json"
+    path.write_text(json.dumps({"site": "09302000", "water_years": {
+        "1991": {"mean_cfs": 300.0}, "1992": {"mean_cfs": 310.5}}}), encoding="utf-8")
+    assert G.load_flow_reference(path) == {"09302000": {1991: 300.0, 1992: 310.5}}
+    assert G.load_flow_reference(tmp_path / "absent.json") == {}
+
+    def feature(day, value):
+        return {"properties": {"time": day, "value": value, "parameter_code": "00060",
+                               "statistic_id": "00003"}}
+    current = [feature((dt.date(1991, 10, 1) + dt.timedelta(days=n)).isoformat(), "20")
+               for n in range(366)]
+    monkeypatch.setattr(G, "load_flow_reference",
+                        lambda: {"09302000": {1991: 300.0, 1992: 310.5}})
+    monkeypatch.setattr(G.upstream, "get_json",
+                        lambda url, **kw: {"features": current, "links": []})
+    assert G.fetch_daily_annual_means(["09302000"]) == {
+        "09302000": {1991: 300.0, 1992: 20.0}}
 
 
+def test_the_committed_flow_reference_holds_whole_water_years_only():
+    reference = G.load_flow_reference()["09302000"]
+    record = json.loads(G.FLOW_REFERENCE_PATH.read_text(encoding="utf-8"))
+    assert G.FLOW_START_WATER_YEAR in reference and max(reference) == 2026
+    for year, entry in record["water_years"].items():
+        whole = (dt.date(int(year), 9, 30) - dt.date(int(year) - 1, 10, 1)).days + 1
+        assert entry["days"] == whole
+        assert entry["approved_days"] + entry["provisional_days"] <= whole
+    assert record["parameter_code"] == "00060" and record["fetched_at"]
 
 
 def test_annual_means_follow_the_next_token_and_send_ids_as_parameters(monkeypatch):

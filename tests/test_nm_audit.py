@@ -12,28 +12,22 @@ import audit_new_mexico_reservoirs as nm  # noqa: E402
 TODAY = dt.date(2026, 10, 27)
 
 
-def series(stat, rows, unit="ac-ft"):
-    return {
-        "sourceInfo": {"siteCode": [{"value": "08286900"}],
-                       "siteName": "ABIQUIU RESERVOIR NEAR ABIQUIU N MEX",
-                       "geoLocation": {"geogLocation": {
-                           "latitude": 36.24, "longitude": -106.43}}},
-        "variable": {"unit": {"unitCode": unit},
-                     "options": {"option": [
-                         {"name": "Statistic", "optionCode": stat}]}},
-        "values": [{"value": [{"value": v, "dateTime": f"{d}T00:00:00.000"}
-                              for d, v in rows]}],
-    }
+def reading(stat, day, value, parameter="00054"):
+    return {"properties": {"statistic_id": stat, "time": day, "value": value,
+                           "parameter_code": parameter,
+                           "monitoring_location_id": "USGS-08286900"}}
 
 
-def test_parse_nwis_drops_sentinel_negative_and_foreign_units():
-    payload = {"value": {"timeSeries": [
-        series("32400", [("2026-10-01", "100"), ("2026-10-02", "-999999"),
-                         ("2026-10-03", "-5"), ("2026-10-04", "120")]),
-        series("00003", [("2026-10-04", "9")], unit="ft"),
-    ]}}
-    sites = nm.parse_nwis(payload)
-    assert sites["08286900"]["statistics"] == {
+def test_parse_daily_drops_sentinel_negative_and_other_parameters():
+    features = [
+        reading("32400", "2026-10-04", "120"),
+        reading("32400", "2026-10-01", "100"),
+        reading("32400", "2026-10-02", "-999999"),
+        reading("32400", "2026-10-03", "-5"),
+        reading("32400", "2026-10-05", None),
+        reading("00003", "2026-10-04", "9", parameter="00062"),
+    ]
+    assert nm.parse_daily(features) == {
         "32400": [("2026-10-01", 100.0), ("2026-10-04", 120.0)]}
 
 
