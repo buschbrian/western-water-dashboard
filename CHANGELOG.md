@@ -89,10 +89,21 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   20 in sensors; a reading is not used on a day the soil there is frozen.
   Its own key, a list of the stations that changed most, and a table of
   every station. A new daily file, `soil_moisture.json` (27 KB gzipped),
-  fetched only when a reader turns the switch.
+  fetched only when a reader turns the switch. The link carries the mode:
+  `precipitation.html?layer=soil` opens on soil moisture.
 
 ### Changed
 
+- **Eighteen more reservoir names are the water's own name** (ADR-147).
+  Gauge and county text is gone from `Rye Patch Reservoir`, `Stagecoach
+  Reservoir`, `Lake San Antonio`, `San Antonio Reservoir`, `Jackson Meadows`,
+  `Dwinnell Reservoir`, `Camp Far West`, `Bucks Lake` and `Upper San
+  Leandro`. `McPhee Reservoir`, `McKay`, `Lake McCloud` and `Lake McSwain`
+  have the right capitals, and `Howard A. Hanson` is spelled as the dam
+  inventory spells it. Four dam names now name the water: `Lake Oroville`,
+  `Cherry Lake`, `Morena Reservoir` and `Bass Lake`. Links that use an old
+  name still open the right reservoir. A new test refuses provider text in
+  any roster name.
 - **Precipitation has its own page**, `precipitation.html` (ADR-130): the
   recent totals, the season since 1 October and the history chart, for the
   place in the link, with a link to the snowpack view for the same place.
