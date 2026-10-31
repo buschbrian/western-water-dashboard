@@ -79,7 +79,8 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   20 in sensors; a reading is not used on a day the soil there is frozen.
   Its own key, a list of the stations that changed most, and a table of
   every station. A new daily file, `soil_moisture.json` (27 KB gzipped),
-  fetched only when a reader turns the switch.
+  fetched only when a reader turns the switch. The link carries the mode:
+  `precipitation.html?layer=soil` opens on soil moisture.
 
 ### Changed
 
