@@ -430,6 +430,23 @@ class TestTheDisagreementScreens:
         found = dict(discrepancies(decision, highest_readings=[0, 0, 0]))
         assert "unstable maximum" not in found
 
+    def test_a_high_the_daily_series_confirms_is_not_a_spike(self):
+        # ADR-150. Guadalupe's monthly series held three months: 1,762 in
+        # December 2021 over a third highest of 402. The daily series reads
+        # 1,762 on 31 December, after a storm fill, so the high is real.
+        decision = self.clean(3415.0)
+        held = dict(discrepancies(decision, highest_readings=[1762, 900, 402]))
+        assert "unstable maximum" in held
+        cleared = dict(discrepancies(decision, highest_readings=[1762, 900, 402],
+                                     highest_confirmed=True))
+        assert "unstable maximum" not in cleared
+
+    def test_a_confirmed_high_still_answers_the_capacity_screens(self):
+        decision = self.clean(1000.0)
+        found = dict(discrepancies(decision, highest_readings=[1762, 900, 402],
+                                   highest_confirmed=True))
+        assert "seen above the capacity it would be divided by" in found
+
     def test_the_two_capacity_sources_are_compared(self):
         # Keswick: 7,470 against 23,772, the widest disagreement measured.
         decision = self.clean(7470.0)

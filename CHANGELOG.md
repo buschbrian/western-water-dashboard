@@ -94,6 +94,13 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Changed
 
+- **The California audit reads the daily series where the monthly series
+  is silent** (ADR-150). A station is quiet only when neither series
+  reported within the year. A monthly high is not a spike when the daily
+  reading for the same day agrees. The audit admits no station.
+- **The refresh reports record figures for review** (ADR-150). It warns
+  when a record high is above the full level, or when a record low is far
+  below the readings near it. It removes no reading; a person decides.
 - **Eighteen more reservoir names are the water's own name** (ADR-147).
   Gauge and county text is gone from `Rye Patch Reservoir`, `Stagecoach
   Reservoir`, `Lake San Antonio`, `San Antonio Reservoir`, `Jackson Meadows`,

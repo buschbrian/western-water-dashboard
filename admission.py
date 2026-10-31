@@ -437,8 +437,21 @@ def preferred_capacity(decision, provider_capacity_af=None, provider_basis=None)
     return decision.capacity_af, decision.capacity_basis
 
 
+def unstable_maximum(highest_readings):
+    """True when the highest reading sits far above the third highest.
+
+    A third-highest of exactly zero is an empty reservoir, not a missing
+    reading: a series whose top three are [58,000, 0, 0] is one anomalous
+    spike over a pond that has stood empty, which is precisely the shape
+    this screen exists to catch. Truthiness here silently waved it through.
+    See `SPIKE_RATIO` for why the third and not the second.
+    """
+    readings = sorted(highest_readings or (), reverse=True)
+    return len(readings) >= 3 and readings[0] > readings[2] * SPIKE_RATIO
+
+
 def discrepancies(decision, highest_readings=None, service_capacity_af=None,
-                  provider_basis=None):
+                  provider_basis=None, highest_confirmed=False):
     """Everything about this candidate that two sources do not agree about.
 
     `admit` answers one question -- is this the right dam -- and answers it
@@ -470,18 +483,19 @@ def discrepancies(decision, highest_readings=None, service_capacity_af=None,
     `service_capacity_af` is the provider's own published full level where it
     has one. Both are optional: a screen with nothing to read stays quiet
     rather than guessing, so a provider that publishes no full level is not
-    reported as disagreeing with itself.
+    reported as disagreeing with itself. `highest_confirmed` is True when a
+    second series from the same station confirms the highest reading on the
+    day it describes; the spike screen then stays quiet (ADR-150).
     """
     found = []
     if not decision.admitted:
         found.append(("no confirmed dam", decision.reason))
 
     readings = sorted(highest_readings or (), reverse=True)
-    # A third-highest of exactly zero is an empty reservoir, not a missing
-    # reading: a series whose top three are [58,000, 0, 0] is one anomalous
-    # spike over a pond that has stood empty, which is precisely the shape
-    # this screen exists to catch. Truthiness here silently waved it through.
-    if len(readings) >= 3 and readings[0] > readings[2] * SPIKE_RATIO:
+    # A monthly high the station's own daily series confirms on the day it
+    # describes is a measurement, not a spike (ADR-150). The caller makes
+    # that comparison, because only the caller has the daily series.
+    if unstable_maximum(readings) and not highest_confirmed:
         found.append((
             "unstable maximum",
             f"highest reading {readings[0]:,.0f} acre-feet against a third "

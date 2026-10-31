@@ -64,7 +64,8 @@ denominator. **Start with ADR-070, then ADR-072, then ADR-003.**
   [ADR-114](ADR-114-publish-a-water-type-and-an-operating-character.md),
   [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md),
   [ADR-135](ADR-135-publish-a-reservoir-level-only-above-a-reviewed-datum.md),
-  [ADR-139](ADR-139-review-each-reservoirs-vertical-datum-before-publishing-an-elevation.md)
+  [ADR-139](ADR-139-review-each-reservoirs-vertical-datum-before-publishing-an-elevation.md),
+  [ADR-150](ADR-150-read-the-daily-series-before-calling-a-station-quiet-or-a-high-a-spike.md)
 - Freshness and withdrawal:
   [ADR-056](ADR-056-withdraw-a-reading-that-belongs-to-another-season.md),
   [ADR-115](ADR-115-state-a-reviewed-hold-where-the-reservoir-used-to-be.md),
@@ -349,6 +350,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-145](ADR-145-compare-river-gauges-above-ten-years-shorten-two-names-and-round-the-page.md) | Compare river gauges above ten years, shorten two names, and round the page | Accepted; amends ADR-144; compare a date with more than 10 approved years, `short_record` true under 30 and said beside the comparison, `ten_years_or_fewer` replaces `fewer_than_30_years`; `rivers.json` structure version 3; Middle Fork Beaver Creek near Lonetree admitted at 22 years; "Mill Creek near Moab" and "South Creek near Monticello"; the reading and normal range at three significant figures on the rivers page |
 | [ADR-146](ADR-146-keep-river-flow-and-soil-moisture-change-day-by-day.md) | Keep river flow and the soil-moisture change day by day | Accepted; extends ADR-136 and ADR-142; `river_history.json` (daily flow, status, qualifiers, class) and `soil_moisture_history.json` (published change per drainage area per date) in the `elevation_history.json` layout; merge by date, nothing deleted; no payload changes |
 | [ADR-147](ADR-147-hold-every-published-reservoir-name-to-the-waters-own-name.md) | Hold every published reservoir name to the water's own name | Accepted; extends ADR-079; eighteen more roster names renamed with fifteen former names added; a test refuses provider text in any roster name, with an allow list and a held list |
+| [ADR-150](ADR-150-read-the-daily-series-before-calling-a-station-quiet-or-a-high-a-spike.md) | Read the daily series before calling a station quiet or a high a spike | Accepted; extends ADR-116; the California audit screens the daily series where the monthly one is silent, a monthly high the daily reading confirms is not a spike, and the refresh reports a record high above the full level or a record low far below its neighbours, removing nothing; ADR-148 and ADR-149 are other records |
 
 ## Relationship to the historical journal
 
