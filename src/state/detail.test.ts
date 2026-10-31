@@ -4,7 +4,7 @@ import { storageColor } from "../viz/classes";
 import { headlinePercent } from "../viz/symbols";
 import {
   capacityBasisName, changeLabel, describeReservoir, describeSinceLow, lateMessage,
-  monthlyDetail, providerName, rankWithYears
+  monthlyDetail, providerName, rankPosition, rankWithYears
 } from "./detail";
 import { createSelectionStore, findReservoir, normalizeSelectionValue } from "./selection";
 import { loadLegacyApi } from "../data/legacy-harness";
@@ -450,7 +450,7 @@ describe("what the panel says about its own basis", () => {
       const rank = view.rows.find((row) => row.label === "History rank")?.value ?? "";
       if (rank === "—") continue;
       expect(rank, `${view.name} states a rank with no sample size`)
-        .toMatch(/(out of \d+ earlier years?)|(-lowest of \d+)/);
+        .toMatch(/(out of \d+ earlier years?)|((Lowest|Highest|-lowest|-highest) of \d+ years)/);
     }
   });
 
@@ -471,29 +471,48 @@ describe("what the panel says about its own basis", () => {
  */
 describe("how the history rank reads", () => {
   it("leads with the position and keeps the percentage when the sample supports it", () => {
-    expect(rankWithYears(18.2, 11, 3, 12)).toBe("3rd-lowest of 12, 18.2%");
-    expect(rankWithYears(0, 10, 1, 11)).toBe("1st-lowest of 11, 0.0%");
-    expect(rankWithYears(100, 10, 11, 11)).toBe("11th-lowest of 11, 100.0%");
+    expect(rankWithYears(18.2, 11, 3, 12)).toBe("3rd-lowest of 12 years, 18.2%");
+    expect(rankWithYears(81.8, 11, 10, 12)).toBe("3rd-highest of 12 years, 81.8%");
+  });
+
+  /* "1st-lowest of 12, 0.0%" was Lake Mead's headline fact and read as a
+   * formatting fault. At either end the percentage can only be 0% or 100%,
+   * which repeats the position, so the position stands alone. */
+  it("names the two ends in words and drops the percentage there", () => {
+    expect(rankWithYears(0, 11, 1, 12)).toBe("Lowest of 12 years");
+    expect(rankWithYears(100, 11, 12, 12)).toBe("Highest of 12 years");
+    expect(rankWithYears(0, 10, 1, 11)).toBe("Lowest of 11 years");
+    expect(rankWithYears(100, 10, 11, 11)).toBe("Highest of 11 years");
+  });
+
+  it("counts from the nearer end, and from the lowest in the middle", () => {
+    expect(rankPosition(11, 12)).toBe("2nd-highest of 12 years");
+    expect(rankPosition(2, 12)).toBe("2nd-lowest of 12 years");
+    expect(rankPosition(6, 12)).toBe("6th-lowest of 12 years");
+    expect(rankPosition(7, 12)).toBe("6th-highest of 12 years");
+    expect(rankPosition(6, 11)).toBe("6th-lowest of 11 years");
+    expect(rankPosition(1, 2)).toBe("Lowest of 2 years");
+    expect(rankPosition(2, 2)).toBe("Highest of 2 years");
   });
 
   it("prints the position alone when the percentile could not mean much", () => {
     /* With four prior years a percentile can only ever read 0, 25, 50, 75
      * or 100 -- "0.0%" reads as a measurement of nothing. Ten prior years
      * is the floor for printing one. */
-    expect(rankWithYears(0, 4, 1, 5)).toBe("1st-lowest of 5");
-    expect(rankWithYears(25, 8, 2, 9)).toBe("2nd-lowest of 9");
-    expect(rankWithYears(100, 9, 10, 10)).toBe("10th-lowest of 10");
+    expect(rankWithYears(25, 4, 2, 5)).toBe("2nd-lowest of 5 years");
+    expect(rankWithYears(25, 8, 2, 9)).toBe("2nd-lowest of 9 years");
+    expect(rankWithYears(87.5, 8, 8, 9)).toBe("2nd-highest of 9 years");
     // Exactly on the threshold keeps it: ten steps of ten points.
-    expect(rankWithYears(18.2, 10, 3, 11)).toBe("3rd-lowest of 11, 18.2%");
+    expect(rankWithYears(18.2, 10, 3, 11)).toBe("3rd-lowest of 11 years, 18.2%");
   });
 
   it("spells the awkward ordinals correctly", () => {
-    expect(rankWithYears(50, 30, 11, 31)).toContain("11th-lowest");
-    expect(rankWithYears(50, 30, 12, 31)).toContain("12th-lowest");
-    expect(rankWithYears(50, 30, 13, 31)).toContain("13th-lowest");
-    expect(rankWithYears(50, 30, 21, 31)).toContain("21st-lowest");
-    expect(rankWithYears(50, 30, 22, 31)).toContain("22nd-lowest");
-    expect(rankWithYears(50, 30, 23, 31)).toContain("23rd-lowest");
+    expect(rankWithYears(50, 60, 11, 61)).toContain("11th-lowest");
+    expect(rankWithYears(50, 60, 12, 61)).toContain("12th-lowest");
+    expect(rankWithYears(50, 60, 13, 61)).toContain("13th-lowest");
+    expect(rankWithYears(50, 60, 21, 61)).toContain("21st-lowest");
+    expect(rankWithYears(50, 60, 22, 61)).toContain("22nd-lowest");
+    expect(rankWithYears(50, 60, 23, 61)).toContain("23rd-lowest");
   });
 
   /* The fields arrive from the pipeline. A payload written before they did
@@ -511,7 +530,8 @@ describe("how the history rank reads", () => {
   });
 
   /* Whatever the payload holds today, the two forms must not disagree about
-   * direction: the top position and 100% have to arrive together. */
+   * direction: the top position and 100% have to arrive together, and the
+   * bottom position and 0%. */
   it("agrees with the percentage across the published payload", () => {
     for (const reservoir of reservoirs) {
       const rank = reservoir.seasonal_rank ?? null;
@@ -519,8 +539,10 @@ describe("how the history rank reads", () => {
       if (rank === null || rankOf === null) continue;
       expect(rank, reservoir.name).toBeGreaterThanOrEqual(1);
       expect(rank, reservoir.name).toBeLessThanOrEqual(rankOf);
-      expect(rankWithYears(reservoir.seasonal_percentile, 0, rank, rankOf),
-        reservoir.name).toContain("-lowest of ");
+      const words = rankWithYears(reservoir.seasonal_percentile, 0, rank, rankOf);
+      expect(words, reservoir.name).toMatch(/(Lowest|Highest|-lowest|-highest) of \d+ years/);
+      if (reservoir.seasonal_percentile === 0) expect(words, reservoir.name).toMatch(/^Lowest /);
+      if (reservoir.seasonal_percentile === 100) expect(words, reservoir.name).toMatch(/^Highest /);
     }
   });
 });

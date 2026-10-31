@@ -248,6 +248,23 @@ export function capacityBasisName(basis: string | null): string | null {
  */
 export const MINIMUM_YEARS_FOR_PERCENTILE = 10;
 
+/**
+ * A position among `rankOf` years, counted from the nearer end: "Lowest of
+ * 12 years", "3rd-lowest of 12 years", "2nd-highest of 12 years". "11th-lowest
+ * of 12" makes the reader do the subtraction, and "1st-lowest" is not how
+ * anyone says it. A middle position counts from the lowest. `rank` counts
+ * from the lowest, as the pipeline publishes it.
+ */
+export function rankPosition(rank: number, rankOf: number): string {
+  const years = `of ${rankOf} years`;
+  if (rank <= 1) return `Lowest ${years}`;
+  if (rank >= rankOf) return `Highest ${years}`;
+  const fromTop = rankOf - rank + 1;
+  return rank <= fromTop
+    ? `${ordinal(rank)}-lowest ${years}`
+    : `${ordinal(fromTop)}-highest ${years}`;
+}
+
 export function rankWithYears(
   percentile: number | null, years: number,
   rank: number | null = null, rankOf: number | null = null
@@ -255,13 +272,16 @@ export function rankWithYears(
   const share = formatPercent(percentile);
   if (percentile === null) return share;
   if (rank !== null && rankOf !== null && rankOf > 1) {
-    // The ordinal leads either way; the percentage joins it only when the
-    // sample is big enough for its steps to mean something.
+    // The position leads either way. The percentage joins it only when the
+    // sample is big enough for its steps to mean something, and never at
+    // either end, where it can only repeat the position as 0% or 100%.
+    const position = rankPosition(rank, rankOf);
+    const atAnEnd = rank <= 1 || rank >= rankOf;
     const priorYears = rankOf - 1;
-    if (priorYears >= MINIMUM_YEARS_FOR_PERCENTILE) {
-      return `${ordinal(rank)}-lowest of ${rankOf}, ${share}`;
+    if (priorYears >= MINIMUM_YEARS_FOR_PERCENTILE && !atAnEnd) {
+      return `${position}, ${share}`;
     }
-    return `${ordinal(rank)}-lowest of ${rankOf}`;
+    return position;
   }
   if (!Number.isFinite(years) || years <= 0) return share;
   const rounded = Math.floor(years);
