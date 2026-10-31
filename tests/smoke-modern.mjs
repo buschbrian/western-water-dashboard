@@ -4040,7 +4040,7 @@ for (const viewport of VIEWPORTS) {
     /* A shared soil link opens in soil mode (ADR-142), area kept; an unknown
      * value opens on rain. */
     await tab.goto(`${URL}precipitation.html?area=140100&layer=soil`, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__precipReady?.map?.soil?.state === "ready", { timeout: 60000 });
+    await tab.waitForFunction(() => window.__precipReady?.map?.soil?.state === "ready", null, { timeout: 60000 });
     const soilLink = await tab.evaluate(() => ({
       map: window.__precipReady?.map,
       area: window.__precipReady?.area,
@@ -4051,7 +4051,7 @@ for (const viewport of VIEWPORTS) {
       && soilLink.search === "?area=140100&layer=soil",
     `${label}: the soil link opened ${JSON.stringify(soilLink)}`);
     await tab.goto(`${URL}precipitation.html?area=140100&layer=snow`, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__precipReady?.map !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__precipReady?.map !== undefined, null, { timeout: 60000 });
     const oddLink = await tab.evaluate(() => window.__precipReady?.map?.mode);
     check(oddLink === "rain", `${label}: an unknown layer opened ${oddLink}`);
   } catch (err) {
@@ -4089,7 +4089,7 @@ for (const viewport of VIEWPORTS) {
       `${label}: the season figures were ${early.season} before the held history arrived`);
     check(early.figures === 3 && early.listed > 0,
       `${label}: ${early.figures} recent figures and ${early.listed} stations drew before the history`);
-    await tab.waitForFunction(() => window.__precipReady?.precipitation?.state === "ready", { timeout: 60000 });
+    await tab.waitForFunction(() => window.__precipReady?.precipitation?.state === "ready", null, { timeout: 60000 });
   } catch (err) {
     failures.push(`${label}: ${err.message}`);
   }
@@ -4742,7 +4742,7 @@ for (const viewport of VIEWPORTS) {
   console.log(`\n=== ${label}`);
   try {
     await tab.goto(`${URL}precipitation.html?state=UT`, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__precipReady?.precipitation?.recent === "ready", { timeout: 60000 });
+    await tab.waitForFunction(() => window.__precipReady?.precipitation?.recent === "ready", null, { timeout: 60000 });
     await tab.locator("#precip-map-host").scrollIntoViewIfNeeded();
     await tab.waitForFunction(() => ["ready", "failed"].includes(window.__precipReady?.map?.state), { timeout: 60000 });
     await tab.waitForTimeout(2000);
