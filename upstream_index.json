@@ -4,7 +4,7 @@
  "retrieved": "2026-08-30",
  "keyed_by": "source_station_id",
  "selection": "every published reservoir, traced from its published point against every other published reservoir and snow-site point",
- "traced_this_run": 15,
+ "traced_this_run": 1,
  "self_exclusion": "deliberate: a dam point lies inside its own basin",
  "area_method": "spherical excess around the ring; approximate, for screening rather than measurement",
  "review_area_sq_mi": 300000.0,
@@ -473,7 +473,7 @@
    "upstream_snow_sites": []
   },
   "09UTDMAD:UT:BOR": {
-   "name": "D M A D Reservoir",
+   "name": "DMAD Reservoir",
    "trace_point": "published point",
    "comid": "1202184",
    "basin_vertices": 74,

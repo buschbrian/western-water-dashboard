@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "method_version": "storage-normal-annual-3",
-  "generated_at": "2026-10-31T19:50:21+00:00",
+  "generated_at": "2026-10-31T20:20:40+00:00",
   "start_date": "2015-01-01",
   "normal_period": {
     "start_year": 2015,
@@ -81439,7 +81439,7 @@
       ]
     },
     {
-      "name": "D M A D Reservoir",
+      "name": "DMAD Reservoir",
       "rise_item_id": null,
       "source_key": "awdb",
       "source_label": "USDA NRCS AWDB",

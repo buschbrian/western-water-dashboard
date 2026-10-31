@@ -898,7 +898,7 @@
       }
     },
     "09UTDMAD:UT:BOR": {
-      "name": "D M A D Reservoir",
+      "name": "DMAD Reservoir",
       "station_triplet": "09UTDMAD:UT:BOR",
       "lat": 39.39495,
       "lon": -112.48244,
