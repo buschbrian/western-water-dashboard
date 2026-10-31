@@ -18,9 +18,10 @@ name: Hooks
 # can reach. gitleaks is pinned to the same version as .pre-commit-config.yaml
 # so local and CI cannot disagree about what counts as a secret.
 
+# Once per commit, as in ci.yml: pull requests, and pushes to main.
 on:
   push:
-    branches: ["**"]
+    branches: ["main"]
   pull_request:
   workflow_dispatch: {}
 
