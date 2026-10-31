@@ -8,11 +8,12 @@
 - **Seasonal tests read a frozen season, not the daily file.** `snowpack.json`
   restarts at one snowless day every 1 October, and tests that needed a
   headline or a peak froze the deploy from 2026-10-02. Read
-  `readSnowpackSeasonFixture()` (`tests/fixtures/snowpack-wy2026.json`, classed
-  `frozen`) for model behaviour; keep `readSnowpack()` for what today's file
-  must satisfy, which is the validator. The turn of the season itself is
-  `readSnowpackEarlySeasonFixture()` (`tests/fixtures/snowpack-wy2027-october.json`,
-  seventeen October days, also `frozen`).
+  `readSnowpackSeasonFixture()` (the sha256-pinned archive
+  `data/snow/snowpack-wy2026.json`) for model behaviour; keep `readSnowpack()`
+  for what today's file must satisfy, which is the validator. The turn of the
+  season itself is `readSnowpackEarlySeasonFixture()`
+  (`tests/fixtures/snowpack-wy2027-october.json`, seventeen October days,
+  classed `frozen`).
 - **Tests about where a reservoir is read the roster, never `reservoirs.json`**,
   or a quiet feed silently retires the assertion (ADR-056).
 - **Size budgets are gzipped**, never raw. A budget in the wrong unit fails on
