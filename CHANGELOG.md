@@ -113,6 +113,12 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   National Hydrography Dataset name of the water at the reservoir's point.
   `Seven Oaks Dam` stays, because no source names its basin. Short names
   stay short. Links that use an old name still open the right reservoir.
+- **Success Lake and Guadalupe Reservoir stay held, with corrected
+  reasons.** Their highest readings are real; each matches the daily
+  value for the same day. Success Lake is held because no published full
+  level for 2019 contains its June 2019 water. Guadalupe is held because
+  a dam-safety order sets its full level, and the operator gives two
+  volumes for it.
 - **Buchanan Dam's December 2022 monthly reading is excluded** (ADR-116).
   The California Department of Water Resources reports 172,105 acre-feet
   for that month. Its own daily series reports 22,809 acre-feet on 31
