@@ -202,9 +202,9 @@ def test_a_basin_problem_outranks_storage_and_every_finding_is_kept():
     assert "record starts 1993-05-01" in reason
 
 
-def test_storage_or_a_named_diversion_upstream_is_shaped():
-    assert G.suggest(plain_row(upstream_reservoirs="Deer Creek"))[0] == "shaped"
-    assert G.suggest(plain_row("BEAR RIVER BELOW O-LINE CANAL NR BRIGHAM CITY, UT"))[0] == "shaped"
+def test_a_reservoir_upstream_is_shaped_by_reservoirs_and_a_named_diversion_reduces_the_flow():
+    assert G.suggest(plain_row(upstream_reservoirs="Deer Creek"))[0] == "reservoir"
+    assert G.suggest(plain_row("BEAR RIVER BELOW O-LINE CANAL NR BRIGHAM CITY, UT"))[0] == "diversion"
 
 
 def test_an_untraced_gauge_is_never_suggested_as_natural():
@@ -237,11 +237,47 @@ def test_a_dam_without_a_position_is_dropped_and_irrigation_is_read_from_purpose
     assert record["storage_af"] == 6870 and record["irrigation"] is True
 
 
-def test_annual_means_are_read_from_the_rdb_answer():
-    rdb = ("# comment\nagency_cd\tsite_no\tparameter_cd\tts_id\tloc_web_ds\tyear_nu\tmean_va\n"
-           "5s\t15s\t5s\t10n\t15s\t4s\t12n\n"
-           "USGS\t09379500\t00060\t1\t\t1990\t3000\nUSGS\t09379500\t00060\t1\t\t1991\t2000\n")
-    assert G.parse_annual_means(rdb) == {"09379500": {1990: 3000.0, 1991: 2000.0}}
+def stats_value(start, end, count, value):
+    return {"start_date": start, "end_date": end, "interval_type": "water_year",
+            "value": value, "sample_count": count, "computation": "arithmetic_mean"}
+
+
+def stats_page(site, values, *, parameter="00060", statistic="00003"):
+    return {"features": [{"properties": {
+        "monitoring_location_id": f"USGS-{site}",
+        "data": [{"parameter_code": parameter, "parent_statistic_id": statistic,
+                  "values": values}]}}]}
+
+
+def test_annual_means_keep_only_complete_water_years():
+    page = stats_page("09379500", [
+        stats_value("1990-10-01", "1991-09-30", 365, "3000.5"),
+        stats_value("1991-10-01", "1992-09-30", 366, "2000.0"),
+        stats_value("1992-10-01", "1993-09-29", 363, "10.0"),
+        stats_value("1993-04-03", "1993-09-30", 181, "10.0"),
+        stats_value("1994-10-01", "1995-09-30", 300, "10.0"),
+        stats_value("1995-10-01", "1996-09-30", 366, "bad"),
+    ])
+    assert G.parse_annual_means(page) == {"09379500": {1991: 3000.5, 1992: 2000.0}}
+
+
+def test_annual_means_ignore_other_parameters_and_statistics():
+    values = [stats_value("1990-10-01", "1991-09-30", 365, "5")]
+    assert G.parse_annual_means(stats_page("09379500", values, parameter="00010")) == {}
+    assert G.parse_annual_means(stats_page("09379500", values, statistic="00001")) == {}
+
+
+def test_annual_means_follow_the_next_token_and_send_ids_as_parameters(monkeypatch):
+    pages = [{**stats_page("111", [stats_value("1990-10-01", "1991-09-30", 365, "1")]),
+              "next": "tok"},
+             stats_page("222", [stats_value("1990-10-01", "1991-09-30", 365, "2")])]
+    urls = []
+    monkeypatch.setattr(G.upstream, "get_json",
+                        lambda url, **kwargs: urls.append(url) or pages.pop(0))
+    monkeypatch.delenv("USGS_API_KEY", raising=False)
+    assert G.fetch_annual_means(["111", "222"]) == {"111": {1991: 1.0}, "222": {1991: 2.0}}
+    assert "monitoring_location_id=USGS-111&monitoring_location_id=USGS-222" in urls[0]
+    assert "next_token" not in urls[0] and urls[1].count("next_token=tok") == 1
 
 
 def test_mean_flow_prefers_1991_on_and_falls_back_to_the_whole_record():
@@ -321,16 +357,32 @@ def test_page_basins_read_each_ring_as_its_own_polygon(tmp_path):
 # --- the suggestion with storage evidence, and the queue -----------------------
 
 def test_small_storage_suggests_natural_and_large_storage_suggests_shaped():
-    small = plain_row(dams_upstream="3", dam_storage_af="500", storage_share_pct="1.6",
-                      upstream_reservoirs="Trial Lake")
+    small = plain_row(dams_upstream="3", dam_storage_af="500", storage_share_pct="1.6")
     tier, reason = G.suggest(small)
     assert tier == "natural"
     assert "hold 1.6% of a year's flow" in reason
-    assert G.suggest(plain_row(dams_upstream="1", storage_share_pct="2"))[0] == "shaped"
+    assert G.suggest(plain_row(dams_upstream="1", storage_share_pct="12"))[0] == "reservoir"
+
+
+def test_a_published_reservoir_in_the_basin_shapes_the_gauge_whatever_else_is_found():
+    row = plain_row(dams_upstream="3", dam_storage_af="500", storage_share_pct="0.4",
+                    upstream_reservoirs="Trial Lake")
+    tier, reason = G.suggest(row)
+    assert tier == "reservoir"
+    assert "1 published reservoir upstream" in reason
+    assert G.suggest(plain_row(dams_upstream="2", dam_storage_af="0",
+                               upstream_reservoirs="Trial Lake"))[0] == "reservoir"
+
+
+def test_storage_under_ten_percent_with_no_published_reservoir_is_natural():
+    assert G.SMALL_STORAGE_SHARE == 10
+    assert G.suggest(plain_row(dams_upstream="4", storage_share_pct="9.9"))[0] == "natural"
+    assert G.suggest(plain_row(dams_upstream="4", storage_share_pct="10"))[0] == "reservoir"
+    assert G.suggest(plain_row(dams_upstream="4", storage_share_pct="10.1"))[0] == "reservoir"
 
 
 def test_storage_with_no_flow_to_compare_is_shaped_and_dams_without_storage_are_not():
-    assert G.suggest(plain_row(dams_upstream="2", dam_storage_af="900"))[0] == "shaped"
+    assert G.suggest(plain_row(dams_upstream="2", dam_storage_af="900"))[0] == "reservoir"
     tier, reason = G.suggest(plain_row(dams_upstream="2", dam_storage_af="0"))
     assert tier == "natural" and "list no storage" in reason
 
@@ -343,16 +395,159 @@ def test_irrigation_dams_and_a_dam_by_the_gauge_are_kept_as_findings():
     assert "1 irrigation dam upstream" in reason and "perhaps below it: Weir" in reason
 
 
-def test_only_the_safe_direction_is_queued_for_bulk_agreement():
-    queue = lambda **kw: G.review_queue(plain_row(**kw), G.suggest(plain_row(**kw))[0])
-    assert queue(site_name="FAIRVIEW TUNNEL NEAR FAIRVIEW, UT") == "bulk"
+def queue(**kw):
+    row = plain_row(**kw)
+    return G.review_queue(row, G.suggest(row)[0])
+
+
+def test_a_published_reservoir_is_shaped_by_reservoirs_and_agreed_in_bulk():
+    assert queue(upstream_reservoirs="Deer Creek") == "bulk"
     assert queue(dams_upstream="4", storage_share_pct="12") == "bulk"
-    assert queue(site_name="BEAR RIVER BELOW O-LINE CANAL NR BRIGHAM CITY, UT") == "bulk"
-    assert queue(dams_upstream="4", storage_share_pct="12", dams_near_gauge="Weir") == "review"
-    # Storage known only from the published roster has no share to judge.
-    assert queue(upstream_reservoirs="Deer Creek") == "review"
+
+
+def test_small_storage_with_no_published_reservoir_is_natural_and_agreed_in_bulk():
+    assert queue(dams_upstream="4", storage_share_pct="9.9") == "bulk"
+    assert queue(dams_upstream="0", storage_share_pct="0") == "bulk"
+    assert queue(dams_upstream="4", storage_share_pct="10") == "bulk"
+    assert G.suggest(plain_row(dams_upstream="4", storage_share_pct="9.9"))[0] == "natural"
+
+
+def test_no_storage_comparison_means_review_not_bulk():
     assert queue() == "review"
-    assert queue(trace_check="traced about 404 sq mi") == "check"
+    assert queue(dams_upstream="2", dam_storage_af="0") == "review"
+
+
+def test_another_finding_sends_either_outcome_to_review():
+    for base in ({"upstream_reservoirs": "Deer Creek"},
+                 {"dams_upstream": "4", "storage_share_pct": "3"}):
+        assert queue(**base) == "bulk"
+        assert queue(**base, dams_near_gauge="Weir") == "review"
+        assert queue(**base, covers_1991_2020="no", record_begin="1999-01-01") == "review"
+        assert queue(**base, nrcs_adjustment_pct="-20") == "review"
+        assert queue(**base, trace_check="traced about 404 sq mi") == "check"
+        assert queue(**base, trace_screen="not_indexed") == "check"
+    assert queue(site_name="BEAR RIVER BELOW O-LINE CANAL NR BRIGHAM CITY, UT",
+                 upstream_reservoirs="Deer Creek") == "review"
+    assert queue(site_name="BEAR RIVER BELOW O-LINE CANAL NR BRIGHAM CITY, UT",
+                 dams_upstream="4", storage_share_pct="3") == "bulk"
+
+
+def test_irrigation_dams_hold_back_a_natural_row_but_not_a_reservoir_row():
+    assert queue(upstream_reservoirs="Deer Creek", irrigation_dams="2") == "bulk"
+    assert queue(dams_upstream="4", storage_share_pct="12", irrigation_dams="2") == "bulk"
+    assert queue(dams_upstream="4", storage_share_pct="3", irrigation_dams="2") == "review"
+
+
+def test_gages2_non_reference_holds_back_a_natural_row_and_not_listed_does_not():
+    small = {"dams_upstream": "4", "storage_share_pct": "3"}
+    assert queue(**small, gages2_class="non_reference") == "review"
+    assert queue(**small, gages2_class="reference") == "bulk"
+    assert queue(**small, gages2_class="not_listed") == "bulk"
+    assert queue(**small) == "bulk"
+    assert queue(upstream_reservoirs="Deer Creek", gages2_class="non_reference") == "bulk"
+
+
+def test_water_added_upstream_is_a_reviewed_note_and_never_a_diversion():
+    row = plain_row(nrcs_adjustment_pct="-50.4", dams_upstream="4", storage_share_pct="3")
+    tier, reason = G.suggest(row)
+    assert tier == "natural" and "water is added upstream" in reason
+    assert G.review_queue(row, tier) == "review"
+    assert not G.has_diversion(row)
+    assert G.TIER_WORDS["diversion"] == "Reduced by diversions"
+
+
+def test_an_exclusion_by_name_or_site_type_is_bulk_and_a_named_diversion_is_bulk_when_alone():
+    assert queue(site_name="FAIRVIEW TUNNEL NEAR FAIRVIEW, UT") == "bulk"
+    assert queue(usgs_site_type="ST-CA") == "bulk"
+    assert queue(site_name="BEAR RIVER BELOW O-LINE CANAL NR BRIGHAM CITY, UT") == "bulk"
+    assert queue(site_name="BEAR RIVER BELOW O-LINE CANAL NR BRIGHAM CITY, UT",
+                 dams_near_gauge="Weir") == "review"
+
+
+# --- tier split, order and old rulings (ADR-138) -------------------------------
+
+def test_the_tiers_have_machine_keys_and_one_table_of_reader_words():
+    assert set(G.TIER_WORDS) == set(G.SUGGESTIONS) == set(G.TIER_TREATMENT)
+    assert G.TIER_WORDS["reservoir"] == "Shaped by reservoirs"
+    assert G.TIER_WORDS["diversion"] == "Reduced by diversions"
+    assert G.TIER_WORDS["exclude"] == "Not a river"
+    assert "shaped" not in G.SUGGESTIONS and "shaped" in G.VALID_RULINGS
+
+
+def test_a_diversion_outranks_a_reservoir_and_the_row_goes_to_review():
+    row = plain_row("BEAR RIVER BELOW O-LINE CANAL NR BRIGHAM CITY, UT",
+                    upstream_reservoirs="Deer Creek")
+    tier, reason = G.suggest(row)
+    assert tier == "diversion"
+    assert "below a diversion" in reason and "1 published reservoir upstream" in reason
+    assert G.review_queue(row, tier) == "review"
+
+
+def test_a_canal_or_ditch_site_type_is_not_a_river():
+    for code in ("ST-CA", "ST-DCH"):
+        tier, reason = G.suggest(plain_row(usgs_site_type=code))
+        assert tier == "exclude" and code in reason
+    assert G.suggest(plain_row(usgs_site_type="ST"))[0] == "natural"
+
+
+def test_an_nrcs_adjustment_with_no_storage_suggests_diversions_and_with_storage_corroborates():
+    alone = plain_row(nrcs_adjustment_pct="25.9", dams_upstream="1", storage_share_pct="1")
+    tier, reason = G.suggest(alone)
+    assert tier == "diversion" and "+25.9%" in reason and "no storage explains it" in reason
+    assert G.review_queue(alone, tier) == "review"
+    stored = plain_row(nrcs_adjustment_pct="-11.2", upstream_reservoirs="Deer Creek")
+    assert G.suggest(stored)[0] == "reservoir"
+    assert "water is added upstream" in G.suggest(stored)[1]
+    for value in ("0", "4.9", "-4.9", "no_pair", "no_data", ""):
+        assert G.suggest(plain_row(nrcs_adjustment_pct=value))[0] == "natural"
+
+
+def test_gages2_is_kept_as_a_finding_and_decides_no_tier():
+    tier, reason = G.suggest(plain_row(gages2_class="reference"))
+    assert tier == "natural" and "least-disturbed reference gauge" in reason
+    tier, reason = G.suggest(plain_row(gages2_class="reference", upstream_reservoirs="Trial Lake"))
+    assert tier == "reservoir" and "reference gauge" in reason
+    assert "does not list it as a reference" in G.suggest(plain_row(gages2_class="non_reference"))[1]
+    assert G.suggest(plain_row(gages2_class="not_listed"))[0] == "natural"
+
+
+def test_an_old_shaped_ruling_stands_as_reservoirs_unless_a_diversion_finding_exists():
+    stored = plain_row(reviewer_ruling="shaped", upstream_reservoirs="Deer Creek")
+    assert G.resolve_ruling(stored)[0] == "reservoir"
+    named = plain_row("BEAR RIVER BELOW O-LINE CANAL NR BRIGHAM CITY, UT",
+                      reviewer_ruling="shaped", upstream_reservoirs="Deer Creek")
+    ruling, why = G.resolve_ruling(named)
+    assert ruling == "" and "returns to review" in why
+    nrcs = plain_row(reviewer_ruling="shaped", nrcs_adjustment_pct="30")
+    assert G.resolve_ruling(nrcs)[0] == ""
+    assert G.resolve_ruling(plain_row(reviewer_ruling="natural")) == ("natural", "")
+    assert G.resolve_ruling(plain_row()) == ("", "")
+
+
+# --- reference evidence -----------------------------------------------------------
+
+def test_reference_evidence_records_what_each_source_said_and_what_it_did_not():
+    found = G.reference_evidence("1", {"1": "reference"}, {"1": 12.5}, {"1": "ST-DCH"})
+    assert found == {"gages2_class": "reference", "nrcs_adjustment_pct": 12.5,
+                     "usgs_site_type": "ST-DCH"}
+    none = G.reference_evidence("2", {"1": "reference"}, {"1": 12.5}, {})
+    assert none == {"gages2_class": "not_listed", "nrcs_adjustment_pct": "no_pair",
+                    "usgs_site_type": "ST"}
+    blank = G.reference_evidence("3", {}, {"3": None}, {})
+    assert blank["nrcs_adjustment_pct"] == "no_data"
+
+
+def test_the_site_type_lookup_reads_only_canal_and_ditch_sites(monkeypatch):
+    asked = []
+
+    def features(url):
+        asked.append(url)
+        code = urllib.parse.parse_qs(urllib.parse.urlparse(url).query)["site_type_code"][0]
+        return [{"id": f"USGS-{code}1"}, {"id": "USBLM-9"}]
+
+    monkeypatch.setattr(G, "usgs_features", features)
+    assert G.fetch_site_types(G.STATES["UT"]) == {"ST-CA1": "ST-CA", "ST-DCH1": "ST-DCH"}
+    assert all("state_code=49" in url for url in asked)
 
 
 def test_writing_names_the_watershed_and_the_queue(tmp_path, monkeypatch):
@@ -417,3 +612,74 @@ def test_no_state_means_utah(monkeypatch, tmp_path):
 def test_an_unknown_state_is_refused(capsys):
     with pytest.raises(SystemExit):
         G.main(["--state", "WY"])
+
+
+# --- display names -----------------------------------------------------------
+
+def name(raw):
+    return G.gauge_names.propose(raw)
+
+
+def test_station_abbreviations_are_spelled_out_in_proper_case():
+    assert name("DIRTY DEVIL R AB POISON SP WSH NR HANKSVILLE UT")[0] == (
+        "Dirty Devil River above Poison Spring Wash near Hanksville")
+    assert name("SALT CRK BL NEPHI POWERPLANT DIV NR NEPHI, UT")[0] == (
+        "Salt Creek below Nephi Powerplant Diversion near Nephi")
+    assert name("N FK CACHE LA POUDRE R ABV HALLIGAN RES NR LIVERMORE, CO")[0].startswith(
+        "North Fork Cache la Poudre River above Halligan Reservoir near")
+    assert name("YELLOWSTONE R @ BRIDGE CMPGRND NR ALTONAH, UT")[0] == (
+        "Yellowstone River at Bridge Campground near Altonah")
+
+
+def test_a_state_suffix_is_dropped_and_recorded():
+    for raw in ("WEBER RIVER NEAR PEOA, UTAH", "WEBER RIVER NEAR PEOA, UT",
+                "WEBER RIVER NEAR PEOA UT", "WEBER RIVER NEAR PEOA, UT."):
+        display, patterns, check = name(raw)
+        assert display == "Weber River near Peoa" and check == ""
+        assert "state suffix dropped" in patterns
+    assert name("COLORADO RIVER AT LEES FERRY, AZ")[0] == "Colorado River at Lees Ferry"
+
+
+def test_proper_nouns_and_numerals_keep_their_form():
+    assert name("MCELMO CREEK NEAR BLUFF, UTAH")[0] == "McElmo Creek near Bluff"
+    assert name("ROAN CREEK AT DE BEQUE, CO.")[0] == "Roan Creek at De Beque"
+    assert name("ARKANSAS R AT PUMP STATION III")[0].endswith("Station III")
+    assert name("BOULDER CREEK AT NORTH 75TH ST. NEAR BOULDER, CO")[0] == (
+        "Boulder Creek at North 75th Street near Boulder")
+
+
+def test_spanish_articles_are_lower_case_inside_a_name_and_capital_where_one_opens_a_place():
+    assert name("CACHE LA POUDRE RIVER AT MOUTH OF CANYON, NEAR FORT COLLINS, CO")[0] == (
+        "Cache la Poudre River at Mouth of Canyon, near Fort Collins")
+    display, patterns, check = name("RIO PUEBLO DE TAOS NEAR TAOS, NM")
+    assert display == "Rio Pueblo de Taos near Taos" and check == ""
+    assert "Spanish article lower-cased" in patterns
+    assert name("RIO DE LOS PINOS NEAR ORTIZ, CO")[0] == "Rio de los Pinos near Ortiz"
+    assert name("LA PLATA RIVER AT HESPERUS, CO")[0] == "La Plata River at Hesperus"
+    assert name("ARKANSAS RIVER AT LA JUNTA, CO")[0] == "Arkansas River at La Junta"
+    assert name("RIO GRANDE NEAR DEL NORTE, CO")[0] == "Rio Grande near Del Norte"
+    assert name("JEMEZ RIVER BELOW LOS ALAMOS CANYON, NM")[0] == "Jemez River below Los Alamos Canyon"
+
+
+def test_an_ambiguous_token_is_named_and_a_name_that_is_not_ambiguous_has_no_check():
+    display, patterns, check = name("DIRTY DEVIL R AB POISON SP WSH NR HANKSVILLE UT")
+    assert check == "SP: Spring or Springs" and "SP=Spring" in patterns
+    display, _, check = name("TURKEY C EAST SEEP BL TELLER RES NR STONE CITY, CO")
+    assert display.startswith("Turkey C East Seep") and "C: " in check
+    assert name("SLATE R AB BAXTER GL @HWY 135 NR CRESTED BUTTE, CO")[2].startswith("GL: ")
+    assert name("ALAMITOS CREEK BLW FR 161H NR HOLMAN, NM")[0].count("FR 161H") == 1
+    assert name("WEBER RIVER NEAR PEOA, UTAH")[2] == ""
+
+
+def test_a_name_already_in_mixed_case_is_not_recased():
+    assert name("Middle Fork Beaver Creek near Lonetree, WY")[0] == (
+        "Middle Fork Beaver Creek near Lonetree")
+
+
+def test_writing_fills_the_proposed_name_and_leaves_site_name_alone(tmp_path):
+    path = tmp_path / "gauge-review.csv"
+    G.write_rows({"1": plain_row("DUCHESNE RIV ABV UINTA RIV, NR RANDLETT, UT")}, path)
+    row = G.read_rows(path)["1"]
+    assert row["site_name"] == "DUCHESNE RIV ABV UINTA RIV, NR RANDLETT, UT"
+    assert row["proposed_display_name"] == "Duchesne River above Uinta River, near Randlett"
+    assert row["name_check"] == ""

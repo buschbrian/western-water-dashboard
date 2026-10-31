@@ -167,3 +167,96 @@ def test_concurrent_worksheet_edit_is_retained(tmp_path, monkeypatch):
         I.merge(export, worksheet, apply=True)
     assert worksheet.read_bytes() == edited
     assert sorted(p.name for p in tmp_path.iterdir()) == ["rulings.csv", "worksheet.csv"]
+
+
+# --- tier split and accepted names (ADR-138) ---------------------------------
+
+def one_row(tmp_path, incoming, *, row=None, fields=None):
+    worksheet, export = tmp_path / "worksheet.csv", tmp_path / "rulings.csv"
+    base = {field: "" for field in I.FIELDS}
+    base.update(usgs_site_no="01234567", site_name="Synthetic creek",
+                suggested_ruling="reservoir", trace_screen="traced",
+                covers_1991_2020="yes", upstream_reservoirs="Deer Creek")
+    base.update(row or {})
+    write_csv(worksheet, I.FIELDS, [base])
+    record = dict(usgs_site_no="01234567", reviewer_ruling="", notes="",
+                  updated_at="2026-10-27T12:00:00Z", save_state="saved")
+    record.update(incoming)
+    write_csv(export, fields or [f for f in I.EXPORT_FIELDS + I.OPTIONAL_EXPORT_FIELDS
+                                 if f in record], [record])
+    return worksheet, export
+
+
+def merged(worksheet):
+    return I.read_csv(worksheet.read_bytes(), I.FIELDS)[0]
+
+
+def test_new_tier_keys_import_and_an_unknown_key_is_refused(tmp_path):
+    for key in ("reservoir", "diversion", "natural", "exclude"):
+        worksheet, export = one_row(tmp_path, {"reviewer_ruling": key, "notes": "reason"})
+        assert I.merge(export, worksheet, apply=True)["applied"]
+        assert merged(worksheet)["reviewer_ruling"] == key
+    worksheet, export = one_row(tmp_path, {"reviewer_ruling": "regulated", "notes": "x"})
+    with pytest.raises(ValueError, match="invalid reviewer_ruling"):
+        I.merge(export, worksheet)
+
+
+def test_an_old_shaped_ruling_imports_as_reservoirs_when_no_diversion_is_found(tmp_path):
+    worksheet, export = one_row(tmp_path, {"reviewer_ruling": "shaped"})
+    report = I.merge(export, worksheet, apply=True)
+    assert report["returned_to_review"] == []
+    assert merged(worksheet)["reviewer_ruling"] == "reservoir"
+
+
+def test_an_old_shaped_ruling_returns_to_review_when_a_diversion_finding_exists(tmp_path):
+    row = {"site_name": "BEAR RIVER BELOW O-LINE CANAL NR BRIGHAM CITY, UT",
+           "suggested_ruling": "diversion"}
+    worksheet, export = one_row(tmp_path, {"reviewer_ruling": "shaped", "notes": "Old note"}, row=row)
+    report = I.merge(export, worksheet, apply=True)
+    assert [r["usgs_site_no"] for r in report["returned_to_review"]] == ["01234567"]
+    assert "diversion finding" in report["returned_to_review"][0]["why"]
+    saved = merged(worksheet)
+    assert saved["reviewer_ruling"] == "" and saved["notes"] == "Old note"
+
+
+def test_a_shaped_ruling_that_differs_from_the_suggestion_still_needs_notes(tmp_path):
+    worksheet, export = one_row(tmp_path, {"reviewer_ruling": "shaped"},
+                                row={"suggested_ruling": "natural", "upstream_reservoirs": ""})
+    with pytest.raises(ValueError, match="needs notes"):
+        I.merge(export, worksheet)
+
+
+def test_an_accepted_name_merges_like_a_ruling(tmp_path):
+    worksheet, export = one_row(tmp_path, {"accepted_display_name": "Cache la Poudre River"})
+    assert I.merge(export, worksheet, apply=True)["applied"]
+    assert merged(worksheet)["accepted_display_name"] == "Cache la Poudre River"
+    after = worksheet.read_bytes()
+    assert not I.merge(export, worksheet, apply=True)["changes"]
+    assert worksheet.read_bytes() == after
+
+
+def test_changing_or_clearing_an_accepted_name_needs_an_explicit_replace(tmp_path):
+    row = {"accepted_display_name": "Weber River near Peoa"}
+    worksheet, export = one_row(tmp_path, {"accepted_display_name": "Weber River at Peoa"}, row=row)
+    assert I.merge(export, worksheet)["conflicts"] == ["01234567"]
+    with pytest.raises(ValueError, match="existing review"):
+        I.merge(export, worksheet, apply=True)
+    assert I.merge(export, worksheet, apply=True, replace={"01234567"})["applied"]
+    assert merged(worksheet)["accepted_display_name"] == "Weber River at Peoa"
+    worksheet, export = one_row(tmp_path, {"accepted_display_name": ""}, row=row)
+    assert I.merge(export, worksheet)["conflicts"] == ["01234567"]
+
+
+@pytest.mark.parametrize("name", [" padded ", "two\nlines", "x" * 121])
+def test_an_untidy_accepted_name_refuses_the_batch(tmp_path, name):
+    worksheet, export = one_row(tmp_path, {"accepted_display_name": name})
+    with pytest.raises(ValueError, match="accepted_display_name"):
+        I.merge(export, worksheet)
+
+
+def test_an_export_without_the_name_column_leaves_accepted_names_alone(tmp_path):
+    worksheet, export = one_row(tmp_path, {"reviewer_ruling": "reservoir"},
+                                row={"accepted_display_name": "Kept Name"})
+    assert I.merge(export, worksheet, apply=True)["applied"]
+    saved = merged(worksheet)
+    assert saved["accepted_display_name"] == "Kept Name" and saved["reviewer_ruling"] == "reservoir"

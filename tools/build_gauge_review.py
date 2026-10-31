@@ -11,6 +11,7 @@ nothing else.
     .venv/bin/python tools/build_gauge_review.py --missing    # trace rows not yet traced
     .venv/bin/python tools/build_gauge_review.py --only 10163000
     .venv/bin/python tools/build_gauge_review.py --state CO    # gauge-review-co.csv
+    .venv/bin/python tools/build_gauge_review.py --state UT --reference-evidence
 
 **The screen.** Two U.S. Geological Survey OGC v1 queries: the daily mean
 discharge series (parameter 00060, statistic 00003) inside the state's
@@ -29,22 +30,34 @@ sites sit inside it. A listed reservoir is evidence that storage is
 upstream, not a finding that the flow is regulated, and never a statement
 that the gauge measures the reservoir's inflow. When the traced area and the
 gauge's published drainage area differ by more than `AREA_CHECK_RATIO`, the
-row says so: the trace may be the wrong basin.
+row says so: the trace may be the wrong basin. A published reservoir inside
+the basin makes the gauge shaped by reservoirs, whatever else is found
+(ADR-137, ADR-138).
 
 **The storage evidence** (`--evidence`, offline apart from two services).
 Every dam the National Inventory of Dams places inside a gauge's basin, not
 only the reservoirs this site publishes, and their summed storage as a share
 of one year's mean flow at the gauge (the degree of regulation). The share
-sorts rows; it does not rule them. A share under `SMALL_STORAGE_SHARE` with
-storage upstream suggests natural for review; a share at or above it
-suggests shaped and, when nothing else is in doubt, puts the row in the
-`bulk` queue: a natural river wrongly ruled shaped loses only a comparison
-with normal, the other mistake publishes a wrong one. Basin outlines come
+sorts rows; it does not rule them. With no published reservoir in the basin, a
+share under `SMALL_STORAGE_SHARE` (10%, ADR-137) suggests natural; a share at
+or above it suggests shaped by reservoirs. Either, and a published reservoir,
+goes in the `bulk` queue when nothing else is in doubt (ADR-138). Basin outlines come
 from the review page's bundle (`--basins`), the simplified outlines the
 reviewer sees, so a dam within a few hundred metres of an edge can fall
 either side.
 
-**Every run merges.** `reviewer_ruling` and `notes` are never touched. A
+**Reference evidence** (`--reference-evidence`, keyless; ADR-138). The GAGES-II
+reference class, the NRCS adjusted-over-observed volume at the station with the
+gauge's number, and the site type USGS lists (a canal or ditch is not a river).
+Run it for Utah now and for CO, NM and AZ once their traces end.
+
+**Display names.** `proposed_display_name`, `name_patterns` and `name_check`
+come from `tools/gauge_names.py` on every write: proper case, the agency's
+abbreviations spelled out, the state suffix dropped. A token the rules cannot
+settle stays as written and is named in `name_check`. It is a proposal for a
+person to accept; nothing published is renamed.
+
+**Every run merges.** `reviewer_ruling`, `notes` and `accepted_display_name` are never touched. A
 gauge that has stopped reporting keeps its row and its older `screened_on`
 date. The file is rewritten after every trace, so an interrupted run keeps
 what it finished and `--missing` resumes it.
@@ -69,6 +82,8 @@ from typing import NamedTuple
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
 import build_upstream_index as upstream  # noqa: E402
+import gauge_evidence  # noqa: E402
+import gauge_names  # noqa: E402
 
 OUTPUT_PATH = ROOT / "gauge-review.csv"
 
@@ -104,18 +119,20 @@ AREA_CHECK_RATIO = 0.25
 NID_LAYER = ("https://geospatial.sec.usace.army.mil/dls/rest/services/NID/"
              "National_Inventory_of_Dams_Public_Service/FeatureServer/0")
 NID_BATCH = 250
-#: The legacy statistics service: keyless, and the only one serving
-#: annual means per water year today.
-ANNUAL_STATS_URL = "https://waterservices.usgs.gov/nwis/stat/"
-#: The service refuses more than ten sites per request.
+#: The Water Data Statistics API (beta) replaces the retired legacy
+#: `nwis/stat` service. It also returns a year that is still open or missing
+#: days, which the legacy service never did (ADR-143).
+ANNUAL_STATS_URL = "https://api.waterdata.usgs.gov/statistics/v0/observationIntervals"
 STATS_BATCH = 10
+STATS_PAGE_SIZE = 10000
 FLOW_START_WATER_YEAR = 1991
 MIN_FLOW_YEARS = 5
 #: One cubic foot per second for a year, in acre-feet.
 ACRE_FEET_PER_CFS_YEAR = 1.983471 * 365.25
-#: Storage under this share of a year's flow is small enough that the
-#: reviewer, not the rule, decides whether it shapes the daily flow.
-SMALL_STORAGE_SHARE = 2.0
+#: Brian's ruling of 2026-10-27 (ADR-137): inventoried storage under this
+#: share of a year's flow, with no published reservoir in the basin, is
+#: natural. At or above it the gauge is shaped.
+SMALL_STORAGE_SHARE = 10.0
 #: A dam this close to the gauge may sit in the part of the gauge's own
 #: catchment that lies below it, so the row is not bulk-ruled.
 NEAR_GAUGE_KM = 1.0
@@ -136,8 +153,10 @@ FIELDS = [
     "trace_check", "upstream_reservoirs", "upstream_snow_sites",
     "mean_flow_cfs", "flow_years", "dams_upstream", "dam_storage_af",
     "storage_share_pct", "largest_dams", "irrigation_dams", "dams_near_gauge",
-    "huc8_name", "usgs_page", "suggested_ruling", "suggestion_reason",
-    "review_queue", "reviewer_ruling", "notes",
+    "gages2_class", "nrcs_adjustment_pct", "usgs_site_type",
+    "huc8_name", "usgs_page", "proposed_display_name", "name_patterns",
+    "name_check", "suggested_ruling", "suggestion_reason",
+    "review_queue", "reviewer_ruling", "notes", "accepted_display_name",
 ]
 SCREEN_FIELDS = FIELDS[:FIELDS.index("trace_screen")]
 TRACE_FIELDS = ["trace_screen", "nldi_basin_sq_mi", "trace_check",
@@ -145,20 +164,62 @@ TRACE_FIELDS = ["trace_screen", "nldi_basin_sq_mi", "trace_check",
 EVIDENCE_FIELDS = ["mean_flow_cfs", "flow_years", "dams_upstream",
                    "dam_storage_af", "storage_share_pct", "largest_dams",
                    "irrigation_dams", "dams_near_gauge"]
+REFERENCE_FIELDS = ["gages2_class", "nrcs_adjustment_pct", "usgs_site_type"]
 
-#: The tiers a suggestion can name, strongest finding first. A suggestion is
-#: arithmetic over the columns beside it; the ruling is still a person's.
-SUGGESTIONS = ("exclude", "check", "shaped", "short", "natural")
+#: The tiers a suggestion can name, strongest finding first (ADR-138). A
+#: suggestion is arithmetic over the columns beside it; the ruling is still a
+#: person's. A diversion finding outranks a reservoir finding because it is a
+#: statement about this gauge (its name, or NRCS adjusting its volume where no
+#: storage explains it), while a reservoir finding is a statement about its
+#: basin; a row with both is queued for review, not agreed in bulk.
+SUGGESTIONS = ("exclude", "check", "diversion", "reservoir", "short", "natural")
+#: The keys are machine names; these are the words a reader sees. The review
+#: page keeps the same words, and a test holds the two lists together.
+TIER_WORDS = {
+    "natural": "Natural",
+    "reservoir": "Shaped by reservoirs",
+    "diversion": "Reduced by diversions",
+    "short": "Short record",
+    "check": "Check",
+    "exclude": "Not a river",
+}
+#: What a reader sees for each tier: compared, shown without a rank, or not shown.
+TIER_TREATMENT = {
+    "natural": "compared with normal",
+    "reservoir": "shown, not ranked",
+    "diversion": "shown, not ranked",
+    "short": "shown, no comparison",
+    "check": "not published until checked",
+    "exclude": "not shown",
+}
+#: Rulings saved before the split. `shaped` held both reasons. It stays valid
+#: as `reservoir` unless the row now has a diversion finding, in which case
+#: the ruling goes back to review (`resolve_ruling`).
+LEGACY_RULINGS = {"shaped": "reservoir"}
+VALID_RULINGS = (*SUGGESTIONS, *LEGACY_RULINGS)
 CONDUIT_NAME = re.compile(r"\b(TUNNEL|DRAIN|CANAL|DITCH)\s+(NEAR|NR|AT)\b")
 LOCATOR_WORD = re.compile(r"\b(AT|AB|ABV|ABOVE|BL|BLW|BEL|BELOW)\b")
 BELOW_DIVERSION_NAME = re.compile(
     r"\b(BL|BLW|BEL|BELOW)\b.*\b(DIV|DIVERSION|CANAL|DITCH|POWERPLANT|TUNNEL)\b")
+CANAL_SITE_TYPES = {"ST-CA": "canal", "ST-DCH": "ditch"}
 USGS_PAGE_URL = "https://waterdata.usgs.gov/monitoring-location/USGS-{site}/"
 
 
 def _share(row: dict) -> float | None:
     value = row.get("storage_share_pct")
     return None if value in ("", None) else float(value)
+
+
+def _adjustment(row: dict) -> float | None:
+    try:
+        return float(row.get("nrcs_adjustment_pct") or "")
+    except ValueError:
+        return None
+
+
+def _water_added(row: dict) -> bool:
+    adjustment = _adjustment(row)
+    return adjustment is not None and adjustment <= -gauge_evidence.NRCS_MATERIAL_PCT
 
 
 def findings(row: dict) -> list[tuple[str, str]]:
@@ -168,6 +229,10 @@ def findings(row: dict) -> list[tuple[str, str]]:
     conduit = CONDUIT_NAME.search(name)
     if conduit and not LOCATOR_WORD.search(name[:conduit.start()]):
         found.append(("exclude", "the gauge measures a tunnel, drain or canal"))
+    site_type = row.get("usgs_site_type", "")
+    if site_type in CANAL_SITE_TYPES:
+        found.append(("exclude", f"the U.S. Geological Survey lists the site as a "
+                      f"{CANAL_SITE_TYPES[site_type]} ({site_type})"))
     if row["trace_screen"] != "traced":
         found.append(("check", f"basin not traced ({row['trace_screen'] or 'not run'})"))
     elif row["trace_check"]:
@@ -178,18 +243,30 @@ def findings(row: dict) -> list[tuple[str, str]]:
     storage = float(row.get("dam_storage_af") or 0)
     held = f"{dams} inventoried dam{'s' if dams != 1 else ''} upstream"
     if dams and share is not None:
-        found.append(("shaped" if share >= SMALL_STORAGE_SHARE else "natural",
+        found.append(("reservoir" if share >= SMALL_STORAGE_SHARE else "natural",
                       f"{held} hold {share:g}% of a year's flow"))
     elif dams and storage:
-        found.append(("shaped", f"{held} hold {storage:,.0f} acre-feet; "
+        found.append(("reservoir", f"{held} hold {storage:,.0f} acre-feet; "
                       "no mean flow to compare"))
     elif dams:
         found.append(("natural", f"{held} list no storage"))
-    elif reservoirs:
-        found.append(("shaped", f"{len(reservoirs)} published reservoir"
+    if reservoirs:
+        found.append(("reservoir", f"{len(reservoirs)} published reservoir"
                       f"{'s' if len(reservoirs) != 1 else ''} upstream"))
     if BELOW_DIVERSION_NAME.search(name):
-        found.append(("shaped", "the name places it below a diversion"))
+        found.append(("diversion", "the name places it below a diversion"))
+    adjustment = _adjustment(row)
+    if adjustment is not None and adjustment >= gauge_evidence.NRCS_MATERIAL_PCT:
+        stored = any(tier == "reservoir" for tier, _ in found)
+        found.append(("reservoir" if stored else "diversion",
+                      f"the Natural Resources Conservation Service adjusts its yearly "
+                      f"volume by {adjustment:+g}% for upstream projects (the work "
+                      "removes or holds back water)"
+                      + ("" if stored else "; no storage explains it")))
+    elif _water_added(row):
+        found.append(("natural", f"the Natural Resources Conservation Service adjusts its "
+                      f"yearly volume by {adjustment:+g}%: water is added upstream "
+                      "(a transbasin import, for example), so review it"))
     irrigation = int(row.get("irrigation_dams") or 0)
     if irrigation:
         found.append(("natural", f"{irrigation} irrigation dam"
@@ -197,6 +274,11 @@ def findings(row: dict) -> list[tuple[str, str]]:
     if row.get("dams_near_gauge"):
         found.append(("natural", f"dam within {NEAR_GAUGE_KM:g} km of the gauge, "
                       f"perhaps below it: {row['dams_near_gauge']}"))
+    gages2 = row.get("gages2_class", "")
+    if gages2 == "reference":
+        found.append(("natural", "GAGES-II (2011) lists it as a least-disturbed reference gauge"))
+    elif gages2 == "non_reference":
+        found.append(("natural", "GAGES-II (2011) does not list it as a reference gauge"))
     if row["covers_1991_2020"] != "yes":
         found.append(("short", f"record starts {row['record_begin'] or 'unknown'}"))
     if not any(tier != "natural" for tier, _ in found):
@@ -213,23 +295,59 @@ def suggest(row: dict) -> tuple[str, str]:
     return tier, "; ".join(reason for _, reason in found)
 
 
-def review_queue(row: dict, tier: str) -> str:
-    """Which pile a row sits in: `bulk` may be agreed as a group.
+def has_diversion(row: dict) -> bool:
+    return any(tier == "diversion" for tier, _ in findings(row))
 
-    Only the safe direction is bulk: an exclusion by the gauge's own name,
-    or shaped by storage holding at least the small share or by a named
-    diversion, with no dam near the gauge that could sit below it.
+
+def resolve_ruling(row: dict) -> tuple[str, str]:
+    """The ruling a saved `reviewer_ruling` stands for now, and why it moved.
+
+    A ruling of the earlier `shaped` tier stands as `reservoir` unless the row
+    has a diversion finding; then it returns to review (an empty ruling),
+    because `shaped` never said which kind of shaping the reviewer meant.
+    """
+    ruling = row.get("reviewer_ruling", "")
+    if ruling not in LEGACY_RULINGS:
+        return ruling, ""
+    if has_diversion(row):
+        return "", f"an earlier {ruling!r} ruling returns to review: a diversion finding exists"
+    return LEGACY_RULINGS[ruling], f"an earlier {ruling!r} ruling stands as {LEGACY_RULINGS[ruling]!r}"
+
+
+def review_queue(row: dict, tier: str) -> str:
+    """Which pile a row sits in: `bulk` may be agreed as a group (ADR-138).
+
+    Three outcomes are bulk, each only when nothing else is in doubt: not a
+    river by the gauge's own name or site type; shaped by reservoirs (a
+    published reservoir in the basin, or inventoried storage at or above the
+    small share); and natural (measured storage under the small share, and no
+    published reservoir, as the tier already says). A dam near the gauge, a
+    record starting after 1991, diversion evidence or water added upstream
+    (a negative NRCS adjustment) send the row to `review`; an untraced or
+    mismatched basin sends it to `check`. Irrigation dams hold back a natural
+    row but not a shaped one, which is shown without a rank either way. A
+    natural row GAGES-II lists as non-reference goes to `review`. A diversion
+    named in the gauge's own name is bulk when no reservoir finding competes;
+    an NRCS adjustment alone is not, because it does not say what it adjusts.
     """
     if tier == "check":
         return "check"
     if tier == "exclude":
         return "bulk"
-    if tier == "shaped" and not row.get("dams_near_gauge"):
+    tiers = {t for t, _ in findings(row)}
+    irrigation = int(row.get("irrigation_dams") or 0)
+    quiet = (not row.get("dams_near_gauge") and row["covers_1991_2020"] == "yes"
+             and not _water_added(row))
+    if tier == "diversion":
+        named = BELOW_DIVERSION_NAME.search(row["site_name"].upper())
+        return "bulk" if named and "reservoir" not in tiers and quiet and not irrigation else "review"
+    if tier == "reservoir":
+        return "bulk" if "diversion" not in tiers and quiet else "review"
+    if tier == "natural":
         share = _share(row)
-        strong = ((share is not None and share >= SMALL_STORAGE_SHARE)
-                  or BELOW_DIVERSION_NAME.search(row["site_name"].upper()))
-        if strong:
-            return "bulk"
+        measured = share is not None and share < SMALL_STORAGE_SHARE
+        listed = row.get("gages2_class") != "non_reference"
+        return "bulk" if measured and listed and quiet and not irrigation else "review"
     return "review"
 
 
@@ -397,24 +515,42 @@ def dam_record(attributes: dict) -> dict | None:
             "irrigation": "irrigation" in (attributes.get("PURPOSES") or "").lower()}
 
 
-def parse_annual_means(rdb: str) -> dict[str, dict[int, float]]:
-    """Site number to {water year: mean discharge} from the RDB answer."""
+def _complete_water_year(value: dict) -> int | None:
+    """The water year of a whole 1 October to 30 September interval, else None."""
+    try:
+        start = dt.date.fromisoformat(value["start_date"])
+        end = dt.date.fromisoformat(value["end_date"])
+        count = int(value["sample_count"])
+    except (KeyError, TypeError, ValueError):
+        return None
+    whole = (start.month, start.day, end.month, end.day) == (10, 1, 9, 30) \
+        and start.year == end.year - 1
+    return end.year if whole and count == (end - start).days + 1 else None
+
+
+def parse_annual_means(payload: dict) -> dict[str, dict[int, float]]:
+    """Site number to {water year: mean discharge} from one statistics page.
+
+    Only complete water years count: the legacy service published no other,
+    and an open year would pull a mean toward one season.
+    """
     means: dict[str, dict[int, float]] = {}
-    header: list[str] | None = None
-    for line in rdb.splitlines():
-        if not line or line.startswith("#"):
-            continue
-        cells = line.split("\t")
-        if header is None:
-            header = cells
-            continue
-        if cells[0].endswith("s") and cells[0][:-1].isdigit():
-            continue
-        row = dict(zip(header, cells))
-        try:
-            means.setdefault(row["site_no"], {})[int(row["year_nu"])] = float(row["mean_va"])
-        except (KeyError, ValueError):
-            continue
+    for feature in payload.get("features") or []:
+        properties = feature.get("properties") or {}
+        site = str(properties.get("monitoring_location_id") or "").removeprefix("USGS-")
+        for series in properties.get("data") or []:
+            if series.get("parameter_code") != DISCHARGE_PARAMETER \
+                    or series.get("parent_statistic_id") != DAILY_MEAN_STATISTIC:
+                continue
+            for value in series.get("values") or []:
+                year = _complete_water_year(value)
+                if year is None or value.get("computation") != "arithmetic_mean" \
+                        or value.get("interval_type") != "water_year":
+                    continue
+                try:
+                    means.setdefault(site, {})[year] = float(value["value"])
+                except (KeyError, TypeError, ValueError):
+                    continue
     return means
 
 
@@ -429,16 +565,31 @@ def mean_flow(years: dict[int, float]) -> tuple[float | None, int]:
 
 
 def fetch_annual_means(sites: list[str]) -> dict[str, dict[int, float]]:
+    key = os.environ.get("USGS_API_KEY", "").strip()
+    headers = {"X-Api-Key": key} if key else None
     means: dict[str, dict[int, float]] = {}
     for start in range(0, len(sites), STATS_BATCH):
-        query = urllib.parse.urlencode({
-            "format": "rdb", "sites": ",".join(sites[start:start + STATS_BATCH]),
-            "statReportType": "annual", "statYearType": "water",
-            "statTypeCd": "mean", "parameterCd": DISCHARGE_PARAMETER})
-        request = urllib.request.Request(f"{ANNUAL_STATS_URL}?{query}",
-                                         headers={"User-Agent": upstream.USER_AGENT})
-        with urllib.request.urlopen(request, timeout=USGS_TIMEOUT) as response:
-            means.update(parse_annual_means(response.read().decode("utf-8")))
+        params: list[tuple[str, str]] = [
+            ("monitoring_location_id", f"USGS-{site}")
+            for site in sites[start:start + STATS_BATCH]]
+        params += [("parameter_code", DISCHARGE_PARAMETER),
+                   ("computation_type", "arithmetic_mean"),
+                   ("interval_type", "WY"), ("page_size", str(STATS_PAGE_SIZE))]
+        pages = 0
+        while True:
+            pages += 1
+            if pages > 50:
+                raise RuntimeError("USGS statistics pagination exceeded 50 pages")
+            payload = upstream.get_json(
+                f"{ANNUAL_STATS_URL}?{urllib.parse.urlencode(params)}",
+                timeout=USGS_TIMEOUT, headers=headers)
+            for site, years in parse_annual_means(payload).items():
+                means.setdefault(site, {}).update(years)
+            token = payload.get("next")
+            if not token:
+                break
+            params = [(name, value) for name, value in params if name != "next_token"]
+            params.append(("next_token", token))
     return means
 
 
@@ -494,6 +645,32 @@ def storage_evidence(row: dict, polygons: list, dams: list[dict],
     return result
 
 
+def fetch_site_types(state: State) -> dict[str, str]:
+    """Site number to `ST-CA` or `ST-DCH` for the state's canal and ditch sites.
+
+    The screen admits only site type `ST`, so a row is a canal or ditch only
+    when the agency has reclassified it since; the lookup is what notices.
+    """
+    types: dict[str, str] = {}
+    for code in CANAL_SITE_TYPES:
+        for feature in usgs_features(
+                f"{USGS_BASE}/monitoring-locations/items?" + urllib.parse.urlencode({
+                    "f": "json", "state_code": state.code, "site_type_code": code,
+                    "limit": 10000})):
+            if str(feature.get("id", "")).startswith("USGS-"):
+                types[feature["id"].removeprefix("USGS-")] = code
+    return types
+
+
+def reference_evidence(site: str, gages2: dict[str, str], nrcs: dict[str, float | None],
+                       site_types: dict[str, str]) -> dict:
+    """The reference-evidence fields for one row (ADR-138)."""
+    pair = "no_data" if nrcs.get(site) is None else nrcs[site]
+    return {"gages2_class": gages2.get(site, "not_listed"),
+            "nrcs_adjustment_pct": pair if site in nrcs else "no_pair",
+            "usgs_site_type": site_types.get(site, "ST")}
+
+
 def load_page_basins(path: Path) -> dict[str, list]:
     """Basin outlines from the review page's bundle, as polygons.
 
@@ -527,6 +704,8 @@ def write_rows(rows: dict[str, dict], path: Path = OUTPUT_PATH) -> None:
     for row in rows.values():
         row["usgs_page"] = USGS_PAGE_URL.format(site=row["usgs_site_no"])
         row["huc8_name"] = names.get(row["huc8"], row.get("huc8_name", ""))
+        (row["proposed_display_name"], row["name_patterns"],
+         row["name_check"]) = gauge_names.propose(row["site_name"])
         row["suggested_ruling"], row["suggestion_reason"] = suggest(row)
         row["review_queue"] = review_queue(row, row["suggested_ruling"])
     ordered = sorted(rows.values(), key=lambda r: (r["huc8"], r["usgs_site_no"]))
@@ -567,6 +746,9 @@ def main(argv: list[str] | None = None) -> int:
                         help="add dam storage and mean flow, then stop")
     parser.add_argument("--basins", type=Path, metavar="GAUGES_JSON",
                         help="the review page's gauges.json, for --evidence")
+    parser.add_argument("--reference-evidence", action="store_true",
+                        help="add the GAGES-II class, the NRCS volume adjustment and "
+                        "the site type, then stop (keyless; ADR-138)")
     args = parser.parse_args(argv)
     only = set(args.only) or None
     state = STATES[args.state]
@@ -588,6 +770,19 @@ def main(argv: list[str] | None = None) -> int:
         write_rows(rows, output)
         print(f"{len(dams)} inventoried dams; evidence for {len(targets)} rows; "
               f"{sum(1 for s in targets if rows[s]['mean_flow_cfs'] != '')} with a mean flow")
+        return 0
+    if args.reference_evidence:
+        targets = sorted(site for site in rows if not only or site in only)
+        gages2 = gauge_evidence.fetch_gages2()
+        nrcs = gauge_evidence.fetch_nrcs_adjustments(targets, dt.date.today().isoformat())
+        site_types = fetch_site_types(state)
+        for site in targets:
+            rows[site].update(reference_evidence(site, gages2, nrcs, site_types))
+        write_rows(rows, output)
+        listed = sum(1 for s in targets if rows[s]["gages2_class"] != "not_listed")
+        print(f"{len(targets)} rows: {listed} in GAGES-II; {len(nrcs)} with an NRCS pair; "
+              f"{sum(1 for s in targets if rows[s]['usgs_site_type'] in CANAL_SITE_TYPES)} "
+              "canal or ditch")
         return 0
     if args.suggest:
         write_rows(rows, output)

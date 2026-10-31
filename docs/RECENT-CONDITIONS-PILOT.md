@@ -94,9 +94,14 @@ changes `reviewer_ruling` or `notes`.
 | `storage_share_pct` | That storage as a percentage of one year's mean flow (the degree of regulation) |
 | `irrigation_dams` | Dams in the basin whose listed purposes include irrigation, a prompt to look for canals |
 | `dams_near_gauge` | Dams within 1 km of the gauge: the whole local catchment is traced, so one may sit below it |
+| `gages2_class` | `reference`, `non_reference` or `not_listed` in the USGS GAGES-II point file (2011; fetched at build time, 0.7 MB, checked 2026-10-27). A reference gauge was least disturbed in 2011; it says nothing of later dams. `--reference-evidence` fills it |
+| `nrcs_adjustment_pct` | NRCS adjusted over observed stream volume (`SRVO` over `SRVOO`) at the station with this gauge's number, in percent, over the months both exist since October 1991. `no_pair` and `no_data` are written as such. 5 or more in either direction is a finding: the flow is altered, not by what |
+| `usgs_site_type` | `ST-CA` or `ST-DCH` when USGS now lists the site as a canal or ditch, otherwise `ST` (the screen admits only `ST`) |
 | `huc8_name` | The watershed name the review page groups by |
 | `suggested_ruling`, `suggestion_reason` | A tier worked out from the columns above, and every finding behind it. Recomputed on every write; never copied into the ruling |
-| `review_queue` | `bulk` when the suggestion is the safe one and may be agreed a watershed at a time; `check`; otherwise `review` |
+| `proposed_display_name`, `name_patterns`, `name_check` | A readable name worked out from the station name by `tools/gauge_names.py`, the rules that fired, and what a person must check (a token the rules cannot settle stays as written). A proposal to accept, as with the reservoir names worksheet; nothing published is renamed (ADR-137) |
+| `review_queue` | `bulk` when the suggestion is `exclude`, `reservoir` or `natural` by small storage, nothing else is in doubt, and it may be agreed a watershed at a time; `check`; otherwise `review` |
+| `accepted_display_name` | The name a person accepted on the review page, merged by the importer like a ruling (ADR-138). Never written by the builder |
 
 An upstream reservoir means storage can shape the flow. It is not a
 finding that the flow is regulated, and the gauge does not measure that
@@ -120,16 +125,22 @@ suggestions offline. Each row gets the strongest of its findings:
 
 | Tier | Rule | What a ruling of this tier would mean |
 |---|---|---|
-| `exclude` | The gauge's own name is a tunnel, drain or canal (`FAIRVIEW TUNNEL NEAR …`), not a river measured beside one | Not shown |
+| `exclude` | The gauge's own name is a tunnel, drain or canal (`FAIRVIEW TUNNEL NEAR …`), not a river measured beside one; or USGS lists the site as a canal or ditch (`ST-CA`, `ST-DCH`) | Not a river; not shown |
 | `check` | The basin was not traced, or the trace differs from the published drainage area by more than 25% | Unresolved until the basin is checked |
-| `shaped` | Inventoried dams in the basin hold at least 2% of a year's flow (or hold storage and the gauge has no mean flow; or, before the storage evidence runs, a published reservoir sits in the basin), or the name places the gauge below a diversion, canal, tunnel or powerplant | Flow shown and labelled as shaped upstream; not ranked against normal |
+| `diversion` | The name places the gauge below a diversion, canal, ditch, powerplant or tunnel; or NRCS adjusts the gauge's volume upward by 5% or more and no storage finding explains it (a negative adjustment is a review note) | Flow shown and labelled as reduced by diversions upstream; not ranked against normal |
+| `reservoir` | A published reservoir sits in the basin, whatever else is found; or inventoried dams hold at least 10% of a year's flow (or hold storage and the gauge has no mean flow) | Flow shown and labelled as shaped by reservoirs upstream; not ranked against normal |
 | `short` | The record starts after 1 January 1991 | Flow shown; no comparison with normal |
-| `natural` | None of the above. Storage under 2% of a year's flow, irrigation dams and a dam beside the gauge are kept as findings for the reviewer | Flow shown and compared with normal for the date |
+| `natural` | None of the above. Storage under 10% of a year's flow with no published reservoir in the basin, irrigation dams and a dam beside the gauge are kept as findings for the reviewer | Flow shown and compared with normal for the date |
+
+Strongest first: `exclude`, `check`, `diversion`, `reservoir`, `short`,
+`natural`. A diversion finding is about the gauge, a reservoir finding about
+its basin, so a row with both is `diversion` and goes to review. The reader
+words for the keys are `TIER_WORDS` in `tools/build_gauge_review.py` (ADR-138).
 
 The rules see inventoried dams, published reservoirs and diversions a
 gauge's name mentions. A canal that takes water out without a dam, a
-transbasin import or city use can still make a `natural` row wrong. The 2%
-line sorts rows; it is not a finding that smaller storage leaves the flow
+transbasin import or city use can still make a `natural` row wrong. The 10%
+line is Brian's ruling (ADR-137); it is not a finding that smaller storage leaves the flow
 natural, and a small irrigation dam can take most of a dry-season flow. Write the ruling in
 `reviewer_ruling` as one of the five tiers (blank means not yet reviewed),
 and a reason in `notes` when it differs from the suggestion. How each tier
@@ -159,6 +170,33 @@ or by a named diversion, or excluded by the gauge's own name -- with no dam
 near the gauge. The review page groups gauges by watershed and agrees a
 group's open `bulk` rows after a second press, with a note saying so. A
 ruling already made, or a local draft, is never overwritten.
+
+**Rulings of 2026-10-27 (ADR-137).** A published reservoir in the basin
+makes the gauge `shaped`, no matter what else is found. With none, inventoried
+storage under 10% of a year's flow is `natural`; at or above 10% it stays
+`shaped`. The Utah suggestions moved from 26 `natural`, 110 `shaped`, 14
+`short`, 11 `check`, 3 `exclude` to 39, 96, 15, 11, 3; queues from 96 `bulk`,
+57 `review` to 79 and 74. Five Utah names carry a `name_check`. Colorado, New
+Mexico and Arizona worksheets take the new rules and columns when
+`--suggest` runs on them after their traces end.
+
+**Tier split, reference evidence and bulk queue (ADR-138).** `shaped` is
+two tiers: `reservoir` (Shaped by reservoirs) and `diversion` (Reduced by
+diversions); `exclude` reads as Not a river. A saved `shaped` ruling stands as
+`reservoir` unless the row has a diversion finding; then it returns to review.
+Bulk covers three outcomes: not a river, shaped by reservoirs and natural by
+measured small storage, each only when no near-gauge dam, short record,
+diversion evidence or added water is in doubt. Irrigation dams and GAGES-II
+non-reference hold back a natural row only. Utah moved from 39 `natural`, 96
+`shaped`, 15 `short`, 11 `check`, 3 `exclude` to 37, 91 `reservoir` + 7
+`diversion`, 15, 11, 3; queues from 79 `bulk`, 74 `review` to 72 and 81.
+Evidence coverage in Utah: 116 of 164 in GAGES-II (20 reference), 77 with an
+NRCS pair (16 adjusted by 5% or more), none a canal or ditch.
+
+```bash
+.venv/bin/python tools/build_gauge_review.py --state UT --reference-evidence
+.venv/bin/python tools/build_gauge_review.py --state UT --suggest
+```
 
 ### Private review page
 
