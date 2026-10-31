@@ -108,11 +108,28 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   (ADR-147). `Isabella Lake`, `Pine Flat Lake`, `Lake Kaweah`, `Big Bear
   Lake`, `Lake Cuyamaca`, `El Capitan Lake`, `Frenchman Lake`, `Ruth Lake`,
   `Briones Reservoir`, `Gibraltar Reservoir`, `Los Banos Reservoir`,
-  `Soulajule Reservoir`, `C.C. Cragin Reservoir`, `Conconully Lake` and `D M
-  A D Reservoir` replace the dam word or code, each with one source: the
+  `Soulajule Reservoir`, `C.C. Cragin Reservoir`, `Conconully Lake` and `DMAD
+  Reservoir` replace the dam word or code, each with one source: the
   National Hydrography Dataset name of the water at the reservoir's point.
   `Seven Oaks Dam` stays, because no source names its basin. Short names
   stay short. Links that use an old name still open the right reservoir.
+- **Success Lake and Guadalupe Reservoir stay held, with corrected
+  reasons.** Their highest readings are real; each matches the daily
+  value for the same day. Success Lake is held because no published full
+  level for 2019 contains its June 2019 water. Guadalupe is held because
+  a dam-safety order sets its full level, and the operator gives two
+  volumes for it.
+- **Buchanan Dam's December 2022 monthly reading is excluded** (ADR-116).
+  The California Department of Water Resources reports 172,105 acre-feet
+  for that month. Its own daily series reports 22,809 acre-feet on 31
+  December 2022. The raw value and the reason stay in
+  `admitted_cdec_reservoirs.json`. Nothing published changes.
+- **The California audit compares monthly and daily storage.**
+  `tools/audit_cdec_stations.py --monthly-daily` compares each monthly
+  reading with the same station's daily reading on the month's last day.
+  It reports each month where they differ by more than 100 acre-feet and
+  5% of the larger value. It removes no reading; a person decides
+  (ADR-116).
 - **Precipitation has its own page**, `precipitation.html` (ADR-130): the
   recent totals, the season since 1 October and the history chart, for the
   place in the link, with a link to the snowpack view for the same place.

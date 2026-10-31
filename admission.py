@@ -451,9 +451,10 @@ def discrepancies(decision, highest_readings=None, service_capacity_af=None,
 
     Nothing here is repaired. A disagreement is reported and the candidate is
     held out of the roster until a person settles it, because every repair
-    available is a guess about which source is wrong: Buchanan Dam has been
+    available is a guess about which source is wrong: Buchanan Dam was once
     seen holding 172,105 acre-feet against the 150,000 its own operator calls
-    full, and no source this project holds says which of the two to believe.
+    full. The station's own daily series later showed that reading was the
+    fault, and it was excluded by review (ADR-116), never repaired.
 
     **A rule is not a repair, and one disagreement now has a rule.** Where
     the caller names a `provider_basis`, the provider's own full level is the

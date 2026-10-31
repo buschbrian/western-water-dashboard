@@ -51,6 +51,7 @@ import sys
 import time
 import urllib.parse
 import urllib.request
+from datetime import date, timedelta
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -307,6 +308,169 @@ def reading_day(stamp) -> str:
     return f"{year:04d}-{month:02d}-{day:02d}"
 
 
+#: How far a monthly reading may sit from the daily reading on its month's
+#: last day before the pair is reported for review. Both floors must be
+#: passed.
+#:
+#: The monthly value is the daily value at month end, rounded: on 2026-10-31
+#: Shasta's January 2024 month is 3,624,000 against a 31 January daily
+#: reading of 3,623,764, Folsom's 537,800 against 537,795. That is four
+#: significant figures, so rounding moves a value by 0.05% at most, and a
+#: later revision of one series and not the other moves it by a little more.
+#: Measured the same day over the 159 stations the California file names:
+#: 9,209 of 12,141 month ends agree exactly, and these floors report 125 at
+#: 33 stations. There is no clean gap between revision and fault, so the
+#: floors sit well above rounding and leave the rest to a reviewer. The
+#: faults this was written for sit far outside them: Buchanan's 172,105
+#: against 22,809, Grant Lake's 82,410 against 22,694.
+#:
+#: The share keeps a large reservoir's rounding quiet. The acre-feet floor
+#: keeps a small one quiet, where 349 against 300 is 16% and is nothing.
+MONTH_END_TOLERANCE_SHARE = 0.05
+MONTH_END_TOLERANCE_AF = 100.0
+
+
+def month_end_day(stamp) -> str:
+    """The last day of the month a monthly stamp names, or "" if none.
+
+    The servlet stamps a monthly reading at the start of its month and the
+    value is the water on the month's last day (`fetch_cdec_series` records
+    the measurement against Oroville). Checked again on 2026-10-31 against
+    Shasta, Oroville and Folsom for January to April 2024.
+    """
+    day = reading_day(stamp)
+    if not day:
+        return ""
+    year, month = int(day[:4]), int(day[5:7])
+    following = date(year + month // 12, month % 12 + 1, 1)
+    return (following - timedelta(days=1)).isoformat()
+
+
+def month_end_disagreements(station: str, monthly: list, daily: list) -> dict:
+    """Each month whose reading the daily series contradicts at month end.
+
+    `monthly` and `daily` are the servlet's own rows for one station. Only
+    usable readings are compared, and a month with no usable daily reading
+    on its last day is counted and not judged. Excluded readings (ADR-116)
+    are compared too, because they are the cases this screen exists to find,
+    and each disagreement names the exclusion that already covers it.
+
+    It reports and never removes. Which of the two readings is wrong is a
+    person's decision: Lake Almanor's August 2021 month carries 763,000
+    acre-feet against a daily 52,923, and there the daily is the likelier
+    fault.
+    """
+    by_day = {}
+    for row in daily:
+        if not isinstance(row, dict):
+            continue
+        value = usable(row.get("value"))
+        day = reading_day(row.get("date"))
+        if value is not None and day:
+            by_day[day] = value
+    compared, unmatched, found = 0, 0, []
+    for row in monthly:
+        if not isinstance(row, dict):
+            continue
+        value = usable(row.get("value"))
+        last = month_end_day(row.get("date"))
+        if value is None or not last:
+            continue
+        other = by_day.get(last)
+        if other is None:
+            unmatched += 1
+            continue
+        compared += 1
+        difference = value - other
+        if abs(difference) <= MONTH_END_TOLERANCE_AF \
+                or abs(difference) <= MONTH_END_TOLERANCE_SHARE * max(value, other):
+            continue
+        excluded = excluded_reading(station, row.get("date"), value)
+        found.append({
+            "month": last[:7],
+            "monthly_stamp": row.get("date"),
+            "monthly_af": value,
+            "daily_day": last,
+            "daily_af": other,
+            "difference_af": difference,
+            "ratio": round(value / other, 3) if other else None,
+            "excluded": excluded["issue_url"] if excluded else None,
+        })
+    return {"compared": compared, "months_without_a_daily_reading": unmatched,
+            "disagreements": found}
+
+
+def month_end_screen(stations: list[str]) -> dict[str, dict]:
+    """The monthly-against-daily comparison for each named station.
+
+    One station a request, both durations, since `START_DATE`. A station
+    whose requests fail twice is reported with its error, never dropped: a
+    station missing from the result reads exactly like one with nothing to
+    report.
+    """
+    end = time.strftime("%Y-%m-%d")
+    results = {}
+    for station in stations:
+        error = None
+        for attempt in range(2):
+            try:
+                rows = {}
+                for code in ("M", "D"):
+                    body = get(CDEC_DATA, {
+                        "Stations": station, "SensorNums": "15",
+                        "dur_code": code, "Start": START_DATE, "End": end})
+                    parsed = json.loads(body)
+                    if not isinstance(parsed, list):
+                        raise ValueError("the service did not answer with readings")
+                    rows[code] = parsed
+                    time.sleep(1)
+                results[station] = month_end_disagreements(
+                    station, rows["M"], rows["D"])
+                error = None
+                break
+            except (OSError, ValueError) as failure:
+                error = str(failure)
+                time.sleep(5)
+        if error is not None:
+            results[station] = {"error": error}
+    return results
+
+
+def roster_stations() -> list[str]:
+    """Every station the California file names, published and withheld."""
+    document = json.loads(
+        (ROOT / "admitted_cdec_reservoirs.json").read_text(encoding="utf-8"))
+    return sorted(set(document["reservoirs"]) | set(document["withheld"]))
+
+
+def print_month_end_table(results: dict[str, dict]) -> None:
+    """The disagreements, one line each, and the stations not compared."""
+    print(f"Monthly against daily at month end; reported where the two differ "
+          f"by more than {MONTH_END_TOLERANCE_AF:,.0f} acre-feet and "
+          f"{MONTH_END_TOLERANCE_SHARE:.0%} of the larger.")
+    header = (f"{'sta':<4} {'month':<8} {'monthly':>11} {'daily':>11} "
+              f"{'ratio':>8}  excluded")
+    print(header)
+    print("-" * len(header))
+    for station, result in results.items():
+        for row in result.get("disagreements", []):
+            ratio = f"{row['ratio']:.3f}" if row["ratio"] is not None else "-"
+            print(f"{station:<4} {row['month']:<8} {row['monthly_af']:>11,.0f} "
+                  f"{row['daily_af']:>11,.0f} {ratio:>8}  "
+                  f"{row['excluded'] or ''}")
+    failed = sorted(s for s, r in results.items() if "error" in r)
+    silent = sorted(s for s, r in results.items()
+                    if "error" not in r and not r["compared"])
+    compared = sum(r.get("compared", 0) for r in results.values())
+    flagged = sorted(s for s, r in results.items() if r.get("disagreements"))
+    print(f"\n{compared:,} month ends compared at {len(results) - len(failed) - len(silent)} "
+          f"stations; {len(flagged)} stations disagree.")
+    if silent:
+        print(f"No month end to compare: {', '.join(silent)}")
+    if failed:
+        print(f"Request failed: {', '.join(failed)}")
+
+
 def published_capacities() -> dict[str, float]:
     """The full levels this service publishes, keyed by station.
 
@@ -542,7 +706,26 @@ def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--json", action="store_true",
                         help="print the decisions and their evidence as JSON")
+    parser.add_argument("--monthly-daily", nargs="*", metavar="STATION",
+                        help="compare each monthly reading with the daily "
+                             "reading on its month's last day, for the named "
+                             "stations or every station the California file "
+                             "names; reports and changes nothing")
     args = parser.parse_args()
+
+    if args.monthly_daily is not None:
+        stations = args.monthly_daily or roster_stations()
+        print(f"=== monthly against daily, {len(stations)} stations",
+              file=sys.stderr)
+        results = month_end_screen(stations)
+        if args.json:
+            print(json.dumps({
+                "tolerance": {"acre_feet": MONTH_END_TOLERANCE_AF,
+                              "share_of_larger": MONTH_END_TOLERANCE_SHARE},
+                "stations": results}, indent=1))
+        else:
+            print_month_end_table(results)
+        return 0
 
     print("=== California Data Exchange Center, reservoir storage",
           file=sys.stderr)
