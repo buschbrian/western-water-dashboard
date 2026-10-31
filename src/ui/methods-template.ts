@@ -387,7 +387,8 @@ export function methodsMarkup(search: string): string {
           water, the flow is not compared with normal. Where little or no water is
           stored upstream, the newest flow is compared with the normal range for the
           same date. That range is the middle half of the daily values the U.S.
-          Geological Survey approved, from 30 years or more. This site never adds two gauges
+          Geological Survey approved, from more than 10 years. When a date has fewer than
+          30 years, the page says so. This site never adds two gauges
           together, and never calls a gauge the flow into a reservoir.</dd>
         <dt>Capacity</dt>
         <dd>The amount of water that a reservoir is designed to hold.</dd>

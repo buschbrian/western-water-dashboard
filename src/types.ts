@@ -997,7 +997,7 @@ export interface RiverNormalBand {
 export type RiverFlowClass =
   | "much_below_normal" | "below_normal" | "normal" | "above_normal" | "much_above_normal";
 
-export type RiverNormalWithheld = "fewer_than_30_years" | "percentile_missing";
+export type RiverNormalWithheld = "ten_years_or_fewer" | "percentile_missing";
 
 interface RiverGaugeBase {
   name: string;
@@ -1049,12 +1049,13 @@ export interface ShapedRiverGauge extends RiverGaugeBase {
 }
 
 /** Little or no water stored upstream: compared with the day's percentiles
- * when they rest on 30 years or more (ADR-144). */
+ * when they rest on more than 10 years, with `short_record` true under 30
+ * (ADR-144, ADR-145). */
 export type NaturalRiverGauge = RiverGaugeBase & { tier: "natural" } & (
   | { compared_with_normal: true; normal_band: RiverNormalBand; flow_class: RiverFlowClass;
-      normal_withheld: null }
+      normal_withheld: null; short_record: boolean }
   | { compared_with_normal: false; normal_band: null; flow_class: null;
-      normal_withheld: RiverNormalWithheld });
+      normal_withheld: RiverNormalWithheld; short_record: null });
 
 export type RiverGauge = ShapedRiverGauge | NaturalRiverGauge;
 

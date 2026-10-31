@@ -1,5 +1,5 @@
 /*
- * The river-flow page (ADR-136, ADR-144): a static shell, the runtime
+ * The river-flow page (ADR-136, ADR-144, ADR-145): a static shell, the runtime
  * `rivers.json`, nothing generated (ADR-002).
  *
  * One article per published gauge, each standing alone: no figure on this
@@ -73,6 +73,7 @@ function renderGauge(gauge: RiverGauge): { article: HTMLElement; chart: boolean 
   article.className = "river";
   article.dataset.station = gauge.source_station_id;
   article.dataset.tier = view.tier;
+  if (view.comparison?.shortRecord) article.dataset.shortRecord = "true";
   article.append(heading("h2", view.name, "river-name"));
   if (view.where) article.append(note(view.where));
   article.append(note(view.tierNote, `reservoir-note river-${view.tier}`));
@@ -94,6 +95,9 @@ function renderGauge(gauge: RiverGauge): { article: HTMLElement; chart: boolean 
     verdict.className = "river-class";
     verdict.textContent = view.comparison.label;
     reading.append(verdict, note(view.comparison.detail, "reservoir-note river-band"));
+    if (view.comparison.shortRecord) {
+      reading.append(note(view.comparison.shortRecord, "reservoir-note river-short"));
+    }
   } else if (view.withheld) {
     reading.append(note(view.withheld, "reservoir-note river-withheld"));
   }
