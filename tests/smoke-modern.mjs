@@ -1479,21 +1479,21 @@ for (const viewport of VIEWPORTS) {
       };
       return {
         menu: shown("#page-menu"),
-        buttons: ["#overview-link", "#precipitation-link", "#snow-link", "#drought-link", "#methods-link"].filter(shown),
+        buttons: ["#overview-link", "#precipitation-link", "#snow-link", "#drought-link", "#rivers-link", "#methods-link"].filter(shown),
         menuItems: [...document.querySelectorAll("#page-menu calcite-dropdown-item[href]")]
           .map((item) => item.getAttribute("href")),
-        buttonHrefs: ["#overview-link", "#precipitation-link", "#snow-link", "#drought-link", "#methods-link"]
+        buttonHrefs: ["#overview-link", "#precipitation-link", "#snow-link", "#drought-link", "#rivers-link", "#methods-link"]
           .map((selector) => document.querySelector(selector)?.getAttribute("href"))
       };
     });
     const wideBar = viewport.width >= 1024;
     check(pageLinks.menu === !wideBar,
       `${label}: the page menu is ${pageLinks.menu ? "showing" : "hidden"} at ${viewport.width}px`);
-    check(pageLinks.buttons.length === (wideBar ? 5 : 0),
+    check(pageLinks.buttons.length === (wideBar ? 6 : 0),
       `${label}: ${pageLinks.buttons.length} page link buttons are showing at ${viewport.width}px`);
-    check(pageLinks.menuItems.join(",") === "./,./overview.html,./precipitation.html,./snow.html,./drought.html,./methods.html",
+    check(pageLinks.menuItems.join(",") === "./,./overview.html,./precipitation.html,./snow.html,./drought.html,./rivers.html,./methods.html",
       `${label}: the page menu offers ${pageLinks.menuItems.join(", ")}`);
-    check(pageLinks.buttonHrefs.join(",") === "./overview.html,./precipitation.html,./snow.html,./drought.html,./methods.html",
+    check(pageLinks.buttonHrefs.join(",") === "./overview.html,./precipitation.html,./snow.html,./drought.html,./rivers.html,./methods.html",
       `${label}: the page link buttons point at ${pageLinks.buttonHrefs.join(", ")}`);
     check(await tab.locator(".map-stage > .map-alternative").count() === 0,
       `${label}: the old table and charts overlay still covers the map`);
@@ -2037,7 +2037,7 @@ for (const viewport of VIEWPORTS) {
       /* Whatever is actually on the bar at this width. The link buttons
        * swap for the menu below 64rem, so naming a fixed set here would
        * measure a control that is display:none and pass on a zero box. */
-      const ids = ["brand", "place-search-trigger", "page-menu", "overview-link", "snow-link", "drought-link", "methods-link",
+      const ids = ["brand", "place-search-trigger", "page-menu", "overview-link", "snow-link", "drought-link", "rivers-link", "methods-link",
         "controls-toggle", "detail-toggle", "table-toggle", "theme-toggle"]
         .filter((id) => {
           const element = document.getElementById(id);
@@ -3064,7 +3064,7 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
       ...(viewport.width >= 1024
         ? {
           "map-link": "./", "precipitation-link": "./precipitation.html", "snow-link": "./snow.html",
-          "drought-link": "./drought.html", "methods-link": "./methods.html"
+          "drought-link": "./drought.html", "rivers-link": "./rivers.html", "methods-link": "./methods.html"
         }
         : { "page-menu-trigger": null })
     };

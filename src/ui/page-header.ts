@@ -32,6 +32,9 @@ interface PageLink {
   menuText: string;
   /** What a screen reader announces for the icon-only button. */
   label: string;
+  /** The button shows its icon alone until the bar is wide enough for its
+   * text as well; the menu always says it in full. */
+  compact?: boolean;
 }
 
 /**
@@ -66,7 +69,8 @@ const PAGE_SUBJECTS: Record<PageId, string> = {
    * pages rather than from the bar: the bar clips rather than scrolls, and
    * whether one lake earns a place in it is a decision not yet made. */
   lakes: "Terminal Lakes",
-  /* Daily river flow (ADR-136), reached like the lakes page. */
+  /* Daily river flow (ADR-136). In the bar since ADR-148; the lakes page
+   * is still reached from the methods and data pages only. */
   rivers: "River Flow"
 };
 
@@ -120,6 +124,14 @@ const PAGES: readonly PageLink[] = [
     id: "drought", href: "./drought.html", icon: "gauge",
     text: "Drought", menuText: "Drought",
     label: "Open the weekly drought conditions"
+  },
+  {
+    /* ADR-148: in the bar and the page menu, not in the first-visit
+     * chooser, which asks about a place rather than a page. Between 64rem
+     * and 75rem the bar has room for its icon and not its text. */
+    id: "rivers", href: "./rivers.html", icon: "graph-time-series",
+    text: "River flow", menuText: "River flow",
+    label: "Open the daily river flow", compact: true
   },
   {
     id: "methods", href: "./methods.html", icon: "question",
@@ -219,7 +231,7 @@ export function pageLinksMarkup(current: PageId, search: string = ""): string {
           icon-start="${page.icon}"${page.id === current ? ' selected aria-current="page"' : ""}
           >${page.menuText}</calcite-dropdown-item>`).join("");
   const buttons = others.map((page) => `
-    <calcite-button id="${page.id}-link" class="page-link" slot="content-end" href="${linkHref(page.href, carried)}"
+    <calcite-button id="${page.id}-link" class="page-link${page.compact ? " page-link-compact" : ""}" slot="content-end" href="${linkHref(page.href, carried)}"
       appearance="transparent" kind="neutral" icon-start="${page.icon}"
       label="${page.label}"><span class="page-link-text">${page.text}</span></calcite-button>`).join("");
 

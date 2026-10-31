@@ -22,7 +22,7 @@ module that owns the behaviour and read the entry point only for the sequence.
 | One reservoir | `src/reservoir.ts` | `src/reservoir-model.ts` (link resolution, both baselines, provenance), `src/reservoir-elevation-model.ts` (the surface level, ADR-135), `src/viz/elevation-years.ts`, `src/ui/reservoir-template.ts`; the reading itself is `describeReservoir`, shared with the map's details panel so the two cannot drift |
 | Methods, data, terms | `src/methods.ts`, `src/data-docs.ts` | `src/data-docs-schema.ts` is the field-by-field contract |
 | Terminal lakes | `src/lakes.ts` | `src/lakes-model.ts` (every sentence and row), `src/data/lakes-validate.ts`, `src/ui/lakes-template.ts`; reached from the methods and data pages, not the bar (ADR-119) |
-| River flow | `src/rivers.ts` | `src/rivers-model.ts` (every sentence, row and the CSV), `src/data/rivers-validate.ts`, `src/ui/rivers-template.ts`, `src/viz/flow-chart.ts`; reached from the methods and data pages, not the bar (ADR-136) |
+| River flow | `src/rivers.ts` | `src/rivers-model.ts` (every sentence, row and the CSV), `src/data/rivers-validate.ts`, `src/ui/rivers-template.ts`, `src/viz/flow-chart.ts`; in the page menu and the bar since ADR-148, not in the first-visit chooser |
 | Story views | `src/story.ts` | `src/state/story-url.ts` (the link), `src/snow-place.ts` (the snow page's place narrowing), `src/ui/precipitation-card.ts`, `src/ui/upstream-section.ts`, `src/ui/story-fit.ts`; for embedding, not in the bar (ADR-128) |
 
 Shared by all of them: `src/data/` (fetch, validate, scope, rollup),
@@ -381,7 +381,10 @@ Each was found by a failing test or a screenshot. Do not regress them.
 - **`calcite-navigation` clips, it does not scroll.** An overflowing header
   never widens the page, so a `scrollWidth` check cannot see it — it amputates
   the controls on the end of the bar. The smoke test measures each control's
-  box against the viewport.
+  box against the viewport. With seven page links (ADR-148) the storage map's
+  bar measured 1,108 px at 1,024 px, so every page-link button shows its icon
+  alone from 64rem to 72rem, and the river flow button (`.page-link-compact`)
+  to 75rem.
 - **The place chooser is site navigation.** Every shared header exposes
   **Choose another place** directly at wide widths and inside the existing
   page menu on phones. The storage analysis panel has no duplicate control.

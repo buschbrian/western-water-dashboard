@@ -94,6 +94,11 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Changed
 
+- **River flow is in the page menu and the bar** (ADR-148), between Drought
+  and Methods, on every page. It is not in the first-visit chooser. From 1,024
+  to 1,151 px wide the page-link buttons show their icons alone, and the river
+  flow button does so up to 1,199 px, so the bar no longer clips the storage
+  map's panel buttons.
 - **The river flow page opens on a summary table.** "Flow at each gauge" gives
   each gauge's flow on the newest reading date and how it compares with
   normal, or "Not compared: dams upstream"; each row links to its card. The
