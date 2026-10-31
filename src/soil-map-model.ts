@@ -86,6 +86,35 @@ export function soilMapValues(
   return { endDate: payload.end_date, startDate: payload.start_date, sites, areas, counts, ranked };
 }
 
+/** Stations listed on each side of the "most change" list (ADR-142, as
+ * noted 2026-10-31): four wetter and four drier, not eight by size. */
+export const SOIL_ROWS_PER_SIDE = 4;
+
+export interface SoilMostChange {
+  /** Wetter by the steady band or more, the largest first. */
+  wetter: SoilMoistureSite[];
+  /** Drier by the steady band or more, the largest first. */
+  drier: SoilMoistureSite[];
+}
+
+/** The largest wetter and the largest drier changes, each side on its own,
+ * so a wet week still shows the stations that dried. */
+export function soilMostChange(values: SoilMapValues,
+  perSide: number = SOIL_ROWS_PER_SIDE): SoilMostChange {
+  const side = (direction: 1 | -1): SoilMoistureSite[] => values.ranked
+    .filter((site) => {
+      const index = soilClassIndex(site.change_points);
+      return direction > 0 ? index > 2 : index >= 0 && index < 2;
+    })
+    .slice(0, perSide);
+  return { wetter: side(1), drier: side(-1) };
+}
+
+/** What an empty side says. */
+export function soilNoSideText(direction: "wetter" | "drier"): string {
+  return `No station got ${direction} by ${SOIL_STEADY_POINTS} points or more.`;
+}
+
 /** Why a station has no change, in words. */
 export function soilNoChangeText(site: SoilMoistureSite | undefined): string {
   if (!site) return "No soil sensors";

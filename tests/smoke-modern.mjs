@@ -3986,6 +3986,12 @@ for (const viewport of VIEWPORTS) {
         dayButtonsShown: visible(document.querySelector("[aria-label='Days in the map and the station list']")),
         rainListShown: visible(document.querySelector(".precip-storm-list")),
         listed: document.querySelectorAll(".precip-soil-list li").length,
+        sides: [...document.querySelectorAll(".precip-soil-side")].map((side) => ({
+          title: side.querySelector(".chart-axis-title")?.textContent ?? "",
+          rows: side.querySelectorAll("li").length,
+          shown: visible(side),
+          empty: visible(side.querySelector(".precip-soil-empty"))
+        })),
         values: [...document.querySelectorAll(".precip-soil-list .precip-storm-value")].map((node) => node.textContent),
         busy: document.querySelector(".precip-map-mode-soil")?.getAttribute("aria-busy"),
         overflow: card ? card.scrollWidth - card.clientWidth : -1
@@ -4005,6 +4011,11 @@ for (const viewport of VIEWPORTS) {
     check(soilView.listed === soilView.map?.soil?.rows && soilView.listed <= 8
       && soilView.values.every((value) => /^(\d+\.\d points? (wetter|drier)|No change)$/.test(value)),
     `${label}: the soil list shows ${soilView.listed} rows (${JSON.stringify(soilView.values.slice(0, 3))})`);
+    /* Ruling U5: four wetter and four drier, apart; an empty side says so. */
+    check(soilView.sides.map((side) => side.title).join() === "Most wetter,Most drier"
+      && soilView.sides.every((side) => side.rows <= 4
+        && (!side.shown || (side.rows > 0) !== side.empty)),
+    `${label}: the soil lists read ${JSON.stringify(soilView.sides)}`);
     check(soilView.map?.withValue + soilView.map?.notUsed === soilView.map?.stations
       && soilView.map?.soil?.withChange <= soilView.map?.soil?.stations,
     `${label}: soil mode counts ${JSON.stringify(soilView.map)}`);

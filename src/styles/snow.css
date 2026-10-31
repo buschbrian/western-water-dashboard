@@ -361,7 +361,10 @@
 /* Recent totals (ADR-129): three small figures and a short ranked list.
  * Rows of text, not bars. */
 .precip-storm { margin-block-end: 1rem; padding-block-end: .75rem; border-block-end: 1px solid var(--app-border); }
-.precip-storm[hidden], .precip-storm-list[hidden], .precip-soil-list[hidden] { display: none; }
+.precip-storm[hidden], .precip-storm-list[hidden], .precip-soil-list[hidden],
+.precip-soil-side[hidden], .precip-soil-empty[hidden] { display: none; }
+/* Most wetter, then most drier (ruling U5): two lists, a gap between them. */
+.precip-soil-side + .precip-soil-side { margin-block-start: .75rem; }
 .precip-storm-title { margin: 0; font-size: var(--app-group-heading); }
 #precip-card .precip-storm-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); max-inline-size: 36rem; margin-block: .5rem 0; }
 #precip-card .precip-storm-kpis > .overview-kpi { grid-column: auto; padding: .6rem .7rem; }

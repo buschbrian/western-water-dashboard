@@ -1,6 +1,7 @@
 # ADR-142: Show the week's change in mountain soil moisture
 
-- Status: Accepted
+- Status: Accepted; rule 6's list of eight is split four and four, see the
+  update of 2026-10-31 below
 - Date: 2026-10-27
 - Relates to: ADR-117 and ADR-125 (a new measured element needs its own
   record), ADR-008 (one colour table per measure), ADR-064 (an area's figure
@@ -119,3 +120,12 @@ wetter.**
   Parsing and writing are in `src/state/precip-layer-url.ts`.
 - Phase 2 (percent of median for the date over each station's record, a
   history builder rebuilt each October) needs its own record.
+
+## Update, 2026-10-31
+
+Rule 6's "most change" list of eight stations is now two lists: the four
+largest changes wetter by 2 points or more ("Most wetter") and the four
+largest drier by 2 points or more ("Most drier"). A side with no such station
+says "No station got drier by 2 points or more." (or wetter). Eight ranked by
+size were all wetter in a wet week, under a heading that promised drier
+stations too. Owner's display ruling U5; no method, class or payload changes.

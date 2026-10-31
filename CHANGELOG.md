@@ -94,6 +94,10 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Changed
 
+- **Soil moisture lists wetter and drier stations apart.** The soil map's
+  list of eight is now "Most wetter" (four) and "Most drier" (four), each by 2
+  points or more; an empty side says no station moved that way (ADR-142,
+  update of 2026-10-31).
 - **The share picture names its source and its lines.** The Lake Powell and
   Lake Mead pictures end with a key (this water year, the year before, the
   earlier years and the dashed lines) and "Readings: Bureau of Reclamation ·

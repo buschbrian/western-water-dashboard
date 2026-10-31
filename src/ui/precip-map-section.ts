@@ -17,7 +17,8 @@
 import { precipMapValues, type PrecipMapValues } from "../precip-map-model";
 import type { StormTotals, StormWindow } from "../precip-storm-model";
 import {
-  soilCountsText, soilLeftOutText, soilMapValues, soilNoChangeText, soilWeekText, type SoilMapValues
+  soilCountsText, soilLeftOutText, soilMapValues, soilMostChange, soilNoChangeText, soilNoSideText,
+  soilWeekText, type SoilMapValues
 } from "../soil-map-model";
 import type { SnowpackPayload, SnowSite, SoilMoisturePayload } from "../types";
 import { PRECIP_CLASSES, PRECIP_NO_VALUE_COLOR } from "../viz/precip-classes";
@@ -34,7 +35,7 @@ export interface SoilSectionStatus {
   /** Stations in the place with soil sensors in the file, and of those with a change. */
   stations: number;
   withChange: number;
-  /** Rows in the "most change" list. */
+  /** Rows in the "most change" lists, wetter and drier together. */
   rows: number;
 }
 
@@ -72,8 +73,6 @@ export interface PrecipMapSectionOptions {
   /** The reader switched, or the soil file failed after they did: the mode now shown. */
   onModeChange?: (mode: PrecipMapMode) => void;
 }
-
-const SOIL_ROWS = 8;
 
 function note(text: string): HTMLParagraphElement {
   const element = document.createElement("p");
@@ -213,18 +212,30 @@ export function createPrecipMapSection(
     "Each drainage area takes its colour from the mean change of its stations with a change. It needs as many " +
     "of them as its snow figure does. Only stations with soil sensors are shown.");
   const soilWeek = paragraph("precip-coverage");
-  const soilListTitle = paragraph("chart-axis-title", "");
   const soilCounts = paragraph("precip-note");
   soilCounts.setAttribute("role", "status");
-  const soilList = document.createElement("ol");
-  soilList.className = "precip-soil-list";
+  /* Two lists, not one ranked by size (ruling U5, 2026-10-31): in a wet
+   * week eight stations by size are all wetter, and the stations that dried
+   * are the ones a water manager looks for first. */
+  const soilSide = (title: string, direction: "wetter" | "drier") => {
+    const block = document.createElement("div");
+    block.className = `precip-soil-side precip-soil-${direction}`;
+    const list = document.createElement("ol");
+    list.className = "precip-soil-list";
+    const empty = paragraph("precip-coverage precip-soil-empty", soilNoSideText(direction));
+    block.append(paragraph("chart-axis-title", title), list, empty);
+    return { block, list, empty };
+  };
+  const soilWetter = soilSide("Most wetter", "wetter");
+  const soilDrier = soilSide("Most drier", "drier");
   const soilNote = paragraph("precip-coverage");
   const soilTable = valuesTable("precip-soil-table", "Soil moisture at every station on the map",
     "Soil moisture at every station, scrolls sideways",
     ["Site", "Drainage area", "Change in 7 days", "Soil water at the end (%)", "Sensor depths (in)"]);
   const soilFailed = note("");
   soilFailed.hidden = true;
-  soil.append(soilWeek, soilKey, soilCaption, soilListTitle, soilCounts, soilList, soilNote, soilTable.details);
+  soil.append(soilWeek, soilKey, soilCaption, soilCounts, soilWetter.block, soilDrier.block, soilNote,
+    soilTable.details);
 
   /* The switch: two plain toggle buttons, the card's own idiom for one choice. */
   const switchHead = document.createElement("div");
@@ -306,27 +317,32 @@ export function createPrecipMapSection(
     status.soil.stations = counts.stations;
     status.soil.withChange = counts.measured;
     soilWeek.textContent = soilWeekText(shown);
-    soilListTitle.textContent = counts.measured > 0 ? "Wetter and drier this week: most change" : "";
     soilCounts.textContent = soilCountsText(counts);
-    const rows = shown.ranked.slice(0, SOIL_ROWS);
-    soilList.replaceChildren(...rows.map((reading, index) => {
-      const site = siteByStation.get(reading.station);
-      const item = document.createElement("li");
-      const rank = span("precip-storm-rank", `${index + 1}`);
-      rank.setAttribute("aria-hidden", "true");
-      const label = document.createElement("a");
-      label.className = "precip-storm-name";
-      label.textContent = site?.name ?? reading.station;
-      label.href = siteHref(reading.station);
-      const where = span("precip-storm-area", site?.huc6_name ?? "");
-      const value = document.createElement("strong");
-      value.className = "precip-storm-value";
-      value.textContent = soilChangeText(reading.change_points);
-      item.append(rank, label, where, value);
-      return item;
-    }));
-    soilList.hidden = rows.length === 0;
-    status.soil.rows = rows.length;
+    const most = soilMostChange(shown);
+    const fill = (side: typeof soilWetter, rows: typeof most.wetter): void => {
+      side.list.replaceChildren(...rows.map((reading, index) => {
+        const site = siteByStation.get(reading.station);
+        const item = document.createElement("li");
+        const rank = span("precip-storm-rank", `${index + 1}`);
+        rank.setAttribute("aria-hidden", "true");
+        const label = document.createElement("a");
+        label.className = "precip-storm-name";
+        label.textContent = site?.name ?? reading.station;
+        label.href = siteHref(reading.station);
+        const where = span("precip-storm-area", site?.huc6_name ?? "");
+        const value = document.createElement("strong");
+        value.className = "precip-storm-value";
+        value.textContent = soilChangeText(reading.change_points);
+        item.append(rank, label, where, value);
+        return item;
+      }));
+      side.list.hidden = rows.length === 0;
+      side.empty.hidden = rows.length > 0;
+      side.block.hidden = counts.measured === 0;
+    };
+    fill(soilWetter, most.wetter);
+    fill(soilDrier, most.drier);
+    status.soil.rows = most.wetter.length + most.drier.length;
     soilNote.textContent = soilLeftOutText(counts);
     drawSoilTable();
   };
