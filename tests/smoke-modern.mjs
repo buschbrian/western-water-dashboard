@@ -6246,6 +6246,8 @@ for (const viewport of VIEWPORTS) {
     tiers: [...document.querySelectorAll("#rivers-main article.river[data-station]")]
       .map((article) => ({
         tier: article.getAttribute("data-tier"),
+        shortRecord: article.getAttribute("data-short-record") === "true",
+        short: article.querySelector(".river-short")?.textContent ?? null,
         shaped: article.querySelector(".river-shaped")?.textContent ?? null,
         natural: article.querySelector(".river-natural")?.textContent ?? null,
         verdict: article.querySelector(".river-class")?.textContent ?? null,
@@ -6278,6 +6280,9 @@ for (const viewport of VIEWPORTS) {
       && a.withheld === null)
       || (a.verdict === null && a.withheld?.includes("not compared with normal")))),
   `Rivers page (${viewport.name}): a natural gauge shows neither its class nor why it has none`);
+  check(state.tiers.every((a) => (a.shortRecord && a.tier === "natural" && a.verdict !== null
+    && /fewer than the usual 30\.$/.test(a.short ?? "")) || (!a.shortRecord && a.short === null)),
+  `Rivers page (${viewport.name}): a short record does not say so beside its comparison`);
   check(natural.filter((a) => a.verdict !== null).length === state.ready?.compared,
     `Rivers page (${viewport.name}): ${state.ready?.compared} compared in readiness, `
     + `${natural.filter((a) => a.verdict !== null).length} classes drawn`);

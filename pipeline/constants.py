@@ -261,13 +261,17 @@ ELEVATION_HISTORY_SCHEMA_VERSION = 1
 LAKE_SCHEMA_VERSION = 1
 
 #: The shape of `rivers.json` (ADR-136). Version 2 admits the natural tier
-#: and its comparison with normal (ADR-144).
-RIVER_SCHEMA_VERSION = 2
+#: and its comparison with normal (ADR-144); version 3 compares a day with
+#: more than 10 years and flags one under 30 as `short_record` (ADR-145).
+RIVER_SCHEMA_VERSION = 3
 #: The percentiles a natural gauge's day carries, and the fewest years with an
-#: approved value on that calendar day for a comparison to be made: the
-#: WaterWatch rule, since the statistics service sets no minimum (ADR-144).
+#: approved value on that calendar day for a comparison to be made: more than
+#: 10, Brian's floor, since the statistics service sets none (ADR-145).
 RIVER_NORMAL_PERCENTILES = (10, 25, 50, 75, 90)
-RIVER_NORMAL_MIN_YEARS = 30
+RIVER_NORMAL_MIN_YEARS = 11
+#: WaterWatch's usual record. A compared day with fewer years carries
+#: `short_record: true` and the page says so (ADR-145).
+RIVER_NORMAL_FULL_YEARS = 30
 #: Daily means published per gauge, ending on its newest reported day.
 RIVER_WINDOW_DAYS = 30
 #: Days asked for on every run. Every publishable record's window is read

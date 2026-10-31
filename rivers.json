@@ -1,12 +1,12 @@
 {
-  "schema_version": 2,
+  "schema_version": 3,
   "measurement": "daily_mean_flow",
-  "fetched_at": "2026-10-31T16:25:23+00:00",
+  "fetched_at": "2026-10-31T19:13:10+00:00",
   "run_date": "2026-10-31",
   "window_days": 30,
   "stale_after_days": 2,
   "withdraw_after_days": 60,
-  "gauge_count": 7,
+  "gauge_count": 8,
   "stale_count": 0,
   "withdrawn_count": 0,
   "gauges": [
@@ -45,6 +45,7 @@
       },
       "flow_class": "much_above_normal",
       "normal_withheld": null,
+      "short_record": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
       "as_of": "2026-10-30",
@@ -938,7 +939,245 @@
       ]
     },
     {
-      "name": "Mill Creek at Sheley Tunnel, near Moab",
+      "name": "Middle Fork Beaver Creek near Lonetree",
+      "usgs_name": "Middle Fork Beaver Creek near Lonetree, WY",
+      "measurement": "daily_mean_flow",
+      "source_key": "usgs",
+      "source_label": "U.S. Geological Survey",
+      "source_station_id": "09226500",
+      "source_url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/daily/items?f=json&time_series_id=27325b270d604ffbad3c413017f647bf",
+      "usgs_page": "https://waterdata.usgs.gov/monitoring-location/USGS-09226500/",
+      "time_series_id": "27325b270d604ffbad3c413017f647bf",
+      "parameter_code": "00060",
+      "statistic_id": "00003",
+      "unit": "ft^3/s",
+      "state": "UT",
+      "lat": 40.946111,
+      "lon": -110.178611,
+      "drainage_area_sq_mi": 28.1,
+      "huc8": "14040106",
+      "huc8_name": "Upper Green-Flaming Gorge Reservoir",
+      "flows_toward": null,
+      "tier": "natural",
+      "compared_with_normal": true,
+      "normal_band": {
+        "day": "10-30",
+        "p10": 5.78,
+        "p25": 6.8,
+        "p50": 7.6,
+        "p75": 9.4,
+        "p90": 13.8,
+        "years": 22,
+        "retrieved": "2026-10-31",
+        "source_url": "https://api.waterdata.usgs.gov/statistics/v0/observationNormals?monitoring_location_id=USGS-09226500&parameter_code=00060&computation_type=percentile&normal_type=DOY&page_size=1000"
+      },
+      "flow_class": "much_above_normal",
+      "normal_withheld": null,
+      "short_record": true,
+      "data_frequency": "daily",
+      "stale_after_days": 2,
+      "as_of": "2026-10-30",
+      "days_stale": 1,
+      "is_stale": false,
+      "fetch_ok": true,
+      "current_cfs": 20.9,
+      "current_approval": "Provisional",
+      "current_qualifiers": [],
+      "change_7d_cfs": null,
+      "change_7d_reference_date": null,
+      "window_start": "2026-10-01",
+      "window_end": "2026-10-30",
+      "window_high_cfs": 42.9,
+      "window_high_date": "2026-10-14",
+      "window_low_cfs": 7.81,
+      "window_low_date": "2026-10-09",
+      "reported_days": 26,
+      "provisional_days": 26,
+      "daily": [
+        {
+          "date": "2026-10-01",
+          "cfs": 12.5,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-02",
+          "cfs": 10.9,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-03",
+          "cfs": 9.66,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-04",
+          "cfs": 9.26,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-05",
+          "cfs": 8.37,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-06",
+          "cfs": 7.87,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-07",
+          "cfs": 7.84,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-08",
+          "cfs": 8.04,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-09",
+          "cfs": 7.81,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-10",
+          "cfs": 8.07,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-11",
+          "cfs": null,
+          "approval": null,
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-12",
+          "cfs": null,
+          "approval": null,
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-13",
+          "cfs": null,
+          "approval": null,
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-14",
+          "cfs": 42.9,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-15",
+          "cfs": 28.4,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-16",
+          "cfs": 23.5,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-17",
+          "cfs": 22.8,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-18",
+          "cfs": 22.4,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-19",
+          "cfs": 21.5,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-20",
+          "cfs": 22.3,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-21",
+          "cfs": 23.0,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-22",
+          "cfs": 29.4,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-23",
+          "cfs": null,
+          "approval": null,
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-24",
+          "cfs": 37.7,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-25",
+          "cfs": 27.4,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-26",
+          "cfs": 25.1,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-27",
+          "cfs": 23.2,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-28",
+          "cfs": 22.1,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-29",
+          "cfs": 20.9,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-10-30",
+          "cfs": 20.9,
+          "approval": "Provisional",
+          "qualifiers": []
+        }
+      ]
+    },
+    {
+      "name": "Mill Creek near Moab",
       "usgs_name": "MILL CREEK AT SHELEY TUNNEL, NEAR MOAB, UT",
       "measurement": "daily_mean_flow",
       "source_key": "usgs",
@@ -972,6 +1211,7 @@
       },
       "flow_class": "much_above_normal",
       "normal_withheld": null,
+      "short_record": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
       "as_of": "2026-10-30",
@@ -1399,7 +1639,7 @@
       ]
     },
     {
-      "name": "South Creek above Reservoir near Monticello",
+      "name": "South Creek near Monticello",
       "usgs_name": "SOUTH CREEK ABOVE RESERVOIR NEAR MONTICELLO, UT",
       "measurement": "daily_mean_flow",
       "source_key": "usgs",
@@ -1433,6 +1673,7 @@
       },
       "flow_class": "much_above_normal",
       "normal_withheld": null,
+      "short_record": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
       "as_of": "2026-10-30",

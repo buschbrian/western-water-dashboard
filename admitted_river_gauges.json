@@ -3,7 +3,7 @@
   "source": "U.S. Geological Survey",
   "source_url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/daily/items",
   "reviewed": "2026-10-31",
-  "selection": "The first published river gauges (ADR-136): the four rivers that flow toward Lake Powell named in the recent-conditions plan, directed by Brian Busch on 2026-10-27 as the first set to publish. Each is a Utah gauge from gauge-review.csv with a 1991-2020 record and a traced basin within 25% of its published drainage area. Under the tier ruling recorded as ADR-137, each is shaped: three have a published reservoir inside the basin, and the Dirty Devil's inventoried dams hold at least 10% of a year's flow. Each gauge's daily mean flow is published without a comparison with normal and without a rank. The tier was taken from the worksheet's suggestion at Brian's direction and is pending his formal ruling in the review page; reviewer_ruling in gauge-review.csv is still blank for all four. No gauge here is a reservoir's inflow, and no two are ever added together. Three natural gauges were added on 2026-10-31 (ADR-144), directed by Brian Busch from his explicit natural rulings of 2026-10-27: Mill Creek at Sheley Tunnel near Moab, Blacks Fork near Robertson and South Creek above the reservoir near Monticello. Each is a GAGES-II reference gauge with no published reservoir in its traced basin and inventoried storage under 10% of a year's flow, and each newest flow is compared with the U.S. Geological Survey's day-of-year percentiles in river_normals.json. Middle Fork Beaver Creek near Lonetree (09226500), the fourth natural ruling, is held out: the survey has 22 years of approved values for each calendar day, under the 30 a comparison needs. reviewer_ruling in gauge-review.csv is still blank for all three until the review export is imported.",
+  "selection": "The first published river gauges (ADR-136): the four rivers that flow toward Lake Powell named in the recent-conditions plan, directed by Brian Busch on 2026-10-27 as the first set to publish. Each is a Utah gauge from gauge-review.csv with a 1991-2020 record and a traced basin within 25% of its published drainage area. Under the tier ruling recorded as ADR-137, each is shaped: three have a published reservoir inside the basin, and the Dirty Devil's inventoried dams hold at least 10% of a year's flow. Each gauge's daily mean flow is published without a comparison with normal and without a rank. The tier was taken from the worksheet's suggestion at Brian's direction and is pending his formal ruling in the review page; reviewer_ruling in gauge-review.csv is still blank for all four. No gauge here is a reservoir's inflow, and no two are ever added together. Three natural gauges were added on 2026-10-31 (ADR-144), directed by Brian Busch from his explicit natural rulings of 2026-10-27: Mill Creek near Moab, Blacks Fork near Robertson and South Creek near Monticello. Each is a GAGES-II reference gauge with no published reservoir in its traced basin and inventoried storage under 10% of a year's flow, and each newest flow is compared with the U.S. Geological Survey's day-of-year percentiles in river_normals.json. Middle Fork Beaver Creek near Lonetree (09226500), the fourth natural ruling, was added on 2026-10-31 (ADR-145) when Brian Busch lowered the floor for a comparison to more than 10 years: the survey has 22 years of approved values for most calendar days, so its records say short_record. On 2026-10-31 Brian also shortened two display names to Mill Creek near Moab and South Creek near Monticello; each survey station name stays in usgs_name. reviewer_ruling in gauge-review.csv is still blank for all four until the review export is imported.",
   "keyed_by": "usgs_site_no",
   "gauges": {
     "09379500": {
@@ -184,7 +184,7 @@
     },
     "09183500": {
       "station": "09183500",
-      "display_name": "Mill Creek at Sheley Tunnel, near Moab",
+      "display_name": "Mill Creek near Moab",
       "usgs_name": "MILL CREEK AT SHELEY TUNNEL, NEAR MOAB, UT",
       "state": "UT",
       "lat": 38.4819972222222,
@@ -274,7 +274,7 @@
     },
     "09378170": {
       "station": "09378170",
-      "display_name": "South Creek above Reservoir near Monticello",
+      "display_name": "South Creek near Monticello",
       "usgs_name": "SOUTH CREEK ABOVE RESERVOIR NEAR MONTICELLO, UT",
       "state": "UT",
       "lat": 37.8466608313115,
@@ -314,6 +314,51 @@
           "nrcs_adjustment_pct": 0.0,
           "flow_years": 35,
           "trace": "traced; NLDI basin 8 sq mi against a published 8.64"
+        }
+      }
+    },
+    "09226500": {
+      "station": "09226500",
+      "display_name": "Middle Fork Beaver Creek near Lonetree",
+      "usgs_name": "Middle Fork Beaver Creek near Lonetree, WY",
+      "state": "UT",
+      "lat": 40.946111,
+      "lon": -110.178611,
+      "drainage_area_sq_mi": 28.1,
+      "huc8": "14040106",
+      "huc8_name": "Upper Green-Flaming Gorge Reservoir",
+      "usgs_page": "https://waterdata.usgs.gov/monitoring-location/USGS-09226500/",
+      "series": {
+        "time_series_id": "27325b270d604ffbad3c413017f647bf",
+        "parameter_code": "00060",
+        "statistic_id": "00003",
+        "unit": "ft^3/s",
+        "record_begin": "1948-10-01",
+        "source_url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/time-series-metadata/items?f=json&monitoring_location_id=USGS-09226500&parameter_code=00060&statistic_id=00003",
+        "checked": "2026-10-31"
+      },
+      "tier": {
+        "tier": "natural",
+        "basis": "ADR-137: no published reservoir and no inventoried dam in the traced basin; storage is 0% of a year's flow, under 10%. The station name ends in WY, but the survey places the gauge in Summit County, Utah.",
+        "directed_by": "Brian Busch",
+        "directed_on": "2026-10-31",
+        "tier_ruled_on": "2026-10-27",
+        "status": "ruled_natural",
+        "evidence": {
+          "worksheet": "gauge-review.csv",
+          "screened_on": "2026-10-23",
+          "suggested_ruling": "natural",
+          "review_queue": "bulk",
+          "published_reservoirs_upstream": [],
+          "dams_upstream": 0,
+          "dam_storage_af": 0,
+          "storage_share_pct": 0.0,
+          "largest_dams": "",
+          "irrigation_dams": 0,
+          "gages2_class": "reference",
+          "nrcs_adjustment_pct": "no_pair",
+          "flow_years": 22,
+          "trace": "traced; NLDI basin 29 sq mi against a published 28.1"
         }
       }
     }
