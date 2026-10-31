@@ -108,8 +108,8 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   (ADR-147). `Isabella Lake`, `Pine Flat Lake`, `Lake Kaweah`, `Big Bear
   Lake`, `Lake Cuyamaca`, `El Capitan Lake`, `Frenchman Lake`, `Ruth Lake`,
   `Briones Reservoir`, `Gibraltar Reservoir`, `Los Banos Reservoir`,
-  `Soulajule Reservoir`, `C.C. Cragin Reservoir`, `Conconully Lake` and `D M
-  A D Reservoir` replace the dam word or code, each with one source: the
+  `Soulajule Reservoir`, `C.C. Cragin Reservoir`, `Conconully Lake` and `DMAD
+  Reservoir` replace the dam word or code, each with one source: the
   National Hydrography Dataset name of the water at the reservoir's point.
   `Seven Oaks Dam` stays, because no source names its basin. Short names
   stay short. Links that use an old name still open the right reservoir.
