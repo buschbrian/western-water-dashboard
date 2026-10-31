@@ -629,6 +629,18 @@ async function checkAccessibility(tab, check, label) {
   await checkTextOverlap(tab, check, label);
   await checkHeaderTitle(tab, check, label);
   await checkTextFits(tab, check, label);
+  const violations = await persistentAxeViolations(tab);
+  check(violations.length === 0,
+    `${label}: axe-core found ${violations.length} accessibility violation(s): ` +
+    violations.map((violation) =>
+      `${violation.id} (${violation.impact}) on ${violation.nodes.length} node(s) ` +
+      `e.g. ${violation.nodes[0]?.target.join(" ")} ${violation.nodes[0]?.html} ` +
+      `-- ${violation.nodes[0]?.why}`).join("; "));
+}
+
+/* axe over the whole page, after AXE_EXCEPTIONS, keeping only what survives
+ * both passes. Shared by every axe check in this file. */
+async function persistentAxeViolations(tab) {
   /*
    * Scored twice, and only a finding that survives both counts.
    *
@@ -708,17 +720,8 @@ async function checkAccessibility(tab, check, label) {
   for (const violation of second) {
     if (!kept(violation)) fleeting(violation, "only once the page had settled");
   }
-  if (first.length === 0 && second.length === 0) {
-    console.log("  axe: clean");
-    return;
-  }
-  const violations = persistent;
-  check(violations.length === 0,
-    `${label}: axe-core found ${violations.length} accessibility violation(s): ` +
-    violations.map((violation) =>
-      `${violation.id} (${violation.impact}) on ${violation.nodes.length} node(s) ` +
-      `e.g. ${violation.nodes[0]?.target.join(" ")} ${violation.nodes[0]?.html} ` +
-      `-- ${violation.nodes[0]?.why}`).join("; "));
+  if (first.length === 0 && second.length === 0) console.log("  axe: clean");
+  return persistent;
 }
 /* Every page in this suite is opened with no `?state=`, no stored place and
  * a fresh profile, which is exactly the condition the first-visit splash
