@@ -1512,6 +1512,13 @@
       "county_name": "Plumas County",
       "state": "CA"
     },
+    "BUC": {
+      "name": "Eastman Lake",
+      "county_fips": "06039",
+      "county_name": "Madera County",
+      "state": "CA",
+      "retrieved": "2026-10-31"
+    },
     "BUL": {
       "name": "New Bullards Bar",
       "county_fips": "06115",
