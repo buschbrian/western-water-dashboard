@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "measurement": "daily_mean_flow",
-  "fetched_at": "2026-10-31T19:13:10+00:00",
+  "fetched_at": "2026-10-31T19:21:49+00:00",
   "run_date": "2026-10-31",
   "window_days": 30,
   "stale_after_days": 2,
@@ -23,7 +23,7 @@
       "parameter_code": "00060",
       "statistic_id": "00003",
       "unit": "ft^3/s",
-      "state": "WY",
+      "state": "UT",
       "lat": 40.9590277777778,
       "lon": -110.579722222222,
       "drainage_area_sq_mi": 126.0,
