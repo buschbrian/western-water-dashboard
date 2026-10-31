@@ -2730,6 +2730,11 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
     const openingRows = (await tab.locator("#reservoir-rows").innerText()).split("\n");
     check(namedRows(openingRows, "Lake Powell") === 1,
       `${label}: Lake Powell is missing from the default overview table`);
+    /* ADR-134 and ruling R2: the place total always names its coverage. */
+    const sinceLowNote = (await tab.locator('[data-kpi="since-low-note"]').innerText()).trim();
+    check(/for \d+ of \d+ daily reservoirs$/.test(sinceLowNote),
+      `${label}: the gain since the low does not say how many daily reservoirs it holds `
+      + `("${sinceLowNote}")`);
     const overviewExport = tab.locator("#download-overview-csv");
     check(await overviewExport.count() === 1,
       `${label}: filtered overview has no CSV file control`);
@@ -6011,6 +6016,13 @@ for (const failure of [
         `Reservoir page (${viewport.name}, ${label}): scrolls sideways `
         + `(${state.scroll} > ${state.viewport})`);
       if (label === "upstream") {
+        /* ADR-134: the row is there exactly when the payload has a figure. */
+        const powell = payload.reservoirs.find((row) => row.name === "Lake Powell");
+        const sinceLow = /Since the 4-month low\s+(Up [\d,]+ acre-feet since its low on |At its lowest in 4 months)/
+          .test(state.text);
+        check(sinceLow === (typeof powell?.change_since_low_af === "number"),
+          `Reservoir page (${viewport.name}): Lake Powell's gain since the low is `
+          + `${sinceLow ? "shown without a published figure" : "missing"}`);
         await tab.waitForSelector("#reservoir-main .upstream-group, #reservoir-main .reservoir-note",
           { timeout: 30000 }).catch(() => {});
         const upstream = await tab.evaluate(() => ({

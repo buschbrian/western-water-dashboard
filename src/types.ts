@@ -156,6 +156,14 @@ export interface Reservoir {
   change_30d_elapsed_days?: NullableNumber;
   change_365d_reference_date?: string | null;
   change_365d_elapsed_days?: NullableNumber;
+  /**
+   * The reservoir's own lowest daily reading in the last 120 days, its date,
+   * and the storage gained since (ADR-134). Null for a month-end feed, a late
+   * record, or a window with a gap; optional for payloads written before them.
+   */
+  low_120d_af?: NullableNumber;
+  low_120d_date?: string | null;
+  change_since_low_af?: NullableNumber;
   seasonal_normal_af: NullableNumber;
   pct_of_seasonal_normal: NullableNumber;
   seasonal_sample_years: number;

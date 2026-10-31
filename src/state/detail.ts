@@ -124,6 +124,22 @@ export function formatChange(
 }
 
 /**
+ * Storage gained since the reservoir's own lowest reading in the last 120 days
+ * (ADR-134), or null where the payload publishes none: a monthly feed, a late
+ * record, a gap in the window, or a payload written before the field.
+ */
+export function describeSinceLow(
+  reservoir: Pick<Reservoir, "change_since_low_af" | "low_120d_date">
+): string | null {
+  const gain = reservoir.change_since_low_af;
+  if (gain === null || gain === undefined || !Number.isFinite(gain)) return null;
+  const rounded = Math.round(gain);
+  if (rounded <= 0) return "At its lowest in 4 months";
+  const since = reservoir.low_120d_date ? ` since its low on ${formatDate(reservoir.low_120d_date)}` : "";
+  return `Up ${rounded.toLocaleString("en-US")} acre-feet${since}`;
+}
+
+/**
  * The interval a change actually covers, where it is not the one in its name.
  *
  * "30 days" is the date the pipeline asks for, not the one it gets. The
@@ -331,6 +347,11 @@ export function monthlyDetail(
   });
 }
 
+function sinceLowRows(reservoir: Reservoir): DetailRow[] {
+  const value = describeSinceLow(reservoir);
+  return value === null ? [] : [{ label: "Since the 4-month low", value }];
+}
+
 export function describeReservoir(
   reservoir: Reservoir,
   color: string,
@@ -388,6 +409,7 @@ export function describeReservoir(
           reservoir.change_365d_reference_date),
         negative: (reservoir.change_365d_af ?? 0) < 0
       },
+      ...sinceLowRows(reservoir),
       {
         label: "Highest value this year",
         value: reservoir.peak_this_year_af === null

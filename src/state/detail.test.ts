@@ -3,8 +3,8 @@ import { readPayload } from "../data/payload-fixture";
 import { storageColor } from "../viz/classes";
 import { headlinePercent } from "../viz/symbols";
 import {
-  capacityBasisName, changeLabel, describeReservoir, lateMessage, monthlyDetail,
-  providerName, rankWithYears
+  capacityBasisName, changeLabel, describeReservoir, describeSinceLow, lateMessage,
+  monthlyDetail, providerName, rankWithYears
 } from "./detail";
 import { createSelectionStore, findReservoir, normalizeSelectionValue } from "./selection";
 import { loadLegacyApi } from "../data/legacy-harness";
@@ -562,5 +562,36 @@ describe("how a change states its own interval", () => {
         expect(row.value, view.name).toMatch(/since /);
       }
     }
+  });
+});
+
+/* ADR-134. The text for a gain, for a reservoir at its low today, and no row
+ * at all where the payload publishes none. */
+describe("storage gained since the low", () => {
+  const base = reservoirs.find((row) => row.data_frequency === "daily")!;
+  const rowOf = (over: Partial<Reservoir>) =>
+    describeReservoir({ ...base, ...over }, "#000").rows
+      .find((row) => row.label === "Since the 4-month low");
+
+  it("says how much and since when", () => {
+    expect(describeSinceLow({ change_since_low_af: 809_000, low_120d_date: "2026-09-14" }))
+      .toBe("Up 809,000 acre-feet since its low on Sep 14, 2026");
+    expect(rowOf({ change_since_low_af: 1250.6, low_120d_date: "2026-09-14" })?.value)
+      .toBe("Up 1,251 acre-feet since its low on Sep 14, 2026");
+  });
+
+  it("says when today is the low", () => {
+    expect(describeSinceLow({ change_since_low_af: 0, low_120d_date: "2026-10-26" }))
+      .toBe("At its lowest in 4 months");
+  });
+
+  it("shows no row without a figure", () => {
+    expect(describeSinceLow({ change_since_low_af: null, low_120d_date: null })).toBeNull();
+    expect(rowOf({ change_since_low_af: null, low_120d_af: null, low_120d_date: null }))
+      .toBeUndefined();
+    const older = { ...base };
+    delete older.change_since_low_af;
+    expect(describeReservoir(older, "#000").rows
+      .some((row) => row.label === "Since the 4-month low")).toBe(false);
   });
 });

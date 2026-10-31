@@ -404,6 +404,29 @@ tolerance of ten days for a daily feed and forty-five for a month-end one, so
 `change_*_elapsed_days` publish the interval, and the details panel prints the
 measured one whenever it differs from the name.
 
+## Storage gained since the low
+
+**A gain is measured from the reservoir's own low, not from a date someone
+picked** (ADR-134). `low_120d_af` is the lowest daily reading in the 120 days
+ending on the reading date, `low_120d_date` is its date, and
+`change_since_low_af` is the newest reading minus it. In autumn the window
+reaches the late-summer low, so the figure is the storm gain; in June it
+reaches the winter low, so it is the runoff gain. A tie takes the latest date.
+
+All three are null for a month-end feed (it cannot place a low inside a
+month), for a late record (`is_stale`, including one carried forward), and for
+a window holding fewer than 100 readings (the gap is where the low may be).
+Readings excluded under ADR-116 are already gone from the series.
+
+**A total counts its coverage.** The place summary sums only the daily
+reservoirs that publish a figure and always says "N of M daily reservoirs".
+A missing figure is not a gain of zero. The figure is in the details panel,
+the storage-charts place summary and the map hover, and not in the weekly
+summary.
+
+It invalidates no normal, so `METHOD_VERSION` does not move; the fields are
+optional and additive, so `schema_version` does not move either.
+
 ## Dates and calendars
 
 **A monthly stamp names the month; the water was measured at its end.**

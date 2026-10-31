@@ -130,6 +130,7 @@ ADR-041.**
   [ADR-122](ADR-122-measure-drought-from-the-monitors-full-resolution-archive.md),
   [ADR-125](ADR-125-measure-precipitation-at-the-snow-stations-against-a-fixed-history.md),
   [ADR-129](ADR-129-total-the-latest-storm-from-the-accumulated-precipitation.md),
+  [ADR-134](ADR-134-state-storage-gained-since-each-reservoirs-recent-low.md),
   [ADR-135](ADR-135-publish-a-reservoir-level-only-above-a-reviewed-datum.md),
   [ADR-142](ADR-142-show-the-weeks-change-in-mountain-soil-moisture.md)
 - Current architecture: [`docs/architecture/hydrology-methods.md`](../architecture/hydrology-methods.md)
@@ -329,6 +330,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-131](ADR-131-map-recent-precipitation-by-drainage-area-in-the-snow-colours.md) | Map recent precipitation by drainage area, in the snow map's colours | Accepted; area mean of stations with a total, held to the snow floor; one set of breaks for 1, 3 and 7 days; the NWS scale was refused |
 | [ADR-132](ADR-132-draw-storage-charts-when-they-near-the-screen.md) | Draw the storage charts when they near the screen | Accepted; five chart states in readiness; charts are rebuilt, not reused |
 | [ADR-133](ADR-133-serve-atkinson-hyperlegible-next-from-this-site.md) | Serve Atkinson Hyperlegible Next from this site | Accepted; one 34 KB Latin variable file, `font-display: swap`, no preload, one `--app-font` token |
+| [ADR-134](ADR-134-state-storage-gained-since-each-reservoirs-recent-low.md) | State storage gained since each reservoir's recent low | Accepted; each daily reservoir's own lowest reading in 120 days, ties to the latest date; null for monthly, late or gappy records; totals say "N of M daily reservoirs"; no version moves |
 | [ADR-135](ADR-135-publish-a-reservoir-level-only-above-a-reviewed-datum.md) | Publish a reservoir level only above a reviewed datum | Accepted; the record ADR-117 asks for; Lake Powell above NGVD 1929, Lake Mead above Reclamation's Hoover Dam powerhouse datum; optional `elevation` block with no schema bump, history in `elevation_history.json` |
 | [ADR-136](ADR-136-publish-daily-flow-at-four-rivers-toward-lake-powell.md) | Publish daily flow at four rivers toward Lake Powell | Accepted; four shaped Utah gauges as daily mean flow with no normal, rank or total; tiers directed 2026-10-27 pending formal ruling; own roster, payload and page |
 | [ADR-137](ADR-137-treat-a-published-reservoir-or-ten-percent-storage-as-shaped-and-propose-gauge-names.md) | Treat a published reservoir or ten percent storage as shaped, and propose gauge names | Accepted; a published reservoir in the basin shapes the gauge, storage under 10% of a year's flow with none is natural; adds proposed display names to the worksheet; renames nothing published |

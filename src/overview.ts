@@ -64,6 +64,7 @@ import {
   reservoirInState,
   spreadBoxes,
   countyOptions,
+  describeSinceLowTotal,
   stateOptions,
   watershedOptions,
   watershedRecords,
@@ -218,6 +219,7 @@ function updateKpis(
     `${value >= 0 ? "+" : ""}${formatAcreFeet(value)}`;
   const years = periodLabel(period.choices, rollup.normalBaseline);
   const { coverage } = rollup;
+  const sinceLow = describeSinceLowTotal(rollup.sinceLow);
   const values: Record<string, string> = {
     percent: formatPercent(rollup.percentFull),
     volume: `${formatAcreFeet(rollup.storageAf)} of ${formatAcreFeet(rollup.capacityAf)} acre-feet`,
@@ -238,6 +240,8 @@ function updateKpis(
         + `of ${rollup.count} reservoirs`,
     year: signed(rollup.change365dAf),
     change: `Acre-feet. 30 days: ${signed(rollup.change30dAf)}`,
+    "since-low": sinceLow.value,
+    "since-low-note": sinceLow.note,
     late: String(rollup.stale),
     /* The readings are not all from the publication date, and until now the
      * tile said only "Observation dates vary by reservoir" -- true, and no
@@ -365,6 +369,7 @@ async function renderOverview(
       <article class="overview-kpi"><span>Reservoirs in view</span><strong data-kpi="count">—</strong><small data-kpi="count-note">—</small></article>
       <article class="overview-kpi"><span>Compared with normal</span><strong data-kpi="normal">—</strong><small data-kpi="normal-note">—</small></article>
       <article class="overview-kpi"><span>Change over the year</span><strong data-kpi="year">—</strong><small data-kpi="change">Acre-feet. 30 days: —</small></article>
+      <article class="overview-kpi"><span>Gained since the low</span><strong data-kpi="since-low">—</strong><small data-kpi="since-low-note">—</small></article>
       <article class="overview-kpi"><span>Late or unavailable</span><strong data-kpi="late">—</strong><small>Evaluated against each source update schedule</small></article>
       <article class="overview-kpi"><span>Data published</span><strong>${formatDate(generatedAt.slice(0, 10))}</strong><small data-kpi="observed">—</small></article>
     </section>

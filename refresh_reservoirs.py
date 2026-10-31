@@ -128,7 +128,7 @@ from pipeline.numbers import (  # noqa: F401
     _pct, _round
 )
 from pipeline.history import (  # noqa: F401
-    monthly_history, value_asof
+    monthly_history, recent_low, value_asof
 )
 from pipeline.freshness import (  # noqa: F401
     carry_forward, carry_unrefreshed, carry_withdrawals, partition_by_age,
@@ -230,6 +230,14 @@ def summarize(name: str, item_id: int | None, lat: float, lon: float,
         changes[f"change_{label}_elapsed_days"] = (
             None if past_date is None else int((last_date - past_date).days))
 
+    # Gained since the low (ADR-134): measured from the reservoir's own lowest
+    # daily reading in the window, never from a date someone picked. A
+    # month-end feed cannot place a low inside a month, and a late one would
+    # measure from a window that has moved on, so both publish none.
+    low = (None if data_frequency == "monthly" or days_stale > stale_after_days
+           else recent_low(series, last_date))
+    low_af, low_date = low if low else (None, None)
+
     capacity = capacity or {}
     # What full meant on the day this reading was taken (ADR-111). For every
     # reservoir published so far that is the reservoir's one full level; where
@@ -321,6 +329,9 @@ def summarize(name: str, item_id: int | None, lat: float, lon: float,
 
         # --- trend ---
         **changes,
+        "low_120d_af": _round(low_af),
+        "low_120d_date": None if low_date is None else low_date.date().isoformat(),
+        "change_since_low_af": None if low_af is None else _round(current - low_af),
         "peak_this_year_af": _round(peak_af),
         "peak_this_year_date": peak_date,
         "pct_of_peak_this_year": _pct(current, peak_af),

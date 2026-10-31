@@ -38,6 +38,11 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   store and release water, so no flow is compared with normal, and the
   gauges are never added together. Published as `/api/rivers.json` and as
   a CSV download. Reached from the methods and data pages.
+- **Storage gained since the low** (ADR-134): each daily reservoir's gain
+  since its own lowest reading in the last 120 days, with the date of that
+  low, in the reservoir details and on the storage map hover. The storage
+  charts page totals it for the place and says how many of its daily
+  reservoirs the total holds. Monthly reservoirs show none.
 - **Story views** (ADR-128): `story.html` shows one figure alone, for a
   story to embed: the precipitation card or its "Where this year stands"
   strip for a state or drainage area, or the water stored above a

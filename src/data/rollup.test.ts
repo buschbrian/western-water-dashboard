@@ -4,7 +4,7 @@ import { reservoirSymbol, sizeDomain } from "../viz/symbols";
 import {
   asScoped, basisLabel, isLakeMead, isLakePowell, percentFull, isLate,
   RECORD_MAX_BASIS, reservoirInScope, rollupOfScoped, scopeReservoirs,
-  sizeBasis, statewideRollup
+  sinceLowTotal, sizeBasis, statewideRollup
 } from "./rollup";
 import type { Reservoir } from "../types";
 import { validateReservoirPayload } from "./validate";
@@ -508,5 +508,31 @@ describe("an already-scoped set", () => {
     const group = scoped.filter((reservoir) => reservoir.huc6 === scoped[0]?.huc6);
 
     expect(rollupOfScoped(asScoped(group)).count).toBe(group.length);
+  });
+});
+
+/* ADR-134: a reservoir with no gain since its low is a gap in the total, not
+ * a gain of zero, so the total counts what it holds. */
+describe("storage gained since the low", () => {
+  const daily = (name: string, gain: number | null | undefined): Reservoir => {
+    const row = reservoir({ name, data_frequency: "daily" });
+    if (gain === undefined) delete row.change_since_low_af;
+    else row.change_since_low_af = gain;
+    return row;
+  };
+
+  it("sums only the daily reservoirs that publish a figure, and counts them", () => {
+    const rows = [
+      daily("A", 1000), daily("B", 0), daily("C", null), daily("D", undefined),
+      reservoir({ name: "E", data_frequency: "monthly", change_since_low_af: null })
+    ];
+    expect(sinceLowTotal(rows)).toEqual({ af: 1000, measured: 2, daily: 4 });
+    expect(rollupOfScoped(asScoped(rows)).sinceLow).toEqual(
+      { af: 1000, measured: 2, daily: 4 });
+  });
+
+  it("reports no coverage rather than zero when nothing is daily", () => {
+    const rows = [reservoir({ name: "M", data_frequency: "monthly", change_since_low_af: null })];
+    expect(sinceLowTotal(rows)).toEqual({ af: 0, measured: 0, daily: 0 });
   });
 });

@@ -56,6 +56,13 @@ export function storageReservoirLines(reservoir: Reservoir): string[] {
     const sign = reservoir.change_30d_pct > 0 ? "+" : "";
     lines.push(`${sign}${formatPercent(reservoir.change_30d_pct)} over 30 days`);
   }
+  /* Daily reservoirs only: the payload publishes no low for a monthly feed. */
+  const gain = reservoir.change_since_low_af;
+  if (typeof gain === "number" && Number.isFinite(gain)) {
+    lines.push(Math.round(gain) > 0
+      ? `Up ${formatAcreFeet(gain)} acre-feet since its 4-month low`
+      : "At its lowest in 4 months");
+  }
   /* A dashed ring says the reading is late without saying how late, and
    * "how late" is the whole question a late reading raises. */
   lines.push(`Reading ${formatDate(reservoir.as_of)}`);
