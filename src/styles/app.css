@@ -130,6 +130,16 @@ arcgis-map > [slot="bottom-right"] {
   translate: calc(-1 * var(--map-right-inset)) 0;
 }
 
+/* The scale bar's own scrim is 50% transparent, so its labels took their
+ * contrast from the tiles. White dark-theme labels over the light Oceans
+ * tiles measured 3.3-3.8:1 in a real browser (2026-10-31). An opaque card
+ * surface behind the bar holds both themes' label colours above 4.5:1. */
+arcgis-scale-bar {
+  padding: 2px 4px;
+  background: var(--app-surface-raised);
+  border-radius: 2px;
+}
+
 .map-state {
   position: absolute;
   z-index: 2;

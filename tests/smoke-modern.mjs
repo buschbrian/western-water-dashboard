@@ -373,7 +373,7 @@ const AXE_SOURCE = await readFile(
 const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
 
 /*
- * The accepted exceptions, each kept as narrow as a selector can make it.
+ * The one accepted exception, kept as narrow as a selector can make it.
  *
  * `arcgis-chart` renders an inner `div` carrying an `aria-label` and no role,
  * which `aria-prohibited-attr` correctly reports: the label is inert, because
@@ -388,25 +388,8 @@ const AXE_TAGS = ["wcag2a", "wcag2aa", "wcag21a", "wcag21aa"];
  * next SDK upgrade; if Esri adds the role, this exception starts matching
  * nothing and should be deleted.
  */
-/*
- * The second, also Esri's: `color-contrast` on the `arcgis-scale-bar` labels.
- *
- * In the dark theme the scale bar draws white labels over its own 50% dark
- * scrim, and the map canvas is behind that. axe cannot read canvas pixels, so
- * it composites the scrim over white and reports 2.99:1 -- the contrast
- * against a white backdrop, not against what is drawn. The light theme
- * passes. Measured 2026-10-31 on drought.html, whose dark theme leads with
- * the dark gray canvas. It surfaced only when an axe pass happened to run
- * after the map had drawn; the "Find a place" check now always does.
- *
- * Not proof the label is fine everywhere: the context maps lead with Oceans
- * (light tiles) in both themes, and there a white label could be close to
- * that 2.99. Headless Chromium draws the canvas blank (E18), so check that in
- * a real browser. If Esri gives the label its own backdrop, delete this.
- */
 const AXE_EXCEPTIONS = [
-  { rule: "aria-prohibited-attr", target: "-arcgis-chart" },
-  { rule: "color-contrast", target: "arcgis-scale-bar" }
+  { rule: "aria-prohibited-attr", target: "-arcgis-chart" }
 ];
 
 function axeViolations(violations) {
