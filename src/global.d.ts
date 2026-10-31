@@ -390,6 +390,11 @@ interface Window {
    * explains itself). */
   __reservoirReady?: {
     status: "found" | "withdrawn" | "held" | "unknown" | "none";
+    /** The surface level (ADR-135): "drawn" when the card and the water-year
+     * chart are on the page, "card" when the history could not be read and
+     * only the card is, "none" for a reservoir with no reviewed level. Absent
+     * on every state but "found". */
+    elevation?: "drawn" | "card" | "none";
   };
   /** The terminal-lakes page settled (ADR-119). `lakes` is what the payload
    * published and `rendered` what the page drew, so a page that loaded its

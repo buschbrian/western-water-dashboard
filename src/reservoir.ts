@@ -24,11 +24,15 @@ import { hydrologicPath } from "./data/hydrologic-path";
 import {
   reservoirCsvFilename, reservoirHistoryCsv
 } from "./data/export";
-import { loadReservoirs, loadUpstreamIndex } from "./data/load";
+import { loadElevationHistory, loadReservoirs, loadUpstreamIndex } from "./data/load";
 import {
   baselineRows, provenanceRows, requestedName, resolveReservoirPage
 } from "./reservoir-model";
 import type { ReservoirPageState } from "./reservoir-model";
+import {
+  describeElevation, elevationChart, notDrawnSentence, referenceLevelText
+} from "./reservoir-elevation-model";
+import type { ElevationChart, ElevationView } from "./reservoir-elevation-model";
 import type { ReservoirPayload } from "./types";
 import { renderTrendChart, renderTrendTable } from "./viz/trend";
 import { formatAcreFeet, formatDate } from "./viz/format";
@@ -45,6 +49,8 @@ import { upstreamSection } from "./ui/upstream-section";
 import { setupPlaceChooser } from "./ui/opening-splash";
 import { setupPlaceSearch } from "./ui/place-search";
 import { createLocationFacts } from "./ui/location-facts";
+import { measurementCard } from "./ui/measurement-card";
+import { renderElevationYears } from "./viz/elevation-years";
 import { wireTheme } from "./ui/theme";
 import { coordinateText } from "./viz/coordinates";
 import "./styles/reservoir.css";
@@ -64,9 +70,10 @@ if (!found) throw new Error("Missing #reservoir-main");
  * checker does not carry a narrowing into another function body. */
 const main: HTMLElement = found;
 
-function finish(state: ReservoirPageState["status"]): void {
+function finish(state: ReservoirPageState["status"],
+  elevation?: "drawn" | "card" | "none"): void {
   main.setAttribute("aria-busy", "false");
-  window.__reservoirReady = { status: state };
+  window.__reservoirReady = elevation ? { status: state, elevation } : { status: state };
 }
 
 /** A paragraph with the class every other state message on this page wears. */
@@ -117,6 +124,146 @@ function sectionHeading(text: string): HTMLHeadingElement {
   heading.className = "reservoir-subhead";
   heading.textContent = text;
   return heading;
+}
+
+/** The year key under the elevation chart: which line is which year. */
+function yearKey(chart: ElevationChart): HTMLUListElement {
+  const list = document.createElement("ul");
+  list.className = "elevation-key";
+  const tiers: [string, string][] = [];
+  const current = chart.lines.find((line) => line.tier === "current");
+  const previous = chart.lines.find((line) => line.tier === "previous");
+  const earlier = chart.lines.filter((line) => line.tier === "earlier");
+  if (current) tiers.push(["current", `${current.label} water year`]);
+  if (previous) tiers.push(["previous", `${previous.label} water year`]);
+  if (earlier.length) {
+    tiers.push(["earlier", earlier.length === 1 ? `${earlier[0]!.label} water year`
+      : `${earlier[earlier.length - 1]!.label} to ${earlier[0]!.label} water years`]);
+  }
+  tiers.push(["reference", "Reference level"]);
+  for (const [tier, text] of tiers) {
+    const item = document.createElement("li");
+    const swatch = document.createElement("span");
+    swatch.className = `elevation-swatch elevation-swatch-${tier}`;
+    swatch.setAttribute("aria-hidden", "true");
+    item.append(swatch, document.createTextNode(text));
+    list.append(item);
+  }
+  return list;
+}
+
+/** Each water year's highest and lowest level, for a reader who cannot see the lines. */
+function yearTable(chart: ElevationChart): HTMLElement {
+  const wrapper = document.createElement("details");
+  wrapper.className = "trend-details";
+  const summary = document.createElement("summary");
+  summary.textContent = "Values for each water year";
+  const scroller = document.createElement("div");
+  scroller.className = "trend-table-scroll";
+  const table = document.createElement("table");
+  table.className = "trend-table";
+  const headRow = document.createElement("tr");
+  for (const label of ["Water year", "Highest level", "Lowest level", "Last reading"]) {
+    const cell = document.createElement("th");
+    cell.scope = "col";
+    cell.textContent = label;
+    headRow.append(cell);
+  }
+  const head = document.createElement("thead");
+  head.append(headRow);
+  const body = document.createElement("tbody");
+  const reading = (value: { feet: number; date: string } | null): string => value
+    ? `${value.feet.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })} `
+      + `feet on ${formatDate(value.date)}` : "—";
+  for (const line of chart.lines) {
+    const row = document.createElement("tr");
+    const name = document.createElement("th");
+    name.scope = "row";
+    name.textContent = line.label;
+    row.append(name);
+    for (const value of [line.highest, line.lowest, line.latest]) {
+      const cell = document.createElement("td");
+      cell.textContent = reading(value);
+      row.append(cell);
+    }
+    body.append(row);
+  }
+  table.append(head, body);
+  scroller.append(table);
+  wrapper.append(summary, scroller);
+  return wrapper;
+}
+
+/**
+ * The surface level: the card now, and the water-year chart once the daily
+ * history arrives. A history that cannot be read costs the chart and says
+ * so; the card is from the reservoir payload and stays.
+ */
+function elevationSection(view: ElevationView): { section: HTMLElement; chartHost: HTMLElement } {
+  const section = document.createElement("section");
+  section.className = "reservoir-elevation";
+  const cards = document.createElement("div");
+  cards.className = "measurement-cards";
+  cards.append(measurementCard(view.card, "h2", "reservoir-subhead"));
+  section.append(cards);
+  if (view.late) section.append(note(view.late, "detail-late"));
+  const chartHost = document.createElement("div");
+  chartHost.className = "elevation-chart";
+  chartHost.setAttribute("aria-busy", "true");
+  section.append(chartHost);
+  const heading = document.createElement("h3");
+  heading.className = "reservoir-minorhead";
+  heading.textContent = view.note.heading;
+  section.append(heading, ...view.note.paragraphs.map((text) => note(text)));
+  const links = document.createElement("ul");
+  links.className = "elevation-sources";
+  for (const link of view.note.links) {
+    const item = document.createElement("li");
+    const anchor = document.createElement("a");
+    anchor.href = link.href;
+    anchor.textContent = link.text;
+    item.append(anchor);
+    links.append(item);
+  }
+  section.append(links);
+  return { section, chartHost };
+}
+
+function fillElevationChart(host: HTMLElement, chart: ElevationChart | null): boolean {
+  host.removeAttribute("aria-busy");
+  if (!chart) {
+    host.replaceChildren(note("The daily levels could not be loaded just now.", "chart-empty"));
+    return false;
+  }
+  const heading = document.createElement("h3");
+  heading.className = "reservoir-minorhead";
+  heading.textContent = chart.title;
+  const svgHost = document.createElement("div");
+  svgHost.className = "elevation-chart-host";
+  /* A stable target for a later screenshot of this chart alone, read with
+   * `window.__reservoirReady.elevation === "drawn"`. */
+  svgHost.id = "reservoir-elevation-chart";
+  const parts: HTMLElement[] = [heading, svgHost];
+  host.replaceChildren(...parts);
+  renderElevationYears(svgHost, chart);
+  host.append(yearKey(chart));
+  if (chart.drawn.length) {
+    const levels = document.createElement("ul");
+    levels.className = "elevation-levels";
+    for (const level of chart.drawn) {
+      const item = document.createElement("li");
+      const anchor = document.createElement("a");
+      anchor.href = level.url;
+      anchor.textContent = referenceLevelText(level);
+      item.append(anchor);
+      levels.append(item);
+    }
+    host.append(levels);
+  }
+  const outside = notDrawnSentence(chart.notDrawn);
+  if (outside) host.append(note(outside));
+  host.append(note(chart.explanation), yearTable(chart));
+  return true;
 }
 
 /**
@@ -200,6 +347,11 @@ async function renderFound(payload: ReservoirPayload,
     if (chart) children.push(chartHost);
     if (table) children.push(table);
   }
+
+  // The reviewed surface level (ADR-135), only where the roster gave one.
+  const elevationView = describeElevation(reservoir, payload.generated_at);
+  const elevationParts = elevationView ? elevationSection(elevationView) : null;
+  if (elevationParts) children.push(elevationParts.section);
 
   // Both comparisons, each saying how many years stand behind it. A reader
   // who wants only one is on the map page; here they can see what choosing
@@ -306,8 +458,23 @@ async function renderFound(payload: ReservoirPayload,
   } catch {
     console.error("The upstream index could not be read:");
   } })();
-  await Promise.all([imageryReady, upstreamReady]);
-  finish("found");
+  const elevationReady = (async (): Promise<"drawn" | "card" | "none"> => {
+    if (!elevationParts) return "none";
+    try {
+      const history = await loadElevationHistory();
+      const entry = history.reservoirs.find(
+        (candidate) => candidate.source_station_id === reservoir.source_station_id);
+      const drawn = fillElevationChart(elevationParts.chartHost,
+        entry ? elevationChart(reservoir, entry) : null);
+      return drawn ? "drawn" : "card";
+    } catch (error) {
+      console.warn("The elevation history could not be read; the chart is omitted:", error);
+      fillElevationChart(elevationParts.chartHost, null);
+      return "card";
+    }
+  })();
+  const [, , elevationState] = await Promise.all([imageryReady, upstreamReady, elevationReady]);
+  finish("found", elevationState);
 }
 
 /**

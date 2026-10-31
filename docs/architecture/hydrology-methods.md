@@ -152,6 +152,49 @@ statement that every published water is a reservoir still holds for readers.
 Great Salt Lake requires an arm-aware representation; one point and one total
 would collapse separately measured waters.
 
+## Reservoir surface level
+
+A reservoir publishes its surface level only from a reviewed entry in
+`admitted_reservoir_elevations.json` that names the vertical datum with
+evidence (ADR-135). Lake Powell is the first: Reclamation's daily level
+(RISE item 508) is in feet above NGVD 1929, established by measurement because
+Reclamation names no datum -- over 91 days to 2026-10-26 it read a median
+0.14 ft from the Geological Survey's NGVD 1929 series at 09379900 (parameter
+62614) and 2.76 ft below its NAVD 1988 series (62615). The two Survey series
+differ by a median 2.9 ft (range 2.9 to 3.0), measured 2026-10-27, and that
+offset is published with its date.
+
+**Never assume a provider's datum.** RISE labels no datum on its elevation
+items and is not uniformly NGVD 1929: Taylor Park (item 796) matches the
+Survey's NAVD 1988 series. Every entry carries its own evidence. An
+operator's own project datum (Hoover Dam's powerhouse datum; Reclamation's
+project datums at Davis and Parker) is admitted as `project`, by its name and
+with its stated relation to a national datum -- the feet to add, the
+operator's words and a source -- and is never called by the national datum.
+Lake Mead is the first: Reclamation's 2001 sedimentation survey ties its
+elevations to the Hoover Dam powerhouse datum ("Add 0.55 feet to convert to
+NGVD29"). That RISE item 6123 is on it is an inference from that report, not a
+measurement, because no second series exists at Mead. Its NAVD 1988
+difference, about 2.9 ft, is calculated from two National Geodetic Survey
+benchmarks on the dam (NAVD 88 minus NGVD 29 = 2.35 ft) plus the 0.55 ft, and
+is published as `derived_offset`, never as a measured `datum_offset`.
+
+The level block is the terminal lake's level summary, built by the same
+function (`pipeline.measurement.summarize_measurement`): dated record
+readings, dated 7-, 30- and 365-day changes in feet, and the same-date history
+rank from the unchanged reservoir estimator. Its record starts at the
+roster's `record_starts`, the published end of first filling, with its
+source: Powell 1980-06-22 (Reclamation: "completed filling on June 22,
+1980"), Mead 1941-08-06 (Reclamation's 2001 survey: the first time the lake
+reached its spillway). Readings while a lake first fills describe the filling
+and are left out of the record readings and the rank; the daily history and
+the chart keep them. A start with no published source is refused. No percentage of a level is published,
+and a reference level is a named elevation with its authority, never a
+denominator. A daily level from Reclamation is one end-of-day reading; the
+Survey publishes every fifteen minutes, so the two also differ while the
+water moves quickly, by up to about a foot when Powell rose 1 to 1.8 ft a day
+in October 2026.
+
 **Never subtract two shares with different denominators** (ADR-046) — see the
 drought section below for the case this exists for.
 

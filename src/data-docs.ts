@@ -5,6 +5,7 @@ import "@esri/calcite-components/components/calcite-navigation";
 
 import {
   DROUGHT_GROUPS,
+  ELEVATION_HISTORY_GROUPS,
   LAKE_GROUPS,
   REFERENCE_GROUPS,
   RESERVOIR_GROUPS,
@@ -44,6 +45,7 @@ root.innerHTML = `
       <ul>
         <li><a href="#files">Published files</a></li>
         <li><a href="#reservoir-fields">Reservoir fields</a></li>
+        <li><a href="#elevation-fields">Reservoir level history fields</a></li>
         <li><a href="#lake-fields">Terminal lake fields</a></li>
         <li><a href="#snow-fields">Snow fields</a></li>
         <li><a href="#soil-fields">Soil moisture fields</a></li>
@@ -64,6 +66,18 @@ root.innerHTML = `
           morning. If one provider request fails, the last good reservoir record stays in
           the file and is marked as late data. A broadly failed run does not replace the
           last published file. Shown on the <a href="./">storage map</a>.</p>
+      </article>
+      <article class="api-file">
+        <h3>Reservoir level history</h3>
+        <p><a href="./api/elevation_history.json"><code>/api/elevation_history.json</code></a></p>
+        <p>The daily surface level, in feet, of each reservoir whose level datum has been
+          reviewed, from the Bureau of Reclamation's first reading. Each entry names its
+          datum. The reservoir file carries the summary of the same level in each
+          record's <code>elevation</code> block; this file carries every day. Structure
+          version 1. Refreshed each morning with the reservoirs. If a level request fails,
+          the last good entry stays. Shown on the
+          <a href="./reservoir.html?name=Lake%20Powell">Lake Powell</a> and
+          <a href="./reservoir.html?name=Lake%20Mead">Lake Mead</a> pages.</p>
       </article>
       <article class="api-file">
         <h3>Terminal lakes</h3>
@@ -153,6 +167,10 @@ root.innerHTML = `
     <section class="methods-section api-fields" id="reservoir-fields"
       aria-labelledby="reservoir-fields-heading">
       <h2 id="reservoir-fields-heading">Reservoir fields</h2>
+    </section>
+    <section class="methods-section api-fields" id="elevation-fields"
+      aria-labelledby="elevation-fields-heading">
+      <h2 id="elevation-fields-heading">Reservoir level history fields</h2>
     </section>
     <section class="methods-section api-fields" id="lake-fields"
       aria-labelledby="lake-fields-heading">
@@ -262,6 +280,7 @@ function renderGroups(hostId: string, groups: readonly ApiFieldGroup[]): void {
 }
 
 renderGroups("reservoir-fields", RESERVOIR_GROUPS);
+renderGroups("elevation-fields", ELEVATION_HISTORY_GROUPS);
 renderGroups("lake-fields", LAKE_GROUPS);
 renderGroups("snow-fields", SNOW_GROUPS);
 renderGroups("soil-fields", SOIL_GROUPS);
@@ -273,6 +292,7 @@ setupPlaceSearch("data");
 
 window.__dataDocsReady = {
   files: document.querySelectorAll(".api-file").length,
-  groups: RESERVOIR_GROUPS.length + LAKE_GROUPS.length + SNOW_GROUPS.length
-    + SOIL_GROUPS.length + DROUGHT_GROUPS.length + REFERENCE_GROUPS.length
+  groups: RESERVOIR_GROUPS.length + ELEVATION_HISTORY_GROUPS.length
+    + LAKE_GROUPS.length + SNOW_GROUPS.length + SOIL_GROUPS.length
+    + DROUGHT_GROUPS.length + REFERENCE_GROUPS.length
 };

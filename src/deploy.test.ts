@@ -46,13 +46,14 @@ const COMMITTED_BUT_UNPUBLISHED = [
  * readers need; copying either roster would publish a second application
  * contract beside it. */
 const SOURCE_ONLY_ROSTERS = [
-  "admitted_reservoirs.json", "admitted_rise_reservoirs.json"
+  "admitted_reservoirs.json", "admitted_rise_reservoirs.json",
+  "admitted_reservoir_elevations.json"
 ];
 
 const RUNTIME_DATA = [
   "reservoirs.json", "lakes.json", "snow_sites.json", "snowpack.json",
   "reference.json", "capacities.json", "precipitation.json", "precipitation_history.json",
-  "soil_moisture.json"
+  "soil_moisture.json", "elevation_history.json"
 ];
 
 describe("a data-only commit deploys on its own", () => {
@@ -301,6 +302,8 @@ describe("a data-only commit deploys on its own", () => {
       // The terminal lakes (ADR-119): their page and their payload, at the
       // root, under data/ and as an API alias, like the reservoirs'.
       "lakes.html", "lakes.json", "data/lakes.json", "api/lakes.json",
+      // The reviewed reservoir levels (ADR-135), like the lakes'.
+      "elevation_history.json", "data/elevation_history.json", "api/elevation_history.json",
       // The story views (ADR-128): a public URL a published story embeds.
       "story.html"]) {
       expect(workflow, `the deploy must verify dist/${path}`).toContain(path);
@@ -314,7 +317,8 @@ describe("a data-only commit deploys on its own", () => {
     const config = await read("vite.config.ts");
     expect(config).toContain('resolve(outDir, "api")');
     expect(config).toContain('resolve(outDir, "api", file)');
-    for (const file of ["reservoirs.json", "lakes.json", "snowpack.json", "reference.json"]) {
+    for (const file of ["reservoirs.json", "lakes.json", "elevation_history.json",
+      "snowpack.json", "reference.json"]) {
       expect(config, `the API alias list must name ${file}`).toContain(`"${file}"`);
     }
     expect(config).toContain('data: resolve(root, "data.html")');

@@ -106,6 +106,10 @@ function unevenRows(cards) {
 }
 
 const payload = JSON.parse(await readFile(path.join(REPO_ROOT, "reservoirs.json"), "utf8"));
+/* The reviewed elevation roster (ADR-135): which reservoir pages must show a
+ * surface level. Read from the roster, never inferred from the payload. */
+const elevationRoster = JSON.parse(await readFile(
+  path.join(REPO_ROOT, "admitted_reservoir_elevations.json"), "utf8")).reservoirs;
 const snowPayload = JSON.parse(
   await readFile(path.join(REPO_ROOT, "snowpack.json"), "utf8"));
 const upstreamIndex = JSON.parse(
@@ -3231,6 +3235,9 @@ for (const viewport of VIEWPORTS) {
       `${label}: rendered ${state.groups} field groups, readiness reported ${state.ready?.groups}`);
     check(JSON.stringify(state.links) === JSON.stringify([
       "./api/reservoirs.json", "./",
+      // The reviewed reservoir levels, day by day (ADR-135).
+      "./api/elevation_history.json", "./reservoir.html?name=Lake%20Powell",
+      "./reservoir.html?name=Lake%20Mead",
       // The terminal lakes (ADR-118, ADR-119): their own file and page.
       "./api/lakes.json", "./lakes.html",
       "./api/snowpack.json", "./snow.html",
@@ -5920,7 +5927,11 @@ for (const failure of [
     ["none", "reservoir.html", null],
     /* ADR-127: Lake Powell's upstream set spans several basins in the
      * committed trace, so its page must group them, not list chips. */
-    ["upstream", "reservoir.html?name=Lake%20Powell", "Lake Powell"]
+    ["upstream", "reservoir.html?name=Lake%20Powell", "Lake Powell"],
+    /* ADR-135: Lake Mead's level is on Reclamation's own project datum;
+     * Lake Powell's (the upstream case above) is above NGVD 1929. Both draw a
+     * surface level; Flaming Gorge (found) does not. */
+    ["level", "reservoir.html?name=Lake%20Mead", "Lake Mead"]
   ];
   for (const viewport of VIEWPORTS) {
     const context = await browser.newContext({
@@ -5947,8 +5958,50 @@ for (const failure of [
         coordinateCopy: Boolean(document.querySelector(
           "#reservoir-main .coordinate-copy")),
         scroll: document.documentElement.scrollWidth,
-        viewport: document.documentElement.clientWidth
+        viewport: document.documentElement.clientWidth,
+        elevation: window.__reservoirReady?.elevation ?? null,
+        levelCards: document.querySelectorAll(
+          "#reservoir-main .reservoir-elevation .measurement-cards > section").length,
+        levelLines: document.querySelectorAll(
+          "#reservoir-main .elevation-years .elevation-line").length,
+        currentLines: document.querySelectorAll(
+          "#reservoir-main .elevation-years .elevation-line-current").length,
+        referenceLines: document.querySelectorAll(
+          "#reservoir-main .elevation-years .elevation-reference").length,
+        chartBusy: document.querySelector("#reservoir-main .elevation-chart")
+          ?.getAttribute("aria-busy") ?? null,
+        levelText: document.querySelector("#reservoir-main .reservoir-elevation")
+          ?.textContent ?? "",
+        chartTarget: Boolean(document.querySelector("#reservoir-elevation-chart svg"))
       }));
+      const caseName = cases.find(([caseLabel]) => caseLabel === label)?.[2];
+      const elevationExpected = Boolean(elevationRoster[payload.reservoirs.find(
+        (r) => r.name === caseName)?.source_station_id]);
+      if (["found", "upstream", "level"].includes(label)) {
+        if (elevationExpected) {
+          check(state.elevation === "drawn" && state.levelCards === 1
+            && state.levelLines >= 2 && state.currentLines >= 1 && state.referenceLines >= 1
+            && state.chartBusy === null,
+          `Reservoir page (${viewport.name}, ${label}): the surface level did not draw `
+            + JSON.stringify({ ready: state.elevation, cards: state.levelCards,
+              lines: state.levelLines, references: state.referenceLines, busy: state.chartBusy }));
+          check(state.text.includes("Surface level")
+            && state.text.includes("National Geodetic Vertical Datum of 1929")
+            && /Why (the Geological Survey|other sources) can show a different level/
+              .test(state.text)
+            && state.chartTarget,
+          `Reservoir page (${viewport.name}, ${label}): the card or the datum note is missing`);
+          check(!/\bNGVD29\b|\bNAVD88\b/.test(state.text),
+            `Reservoir page (${viewport.name}, ${label}): the datum reaches a reader as its initials`);
+          check(!state.levelText.includes("%"),
+            `Reservoir page (${viewport.name}, ${label}): a level was given a percentage`);
+        } else {
+          check(state.elevation === "none" && state.levelCards === 0 && state.levelLines === 0
+            && !/can show a different level/.test(state.text),
+          `Reservoir page (${viewport.name}, ${label}): a reservoir with no reviewed level `
+            + `shows one (${state.elevation}, ${state.levelCards} cards)`);
+        }
+      }
       check(state.ready !== null && state.busy === "false",
         `Reservoir page (${viewport.name}, ${label}): state "${state.ready}" `
         + `with aria-busy="${state.busy}" -- every exit clears it`);
@@ -6013,7 +6066,7 @@ for (const failure of [
     }
     await context.close();
   }
-  console.log("\n=== Reservoir page: five link states at "
+  console.log("\n=== Reservoir page: five link states and the surface level at "
     + `${VIEWPORTS.length} widths`);
 }
 

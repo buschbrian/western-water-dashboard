@@ -54,7 +54,8 @@ denominator. **Start with ADR-070, then ADR-072, then ADR-003.**
   [ADR-111](ADR-111-use-the-current-operating-limit-as-full.md),
   [ADR-113](ADR-113-withhold-a-reservoir-whose-full-levels-cannot-be-reconciled.md),
   [ADR-114](ADR-114-publish-a-water-type-and-an-operating-character.md),
-  [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md)
+  [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md),
+  [ADR-135](ADR-135-publish-a-reservoir-level-only-above-a-reviewed-datum.md)
 - Freshness and withdrawal:
   [ADR-056](ADR-056-withdraw-a-reading-that-belongs-to-another-season.md),
   [ADR-115](ADR-115-state-a-reviewed-hold-where-the-reservoir-used-to-be.md),
@@ -123,6 +124,7 @@ ADR-041.**
   [ADR-122](ADR-122-measure-drought-from-the-monitors-full-resolution-archive.md),
   [ADR-125](ADR-125-measure-precipitation-at-the-snow-stations-against-a-fixed-history.md),
   [ADR-129](ADR-129-total-the-latest-storm-from-the-accumulated-precipitation.md),
+  [ADR-135](ADR-135-publish-a-reservoir-level-only-above-a-reviewed-datum.md),
   [ADR-142](ADR-142-show-the-weeks-change-in-mountain-soil-moisture.md)
 - Current architecture: [`docs/architecture/hydrology-methods.md`](../architecture/hydrology-methods.md)
 
@@ -321,6 +323,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-131](ADR-131-map-recent-precipitation-by-drainage-area-in-the-snow-colours.md) | Map recent precipitation by drainage area, in the snow map's colours | Accepted; area mean of stations with a total, held to the snow floor; one set of breaks for 1, 3 and 7 days; the NWS scale was refused |
 | [ADR-132](ADR-132-draw-storage-charts-when-they-near-the-screen.md) | Draw the storage charts when they near the screen | Accepted; five chart states in readiness; charts are rebuilt, not reused |
 | [ADR-133](ADR-133-serve-atkinson-hyperlegible-next-from-this-site.md) | Serve Atkinson Hyperlegible Next from this site | Accepted; one 34 KB Latin variable file, `font-display: swap`, no preload, one `--app-font` token |
+| [ADR-135](ADR-135-publish-a-reservoir-level-only-above-a-reviewed-datum.md) | Publish a reservoir level only above a reviewed datum | Accepted; the record ADR-117 asks for; Lake Powell above NGVD 1929, Lake Mead above Reclamation's Hoover Dam powerhouse datum; optional `elevation` block with no schema bump, history in `elevation_history.json` |
 | [ADR-142](ADR-142-show-the-weeks-change-in-mountain-soil-moisture.md) | Show the week's change in mountain soil moisture | Accepted; seven-day change in points at the snow stations, mean of 2 (or 4), 8 and 20 in, frozen readings dropped, snow floor per area; a "Rain \| Soil moisture" switch on the precipitation map; percent of median is phase 2 |
 
 ## Relationship to the historical journal

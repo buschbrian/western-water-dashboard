@@ -1,7 +1,8 @@
 import type { TableRow } from "../state/table";
 import { capacityVersionOn } from "./capacity";
 import type { SiteRow } from "../snow-model";
-import type { MonthlyRecord, Reservoir, SourceKey } from "../types";
+import type { MonthlyRecord, Reservoir, ReservoirElevation, SourceKey } from "../types";
+import { datumName } from "../measurement-model";
 
 export type CsvValue = string | number | boolean | null | undefined;
 
@@ -234,6 +235,38 @@ const HISTORY_COLUMNS: readonly CsvColumn<HistoryRow>[] = [
   { header: "Days with readings", value: ({ month }) => month?.days }
 ];
 
+/* The datum by its name in full; a project datum with its relation stated. */
+function elevationDatumText(elevation: ReservoirElevation): string {
+  const relation = elevation.datum_relation;
+  if (elevation.vertical_datum === "project" && elevation.datum_name && relation) {
+    return `Bureau of Reclamation ${elevation.datum_name}; add ${relation.add_ft} feet for the `
+      + datumName(relation.datum);
+  }
+  return datumName(elevation.vertical_datum);
+}
+
+/* The reviewed surface level (ADR-135): added to the file only for a
+ * reservoir that publishes one, so every other reservoir's file keeps the
+ * columns it had. Feet, never a share of a level. */
+const ELEVATION_COLUMNS: readonly CsvColumn<HistoryRow>[] = [
+  { header: "Surface level (feet)", value: ({ reservoir }) => reservoir.elevation?.current },
+  {
+    header: "Level datum",
+    value: ({ reservoir }) => reservoir.elevation && elevationDatumText(reservoir.elevation)
+  },
+  { header: "Level reading date", value: ({ reservoir }) => reservoir.elevation?.as_of },
+  { header: "Highest level (feet)", value: ({ reservoir }) => reservoir.elevation?.record_high },
+  { header: "Highest level date", value: ({ reservoir }) => reservoir.elevation?.record_high_date },
+  { header: "Lowest level (feet)", value: ({ reservoir }) => reservoir.elevation?.record_low },
+  { header: "Lowest level date", value: ({ reservoir }) => reservoir.elevation?.record_low_date },
+  { header: "Level change in 7 days (feet)", value: ({ reservoir }) => reservoir.elevation?.change_7d },
+  { header: "Level change in 30 days (feet)", value: ({ reservoir }) => reservoir.elevation?.change_30d },
+  { header: "Level change in 1 year (feet)", value: ({ reservoir }) => reservoir.elevation?.change_365d },
+  { header: "Level history rank", value: ({ reservoir }) => reservoir.elevation?.seasonal_rank },
+  { header: "Level history years", value: ({ reservoir }) => reservoir.elevation?.seasonal_rank_of },
+  { header: "Level record starts", value: ({ reservoir }) => reservoir.elevation?.first_obs }
+];
+
 /**
  * One reservoir's twelve months, as a file.
  *
@@ -245,7 +278,8 @@ export function reservoirHistoryCsv(reservoir: Reservoir): string {
   const months: readonly (MonthlyRecord | null)[] = reservoir.monthly.length
     ? reservoir.monthly : [null];
   return serializeCsv(
-    months.map((month) => ({ reservoir, month })), HISTORY_COLUMNS);
+    months.map((month) => ({ reservoir, month })),
+    reservoir.elevation ? [...HISTORY_COLUMNS, ...ELEVATION_COLUMNS] : HISTORY_COLUMNS);
 }
 
 function safeFilenamePart(value: string): string {

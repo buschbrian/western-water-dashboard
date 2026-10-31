@@ -69,6 +69,7 @@ jobs:
           for path in index.html modern.html legacy/index.html \
                       overview.html precipitation.html snow.html drought.html methods.html data.html \
                       lakes.html lakes.json data/lakes.json \
+                      elevation_history.json data/elevation_history.json \
                       data/drought/usdm-current.geojson data/drought/usdm-huc6.json \
                       explore.html maplibre/index.html retired-route.js \
                       terms.html landscape.html story.html \
@@ -85,7 +86,8 @@ jobs:
               missing=1
             fi
           done
-          for path in api/reservoirs.json api/lakes.json api/snowpack.json api/reference.json; do
+          for path in api/reservoirs.json api/lakes.json api/elevation_history.json \
+                      api/snowpack.json api/reference.json; do
             if [ ! -s "dist/$path" ]; then
               echo "::error title=Missing API alias::$path"
               missing=1

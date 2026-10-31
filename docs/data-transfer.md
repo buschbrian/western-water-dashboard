@@ -41,6 +41,7 @@ No recent-conditions payload or raster is included in this comparison.
 | `reservoirs.json` | 2,055 KB | 220.8 KB |
 | `snow_sites.json` | 143 KB | 22 KB |
 | `lakes.json` | 7.1 KB | 1.4 KB |
+| `elevation_history.json` | 434 KB | 117 KB |
 | `precipitation.json` | 155 KB | 8.9 KB |
 | `precipitation_history.json` | 1,639 KB | 488 KB |
 | `soil_moisture.json` | 161 KB | 26.8 KB |
@@ -74,6 +75,16 @@ fetched only when a reader turns the precipitation map to soil moisture.
 
 `lakes.json` was measured 2026-09-06 on its first generated file, one lake
 (ADR-118); it is fetched only by the terminal-lakes page (ADR-119).
+
+`elevation_history.json` was measured 2026-10-27 on its first generated copy
+(gzip -6, 119,504 bytes; 444,872 raw): Lake Mead's daily level from
+1935-02-02 (33,505 days) and Lake Powell's from 1963-12-28 (22,949 days),
+each written once as a compact array (ADR-135). The full records were kept;
+nothing was cut. It is fetched only by a reservoir page whose reservoir
+carries a reviewed level, which is less than the 488 KB precipitation history
+the snow page fetches. The two level summaries added about 2 KB gzipped to
+`reservoirs.json` (276.9 KB before, 279.1 KB after, gzip -6, the same
+morning's refresh included).
 
 ### The drought archives at a decade
 

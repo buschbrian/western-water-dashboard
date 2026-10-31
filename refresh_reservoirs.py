@@ -39,6 +39,7 @@ refresh_reservoirs as R` still reaches all of it:
     pipeline.history     a series read at a date, and the last twelve months
     pipeline.freshness   carry-forward, withdrawal threshold, the notice
     pipeline.geography   county and drainage-area assignment
+    pipeline.elevation   reviewed surface elevation and its history (ADR-135)
 
 What stays here is what the orchestrator does with them: `summarize` (one
 record from one series), the reference-export sections, the CI signals, and
@@ -63,8 +64,8 @@ import watershed_scopes
 # stubs a provider still stubs the object the fetcher calls (patch
 # `R.providers._get_cdec_json`, not a copy of the name).
 from pipeline import (  # noqa: F401
-    constants, freshness, geography, history, numbers, providers, roster,
-    seasonal, source_history,
+    constants, elevation, freshness, geography, history, measurement, numbers,
+    providers, roster, seasonal, source_history,
 )
 from pipeline.constants import (  # noqa: F401
     ADMITTED_CDEC_RESERVOIRS_PATH, ADMITTED_CDSS_RESERVOIRS_PATH,
@@ -76,7 +77,7 @@ from pipeline.constants import (  # noqa: F401
     CAPACITY_PATH, COUNTIES_PATH, DEFAULT_BASELINE, EXPORT_PATH,
     EXPORT_SCHEMA_VERSION, LOCAL_TZ, METHOD_VERSION, MIN_BASELINE_YEARS,
     NORMALS_PATH, OUTPUT_PATH, RESERVOIR_SCHEMA_VERSION, RISE_RESULT_URL,
-    SOURCE_HISTORY_PATH,
+    SOURCE_HISTORY_PATH, ELEVATION_HISTORY_PATH, ELEVATION_START_DATE,
     SEASONAL_WINDOW_DAYS, SOURCE_COVERAGE, SOURCE_COVERAGE_REVIEWED,
     STALE_AFTER_DAYS, START_DATE, WITHDRAW_AFTER_DAYS, local_today
 )
@@ -95,7 +96,8 @@ from pipeline.roster import (  # noqa: F401
     load_capacities, check_capacity_versions_cover, effective_capacity,
     published_capacity_history, reviewed_hold_notices,
     EXCLUDED_READING_FIELDS, load_excluded_readings,
-    validate_capacity_evidence, validate_capacity_versions
+    validate_capacity_evidence, validate_capacity_versions,
+    admitted_reservoir_elevations, load_admitted_reservoir_elevations
 )
 from pipeline.providers import (  # noqa: F401
     CDEC_DATA_URL, CDEC_EXCLUDED_READINGS, CDEC_MISSING_VALUE,
@@ -333,6 +335,53 @@ def summarize(name: str, item_id: int | None, lat: float, lon: float,
         # to records carried forward from a failed fetch, and loading the
         # boundaries once for the whole run beats loading them 53 times.
     }
+
+
+def load_previous_elevation_history(path: Path) -> dict[str, dict]:
+    """Yesterday's elevation history by station, for a fetch that fails."""
+    if not path.exists():
+        return {}
+    try:
+        payload = json.loads(path.read_text(encoding="utf-8"))
+    except (OSError, ValueError):
+        return {}
+    return {str(e.get("source_station_id")): e
+            for e in (payload.get("reservoirs") or []) if isinstance(e, dict)}
+
+
+def refresh_elevations(records: list[dict], targets: dict[str, dict],
+                       previous: dict[str, dict], previous_history: dict[str, dict],
+                       end: str) -> list[dict]:
+    """Attach each rostered reservoir's `elevation` block; return the history.
+
+    Run after the storage fetch, on whichever record it left -- fresh, or
+    carried forward from yesterday. A failed elevation fetch keeps
+    yesterday's block and history entry: the block carries its own `as_of`,
+    so a level a day old says so, and storage is never withheld over it.
+    """
+    by_station = {str(r.get("source_station_id")): r for r in records}
+    history = []
+    for station, entry in targets.items():
+        record = by_station.get(station)
+        if record is None:
+            continue
+        try:
+            frame = fetch_rise_series(entry["elevation_item_id"], ELEVATION_START_DATE,
+                                      end, column="elevation_ft")
+            if frame.empty:
+                raise ValueError("RISE returned no usable elevation rows")
+            record["elevation"] = elevation.summarize_elevation(entry, frame)
+            history.append(elevation.history_entry(station, entry, frame))
+        except Exception as exc:  # noqa: BLE001 -- the level's fault, not the storage's
+            print(f"WARNING: {entry['name']} elevation (item {entry['elevation_item_id']}) "
+                  f"-- {type(exc).__name__}: {exc}")
+            carried = (previous.get(station) or {}).get("elevation")
+            if carried is not None:
+                record["elevation"] = carried
+            if station in previous_history:
+                history.append(previous_history[station])
+        time.sleep(0.5)
+    return history
 
 
 def load_capacity_catalog() -> dict:
@@ -1149,6 +1198,12 @@ def main() -> int:
             source_station_id=key, normals=normals,
             operator=row.get("operator")))
 
+    elevation_roster = admitted_reservoir_elevations()
+    elevation_targets = {s: e for s, e in elevation_roster.items() if s in rise_targets}
+    elevation_history = refresh_elevations(
+        records, elevation_targets, previous,
+        load_previous_elevation_history(ELEVATION_HISTORY_PATH), end)
+
     if args.only:
         print(json.dumps(records, indent=2))
         return 0 if records else 1
@@ -1392,6 +1447,9 @@ def main() -> int:
         "reviewed_holds": reviewed_hold_notices(),
     }
 
+    for name in elevation.validate_records(records, elevation_roster):
+        print(f"WARNING: {name} is on the elevation roster and has no elevation yet")
+
     print(f"\nFreshness report ({today.date()}):")
     for r in sorted(records, key=lambda r: -(r.get("days_stale") or 0)):
         flag = "STALE" if r.get("is_stale") else "ok   "
@@ -1410,6 +1468,14 @@ def main() -> int:
         return 0
 
     OUTPUT_PATH.write_text(json.dumps(payload, indent=2) + "\n")
+    if elevation_targets:
+        # Written compact, as snowpack.json is: a daily series is read by a
+        # program, and indentation would put each day on its own line.
+        history_payload = elevation.build_history_payload(
+            elevation_history, payload["generated_at"], today)
+        elevation.validate_history_payload(history_payload)
+        ELEVATION_HISTORY_PATH.write_text(
+            json.dumps(history_payload, separators=(",", ":")) + "\n")
     SOURCE_HISTORY_PATH.write_text(
         json.dumps(source_history_document(
             dense_history, today.strftime("%Y-%m-%d")), indent=2) + "\n")

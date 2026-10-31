@@ -61,6 +61,8 @@ function preserveRuntimeDataAndRedirects(): Plugin {
       for (const file of [
         "reservoirs.json", "lakes.json", "snow_sites.json", "snowpack.json",
         "reference.json", "capacities.json", "upstream_index.json",
+        // ADR-135: the reviewed reservoir levels, day by day, for the chart.
+        "elevation_history.json",
         // ADR-125: the daily precipitation file and its committed history.
         "precipitation.json", "precipitation_history.json",
         // ADR-142: the daily soil-moisture file.
@@ -71,7 +73,8 @@ function preserveRuntimeDataAndRedirects(): Plugin {
       }
       // Stable public API aliases. These are second copies of the same
       // runtime files, never imports and never a second source of truth.
-      for (const file of ["reservoirs.json", "lakes.json", "snowpack.json", "reference.json"]) {
+      for (const file of ["reservoirs.json", "lakes.json", "elevation_history.json",
+        "snowpack.json", "reference.json"]) {
         await copyFile(resolve(root, file), resolve(outDir, "api", file));
       }
       await copyFile(resolve(root, "legacy", "index.html"),

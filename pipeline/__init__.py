@@ -15,12 +15,14 @@ notebook had to learn a new import path.
     freshness   carry-forward, the withdrawal threshold, the notice
     geography   county and drainage-area assignment
     lakes       natural terminal lakes, measured without a full level (ADR-112)
+    measurement one daily series summarised, shared by lakes and elevation
+    elevation   reviewed reservoir surface elevation and its history (ADR-135)
 
 Put new logic in the module that owns the concern, not in the orchestrator.
 See docs/architecture/pipeline.md and pipeline/AGENTS.md.
 """
 
 from . import (  # noqa: F401
-    constants, freshness, geography, history, lakes, numbers, providers,
-    roster, seasonal, source_history,
+    constants, elevation, freshness, geography, history, lakes, measurement,
+    numbers, providers, roster, seasonal, source_history,
 )

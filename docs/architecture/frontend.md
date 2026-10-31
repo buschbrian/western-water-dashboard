@@ -19,7 +19,7 @@ module that owns the behaviour and read the entry point only for the sequence.
 | Precipitation | `src/precipitation.ts` | `src/ui/precipitation-card.ts`, `src/precip-model.ts`, `src/precip-storm-model.ts`, `src/viz/precip-*.ts`; the place from `src/snow-place.ts`, as the snow page and story views narrow it (ADR-130); the map is `src/ui/precip-map-section.ts` (lazy, no static SDK import), `src/ui/precip-map.ts` and `src/precip-map-model.ts` (ADR-131); its "Rain \| Soil moisture" switch is `src/ui/precip-map-mode-model.ts`, `src/soil-map-model.ts`, `src/viz/soil-classes.ts` and `src/data/soil-load.ts`, the soil file fetched on first use (ADR-142) |
 | Snowpack | `src/snow.ts` | `src/snow-model.ts`, `src/ui/snow-map.ts`, `src/viz/snow-curve.ts`, `src/state/snow-url.ts` |
 | Drought | `src/drought.ts` | `src/drought-model.ts`, `src/ui/drought-map.ts`, `src/viz/drought-*.ts`, `src/state/drought-url.ts` |
-| One reservoir | `src/reservoir.ts` | `src/reservoir-model.ts` (link resolution, both baselines, provenance), `src/ui/reservoir-template.ts`; the reading itself is `describeReservoir`, shared with the map's details panel so the two cannot drift |
+| One reservoir | `src/reservoir.ts` | `src/reservoir-model.ts` (link resolution, both baselines, provenance), `src/reservoir-elevation-model.ts` (the surface level, ADR-135), `src/viz/elevation-years.ts`, `src/ui/reservoir-template.ts`; the reading itself is `describeReservoir`, shared with the map's details panel so the two cannot drift |
 | Methods, data, terms | `src/methods.ts`, `src/data-docs.ts` | `src/data-docs-schema.ts` is the field-by-field contract |
 | Terminal lakes | `src/lakes.ts` | `src/lakes-model.ts` (every sentence and row), `src/data/lakes-validate.ts`, `src/ui/lakes-template.ts`; reached from the methods and data pages, not the bar (ADR-119) |
 | Story views | `src/story.ts` | `src/state/story-url.ts` (the link), `src/snow-place.ts` (the snow page's place narrowing), `src/ui/precipitation-card.ts`, `src/ui/upstream-section.ts`, `src/ui/story-fit.ts`; for embedding, not in the bar (ADR-128) |
@@ -46,6 +46,23 @@ published data, the reason in a reader's words, the review date and a link to
 the source -- again with nothing a rollup could add up. Readiness is
 `window.__reservoirReady.status`, one of found, withdrawn, held, unknown and
 none, and the browser suite visits every one.
+
+A reservoir on the reviewed elevation roster also shows its surface level
+(ADR-135): the lakes page's level card, shared through
+`src/measurement-model.ts` and `src/ui/measurement-card.ts`, with the datum
+spelled out and changes in feet, never a percentage; then a water-year chart
+from `elevation_history.json`, fetched only for such a reservoir -- the current
+year strong, the year before lighter, four earlier years muted, reference
+levels dashed and named at the right end, and a level far from the readings
+named under the chart instead of drawn; then the note on why the Geological
+Survey (Powell) or other sources (Mead, on Reclamation's own project datum)
+can show a different level. A project datum is named, never called NGVD 1929,
+and a calculated datum difference says it is calculated. The card says where
+its record starts (after first filling); the chart draws every year it shows,
+and its labels sit on plates of the page colour so no line crosses text.
+`window.__reservoirReady.elevation` is `drawn`, `card` (the history could not
+be read) or `none`; the chart's host is `#reservoir-elevation-chart`, the
+stable target for a later share image.
 
 ### The terminal-lakes page
 

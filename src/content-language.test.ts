@@ -66,6 +66,13 @@ const userTextFiles = [
   "src/lakes.ts",
   "src/lakes-model.ts",
   "src/ui/lakes-template.ts",
+  // A reservoir's surface level (ADR-135): the shared card's words, the
+  // datum note, the water-year chart and the page that places them.
+  "src/measurement-model.ts",
+  "src/reservoir-elevation-model.ts",
+  "src/viz/elevation-years.ts",
+  "src/ui/measurement-card.ts",
+  "src/reservoir.ts",
   // The story views (ADR-128): their frame, entry point, link sentences and
   // the two shared builders they draw with.
   "story.html",

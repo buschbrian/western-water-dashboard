@@ -9,23 +9,17 @@
  * because a natural terminal lake has none of them (ADR-112).
  */
 import type { DetailMonth } from "./state/detail";
-import { changeLabel, ordinal } from "./state/detail";
-import type { LakeMeasurement, LakeVolume, TerminalLake, WithdrawnLake } from "./types";
+import {
+  changeRows, datumName, extremeRows, formatFeet, levelCard
+} from "./measurement-model";
+import type { MeasurementRow, MeasurementView } from "./measurement-model";
+import type { LakeVolume, TerminalLake, WithdrawnLake } from "./types";
 import { formatAcreFeet, formatDate } from "./viz/format";
 
-export interface LakeRow {
-  label: string;
-  value: string;
-}
+export { datumName, formatFeet, rankSentence } from "./measurement-model";
 
-export interface LakeMeasurementView {
-  heading: string;
-  /** The current value with its unit, said once, large. */
-  headline: string;
-  /** What the headline is measured above or on, said small beside it. */
-  basis: string;
-  rows: LakeRow[];
-}
+export type LakeRow = MeasurementRow;
+export type LakeMeasurementView = MeasurementView;
 
 export interface LakeView {
   name: string;
@@ -45,74 +39,6 @@ const STATE_NAMES: Record<string, string> = {
   NV: "Nevada", NM: "New Mexico", OR: "Oregon", UT: "Utah", WA: "Washington",
   WY: "Wyoming"
 };
-
-/** The vertical datum as a reader meets it, never as its initials alone. */
-export function datumName(code: string): string {
-  switch (code) {
-    case "NGVD29": return "National Geodetic Vertical Datum of 1929";
-    case "NAVD88": return "North American Vertical Datum of 1988";
-    default: return `${code} datum`;
-  }
-}
-
-/**
- * The history rank as a position: "3rd-lowest of 12". The details panel
- * pairs the ordinal with a percentile once ten years stand behind it; a lake
- * publishes no percentile, so the position stands alone (ADR-112).
- */
-export function rankSentence(rank: number | null, rankOf: number | null): string {
-  if (rank === null || rankOf === null || rankOf <= 1) {
-    return "No earlier years to compare with.";
-  }
-  return `${ordinal(rank)}-lowest of ${rankOf}`;
-}
-
-/** Feet to hundredths, with a thousands separator: 3,914.96. */
-export function formatFeet(value: number | null): string {
-  return value === null || !Number.isFinite(value)
-    ? "—"
-    : value.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-}
-
-function signed(value: number, format: (value: number) => string): string {
-  return `${value > 0 ? "+" : value < 0 ? "−" : ""}${format(Math.abs(value))}`;
-}
-
-function changeRows(
-  measure: LakeMeasurement, unit: string, format: (value: number) => string,
-  pct?: Pick<LakeVolume, "change_7d_pct" | "change_30d_pct" | "change_365d_pct">
-): LakeRow[] {
-  const windows: readonly [string, "7d" | "30d" | "365d"][] = [
-    ["Change in 7 days", "7d"], ["Change in 30 days", "30d"], ["Change in 1 year", "365d"]
-  ];
-  return windows.map(([base, window]) => {
-    const change = measure[`change_${window}`];
-    const reference = measure[`change_${window}_reference_date`];
-    const elapsed = measure[`change_${window}_elapsed_days`];
-    if (change === null || reference === null) {
-      return { label: base, value: "No earlier reading to compare with." };
-    }
-    const share = pct ? pct[`change_${window}_pct`] : null;
-    const shareText = share === null || share === undefined ? "" : ` (${signed(share, (v) => `${v.toFixed(1)}%`)})`;
-    return {
-      label: changeLabel(base, elapsed),
-      value: `${signed(change, format)} ${unit}${shareText} since ${formatDate(reference)}`
-    };
-  });
-}
-
-function extremes(measure: LakeMeasurement, unit: string,
-  format: (value: number) => string): LakeRow[] {
-  return [
-    { label: "Reading date", value: formatDate(measure.as_of) },
-    { label: "Highest reading",
-      value: `${format(measure.record_high)} ${unit} on ${formatDate(measure.record_high_date)}` },
-    { label: "Lowest reading",
-      value: `${format(measure.record_low)} ${unit} on ${formatDate(measure.record_low_date)}` },
-    { label: "History rank",
-      value: rankSentence(measure.seasonal_rank, measure.seasonal_rank_of) }
-  ];
-}
 
 export function lateMessage(lake: TerminalLake): string | null {
   if (!lake.is_stale) return null;
@@ -161,25 +87,21 @@ export function lakeMonths(lake: TerminalLake, color: string): DetailMonth[] {
 }
 
 export function describeLake(lake: TerminalLake, chartColor: string): LakeView {
-  const feet = (value: number): string => formatFeet(value);
   const acreFeet = (value: number): string => formatAcreFeet(value);
   const datum = datumName(lake.elevation.vertical_datum);
+  const shares: Pick<LakeVolume, "change_7d_pct" | "change_30d_pct" | "change_365d_pct"> =
+    lake.volume;
   return {
     name: lake.name,
     statement: lakeStatement(lake),
     late: lateMessage(lake),
-    level: {
-      heading: "Surface level",
-      headline: `${formatFeet(lake.elevation.current)} feet`,
-      basis: `above the ${datum}`,
-      rows: [...extremes(lake.elevation, "feet", feet), ...changeRows(lake.elevation, "feet", feet)]
-    },
+    level: levelCard(lake.elevation, lake.elevation.vertical_datum),
     volume: {
       heading: "Volume",
       headline: `${formatAcreFeet(lake.volume.current)} acre-feet`,
       basis: "on the published table that turns a water level into a volume",
-      rows: [...extremes(lake.volume, "acre-feet", acreFeet),
-        ...changeRows(lake.volume, "acre-feet", acreFeet, lake.volume)]
+      rows: [...extremeRows(lake.volume, "acre-feet", acreFeet),
+        ...changeRows(lake.volume, "acre-feet", acreFeet, shares)]
     },
     months: lakeMonths(lake, chartColor),
     targets: targetsSentence(lake),

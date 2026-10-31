@@ -13,6 +13,16 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
+- **Surface level for Lake Powell and Lake Mead** (ADR-135) on their
+  reservoir pages: a "Surface level" card with dated changes and record
+  readings, a chart of the current water year against five earlier ones
+  with Reclamation's reference levels, and a note on why another source can
+  show a different number. Powell is above the National Geodetic Vertical
+  Datum of 1929; Mead is above Reclamation's own Hoover Dam powerhouse
+  datum, named as such. Published from a reviewed roster that must name each
+  datum with evidence; the daily record is `elevation_history.json`, also at
+  `/api/elevation_history.json`, and the reservoir's CSV file gains the
+  level's columns.
 - **Story views** (ADR-128): `story.html` shows one figure alone, for a
   story to embed: the precipitation card or its "Where this year stands"
   strip for a state or drainage area, or the water stored above a

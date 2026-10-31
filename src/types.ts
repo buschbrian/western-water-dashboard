@@ -235,6 +235,105 @@ export interface Reservoir {
   state?: string | null;
   waterbody_states?: string[];
   connected_states?: string[];
+  /** The reviewed surface level (ADR-135); absent for every other reservoir. */
+  elevation?: ReservoirElevation;
+}
+
+/** The measured difference between two vertical datums at one site. */
+export interface DatumOffset {
+  to_datum: string;
+  /** The other datum's reading minus this one's, in feet. */
+  offset_ft: number;
+  range_ft?: [number, number];
+  readings?: number;
+  usgs_site: string;
+  parameters: Record<string, string>;
+  source_url: string;
+  measured: string;
+}
+
+/**
+ * An operator's own project datum stated against a national one: add
+ * `add_ft` to a level on the project datum to give the level above `datum`.
+ */
+export interface DatumRelation {
+  datum: string;
+  add_ft: number;
+  quote: string;
+  source_url: string;
+}
+
+/**
+ * A datum difference calculated from published figures, not measured at the
+ * reservoir: Lake Mead's NAVD 1988 difference, from survey marks on the dam
+ * and the project datum's stated relation.
+ */
+export interface DerivedOffset {
+  to_datum: string;
+  offset_ft: number;
+  basis: string;
+  sources: { citation: string; url: string }[];
+  checked: string;
+}
+
+/** The published end of a reservoir's first filling, with its source. */
+export interface RecordStart {
+  date: string;
+  /** A short clause for the card: "when Lake Powell first filled". */
+  reason: string;
+  basis: string;
+  quote: string;
+  source_url: string;
+}
+
+/** A named level with the authority that set it: a line, never a share. */
+export interface ReferenceLevel {
+  elevation_ft: number;
+  label: string;
+  source_term?: string;
+  authority: string;
+  url: string;
+}
+
+/**
+ * A reservoir's surface level, for reservoirs on the reviewed elevation
+ * roster only (ADR-135). No percentage of a level, ever (ADR-112).
+ */
+export interface ReservoirElevation extends MeasurementSummary {
+  unit: "ft";
+  /** NGVD29, NAVD88, or "project" for an operator's own datum. */
+  vertical_datum: string;
+  /** A project datum's name, and its relation to a national datum. */
+  datum_name?: string;
+  datum_relation?: DatumRelation;
+  source_item_id: number;
+  source_url: string;
+  datum_offset: DatumOffset | null;
+  derived_offset?: DerivedOffset;
+  reference_levels: ReferenceLevel[];
+  /** Where the record readings and the rank start: after first filling. */
+  record_starts?: RecordStart;
+  /** False where the operator does not say which datum its reference levels use. */
+  reference_levels_datum_stated?: boolean;
+}
+
+/** One reservoir's daily levels: `values[i]` is the level `i` days after `start`. */
+export interface ElevationHistoryEntry {
+  name: string;
+  source_station_id: string;
+  source_item_id: number;
+  vertical_datum: string;
+  start: string;
+  end: string;
+  values: NullableNumber[];
+}
+
+export interface ElevationHistoryPayload {
+  schema_version: number;
+  fetched_at: string;
+  run_date: string;
+  unit: "ft";
+  reservoirs: ElevationHistoryEntry[];
 }
 
 export interface ReservoirSource {
@@ -661,8 +760,13 @@ export interface UpstreamIndex {
  * consumers ever see one.
  */
 
-/** One measured series: its current value, extremes, dated changes and rank. */
-export interface LakeMeasurement {
+/**
+ * One measured daily series: its current value, extremes, dated changes and
+ * rank. The shape a terminal lake's level and volume publish, and the shape
+ * a reviewed reservoir level publishes (ADR-135); the pipeline builds all of
+ * them with one function.
+ */
+export interface MeasurementSummary {
   current: number;
   as_of: string;
   record_high: number;
@@ -682,6 +786,9 @@ export interface LakeMeasurement {
   change_365d_elapsed_days: NullableNumber;
   seasonal_rank: NullableNumber;
   seasonal_rank_of: NullableNumber;
+}
+
+export interface LakeMeasurement extends MeasurementSummary {
   parameter_code: string;
   statistic_id: string;
 }
