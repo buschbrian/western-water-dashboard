@@ -646,6 +646,18 @@ async function checkAccessibility(tab, check, label) {
   await checkTextOverlap(tab, check, label);
   await checkHeaderTitle(tab, check, label);
   await checkTextFits(tab, check, label);
+  const violations = await persistentAxeViolations(tab);
+  check(violations.length === 0,
+    `${label}: axe-core found ${violations.length} accessibility violation(s): ` +
+    violations.map((violation) =>
+      `${violation.id} (${violation.impact}) on ${violation.nodes.length} node(s) ` +
+      `e.g. ${violation.nodes[0]?.target.join(" ")} ${violation.nodes[0]?.html} ` +
+      `-- ${violation.nodes[0]?.why}`).join("; "));
+}
+
+/* axe over the whole page, after AXE_EXCEPTIONS, keeping only what survives
+ * both passes. Shared by every axe check in this file. */
+async function persistentAxeViolations(tab) {
   /*
    * Scored twice, and only a finding that survives both counts.
    *
@@ -725,17 +737,8 @@ async function checkAccessibility(tab, check, label) {
   for (const violation of second) {
     if (!kept(violation)) fleeting(violation, "only once the page had settled");
   }
-  if (first.length === 0 && second.length === 0) {
-    console.log("  axe: clean");
-    return;
-  }
-  const violations = persistent;
-  check(violations.length === 0,
-    `${label}: axe-core found ${violations.length} accessibility violation(s): ` +
-    violations.map((violation) =>
-      `${violation.id} (${violation.impact}) on ${violation.nodes.length} node(s) ` +
-      `e.g. ${violation.nodes[0]?.target.join(" ")} ${violation.nodes[0]?.html} ` +
-      `-- ${violation.nodes[0]?.why}`).join("; "));
+  if (first.length === 0 && second.length === 0) console.log("  axe: clean");
+  return persistent;
 }
 /* Every page in this suite is opened with no `?state=`, no stored place and
  * a fresh profile, which is exactly the condition the first-visit splash
@@ -1157,6 +1160,12 @@ function reportHostedOutage(label, hosted) {
     const label = "Find a place: reservoir (dark, mobile)";
     console.log(`\n=== ${label} -- ${reservoir.name}`);
     await tab.goto(`${URL}drought.html`, { waitUntil: "domcontentloaded", timeout: 60000 });
+    /* The page is scored whole, map included, so wait until the map has
+     * started or failed (`mapClassesDrawn` is written on both paths). Scored
+     * earlier, the result depended on whether the map's scale bar had drawn
+     * yet: a race the runner's speed decided, not the page. */
+    await tab.waitForFunction(() => window.__droughtReady?.mapClassesDrawn !== undefined,
+      null, { timeout: 90000 });
     const trigger = tab.locator("#place-search-trigger");
     await trigger.waitFor({ state: "visible", timeout: 60000 });
     const bar = await trigger.evaluate((element) => {
@@ -1202,11 +1211,12 @@ function reportHostedOutage(label, hosted) {
      * on the search alone while the dark "ArcGIS map" badge failed contrast
      * (4.04:1); that badge is now 5.17:1, so the page is held to the same
      * standard as the light case below. */
-    await tab.addScriptTag({ url: `${URL}__axe.js` });
-    const searchViolations = axeViolations(await tab.evaluate(async (tags) =>
-      (await window.axe.run(document, { runOnly: { type: "tag", values: tags } })).violations,
-    AXE_TAGS)).map((violation) =>
-      `${violation.id}: ${violation.nodes[0]?.html.slice(0, 120)}`);
+    /* Two passes, like every other axe check here. A single pass failed twice
+     * on `button-name` against a Calcite inner button with `aria-label=""`,
+     * the same shape as the one-frame state `persistentAxeViolations`
+     * describes. */
+    const searchViolations = (await persistentAxeViolations(tab)).map((violation) =>
+      `${violation.id}: ${violation.nodes[0]?.target.join(" ")} ${violation.nodes[0]?.html.slice(0, 120)}`);
     check(searchViolations.length === 0,
       `${label}: axe-core found violations in the search: ${searchViolations.join("; ")}`);
     await input.press("Enter");
