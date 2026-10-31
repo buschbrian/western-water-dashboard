@@ -188,10 +188,11 @@
       "state": "AZ"
     },
     "09398300:AZ:BOR": {
-      "name": "Cragin Dam Reservoir",
+      "name": "C.C. Cragin Reservoir",
       "county_fips": "04005",
       "county_name": "Coconino County",
-      "state": "AZ"
+      "state": "AZ",
+      "retrieved": "2026-10-31"
     },
     "09469000:AZ:BOR": {
       "name": "San Carlos Reservoir",
@@ -230,10 +231,11 @@
       "state": "UT"
     },
     "09UTDMAD:UT:BOR": {
-      "name": "DMAD",
+      "name": "DMAD Reservoir",
       "county_fips": "49027",
       "county_name": "Millard County",
-      "state": "UT"
+      "state": "UT",
+      "retrieved": "2026-10-31"
     },
     "09UTELLK:UT:BOR": {
       "name": "Electric Lake",
@@ -695,10 +697,11 @@
       "state": "MT"
     },
     "12446453:WA:BOR": {
-      "name": "Conconully Lake Salmon Lake Dam",
+      "name": "Conconully Lake",
       "county_fips": "53047",
       "county_name": "Okanogan County",
-      "state": "WA"
+      "state": "WA",
+      "retrieved": "2026-10-31"
     },
     "12446480:WA:BOR": {
       "name": "Conconully Reservoir",
@@ -1442,10 +1445,11 @@
       "retrieved": "2026-10-31"
     },
     "BIO": {
-      "name": "Briones Dam",
+      "name": "Briones Reservoir",
       "county_fips": "06013",
       "county_name": "Contra Costa County",
-      "state": "CA"
+      "state": "CA",
+      "retrieved": "2026-10-31"
     },
     "BIT": {
       "name": "Lake Britton",
@@ -1496,10 +1500,11 @@
       "state": "CA"
     },
     "BRV": {
-      "name": "Bear Valley Dam",
+      "name": "Big Bear Lake",
       "county_fips": "06071",
       "county_name": "San Bernardino County",
-      "state": "CA"
+      "state": "CA",
+      "retrieved": "2026-10-31"
     },
     "BTV": {
       "name": "Butt Valley",
@@ -1625,10 +1630,11 @@
       "state": "CA"
     },
     "CUY": {
-      "name": "Cuyamaca Dam",
+      "name": "Lake Cuyamaca",
       "county_fips": "06073",
       "county_name": "San Diego County",
-      "state": "CA"
+      "state": "CA",
+      "retrieved": "2026-10-31"
     },
     "CVE": {
       "name": "Calaveras",
@@ -1686,10 +1692,11 @@
       "state": "CA"
     },
     "ELC": {
-      "name": "El Capitan Dam",
+      "name": "El Capitan Lake",
       "county_fips": "06073",
       "county_name": "San Diego County",
-      "state": "CA"
+      "state": "CA",
+      "retrieved": "2026-10-31"
     },
     "ENG": {
       "name": "Harry L. Englebright Lake",
@@ -1728,10 +1735,11 @@
       "state": "CA"
     },
     "FRD": {
-      "name": "Frenchman Dam",
+      "name": "Frenchman Lake",
       "county_fips": "06063",
       "county_name": "Plumas County",
-      "state": "CA"
+      "state": "CA",
+      "retrieved": "2026-10-31"
     },
     "FRL": {
       "name": "French Lake",
@@ -1740,10 +1748,11 @@
       "state": "CA"
     },
     "GBL": {
-      "name": "Gibraltar Dam",
+      "name": "Gibraltar Reservoir",
       "county_fips": "06083",
       "county_name": "Santa Barbara County",
-      "state": "CA"
+      "state": "CA",
+      "retrieved": "2026-10-31"
     },
     "GCL": {
       "name": "Franklin D. Roosevelt Lake",
@@ -1861,10 +1870,11 @@
       "state": "CA"
     },
     "ISB": {
-      "name": "Isabella Dam",
+      "name": "Isabella Lake",
       "county_fips": "06029",
       "county_name": "Kern County",
-      "state": "CA"
+      "state": "CA",
+      "retrieved": "2026-10-31"
     },
     "JCK": {
       "name": "Jackson Meadows",
@@ -1898,10 +1908,11 @@
       "state": "CA"
     },
     "LBS": {
-      "name": "Los Banos Dam",
+      "name": "Los Banos Reservoir",
       "county_fips": "06047",
       "county_name": "Merced County",
-      "state": "CA"
+      "state": "CA",
+      "retrieved": "2026-10-31"
     },
     "LGS": {
       "name": "Lake Bryan",
@@ -2132,10 +2143,11 @@
       "state": "CO"
     },
     "PNF": {
-      "name": "Pine Flat Dam",
+      "name": "Pine Flat Lake",
       "county_fips": "06019",
       "county_name": "Fresno County",
-      "state": "CA"
+      "state": "CA",
+      "retrieved": "2026-10-31"
     },
     "PRR": {
       "name": "Perris",
@@ -2198,10 +2210,11 @@
       "state": "CA"
     },
     "RTD": {
-      "name": "Ruth Dam",
+      "name": "Ruth Lake",
       "county_fips": "06105",
       "county_name": "Trinity County",
-      "state": "CA"
+      "state": "CA",
+      "retrieved": "2026-10-31"
     },
     "SAT": {
       "name": "San Antonio Reservoir",
@@ -2277,10 +2290,11 @@
       "state": "CA"
     },
     "SLJ": {
-      "name": "Soulajule Dam",
+      "name": "Soulajule Reservoir",
       "county_fips": "06041",
       "county_name": "Marin County",
-      "state": "CA"
+      "state": "CA",
+      "retrieved": "2026-10-31"
     },
     "SLN": {
       "name": "Santa Margarita Lake",
@@ -2403,10 +2417,11 @@
       "state": "CA"
     },
     "TRM": {
-      "name": "Terminus Dam",
+      "name": "Lake Kaweah",
       "county_fips": "06107",
       "county_name": "Tulare County",
-      "state": "CA"
+      "state": "CA",
+      "retrieved": "2026-10-31"
     },
     "TUL": {
       "name": "Tulloch",

@@ -42,18 +42,15 @@ REAL_NAMES = {
     "Franklin D. Roosevelt Lake": "a person's initial, with its period",
     "Lake Herbert G. West": "a person's initial, with its period",
     "Howard A. Hanson": "a person's initial, with its period",
+    "C.C. Cragin Reservoir": "initials, with their periods, as the National Hydrography Dataset spells it",
+    "DMAD Reservoir": "the local spelling; the National Hydrography Dataset spaces it D M A D (Brian, 2026-10-31)",
+    "Seven Oaks Dam": "a flood-control dam with no recorded water name (Brian, 2026-10-31)",
 }
 
 #: Names that carry a dam word, or are otherwise probably not the water's own
 #: name, where no source cited in the roster names the water. Not changed; see
 #: the review list. Each is removed from here when it is renamed.
-HELD_FOR_REVIEW = {
-    "Briones Dam", "Bear Valley Dam", "Cuyamaca Dam", "El Capitan Dam",
-    "Frenchman Dam", "Gibraltar Dam", "Isabella Dam", "Los Banos Dam",
-    "Pine Flat Dam", "Ruth Dam", "Seven Oaks Dam", "Soulajule Dam",
-    "Terminus Dam", "Cragin Dam Reservoir", "Conconully Lake Salmon Lake Dam",
-    "DMAD",
-}
+HELD_FOR_REVIEW: set[str] = set()
 
 PROVIDER_WORDS = {
     "re", "res", "resv", "rsvr", "rsv", "nr", "near", "abv", "blw", "bl",
