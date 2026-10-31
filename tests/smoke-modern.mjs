@@ -625,10 +625,11 @@ async function checkTextFits(tab, check, label) {
   check(cut.length === 0, `${label}: ${cut.length} text box(es) cut text short, e.g. ${cut.slice(0, 3).join("; ")}`);
 }
 
-async function checkAccessibility(tab, check, label) {
+async function checkAccessibility(tab, check, label, { axe = true } = {}) {
   await checkTextOverlap(tab, check, label);
   await checkHeaderTitle(tab, check, label);
   await checkTextFits(tab, check, label);
+  if (!axe) return;
   const violations = await persistentAxeViolations(tab);
   check(violations.length === 0,
     `${label}: axe-core found ${violations.length} accessibility violation(s): ` +
@@ -1407,8 +1408,6 @@ for (const viewport of VIEWPORTS) {
     check(await tab.locator('[data-reservoir="Lake Powell"]').count() > 0,
       `${label}: Lake Powell is missing from the default reservoir list`);
     check(ready.basemap === true, `${label}: no basemap resolved`);
-    check(ready.basemapDegraded === false,
-      `${label}: the preferred basemap did not serve`);
     /* `aria-busy` reports one fact: the map is still starting. Once it has
      * started, every path out of that has to clear it -- the visible loader
      * is replaced by the map element well before the view is ready, so a
@@ -7009,8 +7008,8 @@ await checkSnowHistory();
  * header, fill the frame without scrolling either way, clear aria-busy,
  * leave nothing cut off, hold no inner scroller, take its theme from the
  * link (or the system, with none) and never from the reader's stored
- * choice, write nothing to storage, open every link in a new tab, and pass
- * axe. Nothing here reads a number: the reservoir is the published one with
+ * choice, write nothing to storage and open every link in a new tab. Six
+ * of them also pass axe (`AXE_FRAMES`). Nothing here reads a number: the reservoir is the published one with
  * the most published reservoirs above it.
  */
 {
@@ -7040,8 +7039,20 @@ await checkSnowHistory();
     { name: "phone embed", width: 360, height: 640, theme: null, system: "light" },
     { name: "smallest", width: 320, height: 480, theme: "light" }
   ];
+  /* axe runs on 6 of the 27 view-frame pairs (ruled 2026-10-31); the layout
+   * checks in checkAccessibility still run on all 27. The six are the first
+   * pair and the last, and each view at one wide and one narrow frame, in
+   * both themes and through both theme sources (link and system). */
+  const AXE_FRAMES = new Set([
+    "precip|0", // desktop light: the first pair
+    "precip|3", // mobile dark
+    "strip|1", // desktop dark
+    "strip|7", // phone embed, system light
+    "upstream|5", // side panel, system dark
+    "upstream|8" // smallest light: the last pair
+  ]);
   for (const view of views) {
-    for (const frame of frames) {
+    for (const [frameIndex, frame] of frames.entries()) {
       const expected = frame.theme ?? frame.system;
       /* The opposite of what the view must show, in both places a page
        * could take it from: the stored choice and the system. */
@@ -7146,7 +7157,8 @@ await checkSnowHistory();
         const visible = await tab.evaluate(COLLECT_SHADOW_TEXT);
         const retired = RETIRED_TERMS.exec(visible);
         check(retired === null, `${label}: visible text uses a retired term: "${retired?.[0]}"`);
-        await checkAccessibility(tab, check, label);
+        await checkAccessibility(tab, check, label,
+          { axe: AXE_FRAMES.has(`${view.name}|${frameIndex}`) });
       } catch (error) {
         failures.push(`${label}: ${error.message}`);
       } finally {

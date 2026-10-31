@@ -26,7 +26,15 @@
 - Browser suites serve `dist/`, not `src/`. Rebuild before running them, or you
   are testing the previous build.
 - One accessibility violation is accepted, in a vendor component;
-  `AXE_EXCEPTIONS` in `tests/smoke-modern.mjs` says why.
+  `AXE_EXCEPTIONS` in `tests/smoke-modern.mjs` says why. The scale bar's
+  dark-theme contrast is fixed in `src/styles/app.css`, not excepted
+  (Esri register E20).
+- **Story views run axe on 6 of their 27 view-frame pairs** (`AXE_FRAMES`,
+  ruled 2026-10-31); their layout checks still run on all 27.
+- **The suite does not assert that the preferred basemap served.** Esri's
+  uptime is not this site's test (ADR-034). ADR-101 added
+  `basemapDegraded === false` to the storage map check; Brian ruled it out
+  on 2026-10-31. The outage checks still assert the fallback itself.
 
 Verify: `npm run verify:fast` for unit work, `npm run verify:pipeline` for
 pytest, `npm run verify:browser` for either smoke suite.
