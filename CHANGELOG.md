@@ -13,6 +13,13 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
+- **A page for reporters.** `reporters.html` says how to cite a figure (the
+  provider first, then this site, with the reading date and a link to the page
+  that shows it), what the main figures mean, and what they cannot support: no
+  forecasts, operated reservoirs, a history rank that starts in 2015, and
+  provisional readings. It is words only, like the terms page: no script and no
+  new computation. The reservoir, terminal lakes, terms and landscape pages
+  link to it from their footers.
 - **River flow and the soil-moisture change kept day by day** (ADR-146).
   `river_history.json` keeps every day of mean flow at each gauge, with its
   review status, qualifiers and, at a natural gauge, its flow class.
