@@ -4,7 +4,7 @@
  "retrieved": "2026-08-30",
  "keyed_by": "source_station_id",
  "selection": "every published reservoir, traced from its published point against every other published reservoir and snow-site point",
- "traced_this_run": 2,
+ "traced_this_run": 18,
  "self_exclusion": "deliberate: a dam point lies inside its own basin",
  "area_method": "spherical excess around the ring; approximate, for screening rather than measurement",
  "review_area_sq_mi": 300000.0,
@@ -344,7 +344,7 @@
    "upstream_snow_sites": []
   },
   "09237495:CO:BOR": {
-   "name": "Stagecoach Reservoir nr Oak Creek",
+   "name": "Stagecoach Reservoir",
    "trace_point": "published point",
    "comid": "1358238",
    "basin_vertices": 206,
@@ -356,7 +356,8 @@
    "upstream_snow_sites": [
     "1061:CO:SNTL",
     "426:CO:SNTL"
-   ]
+   ],
+   "retrieved": "2026-10-31"
   },
   "09255450:WY:BOR": {
    "name": "High Savery Reservoir",
@@ -822,7 +823,7 @@
    "upstream_snow_sites": []
   },
   "10334500:NV:BOR": {
-   "name": "Rye Patch Re nr Rye Patch, NV",
+   "name": "Rye Patch Reservoir",
    "trace_point": "published point",
    "comid": "11158345",
    "basin_vertices": 7073,
@@ -843,7 +844,8 @@
     "503:NV:SNTL",
     "569:NV:SNTL",
     "570:NV:SNTL"
-   ]
+   ],
+   "retrieved": "2026-10-31"
   },
   "10336710:NV:BOR": {
    "name": "Marlette Lake",
@@ -1261,7 +1263,7 @@
    ]
   },
   "12105800:WA:BOR": {
-   "name": "Howard Hansen",
+   "name": "Howard A. Hanson",
    "trace_point": "published point",
    "comid": "23977692",
    "basin_vertices": 220,
@@ -1272,7 +1274,8 @@
     "1069:WA:SNTL",
     "420:WA:SNTL",
     "788:WA:SNTL"
-   ]
+   ],
+   "retrieved": "2026-10-31"
   },
   "12175000:WA:BOR": {
    "name": "Ross",
@@ -2465,7 +2468,7 @@
    "upstream_snow_sites": []
   },
   "14023000:OR:BOR": {
-   "name": "Mckay",
+   "name": "McKay",
    "trace_point": "published point",
    "comid": "23648274",
    "basin_vertices": 218,
@@ -2473,7 +2476,8 @@
    "upstream_reservoirs": [],
    "upstream_snow_sites": [
     "362:OR:SNTL"
-   ]
+   ],
+   "retrieved": "2026-10-31"
   },
   "14034490:OR:BOR": {
    "name": "Willow Creek",
@@ -3735,22 +3739,24 @@
    "upstream_snow_sites": []
   },
   "ATN": {
-   "name": "Lake San Antonio, Monterey Co",
+   "name": "Lake San Antonio",
    "trace_point": "published point",
    "comid": "8212757",
    "basin_vertices": 314,
    "basin_area_sq_mi": 324,
    "upstream_reservoirs": [],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "BCL": {
-   "name": "Bucks Lake Storage",
+   "name": "Bucks Lake",
    "trace_point": "published point",
    "comid": "2776572",
    "basin_vertices": 70,
    "basin_area_sq_mi": 29,
    "upstream_reservoirs": [],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "BIO": {
    "name": "Briones Dam",
@@ -3990,7 +3996,7 @@
    "upstream_snow_sites": []
   },
   "CFW": {
-   "name": "Bear River At Camp Far West Dam",
+   "name": "Camp Far West",
    "trace_point": "published point",
    "comid": "15070264",
    "basin_vertices": 287,
@@ -3998,7 +4004,8 @@
    "upstream_reservoirs": [
     "RLL"
    ],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "CGS": {
    "name": "Cogswell Reservoir",
@@ -4107,13 +4114,14 @@
    ]
   },
   "CHV": {
-   "name": "Cherry Valley Dam",
+   "name": "Cherry Lake",
    "trace_point": "published point",
    "comid": "17081431",
    "basin_vertices": 183,
    "basin_area_sq_mi": 120,
    "upstream_reservoirs": [],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "CMN": {
    "name": "Camanche Reservoir",
@@ -4131,13 +4139,14 @@
    ]
   },
   "CNV": {
-   "name": "Crane Valley",
+   "name": "Bass Lake",
    "trace_point": "published point",
    "comid": "17116159",
    "basin_vertices": 76,
    "basin_area_sq_mi": 30,
    "upstream_reservoirs": [],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "COY": {
    "name": "Lake Mendocino",
@@ -4283,13 +4292,14 @@
    "upstream_snow_sites": []
   },
   "DRE": {
-   "name": "Dwinnell Reservoir Near Edgewood",
+   "name": "Dwinnell Reservoir",
    "trace_point": "published point",
    "comid": "3917464",
    "basin_vertices": 207,
    "basin_area_sq_mi": 233,
    "upstream_reservoirs": [],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "EDN": {
    "name": "Stumpy Meadows Reservoir",
@@ -4902,13 +4912,14 @@
    "upstream_snow_sites": []
   },
   "JCK": {
-   "name": "Jackson Meadows (Nevada Co Wd)",
+   "name": "Jackson Meadows",
    "trace_point": "published point",
    "comid": "8059613",
    "basin_vertices": 57,
    "basin_area_sq_mi": 37,
    "upstream_reservoirs": [],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "JDA": {
    "name": "Lake Umatilla",
@@ -6042,16 +6053,17 @@
    ]
   },
   "MCO": {
-   "name": "Lake Mccloud",
+   "name": "Lake McCloud",
    "trace_point": "published point",
    "comid": "7961223",
    "basin_vertices": 12,
    "basin_area_sq_mi": 1,
    "upstream_reservoirs": [],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "MCS": {
-   "name": "Lake Mc Swain",
+   "name": "Lake McSwain",
    "trace_point": "published point",
    "comid": "21608729",
    "basin_vertices": 572,
@@ -6059,7 +6071,8 @@
    "upstream_reservoirs": [
     "EXC"
    ],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "MDO": {
    "name": "Modesto Reservoir",
@@ -6346,16 +6359,17 @@
    "upstream_snow_sites": []
   },
   "MOR": {
-   "name": "Morena Dam",
+   "name": "Morena Reservoir",
    "trace_point": "published point",
    "comid": "20325323",
    "basin_vertices": 148,
    "basin_area_sq_mi": 115,
    "upstream_reservoirs": [],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "MPHC2000:CO:BOR": {
-   "name": "Mcphee Reservoir",
+   "name": "McPhee Reservoir",
    "trace_point": "published point",
    "comid": "18384963",
    "basin_vertices": 365,
@@ -6369,7 +6383,8 @@
     "465:CO:SNTL",
     "586:CO:SNTL",
     "739:CO:SNTL"
-   ]
+   ],
+   "retrieved": "2026-10-31"
   },
   "MPL": {
    "name": "Mammoth Pool",
@@ -6452,13 +6467,14 @@
    "upstream_snow_sites": []
   },
   "ORO": {
-   "name": "Oroville Dam",
+   "name": "Lake Oroville",
    "trace_point": "published point",
    "comid": "24689339",
    "basin_vertices": 11,
    "basin_area_sq_mi": 1,
    "upstream_reservoirs": [],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "PAR": {
    "name": "Pardee",
@@ -6616,13 +6632,14 @@
    "upstream_snow_sites": []
   },
   "SAT": {
-   "name": "San Antonio Reservoir, Alameda Co",
+   "name": "San Antonio Reservoir",
    "trace_point": "published point",
    "comid": "2808653",
    "basin_vertices": 83,
    "basin_area_sq_mi": 38,
    "upstream_reservoirs": [],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "SDB": {
    "name": "Saddlebag Lake Reservoir",
@@ -7264,13 +7281,14 @@
    "upstream_snow_sites": []
   },
   "USL": {
-   "name": "U San Leandro",
+   "name": "Upper San Leandro",
    "trace_point": "published point",
    "comid": "948050148",
    "basin_vertices": 83,
    "basin_area_sq_mi": 30,
    "upstream_reservoirs": [],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "UVA": {
    "name": "Uvas Reservoir",
