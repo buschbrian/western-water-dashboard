@@ -13,6 +13,14 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
+- **River flow and the soil-moisture change kept day by day** (ADR-146).
+  `river_history.json` keeps every day of mean flow at each gauge, with its
+  review status, qualifiers and, at a natural gauge, its flow class.
+  `soil_moisture_history.json` keeps the week's change published for each
+  drainage area on each refresh date. Both are published under `api/` and
+  `data/`, and merge by date: a revised river value replaces its day.
+  The data reference now documents both, with an example record for each, and
+  completes the river flow, soil moisture and reservoir level history cards.
 - **Four natural river gauges compared with normal** (ADR-144, ADR-145) on
   the river flow page: Mill Creek near Moab, Blacks Fork near Robertson, South
   Creek near Monticello and Middle Fork Beaver Creek near Lonetree. Each

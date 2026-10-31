@@ -68,6 +68,20 @@
       "note": "The last fifteen days of soil moisture at the snow stations and each station's seven-day change (ADR-142). Separate from snowpack.json and precipitation.json so a failure costs only this file."
     },
     {
+      "path": "river_history.json",
+      "class": "generated-daily",
+      "writer": "refresh_rivers.py",
+      "staged_by_refresh": true,
+      "note": "Every day the daily river refresh has read, per gauge: flow, review status, qualifiers and, at a natural gauge, the flow class (ADR-146). Merged by date, so a revised value replaces that day. Nothing is deleted. No page fetches it yet."
+    },
+    {
+      "path": "soil_moisture_history.json",
+      "class": "generated-daily",
+      "writer": "refresh_soil_moisture.py",
+      "staged_by_refresh": true,
+      "note": "For each refresh date, the week's change published for each drainage area, with the stations behind it (ADR-146). Starts on the first run; no earlier day is rebuilt. No page fetches it yet."
+    },
+    {
       "path": "lakes.json",
       "class": "generated-daily",
       "writer": "refresh_lakes.py",

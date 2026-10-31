@@ -18,6 +18,7 @@ the module that owns the concern, not in the orchestrator.
 | `geography.py` | County and drainage-area assignment onto finished records. |
 | `lakes.py` | Natural terminal lakes (ADR-112, ADR-118): a record with no full level, its validator and payload. Written by `refresh_lakes.py`, never by the reservoir orchestrator. |
 | `measurement.py` | One daily series summarised (extremes, dated changes, rank). Shared by lakes and reservoir levels; change it and both move. |
+| `daily_history.py`, `river_history.py`, `soil_history.py` | Daily history files merged by date (ADR-146): `river_history.json`, `soil_moisture_history.json`. Called by `refresh_rivers.py` and `refresh_soil_moisture.py` after their payloads. |
 | `elevation.py` | Reviewed reservoir surface level (ADR-135): the `elevation` block, `elevation_history.json`, their checks. A datum is never assumed from the provider. |
 
 - **A method version is not a schema version.** Changing an estimator means

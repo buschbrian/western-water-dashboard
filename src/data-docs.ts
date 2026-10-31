@@ -10,8 +10,10 @@ import {
   REFERENCE_GROUPS,
   RESERVOIR_GROUPS,
   RIVER_GROUPS,
+  RIVER_HISTORY_GROUPS,
   SNOW_GROUPS,
   SOIL_GROUPS,
+  SOIL_HISTORY_GROUPS,
   type ApiFieldGroup
 } from "./data-docs-schema";
 import { brandMarkup, pageLinksMarkup } from "./ui/page-header";
@@ -49,8 +51,10 @@ root.innerHTML = `
         <li><a href="#elevation-fields">Reservoir level history fields</a></li>
         <li><a href="#lake-fields">Terminal lake fields</a></li>
         <li><a href="#river-fields">River flow fields</a></li>
+        <li><a href="#river-history-fields">River flow history fields</a></li>
         <li><a href="#snow-fields">Snow fields</a></li>
         <li><a href="#soil-fields">Soil moisture fields</a></li>
+        <li><a href="#soil-history-fields">Soil moisture history fields</a></li>
         <li><a href="#drought-fields">Drought fields</a></li>
         <li><a href="#reference-fields">Reference fields</a></li>
         <li><a href="#examples">Examples</a></li>
@@ -77,9 +81,14 @@ root.innerHTML = `
           datum. The reservoir file carries the summary of the same level in each
           record's <code>elevation</code> block; this file carries every day. Structure
           version 1. Refreshed each morning with the reservoirs. If a level request fails,
-          the last good entry stays. Shown on the
+          the last good entry stays. The Bureau of Reclamation can revise a past level, and
+          each refresh then replaces it. Shown on the
           <a href="./reservoir.html?name=Lake%20Powell">Lake Powell</a> and
           <a href="./reservoir.html?name=Lake%20Mead">Lake Mead</a> pages.</p>
+        <p>Example, shortened to three days:</p>
+        <pre tabindex="0" role="region" aria-label="Reservoir level history example, scrolls sideways"><code>{"name": "Lake Mead", "vertical_datum": "project",
+ "start": "2026-10-28", "end": "2026-10-30",
+ "values": [1038.38, 1038.51, 1038.66]}</code></pre>
       </article>
       <article class="api-file">
         <h3>Terminal lakes</h3>
@@ -109,6 +118,29 @@ root.innerHTML = `
           because one gauge can measure water that another measured upstream, and no gauge
           is a reservoir's inflow. Shown on the <a href="./rivers.html">river flow page</a>,
           which also offers the values as a CSV file.</p>
+        <p>Example day, from a gauge record's <code>daily</code> list:</p>
+        <pre tabindex="0" role="region" aria-label="River flow example, scrolls sideways"><code>{"date": "2026-10-30", "cfs": 101.0, "approval": "Provisional", "qualifiers": []}</code></pre>
+      </article>
+      <article class="api-file">
+        <h3>River flow history</h3>
+        <p><a href="./api/river_history.json"><code>/api/river_history.json</code></a></p>
+        <p>Every day of mean flow this site has read at each river gauge, in cubic feet per
+          second. The river flow file keeps only 30 days. This file keeps all of them. Each
+          gauge has one list of flows, one list of review statuses and one list of
+          qualifiers, from the gauge's <code>start</code> date. A natural gauge also has the
+          flow class of each day. The class compares the flow with the U.S. Geological Survey's
+          percentiles of approved daily values for the same date. The percentiles are not
+          published, so the class is kept here. Structure version 1. Refreshed each morning
+          with the river flow file. Each refresh replaces the 30 newest days, so a revised
+          value replaces the earlier one. A day the survey does not report stays as stored.
+          This site deletes no day. No page shows this file yet.</p>
+        <p>Example, shortened to three days:</p>
+        <pre tabindex="0" role="region" aria-label="River flow history example, scrolls sideways"><code>{"name": "Blacks Fork near Robertson", "source_station_id": "09217900",
+ "tier": "natural", "start": "2026-10-28", "end": "2026-10-30",
+ "cfs": [116.0, 110.0, 101.0],
+ "approval": ["Provisional", "Provisional", "Provisional"],
+ "qualifiers": [[], [], []],
+ "flow_class": ["much_above_normal", "much_above_normal", "much_above_normal"]}</code></pre>
       </article>
       <article class="api-file">
         <h3>Snow monitoring</h3>
@@ -134,6 +166,24 @@ root.innerHTML = `
           comparison with normal. Structure version 1. Refreshed independently each
           morning. A failed refresh does not replace the last complete file. Shown on the
           <a href="./precipitation.html">precipitation page</a>.</p>
+        <p>Example station, shortened:</p>
+        <pre tabindex="0" role="region" aria-label="Soil moisture example, scrolls sideways"><code>{"station": "1030:CO:SNTL", "depths_inches": [2, 8, 20],
+ "end_percent": 21.7, "start_percent": 18.0, "change_points": 3.7}</code></pre>
+      </article>
+      <article class="api-file">
+        <h3>Soil moisture history</h3>
+        <p><a href="./api/soil_moisture_history.json"><code>/api/soil_moisture_history.json</code></a></p>
+        <p>For each refresh date, the week's change in soil moisture that this site published
+          for each drainage area, in percentage points. Each entry also gives the stations
+          behind the figure and the stations in the area. The first date is the first refresh
+          after this file began. This site does not rebuild earlier dates. Structure version 1.
+          Refreshed each morning with the soil moisture file. A second refresh on the same date
+          replaces that date. This site deletes no date. No page shows this file yet.</p>
+        <p>Example, shortened to one date:</p>
+        <pre tabindex="0" role="region" aria-label="Soil moisture history example, scrolls sideways"><code>{"start": "2026-10-31", "end": "2026-10-31", "end_date": ["2026-10-30"],
+ "areas": [{"huc6": "140100", "huc6_name": "Colorado Headwaters",
+  "site_count": [17], "measured_site_count": [13],
+  "mean_change_points": [-0.2]}]}</code></pre>
       </article>
       <article class="api-file">
         <h3>Drought coverage by drainage area</h3>
@@ -201,6 +251,10 @@ root.innerHTML = `
       aria-labelledby="river-fields-heading">
       <h2 id="river-fields-heading">River flow fields</h2>
     </section>
+    <section class="methods-section api-fields" id="river-history-fields"
+      aria-labelledby="river-history-fields-heading">
+      <h2 id="river-history-fields-heading">River flow history fields</h2>
+    </section>
     <section class="methods-section api-fields" id="snow-fields"
       aria-labelledby="snow-fields-heading">
       <h2 id="snow-fields-heading">Snow fields</h2>
@@ -208,6 +262,10 @@ root.innerHTML = `
     <section class="methods-section api-fields" id="soil-fields"
       aria-labelledby="soil-fields-heading">
       <h2 id="soil-fields-heading">Soil moisture fields</h2>
+    </section>
+    <section class="methods-section api-fields" id="soil-history-fields"
+      aria-labelledby="soil-history-fields-heading">
+      <h2 id="soil-history-fields-heading">Soil moisture history fields</h2>
     </section>
     <section class="methods-section api-fields" id="drought-fields"
       aria-labelledby="drought-fields-heading">
@@ -308,8 +366,10 @@ renderGroups("reservoir-fields", RESERVOIR_GROUPS);
 renderGroups("elevation-fields", ELEVATION_HISTORY_GROUPS);
 renderGroups("lake-fields", LAKE_GROUPS);
 renderGroups("river-fields", RIVER_GROUPS);
+renderGroups("river-history-fields", RIVER_HISTORY_GROUPS);
 renderGroups("snow-fields", SNOW_GROUPS);
 renderGroups("soil-fields", SOIL_GROUPS);
+renderGroups("soil-history-fields", SOIL_HISTORY_GROUPS);
 renderGroups("drought-fields", DROUGHT_GROUPS);
 renderGroups("reference-fields", REFERENCE_GROUPS);
 wireTheme();
@@ -320,5 +380,6 @@ window.__dataDocsReady = {
   files: document.querySelectorAll(".api-file").length,
   groups: RESERVOIR_GROUPS.length + ELEVATION_HISTORY_GROUPS.length
     + LAKE_GROUPS.length + RIVER_GROUPS.length + SNOW_GROUPS.length + SOIL_GROUPS.length
+    + RIVER_HISTORY_GROUPS.length + SOIL_HISTORY_GROUPS.length
     + DROUGHT_GROUPS.length + REFERENCE_GROUPS.length
 };
