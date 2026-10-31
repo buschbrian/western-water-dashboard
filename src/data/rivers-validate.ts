@@ -1,12 +1,15 @@
 /*
- * The runtime validator for `rivers.json` (ADR-136).
+ * The runtime validator for `rivers.json` (ADR-136, ADR-144).
  *
  * The pipeline's rules, held again in the browser: a payload that does not
- * say what the page needs is refused whole, and so is one carrying a normal,
- * a rank, a total across gauges, an inflow, or a withdrawal notice with a
- * measurement in it.
+ * say what the page needs is refused whole, and so is one carrying a rank, a
+ * total across gauges, an inflow, a withdrawal notice with a measurement in
+ * it, a normal on a shaped gauge, or a natural gauge's class that does not
+ * follow from its flow and its band.
  */
-import type { RiverDay, RiverGauge, RiverPayload, WithdrawnGauge } from "../types";
+import type {
+  RiverDay, RiverFlowClass, RiverGauge, RiverNormalBand, RiverPayload, WithdrawnGauge
+} from "../types";
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -39,6 +42,66 @@ export const REFUSED_RIVER_FIELDS = [
   "capacity_af", "pct_of_capacity"
 ] as const;
 
+/** What a natural record carries and a shaped record never does. */
+const NORMAL_FIELDS = ["normal_band", "flow_class", "normal_withheld"] as const;
+const BAND_KEYS = ["p10", "p25", "p50", "p75", "p90"] as const;
+const BAND_FIELDS = new Set(["day", ...BAND_KEYS, "years", "retrieved", "source_url"]);
+const WITHHELD = new Set(["fewer_than_30_years", "percentile_missing"]);
+/** WaterWatch's minimum, the pipeline's `RIVER_NORMAL_MIN_YEARS`. */
+export const MIN_NORMAL_YEARS = 30;
+
+/** WaterWatch's class for a flow against one day's band; a value on a
+ * boundary takes the class nearer normal, on both sides alike. */
+export function flowClass(cfs: number, band: RiverNormalBand): RiverFlowClass {
+  if (cfs < band.p10) return "much_below_normal";
+  if (cfs < band.p25) return "below_normal";
+  if (cfs <= band.p75) return "normal";
+  if (cfs <= band.p90) return "above_normal";
+  return "much_above_normal";
+}
+
+function isBand(value: unknown): value is RiverNormalBand {
+  if (!isObject(value) || Object.keys(value).length !== BAND_FIELDS.size
+      || !Object.keys(value).every((key) => BAND_FIELDS.has(key))) return false;
+  const numbers = BAND_KEYS.map((key) => value[key]);
+  return typeof value.day === "string" && /^\d{2}-\d{2}$/.test(value.day)
+    && numbers.every(hasNumber) && (numbers as number[]).every((n, i, all) =>
+      n >= 0 && (i === 0 || all[i - 1]! <= n))
+    && hasNumber(value.years) && value.years >= MIN_NORMAL_YEARS
+    && isDate(value.retrieved) && isHttps(value.source_url);
+}
+
+function checkComparison(value: Record<string, unknown>, name: string): void {
+  if (value.tier === "shaped") {
+    if (value.compared_with_normal !== false || NORMAL_FIELDS.some((field) => field in value)) {
+      throw new Error(`${name}: a shaped gauge is never compared with normal`);
+    }
+    return;
+  }
+  if (value.tier !== "natural") throw new Error(`${name}: unknown tier`);
+  if (!NORMAL_FIELDS.every((field) => field in value)) {
+    throw new Error(`${name}: a natural gauge says whether it is compared with normal`);
+  }
+  if (value.compared_with_normal === false) {
+    if (value.normal_band !== null || value.flow_class !== null
+        || typeof value.normal_withheld !== "string" || !WITHHELD.has(value.normal_withheld)) {
+      throw new Error(`${name}: a natural gauge without a comparison says why, alone`);
+    }
+    return;
+  }
+  if (value.compared_with_normal !== true || value.normal_withheld !== null
+      || !isBand(value.normal_band)) {
+    throw new Error(`${name}: the normal band is malformed`);
+  }
+  if (typeof value.as_of !== "string" || value.normal_band.day !== value.as_of.slice(5)) {
+    throw new Error(`${name}: the normal band is not for the reading's date`);
+  }
+  if (!hasNumber(value.current_cfs)
+      || value.flow_class !== flowClass(value.current_cfs, value.normal_band)) {
+    throw new Error(`${name}: the class does not follow from the flow and the band`);
+  }
+}
+
 const NOTICE_FIELDS = new Set([
   "name", "as_of", "days_stale", "source_label", "reason", "source_station_id"
 ]);
@@ -63,9 +126,7 @@ function validateGauge(value: unknown, index: number, windowDays: number): River
   if (value.measurement !== "daily_mean_flow") {
     throw new Error(`${name}: a river record must say what it measures`);
   }
-  if (value.compared_with_normal !== false || value.tier !== "shaped") {
-    throw new Error(`${name}: only a shaped gauge with no comparison is published`);
-  }
+  checkComparison(value, name);
   if (typeof value.usgs_name !== "string" || !value.usgs_name
       || value.source_key !== "usgs" || typeof value.source_label !== "string"
       || typeof value.source_station_id !== "string" || !isHttps(value.source_url)
@@ -132,7 +193,7 @@ function validateNotice(value: unknown, index: number): WithdrawnGauge {
 
 export function validateRiverPayload(value: unknown): RiverPayload {
   if (!isObject(value)) throw new Error("rivers payload is not an object");
-  if (value.schema_version !== 1) {
+  if (value.schema_version !== 2) {
     throw new Error(`unsupported rivers structure version ${String(value.schema_version)}`);
   }
   refuse(value, "rivers payload");

@@ -6218,11 +6218,12 @@ for (const viewport of VIEWPORTS) {
 console.log(`\n=== Lakes page: ${VIEWPORTS.length} widths`);
 
 /*
- * The river-flow page (ADR-136), at every width.
+ * The river-flow page (ADR-136, ADR-144), at every width.
  *
  * What the payload published is what the page drew, one chart per gauge,
- * each gauge saying why it has no comparison with normal and linking to
- * the survey's own page. Nothing names a gauge as an inflow or adds gauges
+ * each shaped gauge saying why it has no comparison with normal, each
+ * natural gauge saying it is compared and then either its class or why not
+ * today, and every gauge linking to the survey's own page. Nothing names a gauge as an inflow or adds gauges
  * together; nothing scrolls sideways; the provider's initials stay out of
  * visible text. No number is read: the payload's own count is the oracle.
  */
@@ -6242,8 +6243,14 @@ for (const viewport of VIEWPORTS) {
     text: document.body.innerText,
     articles: document.querySelectorAll("#rivers-main article.river[data-station]").length,
     charts: document.querySelectorAll("#rivers-main svg.flow-chart").length,
-    explanations: [...document.querySelectorAll("#rivers-main .river-shaped")]
-      .map((node) => node.textContent ?? ""),
+    tiers: [...document.querySelectorAll("#rivers-main article.river[data-station]")]
+      .map((article) => ({
+        tier: article.getAttribute("data-tier"),
+        shaped: article.querySelector(".river-shaped")?.textContent ?? null,
+        natural: article.querySelector(".river-natural")?.textContent ?? null,
+        verdict: article.querySelector(".river-class")?.textContent ?? null,
+        withheld: article.querySelector(".river-withheld")?.textContent ?? null
+      })),
     pageLinks: [...document.querySelectorAll("#rivers-main a[href]")]
       .filter((link) => link.href.startsWith("https://waterdata.usgs.gov/monitoring-location/"))
       .length,
@@ -6259,9 +6266,21 @@ for (const viewport of VIEWPORTS) {
     + `${state.ready?.rendered}, found ${state.articles} articles`);
   check(state.charts === state.articles && state.ready?.charts === state.articles,
     `Rivers page (${viewport.name}): ${state.charts} charts for ${state.articles} gauges`);
-  check(state.explanations.length === state.articles && state.explanations.every((text) =>
-    text.includes("not compared with normal")),
-  `Rivers page (${viewport.name}): a gauge is missing the explanation of why it has no normal`);
+  const shaped = state.tiers.filter((a) => a.tier === "shaped");
+  const natural = state.tiers.filter((a) => a.tier === "natural");
+  check(shaped.length + natural.length === state.articles,
+    `Rivers page (${viewport.name}): an article has no tier`);
+  check(shaped.every((a) => a.shaped?.includes("not compared with normal")
+    && a.natural === null && a.verdict === null && a.withheld === null),
+  `Rivers page (${viewport.name}): a shaped gauge is missing why it has no normal, or shows one`);
+  check(natural.every((a) => a.natural?.includes("compared with normal") && a.shaped === null
+    && ((a.verdict !== null && /\bnormal for [A-Z][a-z]+ \d{1,2}$/i.test(a.verdict)
+      && a.withheld === null)
+      || (a.verdict === null && a.withheld?.includes("not compared with normal")))),
+  `Rivers page (${viewport.name}): a natural gauge shows neither its class nor why it has none`);
+  check(natural.filter((a) => a.verdict !== null).length === state.ready?.compared,
+    `Rivers page (${viewport.name}): ${state.ready?.compared} compared in readiness, `
+    + `${natural.filter((a) => a.verdict !== null).length} classes drawn`);
   check(state.pageLinks === state.articles,
     `Rivers page (${viewport.name}): ${state.pageLinks} survey page links for ${state.articles} gauges`);
   check(state.text.includes("cubic feet per second"),

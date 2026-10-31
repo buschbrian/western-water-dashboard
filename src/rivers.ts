@@ -1,6 +1,6 @@
 /*
- * The river-flow page (ADR-136): a static shell, the runtime `rivers.json`,
- * nothing generated (ADR-002).
+ * The river-flow page (ADR-136, ADR-144): a static shell, the runtime
+ * `rivers.json`, nothing generated (ADR-002).
  *
  * One article per published gauge, each standing alone: no figure on this
  * page adds two gauges together. A withdrawn gauge is stated, not measured
@@ -35,9 +35,9 @@ const list = root.querySelector<HTMLElement>("#rivers-list");
 if (!main || !list) throw new Error("Missing #rivers-main");
 
 function finish(gauges: number, rendered: number, charts: number, withdrawn: number,
-  failed = false): void {
+  compared: number, failed = false): void {
   main!.setAttribute("aria-busy", "false");
-  window.__riversReady = { gauges, rendered, charts, withdrawn, failed };
+  window.__riversReady = { gauges, rendered, charts, withdrawn, compared, failed };
 }
 
 function note(text: string, className = "reservoir-note"): HTMLParagraphElement {
@@ -72,9 +72,10 @@ function renderGauge(gauge: RiverGauge): { article: HTMLElement; chart: boolean 
   const article = document.createElement("article");
   article.className = "river";
   article.dataset.station = gauge.source_station_id;
+  article.dataset.tier = view.tier;
   article.append(heading("h2", view.name, "river-name"));
   if (view.where) article.append(note(view.where));
-  article.append(note(view.shaped, "reservoir-note river-shaped"));
+  article.append(note(view.tierNote, `reservoir-note river-${view.tier}`));
   if (view.late) article.append(note(view.late, "detail-late"));
 
   const reading = document.createElement("section");
@@ -87,8 +88,16 @@ function renderGauge(gauge: RiverGauge): { article: HTMLElement; chart: boolean 
   const basis = document.createElement("span");
   basis.textContent = view.basis;
   headline.append(value, basis);
-  reading.append(headline, note(view.status, "reservoir-note river-status"),
-    definitionList(view.rows));
+  reading.append(headline);
+  if (view.comparison) {
+    const verdict = document.createElement("p");
+    verdict.className = "river-class";
+    verdict.textContent = view.comparison.label;
+    reading.append(verdict, note(view.comparison.detail, "reservoir-note river-band"));
+  } else if (view.withheld) {
+    reading.append(note(view.withheld, "reservoir-note river-withheld"));
+  }
+  reading.append(note(view.status, "reservoir-note river-status"), definitionList(view.rows));
   article.append(reading);
 
   article.append(heading("h3", "Flow in the last 30 days", "reservoir-subhead"));
@@ -113,6 +122,7 @@ function renderGauge(gauge: RiverGauge): { article: HTMLElement; chart: boolean 
 function render(payload: RiverPayload): void {
   const children: HTMLElement[] = [];
   let charts = 0;
+  const compared = payload.gauges.filter((gauge) => gauge.compared_with_normal).length;
   for (const gauge of payload.gauges) {
     const { article, chart } = renderGauge(gauge);
     if (chart) charts += 1;
@@ -138,7 +148,7 @@ function render(payload: RiverPayload): void {
     children.push(exportButton);
   }
   list!.replaceChildren(...children);
-  finish(payload.gauge_count, payload.gauges.length, charts, payload.withdrawn.length);
+  finish(payload.gauge_count, payload.gauges.length, charts, payload.withdrawn.length, compared);
 }
 
 async function run(): Promise<void> {
@@ -148,7 +158,7 @@ async function run(): Promise<void> {
     console.error("The published river data could not be read:", error);
     list!.replaceChildren(note("The published river data could not be read just now, so "
       + "this page has nothing to show. It is worth reloading later.", "reservoir-error"));
-    finish(0, 0, 0, 0, true);
+    finish(0, 0, 0, 0, 0, true);
   }
 }
 

@@ -431,6 +431,8 @@ interface Window {
     rendered: number;
     charts: number;
     withdrawn: number;
+    /** Natural gauges whose newest flow is compared with normal (ADR-144). */
+    compared: number;
     failed: boolean;
   };
 }

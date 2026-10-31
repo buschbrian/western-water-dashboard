@@ -22,7 +22,8 @@
 }
 .river-reading .detail-headline { margin-block: 0 0.5rem; }
 .river-reading .detail-headline strong { font-size: 1.35rem; }
-.river-shaped { font-weight: 600; }
+.river-shaped, .river-natural { font-weight: 600; }
+.river-class { margin-block: 0 0.25rem; font-size: 1.1rem; font-weight: 700; }
 .flow-bar { fill: var(--flow-bar); }
 .rivers-main .trend-chart-host { margin-block-start: 0.5rem; }
 .rivers-main .detail-export { margin-block-start: 2rem; }

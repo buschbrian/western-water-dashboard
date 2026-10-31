@@ -1,4 +1,4 @@
-"""Daily river flow at reviewed gauges (ADR-136), driven with synthetic rows.
+"""Daily river flow at reviewed gauges (ADR-136, ADR-144), driven with synthetic rows.
 
 Network-free: the provider's HTTP getter is stubbed where the request is
 under test, and everything else runs on rows built here. Nothing asserts
@@ -14,11 +14,17 @@ import pytest
 
 import refresh_rivers
 from pipeline import providers, rivers, roster
-from pipeline.constants import RIVER_WINDOW_DAYS, STALE_AFTER_DAYS, WITHDRAW_AFTER_DAYS
+from pipeline.constants import (
+    RIVER_NORMAL_MIN_YEARS, RIVER_NORMAL_PERCENTILES, RIVER_WINDOW_DAYS, STALE_AFTER_DAYS,
+    WITHDRAW_AFTER_DAYS,
+)
 
 ROOT = Path(__file__).resolve().parent.parent
 TODAY = pd.Timestamp("2026-10-27")
 SITE = "09379500"
+NATURAL = "09183500"
+SHAPED_SITES = {"09379500", "09180500", "09315000", "09333500"}
+NATURAL_SITES = {"09183500", "09217900", "09378170"}
 
 
 def entry(**overrides) -> dict:
@@ -51,27 +57,36 @@ def feature(site=SITE, series="abc", day="2026-10-20", value="12.5", **extra) ->
 
 # --- the roster ----------------------------------------------------------
 
-def test_the_four_rivers_are_admitted_with_display_and_survey_names():
+def test_the_rivers_are_admitted_with_display_and_survey_names():
     gauges = roster.admitted_river_gauges()
-    assert set(gauges) == {"09379500", "09180500", "09315000", "09333500"}
+    assert set(gauges) == SHAPED_SITES | NATURAL_SITES
     for station, row in gauges.items():
         assert row["display_name"] != row["display_name"].upper()
         assert row["usgs_name"]
-        assert row["tier"]["tier"] == "shaped"
-        assert row["tier"]["status"] == "pending_formal_ruling"
         assert row["series"]["parameter_code"] == "00060"
+        if station in SHAPED_SITES:
+            assert row["tier"]["tier"] == "shaped"
+            assert row["tier"]["status"] == "pending_formal_ruling"
+        else:
+            assert row["tier"]["tier"] == "natural"
+            assert row["tier"]["directed_on"] == "2026-10-31"
+            assert row["tier"]["tier_ruled_on"] == "2026-10-27"
 
 
-def test_every_shaped_gauge_meets_an_adr_137_rule():
-    """ADR-137 makes a gauge shaped when a published reservoir sits inside
-    its basin, or when inventoried dams hold at least 10% of a year's flow.
-    Every basis cites the ruling, and the evidence must meet one of them."""
+def test_every_gauge_meets_its_adr_137_rule():
+    """ADR-137: a published reservoir inside the basin, or inventoried dams
+    holding at least 10% of a year's flow, makes a gauge shaped; neither makes
+    it natural. Every basis cites the ruling, and the evidence must meet it."""
     for row in roster.admitted_river_gauges().values():
         evidence = row["tier"]["evidence"]
         assert "ADR-137" in row["tier"]["basis"]
-        if not evidence["published_reservoirs_upstream"]:
+        assert "10%" in row["tier"]["basis"] or evidence["published_reservoirs_upstream"]
+        if row["tier"]["tier"] == "natural":
+            assert evidence["published_reservoirs_upstream"] == []
+            assert evidence["storage_share_pct"] < 10.0
+            assert evidence["gages2_class"] == "reference"
+        elif not evidence["published_reservoirs_upstream"]:
             assert evidence["storage_share_pct"] >= 10.0
-            assert "10%" in row["tier"]["basis"]
 
 
 def write_roster(tmp_path, row) -> Path:
@@ -96,9 +111,29 @@ def test_the_loader_refuses_a_gauge_without_a_readable_display_name(tmp_path, na
 
 def test_the_loader_refuses_a_tier_with_no_publication_decision(tmp_path):
     row = entry()
-    row["tier"]["tier"] = "natural"
+    row["tier"]["tier"] = "short"
     with pytest.raises(ValueError, match="publication decision"):
         roster.load_admitted_river_gauges(write_roster(tmp_path, row))
+
+
+def natural_entry(**overrides) -> dict:
+    row = json.loads(json.dumps(roster.admitted_river_gauges()[NATURAL]))
+    row.update(overrides)
+    return row
+
+
+def test_the_loader_refuses_a_natural_gauge_that_fails_adr_137(tmp_path):
+    roster.load_admitted_river_gauges(write_roster(tmp_path, natural_entry()))
+    reservoir = natural_entry()
+    reservoir["tier"]["evidence"]["published_reservoirs_upstream"] = ["Ken's Lake"]
+    stored = natural_entry()
+    stored["tier"]["evidence"]["storage_share_pct"] = 10.0
+    unruled = natural_entry()
+    del unruled["tier"]["tier_ruled_on"]
+    for row, match in ((reservoir, "ADR-137"), (stored, "ADR-137"),
+                       (unruled, "tier_ruled_on")):
+        with pytest.raises(ValueError, match=match):
+            roster.load_admitted_river_gauges(write_roster(tmp_path, row))
 
 
 @pytest.mark.parametrize("path, match", [
@@ -286,6 +321,241 @@ def test_an_old_record_is_withdrawn_by_station_without_its_measurement():
     assert set(payload["withdrawn"][0]) <= rivers.NOTICE_FIELDS
 
 
+# --- the normals (ADR-144) ----------------------------------------------
+
+def band(p10=2.0, p25=4.0, p50=6.0, p75=8.0, p90=10.0, years=44) -> dict:
+    return {"years": years, "p10": p10, "p25": p25, "p50": p50, "p75": p75, "p90": p90}
+
+
+def normals_entry(station=NATURAL, series=None, **day_overrides) -> dict:
+    series = series or roster.admitted_river_gauges()[station]["series"]["time_series_id"]
+    days = {day: band() for day in providers.DAYS_OF_YEAR}
+    days["02-29"] = band(years=11)
+    days.update(day_overrides)
+    return {"time_series_id": series, "source_url": providers.usgs_flow_normals_url(station),
+            "retrieved": "2026-10-31", "days": days}
+
+
+def synthetic_normals(tmp_path, gauges=None) -> Path:
+    gauges = gauges if gauges is not None else {s: normals_entry(s) for s in NATURAL_SITES}
+    path = tmp_path / "river_normals.json"
+    path.write_text(json.dumps({"percentiles": list(RIVER_NORMAL_PERCENTILES),
+                                "min_years": RIVER_NORMAL_MIN_YEARS, "retrieved": "2026-10-31",
+                                "gauges": gauges}))
+    return path
+
+
+def api_reply(site=NATURAL, series="abc", *, drop=(), **day_overrides) -> dict:
+    values = []
+    for day in providers.DAYS_OF_YEAR:
+        if day in drop:
+            continue
+        value = {"time_of_year": day, "time_of_year_type": "day_of_year",
+                 "values": ["1.0", "2.0", "4.0", "6.0", "8.0", "10.0", "12.0"],
+                 "percentiles": ["5", "10", "25", "50", "75", "90", "95"],
+                 "sample_count": 44, "approval_status": "approved",
+                 "computation_id": "x", "computation": "percentile"}
+        value.update(day_overrides.get("_" + day.replace("-", "_"), {}))
+        values.append(value)
+    return {"type": "FeatureCollection", "next": None, "features": [{
+        "type": "Feature", "geometry": None,
+        "properties": {"monitoring_location_id": f"USGS-{site}", "data": [{
+            "parameter_code": "00060", "unit_of_measure": "ft^3/s",
+            "parent_time_series_id": series, "parent_statistic_id": "00003",
+            "values": values}]}}]}
+
+
+def test_the_normals_adapter_reads_five_percentiles_and_keeps_nan_as_none():
+    days = providers.fetch_usgs_flow_normals(NATURAL, "abc", RIVER_NORMAL_PERCENTILES,
+                                             payload=api_reply(_02_29={
+                                                 "values": ["nan", "nan", "3", "4", "5", "nan",
+                                                            "nan"], "sample_count": 5}))
+    assert list(days) == list(providers.DAYS_OF_YEAR)
+    assert days["10-31"] == band(2.0, 4.0, 6.0, 8.0, 10.0, 44)
+    assert days["02-29"]["p10"] is None and days["02-29"]["years"] == 5
+
+
+@pytest.mark.parametrize("reply, match", [
+    (api_reply(series="other"), "not the reviewed daily mean"),
+    (api_reply(drop=("07-04",)), "365 of 366"),
+    (api_reply(_10_31={"approval_status": "provisional"}), "approved day-of-year"),
+    (api_reply(_10_31={"values": ["1", "9", "4", "6", "8", "10", "12"]}), "out of order"),
+    (api_reply(_10_31={"values": ["1", "2", "lots", "6", "8", "10", "12"]}), "p25"),
+    (api_reply(_10_31={"percentiles": ["5", "10", "50", "75", "90", "95", "99"]}),
+     "unreadable"),
+    ({**api_reply(), "next": "token"}, "more than one page"),
+    (api_reply(site="09217900"), "one monitoring location"),
+])
+def test_the_normals_adapter_refuses_a_reply_it_cannot_trust(reply, match):
+    with pytest.raises(ValueError, match=match):
+        providers.fetch_usgs_flow_normals(NATURAL, "abc", RIVER_NORMAL_PERCENTILES,
+                                          payload=reply)
+
+
+@pytest.mark.parametrize("key", ["", "a-real-looking-key"])
+def test_the_normals_key_goes_in_a_header_only(monkeypatch, key):
+    seen = {}
+
+    class Reply:
+        def raise_for_status(self):
+            return None
+
+        def json(self):
+            return api_reply()
+
+    def get(url, params=None, timeout=None, headers=None):
+        seen.update(url=url, params=params, headers=headers)
+        return Reply()
+    monkeypatch.setattr(providers.SESSION, "get", get)
+    monkeypatch.setenv(providers.USGS_API_KEY_ENV, key)
+    providers.fetch_usgs_flow_normals(NATURAL, "abc", RIVER_NORMAL_PERCENTILES)
+    assert ("X-Api-Key" in seen["headers"]) is bool(key)
+    assert key == "" or key not in seen["url"]
+    assert "computation_type=percentile" in seen["url"] and "normal_type=DOY" in seen["url"]
+
+
+@pytest.mark.parametrize("cfs, expected", [
+    (1.9, "much_below_normal"), (2.0, "below_normal"), (3.9, "below_normal"),
+    (4.0, "normal"), (8.0, "normal"), (8.1, "above_normal"), (10.0, "above_normal"),
+    (10.1, "much_above_normal"), (0.0, "much_below_normal"),
+])
+def test_a_flow_class_takes_the_class_nearer_normal_at_a_boundary(cfs, expected):
+    assert rivers.flow_class(cfs, band()) == expected
+
+
+def test_tied_percentiles_still_give_one_class():
+    tied = band(p10=3.0, p25=3.0)
+    assert rivers.flow_class(3.0, tied) == "normal"
+    assert rivers.flow_class(2.9, tied) == "much_below_normal"
+
+
+def test_a_natural_record_carries_the_band_for_its_reading_date():
+    end = dt.date(2026, 10, 26)
+    record = rivers.summarize_gauge(natural_entry(), rows(end, base=3.0), TODAY,
+                                    normals_entry())
+    assert record["tier"] == "natural" and record["compared_with_normal"] is True
+    assert record["normal_band"]["day"] == "10-26"
+    assert record["normal_band"]["years"] == 44
+    assert record["flow_class"] == rivers.flow_class(record["current_cfs"], record["normal_band"])
+    assert record["normal_withheld"] is None
+    rivers.validate_payload(rivers.build_payload([record], TODAY, "t"),
+                            {NATURAL: natural_entry()})
+
+
+@pytest.mark.parametrize("day, reason", [
+    (band(years=RIVER_NORMAL_MIN_YEARS - 1), "fewer_than_30_years"),
+    (band(p90=None), "percentile_missing"),
+])
+def test_a_day_without_a_usable_band_is_withheld_not_estimated(day, reason):
+    end = dt.date(2026, 10, 26)
+    record = rivers.summarize_gauge(natural_entry(), rows(end), TODAY,
+                                    normals_entry(**{"10-26": day}))
+    assert record["compared_with_normal"] is False
+    assert record["normal_band"] is None and record["flow_class"] is None
+    assert record["normal_withheld"] == reason
+    rivers.validate_payload(rivers.build_payload([record], TODAY, "t"),
+                            {NATURAL: natural_entry()})
+
+
+def test_the_leap_day_is_withheld_on_thin_records():
+    end = dt.date(2028, 2, 29)
+    record = rivers.summarize_gauge(natural_entry(), rows(end), pd.Timestamp(end),
+                                    normals_entry())
+    assert record["normal_withheld"] == "fewer_than_30_years"
+
+
+def test_a_shaped_gauge_never_takes_percentiles():
+    with pytest.raises(ValueError, match="never compared"):
+        rivers.summarize_gauge(entry(), rows(TODAY.date()), TODAY, normals_entry())
+    with pytest.raises(ValueError, match="needs its percentiles"):
+        rivers.summarize_gauge(natural_entry(), rows(TODAY.date()), TODAY)
+
+
+def test_the_payload_refuses_a_normal_on_a_shaped_gauge_and_a_wrong_class():
+    shaped = rivers.summarize_gauge(entry(), rows(TODAY.date()), TODAY)
+    natural = rivers.summarize_gauge(natural_entry(), rows(TODAY.date(), base=3.0), TODAY,
+                                     normals_entry())
+    both = {SITE: entry(), NATURAL: natural_entry()}
+    rivers.validate_payload(rivers.build_payload([shaped, natural], TODAY, "t"), both)
+    bad = [
+        ({**shaped, "normal_band": natural["normal_band"]}, "never compared"),
+        ({**shaped, "flow_class": "normal"}, "never compared"),
+        ({**natural, "flow_class": "much_above_normal"}, "does not follow"),
+        ({**natural, "normal_band": {**natural["normal_band"], "day": "01-01"}},
+         "not the reading's date"),
+        ({**natural, "normal_band": {**natural["normal_band"], "years": 29}}, "too few years"),
+        ({**natural, "normal_band": {**natural["normal_band"], "p25": 99.0}}, "out of order"),
+        ({**natural, "normal_withheld": "fewer_than_30_years"}, "no reason"),
+        ({**natural, "compared_with_normal": False}, "says why"),
+        ({**natural, "tier": "shaped"}, "never compared"),
+    ]
+    for record, match in bad:
+        records = [shaped, record] if record["source_station_id"] == NATURAL else [record, natural]
+        with pytest.raises(ValueError, match=match):
+            rivers.validate_payload(rivers.build_payload(records, TODAY, "t"), both)
+
+
+def test_the_payload_refuses_a_tier_the_roster_does_not_give():
+    record = rivers.summarize_gauge(natural_entry(), rows(TODAY.date()), TODAY, normals_entry())
+    shaped_roster = natural_entry()
+    shaped_roster["tier"] = entry()["tier"]
+    with pytest.raises(ValueError, match="roster's"):
+        rivers.validate_payload(rivers.build_payload([record], TODAY, "t"),
+                                {NATURAL: shaped_roster})
+
+
+def test_the_normals_loader_refuses_what_no_one_reviewed(tmp_path):
+    gauges = roster.admitted_river_gauges()
+    assert set(rivers.load_river_normals(gauges, synthetic_normals(tmp_path))) == NATURAL_SITES
+    cases = [
+        ({s: normals_entry(s) for s in NATURAL_SITES - {NATURAL}}, "no percentiles"),
+        ({**{s: normals_entry(s) for s in NATURAL_SITES},
+          NATURAL: normals_entry(series="other")}, "not the reviewed series"),
+        ({**{s: normals_entry(s) for s in NATURAL_SITES},
+          NATURAL: {**normals_entry(), "days": dict(list(normals_entry()["days"].items())[:365])}},
+         "366 days"),
+        ({**{s: normals_entry(s) for s in NATURAL_SITES},
+          NATURAL: normals_entry(**{"05-01": band(p50=1.0)})}, "out of order"),
+        ({**{s: normals_entry(s) for s in NATURAL_SITES},
+          NATURAL: {**normals_entry(),
+                    "days": {d: band(years=22) for d in providers.DAYS_OF_YEAR}}},
+         "fewer than 30 years"),
+    ]
+    for normals, match in cases:
+        with pytest.raises(ValueError, match=match):
+            rivers.load_river_normals(gauges, synthetic_normals(tmp_path, normals))
+
+
+def test_a_percentile_file_that_fails_leaves_the_last_payload_alone(tmp_path):
+    out = tmp_path / "rivers.json"
+    out.write_text("previous\n")
+    broken = synthetic_normals(tmp_path, {})
+    assert refresh_rivers.main([], fetch=stub_fetch(), output=out, today=TODAY, pause=0,
+                               normals_path=broken) == 1
+    assert out.read_text() == "previous\n"
+
+
+def test_the_builder_merges_and_holds_out_a_gauge_that_fails(tmp_path, monkeypatch):
+    import sys
+    sys.path.insert(0, str(ROOT / "tools"))
+    import build_river_normals as builder
+    out = synthetic_normals(tmp_path)
+    before = json.loads(out.read_text())["gauges"]
+
+    def fetch(site, series, percentiles):
+        if site == "09217900":
+            raise ValueError("the service answered with another series")
+        reply = api_reply(site=site, series=series)
+        return providers.fetch_usgs_flow_normals(site, series, percentiles, payload=reply)
+    code = builder.main([], fetch=fetch, output=out, today=dt.date(2026, 11, 2), pause=0)
+    document = json.loads(out.read_text())
+    assert code == 1
+    assert document["gauges"]["09217900"] == before["09217900"]
+    assert document["gauges"][NATURAL]["retrieved"] == "2026-11-02"
+    assert document["retrieved"] == "2026-10-31"
+    rivers.load_river_normals(roster.admitted_river_gauges(), out)
+
+
 # --- the refresh ---------------------------------------------------------
 
 def stub_fetch(failing=()):
@@ -299,19 +569,25 @@ def stub_fetch(failing=()):
 
 def test_a_full_run_writes_every_gauge(tmp_path):
     out = tmp_path / "rivers.json"
-    assert refresh_rivers.main([], fetch=stub_fetch(), output=out, today=TODAY, pause=0) == 0
+    assert refresh_rivers.main([], fetch=stub_fetch(), output=out, today=TODAY, pause=0, normals_path=synthetic_normals(tmp_path)) == 0
     payload = json.loads(out.read_text())
-    assert payload["gauge_count"] == 4 and payload["withdrawn"] == []
+    assert payload["gauge_count"] == 7 and payload["withdrawn"] == []
+    natural = [g for g in payload["gauges"] if g["tier"] == "natural"]
+    assert {g["source_station_id"] for g in natural} == NATURAL_SITES
+    assert all(g["compared_with_normal"] and g["flow_class"] in rivers.FLOW_CLASSES
+               for g in natural)
+    assert all(not rivers.NORMAL_FIELDS & set(g) for g in payload["gauges"]
+               if g["tier"] == "shaped")
     assert payload["window_days"] == RIVER_WINDOW_DAYS
     assert all(len(g["daily"]) == RIVER_WINDOW_DAYS for g in payload["gauges"])
 
 
 def test_a_failed_gauge_is_carried_forward_late(tmp_path):
     out = tmp_path / "rivers.json"
-    refresh_rivers.main([], fetch=stub_fetch(), output=out, today=TODAY, pause=0)
+    refresh_rivers.main([], fetch=stub_fetch(), output=out, today=TODAY, pause=0, normals_path=synthetic_normals(tmp_path))
     later = TODAY + pd.Timedelta(days=4)
     assert refresh_rivers.main([], fetch=stub_fetch(failing={SITE}), output=out,
-                               today=later, pause=0) == 0
+                               today=later, pause=0, normals_path=synthetic_normals(tmp_path)) == 0
     carried = next(g for g in json.loads(out.read_text())["gauges"]
                    if g["source_station_id"] == SITE)
     assert carried["fetch_ok"] is False and carried["is_stale"] is True
@@ -321,17 +597,17 @@ def test_a_failed_gauge_is_carried_forward_late(tmp_path):
 
 def test_a_withdrawn_gauge_stays_stated_when_its_fetch_fails(tmp_path):
     out = tmp_path / "rivers.json"
-    refresh_rivers.main([], fetch=stub_fetch(), output=out, today=TODAY, pause=0)
+    refresh_rivers.main([], fetch=stub_fetch(), output=out, today=TODAY, pause=0, normals_path=synthetic_normals(tmp_path))
     gone = TODAY + pd.Timedelta(days=WITHDRAW_AFTER_DAYS + 5)
     everything = set(roster.admitted_river_gauges())
     refresh_rivers.main([], fetch=stub_fetch(failing=everything), output=out,
-                        today=gone, pause=0)
+                        today=gone, pause=0, normals_path=synthetic_normals(tmp_path))
     payload = json.loads(out.read_text())
-    assert payload["gauge_count"] == 0 and payload["withdrawn_count"] == 4
+    assert payload["gauge_count"] == 0 and payload["withdrawn_count"] == 7
     refresh_rivers.main([], fetch=stub_fetch(failing=everything), output=out,
-                        today=gone + pd.Timedelta(days=1), pause=0)
+                        today=gone + pd.Timedelta(days=1), pause=0, normals_path=synthetic_normals(tmp_path))
     again = json.loads(out.read_text())
-    assert again["withdrawn_count"] == 4
+    assert again["withdrawn_count"] == 7
     assert all(n["days_stale"] == WITHDRAW_AFTER_DAYS + 7 for n in again["withdrawn"])
 
 
@@ -339,11 +615,16 @@ def test_a_gauge_that_never_fetched_leaves_the_last_file_alone(tmp_path):
     out = tmp_path / "rivers.json"
     out.write_text("previous\n")
     assert refresh_rivers.main([], fetch=stub_fetch(failing={SITE}), output=out,
-                               today=TODAY, pause=0) == 1
+                               today=TODAY, pause=0, normals_path=synthetic_normals(tmp_path)) == 1
     assert out.read_text() == "previous\n"
 
 
 def test_the_committed_payload_matches_the_roster():
     payload = json.loads((ROOT / "rivers.json").read_text(encoding="utf-8"))
     rivers.validate_payload(payload, roster.admitted_river_gauges())
-    assert payload["schema_version"] == 1
+    assert payload["schema_version"] == 2
+
+
+def test_the_committed_percentiles_load_for_every_natural_gauge():
+    normals = rivers.load_river_normals(roster.admitted_river_gauges())
+    assert set(normals) == NATURAL_SITES

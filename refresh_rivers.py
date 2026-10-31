@@ -1,11 +1,13 @@
-"""Refresh the daily river-flow payload, `rivers.json` (ADR-136).
+"""Refresh the daily river-flow payload, `rivers.json` (ADR-136, ADR-144).
 
 A separate orchestrator for a separate measurement. It reads the reviewed
 roster in `admitted_river_gauges.json`, confirms each gauge's reviewed series
 is still the survey's primary daily mean, asks the U.S. Geological Survey's
 v1 OGC daily collection for the last RIVER_FETCH_DAYS days, and writes 30
 days per gauge. Every run reads the whole window again, so a revised
-provisional value replaces the one published before it.
+provisional value replaces the one published before it. A natural gauge's
+newest value is classed against the committed day-of-year percentiles in
+`river_normals.json`, which this script reads and never fetches.
 
     python refresh_rivers.py             # refresh and write rivers.json
     python refresh_rivers.py --dry-run   # compute everything, write nothing
@@ -14,7 +16,9 @@ provisional value replaces the one published before it.
 A failed gauge carries yesterday's record forward marked late, exactly as a
 reservoir's is; past the withdrawal threshold it leaves the payload for a
 notice that carries no measurement (ADR-056). A payload that fails
-validation leaves the last complete file in place.
+validation, or a percentile file that fails its checks, leaves the last
+complete file in place: no class is published against a normal that did not
+load.
 """
 
 import argparse
@@ -26,7 +30,9 @@ import time
 import pandas as pd
 
 from pipeline import rivers
-from pipeline.constants import RIVER_FETCH_DAYS, RIVERS_OUTPUT_PATH, local_today
+from pipeline.constants import (
+    RIVER_FETCH_DAYS, RIVER_NORMALS_PATH, RIVERS_OUTPUT_PATH, local_today,
+)
 from pipeline.freshness import carry_forward, carry_withdrawals
 from pipeline.providers import confirm_usgs_flow_series, fetch_usgs_flow_series
 from pipeline.roster import admitted_river_gauges
@@ -59,8 +65,10 @@ def fetch_gauge(station: str, entry: dict, start: dt.date, end: dt.date) -> list
 
 
 def refresh(targets: dict[str, dict], today: pd.Timestamp, previous: dict[str, dict],
-            previous_withdrawn: dict[str, dict], fetch=fetch_gauge) -> tuple[list[dict], list[dict]]:
+            previous_withdrawn: dict[str, dict], fetch=fetch_gauge,
+            normals: dict[str, dict] | None = None) -> tuple[list[dict], list[dict]]:
     """Every gauge's record for today, or yesterday's carried forward."""
+    normals = normals or {}
     end = today.date()
     start = end - dt.timedelta(days=RIVER_FETCH_DAYS - 1)
     records, carried = [], []
@@ -68,7 +76,7 @@ def refresh(targets: dict[str, dict], today: pd.Timestamp, previous: dict[str, d
         name = entry["display_name"]
         try:
             rows = fetch(station, entry, start, end)
-            records.append(rivers.summarize_gauge(entry, rows, today))
+            records.append(rivers.summarize_gauge(entry, rows, today, normals.get(station)))
         except Exception as exc:  # noqa: BLE001 -- one gauge's fault, not the run's
             reason = f"{type(exc).__name__}: {exc}"
             print(f"WARNING: {name} ({station}) -- {reason}")
@@ -82,7 +90,8 @@ def refresh(targets: dict[str, dict], today: pd.Timestamp, previous: dict[str, d
 
 
 def main(argv: list[str] | None = None, *, fetch=fetch_gauge, output=RIVERS_OUTPUT_PATH,
-         today: pd.Timestamp | None = None, pause: float = 0.5) -> int:
+         today: pd.Timestamp | None = None, pause: float = 0.5,
+         normals_path=RIVER_NORMALS_PATH) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
     parser.add_argument("--only", nargs="*", metavar="SITE",
                         help="debugging aid: fetch only these gauges and print their "
@@ -103,6 +112,12 @@ def main(argv: list[str] | None = None, *, fetch=fetch_gauge, output=RIVERS_OUTP
             print(f"ERROR: unknown gauge(s): {', '.join(sorted(missing))}", file=sys.stderr)
             return 2
 
+    try:
+        normals = rivers.load_river_normals(roster, normals_path)
+    except (OSError, ValueError) as exc:
+        print(f"ERROR: the river percentiles did not load ({exc}); rivers.json left untouched",
+              file=sys.stderr)
+        return 1
     previous, previous_withdrawn = load_previous(output)
 
     def paced(station, entry, start, end):
@@ -110,7 +125,7 @@ def main(argv: list[str] | None = None, *, fetch=fetch_gauge, output=RIVERS_OUTP
         time.sleep(pause)
         return rows
 
-    records, carried = refresh(targets, today, previous, previous_withdrawn, paced)
+    records, carried = refresh(targets, today, previous, previous_withdrawn, paced, normals)
 
     if args.only:
         print(json.dumps(records, indent=2))
@@ -126,8 +141,13 @@ def main(argv: list[str] | None = None, *, fetch=fetch_gauge, output=RIVERS_OUTP
 
     for record in payload["gauges"]:
         late = f" LATE ({record['days_stale']}d)" if record["is_stale"] else ""
+        band = record.get("normal_band")
+        versus = (f"; {record['flow_class']} (p25-p75 {band['p25']}-{band['p75']}, "
+                  f"{band['years']} years)" if band
+                  else f"; not compared: {record['normal_withheld']}"
+                  if record.get("normal_withheld") else "")
         print(f"{record['name']}: {record['current_cfs']:,} ft^3/s on {record['as_of']} "
-              f"({record['current_approval']}){late}")
+              f"({record['current_approval']}){versus}{late}")
     for notice in payload["withdrawn"]:
         print(f"{notice['name']}: withdrawn, last reading {notice['as_of']} "
               f"({notice['days_stale']} days)")

@@ -1,12 +1,16 @@
 /*
- * The words and rows the river-flow page is made of (ADR-136).
+ * The words and rows the river-flow page is made of (ADR-136, ADR-144).
  *
  * Pure: a gauge record in, sentences and labelled rows out. A gauge has no
- * full level, no normal and no rank, so none is worded here, and nothing
- * here adds two gauges together or calls one a reservoir's inflow.
+ * full level and no rank. A shaped gauge has no normal; a natural gauge's
+ * newest flow is worded against the day's normal range from the payload,
+ * never one computed here. Nothing adds two gauges together or calls one a
+ * reservoir's inflow.
  */
 import { serializeCsv } from "./data/export";
-import type { RiverDay, RiverGauge, RiverPayload, WithdrawnGauge } from "./types";
+import type {
+  NaturalRiverGauge, RiverDay, RiverFlowClass, RiverGauge, RiverPayload, WithdrawnGauge
+} from "./types";
 import { formatDate } from "./viz/format";
 
 export interface RiverRow {
@@ -24,10 +28,21 @@ export interface RiverDayView {
   status: string;
 }
 
+/** A natural gauge's comparison: the class in words and what it rests on. */
+export interface RiverComparison {
+  label: string;
+  detail: string;
+}
+
 export interface RiverView {
   name: string;
   where: string;
-  shaped: string;
+  tier: RiverGauge["tier"];
+  /** Why this gauge is or is not compared with normal. */
+  tierNote: string;
+  comparison: RiverComparison | null;
+  /** A natural gauge's reason for no comparison today, or null. */
+  withheld: string | null;
   late: string | null;
   headline: string;
   basis: string;
@@ -59,6 +74,66 @@ function signed(value: number): string {
  * water or canals take it out (decision R8 is still open). */
 export const SHAPED_SENTENCE =
   "Dams upstream store and release water, so this flow is not compared with normal.";
+
+/** The sentence every natural gauge carries (ADR-144). */
+export const NATURAL_SENTENCE =
+  "Little or no water is stored upstream, so this flow is compared with normal for the date.";
+
+/** WaterWatch's five class names. */
+export const FLOW_CLASS_WORDS: Record<RiverFlowClass, string> = {
+  much_below_normal: "Much below normal",
+  below_normal: "Below normal",
+  normal: "Normal",
+  above_normal: "Above normal",
+  much_above_normal: "Much above normal"
+};
+
+/** "October 30": the calendar day a band belongs to, with no year. */
+export function calendarDay(date: string): string {
+  const parsed = new Date(`${date}T00:00:00Z`);
+  return Number.isNaN(parsed.getTime()) ? date : parsed.toLocaleDateString("en-US", {
+    month: "long", day: "numeric", timeZone: "UTC"
+  });
+}
+
+function cfsText(value: number): string {
+  return `${formatFlow(value)} ${FLOW_UNIT}`;
+}
+
+/** What a natural gauge says about today against normal, or why it says nothing. */
+export function describeComparison(gauge: NaturalRiverGauge): {
+  comparison: RiverComparison | null; withheld: string | null; rows: RiverRow[]; source: RiverRow[];
+} {
+  const day = calendarDay(gauge.as_of);
+  if (!gauge.compared_with_normal) {
+    const why = gauge.normal_withheld === "fewer_than_30_years"
+      ? "fewer than 30 years have an approved value on this date"
+      : "the U.S. Geological Survey gives no normal range for this date";
+    return { comparison: null, withheld: `This flow is not compared with normal for ${day}: ${why}.`,
+      rows: [], source: [] };
+  }
+  const band = gauge.normal_band;
+  return {
+    comparison: {
+      label: `${FLOW_CLASS_WORDS[gauge.flow_class]} for ${day}`,
+      detail: `Normal for this date is ${formatFlow(band.p25)} to ${cfsText(band.p75)}: the `
+        + `middle half of the approved daily values in ${band.years} years of record.`
+    },
+    withheld: null,
+    rows: [
+      { label: `Normal range for ${day}`,
+        value: `${formatFlow(band.p25)} to ${cfsText(band.p75)}` },
+      { label: `Median for ${day}`, value: cfsText(band.p50) },
+      { label: "Much below normal", value: `Under ${cfsText(band.p10)}` },
+      { label: "Much above normal", value: `Over ${cfsText(band.p90)}` },
+      { label: "Years compared", value: `${band.years} years with an approved value on this date` }
+    ],
+    source: [
+      { label: "Normal range", value: "Daily values the U.S. Geological Survey approved, "
+        + `for each date in the record. Read ${formatDate(band.retrieved)}.` }
+    ]
+  };
+}
 
 export function whereSentence(gauge: RiverGauge): string {
   const state = STATE_NAMES[gauge.state];
@@ -138,16 +213,22 @@ export function describeGauge(gauge: RiverGauge): RiverView {
     .filter((part): part is string => part !== null).join(" ");
   const area = gauge.drainage_area_sq_mi === null
     ? null : `${gauge.drainage_area_sq_mi.toLocaleString("en-US")} square miles`;
+  const normal = gauge.tier === "natural" ? describeComparison(gauge)
+    : { comparison: null, withheld: null, rows: [], source: [] };
   return {
     name: gauge.name,
     where: whereSentence(gauge),
-    shaped: SHAPED_SENTENCE,
+    tier: gauge.tier,
+    tierNote: gauge.tier === "natural" ? NATURAL_SENTENCE : SHAPED_SENTENCE,
+    comparison: normal.comparison,
+    withheld: normal.withheld,
     late: lateMessage(gauge),
     headline: `${formatFlow(gauge.current_cfs)} ${FLOW_UNIT}`,
     basis: `mean flow on ${formatDate(gauge.as_of)}`,
     status,
     rows: [
       { label: "Reading date", value: formatDate(gauge.as_of) },
+      ...normal.rows,
       { label: "Change in 7 days", value: change },
       { label: "Highest in 30 days",
         value: `${formatFlow(gauge.window_high_cfs)} ${FLOW_UNIT} on ${formatDate(gauge.window_high_date)}` },
@@ -164,7 +245,8 @@ export function describeGauge(gauge: RiverGauge): RiverView {
       { label: "Station name at the publisher", value: gauge.usgs_name },
       { label: "Measurement", value: "Daily mean flow, in cubic feet per second" },
       ...(area ? [{ label: "Drainage area", value: area }] : []),
-      { label: "Subbasin", value: `${gauge.huc8_name} (${gauge.huc8})` }
+      { label: "Subbasin", value: `${gauge.huc8_name} (${gauge.huc8})` },
+      ...normal.source
     ],
     pageUrl: gauge.usgs_page
   };

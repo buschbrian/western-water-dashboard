@@ -1,9 +1,11 @@
 import { describe, expect, it } from "vitest";
 
-import { riverDays, riverGauge, riverPayload } from "./data/river-fixture";
 import {
-  SHAPED_SENTENCE, approvalText, describeGauge, formatFlow, lateMessage, riversCsv,
-  riversCsvFilename, whereSentence, withdrawnSentence
+  naturalRiverGauge, riverBand, riverDays, riverGauge, riverPayload
+} from "./data/river-fixture";
+import {
+  NATURAL_SENTENCE, SHAPED_SENTENCE, approvalText, calendarDay, describeGauge, formatFlow,
+  lateMessage, riversCsv, riversCsvFilename, whereSentence, withdrawnSentence
 } from "./rivers-model";
 
 describe("river model", () => {
@@ -12,7 +14,9 @@ describe("river model", () => {
     const gauge = riverGauge();
     expect(view.headline).toBe(`${formatFlow(gauge.current_cfs)} cubic feet per second`);
     expect(view.basis).toMatch(/^mean flow on [A-Z][a-z]{2} \d{1,2}, \d{4}$/);
-    expect(view.shaped).toBe(SHAPED_SENTENCE);
+    expect(view.tierNote).toBe(SHAPED_SENTENCE);
+    expect(view.comparison).toBeNull();
+    expect(view.withheld).toBeNull();
     expect(view.days).toHaveLength(30);
   });
 
@@ -44,6 +48,38 @@ describe("river model", () => {
     const view = describeGauge(riverGauge());
     const text = JSON.stringify(view).toLowerCase();
     expect(text).not.toMatch(/inflow|total|percent of normal|% of normal|rank/);
+  });
+
+  it("words a natural gauge's class and the band it rests on, from the payload alone", () => {
+    const gauge = naturalRiverGauge();
+    const view = describeGauge(gauge);
+    expect(view.tierNote).toBe(NATURAL_SENTENCE);
+    expect(view.comparison?.label).toBe("Normal for October 26");
+    expect(view.comparison?.detail).toBe("Normal for this date is 200 to 400 cubic feet per "
+      + "second: the middle half of the approved daily values in 44 years of record.");
+    const rows = Object.fromEntries(view.rows.map((row) => [row.label, row.value]));
+    expect(rows["Normal range for October 26"]).toBe("200 to 400 cubic feet per second");
+    expect(rows["Median for October 26"]).toBe("300 cubic feet per second");
+    expect(rows["Much below normal"]).toBe("Under 100 cubic feet per second");
+    expect(rows["Much above normal"]).toBe("Over 500 cubic feet per second");
+    const much = describeGauge({ ...gauge, flow_class: "much_above_normal" } as typeof gauge);
+    expect(much.comparison?.label).toBe("Much above normal for October 26");
+    expect(JSON.stringify(view).toLowerCase()).not.toMatch(/inflow|total|% of normal|rank/);
+  });
+
+  it("says why a natural gauge has no comparison today, without a class", () => {
+    const thin = describeGauge(naturalRiverGauge({}, "fewer_than_30_years"));
+    expect(thin.comparison).toBeNull();
+    expect(thin.withheld).toBe("This flow is not compared with normal for October 26: fewer "
+      + "than 30 years have an approved value on this date.");
+    expect(thin.rows.some((row) => row.label.startsWith("Normal range"))).toBe(false);
+    const gap = describeGauge(naturalRiverGauge({}, "percentile_missing"));
+    expect(gap.withheld).toContain("gives no normal range for this date");
+  });
+
+  it("names the band's calendar day without a year", () => {
+    expect(calendarDay("2028-02-29")).toBe("February 29");
+    expect(riverBand("2026-10-30").day).toBe("10-30");
   });
 
   it("states a missing 7-day reference instead of inventing a change", () => {

@@ -980,7 +980,26 @@ export interface RiverDay {
   qualifiers: string[];
 }
 
-export interface RiverGauge {
+/** One calendar day's flow percentiles from the U.S. Geological Survey's
+ * statistics service, over the whole approved record (ADR-144). */
+export interface RiverNormalBand {
+  day: string;
+  p10: number;
+  p25: number;
+  p50: number;
+  p75: number;
+  p90: number;
+  years: number;
+  retrieved: string;
+  source_url: string;
+}
+
+export type RiverFlowClass =
+  | "much_below_normal" | "below_normal" | "normal" | "above_normal" | "much_above_normal";
+
+export type RiverNormalWithheld = "fewer_than_30_years" | "percentile_missing";
+
+interface RiverGaugeBase {
   name: string;
   usgs_name: string;
   measurement: "daily_mean_flow";
@@ -1000,8 +1019,6 @@ export interface RiverGauge {
   huc8: string;
   huc8_name: string;
   flows_toward: string | null;
-  tier: "shaped";
-  compared_with_normal: false;
   data_frequency: "daily";
   stale_after_days: number;
   as_of: string;
@@ -1024,6 +1041,22 @@ export interface RiverGauge {
   provisional_days: number;
   daily: RiverDay[];
 }
+
+/** Dams upstream store and release water: flow alone (ADR-136). */
+export interface ShapedRiverGauge extends RiverGaugeBase {
+  tier: "shaped";
+  compared_with_normal: false;
+}
+
+/** Little or no water stored upstream: compared with the day's percentiles
+ * when they rest on 30 years or more (ADR-144). */
+export type NaturalRiverGauge = RiverGaugeBase & { tier: "natural" } & (
+  | { compared_with_normal: true; normal_band: RiverNormalBand; flow_class: RiverFlowClass;
+      normal_withheld: null }
+  | { compared_with_normal: false; normal_band: null; flow_class: null;
+      normal_withheld: RiverNormalWithheld });
+
+export type RiverGauge = ShapedRiverGauge | NaturalRiverGauge;
 
 export interface WithdrawnGauge {
   name: string;

@@ -56,6 +56,10 @@ ELEVATION_START_DATE = "19000101"
 #: flow, never a storage: nothing here joins a reservoir or lake file.
 ADMITTED_RIVER_GAUGES_PATH = ROOT / "admitted_river_gauges.json"
 RIVERS_OUTPUT_PATH = ROOT / "rivers.json"
+#: Day-of-year flow percentiles for the natural gauges (ADR-144), read from
+#: the survey's statistics service by `tools/build_river_normals.py` and
+#: committed, so the daily refresh asks nothing more than ADR-136's requests.
+RIVER_NORMALS_PATH = ROOT / "river_normals.json"
 SOURCE_HISTORY_PATH = ROOT / "data" / "reservoir-source-history.json"
 NORMALS_PATH = ROOT / "normals.json"
 COUNTIES_PATH = ROOT / "counties.json"
@@ -256,8 +260,14 @@ ELEVATION_HISTORY_SCHEMA_VERSION = 1
 #: lake record has no capacity or percent full to share a contract with.
 LAKE_SCHEMA_VERSION = 1
 
-#: The shape of `rivers.json` (ADR-136).
-RIVER_SCHEMA_VERSION = 1
+#: The shape of `rivers.json` (ADR-136). Version 2 admits the natural tier
+#: and its comparison with normal (ADR-144).
+RIVER_SCHEMA_VERSION = 2
+#: The percentiles a natural gauge's day carries, and the fewest years with an
+#: approved value on that calendar day for a comparison to be made: the
+#: WaterWatch rule, since the statistics service sets no minimum (ADR-144).
+RIVER_NORMAL_PERCENTILES = (10, 25, 50, 75, 90)
+RIVER_NORMAL_MIN_YEARS = 30
 #: Daily means published per gauge, ending on its newest reported day.
 RIVER_WINDOW_DAYS = 30
 #: Days asked for on every run. Every publishable record's window is read

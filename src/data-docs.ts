@@ -97,10 +97,14 @@ root.innerHTML = `
         <p>Daily mean flow in cubic feet per second at a small reviewed set of U.S.
           Geological Survey gauges. Each gauge carries its last 30 days. Each day has the
           survey's review status and qualifiers. A gauge also carries the change from 7
-          days earlier, and the survey's own station name and page. Structure version 1. Refreshed each morning;
+          days earlier, and the survey's own station name and page. Refreshed each morning;
           every refresh reads the last 90 days again, so a revised provisional value
           replaces the earlier one. Where dams upstream store and release water, a gauge
-          has no comparison with normal and no rank. The file has no total across gauges,
+          has no comparison with normal and no rank. Where little or no water is stored
+          upstream, the newest value is compared with the U.S. Geological Survey's
+          percentiles for the same date: the 10th, 25th, 50th, 75th and 90th of the
+          approved daily values, from 30 years or more. Structure version 2. The file has
+          no total across gauges,
           because one gauge can measure water that another measured upstream, and no gauge
           is a reservoir's inflow. Shown on the <a href="./rivers.html">river flow page</a>,
           which also offers the values as a CSV file.</p>
