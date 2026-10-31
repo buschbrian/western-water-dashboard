@@ -300,14 +300,14 @@ async function renderOverview(
       <div class="card-heading">
         <div>
           <h2 id="weekly-heading">What moved this week</h2>
-          <p class="weekly-intro">The last seven days, worked out from the same files the rest of this site draws. Nothing here is a forecast.</p>
+          <p class="weekly-intro">Changes over the last seven days. Nothing here is a forecast.</p>
           <p class="weekly-scope" data-weekly="scope" role="status" aria-live="polite"></p>
         </div>
         <button id="weekly-toggle" class="mobile-disclosure-toggle" type="button"
           aria-controls="weekly-sections" aria-expanded="false">Show weekly update</button>
       </div>
       <div id="weekly-sections" class="weekly-sections"></div>
-      <p class="card-note weekly-note">The storage figures follow the reservoirs the scope includes, so a change to the Lake Powell control changes them. The snow and drought figures describe the whole region and cannot follow a reservoir scope, which each of them says.</p>
+      <p class="card-note weekly-note">The storage figures follow the reservoir filters. The snow and drought figures always describe the whole region.</p>
     </section>
     <!-- What a shared link's ?state= and ?area= narrowed this page to when
          it opened (slice S3d, docs/OPENING-SCOPE-AND-THE-WESTERN-ROSTER.md).
@@ -325,7 +325,7 @@ async function renderOverview(
            number on the page is in the total at all. Sat fifth in the row
            it read as one more narrowing filter. -->
       <div class="filterbar-head">
-        <div class="filterbar-title"><p class="eyebrow">Cross-filter dashboard</p><h2 id="filter-heading">Focus the analysis</h2></div>
+        <div class="filterbar-title"><h2 id="filter-heading">Filter the reservoirs</h2></div>
         <button id="overview-filter-toggle" class="mobile-filter-toggle" type="button"
           aria-controls="overview-filter-actions overview-filter-search overview-filter-controls"
           aria-expanded="false">Show filters</button>
@@ -361,7 +361,7 @@ async function renderOverview(
              scale as the two place menus beside it. -->
         <calcite-label>Reporting<calcite-select id="cadence-filter" scale="l"><calcite-option value="all">All reporting</calcite-option><calcite-option value="daily">Daily</calcite-option><calcite-option value="monthly">Monthly</calcite-option><calcite-option value="late">Late or unavailable</calcite-option></calcite-select></calcite-label>
       </div>
-      <p class="card-note filter-note">Lake Powell and Lake Mead are each large enough to hide local conditions in a combined total. Both start included, and either can be taken out at any time.</p>
+      <p class="card-note filter-note">Lake Powell and Lake Mead are large enough to hide local conditions in a combined total. Turn either off to see the other reservoirs more clearly.</p>
     </section>
     <p id="filter-status" class="filter-status" role="status"></p>
     <section class="overview-kpis" aria-label="Filtered storage summary">
@@ -370,21 +370,20 @@ async function renderOverview(
       <article class="overview-kpi"><span>Compared with normal</span><strong data-kpi="normal">—</strong><small data-kpi="normal-note">—</small></article>
       <article class="overview-kpi"><span>Change over the year</span><strong data-kpi="year">—</strong><small data-kpi="change">Acre-feet. 30 days: —</small></article>
       <article class="overview-kpi"><span>Gained since the low</span><strong data-kpi="since-low">—</strong><small data-kpi="since-low-note">—</small></article>
-      <article class="overview-kpi"><span>Late or unavailable</span><strong data-kpi="late">—</strong><small>Evaluated against each source update schedule</small></article>
+      <article class="overview-kpi"><span>Late or unavailable</span><strong data-kpi="late">—</strong><small>Against each source's update schedule</small></article>
       <article class="overview-kpi"><span>Data published</span><strong>${formatDate(generatedAt.slice(0, 10))}</strong><small data-kpi="observed">—</small></article>
     </section>
     <section class="class-strip" aria-labelledby="class-heading">
       <div class="class-strip-head">
         <h2 id="class-heading">How the reservoirs are spread</h2>
-        <p>Choose a level to filter everything below. The widths are the share of reservoirs in view.</p>
+        <p>Choose a band to filter the page. Each width is that band's share of the reservoirs in view.</p>
       </div>
       <div class="class-bar" data-classes role="group" aria-labelledby="class-heading"></div>
     </section>
     <section class="chart-settings mobile-chart-settings" aria-labelledby="chart-settings-heading">
       <div class="chart-settings-copy">
-        <p class="eyebrow">Chart display</p>
-        <h2 id="chart-settings-heading">Choose how the charts show the filtered data</h2>
-        <p>The filters above change every chart and the table. Each setting here says which charts it changes.</p>
+        <h2 id="chart-settings-heading">Chart options</h2>
+        <p>The filters above change every chart and the table.</p>
       </div>
       <button id="chart-settings-toggle" class="mobile-disclosure-toggle" type="button"
         aria-controls="chart-settings-controls" aria-expanded="false">Show chart options</button>
@@ -402,26 +401,25 @@ async function renderOverview(
         <div id="capacity-chart" class="chart-host" aria-busy="true"></div>
         <div class="card-foot">
           <div class="chart-legend" data-legend></div>
-          <p class="card-note">A reservoir can hold more than its full level when water is held above the usual pool. A bar can then run past 100%.</p>
+          <p class="card-note">A bar can pass 100% when water is held above the full level.</p>
         </div>
       </section>
       <section class="overview-card overview-card-wide" aria-labelledby="watershed-heading">
-        <div class="card-heading"><div><h2 id="watershed-heading">Drainage-area conditions</h2><p>Combined storage divided by the combined full level within each area. Click a bar to filter to it.</p></div></div>
+        <div class="card-heading"><div><h2 id="watershed-heading">Storage by drainage area</h2><p>Combined storage against the combined full level of each area. Click a bar to filter to it.</p></div></div>
         <div id="watershed-chart" class="chart-host" aria-busy="true"></div>
         <div class="card-foot">
           <div class="chart-legend" data-legend></div>
         </div>
       </section>
       <section class="overview-card" aria-labelledby="trend-heading">
-        <div class="card-heading"><div><h2 id="trend-heading">The last 12 months</h2><p>Combined storage for the reservoirs in view, month by month. The only chart here that shows direction.</p></div></div>
+        <div class="card-heading"><div><h2 id="trend-heading">Storage over the last 12 months</h2><p>Combined storage for the reservoirs in view, by month.</p></div></div>
         <div id="trend-chart" class="chart-host" aria-busy="true"></div>
         <div class="card-foot">
-          <p class="card-note">Each month counts only the reservoirs that reported it, so the months are not all drawn from the same set. Hover any month to see how many reservoirs are behind it.</p>
-          <p class="card-note">The newest month is the one to read with care. Reservoirs read once a month report at month end, so that month is thin until they do.</p>
+          <p class="card-note">Each month counts only the reservoirs that reported in it. Point to a month to see how many. The newest month is not complete until the monthly reports arrive.</p>
         </div>
       </section>
       <section class="overview-card" aria-labelledby="normal-heading">
-        <div class="card-heading"><div><h2 id="normal-heading">Stored now against normal</h2><p>Each dot is a reservoir. Dots below the dashed line hold less than they usually do on this date.</p></div></div>
+        <div class="card-heading"><div><h2 id="normal-heading">Storage compared with normal</h2><p>Each dot is a reservoir. Dots below the line at 100% hold less than usual for this date.</p></div></div>
         <div id="normal-chart" class="chart-host" aria-busy="true"></div>
         <div class="card-foot">
           <!-- Which reservoirs the ratio axis could not reach, named rather
@@ -429,12 +427,11 @@ async function renderOverview(
                reservoir fits, so this never announces an empty status. -->
           <div id="normal-off-scale" class="chart-note" role="status" hidden></div>
           <div class="chart-legend" data-legend></div>
-          <p class="card-note">The reservoirs get larger to the right, in tenfold steps, so the small ones are as readable as Flaming Gorge.</p>
-          <p class="card-note">The scale stops at twice the usual level. A reservoir that usually holds very little on this date can read far above that. A small change in storage is then a large change in the percentage.</p>
+          <p class="card-note">Reservoir size increases to the right in steps of ten. The scale stops at 200% of usual, because a reservoir that usually holds very little can read much higher.</p>
         </div>
       </section>
       <section class="overview-card overview-card-wide" aria-labelledby="distribution-heading">
-        <div class="card-heading"><div><h2 id="distribution-heading">How full, across all of them</h2><p>Reservoirs sorted into ten equal bands of percent full, with the mean, the middle value, and the range the middle half of them fall in.</p></div></div>
+        <div class="card-heading"><div><h2 id="distribution-heading">Percent full across the reservoirs</h2><p>How many reservoirs fall in each band of percent full, with the mean, the middle value and the middle half.</p></div></div>
         <div id="distribution-chart" class="chart-host" aria-busy="true"></div>
         <div class="card-foot">
           <!-- Under the chart, not beside it. The histogram is the widest thing
@@ -447,13 +444,12 @@ async function renderOverview(
         </div>
       </section>
       <section class="overview-card overview-card-wide" aria-labelledby="spread-heading">
-        <div class="card-heading"><div><h2 id="spread-heading">Spread within each drainage area</h2><p>Each row is one drainage area, driest first. The box holds the middle half of its reservoirs and the line inside it is the middle value.</p></div></div>
+        <div class="card-heading"><div><h2 id="spread-heading">Percent full within each drainage area</h2><p>Each row is one drainage area, driest first. The box holds the middle half of its reservoirs and the line inside it is the middle value.</p></div></div>
         <div id="spread-chart" class="chart-host" aria-busy="true"></div>
         <div class="card-foot">
           <div class="chart-legend" data-legend></div>
-          <p class="card-note">The whiskers reach the rest, and every dot beyond them is one reservoir worth opening on the map. The figure at the right of each row is how many reservoirs the row holds. A box drawn over three of them carries less weight than one drawn over forty.</p>
-          <p class="card-note">The box takes its colour from that area's middle value, in the same colours as the map circles. An area at 60% can be forty reservoirs near 60, or half full and half empty.</p>
-          <p class="card-note">Areas with fewer than three reservoirs are left out, because a box drawn over two of them is just the two values again. A reservoir can hold more than its full level when water is held above the usual pool. A whisker or a mark pressed against the right edge can then stand for a value past 100%.</p>
+          <p class="card-note">The whiskers reach the other reservoirs, and each dot beyond them is one reservoir. The number at the right of a row is how many reservoirs it holds. The box takes its colour from the middle value.</p>
+          <p class="card-note">Areas with fewer than three reservoirs are not shown. A mark at the right edge can stand for a value above 100%.</p>
         </div>
       </section>
     </div>

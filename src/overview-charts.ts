@@ -175,6 +175,12 @@ const NORMAL_AXIS_MAX = 200;
 /** The value axis is the second one; the category axis is the first. */
 const VALUE_AXIS = 1;
 
+/** Axis ticks in whole acre-feet with thousands separators. */
+const ACRE_FEET_FORMAT = {
+  type: WebChartTypes.NumberAxisFormat,
+  intlOptions: { maximumFractionDigits: 0, useGrouping: true }
+} as const;
+
 /**
  * Expands a browser-minified `#rgb` to `#rrggbb`.
  *
@@ -955,8 +961,10 @@ export function offScaleNote(points: readonly NormalPoint[]): OffScaleNote | nul
    * line is one reservoir however many there are. */
   return {
     lead: `${count} above ${NORMAL_AXIS_MAX}% of usual and not drawn:`,
+    /* Whole percents: above twice the usual level, a decimal place adds
+     * nothing a reader can use, and "1812.0%" read as a typo for "1,812%". */
     items: above.map((point) =>
-      `${point.label} at ${formatPercent(point.percentOfNormal)}`)
+      `${point.label} at ${Math.round(point.percentOfNormal).toLocaleString("en-US")}%`)
   };
 }
 
@@ -986,8 +994,18 @@ export async function renderArcgisNormalChart(
   /* Axis 0 is the horizontal one. See the note above the function. */
   model.setLogarithmic(true, 0);
   /* A logarithmic axis cannot show zero, and does not have to: a reservoir
-   * with no usual value for the date is not on this chart at all. */
-  model.setMinBound(null as unknown as number, 0);
+   * with no usual value for the date is not on this chart at all. Left free,
+   * the axis started at the smallest usual value and every tick was a
+   * multiple of it -- 24.16, 2,416, 241,600. Ending it on the powers of ten
+   * around the data puts the ticks on 10, 1,000, 100,000. */
+  const usual = points.map((point) => point.normalAf).filter((value) => value > 0);
+  model.setMinBound(usual.length > 0
+    ? 10 ** Math.floor(Math.log10(Math.min(...usual)))
+    : null as unknown as number, 0);
+  model.setMaxBound(usual.length > 0
+    ? 10 ** Math.ceil(Math.log10(Math.max(...usual)))
+    : null as unknown as number, 0);
+  model.setAxisValueFormat(0, ACRE_FEET_FORMAT);
   /* The ratio axis starts at zero -- it is a percentage of something, and a
    * bottom that floats with the data would move the reference line's height
    * every time the filter changed.
