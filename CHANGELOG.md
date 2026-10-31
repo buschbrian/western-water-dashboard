@@ -94,6 +94,11 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Changed
 
+- **The share picture names its source and its lines.** The Lake Powell and
+  Lake Mead pictures end with a key (this water year, the year before, the
+  earlier years and the dashed lines) and "Readings: Bureau of Reclamation ·
+  buschbrian.github.io/western-water-dashboard". The committed fallback
+  pictures carry the same source line. The frame stays 1200 by 630.
 - **Lake Powell and Lake Mead lead with their level.** The top of each page
   shows two tiles: the surface level above its named datum, beside percent
   full and the level it is measured against ("23.7% full (maximum level)").

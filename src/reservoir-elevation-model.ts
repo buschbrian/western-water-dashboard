@@ -389,6 +389,29 @@ export function referenceKeyEntries(drawn: readonly ReferenceLevel[],
   return entries;
 }
 
+/** One entry of the key under a level chart: which line is which. */
+export interface YearKeyEntry {
+  tier: YearTier | "reference";
+  text: string;
+}
+
+/** The chart key, shared by the page and the share picture: the current
+ * year, the year before, the earlier years, then the dashed lines. */
+export function yearKeyEntries(chart: ElevationChart): YearKeyEntry[] {
+  const entries: YearKeyEntry[] = [];
+  const current = chart.lines.find((line) => line.tier === "current");
+  const previous = chart.lines.find((line) => line.tier === "previous");
+  const earlier = chart.lines.filter((line) => line.tier === "earlier");
+  if (current) entries.push({ tier: "current", text: `${current.label} water year` });
+  if (previous) entries.push({ tier: "previous", text: `${previous.label} water year` });
+  if (earlier.length) {
+    entries.push({ tier: "earlier", text: earlier.length === 1 ? `${earlier[0]!.label} water year`
+      : `${earlier[earlier.length - 1]!.label} to ${earlier[0]!.label} water years` });
+  }
+  for (const text of chart.referenceKey) entries.push({ tier: "reference", text });
+  return entries;
+}
+
 /** The sentence under the chart for levels it does not draw, or null. */
 export function notDrawnSentence(levels: readonly ReferenceLevel[]): string | null {
   if (levels.length === 0) return null;

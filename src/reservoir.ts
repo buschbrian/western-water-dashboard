@@ -32,7 +32,7 @@ import {
 import type { ReservoirPageState } from "./reservoir-model";
 import {
   describeElevation, elevationChart, levelHeadline, notDrawnSentence, referenceLevelGroups,
-  referenceLevelText
+  referenceLevelText, yearKeyEntries
 } from "./reservoir-elevation-model";
 import type { ElevationChart, ElevationView } from "./reservoir-elevation-model";
 import type { ReservoirPayload } from "./types";
@@ -145,18 +145,7 @@ function sectionHeading(text: string): HTMLHeadingElement {
 function yearKey(chart: ElevationChart): HTMLUListElement {
   const list = document.createElement("ul");
   list.className = "elevation-key";
-  const tiers: [string, string][] = [];
-  const current = chart.lines.find((line) => line.tier === "current");
-  const previous = chart.lines.find((line) => line.tier === "previous");
-  const earlier = chart.lines.filter((line) => line.tier === "earlier");
-  if (current) tiers.push(["current", `${current.label} water year`]);
-  if (previous) tiers.push(["previous", `${previous.label} water year`]);
-  if (earlier.length) {
-    tiers.push(["earlier", earlier.length === 1 ? `${earlier[0]!.label} water year`
-      : `${earlier[earlier.length - 1]!.label} to ${earlier[0]!.label} water years`]);
-  }
-  for (const entry of chart.referenceKey) tiers.push(["reference", entry]);
-  for (const [tier, text] of tiers) {
+  for (const { tier, text } of yearKeyEntries(chart)) {
     const item = document.createElement("li");
     const swatch = document.createElement("span");
     swatch.className = `elevation-swatch elevation-swatch-${tier}`;
@@ -523,7 +512,7 @@ async function renderShare(payload: ReservoirPayload,
   const entry = history?.reservoirs.find(
     (candidate) => candidate.source_station_id === reservoir.source_station_id);
   const chart = entry ? elevationChart(reservoir, entry) : null;
-  const frame = chart ? shareFrame(reservoir, label, payload.generated_at, chart) : null;
+  const frame = chart ? shareFrame(reservoir, label, payload.generated_at) : null;
   if (!chart || !frame) {
     const heading = document.createElement("h1");
     heading.className = "reservoir-name";
@@ -551,7 +540,12 @@ async function renderShare(payload: ReservoirPayload,
   const chartHost = document.createElement("div");
   chartHost.className = "elevation-chart-host";
   chartHost.id = "reservoir-elevation-chart";
-  main.replaceChildren(head, chartHost, text("p", "share-caption", frame.caption));
+  const key = yearKey(chart);
+  key.classList.add("share-key");
+  const foot = document.createElement("footer");
+  foot.className = "share-foot";
+  foot.append(key, text("p", "share-source", frame.source));
+  main.replaceChildren(head, chartHost, foot);
   const drawn = renderElevationYears(chartHost, chart,
     { scale: SHARE_CHART_SCALE, height: SHARE_CHART_HEIGHT });
   finish("found", drawn ? "drawn" : "card");

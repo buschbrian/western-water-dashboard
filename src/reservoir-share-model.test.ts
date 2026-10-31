@@ -1,8 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { syntheticElevation } from "./data/elevation-fixture";
 import { readPayload } from "./data/payload-fixture";
-import { elevationChart } from "./reservoir-elevation-model";
-import { isShareView, shareFrame } from "./reservoir-share-model";
+import { elevationChart, yearKeyEntries } from "./reservoir-elevation-model";
+import { SITE_ADDRESS, isShareView, shareFrame } from "./reservoir-share-model";
 import type { ElevationHistoryEntry, Reservoir } from "./types";
 
 const reservoir: Reservoir = {
@@ -34,24 +34,29 @@ describe("the share view", () => {
 describe("the share frame", () => {
   const chart = elevationChart(reservoir, history())!;
 
-  it("says the name, the level with its datum, the reading date and how to read the chart", () => {
-    const frame = shareFrame(reservoir, "Testwater", "2026-10-21T12:00:00Z", chart)!;
+  it("says the name, the level with its datum, the reading date and its source", () => {
+    const frame = shareFrame(reservoir, "Testwater", "2026-10-21T12:00:00Z")!;
     expect(frame.name).toBe("Testwater");
     expect(frame.level).toBe("3,500.25 feet");
     expect(frame.basis).toBe("above the National Geodetic Vertical Datum of 1929");
     expect(frame.readingDate).toMatch(/^Reading date: [A-Z][a-z]{2} \d{1,2}, \d{4}$/);
-    expect(frame.caption).toContain("one water year");
-    expect(frame.caption).toContain(chart.lines[0]!.label);
+    expect(frame.source).toBe(`Readings: Bureau of Reclamation · ${SITE_ADDRESS}`);
   });
 
   it("uses no initials for a datum and no percent for a level", () => {
-    const frame = shareFrame(reservoir, "Testwater", "2026-10-21T12:00:00Z", chart)!;
+    const frame = shareFrame(reservoir, "Testwater", "2026-10-21T12:00:00Z")!;
     const text = Object.values(frame).join(" ");
     expect(text).not.toMatch(/\bNGVD|\bNAVD|%/);
   });
 
+  it("keys the current year, the year before and the earlier ones by name", () => {
+    const entries = yearKeyEntries(chart);
+    expect(entries.map((entry) => entry.tier).slice(0, 2)).toEqual(["current", "previous"]);
+    expect(entries[1]!.text).toBe(`${chart.lines[1]!.label} water year`);
+  });
+
   it("is absent for a reservoir with no reviewed level", () => {
     const { elevation: _drop, ...plain } = reservoir;
-    expect(shareFrame(plain as Reservoir, "Testwater", "2026-10-21", chart)).toBeNull();
+    expect(shareFrame(plain as Reservoir, "Testwater", "2026-10-21")).toBeNull();
   });
 });

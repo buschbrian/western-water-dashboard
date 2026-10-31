@@ -242,7 +242,13 @@ html.share-view body { background: var(--app-surface); }
 }
 .share-basis { margin: 10px 0 0; font-size: 22px; line-height: 1.2; color: var(--app-text); }
 .reservoir-share .elevation-chart-host { margin-block-start: 6px; }
-.share-caption { margin: 0; font-size: 22px; color: var(--app-muted); }
+/* The key and the source line close the frame: a picture that travels
+ * without its page still says which line is which and whose readings these
+ * are. The key wraps to a second row when a dashed line has a long name. */
+.share-foot { margin-block-start: auto; display: flex; flex-direction: column; gap: 6px; }
+.reservoir-share .share-key { margin: 0; gap: 4px 24px; font-size: 20px; color: var(--app-text); }
+.reservoir-share .share-key .elevation-swatch { inline-size: 32px; }
+.share-source { margin: 0; font-size: 20px; color: var(--app-muted); }
 
 /* A reservoir with a reviewed level leads with two tiles: the level above
  * its named datum beside percent full and its basis. One column on a phone,

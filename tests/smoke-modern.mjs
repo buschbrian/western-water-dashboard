@@ -6160,6 +6160,9 @@ for (const failure of [
       fitsHeight: document.documentElement.scrollHeight <= window.innerHeight,
       fitsWidth: document.documentElement.scrollWidth <= window.innerWidth,
       level: document.querySelector(".share-figure")?.textContent ?? "",
+      source: document.querySelector(".share-source")?.textContent ?? "",
+      keyYears: [...document.querySelectorAll(".share-key li")]
+        .filter((item) => /water years?$/.test(item.textContent ?? "")).length,
       axis: (() => {
         const svg = document.querySelector("#reservoir-elevation-chart svg");
         const label = svg?.querySelector(".elevation-axis");
@@ -6176,6 +6179,12 @@ for (const failure of [
         && share.text.includes("Reading date:") && share.text.includes("above the "),
       `Share frame (${name}): the name, level, datum, date and chart are not all there `
         + JSON.stringify({ elevation: share.elevation, lines: share.lines, level: share.level }));
+      /* Ruling U9: the picture names its source and the year before. */
+      check(share.source.startsWith("Readings: Bureau of Reclamation")
+        && share.source.includes("buschbrian.github.io/western-water-dashboard")
+        && share.keyYears >= 2,
+      `Share frame (${name}): the source line or the key is missing `
+        + JSON.stringify({ source: share.source, keyYears: share.keyYears }));
       check(share.axis >= 20,
         `Share frame (${name}): the axis type is ${share.axis}px; a link card shrinks it to a fifth`);
       check(!/\bNGVD29\b|\bNAVD88\b/.test(share.text) && !share.text.includes("%"),

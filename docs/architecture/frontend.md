@@ -78,8 +78,13 @@ be read) or `none`; the chart's host is `#reservoir-elevation-chart`.
 
 `reservoir.html?name=...&view=share` (ADR-141) is the same page in a picture
 mode: one 1200 by 630 frame of the name, the surface level with its datum, the
-reading date and the water-year chart, drawn twice its size so its type reads
-on a link card. No navigation, no place chooser, no map, always the light
+reading date and the water-year chart, drawn twice its size (300 px high) so
+its type reads on a link card. Under the chart are the page's own chart key
+(`yearKeyEntries`: this water year, the year before, the earlier years, the
+dashed lines) and a source line, "Readings: Bureau of Reclamation ·
+buschbrian.github.io/western-water-dashboard" (owner's display ruling U9,
+2026-10-31): a picture travels without its page. The committed fallback
+pictures carry the same source line. No navigation, no place chooser, no map, always the light
 theme, nothing stored. Its words come from the page's own level card
 (`reservoir-share-model.ts`). A reservoir with no reviewed level, or an
 unreadable history, signals `elevation` as `none` or `card`, never `drawn`.

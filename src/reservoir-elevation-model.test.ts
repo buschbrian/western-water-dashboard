@@ -187,6 +187,7 @@ describe("the water-year chart", () => {
       basis: "above NGVD 1929" });
     const project = reservoir({ elevation: syntheticProjectElevation() });
     expect(levelHeadline(project)?.basis).toBe("above the Hoover Dam powerhouse datum");
-    expect(levelHeadline(reservoir({ elevation: undefined }))).toBeNull();
+    const { elevation: _drop, ...plain } = reservoir();
+    expect(levelHeadline(plain as Reservoir)).toBeNull();
   });
 });
