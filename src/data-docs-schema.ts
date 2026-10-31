@@ -885,7 +885,7 @@ export const ELEVATION_HISTORY_GROUPS: readonly ApiFieldGroup[] = [
   ]}
 ];
 
-/* The river-flow payload (ADR-136). */
+/* The river-flow payload (ADR-136, ADR-144, ADR-145). */
 export const RIVER_GROUPS: readonly ApiFieldGroup[] = [
   { id: "river-header", title: "File header", path: "root", fields: [
     f("schema_version", "version number", "Version of this JSON structure."),
@@ -925,7 +925,8 @@ export const RIVER_GROUPS: readonly ApiFieldGroup[] = [
     f("compared_with_normal", "true or false", "True when the newest value is compared with normal for its date. Always false for a shaped gauge, which has no normal and no rank."),
     f("normal_band", "object", "A natural gauge's normal for the as_of date, or null when it is not compared today. Fields are listed below. Never on a shaped gauge.", true),
     f("flow_class", "identifier", "Where current_cfs falls in normal_band: much_below_normal (under p10), below_normal (under p25), normal (p25 to p75), above_normal (up to p90) or much_above_normal (over p90). A value on a boundary takes the class nearer normal. Null when not compared. Never on a shaped gauge.", true),
-    f("normal_withheld", "identifier", "Why a natural gauge is not compared today: fewer_than_30_years or percentile_missing. Null when compared. Never on a shaped gauge.", true),
+    f("normal_withheld", "identifier", "Why a natural gauge is not compared today: ten_years_or_fewer or percentile_missing. Null when compared. Never on a shaped gauge.", true),
+    f("short_record", "true or false", "True when normal_band rests on fewer than 30 years, false when on 30 or more. Null when not compared. Never on a shaped gauge.", true),
     f("data_frequency", "identifier", "Always daily."),
     f("stale_after_days", "days", "Days allowed before this gauge's reading is late."),
     f("as_of", "date", "Date of the newest day with a value."),
@@ -961,7 +962,7 @@ export const RIVER_GROUPS: readonly ApiFieldGroup[] = [
     f("p50", "cubic feet per second", "50th percentile, the median."),
     f("p75", "cubic feet per second", "75th percentile. The high end of the normal range."),
     f("p90", "cubic feet per second", "90th percentile."),
-    f("years", "years", "Years with an approved value on this calendar day. Always 30 or more."),
+    f("years", "years", "Years with an approved value on this calendar day. Always more than 10; under 30, short_record is true."),
     f("retrieved", "date", "Date the percentiles were read from the publisher."),
     f("source_url", "web address", "The publisher's statistics request the percentiles came from.")
   ]},
@@ -972,5 +973,53 @@ export const RIVER_GROUPS: readonly ApiFieldGroup[] = [
     f("source_label", "text", "Publisher's name, or null."),
     f("source_station_id", "identifier", "Publisher's site number."),
     f("reason", "text", "Why the gauge is held back. Contains no measurement.")
+  ]}
+];
+
+/* The daily river flow kept day by day (ADR-146). */
+export const RIVER_HISTORY_GROUPS: readonly ApiFieldGroup[] = [
+  { id: "river-history-header", title: "File header", path: "root", fields: [
+    f("schema_version", "version number", "Version of this JSON structure."),
+    f("measurement", "identifier", "Always daily_mean_flow."),
+    f("fetched_at", "date and time", "Time this site wrote the file, in coordinated universal time."),
+    f("run_date", "date", "Local date of the refresh."),
+    f("unit", "identifier", "Always ft^3/s, cubic feet per second."),
+    f("gauges", "array", "One entry for each gauge this site has published. A gauge stays here after it leaves the river flow file.")
+  ]},
+  { id: "river-history-gauge", title: "One gauge's days", path: "gauges[]", fields: [
+    f("name", "text", "Name of the gauge in plain words, as in the river flow file."),
+    f("source_station_id", "identifier", "The U.S. Geological Survey's site number, which joins this entry to the river flow file."),
+    f("time_series_id", "identifier", "The survey's identifier of the daily mean series."),
+    f("tier", "identifier", "Either shaped or natural, as in the river flow file."),
+    f("start", "date", "Date of the first value."),
+    f("end", "date", "Date of the last value."),
+    f("cfs", "cubic feet per second", "The daily mean flow for each day from start to end. The value at position n belongs to the day n days after start. Null is a day with no value."),
+    f("approval", "text", "The survey's review status of each day's value: Provisional or Approved. Null where cfs is null."),
+    f("qualifiers", "array", "The survey's qualifiers for each day, such as ESTIMATED. An empty list means none. Null where cfs is null."),
+    f("flow_class", "identifier", "Natural gauges only. The class of each day's flow among the survey's percentiles for that date: much_below_normal, below_normal, normal, above_normal or much_above_normal. Null where the date has no comparison.", true)
+  ]}
+];
+
+/* The week's soil-moisture change kept day by day (ADR-146). */
+export const SOIL_HISTORY_GROUPS: readonly ApiFieldGroup[] = [
+  { id: "soil-history-header", title: "File header", path: "root", fields: [
+    f("schema_version", "version number", "Version of this JSON structure."),
+    f("fetched_at", "date and time", "Time this site wrote the file, in coordinated universal time."),
+    f("run_date", "date", "Local date of the newest refresh."),
+    f("units", "text", "Unit of the changes."),
+    f("change_days", "days", "Days between the start and the end of each change. Always 7."),
+    f("start", "date", "Refresh date of the first value."),
+    f("end", "date", "Refresh date of the last value."),
+    f("end_date", "date", "For each refresh date, the day the published change ends on. Null when too few stations sent readings."),
+    f("site_count", "stations", "For each refresh date, the stations in the soil moisture file."),
+    f("measured_site_count", "stations", "For each refresh date, the stations with a change."),
+    f("areas", "array", "One entry for each drainage area this site has published.")
+  ]},
+  { id: "soil-history-area", title: "One drainage area's days", path: "areas[]", fields: [
+    f("huc6", "code", "Six-digit drainage-area code."),
+    f("huc6_name", "text", "Name of that drainage area."),
+    f("site_count", "stations", "For each refresh date, the stations in the area. Null before the area first appears."),
+    f("measured_site_count", "stations", "For each refresh date, the stations in the area with a change."),
+    f("mean_change_points", "percentage points", "For each refresh date, the mean of the stations' changes as the soil moisture file published it. Null below the reporting floor.")
   ]}
 ];

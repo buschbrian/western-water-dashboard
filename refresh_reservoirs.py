@@ -106,7 +106,7 @@ from pipeline.providers import (  # noqa: F401
     CAP_BASE_URL, CAP_LAKE_PLEASANT_URL, CWMS_BASE_URL, CWMS_TIMESERIES_URL,
     CDSS_SERIES_URL, CDSS_STATIONS_URL, DNRC_SERIES_URL, DNRC_STAGE_URL,
     MAX_PAGES, RETRY_ATTEMPTS, RETRY_BACKOFF_SECONDS, SRP_BASE_URL,
-    SRP_SERIES_URL, SRP_STATIONS_URL, USGS_DV_URL, USGS_LEGACY_DV_URL,
+    SRP_SERIES_URL, SRP_STATIONS_URL, USGS_DV_URL,
     _get_awdb_json, _get_cdss_json,
     _get_cdec_json, _get_json, _get_usgs_json, fetch_awdb_series,
     fetch_cap_reading, fetch_cdss_series, fetch_cdec_series, fetch_cwms_series,

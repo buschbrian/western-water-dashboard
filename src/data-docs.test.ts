@@ -7,8 +7,10 @@ import {
   REFERENCE_GROUPS,
   RESERVOIR_GROUPS,
   RIVER_GROUPS,
+  RIVER_HISTORY_GROUPS,
   SNOW_GROUPS,
   SOIL_GROUPS,
+  SOIL_HISTORY_GROUPS,
   type ApiFieldGroup
 } from "./data-docs-schema";
 
@@ -114,6 +116,20 @@ describe("public API field documentation", () => {
     }
   });
 
+  it("covers every current river flow history field", () => {
+    const data = read("river_history.json");
+    expectFields(RIVER_HISTORY_GROUPS, "river-history-header", data);
+    expect(data.gauges.length).toBeGreaterThan(0);
+    expectFields(RIVER_HISTORY_GROUPS, "river-history-gauge", merged(data.gauges));
+  });
+
+  it("covers every current soil moisture history field", () => {
+    const data = read("soil_moisture_history.json");
+    expectFields(SOIL_HISTORY_GROUPS, "soil-history-header", data);
+    expect(data.areas.length).toBeGreaterThan(0);
+    expectFields(SOIL_HISTORY_GROUPS, "soil-history-area", merged(data.areas));
+  });
+
   it("covers every current snow field", () => {
     const data = read("snowpack.json");
     expectFields(SNOW_GROUPS, "snow-header", data);
@@ -217,7 +233,8 @@ describe("public API field documentation", () => {
 
   it("keeps API explanations in plain language", () => {
     const prose = [...RESERVOIR_GROUPS, ...ELEVATION_HISTORY_GROUPS, ...LAKE_GROUPS,
-      ...RIVER_GROUPS, ...SNOW_GROUPS, ...DROUGHT_GROUPS, ...REFERENCE_GROUPS]
+      ...RIVER_GROUPS, ...RIVER_HISTORY_GROUPS, ...SNOW_GROUPS, ...SOIL_HISTORY_GROUPS,
+      ...DROUGHT_GROUPS, ...REFERENCE_GROUPS]
       .flatMap((section) => [section.title,
         ...section.fields.flatMap((field) => [field.units, field.meaning])])
       .join(" ");

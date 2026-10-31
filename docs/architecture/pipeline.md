@@ -33,7 +33,8 @@ Other entry points: `refresh_snowpack.py` (snow payload),
 `refresh_station_readings.py` (precipitation at the snow stations, ADR-125),
 `refresh_soil_moisture.py` (the week's soil-moisture change at the same stations, ADR-142), `refresh_lakes.py`
 (the terminal-lake payload, `lakes.json`), `refresh_rivers.py` (daily river
-flow, `rivers.json`), `watershed_scopes.py`
+flow, `rivers.json`; with `pipeline/river_history.py` and `pipeline/soil_history.py`
+keeping both daily histories, ADR-146), `watershed_scopes.py`
 and `huc.py` (named scopes, drainage assignment, grouping), `admission.py`
 (candidate screening), `tools/` (audits, boundary fetches, drought
 computation, normals).
@@ -194,8 +195,10 @@ with a value; every run re-reads the whole window, so revisions land without
 a merge. Freshness is ADR-056's, with the notice keyed by station (ADR-126).
 `pipeline.rivers.validate_payload` refuses a rank, capacity, inflow or
 total on a record or the envelope, a band or class on a shaped gauge, a
-natural record whose class does not follow from its flow and band or whose
-band is for another date, out of order or under 30 years, a tier other than
+natural record whose class does not follow from its flow and band, whose
+band is for another date, out of order or on 10 years or fewer, or whose
+`short_record` does not say whether the band rests on fewer than 30 years
+(ADR-145), a tier other than
 the roster's, a window that is not 30 consecutive days ending on the current
 value, a notice carrying a measurement, and a roster gauge in neither list.
 

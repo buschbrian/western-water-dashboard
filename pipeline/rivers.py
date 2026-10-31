@@ -1,4 +1,4 @@
-"""Daily mean river flow at reviewed gauges (ADR-136, ADR-144).
+"""Daily mean river flow at reviewed gauges (ADR-136, ADR-144, ADR-145).
 
 A gauge measures a rate, not a volume held: there is no full level and no
 percent full. What a record publishes is the survey's own daily means for the
@@ -6,7 +6,8 @@ last 30 reported days, each with its approval status and qualifiers, the
 newest of them, and the change from seven days earlier. A shaped gauge has no
 normal to compare with. A natural gauge's newest value is placed among the
 survey's own day-of-year percentiles for that calendar day (ADR-144); nothing
-here computes a percentile.
+here computes a percentile. A day with 10 years or fewer is not compared, and
+a compared day with fewer than 30 says so in `short_record` (ADR-145).
 
 Two rules from ADR-124 are mechanical here. No field adds gauges together,
 and nothing names a gauge as a reservoir's inflow; `validate_payload` refuses
@@ -22,7 +23,8 @@ from pathlib import Path
 import pandas as pd
 
 from .constants import (
-    RIVER_NORMAL_MIN_YEARS, RIVER_NORMAL_PERCENTILES, RIVER_NORMALS_PATH,
+    RIVER_NORMAL_FULL_YEARS, RIVER_NORMAL_MIN_YEARS, RIVER_NORMAL_PERCENTILES,
+    RIVER_NORMALS_PATH,
     RIVER_SCHEMA_VERSION, RIVER_WINDOW_DAYS, STALE_AFTER_DAYS, WITHDRAW_AFTER_DAYS,
 )
 from .freshness import partition_by_age, withdrawal_notice
@@ -46,14 +48,14 @@ NOTICE_FIELDS = frozenset({
 })
 
 #: The comparison a natural record carries and a shaped record never does.
-NORMAL_FIELDS = frozenset({"normal_band", "flow_class", "normal_withheld"})
+NORMAL_FIELDS = frozenset({"normal_band", "flow_class", "normal_withheld", "short_record"})
 BAND_KEYS = tuple(f"p{p}" for p in RIVER_NORMAL_PERCENTILES)
 BAND_FIELDS = frozenset({"day", *BAND_KEYS, "years", "retrieved", "source_url"})
 #: WaterWatch's five classes, lowest first.
 FLOW_CLASSES = ("much_below_normal", "below_normal", "normal", "above_normal",
                 "much_above_normal")
 #: Why a natural gauge's day carries no comparison.
-WITHHELD_REASONS = frozenset({"fewer_than_30_years", "percentile_missing"})
+WITHHELD_REASONS = frozenset({"ten_years_or_fewer", "percentile_missing"})
 
 
 class NoReportedFlow(ValueError):
@@ -81,7 +83,7 @@ def flow_class(cfs: float, band: dict) -> str:
 def withheld_reason(day: dict) -> str | None:
     """Why a stored day cannot be compared, or None when it can."""
     if day["years"] < RIVER_NORMAL_MIN_YEARS:
-        return "fewer_than_30_years"
+        return "ten_years_or_fewer"
     if any(day.get(key) is None for key in BAND_KEYS):
         return "percentile_missing"
     return None
@@ -112,8 +114,8 @@ def _check_normals_entry(station: str, entry: dict, series_id: str) -> None:
             raise ValueError(f"{station}: {key} percentiles are out of order")
     if statistics.median(day["years"] for day in days.values()) < RIVER_NORMAL_MIN_YEARS:
         raise ValueError(
-            f"{station}: most days have fewer than {RIVER_NORMAL_MIN_YEARS} years of approved "
-            "values, so this gauge has no normal to compare with (ADR-144)")
+            f"{station}: most days have {RIVER_NORMAL_MIN_YEARS - 1} years of approved values "
+            "or fewer, so this gauge has no normal to compare with (ADR-145)")
 
 
 def load_river_normals(roster: dict[str, dict],
@@ -122,7 +124,7 @@ def load_river_normals(roster: dict[str, dict],
 
     Refuses the file when a natural gauge has no entry, when an entry names
     another series, misses a day, or holds percentiles out of order, and
-    when most of a gauge's days have under 30 years: a natural record is
+    when most of a gauge's days have 10 years or fewer: a natural record is
     never published against a normal nobody reviewed.
     """
     natural = {s: e for s, e in roster.items() if e["tier"]["tier"] == "natural"}
@@ -150,11 +152,12 @@ def normal_fields(normals: dict, as_of: dt.date, cfs: float) -> dict:
     reason = withheld_reason(day)
     if reason:
         return {"compared_with_normal": False, "normal_band": None, "flow_class": None,
-                "normal_withheld": reason}
+                "normal_withheld": reason, "short_record": None}
     band = {"day": key, **{k: day[k] for k in BAND_KEYS}, "years": day["years"],
             "retrieved": normals["retrieved"], "source_url": normals["source_url"]}
     return {"compared_with_normal": True, "normal_band": band,
-            "flow_class": flow_class(cfs, band), "normal_withheld": None}
+            "flow_class": flow_class(cfs, band), "normal_withheld": None,
+            "short_record": day["years"] < RIVER_NORMAL_FULL_YEARS}
 
 
 def _window(rows: list[dict], end: dt.date) -> list[dict]:
@@ -307,6 +310,7 @@ def _check_comparison(record: dict) -> None:
     band, compared = record["normal_band"], record.get("compared_with_normal")
     if compared is False:
         if band is not None or record["flow_class"] is not None \
+                or record["short_record"] is not None \
                 or record["normal_withheld"] not in WITHHELD_REASONS:
             raise ValueError(f"{name}: a natural record without a comparison says why, alone")
         return
@@ -317,6 +321,9 @@ def _check_comparison(record: dict) -> None:
     if any(isinstance(v, bool) or not isinstance(v, (int, float)) for v in values) \
             or values != sorted(values) or band["years"] < RIVER_NORMAL_MIN_YEARS:
         raise ValueError(f"{name}: the band is out of order or rests on too few years")
+    if record["short_record"] is not (band["years"] < RIVER_NORMAL_FULL_YEARS):
+        raise ValueError(f"{name}: short_record must say whether the band rests on fewer "
+                         f"than {RIVER_NORMAL_FULL_YEARS} years")
     if band["day"] != str(record.get("as_of"))[5:]:
         raise ValueError(f"{name}: the band is for {band['day']}, not the reading's date")
     if record["flow_class"] != flow_class(record["current_cfs"], band):

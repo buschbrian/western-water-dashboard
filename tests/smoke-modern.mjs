@@ -3261,7 +3261,7 @@ for (const viewport of VIEWPORTS) {
       scroll: document.documentElement.scrollWidth
     }));
     console.log("  ready:", JSON.stringify(state.ready));
-    check(state.ready?.files === 9 && state.files === 9,
+    check(state.ready?.files === 11 && state.files === 11,
       `${label}: rendered ${state.files} file cards, readiness reported ${state.ready?.files}`);
     check(state.ready?.groups === state.groups && state.groups >= 20,
       `${label}: rendered ${state.groups} field groups, readiness reported ${state.ready?.groups}`);
@@ -3274,11 +3274,14 @@ for (const viewport of VIEWPORTS) {
       "./api/lakes.json", "./lakes.html",
       // Daily river flow (ADR-136): its own file and page.
       "./api/rivers.json", "./rivers.html",
+      // Its history, kept day by day (ADR-146).
+      "./api/river_history.json",
       "./api/snowpack.json", "./snow.html",
       // Each finished snow season, frozen (ADR-121).
       "./data/snow/snowpack-wy2026.json",
       // The week's change in soil moisture (ADR-142).
       "./data/soil_moisture.json", "./precipitation.html",
+      "./api/soil_moisture_history.json",
       "./data/drought/usdm-huc6.json", "./drought.html",
       "./data/drought/usdm-current.geojson",
       // The same week over larger areas, published because the reader can
@@ -6304,6 +6307,8 @@ for (const viewport of VIEWPORTS) {
     tiers: [...document.querySelectorAll("#rivers-main article.river[data-station]")]
       .map((article) => ({
         tier: article.getAttribute("data-tier"),
+        shortRecord: article.getAttribute("data-short-record") === "true",
+        short: article.querySelector(".river-short")?.textContent ?? null,
         shaped: article.querySelector(".river-shaped")?.textContent ?? null,
         natural: article.querySelector(".river-natural")?.textContent ?? null,
         verdict: article.querySelector(".river-class")?.textContent ?? null,
@@ -6336,6 +6341,9 @@ for (const viewport of VIEWPORTS) {
       && a.withheld === null)
       || (a.verdict === null && a.withheld?.includes("not compared with normal")))),
   `Rivers page (${viewport.name}): a natural gauge shows neither its class nor why it has none`);
+  check(state.tiers.every((a) => (a.shortRecord && a.tier === "natural" && a.verdict !== null
+    && /fewer than the usual 30\.$/.test(a.short ?? "")) || (!a.shortRecord && a.short === null)),
+  `Rivers page (${viewport.name}): a short record does not say so beside its comparison`);
   check(natural.filter((a) => a.verdict !== null).length === state.ready?.compared,
     `Rivers page (${viewport.name}): ${state.ready?.compared} compared in readiness, `
     + `${natural.filter((a) => a.verdict !== null).length} classes drawn`);

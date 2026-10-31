@@ -13,19 +13,29 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
-- **Three natural river gauges compared with normal** (ADR-144) on the river
-  flow page: Mill Creek near Moab, Blacks Fork near Robertson and South Creek
-  near Monticello. Each gauge's newest daily flow is placed in one of five
-  classes, from much below normal to much above normal, against the U.S.
-  Geological Survey's percentiles of approved daily values for the same date.
-  The page shows the normal range, the median and how many years they rest
-  on. A date with fewer than 30 years gets no comparison, and the page says
-  why. Middle Fork Beaver Creek is held out at 22 years. The four rivers
-  toward Lake Powell are unchanged and are still not compared with normal.
-  `rivers.json` moves to structure version 2 with `normal_band`, `flow_class`
-  and `normal_withheld` on natural gauges; the percentiles are a committed
-  reference file, `river_normals.json`, rebuilt by
-  `tools/build_river_normals.py`.
+- **River flow and the soil-moisture change kept day by day** (ADR-146).
+  `river_history.json` keeps every day of mean flow at each gauge, with its
+  review status, qualifiers and, at a natural gauge, its flow class.
+  `soil_moisture_history.json` keeps the week's change published for each
+  drainage area on each refresh date. Both are published under `api/` and
+  `data/`, and merge by date: a revised river value replaces its day.
+  The data reference now documents both, with an example record for each, and
+  completes the river flow, soil moisture and reservoir level history cards.
+- **Four natural river gauges compared with normal** (ADR-144, ADR-145) on
+  the river flow page: Mill Creek near Moab, Blacks Fork near Robertson, South
+  Creek near Monticello and Middle Fork Beaver Creek near Lonetree. Each
+  gauge's newest daily flow is placed in one of five classes, from much below
+  normal to much above normal, against the U.S. Geological Survey's
+  percentiles of approved daily values for the same date. The page shows the
+  normal range, the median and how many years they rest on, with the reading
+  and the range at three significant figures. A date with 10 years or fewer
+  gets no comparison, and the page says why; a date with fewer than 30 years
+  is compared, and the page says it has fewer than the usual 30. The four
+  rivers toward Lake Powell are unchanged and are still not compared with
+  normal. `rivers.json` moves to structure version 3 with `normal_band`,
+  `flow_class`, `normal_withheld` and `short_record` on natural gauges; the
+  percentiles are a committed reference file, `river_normals.json`, rebuilt
+  by `tools/build_river_normals.py`.
 - **A picture for a shared Lake Powell or Lake Mead link** (ADR-141). Two
   share pages, `share/lake-powell.html` and `share/lake-mead.html`, carry the
   card tags and send a person on to the reservoir page. The picture on the
@@ -84,6 +94,42 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Changed
 
+- **Eighteen more reservoir names are the water's own name** (ADR-147).
+  Gauge and county text is gone from `Rye Patch Reservoir`, `Stagecoach
+  Reservoir`, `Lake San Antonio`, `San Antonio Reservoir`, `Jackson Meadows`,
+  `Dwinnell Reservoir`, `Camp Far West`, `Bucks Lake` and `Upper San
+  Leandro`. `McPhee Reservoir`, `McKay`, `Lake McCloud` and `Lake McSwain`
+  have the right capitals, and `Howard A. Hanson` is spelled as the dam
+  inventory spells it. Four dam names now name the water: `Lake Oroville`,
+  `Cherry Lake`, `Morena Reservoir` and `Bass Lake`. Links that use an old
+  name still open the right reservoir. A new test refuses provider text in
+  any roster name.
+- **Fifteen dam names and one code are now the water's recorded name**
+  (ADR-147). `Isabella Lake`, `Pine Flat Lake`, `Lake Kaweah`, `Big Bear
+  Lake`, `Lake Cuyamaca`, `El Capitan Lake`, `Frenchman Lake`, `Ruth Lake`,
+  `Briones Reservoir`, `Gibraltar Reservoir`, `Los Banos Reservoir`,
+  `Soulajule Reservoir`, `C.C. Cragin Reservoir`, `Conconully Lake` and `DMAD
+  Reservoir` replace the dam word or code, each with one source: the
+  National Hydrography Dataset name of the water at the reservoir's point.
+  `Seven Oaks Dam` stays, because no source names its basin. Short names
+  stay short. Links that use an old name still open the right reservoir.
+- **Success Lake and Guadalupe Reservoir stay held, with corrected
+  reasons.** Their highest readings are real; each matches the daily
+  value for the same day. Success Lake is held because no published full
+  level for 2019 contains its June 2019 water. Guadalupe is held because
+  a dam-safety order sets its full level, and the operator gives two
+  volumes for it.
+- **Buchanan Dam's December 2022 monthly reading is excluded** (ADR-116).
+  The California Department of Water Resources reports 172,105 acre-feet
+  for that month. Its own daily series reports 22,809 acre-feet on 31
+  December 2022. The raw value and the reason stay in
+  `admitted_cdec_reservoirs.json`. Nothing published changes.
+- **The California audit compares monthly and daily storage.**
+  `tools/audit_cdec_stations.py --monthly-daily` compares each monthly
+  reading with the same station's daily reading on the month's last day.
+  It reports each month where they differ by more than 100 acre-feet and
+  5% of the larger value. It removes no reading; a person decides
+  (ADR-116).
 - **Precipitation has its own page**, `precipitation.html` (ADR-130): the
   recent totals, the season since 1 October and the history chart, for the
   place in the link, with a link to the snowpack view for the same place.
@@ -122,6 +168,20 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Fixed
 
+- On a reservoir page, "Since the 4-month low" (ADR-134) sits with the other
+  answers under the headline, after the changes. It had fallen into the
+  Sources section below the satellite view.
+- The history rank reads "Lowest of 12 years", "3rd-lowest of 12 years" or
+  "2nd-highest of 12 years", counted from the nearer end. At either end it
+  no longer adds "0.0%" or "100.0%", which only repeated the position.
+- The weekly card on the storage charts page no longer says its storage
+  figures follow the reservoir filters. They follow the Lake Powell and Lake
+  Mead switches and the drainage area, as the note now says, and not the
+  state, county, search, reporting or storage class filters.
+- The Methods page names what the site shows, river flow included, and no
+  longer counts its storage publishers wrongly. It gains entries for the
+  soil moisture change (ADR-142), the gain since the 4-month low (ADR-134)
+  and surface level and its datum (ADR-135, ADR-139).
 - On the storage charts page, the scatter plot no longer prints "Usual level"
   over the biggest reservoirs' dots, and the combined-storage and change
   figures say "acre-feet".

@@ -39,7 +39,7 @@ describe("the terminal-lake page's words", () => {
     const view = describeLake(walker, "#000000");
     for (const card of [view.level, view.volume]) {
       expect(card.rows.find((row) => row.label === "History rank")?.value)
-        .toBe("3rd-lowest of 12");
+        .toBe("3rd-lowest of 12 years");
     }
   });
 

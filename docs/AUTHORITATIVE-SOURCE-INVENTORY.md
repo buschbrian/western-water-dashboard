@@ -167,29 +167,17 @@ and the reviewed daily statistic committed beside each station -- because
 Weber Reservoir exposes two of them and selecting by response order would let
 a published figure change with no decision behind it.
 
-**The comparison ADR-098 requires has been run at day level and agrees
-everywhere.** `tools/check_usgs_migration_parity.py` compares the two services
-directly and needs the key for its modern half. What has been measured without
-one is the published output against the retired service, and it is repeatable
-by anyone on any morning:
-
-```bash
-.venv/bin/python tools/check_usgs_migration_parity.py --against-published
-```
-
-For each of the seven stations it takes the day the payload reports and the
-three days its 7, 30 and 365-day changes are measured from -- **28
-comparisons spanning a year, all 28 identical**, Weber Reservoir among them.
-That confirms site identity, the chosen statistic and the unit on real
-published values, and it exits non-zero if that ever stops being true.
-
-**The full-series comparison has now been run, and agrees everywhere.** With
-`USGS_API_KEY` set, `--days 365` compared both services day by day for all
-seven stations on 2026-08-29: **2,496 days on each side and nothing
-differing**. The day counts match station for station -- 365 where the record
+**The comparison ADR-098 requires was run at day level and agreed
+everywhere.** `tools/check_usgs_migration_parity.py` compared the two services
+directly. On 2026-08-29, with `USGS_API_KEY` set, it compared both services
+day by day for all seven stations: **2,496 days on each side and nothing
+differing**. The day counts matched station for station -- 365 where the record
 is complete, 362 for Alder Reservoir and 309 for Mud Mountain Lake -- so
-neither service omits a day the other returned, which is the second half of
-what the tool calls a pass.
+neither service omitted a day the other returned. Before that, a sample of the
+published figures (the day each payload reports and the three days its 7, 30
+and 365-day changes are measured from) agreed on all 28 comparisons. The tool
+was deleted on 2026-10-31 with the last legacy read: its legacy half had no
+purpose once the service was to end, and the result above stands as the record.
 
 Mud Mountain Lake is measured on statistic `30800` where the other six use
 `32400`. That is the reason ADR-098 committed the statistic beside each
@@ -223,10 +211,13 @@ gh secret set USGS_API_KEY --repo buschbrian/western-water-dashboard
 key page states no lifetime and lets one address hold several keys, so
 replacing the key is a rotation, not a deadline. The 2027 date belongs to
 the keyless legacy service, which shuts down on 2027-02-22 after slowed
-requests and planned outages from January. One tool still reads it:
-`tools/check_usgs_migration_parity.py`, whose legacy half was ADR-098's
-comparison and ends with the service. `tools/probe_nwis_storage.py`, the
-discovery count, moved to the modern collection on 2026-10-31.
+requests and planned outages from January. **No code in this repository reads
+it any more** (2026-10-31, K2). The parity tool was deleted;
+`tools/probe_nwis_storage.py` and `tools/audit_new_mexico_reservoirs.py` read the
+modern collection; and Duchesne River near Randlett (09302000), whose daily
+values the modern collection serves only from 2026-07-15, has its yearly mean
+flow committed once in `data/reference/duchesne-09302000-water-year-flow.json`
+(written by `tools/fetch_duchesne_flow_reference.py`, which can no longer run).
 
 **The repository had no such secret when this was written**, so the migrated
 provider had never run anywhere but on the machine that migrated it. A run

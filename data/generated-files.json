@@ -68,6 +68,20 @@
       "note": "The last fifteen days of soil moisture at the snow stations and each station's seven-day change (ADR-142). Separate from snowpack.json and precipitation.json so a failure costs only this file."
     },
     {
+      "path": "river_history.json",
+      "class": "generated-daily",
+      "writer": "refresh_rivers.py",
+      "staged_by_refresh": true,
+      "note": "Every day the daily river refresh has read, per gauge: flow, review status, qualifiers and, at a natural gauge, the flow class (ADR-146). Merged by date, so a revised value replaces that day. Nothing is deleted. No page fetches it yet."
+    },
+    {
+      "path": "soil_moisture_history.json",
+      "class": "generated-daily",
+      "writer": "refresh_soil_moisture.py",
+      "staged_by_refresh": true,
+      "note": "For each refresh date, the week's change published for each drainage area, with the stations behind it (ADR-146). Starts on the first run; no earlier day is rebuilt. No page fetches it yet."
+    },
+    {
       "path": "lakes.json",
       "class": "generated-daily",
       "writer": "refresh_lakes.py",
@@ -199,6 +213,13 @@
       "writer": "tools/build_upstream_index.py",
       "staged_by_refresh": false,
       "note": "What drains to each published reservoir, traced once against NLDI and committed with its COMID evidence (ADR-077). Rebuild when the roster or snow network changes; published verbatim in dist."
+    },
+    {
+      "path": "data/reference/duchesne-09302000-water-year-flow.json",
+      "class": "derived-on-demand",
+      "writer": "tools/fetch_duchesne_flow_reference.py",
+      "staged_by_refresh": false,
+      "note": "A committed reference, read once from the legacy USGS WaterServices daily values (shut down 2027-02-22) and never refreshed: the mean discharge of each complete water year at Duchesne River near Randlett (09302000), with source URL, fetched_at, parameter and approval-code counts. tools/build_gauge_review.py reads it for the years the OGC v1 daily series lacks. Its writer cannot run once the legacy service ends; the file is the record."
     },
     {
       "path": "data/reviews/operating-character-census.json",

@@ -1520,12 +1520,13 @@ def exclusion_file(tmp_path, records, station="GNT", withheld=True) -> Path:
     return path
 
 
-def test_the_four_reviewed_readings_are_committed_with_their_evidence():
+def test_the_reviewed_readings_are_committed_with_their_evidence():
     """ADR-116 keeps the raw value, not a replacement for it.
 
-    Three of the four stay withheld and Grant Lake was admitted on its own
-    review once the exclusion answered its only screen; these five readings are the whole of
-    what the exclusion removes, and each names the issue the provider is
+    Grant Lake was admitted on its own review once the exclusion answered its
+    only screen. Buchanan's December 2022 month was added on 2026-10-31,
+    against the station's own daily series. These six readings are the whole
+    of what the exclusion removes, and each names the issue the provider is
     still being asked on.
     """
     named = {
@@ -1534,6 +1535,7 @@ def test_the_four_reviewed_readings_are_committed_with_their_evidence():
         for station, records in R.CDEC_EXCLUDED_READINGS.items()
     }
     assert named == {
+        "BUC": [("2022-12-1 00:00", 172105)],
         "GNT": [("2023-3-1 00:00", 82410)],
         "HVS": [("2024-11-1 00:00", 5775421), ("2025-5-1 00:00", 5913000)],
         "ONF": [("2017-5-1 00:00", 443348)],

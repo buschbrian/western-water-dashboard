@@ -1,5 +1,5 @@
 /*
- * The runtime validator for `rivers.json` (ADR-136, ADR-144).
+ * The runtime validator for `rivers.json` (ADR-136, ADR-144, ADR-145).
  *
  * The pipeline's rules, held again in the browser: a payload that does not
  * say what the page needs is refused whole, and so is one carrying a rank, a
@@ -43,12 +43,17 @@ export const REFUSED_RIVER_FIELDS = [
 ] as const;
 
 /** What a natural record carries and a shaped record never does. */
-const NORMAL_FIELDS = ["normal_band", "flow_class", "normal_withheld"] as const;
+const NORMAL_FIELDS = ["normal_band", "flow_class", "normal_withheld", "short_record"] as const;
 const BAND_KEYS = ["p10", "p25", "p50", "p75", "p90"] as const;
 const BAND_FIELDS = new Set(["day", ...BAND_KEYS, "years", "retrieved", "source_url"]);
-const WITHHELD = new Set(["fewer_than_30_years", "percentile_missing"]);
-/** WaterWatch's minimum, the pipeline's `RIVER_NORMAL_MIN_YEARS`. */
-export const MIN_NORMAL_YEARS = 30;
+const WITHHELD = new Set(["ten_years_or_fewer", "percentile_missing"]);
+/** More than 10 years: the pipeline's `RIVER_NORMAL_MIN_YEARS` (ADR-145). */
+export const MIN_NORMAL_YEARS = 11;
+/** WaterWatch's usual record, the pipeline's `RIVER_NORMAL_FULL_YEARS`; a
+ * band on fewer years carries `short_record: true`. */
+export const FULL_RECORD_YEARS = 30;
+/** The structure version this page reads, the pipeline's `RIVER_SCHEMA_VERSION`. */
+export const RIVER_SCHEMA_VERSION = 3;
 
 /** WaterWatch's class for a flow against one day's band; a value on a
  * boundary takes the class nearer normal, on both sides alike. */
@@ -83,7 +88,7 @@ function checkComparison(value: Record<string, unknown>, name: string): void {
     throw new Error(`${name}: a natural gauge says whether it is compared with normal`);
   }
   if (value.compared_with_normal === false) {
-    if (value.normal_band !== null || value.flow_class !== null
+    if (value.normal_band !== null || value.flow_class !== null || value.short_record !== null
         || typeof value.normal_withheld !== "string" || !WITHHELD.has(value.normal_withheld)) {
       throw new Error(`${name}: a natural gauge without a comparison says why, alone`);
     }
@@ -92,6 +97,9 @@ function checkComparison(value: Record<string, unknown>, name: string): void {
   if (value.compared_with_normal !== true || value.normal_withheld !== null
       || !isBand(value.normal_band)) {
     throw new Error(`${name}: the normal band is malformed`);
+  }
+  if (value.short_record !== (value.normal_band.years < FULL_RECORD_YEARS)) {
+    throw new Error(`${name}: short_record does not match the band's years`);
   }
   if (typeof value.as_of !== "string" || value.normal_band.day !== value.as_of.slice(5)) {
     throw new Error(`${name}: the normal band is not for the reading's date`);
@@ -193,7 +201,7 @@ function validateNotice(value: unknown, index: number): WithdrawnGauge {
 
 export function validateRiverPayload(value: unknown): RiverPayload {
   if (!isObject(value)) throw new Error("rivers payload is not an object");
-  if (value.schema_version !== 2) {
+  if (value.schema_version !== RIVER_SCHEMA_VERSION) {
     throw new Error(`unsupported rivers structure version ${String(value.schema_version)}`);
   }
   refuse(value, "rivers payload");

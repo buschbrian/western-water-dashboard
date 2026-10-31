@@ -12,9 +12,10 @@ import { describe, expect, it } from "vitest";
 
 import type { Reservoir, ReservoirPayload } from "./types";
 import {
-  baselineRows, provenanceRows, requestedName,
+  answerRows, baselineRows, provenanceRows, requestedName,
   resolveReservoirPage
 } from "./reservoir-model";
+import { describeReservoir } from "./state/detail";
 
 function reservoir(overrides: Partial<Reservoir>): Reservoir {
   return {
@@ -217,5 +218,40 @@ describe("provenanceRows", () => {
     }));
     expect(rows.find((row) => row.label === "Full level")?.value)
       .toContain("daily reservoir report");
+  });
+});
+
+/*
+ * The gain since the 4-month low is an answer (ADR-134). It fell to the
+ * Sources section under the satellite view once, because the page picked its
+ * answer rows by label and did not know this one.
+ */
+describe("the answer tiles under the headline", () => {
+  const daily = reservoir({
+    change_30d_af: 120, change_30d_pct: 1.2, change_30d_reference_date: "2026-07-21",
+    change_365d_af: -40, change_365d_pct: -0.4, change_365d_reference_date: "2025-08-20",
+    low_120d_af: 800, low_120d_date: "2026-06-15", change_since_low_af: 200
+  });
+
+  it("puts the gain since the low with the changes, before the comparison", () => {
+    const view = describeReservoir(daily, "#000");
+    expect(answerRows(view.rows, view.baseline.label).map((row) => row.label)).toEqual([
+      "Reading date", "Change in 30 days", "Change in 1 year", "Since the 4-month low",
+      view.baseline.label, "History rank"
+    ]);
+  });
+
+  it("leaves it out where the reservoir publishes no low", () => {
+    const view = describeReservoir(reservoir({ change_since_low_af: null }), "#000");
+    expect(answerRows(view.rows, view.baseline.label).map((row) => row.label))
+      .not.toContain("Since the 4-month low");
+  });
+
+  it("keeps provenance rows out of the answer", () => {
+    const view = describeReservoir(daily, "#000");
+    const labels = answerRows(view.rows, view.baseline.label).map((row) => row.label);
+    for (const label of ["Stored now", "Update schedule", "Measured by", "Highest value this year"]) {
+      expect(labels).not.toContain(label);
+    }
   });
 });

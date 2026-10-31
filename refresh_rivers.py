@@ -1,4 +1,4 @@
-"""Refresh the daily river-flow payload, `rivers.json` (ADR-136, ADR-144).
+"""Refresh the daily river-flow payload, `rivers.json` (ADR-136, ADR-144, ADR-145).
 
 A separate orchestrator for a separate measurement. It reads the reviewed
 roster in `admitted_river_gauges.json`, confirms each gauge's reviewed series
@@ -29,7 +29,7 @@ import time
 
 import pandas as pd
 
-from pipeline import rivers
+from pipeline import river_history, rivers
 from pipeline.constants import (
     RIVER_FETCH_DAYS, RIVER_NORMALS_PATH, RIVERS_OUTPUT_PATH, local_today,
 )
@@ -89,6 +89,19 @@ def refresh(targets: dict[str, dict], today: pd.Timestamp, previous: dict[str, d
     return records, carried
 
 
+def keep_history(payload: dict, normals: dict, today: pd.Timestamp, fetched_at: str,
+                 output) -> int:
+    """Merge the written payload into river_history.json beside it (ADR-146)."""
+    try:
+        kept = river_history.update(payload, normals, today, fetched_at,
+                                    output.with_name(river_history.RIVER_HISTORY_PATH.name))
+    except (OSError, ValueError, KeyError) as exc:
+        print(f"ERROR: {exc}; river_history.json left untouched", file=sys.stderr)
+        return 1
+    print(f"Merged {payload['gauge_count']} gauge(s) into river_history.json ({kept} kept)")
+    return 0
+
+
 def main(argv: list[str] | None = None, *, fetch=fetch_gauge, output=RIVERS_OUTPUT_PATH,
          today: pd.Timestamp | None = None, pause: float = 0.5,
          normals_path=RIVER_NORMALS_PATH) -> int:
@@ -142,8 +155,9 @@ def main(argv: list[str] | None = None, *, fetch=fetch_gauge, output=RIVERS_OUTP
     for record in payload["gauges"]:
         late = f" LATE ({record['days_stale']}d)" if record["is_stale"] else ""
         band = record.get("normal_band")
+        short = ", short record" if record.get("short_record") else ""
         versus = (f"; {record['flow_class']} (p25-p75 {band['p25']}-{band['p75']}, "
-                  f"{band['years']} years)" if band
+                  f"{band['years']} years{short})" if band
                   else f"; not compared: {record['normal_withheld']}"
                   if record.get("normal_withheld") else "")
         print(f"{record['name']}: {record['current_cfs']:,} ft^3/s on {record['as_of']} "
@@ -157,7 +171,7 @@ def main(argv: list[str] | None = None, *, fetch=fetch_gauge, output=RIVERS_OUTP
     output.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     print(f"Wrote {output.name}: {payload['gauge_count']} gauge(s), "
           f"{payload['stale_count']} late, {payload['withdrawn_count']} withdrawn")
-    return 0
+    return keep_history(payload, normals, today, fetched_at, output)
 
 
 if __name__ == "__main__":

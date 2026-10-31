@@ -1,6 +1,7 @@
 # ADR-144: Compare natural river gauges with the survey's day-of-year percentiles
 
-- Status: Accepted
+- Status: Accepted; the 30-year floor, the first set and the page's numbers are
+  amended by [ADR-145](ADR-145-compare-river-gauges-above-ten-years-shorten-two-names-and-round-the-page.md)
 - Date: 2026-10-31
 - Extends: ADR-136 (daily flow at four shaped rivers; unchanged for them),
   ADR-137 (the tier rule a natural gauge must meet)

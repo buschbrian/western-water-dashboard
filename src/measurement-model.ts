@@ -7,7 +7,7 @@
  * summary in, labelled rows out. A level carries no percentage of anything
  * (ADR-112); only a caller that passes the shares gets them.
  */
-import { changeLabel, ordinal } from "./state/detail";
+import { changeLabel, rankPosition } from "./state/detail";
 import type { MeasurementSummary, NullableNumber } from "./types";
 import { formatDate } from "./viz/format";
 
@@ -38,7 +38,7 @@ export function datumName(code: string): string {
 }
 
 /**
- * The history rank as a position: "3rd-lowest of 12". The details panel
+ * The history rank as a position: "3rd-lowest of 12 years". The details panel
  * pairs the ordinal with a percentile once ten years stand behind it; a level
  * publishes no percentile, so the position stands alone (ADR-112).
  */
@@ -46,7 +46,7 @@ export function rankSentence(rank: number | null, rankOf: number | null): string
   if (rank === null || rankOf === null || rankOf <= 1) {
     return "No earlier years to compare with.";
   }
-  return `${ordinal(rank)}-lowest of ${rankOf}`;
+  return rankPosition(rank, rankOf);
 }
 
 /** Feet to hundredths, with a thousands separator: 3,914.96. */

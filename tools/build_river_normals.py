@@ -13,8 +13,8 @@ record; this tool computes nothing and estimates nothing.
     python tools/build_river_normals.py --prune      # also drop gauges no longer natural
 
 A builder: every run merges, and a gauge not asked about keeps its entry. A
-gauge whose reply fails a check, or whose days mostly rest on fewer than 30
-years, is reported and not written. The key goes only in the X-Api-Key header,
+gauge whose reply fails a check, or whose days mostly rest on 10 years or
+fewer, is reported and not written (ADR-145). The key goes only in the X-Api-Key header,
 and only when USGS_API_KEY is set (ADR-098). Network job: not part of any build
 or CI target. The percentiles move when the survey approves another year of
 values, so rebuild about once a year; `tools/check_reference_freshness.py`
@@ -33,7 +33,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from pipeline import rivers  # noqa: E402
 from pipeline.constants import (  # noqa: E402
-    RIVER_NORMAL_MIN_YEARS, RIVER_NORMAL_PERCENTILES, RIVER_NORMALS_PATH,
+    RIVER_NORMAL_FULL_YEARS, RIVER_NORMAL_MIN_YEARS, RIVER_NORMAL_PERCENTILES,
+    RIVER_NORMALS_PATH,
 )
 from pipeline.providers import (  # noqa: E402
     USGS_STATISTICS_NORMALS_URL, fetch_usgs_flow_normals, usgs_flow_normals_url,
@@ -47,7 +48,9 @@ DESCRIPTION = (
     "the Weibull plotting position (measured against the daily record on 2026-10-31). "
     "years is the number of approved values on that day. A day with fewer than "
     f"{RIVER_NORMAL_MIN_YEARS} years, or a percentile the service gives as nan, is never "
-    "compared with. Written by tools/build_river_normals.py; never hand-edited."
+    f"compared with; a compared day with fewer than {RIVER_NORMAL_FULL_YEARS} years is "
+    "published as a short record (ADR-145). Written by tools/build_river_normals.py; "
+    "never hand-edited."
 )
 
 

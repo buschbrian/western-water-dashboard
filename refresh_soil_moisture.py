@@ -31,6 +31,7 @@ from zoneinfo import ZoneInfo
 
 import requests
 
+from pipeline import soil_history
 from refresh_snowpack import (
     DATA_URL,
     LATE_AFTER_DAYS,
@@ -397,6 +398,13 @@ def main() -> int:
           f"{payload['measured_site_count']} with a {CHANGE_DAYS}-day change to {payload['end_date']}; "
           f"{payload['frozen_site_count']} frozen; {payload['late_site_count']} reporting late; "
           f"{args.output} {'written' if changed else 'unchanged'}.")
+    try:
+        kept = soil_history.update(payload, payload["generated_at"],
+                                   args.output.with_name(soil_history.SOIL_HISTORY_PATH.name))
+    except (OSError, ValueError, KeyError) as exc:
+        print(f"ERROR: {exc}; soil_moisture_history.json left untouched")
+        return 1
+    print(f"soil_moisture_history.json holds {kept} date(s).")
     return 0
 
 

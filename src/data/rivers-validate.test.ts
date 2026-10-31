@@ -39,8 +39,13 @@ describe("validateRiverPayload", () => {
     const compared = validateRiverPayload(copy(riverPayload([riverGauge(), naturalRiverGauge()])));
     expect(compared.gauges[1]!.compared_with_normal).toBe(true);
     const withheld = validateRiverPayload(copy(riverPayload([
-      naturalRiverGauge({}, "fewer_than_30_years")])));
+      naturalRiverGauge({}, "ten_years_or_fewer")])));
     expect(withheld.gauges[0]!.compared_with_normal).toBe(false);
+    const base = naturalRiverGauge();
+    const short = { ...base, short_record: true, normal_band: riverBand(base.as_of, { years: 11 }) };
+    expect(validateRiverPayload(copy(riverPayload([short as typeof base]))).gauges[0]!
+      .compared_with_normal)
+      .toBe(true);
   });
 
   it("refuses a natural gauge whose class, band or reason does not hold together", () => {
@@ -48,10 +53,15 @@ describe("validateRiverPayload", () => {
     const bad: [unknown, string][] = [
       [{ ...gauge, flow_class: "much_above_normal" }, "does not follow"],
       [{ ...gauge, normal_band: riverBand("2026-10-25") }, "reading's date"],
-      [{ ...gauge, normal_band: riverBand(gauge.as_of, { years: 29 }) }, "malformed"],
+      [{ ...gauge, normal_band: riverBand(gauge.as_of, { years: 10 }) }, "malformed"],
+      [{ ...gauge, normal_band: riverBand(gauge.as_of, { years: 29 }) }, "short_record"],
+      [{ ...gauge, short_record: true }, "short_record"],
+      [{ ...gauge, short_record: null }, "short_record"],
+      [{ ...naturalRiverGauge({}, "percentile_missing"), short_record: false }, "says why"],
+      [{ ...riverGauge(), short_record: false }, "never compared"],
       [{ ...gauge, normal_band: riverBand(gauge.as_of, { p25: 450 }) }, "malformed"],
       [{ ...gauge, normal_band: { ...riverBand(gauge.as_of), percentile: 50 } }, "malformed"],
-      [{ ...gauge, normal_withheld: "fewer_than_30_years" }, "malformed"],
+      [{ ...gauge, normal_withheld: "ten_years_or_fewer" }, "malformed"],
       [{ ...gauge, compared_with_normal: false }, "says why"],
       [{ ...naturalRiverGauge({}, "percentile_missing"), normal_withheld: "guessed" }, "says why"],
       [{ ...gauge, tier: "short" }, "unknown tier"]

@@ -26,7 +26,8 @@ import {
 } from "./data/export";
 import { loadElevationHistory, loadReservoirs, loadUpstreamIndex } from "./data/load";
 import {
-  baselineRows, provenanceRows, requestedName, resolveReservoirPage
+  answerRows as pickAnswerRows, baselineRows, provenanceRows, requestedName,
+  resolveReservoirPage
 } from "./reservoir-model";
 import type { ReservoirPageState } from "./reservoir-model";
 import {
@@ -119,8 +120,8 @@ function answerTiles(
   list.className = "reservoir-tiles";
   for (const row of rows) {
     const tile = document.createElement("div");
-    /* The seasonal comparison is the longest sentence; it takes two columns
-     * so five tiles fill whole rows at both grid widths. */
+    /* The seasonal comparison and the gain since the 4-month low are the
+     * longest sentences; each takes two columns. */
     if (wide(row.label)) tile.className = "reservoir-tile-wide";
     const term = document.createElement("dt");
     term.textContent = row.label;
@@ -323,16 +324,10 @@ async function renderFound(payload: ReservoirPayload,
   /* The answer first: how much is stored, how full that is, how it has
    * moved and whether that is normal. Every other row of the details view
    * follows lower down, under the section it belongs to. */
-  const answerLabels = new Set(["Reading date", "History rank", view.baseline.label]);
-  const isAnswer = (row: { label: string }): boolean =>
-    row.label.startsWith("Change in") || answerLabels.has(row.label);
   const stored = view.rows.find((row) => row.label === "Stored now");
-  const answerRank = (label: string): number => label === "Reading date" ? 0
-    : label.startsWith("Change in") ? 1 : label === view.baseline.label ? 2 : 3;
-  const answerRows = view.rows.filter(isAnswer)
-    .sort((a, b) => answerRank(a.label) - answerRank(b.label));
+  const answerRows = pickAnswerRows(view.rows, view.baseline.label);
   const restRows = view.rows.filter((row) =>
-    row !== stored && !isAnswer(row) && row.label !== "Measured by");
+    row !== stored && !answerRows.includes(row) && row.label !== "Measured by");
   const peakRows = restRows.filter((row) => row.label === "Highest value this year");
   const factRows = restRows.filter((row) => row.label !== "Highest value this year");
 
@@ -348,7 +343,8 @@ async function renderFound(payload: ReservoirPayload,
     figure.append(label, amount);
     children.push(figure);
   }
-  children.push(headline, answerTiles(answerRows, (label) => label === view.baseline.label));
+  children.push(headline, answerTiles(answerRows, (label) =>
+    label === view.baseline.label || label === "Since the 4-month low"));
 
   // The twelve months, drawn by the same SVG builder the details panel uses.
   const chartHost = document.createElement("div");

@@ -5,14 +5,15 @@ import {
 } from "./data/river-fixture";
 import {
   NATURAL_SENTENCE, SHAPED_SENTENCE, approvalText, calendarDay, describeGauge, formatFlow,
-  lateMessage, riversCsv, riversCsvFilename, whereSentence, withdrawnSentence
+  formatFlowFigures, lateMessage, riversCsv, riversCsvFilename, shortRecordSentence,
+  whereSentence, withdrawnSentence
 } from "./rivers-model";
 
 describe("river model", () => {
   it("words the current reading in full units with its date", () => {
     const view = describeGauge(riverGauge());
     const gauge = riverGauge();
-    expect(view.headline).toBe(`${formatFlow(gauge.current_cfs)} cubic feet per second`);
+    expect(view.headline).toBe(`${formatFlowFigures(gauge.current_cfs)} cubic feet per second`);
     expect(view.basis).toMatch(/^mean flow on [A-Z][a-z]{2} \d{1,2}, \d{4}$/);
     expect(view.tierNote).toBe(SHAPED_SENTENCE);
     expect(view.comparison).toBeNull();
@@ -62,16 +63,34 @@ describe("river model", () => {
     expect(rows["Median for October 26"]).toBe("300 cubic feet per second");
     expect(rows["Much below normal"]).toBe("Under 100 cubic feet per second");
     expect(rows["Much above normal"]).toBe("Over 500 cubic feet per second");
+    expect(rows["Years compared"]).toBe("44 years with an approved value on this date");
+    expect(view.comparison?.shortRecord).toBeNull();
     const much = describeGauge({ ...gauge, flow_class: "much_above_normal" } as typeof gauge);
     expect(much.comparison?.label).toBe("Much above normal for October 26");
     expect(JSON.stringify(view).toLowerCase()).not.toMatch(/inflow|total|% of normal|rank/);
   });
 
+  it("says beside the comparison when the band rests on fewer than 30 years", () => {
+    const base = naturalRiverGauge();
+    const short = { ...base, short_record: true,
+      normal_band: riverBand(base.as_of, { years: 22, p25: 33.75, p75: 59.875 }) } as typeof base;
+    const view = describeGauge(short);
+    expect(view.comparison?.shortRecord).toBe("The U.S. Geological Survey has 22 years of "
+      + "record for this date, fewer than the usual 30.");
+    expect(view.comparison?.detail).toBe("Normal for this date is 33.8 to 59.9 cubic feet per "
+      + "second: the middle half of the approved daily values in 22 years of record.");
+    const rows = Object.fromEntries(view.rows.map((row) => [row.label, row.value]));
+    expect(rows["Years compared"])
+      .toBe("22 years with an approved value on this date (fewer than the usual 30)");
+    expect(shortRecordSentence(22).split(/\s+/).length).toBeLessThanOrEqual(25);
+  });
+
   it("says why a natural gauge has no comparison today, without a class", () => {
-    const thin = describeGauge(naturalRiverGauge({}, "fewer_than_30_years"));
+    const thin = describeGauge(naturalRiverGauge({}, "ten_years_or_fewer"));
     expect(thin.comparison).toBeNull();
-    expect(thin.withheld).toBe("This flow is not compared with normal for October 26: fewer "
-      + "than 30 years have an approved value on this date.");
+    expect(thin.withheld).toBe("This flow is not compared with normal for October 26: the "
+      + "U.S. Geological Survey has 10 or fewer years of record for this date.");
+    expect(thin.withheld!.split(/\s+/).length).toBeLessThanOrEqual(25);
     expect(thin.rows.some((row) => row.label.startsWith("Normal range"))).toBe(false);
     const gap = describeGauge(naturalRiverGauge({}, "percentile_missing"));
     expect(gap.withheld).toContain("gives no normal range for this date");
@@ -90,6 +109,16 @@ describe("river model", () => {
     const gap = describeGauge(gauge).days[22]!;
     expect(gap.value).toBe("No value");
     expect(gap.status).toBe("No value");
+  });
+
+  it.each([
+    [101, "101"], [15.4, "15.4"], [7.62, "7.62"], [33.75, "33.8"], [59.875, "59.9"],
+    [4.947, "4.95"], [4.9, "4.9"], [7.5, "7.5"], [0.05, "0.05"], [0.18, "0.18"],
+    [0.012, "0.012"], [0.374, "0.374"], [9.625, "9.63"], [99.96, "100"], [100, "100"],
+    [1234.5, "1,235"], [3920, "3,920"], [33800, "33,800"], [0, "0"], [null, "—"],
+    [Number.NaN, "—"]
+  ] as [number | null, string][])("shows %s as %s at three significant figures", (value, text) => {
+    expect(formatFlowFigures(value)).toBe(text);
   });
 
   it("formats flow at the survey's precision", () => {

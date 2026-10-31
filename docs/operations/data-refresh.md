@@ -56,6 +56,13 @@ scripts/refresh-daily.sh          # everything, exactly as the workflow does
    `tools/check_reference_freshness.py` says so, and with `--only SITE` when a
    natural gauge joins the roster). It refuses a reply it cannot trust and
    leaves that gauge's entry as it was (ADR-144).
+
+   **Histories** (ADR-146) — `refresh_rivers.py` and `refresh_soil_moisture.py`
+   each merge their payload into `river_history.json` and
+   `soil_moisture_history.json` right after writing it. A history that fails its
+   validator keeps the last complete file and makes the script exit non-zero.
+   The river file can be rebuilt for 30 days by running the refresh; the soil
+   file cannot be rebuilt for a missed day.
 6. **Commit** — the published set, staged together, so the drought files can
    never be committed apart. The list lives in `data/generated-files.json` and
    `scripts/refresh-daily.sh` reads it; do not retype it into a workflow.

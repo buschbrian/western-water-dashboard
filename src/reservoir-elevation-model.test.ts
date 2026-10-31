@@ -36,7 +36,7 @@ describe("the surface level card", () => {
       .toBe("+1.50 feet since Oct 13, 2026");
     expect(view.card.rows.find((row) => row.label === "Change in 1 year")!.value)
       .toBe("No earlier reading to compare with.");
-    expect(view.card.rows.find((row) => row.label === "History rank")!.value).toBe("3rd-lowest of 40");
+    expect(view.card.rows.find((row) => row.label === "History rank")!.value).toBe("3rd-lowest of 40 years");
     expect(view.card.rows.map((row) => row.value).join(" ")).not.toMatch(/%/);
     expect(view.late).toBeNull();
   });
