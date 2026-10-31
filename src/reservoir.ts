@@ -31,7 +31,8 @@ import {
 } from "./reservoir-model";
 import type { ReservoirPageState } from "./reservoir-model";
 import {
-  describeElevation, elevationChart, notDrawnSentence, referenceLevelGroups, referenceLevelText
+  describeElevation, elevationChart, levelHeadline, notDrawnSentence, referenceLevelGroups,
+  referenceLevelText
 } from "./reservoir-elevation-model";
 import type { ElevationChart, ElevationView } from "./reservoir-elevation-model";
 import type { ReservoirPayload } from "./types";
@@ -40,7 +41,7 @@ import { formatAcreFeet, formatDate } from "./viz/format";
 import { storageColor } from "./viz/classes";
 import { headlinePercent } from "./viz/symbols";
 import {
-  describeReservoir
+  describeReservoir, percentFullBasis
 } from "./state/detail";
 import {
   baselineChoices
@@ -318,8 +319,26 @@ async function renderFound(payload: ReservoirPayload,
   const value = document.createElement("strong");
   value.textContent = view.percent;
   const basis = document.createElement("span");
-  basis.textContent = view.basis;
+  /* A reservoir with a reviewed level (ADR-135) leads with two tiles: the
+   * level above its named datum, and percent full with the level it is
+   * measured against. Every other reservoir keeps the sentence. */
+  const level = levelHeadline(reservoir);
+  basis.textContent = level && headlinePercent(reservoir) !== null
+    ? percentFullBasis(reservoir) : view.basis;
   headline.append(value, basis);
+  let headlineBlock: HTMLElement = headline;
+  if (level) {
+    const levelTile = document.createElement("p");
+    levelTile.className = "detail-headline reservoir-level-headline";
+    const figure = document.createElement("strong");
+    figure.textContent = level.figure;
+    const datum = document.createElement("span");
+    datum.textContent = level.basis;
+    levelTile.append(figure, datum);
+    headlineBlock = document.createElement("div");
+    headlineBlock.className = "reservoir-headline-pair";
+    headlineBlock.append(levelTile, headline);
+  }
 
   /* The answer first: how much is stored, how full that is, how it has
    * moved and whether that is normal. Every other row of the details view
@@ -343,7 +362,7 @@ async function renderFound(payload: ReservoirPayload,
     figure.append(label, amount);
     children.push(figure);
   }
-  children.push(headline, answerTiles(answerRows, (label) =>
+  children.push(headlineBlock, answerTiles(answerRows, (label) =>
     label === view.baseline.label || label === "Since the 4-month low"));
 
   // The twelve months, drawn by the same SVG builder the details panel uses.

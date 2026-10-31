@@ -7,7 +7,7 @@
  * (`levelCard`), so a level reads the same on both pages; nothing here is a
  * percentage of a level (ADR-112).
  */
-import { datumName, levelCard } from "./measurement-model";
+import { datumName, formatFeet, levelCard } from "./measurement-model";
 import type { MeasurementView } from "./measurement-model";
 import type {
   ElevationHistoryEntry, ReferenceLevel, Reservoir, ReservoirElevation
@@ -104,6 +104,32 @@ export function elevationDatum(elevation: ReservoirElevation): string {
   return elevation.vertical_datum === "project" && elevation.datum_name
     ? `the Bureau of Reclamation's ${elevation.datum_name}`
     : `the ${datumName(elevation.vertical_datum)}`;
+}
+
+/**
+ * The datum in the few words a headline tile has room for: "NGVD 1929",
+ * "NAVD 1988", or a project datum by its own name ("the Hoover Dam
+ * powerhouse datum"). The level card below spells the national datums out.
+ */
+export function shortDatumName(elevation: ReservoirElevation): string {
+  if (elevation.vertical_datum === "project" && elevation.datum_name) {
+    return `the ${elevation.datum_name}`;
+  }
+  switch (elevation.vertical_datum) {
+    case "NGVD29": return "NGVD 1929";
+    case "NAVD88": return "NAVD 1988";
+    default: return elevationDatum(elevation);
+  }
+}
+
+/** The level tile at the top of a reviewed reservoir's page, or null. */
+export function levelHeadline(reservoir: Reservoir): { figure: string; basis: string } | null {
+  const elevation = reservoir.elevation;
+  if (!elevation) return null;
+  return {
+    figure: `${formatFeet(elevation.current)} feet`,
+    basis: `above ${shortDatumName(elevation)}`
+  };
 }
 
 /** How a project datum relates to a national one; null for a national datum. */

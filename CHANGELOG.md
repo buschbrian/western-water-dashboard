@@ -94,6 +94,10 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Changed
 
+- **Lake Powell and Lake Mead lead with their level.** The top of each page
+  shows two tiles: the surface level above its named datum, beside percent
+  full and the level it is measured against ("23.7% full (maximum level)").
+  Reservoirs without a reviewed level are unchanged.
 - **Lake Mead's three 24-Month Study levels are named once.** The chart key
   and the list under the chart say "Levels Reclamation's 24-Month Study
   reports against" one time, and each line is marked by its height alone

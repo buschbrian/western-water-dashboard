@@ -6013,7 +6013,10 @@ for (const failure of [
           ?.getAttribute("aria-busy") ?? null,
         levelText: document.querySelector("#reservoir-main .reservoir-elevation")
           ?.textContent ?? "",
-        chartTarget: Boolean(document.querySelector("#reservoir-elevation-chart svg"))
+        chartTarget: Boolean(document.querySelector("#reservoir-elevation-chart svg")),
+        headlineTiles: [...document.querySelectorAll(
+          "#reservoir-main .reservoir-headline-pair > .detail-headline")]
+          .map((tile) => tile.textContent ?? "")
       }));
       const caseName = cases.find(([caseLabel]) => caseLabel === label)?.[2];
       const elevationExpected = Boolean(elevationRoster[payload.reservoirs.find(
@@ -6036,7 +6039,17 @@ for (const failure of [
             `Reservoir page (${viewport.name}, ${label}): the datum reaches a reader as its initials`);
           check(!state.levelText.includes("%"),
             `Reservoir page (${viewport.name}, ${label}): a level was given a percentage`);
+          /* Ruling U7: the level and percent full side by side, each with its basis. */
+          check(state.headlineTiles.length === 2
+            && /^[\d,]+\.\d\d feetabove \S/.test(state.headlineTiles[0])
+            && !state.headlineTiles[0].includes("%")
+            && /^[\d.]+%full( \(.+\))?$/.test(state.headlineTiles[1]),
+          `Reservoir page (${viewport.name}, ${label}): the headline tiles read `
+            + JSON.stringify(state.headlineTiles));
         } else {
+          check(state.headlineTiles.length === 0,
+            `Reservoir page (${viewport.name}, ${label}): a reservoir with no reviewed level `
+            + "has a level tile");
           check(state.elevation === "none" && state.levelCards === 0 && state.levelLines === 0
             && !/can show a different level/.test(state.text),
           `Reservoir page (${viewport.name}, ${label}): a reservoir with no reviewed level `

@@ -48,7 +48,13 @@ the source -- again with nothing a rollup could add up. Readiness is
 `window.__reservoirReady.status`, one of found, withdrawn, held, unknown and
 none, and the browser suite visits every one.
 
-A reservoir on the reviewed elevation roster also shows its surface level
+A reservoir on the reviewed elevation roster leads with two tiles under the
+stored volume (owner's display ruling U7, 2026-10-31): the level above a short
+datum name ("3,531.69 feet above NGVD 1929", a project datum by its own name)
+beside percent full with its basis ("23.7% full (maximum level)", from
+`capacityBasisShortName`, keyed like the full names in `state/detail.ts`). A
+reservoir with no reviewed level keeps the one percent-full sentence. Such a
+reservoir also shows its surface level
 (ADR-135): the lakes page's level card, shared through
 `src/measurement-model.ts` and `src/ui/measurement-card.ts`, with the datum
 spelled out and changes in feet, never a percentage; then a water-year chart

@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { syntheticElevation, syntheticProjectElevation } from "./data/elevation-fixture";
 import { readPayload } from "./data/payload-fixture";
 import {
-  chartLevelLabel, datumNote, describeElevation, elevationChart, elevationLate, groupFeet,
+  chartLevelLabel, datumNote, levelHeadline, shortDatumName, describeElevation, elevationChart, elevationLate, groupFeet,
   notDrawnSentence, referenceKeyEntries, referenceLevelGroups, referenceLevelText,
   sharedLevelLabels, waterYearLabel, waterYearLines, waterYearOf
 } from "./reservoir-elevation-model";
@@ -176,5 +176,17 @@ describe("the water-year chart", () => {
     expect(referenceKeyEntries(levels.slice(0, 1), shared)).toEqual(["Reference level"]);
     expect(notDrawnSentence(levels.slice(1))).toBe("Not drawn on this chart, because they are far "
       + `from these readings: 1,075, 1,050 and 1,025 feet (${study}).`);
+  });
+
+  it("heads a reviewed reservoir's page with its level above a short datum name", () => {
+    const national = reservoir();
+    expect(shortDatumName(national.elevation!)).toBe("NGVD 1929");
+    expect(levelHeadline(national)).toEqual({
+      figure: `${national.elevation!.current.toLocaleString("en-US",
+        { minimumFractionDigits: 2, maximumFractionDigits: 2 })} feet`,
+      basis: "above NGVD 1929" });
+    const project = reservoir({ elevation: syntheticProjectElevation() });
+    expect(levelHeadline(project)?.basis).toBe("above the Hoover Dam powerhouse datum");
+    expect(levelHeadline(reservoir({ elevation: undefined }))).toBeNull();
   });
 });
