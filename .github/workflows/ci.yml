@@ -96,6 +96,10 @@ jobs:
       # ArcGIS application rather than the three small compatibility routes.
       - name: Load the primary ArcGIS application in a real browser
         run: node tests/smoke-modern.mjs
+      # The third suite verify:browser runs: every hosted service refused, so
+      # the fallback each page promises is proved on every CI run too.
+      - name: Load the pages with every hosted service refused
+        run: node tests/hosted-outage.mjs
       # Uploaded on failure *and* success: when a map breaks, the picture is
       # usually the fastest explanation, and when it doesn't, it is the only
       # visual record that the symbology still looks right.
