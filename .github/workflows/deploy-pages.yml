@@ -62,54 +62,11 @@ jobs:
       # The ArcGIS 5.1 application is the root production page. The retired
       # application paths remain as small redirect pages. Asserted here rather
       # than trusted, because two of those copies happen in a closeBundle hook
-      # that no other job exercises.
+      # that no other job exercises. The list is scripts/published-files.json,
+      # the one vite.config.ts builds from; the script also fails if the
+      # payload was bundled into dist/assets.
       - name: Verify the published output still serves every current URL
-        run: |
-          missing=0
-          for path in index.html modern.html legacy/index.html \
-                      overview.html precipitation.html snow.html drought.html methods.html data.html \
-                      lakes.html lakes.json data/lakes.json \
-                      elevation_history.json data/elevation_history.json \
-                      rivers.html rivers.json data/rivers.json \
-                      data/river_history.json data/soil_moisture_history.json \
-                      data/reservoir_flow_history.json data/storage-history/index.json \
-                      data/storage-history/current.json \
-                      data/drought/usdm-current.geojson data/drought/usdm-huc6.json \
-                      explore.html maplibre/index.html retired-route.js \
-                      terms.html reporters.html landscape.html story.html feed.xml feed.json weekly.html \
-                      share/lake-powell.html share/lake-mead.html \
-                      share/lake-powell.png share/lake-mead.png \
-                      share/targets.json share/ledger.json share/west.html share/west.png \
-                      reservoirs.json capacities.json \
-                      snow_sites.json snowpack.json reference.json \
-                      data/reservoirs.json data/capacities.json \
-                      data/snow_sites.json data/snowpack.json \
-                      data/snow/snowpack-wy2026.json \
-                      data/precipitation.json data/precipitation_history.json \
-                      data/soil_moisture.json \
-                      data/reference.json data/drought/usdm-current.geojson; do
-            if [ ! -s "dist/$path" ]; then
-              echo "::error title=Missing from dist::$path"
-              missing=1
-            fi
-          done
-          for path in api/reservoirs.json api/lakes.json api/elevation_history.json \
-                      api/rivers.json api/river_history.json api/soil_moisture_history.json api/reservoir_flow_history.json \
-                      api/snowpack.json api/reference.json; do
-            if [ ! -s "dist/$path" ]; then
-              echo "::error title=Missing API alias::$path"
-              missing=1
-            fi
-          done
-          # The runtime-data rule, checked directly: the published JS must
-          # not contain the payload. A bundled reservoirs.json would make
-          # every daily refresh depend on a successful rebuild.
-          as_of=$(node -p "require('./reservoirs.json').generated_at")
-          if grep -rqF "$as_of" dist/assets 2>/dev/null; then
-            echo "::error title=Data was bundled::dist/assets contains the payload's generated_at; data must be fetched at runtime, not built in"
-            missing=1
-          fi
-          exit $missing
+        run: node scripts/check-dist.mjs
 
       # ADR-154: the pictures behind permanent reservoir and scope links,
       # captured from the site just built. dist/share/*.png already holds the

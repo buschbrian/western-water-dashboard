@@ -10,6 +10,7 @@
  * and bundles cleanly, a build step that stops copying the payload. None of
  * them fail a browser test; all of them freeze the published numbers.
  */
+import { readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -50,13 +51,12 @@ const SOURCE_ONLY_ROSTERS = [
   "admitted_reservoir_elevations.json", "admitted_reservoir_flows.json"
 ];
 
-const RUNTIME_DATA = [
-  "reservoirs.json", "lakes.json", "snow_sites.json", "snowpack.json",
-  "reference.json", "capacities.json", "precipitation.json", "precipitation_history.json",
-  "snow_history.json",
-  "soil_moisture.json", "elevation_history.json", "rivers.json",
-  "river_history.json", "soil_moisture_history.json", "reservoir_flow_history.json"
-];
+/* The one list the build publishes from and the deploy checks against. */
+const PUBLISHED = JSON.parse(
+  readFileSync(resolve(root, "scripts/published-files.json"), "utf8")) as {
+  pages: string[]; runtime_data: string[]; api_aliases: string[]; other_paths: string[];
+};
+const RUNTIME_DATA = PUBLISHED.runtime_data;
 
 describe("a data-only commit deploys on its own", () => {
   it("deploys every push to main, with no path filter to skip data commits", async () => {
@@ -209,12 +209,11 @@ describe("a data-only commit deploys on its own", () => {
       "tools/compute_drought_coverage.py --scope west-huc2 --no-history");
   });
 
-  it("copies the runtime data into the published output instead of bundling it", async () => {
-    const config = await read("vite.config.ts");
-    for (const file of RUNTIME_DATA) {
-      expect(config, `${file} must be copied into dist/`).toContain(`"${file}"`);
-    }
-    expect(config).toContain('resolve(outDir, "data")');
+  it("builds from the published list, and the deploy checks dist/ against it", async () => {
+    expect(await read("vite.config.ts")).toContain('"scripts", "published-files.json"');
+    expect(await read("scripts/check-dist.mjs")).toContain('"published-files.json"');
+    expect(await read(".github/workflows/deploy-pages.yml"))
+      .toContain("run: node scripts/check-dist.mjs");
   });
 
   it("keeps the payload out of every application module", async () => {
@@ -281,7 +280,7 @@ describe("a data-only commit deploys on its own", () => {
     // that reaches only one of them is a drift no per-file check can see.
     expect(maplibreEntry, "legacy/ and maplibre/ redirect pages must stay identical")
       .toEqual(legacyEntry);
-    expect(config).toContain('index: resolve(root, "index.html")');
+    expect(PUBLISHED.pages).toContain("index.html");
     expect(config).toContain('resolve(root, "legacy", "index.html")');
   });
 
@@ -341,13 +340,13 @@ describe("a data-only commit deploys on its own", () => {
     const config = await read("vite.config.ts");
     expect(config).toContain('resolve(root, "legacy", "index.html")');
     expect(config).toContain('resolve(root, "maplibre", "index.html")');
-    expect(config).toContain('explore: resolve(root, "explore.html")');
+    expect(PUBLISHED.pages).toContain("explore.html");
     expect(config).not.toContain('resolve(root, "shared")');
     expect(await read("package.json")).not.toContain("@observablehq/plot");
   });
 
   it("keeps the analysis-only geometry out of the deploy", async () => {
-    const config = await read("vite.config.ts");
+    const config = await read("vite.config.ts") + await read("scripts/published-files.json");
     for (const file of COMMITTED_BUT_UNPUBLISHED) {
       /* The build copies a fixed list. This asserts the list does not grow to
        * include these, which is the plausible well-meant change: a new
@@ -358,7 +357,7 @@ describe("a data-only commit deploys on its own", () => {
   });
 
   it("keeps reviewed admission rosters source-only", async () => {
-    const config = await read("vite.config.ts");
+    const config = await read("vite.config.ts") + await read("scripts/published-files.json");
     for (const file of SOURCE_ONLY_ROSTERS) {
       expect(config, `${file} is copied into the deploy`).not.toContain(`"${file}"`);
     }
@@ -396,9 +395,8 @@ describe("every published address is the site's own", () => {
 
   it("lists every reader page in the sitemap, and nothing else", async () => {
     const base = await siteBase();
-    const config = await read("vite.config.ts");
-    const pages = [...config.matchAll(/resolve\(root, "([a-z-]+)\.html"\)/g)]
-      .map((match) => match[1]!)
+    const pages = PUBLISHED.pages
+      .map((page) => page.replace(/\.html$/, ""))
       .filter((name) => !NOT_LISTED.has(name))
       .map((name) => name === "index" ? `${base}/` : `${base}/${name}.html`);
     pages.push(`${base}/weekly.html`);

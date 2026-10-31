@@ -1,0 +1,33 @@
+{
+  "pages": [
+    "index.html", "modern.html", "overview.html", "precipitation.html", "snow.html",
+    "drought.html", "methods.html", "data.html", "reservoir.html", "lakes.html",
+    "rivers.html", "story.html", "explore.html", "terms.html", "reporters.html",
+    "landscape.html"
+  ],
+  "runtime_data": [
+    "reservoirs.json", "lakes.json", "snow_sites.json", "snowpack.json",
+    "reference.json", "capacities.json", "upstream_index.json",
+    "elevation_history.json", "precipitation.json", "precipitation_history.json",
+    "snow_history.json", "soil_moisture.json", "rivers.json", "river_history.json",
+    "soil_moisture_history.json", "reservoir_flow_history.json"
+  ],
+  "api_aliases": [
+    "reservoirs.json", "lakes.json", "elevation_history.json", "rivers.json",
+    "river_history.json", "soil_moisture_history.json", "reservoir_flow_history.json",
+    "snowpack.json", "reference.json"
+  ],
+  "other_paths": [
+    "legacy/index.html", "maplibre/index.html", "retired-route.js",
+    "share/lake-powell.html", "share/lake-mead.html",
+    "share/lake-powell.png", "share/lake-mead.png",
+    "share/targets.json", "share/ledger.json", "share/west.html", "share/west.png",
+    "feed.xml", "feed.json", "weekly.html",
+    "data/drought/usdm-current.geojson", "data/drought/usdm-huc6.json",
+    "data/snow/snowpack-wy2026.json",
+    "data/storage-history/index.json", "data/storage-history/current.json",
+    "data/assistant/places.json", "data/assistant/towns.json",
+    "data/assistant/reservoirs.json", "data/assistant/snow.json",
+    "data/assistant/drought.json"
+  ]
+}
