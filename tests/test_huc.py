@@ -304,9 +304,7 @@ def test_no_reservoir_sits_close_enough_to_a_boundary_to_be_generalized_across(
         "the committed boundary generalization needs re-measuring")
 
 
-def test_ray_casting_agrees_with_the_typescript_port():
-    """The same fixtures as src/data/huc.test.ts, so the two implementations
-    of the same algorithm cannot drift apart unnoticed."""
+def test_ray_casting_honours_a_hole():
     donut = [
         [[0, 0], [4, 0], [4, 4], [0, 4], [0, 0]],
         [[1, 1], [3, 1], [3, 3], [1, 3], [1, 1]],
