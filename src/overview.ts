@@ -220,7 +220,7 @@ function updateKpis(
   const { coverage } = rollup;
   const values: Record<string, string> = {
     percent: formatPercent(rollup.percentFull),
-    volume: `${formatAcreFeet(rollup.storageAf)} of ${formatAcreFeet(rollup.capacityAf)}`,
+    volume: `${formatAcreFeet(rollup.storageAf)} of ${formatAcreFeet(rollup.capacityAf)} acre-feet`,
     count: String(rollup.count),
     /* Which reservoirs, and against how many kinds of full level. The tile
      * used to say "Utah-intersecting waterbodies", which was the whole
@@ -237,7 +237,7 @@ function updateKpis(
       : `Of the usual storage for this date, ${years}, for ${rollup.normalCovers} `
         + `of ${rollup.count} reservoirs`,
     year: signed(rollup.change365dAf),
-    change: `30 days: ${signed(rollup.change30dAf)}`,
+    change: `Acre-feet. 30 days: ${signed(rollup.change30dAf)}`,
     late: String(rollup.stale),
     /* The readings are not all from the publication date, and until now the
      * tile said only "Observation dates vary by reservoir" -- true, and no
@@ -364,7 +364,7 @@ async function renderOverview(
       <article class="overview-kpi overview-kpi-primary"><span>Combined storage</span><strong data-kpi="percent">—</strong><small data-kpi="volume">—</small></article>
       <article class="overview-kpi"><span>Reservoirs in view</span><strong data-kpi="count">—</strong><small data-kpi="count-note">—</small></article>
       <article class="overview-kpi"><span>Compared with normal</span><strong data-kpi="normal">—</strong><small data-kpi="normal-note">—</small></article>
-      <article class="overview-kpi"><span>Change over the year</span><strong data-kpi="year">—</strong><small data-kpi="change">30 days: —</small></article>
+      <article class="overview-kpi"><span>Change over the year</span><strong data-kpi="year">—</strong><small data-kpi="change">Acre-feet. 30 days: —</small></article>
       <article class="overview-kpi"><span>Late or unavailable</span><strong data-kpi="late">—</strong><small>Evaluated against each source update schedule</small></article>
       <article class="overview-kpi"><span>Data published</span><strong>${formatDate(generatedAt.slice(0, 10))}</strong><small data-kpi="observed">—</small></article>
     </section>

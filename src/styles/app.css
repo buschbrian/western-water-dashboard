@@ -412,9 +412,10 @@ arcgis-map > [slot="bottom-right"] {
 .list-btn:focus-visible { outline: .15rem solid #00619b; outline-offset: -.15rem; }
 .list-btn[aria-pressed="true"] { background: var(--app-surface); font-weight: 700; }
 .list-swatch { width: .75rem; height: .75rem; border: 1px solid rgba(0, 0, 0, .35); border-radius: 50%; }
-/* min-width: 0 so a long reservoir name truncates instead of widening the
- * whole panel -- and, at 360px, the page. */
-.list-name { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+/* min-width: 0 so a long reservoir name wraps inside its column instead of
+ * widening the whole panel -- and, at 360px, the page. A name is never cut
+ * to an ellipsis: the reader needs all of it to tell two reservoirs apart. */
+.list-name { min-width: 0; overflow-wrap: anywhere; }
 .list-percent { font-variant-numeric: tabular-nums; font-size: .8125rem; }
 .list-late {
   padding: .0625rem .3125rem;
