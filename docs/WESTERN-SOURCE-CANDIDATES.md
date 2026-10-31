@@ -930,3 +930,56 @@ The next pass, and the order to work it in, is scoped in
 section 5. **This document remains the authority for what each source is**;
 that one records only what is left to do about it and what has to be counted
 before anyone can size it.
+
+## The count taken again on the modern service (2026-10-31)
+
+`tools/probe_nwis_storage.py` now reads the U.S. Geological Survey's OGC `v1`
+collections -- each series' newest value from `latest-daily`, then the
+sites' names from `monitoring-locations`, two requests a state -- because
+the legacy service it first read shuts down on 2027-02-22. It now covers all
+eleven western states, and the seven-day window is unchanged.
+
+**The 2026-08-21 count overstated how many sites report.** The legacy service
+lists a time series for an active site even when the series holds no value
+inside the requested period, and the probe counted listed series. Run against
+both services on 2026-10-31, the legacy service listed 91 sites, 58 of them
+held a value, and `v1` returned the same 58, site for site, in every state:
+
+| State | Listed by the legacy service | Reporting (both services) |
+|---|---:|---:|
+| Arizona | 6 | 6 |
+| California | 21 | 21 |
+| Colorado | 13 | 11 |
+| Idaho | 5 | 1 |
+| Montana | 0 | 0 |
+| New Mexico | 20 | 9 |
+| Nevada | 8 | 6 |
+| Oregon | 9 | 0 |
+| Utah | 1 | 0 |
+| Washington | 6 | 4 |
+| Wyoming | 2 | 0 |
+| **Total** | **91** | **58** |
+
+Oregon's nine are the Willamette projects, and their newest daily value is
+from 1974. The August finding that "all nine reporting sites are already on
+the roster" matched nine sites that were not reporting; the roster's Oregon
+coverage comes from its own providers and is unaffected.
+
+**Of the 58, twelve stand near no published point**, two are already held in
+`admitted_usgs_reservoirs.json` (Walker Lake and Milner Lake), and 44 are
+within three kilometres of one -- candidates under ADR-069, not rulings.
+Only three of the twelve lie inside the drainage set this site publishes,
+which is hydrologic regions 14 to 18:
+
+| Site | Region | What it is |
+|---|---|---|
+| Lake Havasu near Parker Dam (09427500) | 15 | The reservoir whose California Data Exchange Center series is held for implausible readings (`HVS`). A second publisher of the same water is an ADR-069 question, not an addition |
+| Zuni Salt Lake near Quemado (09386189) | 15 | A natural salt lake. Its path is ADR-112's terminal lakes, not the reservoir roster |
+| Alisal Reservoir near Solvang (11128300) | 18 | A small Santa Ynez reservoir with no published neighbour within 14 km |
+
+The other nine are in region 11 (Teller Reservoir in Colorado; Lake Maloya,
+Eagle Nest Lake and Ute Reservoir in New Mexico) and region 13 (Costilla,
+Nambe Falls, McClure, Nichols and Bluewater, all in New Mexico). No drainage
+area in this site contains them, which is also why New Mexico publishes one
+reservoir. Admitting them is a decision about the site's geography before it
+is a question about this source.
