@@ -8,8 +8,7 @@ capacity. This walks the catalog around a known storage item id and prints
 what is actually there, so the capacity lookup can be written against the
 real payload instead of a guess.
 
-Run it from CI (`.github/workflows/probe-rise.yml`) rather than locally if
-your network can't reach data.usbr.gov:
+Run it locally:
 
     python tools/probe_rise.py --item-id 509
     python tools/probe_rise.py --name "Lake Powell" --capacity-hunt
