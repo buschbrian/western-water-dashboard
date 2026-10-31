@@ -50,9 +50,9 @@
     },
     {
       "path": "snow_sites.json",
-      "class": "generated-daily",
-      "writer": "refresh_snowpack.py",
-      "staged_by_refresh": true
+      "class": "derived-on-demand",
+      "writer": "tools/build_snotel_inventory.py",
+      "staged_by_refresh": false
     },
     {
       "path": "precipitation.json",

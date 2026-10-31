@@ -49,6 +49,8 @@ jobs:
         run: npm run budget:sdk
       - name: Production build
         run: npx vite build
+      - name: Every published path is in dist, and no payload was bundled
+        run: node scripts/check-dist.mjs
 
   python-tests:
     name: Data script tests
