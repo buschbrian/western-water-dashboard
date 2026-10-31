@@ -1,4 +1,4 @@
-"""Refresh the daily river-flow payload, `rivers.json` (ADR-136, ADR-144).
+"""Refresh the daily river-flow payload, `rivers.json` (ADR-136, ADR-144, ADR-145).
 
 A separate orchestrator for a separate measurement. It reads the reviewed
 roster in `admitted_river_gauges.json`, confirms each gauge's reviewed series
@@ -142,8 +142,9 @@ def main(argv: list[str] | None = None, *, fetch=fetch_gauge, output=RIVERS_OUTP
     for record in payload["gauges"]:
         late = f" LATE ({record['days_stale']}d)" if record["is_stale"] else ""
         band = record.get("normal_band")
+        short = ", short record" if record.get("short_record") else ""
         versus = (f"; {record['flow_class']} (p25-p75 {band['p25']}-{band['p75']}, "
-                  f"{band['years']} years)" if band
+                  f"{band['years']} years{short})" if band
                   else f"; not compared: {record['normal_withheld']}"
                   if record.get("normal_withheld") else "")
         print(f"{record['name']}: {record['current_cfs']:,} ft^3/s on {record['as_of']} "

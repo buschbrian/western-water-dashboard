@@ -227,11 +227,23 @@ against Mill Creek's daily record. The project keeps the 10th, 25th, 50th,
 75th and 90th and computes none. The class is WaterWatch's, for the band of
 the reading's own calendar day: under p10 much below normal, under p25 below,
 p25 to p75 normal, up to p90 above, over p90 much above; a value on a
-boundary takes the class nearer normal. A day whose band rests on fewer than
-30 years (`RIVER_NORMAL_MIN_YEARS`, WaterWatch's rule; the service has no
+boundary takes the class nearer normal. A day whose band rests on 10 years
+or fewer (`RIVER_NORMAL_MIN_YEARS` is 11, Brian's floor; the service has no
 minimum) or lacks a percentile (the service answers `nan`) is not compared,
-and the record says why. 29 February is that day at every current gauge. The
-newest value is usually provisional while the band is approved.
+and the record says why (`ten_years_or_fewer`, `percentile_missing`). A
+compared day with fewer than 30 years (`RIVER_NORMAL_FULL_YEARS`, WaterWatch's
+usual record) carries `short_record: true`, and the page says how many years
+beside the comparison (ADR-145). Middle Fork Beaver Creek, at 22 years on
+most days, is the current short record. On 29 February, Mill Creek (11
+years) and Blacks Fork (13) are compared as short records, and South Creek
+(10) and Middle Fork Beaver Creek (5) are not compared. The newest value is
+usually provisional while the band is approved.
+
+**The rivers page shows the reading and the normal range at three
+significant figures** (ADR-145): a value of 100 or more as a whole number,
+anything smaller to three figures without added zeros (33.75 shows as 33.8,
+0.05 as 0.05). The payload, the daily table and the CSV file keep the
+survey's precision.
 
 **Never subtract two shares with different denominators** (ADR-046) — see the
 drought section below for the case this exists for.

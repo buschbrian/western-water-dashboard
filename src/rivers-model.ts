@@ -1,5 +1,5 @@
 /*
- * The words and rows the river-flow page is made of (ADR-136, ADR-144).
+ * The words and rows the river-flow page is made of (ADR-136, ADR-144, ADR-145).
  *
  * Pure: a gauge record in, sentences and labelled rows out. A gauge has no
  * full level and no rank. A shaped gauge has no normal; a natural gauge's
@@ -8,6 +8,7 @@
  * reservoir's inflow.
  */
 import { serializeCsv } from "./data/export";
+import { FULL_RECORD_YEARS } from "./data/rivers-validate";
 import type {
   NaturalRiverGauge, RiverDay, RiverFlowClass, RiverGauge, RiverPayload, WithdrawnGauge
 } from "./types";
@@ -32,6 +33,8 @@ export interface RiverDayView {
 export interface RiverComparison {
   label: string;
   detail: string;
+  /** Said beside the comparison when the band rests on fewer than 30 years. */
+  shortRecord: string | null;
 }
 
 export interface RiverView {
@@ -66,6 +69,17 @@ export function formatFlow(value: number | null): string {
     : value.toLocaleString("en-US", { maximumFractionDigits: 2 });
 }
 
+/** The rivers page's reading and normal range, at three significant figures
+ * (ADR-145): 101, 15.4, 7.62, 33.8, 0.05. A value of 100 or more is a whole
+ * number with separators. No trailing zero is added; the payload keeps full
+ * precision. */
+export function formatFlowFigures(value: number | null): string {
+  if (value === null || !Number.isFinite(value)) return "—";
+  return Math.abs(value) >= 100
+    ? value.toLocaleString("en-US", { maximumFractionDigits: 0 })
+    : value.toLocaleString("en-US", { maximumSignificantDigits: 3 });
+}
+
 function signed(value: number): string {
   return `${value > 0 ? "+" : value < 0 ? "−" : ""}${formatFlow(Math.abs(value))}`;
 }
@@ -97,7 +111,14 @@ export function calendarDay(date: string): string {
 }
 
 function cfsText(value: number): string {
-  return `${formatFlow(value)} ${FLOW_UNIT}`;
+  return `${formatFlowFigures(value)} ${FLOW_UNIT}`;
+}
+
+/** "The U.S. Geological Survey has 22 years of record for this date, fewer
+ * than the usual 30." */
+export function shortRecordSentence(years: number): string {
+  return `The U.S. Geological Survey has ${years} years of record for this date, `
+    + `fewer than the usual ${FULL_RECORD_YEARS}.`;
 }
 
 /** What a natural gauge says about today against normal, or why it says nothing. */
@@ -106,27 +127,30 @@ export function describeComparison(gauge: NaturalRiverGauge): {
 } {
   const day = calendarDay(gauge.as_of);
   if (!gauge.compared_with_normal) {
-    const why = gauge.normal_withheld === "fewer_than_30_years"
-      ? "fewer than 30 years have an approved value on this date"
+    const why = gauge.normal_withheld === "ten_years_or_fewer"
+      ? "the U.S. Geological Survey has 10 or fewer years of record for this date"
       : "the U.S. Geological Survey gives no normal range for this date";
     return { comparison: null, withheld: `This flow is not compared with normal for ${day}: ${why}.`,
       rows: [], source: [] };
   }
   const band = gauge.normal_band;
+  const short = gauge.short_record ? ` (fewer than the usual ${FULL_RECORD_YEARS})` : "";
   return {
     comparison: {
       label: `${FLOW_CLASS_WORDS[gauge.flow_class]} for ${day}`,
-      detail: `Normal for this date is ${formatFlow(band.p25)} to ${cfsText(band.p75)}: the `
-        + `middle half of the approved daily values in ${band.years} years of record.`
+      detail: `Normal for this date is ${formatFlowFigures(band.p25)} to ${cfsText(band.p75)}: `
+        + `the middle half of the approved daily values in ${band.years} years of record.`,
+      shortRecord: gauge.short_record ? shortRecordSentence(band.years) : null
     },
     withheld: null,
     rows: [
       { label: `Normal range for ${day}`,
-        value: `${formatFlow(band.p25)} to ${cfsText(band.p75)}` },
+        value: `${formatFlowFigures(band.p25)} to ${cfsText(band.p75)}` },
       { label: `Median for ${day}`, value: cfsText(band.p50) },
       { label: "Much below normal", value: `Under ${cfsText(band.p10)}` },
       { label: "Much above normal", value: `Over ${cfsText(band.p90)}` },
-      { label: "Years compared", value: `${band.years} years with an approved value on this date` }
+      { label: "Years compared",
+        value: `${band.years} years with an approved value on this date${short}` }
     ],
     source: [
       { label: "Normal range", value: "Daily values the U.S. Geological Survey approved, "
@@ -223,7 +247,7 @@ export function describeGauge(gauge: RiverGauge): RiverView {
     comparison: normal.comparison,
     withheld: normal.withheld,
     late: lateMessage(gauge),
-    headline: `${formatFlow(gauge.current_cfs)} ${FLOW_UNIT}`,
+    headline: `${formatFlowFigures(gauge.current_cfs)} ${FLOW_UNIT}`,
     basis: `mean flow on ${formatDate(gauge.as_of)}`,
     status,
     rows: [

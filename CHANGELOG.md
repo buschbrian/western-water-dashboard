@@ -13,19 +13,21 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
-- **Three natural river gauges compared with normal** (ADR-144) on the river
-  flow page: Mill Creek near Moab, Blacks Fork near Robertson and South Creek
-  near Monticello. Each gauge's newest daily flow is placed in one of five
-  classes, from much below normal to much above normal, against the U.S.
-  Geological Survey's percentiles of approved daily values for the same date.
-  The page shows the normal range, the median and how many years they rest
-  on. A date with fewer than 30 years gets no comparison, and the page says
-  why. Middle Fork Beaver Creek is held out at 22 years. The four rivers
-  toward Lake Powell are unchanged and are still not compared with normal.
-  `rivers.json` moves to structure version 2 with `normal_band`, `flow_class`
-  and `normal_withheld` on natural gauges; the percentiles are a committed
-  reference file, `river_normals.json`, rebuilt by
-  `tools/build_river_normals.py`.
+- **Four natural river gauges compared with normal** (ADR-144, ADR-145) on
+  the river flow page: Mill Creek near Moab, Blacks Fork near Robertson, South
+  Creek near Monticello and Middle Fork Beaver Creek near Lonetree. Each
+  gauge's newest daily flow is placed in one of five classes, from much below
+  normal to much above normal, against the U.S. Geological Survey's
+  percentiles of approved daily values for the same date. The page shows the
+  normal range, the median and how many years they rest on, with the reading
+  and the range at three significant figures. A date with 10 years or fewer
+  gets no comparison, and the page says why; a date with fewer than 30 years
+  is compared, and the page says it has fewer than the usual 30. The four
+  rivers toward Lake Powell are unchanged and are still not compared with
+  normal. `rivers.json` moves to structure version 3 with `normal_band`,
+  `flow_class`, `normal_withheld` and `short_record` on natural gauges; the
+  percentiles are a committed reference file, `river_normals.json`, rebuilt
+  by `tools/build_river_normals.py`.
 - **A picture for a shared Lake Powell or Lake Mead link** (ADR-141). Two
   share pages, `share/lake-powell.html` and `share/lake-mead.html`, carry the
   card tags and send a person on to the reservoir page. The picture on the
@@ -84,6 +86,16 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Changed
 
+- **Eighteen more reservoir names are the water's own name** (ADR-147).
+  Gauge and county text is gone from `Rye Patch Reservoir`, `Stagecoach
+  Reservoir`, `Lake San Antonio`, `San Antonio Reservoir`, `Jackson Meadows`,
+  `Dwinnell Reservoir`, `Camp Far West`, `Bucks Lake` and `Upper San
+  Leandro`. `McPhee Reservoir`, `McKay`, `Lake McCloud` and `Lake McSwain`
+  have the right capitals, and `Howard A. Hanson` is spelled as the dam
+  inventory spells it. Four dam names now name the water: `Lake Oroville`,
+  `Cherry Lake`, `Morena Reservoir` and `Bass Lake`. Links that use an old
+  name still open the right reservoir. A new test refuses provider text in
+  any roster name.
 - **Precipitation has its own page**, `precipitation.html` (ADR-130): the
   recent totals, the season since 1 October and the history chart, for the
   place in the link, with a link to the snowpack view for the same place.

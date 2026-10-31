@@ -169,10 +169,11 @@
       "state": "WY"
     },
     "09237495:CO:BOR": {
-      "name": "Stagecoach Reservoir nr Oak Creek",
+      "name": "Stagecoach Reservoir",
       "county_fips": "08107",
       "county_name": "Routt County",
-      "state": "CO"
+      "state": "CO",
+      "retrieved": "2026-10-31"
     },
     "09255450:WY:BOR": {
       "name": "High Savery Reservoir",
@@ -391,10 +392,11 @@
       "state": "NV"
     },
     "10334500:NV:BOR": {
-      "name": "Rye Patch Re nr Rye Patch, NV",
+      "name": "Rye Patch Reservoir",
       "county_fips": "32027",
       "county_name": "Pershing County",
-      "state": "NV"
+      "state": "NV",
+      "retrieved": "2026-10-31"
     },
     "10336710:NV:BOR": {
       "name": "Marlette Lake",
@@ -614,10 +616,11 @@
       "state": "WA"
     },
     "12105800:WA:BOR": {
-      "name": "Howard Hansen",
+      "name": "Howard A. Hanson",
       "county_fips": "53033",
       "county_name": "King County",
-      "state": "WA"
+      "state": "WA",
+      "retrieved": "2026-10-31"
     },
     "12175000:WA:BOR": {
       "name": "Ross",
@@ -1004,10 +1007,11 @@
       "state": "OR"
     },
     "14023000:OR:BOR": {
-      "name": "Mckay",
+      "name": "McKay",
       "county_fips": "41059",
       "county_name": "Umatilla County",
-      "state": "OR"
+      "state": "OR",
+      "retrieved": "2026-10-31"
     },
     "14034490:OR:BOR": {
       "name": "Willow Creek",
@@ -1424,16 +1428,18 @@
       "state": "CA"
     },
     "ATN": {
-      "name": "Lake San Antonio, Monterey Co",
+      "name": "Lake San Antonio",
       "county_fips": "06053",
       "county_name": "Monterey County",
-      "state": "CA"
+      "state": "CA",
+      "retrieved": "2026-10-31"
     },
     "BCL": {
-      "name": "Bucks Lake Storage",
+      "name": "Bucks Lake",
       "county_fips": "06063",
       "county_name": "Plumas County",
-      "state": "CA"
+      "state": "CA",
+      "retrieved": "2026-10-31"
     },
     "BIO": {
       "name": "Briones Dam",
@@ -1526,10 +1532,11 @@
       "state": "CA"
     },
     "CFW": {
-      "name": "Bear River At Camp Far West Dam",
+      "name": "Camp Far West",
       "county_fips": "06115",
       "county_name": "Yuba County",
-      "state": "CA"
+      "state": "CA",
+      "retrieved": "2026-10-31"
     },
     "CGS": {
       "name": "Cogswell Reservoir",
@@ -1556,10 +1563,11 @@
       "state": "WA"
     },
     "CHV": {
-      "name": "Cherry Valley Dam",
+      "name": "Cherry Lake",
       "county_fips": "06109",
       "county_name": "Tuolumne County",
-      "state": "CA"
+      "state": "CA",
+      "retrieved": "2026-10-31"
     },
     "CMN": {
       "name": "Camanche Reservoir",
@@ -1568,10 +1576,11 @@
       "state": "CA"
     },
     "CNV": {
-      "name": "Crane Valley",
+      "name": "Bass Lake",
       "county_fips": "06039",
       "county_name": "Madera County",
-      "state": "CA"
+      "state": "CA",
+      "retrieved": "2026-10-31"
     },
     "COY": {
       "name": "Lake Mendocino",
@@ -1664,10 +1673,11 @@
       "state": "CA"
     },
     "DRE": {
-      "name": "Dwinnell Reservoir Near Edgewood",
+      "name": "Dwinnell Reservoir",
       "county_fips": "06093",
       "county_name": "Siskiyou County",
-      "state": "CA"
+      "state": "CA",
+      "retrieved": "2026-10-31"
     },
     "EDN": {
       "name": "Stumpy Meadows Reservoir",
@@ -1857,10 +1867,11 @@
       "state": "CA"
     },
     "JCK": {
-      "name": "Jackson Meadows (Nevada Co Wd)",
+      "name": "Jackson Meadows",
       "county_fips": "06091",
       "county_name": "Sierra County",
-      "state": "CA"
+      "state": "CA",
+      "retrieved": "2026-10-31"
     },
     "JDA": {
       "name": "Lake Umatilla",
@@ -1995,16 +2006,18 @@
       "state": "OR"
     },
     "MCO": {
-      "name": "Lake Mccloud",
+      "name": "Lake McCloud",
       "county_fips": "06089",
       "county_name": "Shasta County",
-      "state": "CA"
+      "state": "CA",
+      "retrieved": "2026-10-31"
     },
     "MCS": {
-      "name": "Lake Mc Swain",
+      "name": "Lake McSwain",
       "county_fips": "06043",
       "county_name": "Mariposa County",
-      "state": "CA"
+      "state": "CA",
+      "retrieved": "2026-10-31"
     },
     "MDO": {
       "name": "Modesto Reservoir",
@@ -2044,16 +2057,18 @@
       "state": "CA"
     },
     "MOR": {
-      "name": "Morena Dam",
+      "name": "Morena Reservoir",
       "county_fips": "06073",
       "county_name": "San Diego County",
-      "state": "CA"
+      "state": "CA",
+      "retrieved": "2026-10-31"
     },
     "MPHC2000:CO:BOR": {
-      "name": "Mcphee Reservoir",
+      "name": "McPhee Reservoir",
       "county_fips": "08083",
       "county_name": "Montezuma County",
-      "state": "CO"
+      "state": "CO",
+      "retrieved": "2026-10-31"
     },
     "MPL": {
       "name": "Mammoth Pool",
@@ -2098,10 +2113,11 @@
       "state": "CA"
     },
     "ORO": {
-      "name": "Oroville Dam",
+      "name": "Lake Oroville",
       "county_fips": "06007",
       "county_name": "Butte County",
-      "state": "CA"
+      "state": "CA",
+      "retrieved": "2026-10-31"
     },
     "PAR": {
       "name": "Pardee",
@@ -2188,10 +2204,11 @@
       "state": "CA"
     },
     "SAT": {
-      "name": "San Antonio Reservoir, Alameda Co",
+      "name": "San Antonio Reservoir",
       "county_fips": "06001",
       "county_name": "Alameda County",
-      "state": "CA"
+      "state": "CA",
+      "retrieved": "2026-10-31"
     },
     "SDB": {
       "name": "Saddlebag Lake Reservoir",
@@ -2404,10 +2421,11 @@
       "state": "CA"
     },
     "USL": {
-      "name": "U San Leandro",
+      "name": "Upper San Leandro",
       "county_fips": "06001",
       "county_name": "Alameda County",
-      "state": "CA"
+      "state": "CA",
+      "retrieved": "2026-10-31"
     },
     "UVA": {
       "name": "Uvas Reservoir",

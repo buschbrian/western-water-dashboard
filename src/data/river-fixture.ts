@@ -88,15 +88,16 @@ export function naturalRiverGauge(overrides: Partial<ShapedRiverGauge> = {},
   const { tier: _tier, compared_with_normal: _compared, ...rest } = base;
   if (withheld) {
     return { ...rest, tier: "natural", compared_with_normal: false, normal_band: null,
-      flow_class: null, normal_withheld: withheld };
+      flow_class: null, normal_withheld: withheld, short_record: null };
   }
   return { ...rest, tier: "natural", compared_with_normal: true,
-    normal_band: riverBand(base.as_of), flow_class: "normal", normal_withheld: null };
+    normal_band: riverBand(base.as_of), flow_class: "normal", normal_withheld: null,
+    short_record: false };
 }
 
 export function riverPayload(gauges: RiverGauge[] = [riverGauge()]): RiverPayload {
   return {
-    schema_version: 2,
+    schema_version: 3,
     measurement: "daily_mean_flow",
     fetched_at: "2026-10-27T13:00:00+00:00",
     run_date: "2026-10-27",

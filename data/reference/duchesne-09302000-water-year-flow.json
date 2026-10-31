@@ -1,0 +1,526 @@
+{
+  "site": "09302000",
+  "site_name": "DUCHESNE RIVER NEAR RANDLETT, UT",
+  "source": "U.S. Geological Survey legacy WaterServices daily values (shut down 2027-02-22)",
+  "source_url": "https://waterservices.usgs.gov/nwis/dv/?format=json&sites=09302000&parameterCd=00060&statCd=00003&startDT=1900-01-01&endDT=2026-09-30",
+  "fetched_at": "2026-10-31T19:10:24Z",
+  "parameter_code": "00060",
+  "parameter": "Discharge, cubic feet per second",
+  "statistic_code": "00003",
+  "statistic": "Daily mean",
+  "approval_codes": {
+    "A": "approved for publication",
+    "P": "provisional"
+  },
+  "rule": "mean of the daily means in a water year (1 October to 30 September), kept only when every day of the year has a value; the same rule as annual_means_from_daily in tools/build_gauge_review.py",
+  "range": {
+    "first_day": "1942-10-01",
+    "last_day": "2026-09-30"
+  },
+  "water_years": {
+    "1943": {
+      "mean_cfs": 630.9972602739726,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1944": {
+      "mean_cfs": 951.7295081967213,
+      "days": 366,
+      "approved_days": 366,
+      "provisional_days": 0
+    },
+    "1945": {
+      "mean_cfs": 571.8191780821918,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1946": {
+      "mean_cfs": 436.96712328767126,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1947": {
+      "mean_cfs": 787.3780821917808,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1948": {
+      "mean_cfs": 455.60928961748635,
+      "days": 366,
+      "approved_days": 366,
+      "provisional_days": 0
+    },
+    "1949": {
+      "mean_cfs": 833.2767123287671,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1950": {
+      "mean_cfs": 802.7479452054795,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1951": {
+      "mean_cfs": 600.5643835616438,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1952": {
+      "mean_cfs": 1434.0437158469945,
+      "days": 366,
+      "approved_days": 366,
+      "provisional_days": 0
+    },
+    "1953": {
+      "mean_cfs": 490.23835616438356,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1954": {
+      "mean_cfs": 264.4219178082192,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1955": {
+      "mean_cfs": 341.958904109589,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1956": {
+      "mean_cfs": 431.89890710382514,
+      "days": 366,
+      "approved_days": 366,
+      "provisional_days": 0
+    },
+    "1957": {
+      "mean_cfs": 561.4520547945206,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1958": {
+      "mean_cfs": 643.2630136986302,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1959": {
+      "mean_cfs": 222.8876712328767,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1960": {
+      "mean_cfs": 236.02240437158468,
+      "days": 366,
+      "approved_days": 366,
+      "provisional_days": 0
+    },
+    "1961": {
+      "mean_cfs": 147.06520547945206,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1962": {
+      "mean_cfs": 726.0,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1963": {
+      "mean_cfs": 299.9287671232877,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1964": {
+      "mean_cfs": 482.73224043715845,
+      "days": 366,
+      "approved_days": 366,
+      "provisional_days": 0
+    },
+    "1965": {
+      "mean_cfs": 1132.7068493150684,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1966": {
+      "mean_cfs": 527.7671232876712,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1967": {
+      "mean_cfs": 814.0931506849315,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1968": {
+      "mean_cfs": 770.0710382513661,
+      "days": 366,
+      "approved_days": 366,
+      "provisional_days": 0
+    },
+    "1969": {
+      "mean_cfs": 889.3178082191781,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1970": {
+      "mean_cfs": 272.86301369863014,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1971": {
+      "mean_cfs": 430.67397260273975,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1972": {
+      "mean_cfs": 482.9863387978142,
+      "days": 366,
+      "approved_days": 366,
+      "provisional_days": 0
+    },
+    "1973": {
+      "mean_cfs": 805.6493150684931,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1974": {
+      "mean_cfs": 464.23561643835615,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1975": {
+      "mean_cfs": 577.8739726027397,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1976": {
+      "mean_cfs": 306.1366120218579,
+      "days": 366,
+      "approved_days": 366,
+      "provisional_days": 0
+    },
+    "1977": {
+      "mean_cfs": 96.01095890410959,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1978": {
+      "mean_cfs": 314.8931506849315,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1979": {
+      "mean_cfs": 489.36164383561646,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1980": {
+      "mean_cfs": 445.4016393442623,
+      "days": 366,
+      "approved_days": 366,
+      "provisional_days": 0
+    },
+    "1981": {
+      "mean_cfs": 283.7013698630137,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1982": {
+      "mean_cfs": 658.758904109589,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1983": {
+      "mean_cfs": 1736.3068493150686,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1984": {
+      "mean_cfs": 1295.639344262295,
+      "days": 366,
+      "approved_days": 366,
+      "provisional_days": 0
+    },
+    "1985": {
+      "mean_cfs": 685.1641095890411,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1986": {
+      "mean_cfs": 1057.5671232876712,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1987": {
+      "mean_cfs": 715.6602739726028,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1988": {
+      "mean_cfs": 259.1366120218579,
+      "days": 366,
+      "approved_days": 366,
+      "provisional_days": 0
+    },
+    "1989": {
+      "mean_cfs": 119.2904109589041,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1990": {
+      "mean_cfs": 76.40273972602739,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1991": {
+      "mean_cfs": 118.9972602739726,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1992": {
+      "mean_cfs": 110.08743169398907,
+      "days": 366,
+      "approved_days": 366,
+      "provisional_days": 0
+    },
+    "1993": {
+      "mean_cfs": 196.3835616438356,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1994": {
+      "mean_cfs": 143.8931506849315,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1995": {
+      "mean_cfs": 665.6328767123288,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1996": {
+      "mean_cfs": 308.72677595628414,
+      "days": 366,
+      "approved_days": 366,
+      "provisional_days": 0
+    },
+    "1997": {
+      "mean_cfs": 715.3616438356164,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1998": {
+      "mean_cfs": 1077.0657534246575,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "1999": {
+      "mean_cfs": 944.6082191780822,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "2000": {
+      "mean_cfs": 249.3224043715847,
+      "days": 366,
+      "approved_days": 366,
+      "provisional_days": 0
+    },
+    "2001": {
+      "mean_cfs": 209.64383561643837,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "2002": {
+      "mean_cfs": 58.909424657534245,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "2003": {
+      "mean_cfs": 51.22854794520548,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "2004": {
+      "mean_cfs": 48.1724043715847,
+      "days": 366,
+      "approved_days": 366,
+      "provisional_days": 0
+    },
+    "2005": {
+      "mean_cfs": 797.7564383561643,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "2006": {
+      "mean_cfs": 376.9627397260274,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "2007": {
+      "mean_cfs": 157.31424657534245,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "2008": {
+      "mean_cfs": 147.35273224043715,
+      "days": 366,
+      "approved_days": 366,
+      "provisional_days": 0
+    },
+    "2009": {
+      "mean_cfs": 183.35972602739727,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "2010": {
+      "mean_cfs": 204.7394520547945,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "2011": {
+      "mean_cfs": 1363.9142465753425,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "2012": {
+      "mean_cfs": 338.9622950819672,
+      "days": 366,
+      "approved_days": 366,
+      "provisional_days": 0
+    },
+    "2013": {
+      "mean_cfs": 68.20219178082192,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "2014": {
+      "mean_cfs": 89.95835616438357,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "2015": {
+      "mean_cfs": 184.52931506849313,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "2016": {
+      "mean_cfs": 228.1172131147541,
+      "days": 366,
+      "approved_days": 366,
+      "provisional_days": 0
+    },
+    "2017": {
+      "mean_cfs": 624.5345205479452,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "2018": {
+      "mean_cfs": 141.3717808219178,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "2019": {
+      "mean_cfs": 571.1279452054795,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "2020": {
+      "mean_cfs": 224.80163934426227,
+      "days": 366,
+      "approved_days": 366,
+      "provisional_days": 0
+    },
+    "2021": {
+      "mean_cfs": 58.79917808219178,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "2022": {
+      "mean_cfs": 66.41945205479452,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "2023": {
+      "mean_cfs": 542.6465753424658,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "2024": {
+      "mean_cfs": 332.0360655737705,
+      "days": 366,
+      "approved_days": 366,
+      "provisional_days": 0
+    },
+    "2025": {
+      "mean_cfs": 95.48602739726027,
+      "days": 365,
+      "approved_days": 365,
+      "provisional_days": 0
+    },
+    "2026": {
+      "mean_cfs": 74.58739726027397,
+      "days": 365,
+      "approved_days": 287,
+      "provisional_days": 78
+    }
+  }
+}

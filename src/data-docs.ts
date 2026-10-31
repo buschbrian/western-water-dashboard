@@ -103,7 +103,8 @@ root.innerHTML = `
           has no comparison with normal and no rank. Where little or no water is stored
           upstream, the newest value is compared with the U.S. Geological Survey's
           percentiles for the same date: the 10th, 25th, 50th, 75th and 90th of the
-          approved daily values, from 30 years or more. Structure version 2. The file has
+          approved daily values, from more than 10 years. Where a date has fewer than 30
+          years, the record says so. Structure version 3. The file has
           no total across gauges,
           because one gauge can measure water that another measured upstream, and no gauge
           is a reservoir's inflow. Shown on the <a href="./rivers.html">river flow page</a>,
