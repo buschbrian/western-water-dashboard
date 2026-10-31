@@ -29,6 +29,10 @@
   `AXE_EXCEPTIONS` in `tests/smoke-modern.mjs` says why. The scale bar's
   dark-theme contrast is fixed in `src/styles/app.css`, not excepted
   (Esri register E20).
+- **Page logic runs at desktop only** (`viewport.logic`, ruled 2026-10-31):
+  counts, links, modes, URL state and readiness values are driven once, at
+  1280px. Layout, overflow and axe run at all three widths. A new logic
+  check goes inside an `if (viewport.logic)` block.
 - **Story views run axe on 6 of their 27 view-frame pairs** (`AXE_FRAMES`,
   ruled 2026-10-31); their layout checks still run on all 27.
 - **The suite does not assert that the preferred basemap served.** Esri's
