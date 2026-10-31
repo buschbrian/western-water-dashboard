@@ -187,7 +187,10 @@ physical Calcite installation.
 any `@arcgis/core` is fetched; the static entry path is Calcite and the
 page's own modules. A static import of either module, or of anything that
 imports `@arcgis/core`, from the entry's graph undoes that. The
-`budget:sdk` static-path figure is where it would show.
+`budget:sdk` static-path figure is where it would show. The static path is
+capped at 256 KiB gzip (ADR-145), above the measured 0.18 MiB shell but below
+the map SDK it must defer. The total graph's separate limits remain 26 MiB
+raw and 9 MiB gzip; optional chart chunks do not enter the static-path sum.
 
 **The basemap gallery is built on the first open of its control.** It
 fetches the portal's basemap group and a thumbnail per background when it

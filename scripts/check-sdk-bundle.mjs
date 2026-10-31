@@ -20,11 +20,15 @@ import { build } from "vite";
  *   23.58 MiB raw / 8.22 MiB gzip across 1547 files
  *   2.13 MiB gzip on the static entry path
  *
- * The growth is entirely lazily-loaded chart chunks -- the largest are the
- * charts package's own PDF-export machinery, which nothing here calls but
- * its chunk graph carries -- and the static entry path moved by 0.06 MiB.
- * The limits below sit above that deliberately. Most of the raw total is
- * lazily-loaded SDK the shell never requests, so the number that governs
+ * On 2026-10-31, after ADR-120 deferred the map itself:
+ *
+ *   23.68 MiB raw / 8.26 MiB gzip
+ *   0.18 MiB gzip on the static entry path
+ *
+ * Most of the total lives in lazy SDK chunks, including the charts package's
+ * PDF-export machinery. Being in the graph does not mean a reader fetches it.
+ * ADR-145 holds the static entry below 256 KiB gzip, with about 40% headroom
+ * over the current shell. The number that governs
  * what a reader waits for is the last one: the chunks the entry pulls in
  * statically. The headroom absorbs dependency patch releases; a change that
  * pushes past it is a change worth reading, not a threshold worth raising
@@ -32,7 +36,7 @@ import { build } from "vite";
  */
 const MAX_RAW_BYTES = 26 * 1024 * 1024;
 const MAX_GZIP_BYTES = 9 * 1024 * 1024;
-const MAX_INITIAL_GZIP_BYTES = 2.3 * 1024 * 1024;
+const MAX_INITIAL_GZIP_BYTES = 256 * 1024;
 
 const result = await build({
   configFile: false,
