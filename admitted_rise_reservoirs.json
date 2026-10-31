@@ -589,5 +589,36 @@
         "match_confirmed_by": "name and position"
       }
     }
+  },
+  "excluded_readings": {
+    "134092": [
+      {
+        "sensor": 134092,
+        "stamp": "2026-10-26T07:00:00+00:00",
+        "value": 263.24,
+        "reason": "RISE storage and elevation fell in one day on 26 October, from 1,328.68 acre-feet and 5,913.72 feet to 263.24 acre-feet and 5,905.62 feet, and repeat that value since, while USGS 09091900 shows the lake still rising to 5,914.65 feet on 28 October. RISE revised its 24 and 25 October readings, which now agree with USGS to the hundredth of a foot. RISE and USGS agreed within 0.12 feet for the previous 88 days.",
+        "source_url": "https://waterdata.usgs.gov/monitoring-location/09091900/",
+        "reviewed_on": "2026-10-29",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/PENDING"
+      },
+      {
+        "sensor": 134092,
+        "stamp": "2026-10-27T07:00:00+00:00",
+        "value": 263.24,
+        "reason": "RISE storage and elevation fell in one day on 26 October, from 1,328.68 acre-feet and 5,913.72 feet to 263.24 acre-feet and 5,905.62 feet, and repeat that value since, while USGS 09091900 shows the lake still rising to 5,914.65 feet on 28 October. RISE revised its 24 and 25 October readings, which now agree with USGS to the hundredth of a foot. RISE and USGS agreed within 0.12 feet for the previous 88 days.",
+        "source_url": "https://waterdata.usgs.gov/monitoring-location/09091900/",
+        "reviewed_on": "2026-10-29",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/PENDING"
+      },
+      {
+        "sensor": 134092,
+        "stamp": "2026-10-28T07:00:00+00:00",
+        "value": 263.24,
+        "reason": "RISE storage and elevation fell in one day on 26 October, from 1,328.68 acre-feet and 5,913.72 feet to 263.24 acre-feet and 5,905.62 feet, and repeat that value since, while USGS 09091900 shows the lake still rising to 5,914.65 feet on 28 October. RISE revised its 24 and 25 October readings, which now agree with USGS to the hundredth of a foot. RISE and USGS agreed within 0.12 feet for the previous 88 days.",
+        "source_url": "https://waterdata.usgs.gov/monitoring-location/09091900/",
+        "reviewed_on": "2026-10-29",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/PENDING"
+      }
+    ]
   }
 }

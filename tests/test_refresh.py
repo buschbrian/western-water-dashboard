@@ -2848,3 +2848,50 @@ class TestTheSharedProviderSession:
 
         with pytest.raises(ValueError):
             R.providers._retry_unreadable_body(read)
+
+
+def rise_page(rows):
+    return {"data": [{"attributes": {"dateTime": stamp, "result": result}}
+                     for stamp, result in rows],
+            "meta": {"itemsPerPage": 2000, "totalItems": len(rows)}}
+
+
+def test_rise_exclusions_drop_the_named_readings_and_nothing_else(tmp_path, monkeypatch, capsys):
+    """ADR-116 for a RISE item: the item is the station and its own sensor.
+
+    The same value on another item, and a corrected value at an excluded
+    stamp, both survive; the series simply ends at the last reading nobody
+    has excluded and the freshness rules take it from there.
+    """
+    path = exclusion_file(
+        tmp_path, [exclusion(
+            sensor=134092, stamp="2026-10-24T07:00:00+00:00", value=253.47)],
+        station="134092", withheld=False)
+    table = R.load_excluded_readings(path, None)
+    monkeypatch.setattr(R.providers, "RISE_EXCLUDED_READINGS", table)
+    rows = [("2026-10-22T07:00:00+00:00", 1204.13),
+            ("2026-10-23T07:00:00+00:00", 1250.26),
+            ("2026-10-24T07:00:00+00:00", 253.47),
+            ("2026-10-25T07:00:00+00:00", 1300.0)]
+    monkeypatch.setattr(R.providers, "_get_json", lambda params: rise_page(rows))
+    frame = R.fetch_rise_series(134092, "20260101", "20261101")
+    assert frame["storage_af"].tolist() == [1204.13, 1250.26, 1300.0]
+    assert "item 134092: 1 reviewed reading(s) excluded (ADR-116)" in capsys.readouterr().out
+
+    monkeypatch.setattr(R.providers, "_get_json", lambda params: rise_page(rows))
+    other = R.fetch_rise_series(999, "20260101", "20261101")
+    assert 253.47 in other["storage_af"].tolist()
+
+
+def test_rise_exclusions_must_name_their_own_item(tmp_path):
+    path = exclusion_file(tmp_path, [exclusion(sensor=1)],
+                          station="134092", withheld=False)
+    with pytest.raises(ValueError, match="sensor 134092"):
+        R.load_excluded_readings(path, None)
+
+
+def test_the_committed_rise_exclusions_are_the_reviewed_rifle_gap_readings():
+    named = {item: sorted((record["stamp"][:10], record["value"]) for record in records)
+             for item, records in R.RISE_EXCLUDED_READINGS.items()}
+    assert named == {"134092": [("2026-10-26", 263.24), ("2026-10-27", 263.24),
+                                ("2026-10-28", 263.24)]}

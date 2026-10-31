@@ -20,7 +20,8 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from .constants import (
-    ADMITTED_CDEC_RESERVOIRS_PATH, AWDB_DATA_URL, RISE_RESULT_URL,
+    ADMITTED_CDEC_RESERVOIRS_PATH, ADMITTED_RISE_RESERVOIRS_PATH,
+    AWDB_DATA_URL, RISE_RESULT_URL,
     local_today,
 )
 from .roster import load_excluded_readings
@@ -190,6 +191,18 @@ def fetch_rise_series(item_id: int, start: str, end: str, *,
     df[column] = pd.to_numeric(df["result"], errors="coerce")
     df = df.dropna(subset=[column])
 
+    # A reviewed exclusion is applied where RISE readings are read (ADR-116).
+    gone = [excluded_reading(str(item_id), stamp, reading, RISE_EXCLUDED_READINGS)
+            for stamp, reading in zip(df["dateTime"], df["storage_af"])]
+    if any(found is not None for found in gone):
+        dropped = [found for found in gone if found is not None]
+        print(f"  item {item_id}: {len(dropped)} reviewed reading(s) excluded "
+              f"(ADR-116)")
+        for record in dropped:
+            print(f"    {record['stamp']}  {record['value']:,.2f} acre-feet  "
+                  f"{record['issue_url']}")
+        df = df[[found is None for found in gone]]
+
     df = df[df["date"] <= local_today()]
     df = df.sort_values("date").drop_duplicates(subset="date", keep="last")
     return df[["date", column]].reset_index(drop=True)
@@ -283,6 +296,11 @@ CDEC_EXCLUDED_READINGS = load_excluded_readings(
     ADMITTED_CDEC_RESERVOIRS_PATH, CDEC_STORAGE_SENSOR)
 
 
+#: Reviewed exclusions of RISE results, by item (ADR-116). The item is the
+#: station key, so a record names the item as its own `sensor`.
+RISE_EXCLUDED_READINGS = load_excluded_readings(ADMITTED_RISE_RESERVOIRS_PATH, None)
+
+
 def _reading_day(stamp):
     """One stamp's own calendar day, or None where it does not parse.
 
@@ -295,7 +313,8 @@ def _reading_day(stamp):
     return None if pd.isna(parsed) else parsed.normalize()
 
 
-def excluded_reading(station_id: str, stamp, reading) -> dict | None:
+def excluded_reading(station_id: str, stamp, reading,
+                     table: dict | None = None) -> dict | None:
     """The reviewed exclusion this reading is, or None (ADR-116).
 
     A reading is excluded only where the station, the day and the **raw
@@ -307,7 +326,9 @@ def excluded_reading(station_id: str, stamp, reading) -> dict | None:
     day = _reading_day(stamp)
     if day is None:
         return None
-    for record in CDEC_EXCLUDED_READINGS.get(station_id, ()):
+    if table is None:
+        table = CDEC_EXCLUDED_READINGS
+    for record in table.get(station_id, ()):
         if _reading_day(record["stamp"]) == day \
                 and float(record["value"]) == float(reading):
             return record

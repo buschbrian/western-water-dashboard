@@ -1063,7 +1063,7 @@ EXCLUDED_READING_FIELDS = {
 }
 
 
-def load_excluded_readings(path: Path, sensor: int) -> dict[str, list[dict]]:
+def load_excluded_readings(path: Path, sensor: int | None) -> dict[str, list[dict]]:
     """Reviewed exclusions of single provider readings, by station (ADR-116).
 
     A confirmed provider anomaly is dropped from the series, named, and left
@@ -1081,7 +1081,9 @@ def load_excluded_readings(path: Path, sensor: int) -> dict[str, list[dict]]:
     that is working.
 
     `sensor` is the caller's own storage sensor, so an exclusion cannot
-    silently name a different measurement of the same station.
+    silently name a different measurement of the same station. A provider
+    whose station key is itself the storage series (Reclamation's RISE item)
+    passes None, and the record's `sensor` must then equal that key.
 
     Returns `{station: [exclusion, ...]}`, empty when the file carries none.
     """
@@ -1103,9 +1105,10 @@ def load_excluded_readings(path: Path, sensor: int) -> dict[str, list[dict]]:
                 raise ValueError(
                     f"{station}: an excluded reading carries the reading and "
                     f"the evidence against it, and never a replacement value")
-            if record["sensor"] != sensor:
+            expected = sensor if sensor is not None else int(station)
+            if record["sensor"] != expected:
                 raise ValueError(
-                    f"{station}: an excluded reading must name sensor {sensor}")
+                    f"{station}: an excluded reading must name sensor {expected}")
             if not isinstance(record["stamp"], str) or not record["stamp"].strip():
                 raise ValueError(
                     f"{station}: an excluded reading needs the stamp the "
