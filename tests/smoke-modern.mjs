@@ -3980,6 +3980,11 @@ for (const viewport of VIEWPORTS) {
         map: window.__precipReady?.map,
         pressed: [...document.querySelectorAll(".precip-map-mode-head button")]
           .map((button) => button.getAttribute("aria-pressed")).join(","),
+        switchLabel: document.querySelectorAll(".precip-map-mode-head button")[1]?.textContent ?? "",
+        switchOverflow: (() => {
+          const head = document.querySelector(".precip-map-mode-head");
+          return head ? head.scrollWidth - head.clientWidth : -1;
+        })(),
         keyItems: [...document.querySelectorAll(".precip-soil-key [role='listitem']")].map((item) => item.textContent),
         keyShown: visible(document.querySelector(".precip-soil-key")),
         rainKeyShown: visible(document.querySelector(".precip-map-key")),
@@ -4004,15 +4009,19 @@ for (const viewport of VIEWPORTS) {
     check(soilView.busy === "false", `${label}: the soil block left aria-busy ${soilView.busy}`);
     check(soilView.keyShown && !soilView.rainKeyShown && soilView.keyItems.length === 7
       && soilView.keyItems.includes("Within 2 points: steady")
-      && soilView.keyItems.includes("No change measured, or too few stations"),
+      && soilView.keyItems.includes("No value: too few stations, or no reading on both days"),
     `${label}: the soil key reads ${JSON.stringify(soilView.keyItems)}`);
     check(!soilView.dayButtonsShown && !soilView.rainListShown,
       `${label}: soil mode still shows the day buttons (${soilView.dayButtonsShown}) or the rain list (${soilView.rainListShown})`);
     check(soilView.listed === soilView.map?.soil?.rows && soilView.listed <= 8
       && soilView.values.every((value) => /^(\d+\.\d points? (wetter|drier)|No change)$/.test(value)),
     `${label}: the soil list shows ${soilView.listed} rows (${JSON.stringify(soilView.values.slice(0, 3))})`);
+    /* Ruling U6: the soil end date is on the switch, and the switch fits. */
+    check(/^Soil moisture to [A-Z][a-z]{2} \d{1,2}$/.test(soilView.switchLabel)
+      && soilView.switchOverflow <= 1,
+    `${label}: the soil switch reads "${soilView.switchLabel}" and overflows by ${soilView.switchOverflow}px`);
     /* Ruling U5: four wetter and four drier, apart; an empty side says so. */
-    check(soilView.sides.map((side) => side.title).join() === "Most wetter,Most drier"
+    check(soilView.sides.map((side) => side.title).join() === "Largest increase,Largest decrease"
       && soilView.sides.every((side) => side.rows <= 4
         && (!side.shown || (side.rows > 0) !== side.empty)),
     `${label}: the soil lists read ${JSON.stringify(soilView.sides)}`);

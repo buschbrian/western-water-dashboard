@@ -94,9 +94,15 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Changed
 
+- **The soil map says how old it is.** Once the soil readings load, the
+  switch reads "Soil moisture to Oct 26" (the week's end date), and the date
+  line says why it can end before the rain totals: it is the newest day on
+  which 9 in 10 on-time stations sent readings at all three depths. The grey
+  key entry now reads "No value: too few stations, or no reading on both
+  days".
 - **Soil moisture lists wetter and drier stations apart.** The soil map's
-  list of eight is now "Most wetter" (four) and "Most drier" (four), each by 2
-  points or more; an empty side says no station moved that way (ADR-142,
+  list of eight is now "Largest increase" (four) and "Largest decrease" (four),
+  each by 2 points or more; an empty side says no station moved that way (ADR-142,
   update of 2026-10-31).
 - **The share picture names its source and its lines.** The Lake Powell and
   Lake Mead pictures end with a key (this water year, the year before, the

@@ -124,8 +124,8 @@ wetter.**
 ## Update, 2026-10-31
 
 Rule 6's "most change" list of eight stations is now two lists: the four
-largest changes wetter by 2 points or more ("Most wetter") and the four
-largest drier by 2 points or more ("Most drier"). A side with no such station
+largest changes wetter by 2 points or more ("Largest increase") and the four
+largest drier by 2 points or more ("Largest decrease"). A side with no such station
 says "No station got drier by 2 points or more." (or wetter). Eight ranked by
 size were all wetter in a wet week, under a heading that promised drier
 stations too. Owner's display ruling U5; no method, class or payload changes.

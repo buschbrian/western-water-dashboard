@@ -4,6 +4,8 @@
  * (`precip-map-section.ts`) applies it to the page; nothing here touches
  * the DOM, so it is unit-tested.
  */
+import { formatShortDate } from "../viz/format";
+
 export type PrecipMapMode = "rain" | "soil";
 export type SoilLoadState = "idle" | "loading" | "ready" | "failed";
 
@@ -40,4 +42,10 @@ export function precipMapLabel(mode: PrecipMapMode): string {
   return mode === "rain"
     ? "Map of recent precipitation by drainage area and measurement site"
     : "Map of the change in soil moisture this week by drainage area and measurement site";
+}
+
+/** The soil button's words: its end date once the file is in (ruling U6),
+ * so the four days between it and the rain totals are on the switch. */
+export function soilSwitchLabel(endDate: string | null): string {
+  return endDate ? `Soil moisture to ${formatShortDate(endDate)}` : "Soil moisture";
 }

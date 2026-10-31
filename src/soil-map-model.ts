@@ -11,7 +11,8 @@
  * committed file.
  */
 import type { SoilMoisturePayload, SoilMoistureSite } from "./types";
-import { formatDate } from "./viz/format";
+import { SET_SHARE } from "./precip-model";
+import { formatDate, formatShortDate } from "./viz/format";
 import { SOIL_STEADY_POINTS, soilClassIndex } from "./viz/soil-classes";
 
 export interface SoilAreaChange {
@@ -128,10 +129,19 @@ export function soilNoChangeText(site: SoilMoistureSite | undefined): string {
 
 const stationWord = (count: number): string => `${count} station${count === 1 ? "" : "s"}`;
 
-/** The week the map shows, or why there is none. */
+/** "9 in 10": the set-day share (ADR-129) as the date line says it. The
+ * soil refresh uses the same share (`END_DAY_SHARE`); a test holds the two equal. */
+export function setShareWords(share: number = SET_SHARE): string {
+  return `${Math.round(share * 10)} in 10`;
+}
+
+/** The week the map shows and why it can end before the rain totals, or why
+ * there is none. */
 export function soilWeekText(values: SoilMapValues): string {
   return values.endDate && values.startDate
-    ? `The change is from ${formatDate(values.startDate)} to ${formatDate(values.endDate)}.`
+    ? `The change is from ${formatDate(values.startDate)} to ${formatDate(values.endDate)}. `
+      + `It ends on ${formatShortDate(values.endDate)}, the newest day on which ${setShareWords()} `
+      + "on-time stations sent readings at all three depths."
     : "Too few stations sent soil moisture to measure a week.";
 }
 

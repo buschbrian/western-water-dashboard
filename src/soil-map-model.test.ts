@@ -3,7 +3,7 @@ import { describe, expect, it } from "vitest";
 import { validateSoilMoisturePayload } from "./data/soil-validate";
 import {
   soilCountsText, soilLeftOutText, soilMapValues, soilMostChange, soilNoChangeText, soilNoSideText,
-  soilWeekText
+  setShareWords, soilWeekText
 } from "./soil-map-model";
 import type { SoilMoisturePayload, SoilMoistureSite } from "./types";
 
@@ -109,8 +109,15 @@ describe("the soil sentences", () => {
 
   it("names the week, or says there is none", () => {
     const values = soilMapValues(payload([]), new Map(), new Map());
-    expect(soilWeekText(values)).toMatch(/^The change is from .+ to .+\.$/);
+    expect(soilWeekText(values)).toBe("The change is from Oct 19, 2026 to Oct 26, 2026. It ends on "
+      + "Oct 26, the newest day on which 9 in 10 on-time stations sent readings at all three depths.");
     expect(soilWeekText({ ...values, endDate: null, startDate: null }))
       .toBe("Too few stations sent soil moisture to measure a week.");
+  });
+
+  it("states the same set-day share the soil refresh uses", () => {
+    const source = readFileSync(new URL("../refresh_soil_moisture.py", import.meta.url), "utf8");
+    const share = Number(/^END_DAY_SHARE = ([\d.]+)$/m.exec(source)?.[1]);
+    expect(setShareWords(share)).toBe(setShareWords());
   });
 });

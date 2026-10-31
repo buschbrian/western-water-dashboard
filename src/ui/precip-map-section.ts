@@ -24,7 +24,9 @@ import type { SnowpackPayload, SnowSite, SoilMoisturePayload } from "../types";
 import { PRECIP_CLASSES, PRECIP_NO_VALUE_COLOR } from "../viz/precip-classes";
 import { SOIL_CLASSES, SOIL_NO_VALUE_COLOR, soilChangeText } from "../viz/soil-classes";
 import type { PrecipMapController } from "./precip-map";
-import { precipMapLabel, precipMapModeView, type PrecipMapMode, type SoilLoadState } from "./precip-map-mode-model";
+import {
+  precipMapLabel, precipMapModeView, soilSwitchLabel, type PrecipMapMode, type SoilLoadState
+} from "./precip-map-mode-model";
 
 type Box = readonly [readonly [number, number], readonly [number, number]];
 
@@ -203,7 +205,7 @@ export function createPrecipMapSection(
   soil.hidden = true;
   const soilKey = key("precip-soil-key", "Map colours and the change in soil moisture they stand for", [
     ...SOIL_CLASSES.map((entry) => keyItem(entry.label, entry.color)),
-    keyItem("No change measured, or too few stations", SOIL_NO_VALUE_COLOR)]);
+    keyItem("No value: too few stations, or no reading on both days", SOIL_NO_VALUE_COLOR)]);
   const soilCaption = paragraph("card-note",
     "Soil moisture is the water in the soil, in percent of the soil's volume. " +
     "A station's value is the mean of its sensors at 2 in (or 4 in), 8 in and 20 in below the ground. " +
@@ -226,8 +228,8 @@ export function createPrecipMapSection(
     block.append(paragraph("chart-axis-title", title), list, empty);
     return { block, list, empty };
   };
-  const soilWetter = soilSide("Most wetter", "wetter");
-  const soilDrier = soilSide("Most drier", "drier");
+  const soilWetter = soilSide("Largest increase", "wetter");
+  const soilDrier = soilSide("Largest decrease", "drier");
   const soilNote = paragraph("precip-coverage");
   const soilTable = valuesTable("precip-soil-table", "Soil moisture at every station on the map",
     "Soil moisture at every station, scrolls sideways",
@@ -245,7 +247,7 @@ export function createPrecipMapSection(
   switchGroup.setAttribute("role", "group");
   switchGroup.setAttribute("aria-label", "What the map shows");
   const modeButtons = new Map<PrecipMapMode, HTMLButtonElement>();
-  for (const [mode, label] of [["rain", "Rain"], ["soil", "Soil moisture"]] as const) {
+  for (const [mode, label] of [["rain", "Rain"], ["soil", soilSwitchLabel(null)]] as const) {
     const button = document.createElement("button");
     button.type = "button";
     button.textContent = label;
@@ -314,6 +316,7 @@ export function createPrecipMapSection(
     if (!shown) return;
     const { counts } = shown;
     status.soil.endDate = shown.endDate;
+    modeButtons.get("soil")!.textContent = soilSwitchLabel(shown.endDate);
     status.soil.stations = counts.stations;
     status.soil.withChange = counts.measured;
     soilWeek.textContent = soilWeekText(shown);
