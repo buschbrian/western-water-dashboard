@@ -9,12 +9,10 @@
  * readable over water and snow (a soft shadow).
  *
  * Nothing here imports the SDK. The symbol is a plain property object the
- * renderer autocasts, which keeps this file's arithmetic testable in the
- * same node environment as `symbols.ts` -- and the diameters it is built from
- * are the ones `symbols.test.ts` already holds against
- * `shared/reservoir-viz.js`. This file must not re-derive a size; it only
- * arranges the sizes it is given and converts their CSS pixels to the points
- * CIM requires.
+ * renderer autocasts, which keeps this file testable in the same node
+ * environment as `symbols.ts`. Sizes arrive per feature as Arcade
+ * (`arcade.ts`); this file must not re-derive one, only arrange the layers
+ * and convert CSS pixels to the points CIM requires.
  *
  * Circles are polygons, not curves. A CIM curve ring is exact and a ring of
  * points is not, but the difference at these radii is under a tenth of a
@@ -29,7 +27,6 @@ import {
 import { hexToRgb } from "./color";
 import { CAPACITY_RING_COLOR, STALE_ACCENT } from "./classes";
 import { RESERVOIR_DETAIL_SCALE } from "./label-scales";
-import type { ReservoirSymbol } from "./symbols";
 import { cssPixelsToPoints } from "./units";
 
 /* The size every overridden marker is authored at. The value never reaches
@@ -121,19 +118,6 @@ export interface CIMVectorMarker {
   }[];
 }
 
-export interface CIMSymbolReference {
-  type: "cim";
-  data: {
-    type: "CIMSymbolReference";
-    symbol: {
-      type: "CIMPointSymbol";
-      symbolLayers: CIMVectorMarker[];
-      scaleSymbolsProportionally: false;
-      respectFrame: true;
-    };
-  };
-}
-
 /**
  * One circle, sized in points. CIM numeric sizes do not accept CSS pixels;
  * callers convert the pixel-based application dimensions at this boundary.
@@ -158,64 +142,6 @@ function circleLayer(
     }]
   };
 }
-
-/**
- * The composed symbol for one reservoir.
- *
- * CIM draws the first layer in the array on top, so the array reads from
- * the front of the symbol backwards: storage fill, capacity ring, shadow.
- */
-export function reservoirCIM(symbol: ReservoirSymbol): CIMSymbolReference {
-  const late = symbol.accent !== null;
-  const ring: CIMVectorMarker = circleLayer(cssPixelsToPoints(symbol.ringPx), [{
-    type: "CIMSolidStroke",
-    enable: true,
-    width: late ? 1.5 : 1,
-    color: cimColor(symbol.accent ?? CAPACITY_RING_COLOR),
-    // A dashed ring is how both production maps say "this reading is older
-    // than this reservoir's own update schedule".
-    ...(late ? {
-      effects: [{
-        type: "CIMGeometricEffectDashes" as const,
-        dashTemplate: [...LATE_DASH],
-        lineDashEnding: "NoConstraint" as const
-      }]
-    } : {})
-  }]);
-
-  const shadow = circleLayer(
-    cssPixelsToPoints(symbol.ringPx + SHADOW_SPREAD),
-    [{ type: "CIMSolidFill", enable: true, color: cimColor("#000000", SHADOW_ALPHA) }],
-    {
-      x: cssPixelsToPoints(SHADOW_OFFSET),
-      y: -cssPixelsToPoints(SHADOW_OFFSET)
-    }
-  );
-
-  /* No fill at all when the percentage cannot be read. `fillSize` already
-   * returns 0 there, and an empty circle would claim the reservoir is empty
-   * rather than unreported. */
-  const fill: CIMVectorMarker[] = symbol.fillPx > 0
-    ? [circleLayer(cssPixelsToPoints(symbol.fillPx), [
-      { type: "CIMSolidFill", enable: true, color: cimColor(symbol.color) },
-      { type: "CIMSolidStroke", enable: true, width: 0.75, color: cimColor("#000000", 102) }
-    ])]
-    : [];
-
-  return {
-    type: "cim",
-    data: {
-      type: "CIMSymbolReference",
-      symbol: {
-        type: "CIMPointSymbol",
-        symbolLayers: [...fill, ring, shadow],
-        scaleSymbolsProportionally: false,
-        respectFrame: true
-      }
-    }
-  };
-}
-
 
 /* ------------------------------------------------------------------ */
 /* The data-driven symbol                                             */
