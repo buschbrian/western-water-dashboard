@@ -104,20 +104,26 @@ page and deliberately not from the navigation bar yet.
 ### The river-flow page
 
 One reading page, `rivers.html`, for every published gauge (ADR-136). It
-fetches `rivers.json` through `loadRivers`, whose validator refuses a normal,
-a rank, an inflow or a total on a gauge or the envelope, a comparison with
-normal, a window that is not 30 consecutive days ending on the current value,
+fetches `rivers.json` through `loadRivers`, whose validator refuses a rank,
+an inflow or a total on a gauge or the envelope, a band or class on a shaped
+gauge, a natural gauge's class that does not follow from its flow and band, a
+window that is not 30 consecutive days ending on the current value,
 and a notice carrying a measurement. Each gauge is one article: its plain
 name, where it is and that the river flows on toward the reviewed water
 downstream, the shaped sentence ("Dams upstream store and release water, so
-this flow is not compared with normal."), lateness, today's mean flow in cubic
-feet per second with its date and review status, the 7-day change and the
+this flow is not compared with normal.") or, for a natural gauge, "Little or
+no water is stored upstream, so this flow is compared with normal for the
+date." (ADR-144), lateness, today's mean flow in cubic feet per second with
+its date and review status, a natural gauge's class in words for the date with
+the normal range (p25 to p75) and its years, the median and the much-below and
+much-above lines, or why there is no comparison today; the 7-day change and the
 window's extremes, the 30-day chart (`renderFlowChart`, hand-built SVG from
 zero, one colour from `--flow-bar`, a missing day as a gap) with every value
 in a collapsed table, the survey's station name and its monitoring-location
 page. One CSV button downloads every gauge's days. Readiness is
 `window.__riversReady`: `gauges` published, `rendered` drawn, `charts` drawn,
-`withdrawn` notices, `failed` a fetch that did not answer.
+`withdrawn` notices, `compared` natural gauges with a class, `failed` a fetch
+that did not answer. Each article carries `data-tier`.
 
 ### The story views
 

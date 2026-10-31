@@ -212,11 +212,26 @@ A gauge publishes the survey's daily mean flow (parameter 00060, statistic
 00003) in cubic feet per second, as reported (ADR-136). Nothing is estimated:
 a reported day with no value stays empty, an approval status and qualifiers
 travel with each day, and the 7-day change is the difference from the value
-exactly seven days earlier, null when that day has none. Every published
-gauge is `shaped` (dams upstream store and release water), so no flow is
-compared with normal or ranked, and no flow normal exists yet. Gauges are
-never added together and no gauge is a reservoir's inflow (ADR-124). A daily
-mean cannot show a peak inside the day.
+exactly seven days earlier, null when that day has none. A `shaped` gauge
+(dams upstream store and release water) is never compared with normal or
+ranked. Gauges are never added together and no gauge is a reservoir's inflow
+(ADR-124). A daily mean cannot show a peak inside the day.
+
+**A natural gauge's newest flow is placed among the survey's own day-of-year
+percentiles** (ADR-144). The U.S. Geological Survey's Statistics API
+(`observationNormals`, beta) computes them from approved daily means sharing a
+calendar day over the whole approved record, gaps included -- not a fixed
+normal period like the storage normals' 1991-2020 -- with the Weibull
+position (rank / (n + 1)); the formula is not documented and was measured
+against Mill Creek's daily record. The project keeps the 10th, 25th, 50th,
+75th and 90th and computes none. The class is WaterWatch's, for the band of
+the reading's own calendar day: under p10 much below normal, under p25 below,
+p25 to p75 normal, up to p90 above, over p90 much above; a value on a
+boundary takes the class nearer normal. A day whose band rests on fewer than
+30 years (`RIVER_NORMAL_MIN_YEARS`, WaterWatch's rule; the service has no
+minimum) or lacks a percentile (the service answers `nan`) is not compared,
+and the record says why. 29 February is that day at every current gauge. The
+newest value is usually provisional while the band is approved.
 
 **Never subtract two shares with different denominators** (ADR-046) — see the
 drought section below for the case this exists for.

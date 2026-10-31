@@ -42,7 +42,7 @@ No recent-conditions payload or raster is included in this comparison.
 | `snow_sites.json` | 143 KB | 22 KB |
 | `lakes.json` | 7.1 KB | 1.4 KB |
 | `elevation_history.json` | 434 KB | 117 KB |
-| `rivers.json` | 23.9 KB | 2.2 KB |
+| `rivers.json` | 42.7 KB | 3.7 KB |
 | `precipitation.json` | 155 KB | 8.9 KB |
 | `precipitation_history.json` | 1,639 KB | 488 KB |
 | `soil_moisture.json` | 161 KB | 26.8 KB |
@@ -91,7 +91,9 @@ morning's refresh included).
 four gauges, 30 days each with approval status and qualifiers (ADR-136). It
 is fetched only by the river-flow page, so it adds 2.2 KB to that page's
 opening data against the pilot's 100 KB budget (ADR-124) and nothing to any
-other page.
+other page. With the three natural gauges and their bands (ADR-144) it was
+42.7 KB raw and 3.7 KB gzipped on 2026-10-31, seven gauges. The percentiles
+behind the bands, `river_normals.json` (17 KB gzipped), are never published.
 
 ### The drought archives at a decade
 
