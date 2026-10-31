@@ -84,11 +84,16 @@ export interface PrecipitationCard {
   /** The recent totals as drawn, and the window the buttons choose; null
    * totals until the daily file is in. */
   readonly recent: { window: StormWindow; totals: StormTotals | null };
+  /** Show or hide the day buttons and the station list of recent totals,
+   * for a map that is showing something else (ADR-142). */
+  showRecentList(shown: boolean): void;
 }
 
 export interface PrecipitationCardParts {
   /** Where a page puts its map of the recent totals, or null. */
   mapSlot: HTMLElement | null;
+  /** The day buttons above the map, or null without a map. */
+  recentChooser: HTMLElement | null;
   top: HTMLElement;
   kpis: HTMLElement;
   split: HTMLElement;
@@ -332,11 +337,11 @@ export function createPrecipitationCard(
   const stormEmpty = text("p", "precip-note", "");
   const stormNote = text("p", "precip-coverage", "");
   const mapSlot = withStorm && options.recentMap ? document.createElement("div") : null;
-  if (mapSlot) {
+  const chooser = mapSlot ? document.createElement("div") : null;
+  if (mapSlot && chooser) {
     /* The buttons choose what the map and the list both show, so they sit
      * above the map rather than beside the list's title under it. */
     mapSlot.className = "precip-map-slot";
-    const chooser = document.createElement("div");
     chooser.className = "precip-storm-head";
     chooser.append(text("p", "chart-axis-title", "Map and list for the last"), stormWindows);
     stormWindows.setAttribute("aria-label", "Days in the map and the station list");
@@ -445,6 +450,15 @@ export function createPrecipitationCard(
   } | null = null;
 
   let stormView: StormTotals | null = null;
+  let recentListShown = true;
+  const applyRecentListShown = (): void => {
+    if (recentListShown) return;
+    if (chooser) chooser.hidden = true;
+    stormListHead.hidden = true;
+    stormList.hidden = true;
+    stormEmpty.hidden = true;
+    stormNote.hidden = true;
+  };
 
   const drawStorm = (): void => {
     const totals = stormView;
@@ -486,6 +500,10 @@ export function createPrecipitationCard(
     stormNote.textContent = [stormLeftOut(shown),
       "0.1 in is the smallest step a gauge measures."].filter(Boolean).join(" ");
     storm.hidden = false;
+    if (chooser) chooser.hidden = false;
+    stormListHead.hidden = false;
+    stormNote.hidden = false;
+    applyRecentListShown();
     Object.assign(status.storm, {
       available: shown.available,
       stations: shown.totals.length,
@@ -674,8 +692,12 @@ export function createPrecipitationCard(
     },
     get status() { return { ...status, storm: { ...status.storm } }; },
     get recent() { return { window: status.storm.window, totals: stormView }; },
+    showRecentList(shown) {
+      recentListShown = shown;
+      drawStorm();
+    },
     parts: {
-      mapSlot, top, kpis, split, strip, stripNote, stripKey, controls, axisTitle, chart: host,
+      mapSlot, recentChooser: chooser, top, kpis, split, strip, stripNote, stripKey, controls, axisTitle, chart: host,
       historyKey, april, coverage, table: details, readNote
     },
     setChartHeight(height) {

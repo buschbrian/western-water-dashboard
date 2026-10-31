@@ -144,7 +144,10 @@ function renderPage(place: SnowPlace, rosters: OpeningRosters, level: number): v
     const inPlace = new Set(place.stations);
     mapSection = createPrecipMapSection(slot, place.payload,
       place.payload.sites.filter((site) => inPlace.has(site.station)),
-      level, place.scope.box, siteHref, () => publishReady());
+      level, place.scope.box, siteHref, () => publishReady(), {
+        chooser: card.parts.recentChooser,
+        showRecentList: (shown) => card.showRecentList(shown)
+      });
   }
   card.update(place.stations, place.payload.sites);
   publishReady();

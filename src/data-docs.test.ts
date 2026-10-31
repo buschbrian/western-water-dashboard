@@ -5,6 +5,7 @@ import {
   REFERENCE_GROUPS,
   RESERVOIR_GROUPS,
   SNOW_GROUPS,
+  SOIL_GROUPS,
   type ApiFieldGroup
 } from "./data-docs-schema";
 
@@ -87,6 +88,16 @@ describe("public API field documentation", () => {
     for (const site of data.sites as Record<string, any>[]) {
       expect(site.series_values.length).toBe(site.series_days.length);
       expect(site.series_normals.length).toBe(site.series_days.length);
+    }
+  });
+
+  it("covers every current soil moisture field", () => {
+    const data = read("soil_moisture.json");
+    expectFields(SOIL_GROUPS, "soil-header", data);
+    expectFields(SOIL_GROUPS, "soil-rollup", merged(data.rollups));
+    expectFields(SOIL_GROUPS, "soil-site", merged(data.sites));
+    if (data.other_depth_sites.length > 0) {
+      expectFields(SOIL_GROUPS, "soil-other-depth-site", merged(data.other_depth_sites));
     }
   });
 

@@ -61,6 +61,13 @@
       "note": "Accumulated precipitation since 1 October at the snow stations (ADR-125). Separate from snowpack.json so a failure costs only this file."
     },
     {
+      "path": "soil_moisture.json",
+      "class": "generated-daily",
+      "writer": "refresh_soil_moisture.py",
+      "staged_by_refresh": true,
+      "note": "The last fifteen days of soil moisture at the snow stations and each station's seven-day change (ADR-142). Separate from snowpack.json and precipitation.json so a failure costs only this file."
+    },
+    {
       "path": "lakes.json",
       "class": "generated-daily",
       "writer": "refresh_lakes.py",

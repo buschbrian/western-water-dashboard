@@ -361,15 +361,15 @@
 /* Recent totals (ADR-129): three small figures and a short ranked list.
  * Rows of text, not bars. */
 .precip-storm { margin-block-end: 1rem; padding-block-end: .75rem; border-block-end: 1px solid var(--app-border); }
-.precip-storm[hidden], .precip-storm-list[hidden] { display: none; }
+.precip-storm[hidden], .precip-storm-list[hidden], .precip-soil-list[hidden] { display: none; }
 .precip-storm-title { margin: 0; font-size: var(--app-group-heading); }
 #precip-card .precip-storm-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); max-inline-size: 36rem; margin-block: .5rem 0; }
 #precip-card .precip-storm-kpis > .overview-kpi { grid-column: auto; padding: .6rem .7rem; }
 #precip-card .precip-storm-kpis strong { font-size: clamp(1.1rem, 2vw, 1.5rem); }
 .precip-storm-head { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.25rem; margin-block: .75rem .25rem; }
 .precip-storm-head .chart-axis-title { margin: 0; }
-.precip-storm-list { margin: 0; padding: 0; list-style: none; max-inline-size: 30rem; }
-.precip-storm-list li {
+.precip-storm-list, .precip-soil-list { margin: 0; padding: 0; list-style: none; max-inline-size: 30rem; }
+.precip-storm-list li, .precip-soil-list li {
   display: grid;
   grid-template-columns: 1.5rem minmax(0, 1fr) auto;
   column-gap: .5rem;
@@ -387,4 +387,10 @@
  * list, so on a phone it stays shorter than the snow map's full card. */
 .precip-map-slot { margin-block: var(--space-2) var(--space-1); }
 .precip-map-slot .view-map-host { block-size: clamp(20rem, 58vh, 36rem); }
-.precip-map-key { margin-block-start: var(--space-2); }
+.precip-map-key, .precip-soil-key { margin-block-start: var(--space-2); }
+
+/* The precipitation map's "Rain | Soil moisture" switch (ADR-142). The day
+ * buttons and the rain list hide in soil mode; a flex row needs its own
+ * rule for `hidden`. */
+.precip-storm-head[hidden], .precip-map-mode-rain[hidden], .precip-map-mode-soil[hidden] { display: none; }
+.precip-map-mode-head { margin-block-start: var(--space-2); }

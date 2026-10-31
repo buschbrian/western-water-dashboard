@@ -234,6 +234,37 @@ total is left out, never counted as dry. An area needs as many such stations
 as its snow reporting floor (`minimum_reporting_sites`), or it has no figure.
 The map's breaks are amounts in inches, the same for 1, 3 and 7 days.
 
+## The week's change in soil moisture
+
+**The published figure is a change at the same sensors, never a level**
+(ADR-142). A percent of the soil's volume is not comparable between two
+soils, so `soil_moisture.json` carries each station's seven-day change in
+percentage points and no median.
+
+- **Station value:** the mean of the 2 in (or 4 in where there is no 2 in
+  sensor), 8 in and 20 in readings for the day. All three or no value. A
+  station without the three sensors is listed in `other_depth_sites` and
+  not used.
+- **Frozen soil:** a depth's reading is dropped on a day its soil
+  temperature (`STO`) is at or below 32 °F, or has no temperature. The day's
+  indices are in the station's `frozen_days`. No month is hidden: soil
+  temperature is at nearly every station.
+- **The week:** one end day for every station, the newest day on which nine
+  in ten on-time stations have all three depths (ADR-129's set-day share);
+  the start is seven days before. The change is the end value minus the
+  start value, both rounded to a tenth first. No value on either day means
+  no change and a `no_change_reason`.
+- **Area value:** the mean of the stations with a change, held to the snow
+  reporting floor (`MIN_ROLLUP_SITES`). The page regroups from the place's
+  own stations (ADR-064); over every station that equals the file's
+  `rollups`, summed in the file's order with half-up rounding on both sides.
+- **Classes:** drier by 5 or more, 2 to 5, within 2, wetter by 2 to 5, 5 to
+  10, 10 or more (`src/viz/soil-classes.ts`).
+
+Not a claim to match the Natural Resources Conservation Service's own
+basin percent-of-median maps, whose method is unpublished. Percent of median
+over each station's own record is a later phase with its own record.
+
 ## Precipitation against its own history
 
 **One fixed set of stations, and every number a mean over it** (ADR-125).

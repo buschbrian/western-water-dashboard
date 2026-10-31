@@ -24,6 +24,14 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   3 and 7 days for the place shown, each the mean of the stations that
   measured both days, and the eight stations with the most. A gauge total
   that falls is left out and counted, never shown as zero (ADR-129).
+- **Soil moisture this week** (ADR-142): a "Rain | Soil moisture" switch on
+  the precipitation map turns the same map to the change in soil moisture
+  over 7 days at the snow stations, in percentage points, brown drier and
+  blue wetter. A station's value is the mean of its 2 in (or 4 in), 8 in and
+  20 in sensors; a reading is not used on a day the soil there is frozen.
+  Its own key, a list of the stations that changed most, and a table of
+  every station. A new daily file, `soil_moisture.json` (27 KB gzipped),
+  fetched only when a reader turns the switch.
 
 ### Changed
 

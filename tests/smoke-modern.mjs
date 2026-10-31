@@ -3225,7 +3225,7 @@ for (const viewport of VIEWPORTS) {
       scroll: document.documentElement.scrollWidth
     }));
     console.log("  ready:", JSON.stringify(state.ready));
-    check(state.ready?.files === 6 && state.files === 6,
+    check(state.ready?.files === 7 && state.files === 7,
       `${label}: rendered ${state.files} file cards, readiness reported ${state.ready?.files}`);
     check(state.ready?.groups === state.groups && state.groups >= 20,
       `${label}: rendered ${state.groups} field groups, readiness reported ${state.ready?.groups}`);
@@ -3236,6 +3236,8 @@ for (const viewport of VIEWPORTS) {
       "./api/snowpack.json", "./snow.html",
       // Each finished snow season, frozen (ADR-121).
       "./data/snow/snowpack-wy2026.json",
+      // The week's change in soil moisture (ADR-142).
+      "./data/soil_moisture.json", "./precipitation.html",
       "./data/drought/usdm-huc6.json", "./drought.html",
       "./data/drought/usdm-current.geojson",
       // The same week over larger areas, published because the reader can
@@ -3934,6 +3936,77 @@ for (const viewport of VIEWPORTS) {
     check(tableRows === linked.ready?.sites,
       `${label}: the values table has ${tableRows} rows for ${linked.ready?.sites} sites`);
     await tab.locator(".precip-map-table summary").click();
+
+    /* The soil-moisture mode (ADR-142): the same map turned to the week's
+     * change. Checked against what the page reports, never today's numbers;
+     * the canvas is blank headless. Switching must not fetch the SDK or the
+     * areas again: the soil file is the only new request. */
+    const switchRequests = [];
+    const onSwitchRequest = (request) => switchRequests.push(request.url());
+    tab.on("request", onSwitchRequest);
+    await tab.locator(".precip-map-mode-head button", { hasText: "Soil moisture" }).click();
+    await tab.waitForFunction(() => ["ready", "failed"].includes(window.__precipReady?.map?.soil?.state),
+      { timeout: 30000 });
+    tab.off("request", onSwitchRequest);
+    const soilView = await tab.evaluate(() => {
+      const visible = (element) => Boolean(element && element.getClientRects().length > 0);
+      const card = document.querySelector("#precip-card");
+      return {
+        map: window.__precipReady?.map,
+        pressed: [...document.querySelectorAll(".precip-map-mode-head button")]
+          .map((button) => button.getAttribute("aria-pressed")).join(","),
+        keyItems: [...document.querySelectorAll(".precip-soil-key [role='listitem']")].map((item) => item.textContent),
+        keyShown: visible(document.querySelector(".precip-soil-key")),
+        rainKeyShown: visible(document.querySelector(".precip-map-key")),
+        dayButtonsShown: visible(document.querySelector("[aria-label='Days in the map and the station list']")),
+        rainListShown: visible(document.querySelector(".precip-storm-list")),
+        listed: document.querySelectorAll(".precip-soil-list li").length,
+        values: [...document.querySelectorAll(".precip-soil-list .precip-storm-value")].map((node) => node.textContent),
+        busy: document.querySelector(".precip-map-mode-soil")?.getAttribute("aria-busy"),
+        overflow: card ? card.scrollWidth - card.clientWidth : -1
+      };
+    });
+    console.log("  soil mode:", JSON.stringify({ ...soilView.map?.soil, mode: soilView.map?.mode, listed: soilView.listed }));
+    check(soilView.map?.soil?.state === "ready", `${label}: the soil file ended as ${soilView.map?.soil?.state}`);
+    check(soilView.map?.mode === "soil" && soilView.pressed === "false,true",
+      `${label}: the switch reports ${soilView.map?.mode}, pressed ${soilView.pressed}`);
+    check(soilView.busy === "false", `${label}: the soil block left aria-busy ${soilView.busy}`);
+    check(soilView.keyShown && !soilView.rainKeyShown && soilView.keyItems.length === 7
+      && soilView.keyItems.includes("Within 2 points: steady")
+      && soilView.keyItems.includes("No change measured, or too few stations"),
+    `${label}: the soil key reads ${JSON.stringify(soilView.keyItems)}`);
+    check(!soilView.dayButtonsShown && !soilView.rainListShown,
+      `${label}: soil mode still shows the day buttons (${soilView.dayButtonsShown}) or the rain list (${soilView.rainListShown})`);
+    check(soilView.listed === soilView.map?.soil?.rows && soilView.listed <= 8
+      && soilView.values.every((value) => /^(\d+\.\d points? (wetter|drier)|No change)$/.test(value)),
+    `${label}: the soil list shows ${soilView.listed} rows (${JSON.stringify(soilView.values.slice(0, 3))})`);
+    check(soilView.map?.withValue + soilView.map?.notUsed === soilView.map?.stations
+      && soilView.map?.soil?.withChange <= soilView.map?.soil?.stations,
+    `${label}: soil mode counts ${JSON.stringify(soilView.map)}`);
+    check(soilView.overflow <= 1, `${label}: the card overflows by ${soilView.overflow}px in soil mode`);
+    /* The SDK may still pull its own worker chunks and ask the area service
+     * for a count; what must not happen is the page's map module loading
+     * again or the area shapes being fetched again. */
+    const refetched = switchRequests.filter((url) => url.includes("reference.json")
+      || /\/assets\/(precip-map|view-map)-[^/]*\.js/.test(url)
+      || (/FeatureServer\/\d+\/query/.test(url) && !url.includes("returnGeometry=false")));
+    check(refetched.length === 0, `${label}: switching to soil fetched ${JSON.stringify(refetched.slice(0, 3))}`);
+    await tab.locator(".precip-soil-table summary").click();
+    await tab.waitForFunction(() => document.querySelectorAll(".precip-soil-table tbody tr").length > 0,
+      null, { timeout: 10000 }).catch(() => {});
+    const soilRows = await tab.locator(".precip-soil-table tbody tr").count();
+    check(soilRows === soilView.map?.soil?.stations,
+      `${label}: the soil table has ${soilRows} rows for ${soilView.map?.soil?.stations} stations`);
+    await tab.locator(".precip-soil-table summary").click();
+    await checkAccessibility(tab, check, `${label}, soil mode`);
+    await tab.locator(".precip-map-mode-head button", { hasText: "Rain" }).click();
+    await tab.waitForFunction(() => window.__precipReady?.map?.mode === "rain", { timeout: 10000 });
+    const backToRain = await tab.evaluate(() => ({
+      dayButtons: Boolean(document.querySelector("[aria-label='Days in the map and the station list']")?.getClientRects().length),
+      rainKey: Boolean(document.querySelector(".precip-map-key")?.getClientRects().length)
+    }));
+    check(backToRain.dayButtons && backToRain.rainKey,
+      `${label}: back on rain, day buttons ${backToRain.dayButtons}, rain key ${backToRain.rainKey}`);
     await checkAccessibility(tab, check, label);
     await tab.screenshot({ path: `screenshots/precipitation-${viewport.name}.png`, fullPage: false });
   } catch (err) {
