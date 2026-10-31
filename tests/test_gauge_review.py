@@ -265,6 +265,33 @@ def test_annual_means_ignore_other_parameters_and_statistics():
     values = [stats_value("1990-10-01", "1991-09-30", 365, "5")]
     assert G.parse_annual_means(stats_page("09379500", values, parameter="00010")) == {}
     assert G.parse_annual_means(stats_page("09379500", values, statistic="00001")) == {}
+def test_daily_means_count_only_whole_water_years():
+    start = dt.date(1990, 10, 1)
+    days = {start + dt.timedelta(n): 10.0 for n in range(365)}
+    days.update({dt.date(1991, 10, 1) + dt.timedelta(n): 20.0 for n in range(300)})
+    assert G.annual_means_from_daily(days) == {1991: 10.0}
+
+
+def test_daily_flow_keeps_only_the_daily_mean_discharge():
+    def feature(time, value, parameter="00060", statistic="00003"):
+        return {"properties": {"time": time, "value": value, "parameter_code": parameter,
+                               "statistic_id": statistic}}
+    page = {"features": [feature("2026-07-15", "145"), feature("2026-07-16", "150", "00010"),
+                         feature("2026-07-17", "160", statistic="00001"),
+                         feature("2026-07-18", None)]}
+    assert G.parse_daily_flow(page) == {dt.date(2026, 7, 15): 145.0}
+
+
+def test_legacy_daily_flow_drops_the_missing_value_sentinel():
+    payload = {"value": {"timeSeries": [
+        {"name": "USGS:09302000:00060:00003", "values": [{"value": [
+            {"dateTime": "1991-10-01T00:00:00.000", "value": "312"},
+            {"dateTime": "1991-10-02T00:00:00.000", "value": "-999999"}]}]},
+        {"name": "USGS:09302000:00010:00003", "values": [{"value": [
+            {"dateTime": "1991-10-01T00:00:00.000", "value": "9.5"}]}]}]}}
+    assert G.parse_legacy_daily_flow(payload) == {dt.date(1991, 10, 1): 312.0}
+
+
 
 
 def test_annual_means_follow_the_next_token_and_send_ids_as_parameters(monkeypatch):
