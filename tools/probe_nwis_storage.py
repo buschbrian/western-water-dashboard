@@ -1,9 +1,10 @@
-"""Probe: USGS reservoir-storage sites in the six thin-roster states.
+"""Probe: USGS reservoir-storage sites in the western states.
 
 `WATER-BODY-AND-NAVIGATION-SCOPING.md` item 5's first rule is "count first,
-build never": query USGS NWIS parameter 00054 (reservoir storage, acre-feet)
-for AZ, NV, ID, OR, WA and WY, and report how many sites exist per state --
-because nobody can size a USGS provider until that number does.
+build never": query USGS parameter 00054 (reservoir storage, acre-feet) state
+by state and report how many sites exist -- because nobody can size a USGS
+provider until that number does. The first count, 2026-08-21, covered AZ,
+NV, ID, OR, WA and WY; the default is now all eleven western states.
 
 Two things are reported, because the scoping asks for both:
 
@@ -20,18 +21,26 @@ Two things are reported, because the scoping asks for both:
   are listed, never decided: ruling one a duplicate is a review judgement
   about dam identity, and this tool records evidence, not verdicts.
 
+Sites already reviewed and held in `admitted_usgs_reservoirs.json` are named
+as held rather than counted again as new.
+
 A probe prints and writes nothing.
 
-    python tools/probe_nwis_storage.py [--days 7]
+    python tools/probe_nwis_storage.py [--days 7] [--states AZ NV ...]
 
-Queries the legacy waterservices.usgs.gov service, which needs no key today;
-its documented retirement (~2027) and its successor's rate limit are already
-recorded in the candidates document and are not re-argued here.
+Reads the agency's OGC `v1` collections: `latest-daily` for each series'
+newest value, then `monitoring-locations` for the sites' names -- two
+requests a state, inside the anonymous rate limit. `USGS_API_KEY` is sent in
+the `X-Api-Key` header when the environment holds it, and is never needed.
+The legacy waterservices.usgs.gov service this first read shuts down on
+2027-02-22.
 """
 
 import argparse
+import datetime as dt
 import json
 import math
+import os
 import sys
 import time
 import urllib.error
@@ -41,8 +50,15 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 
-STATES = ["AZ", "NV", "ID", "OR", "WA", "WY"]
-DV_URL = "https://waterservices.usgs.gov/nwis/dv"
+STATE_NAMES = {
+    "AZ": "Arizona", "CA": "California", "CO": "Colorado", "ID": "Idaho",
+    "MT": "Montana", "NM": "New Mexico", "NV": "Nevada", "OR": "Oregon",
+    "UT": "Utah", "WA": "Washington", "WY": "Wyoming",
+}
+STATES = list(STATE_NAMES)
+OGC_URL = "https://api.waterdata.usgs.gov/ogcapi/v1/collections"
+LATEST_URL = f"{OGC_URL}/latest-daily/items"
+LOCATIONS_URL = f"{OGC_URL}/monitoring-locations/items"
 
 USER_AGENT = ("western-water-dashboard/nwis-storage-count "
               "(+https://github.com/buschbrian)")
@@ -72,11 +88,72 @@ def name_words(name: str) -> set[str]:
     return {w for w in keepers if len(w) > 2}
 
 
+def _get_features(url: str, params: dict | None,
+                  user_agent: str = USER_AGENT) -> list[dict]:
+    """Every feature of one OGC query, following its `next` links."""
+    headers = {"User-Agent": user_agent}
+    api_key = os.environ.get("USGS_API_KEY", "").strip()
+    if api_key:
+        headers["X-Api-Key"] = api_key
+    features: list[dict] = []
+    next_url: str | None = (
+        f"{url}?{urllib.parse.urlencode(params)}" if params else url)
+    while next_url:
+        request = urllib.request.Request(next_url, headers=headers)
+        with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
+            payload = json.loads(response.read())
+        time.sleep(POLITENESS_SECONDS)
+        features.extend(payload.get("features") or [])
+        next_url = next((link.get("href") for link in payload.get("links") or []
+                         if link.get("rel") == "next" and link.get("href")),
+                        None)
+    return features
+
+
+def reporting_sites(state: str, days: int,
+                    user_agent: str = USER_AGENT) -> dict[str, dict]:
+    """Sites in a state whose newest 00054 daily value is inside `days`.
+
+    One site can carry several 00054 series, one per statistic; it reports
+    when any of them does. Active means reporting, as in the first count.
+    """
+    since = dt.date.today() - dt.timedelta(days=days)
+    latest = _get_features(LATEST_URL, {
+        "f": "json", "parameter_code": "00054",
+        "state_name": STATE_NAMES[state], "limit": 10000}, user_agent)
+    coords: dict[str, tuple[float, float]] = {}
+    for feature in latest:
+        reading = feature.get("properties") or {}
+        location = reading.get("monitoring_location_id") or ""
+        try:
+            day = dt.date.fromisoformat(str(reading.get("time"))[:10])
+        except ValueError:
+            continue
+        point = (feature.get("geometry") or {}).get("coordinates") or []
+        if location.startswith("USGS-") and day >= since and len(point) >= 2:
+            coords[location] = (point[0], point[1])
+    if not coords:
+        return {}
+    locations = _get_features(LOCATIONS_URL, {
+        "f": "json", "id": ",".join(sorted(coords)), "limit": 10000,
+        "properties": "monitoring_location_name"}, user_agent)
+    names = {f.get("id"): (f.get("properties") or {}).get(
+        "monitoring_location_name") for f in locations}
+    return {location.removeprefix("USGS-"): {
+                "name": names.get(location), "lon": lon, "lat": lat}
+            for location, (lon, lat) in coords.items()}
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--days", type=int, default=7,
                         help="a site must have reported within this window")
+    parser.add_argument("--states", nargs="+", default=STATES,
+                        choices=STATES, metavar="ST",
+                        help="two-letter state codes (default: all eleven)")
     args = parser.parse_args()
+    held = json.loads((ROOT / "admitted_usgs_reservoirs.json").read_text(
+        encoding="utf-8")).get("withheld", {})
 
     published = json.loads(
         (ROOT / "reservoirs.json").read_text(encoding="utf-8"))["reservoirs"]
@@ -92,48 +169,28 @@ def main() -> int:
           f"{len(dam_points)} reviewed dam points", file=sys.stderr)
 
     total_sites = 0
+    held_sites: list[str] = []
     near_candidates: list[tuple[str, str]] = []
     name_candidates: list[tuple[str, str]] = []
-    for state in STATES:
-        query = urllib.parse.urlencode({
-            "stateCd": state.lower(), "parameterCd": "00054",
-            "siteStatus": "active", "period": f"P{args.days}D",
-            "format": "json"})
-        request = urllib.request.Request(
-            f"{DV_URL}?{query}", headers={"User-Agent": USER_AGENT})
+    new_sites: list[str] = []
+    for state in args.states:
         try:
-            with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
-                payload = json.loads(response.read())
+            sites = reporting_sites(state, args.days)
         except urllib.error.HTTPError as error:
             print(f"  !! HTTP {error.code} for {state}", file=sys.stderr)
             continue
         except (urllib.error.URLError, ValueError) as error:
             print(f"  !! {state}: {error}", file=sys.stderr)
             continue
-        time.sleep(POLITENESS_SECONDS)
-
-        sites: dict[str, dict] = {}
-        for series in payload.get("value", {}).get("timeSeries", []):
-            source = series.get("sourceInfo") or {}
-            codes = source.get("siteCode") or [{}]
-            site_no = codes[0].get("value")
-            if not site_no:
-                continue
-            geog = (source.get("geoLocation") or {}).get(
-                "geogLocation") or {}
-            sites[site_no] = {
-                "name": source.get("siteName"),
-                "lon": geog.get("longitude"),
-                "lat": geog.get("latitude"),
-            }
         print(f"  {state}: {len(sites)} reporting 00054 sites "
               f"(last {args.days} days)")
         total_sites += len(sites)
 
         for site_no, site in sorted(sites.items()):
-            if site["lon"] is None:
-                print(f"      !! {site['name']} ({site_no}): no coordinates",
-                      file=sys.stderr)
+            if site_no in held:
+                print(f"      held: {site['name']} ({site_no}), "
+                      "already reviewed in admitted_usgs_reservoirs.json")
+                held_sites.append(site_no)
                 continue
             best_km, best_name = float("inf"), ""
             best_words: set[str] = set()
@@ -153,11 +210,17 @@ def main() -> int:
                 print(f"      name candidate: {label} <-> {best_name} "
                       f"[{best_km:.1f} km, shared {'/'.join(sorted(best_words))}]")
                 name_candidates.append((label, best_name))
+            else:
+                print(f"      new: {label}, nearest published point "
+                      f"{best_name} [{best_km:.0f} km]")
+                new_sites.append(label)
 
-    print(f"\nTotal across {', '.join(STATES)}: {total_sites} sites "
+    print(f"\nTotal across {', '.join(args.states)}: {total_sites} sites "
           f"reporting 00054 within {args.days} days.")
+    print(f"Already reviewed and held: {len(held_sites)}")
     print(f"Near-duplicate candidates for review: {len(near_candidates)}")
     print(f"Name-only candidates for review: {len(name_candidates)}")
+    print(f"Near no published point: {len(new_sites)}")
     print("\nThe count that sizes the provider is the sites above minus the"
           "\ncandidates a reviewer rules duplicates -- not this list alone.")
     return 0

@@ -222,10 +222,10 @@ gh secret set USGS_API_KEY --repo buschbrian/western-water-dashboard
 key page states no lifetime and lets one address hold several keys, so
 replacing the key is a rotation, not a deadline. The 2027 date belongs to
 the keyless legacy service, which shuts down on 2027-02-22 after slowed
-requests and planned outages from January. Two tools still read it:
+requests and planned outages from January. One tool still reads it:
 `tools/check_usgs_migration_parity.py`, whose legacy half was ADR-098's
-comparison and ends with the service, and `tools/probe_nwis_storage.py`, the
-discovery count, which must move to the modern collection to run again.
+comparison and ends with the service. `tools/probe_nwis_storage.py`, the
+discovery count, moved to the modern collection on 2026-10-31.
 
 **The repository had no such secret when this was written**, so the migrated
 provider had never run anywhere but on the machine that migrated it. A run

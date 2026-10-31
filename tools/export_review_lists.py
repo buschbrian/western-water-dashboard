@@ -9,12 +9,12 @@ tool prints each list as CSV so a reviewer can mark it up in a spreadsheet.
 A probe prints and writes nothing: every mode writes to stdout, and the
 caller redirects. The CSVs stay uncommitted working documents.
 
-    python tools/export_review_lists.py --nwis     # 34 NWIS sites
+    python tools/export_review_lists.py --nwis     # reporting USGS sites
     python tools/export_review_lists.py --nhd      # NHD problem points
     python tools/export_review_lists.py --names    # the damaged names
 
-The NWIS list is queried live (about six requests against the keyless
-legacy service). The NHD list needs the resolution pass's full report;
+The NWIS list is queried live (two requests a state against the agency's
+OGC `v1` collections). The NHD list needs the resolution pass's full report;
 give its `--json` output with `--nhd-json`, or let this tool re-run that
 probe when the report is absent, which costs about fifteen minutes
 against the nationalmap service.
@@ -27,9 +27,6 @@ import json
 import re
 import subprocess
 import sys
-import time
-import urllib.parse
-import urllib.request
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -61,8 +58,9 @@ def load_nhd_report(path: Path) -> dict:
 
 
 def nwis_rows() -> list[dict]:
-    """Every active reporting 00054 site in the six thin states."""
-    from probe_nwis_storage import DV_URL, km_between, name_words  # noqa: E402
+    """Every 00054 site in the western states reporting within seven days."""
+    from probe_nwis_storage import (  # noqa: E402
+        STATES, km_between, name_words, reporting_sites)
 
     reservoirs = json.loads(
         (ROOT / "reservoirs.json").read_text(encoding="utf-8"))["reservoirs"]
@@ -76,29 +74,9 @@ def nwis_rows() -> list[dict]:
         if entry.get("dam_lon") is not None]
 
     rows = []
-    for state in ["AZ", "NV", "ID", "OR", "WA", "WY"]:
-        query = urllib.parse.urlencode({
-            "stateCd": state.lower(), "parameterCd": "00054",
-            "siteStatus": "active", "period": "P7D", "format": "json"})
-        request = urllib.request.Request(
-            f"{DV_URL}?{query}",
-            headers={"User-Agent":
-                     "western-water-dashboard/review-export"})
-        with urllib.request.urlopen(request, timeout=120) as response:
-            payload = json.loads(response.read())
-        time.sleep(1.0)
-
-        sites: dict[str, dict] = {}
-        for series in payload.get("value", {}).get("timeSeries", []):
-            source = series.get("sourceInfo") or {}
-            site_no = (source.get("siteCode") or [{}])[0].get("value")
-            if not site_no:
-                continue
-            geog = (source.get("geoLocation") or {}).get(
-                "geogLocation") or {}
-            sites[site_no] = {"name": source.get("siteName"),
-                              "lon": geog.get("longitude"),
-                              "lat": geog.get("latitude")}
+    for state in STATES:
+        sites = reporting_sites(state, 7,
+                                "western-water-dashboard/review-export")
         for site_no, site in sorted(sites.items()):
             best_km, best_name = None, ""
             for pub_name, pub_lon, pub_lat in points + dam_points:
