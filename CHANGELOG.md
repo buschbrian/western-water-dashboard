@@ -27,14 +27,33 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Changed
 
-- **The snow page is now "Precipitation and snow"**, with the precipitation
-  card directly under the map. The bar says "Precipitation" where width is
-  short. The `snow.html` address and its links are unchanged.
+- **Precipitation has its own page**, `precipitation.html` (ADR-130): the
+  recent totals, the season since 1 October and the history chart, for the
+  place in the link, with a link to the snowpack view for the same place.
+  `snow.html` is the snowpack page again, at the same address, and its map
+  notes fold on a phone so the season chart follows the map.
+- A snow site's card, and a drainage area's, lead with the newest value and
+  the chart; where the site is follows them.
 - **The U.S. Geological Survey provider reads `v1` of the agency's modern
   service**, which the agency now names its current version. Every series
   the site publishes from it was read from both versions first, day by day
   since 2015, and no reading changed. A terminal lake's `source_url` in
   `lakes.json` names the new address from the next morning's refresh.
+
+### Fixed
+
+- On the drought page, each area's reading no longer covers its links on a
+  phone. A summary-card rule from 1.2.0 gave every area row three grid rows
+  for four blocks.
+- On the storage charts page, the notes, key and chart credit under each
+  chart no longer draw over one another. Each card had four shared grid
+  rows and up to seven blocks.
+- The precipitation chart's first date no longer runs into its inch labels,
+  and the "Where this year stands" year names sit clear of the axis.
+- Cards on the snow page no longer sit border to border, and a card's
+  download button no longer touches the block under it on a phone.
+- The browser suite now fails when text is drawn over other text, at every
+  tested width.
 
 ## [1.2.0] - 2026-10-24
 

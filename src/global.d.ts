@@ -217,8 +217,16 @@ interface Window {
      * engine (ADR-047). */
     mapBasinLabels?: number;
     mapBasinLabelsDeconflicted?: boolean;
+  };
+  /** The precipitation view (ADR-130). `sites` is how many measurement sites
+   * the place holds; the card reports what it drew from them, and is null
+   * only when the page itself could not load. */
+  __precipReady?: {
+    level: number;
+    area: string | null;
+    sites: number;
     /** The precipitation card (ADR-125): its own load, so its own state. */
-    precipitation?: {
+    precipitation: {
       state: "loading" | "ready" | "failed";
       stations: number;
       curveDays: number;
@@ -226,7 +234,7 @@ interface Window {
       range: "season" | "year";
       date?: string | null;
       stripYears?: number;
-    };
+    } | null;
   };
   /** The drought view finished drawing. `units` is what the coverage file
    * provided; `rows` is what the page rendered; `storageJoined` counts the

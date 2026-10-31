@@ -229,7 +229,7 @@ files written under different versions are not one series.
 ## Precipitation against its own history
 
 **One fixed set of stations, and every number a mean over it** (ADR-125).
-The snow page's precipitation card compares this water year with every
+The precipitation page's card compares this water year with every
 water year from 1991 through the last finished one, at the stations whose
 gauge record covers all of them. A place's set is its stations in that
 history that are not reporting late; the line, the bands, the median, the

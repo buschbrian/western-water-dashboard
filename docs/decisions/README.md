@@ -166,7 +166,8 @@ ADR-008, then ADR-032 and ADR-061.**
   [ADR-121](ADR-121-keep-the-finished-snow-season-and-open-the-new-one-honestly.md),
   [ADR-086](ADR-086-open-the-place-chooser-from-every-page-header.md),
   [ADR-120](ADR-120-ask-where-to-start-before-loading-the-map.md),
-  [ADR-123](ADR-123-draw-ten-years-of-drought-on-the-drought-page.md)
+  [ADR-123](ADR-123-draw-ten-years-of-drought-on-the-drought-page.md),
+  [ADR-130](ADR-130-give-precipitation-its-own-page.md)
 - Superseded, read only for history: ADR-007, ADR-016, ADR-022, ADR-025,
   ADR-027, ADR-030, ADR-043, ADR-054
 - Current architecture: [`docs/architecture/frontend.md`](../architecture/frontend.md)
@@ -306,11 +307,12 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-122](ADR-122-measure-drought-from-the-monitors-full-resolution-archive.md) | Measure drought from the monitor's full-resolution archive, back ten years | Accepted; method `drought-coverage-3`; the weekly run never measures the simplified download; the archives hold a decade |
 | [ADR-123](ADR-123-draw-ten-years-of-drought-on-the-drought-page.md) | Draw ten years of drought on the drought page | Accepted; extends ADR-117's scope at the maintainer's request; fetched only when its cards come near the screen |
 | [ADR-124](ADR-124-bound-recent-conditions-to-a-static-data-pilot.md) | Bound recent conditions to a static-data pilot | Accepted; scheduled Utah pilot with static outputs, existing USGS access and isolated R2 storage; implementation pending |
-| [ADR-125](ADR-125-measure-precipitation-at-the-snow-stations-against-a-fixed-history.md) | Measure precipitation at the snow stations against a fixed history | Accepted; the record ADR-117 asks for to bring a new measured element into scope; keeps ADR-081's denominator floor |
+| [ADR-125](ADR-125-measure-precipitation-at-the-snow-stations-against-a-fixed-history.md) | Measure precipitation at the snow stations against a fixed history | Accepted; the record ADR-117 asks for to bring a new measured element into scope; keeps ADR-081's denominator floor; its placement on the snow page superseded by ADR-130 |
 | [ADR-126](ADR-126-key-a-withdrawal-notice-by-its-station.md) | Key a withdrawal notice by its station | Accepted; extends ADR-056 and ADR-066; the notice gains `source_station_id`, an optional field with no schema bump, and an older notice falls back to its name for one run |
 | [ADR-127](ADR-127-state-what-is-above-a-reservoir-as-stored-water.md) | State what is above a reservoir as stored water | Accepted; applies `rollupOfScoped` to the ADR-077 upstream set; replaces the reservoir page's chips with basin groups and rows |
 | [ADR-128](ADR-128-publish-compact-story-views-for-embedding.md) | Publish compact story views for embedding | Accepted; one entry page, three views, a theme that never persists, a view that fits its frame; computes nothing new (ADR-117's scope) |
 | [ADR-129](ADR-129-total-the-latest-storm-from-the-accumulated-precipitation.md) | Total the latest storm from the accumulated precipitation | Accepted; 1-, 3- and 7-day totals on the precipitation card; uses ADR-125's set day but not its fixed set; a falling accumulation is left out, never clipped |
+| [ADR-130](ADR-130-give-precipitation-its-own-page.md) | Give precipitation its own page | Accepted; supersedes ADR-125's placement on the snow page; `snow.html` is the snowpack page again at the same address |
 
 ## Relationship to the historical journal
 

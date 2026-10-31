@@ -40,6 +40,7 @@ oracle, and two Python pipelines.
 |---|---|
 | `index.html`, `modern.html`, `src/main.ts` | Primary reservoir storage map, and its stable alias. |
 | `overview.html`, `src/overview*` | ArcGIS Charts storage workspace. |
+| `precipitation.html`, `src/precipitation.ts` | Recent and season precipitation at the snow sites (ADR-130). |
 | `snow.html`, `src/snow*` | Snow curves, drainage-area map, site map, detail views. |
 | `drought.html`, `src/drought*` | Weekly drought map and comparison charts. |
 | `methods.html`, `data.html`, `terms.html` | Methods, public data API, terms. |
