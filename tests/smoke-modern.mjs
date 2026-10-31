@@ -923,7 +923,7 @@ const browser = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
     `${label}: the map host stopped reporting busy before the map started`);
 
   await tab.keyboard.press("Escape");
-  await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 90000 });
+  await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
   const after = await tab.evaluate(() => ({
     open: document.querySelector("dialog.opening-splash")?.hasAttribute("open") ?? null,
     dialogs: document.querySelectorAll("dialog.opening-splash").length,
@@ -997,7 +997,7 @@ const browser = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
     { waitUntil: "domcontentloaded", timeout: 60000 });
   await tab.waitForFunction(() =>
     !document.querySelector("#place-chooser-trigger")?.hasAttribute("hidden"),
-  { timeout: 90000 });
+  null, { timeout: 60000 });
   check(await tab.locator("#place-chooser-trigger").isVisible(),
     `${label}: the direct header action is not visible`);
   await tab.locator("#place-chooser-trigger").click();
@@ -1270,7 +1270,7 @@ for (const viewport of VIEWPORTS) {
   console.log(`\n=== ${label}`);
   try {
     await tab.goto(URL, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     /* Read here, before this block opens the ranking row. That row is what
      * legitimately triggers the dynamic import, so asserting at the end of
      * the block would only ever prove the test clicked it. First load is the
@@ -1539,7 +1539,7 @@ for (const viewport of VIEWPORTS) {
       await tab.locator("#controls-toggle").click();
       await tab.waitForFunction(
         "document.querySelector('#start-sheet')?.hasAttribute('opened')",
-        { timeout: 5000 });
+        null, { timeout: 5000 });
     }
     check(await tab.locator(`${controls} [data-filter="storage"]`).isVisible(),
       `${label}: the storage level filter is not visible`);
@@ -1562,7 +1562,7 @@ for (const viewport of VIEWPORTS) {
       select.value = "late";
       select.dispatchEvent(new CustomEvent("calciteSelectChange", { bubbles: true }));
     }, controls);
-    await tab.waitForFunction(() => window.__dashboardReady.filtered === true, { timeout: 5000 });
+    await tab.waitForFunction(() => window.__dashboardReady.filtered === true, null, { timeout: 5000 });
 
     const filtered = await tab.evaluate(async (selector) => {
       const layer = document.querySelector("arcgis-map")?.map?.findLayerById("reservoirs");
@@ -1647,7 +1647,7 @@ for (const viewport of VIEWPORTS) {
     }
 
     await tab.locator(`${controls} [data-filter="reset"]`).first().click();
-    await tab.waitForFunction(() => window.__dashboardReady.filtered === false, { timeout: 5000 });
+    await tab.waitForFunction(() => window.__dashboardReady.filtered === false, null, { timeout: 5000 });
     const cleared = await tab.evaluate((selector) => ({
       effect: document.querySelector("arcgis-map")?.map
         ?.findLayerById("reservoirs")?.featureEffect ?? null,
@@ -1690,7 +1690,7 @@ for (const viewport of VIEWPORTS) {
       }, pointerName);
       await tab.waitForFunction(
         () => document.querySelector("#map-hover")?.hidden === false,
-        { timeout: 5000 });
+        null, { timeout: 5000 });
       const hoverText = (await tab.locator("#map-hover").innerText()).trim();
       check(hoverText.includes(pointerName) && hoverText.includes("%"),
         `${label}: pointer hover did not summarize ${pointerName}`);
@@ -1839,7 +1839,7 @@ for (const viewport of VIEWPORTS) {
       await tab.locator("#detail-sheet-close").click();
       await tab.waitForFunction(
         "!document.querySelector('#detail-sheet')?.hasAttribute('opened')",
-        { timeout: 5000 });
+        null, { timeout: 5000 });
     }
     await tab.locator(listSelector).first().click();
 
@@ -2234,7 +2234,7 @@ for (const viewport of VIEWPORTS) {
      * and only those -- a chart ranking unknowns at zero would invent a
      * drought. Opening the row is what builds it, so this waits on the
      * readiness field the render writes last. */
-    await tab.waitForFunction(() => window.__dashboardReady.rankingBars > 0, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady.rankingBars > 0, null, { timeout: 60000 });
     const ranking = await tab.evaluate(() => {
       const chart = document.querySelector('[data-ranking="host"] arcgis-chart');
       return {
@@ -2327,13 +2327,13 @@ for (const viewport of VIEWPORTS) {
       await tab.locator("#detail-sheet-close").click();
       await tab.waitForFunction(
         "!document.querySelector('#detail-sheet')?.hasAttribute('opened')",
-        { timeout: 5000 });
+        null, { timeout: 5000 });
       // The application restores focus on the next animation frame so it
       // runs after Calcite's own close lifecycle has finished.
       await tab.waitForFunction(
         "document.activeElement?.matches(" +
           "'#start-sheet .list-btn[aria-pressed=\"true\"]') === true",
-        { timeout: 5000 });
+        null, { timeout: 5000 });
     }
 
     /* Last, on a settled page: every control is wired, every table is
@@ -3231,7 +3231,7 @@ for (const viewport of VIEWPORTS) {
   console.log(`\n=== ${label}`);
   try {
     await tab.goto(`${URL}data.html`, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dataDocsReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dataDocsReady !== undefined, null, { timeout: 60000 });
     const state = await tab.evaluate(() => ({
       ready: window.__dataDocsReady,
       files: document.querySelectorAll(".api-file").length,
@@ -3565,7 +3565,7 @@ for (const viewport of VIEWPORTS) {
     await tab.goto(`${URL}snow.html?area=140100`, {
       waitUntil: "domcontentloaded", timeout: 60000
     });
-    await tab.waitForFunction(() => window.__snowReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__snowReady !== undefined, null, { timeout: 60000 });
     const linked = await tab.evaluate(() => ({
       ready: window.__snowReady,
       tableRows: document.querySelectorAll("#snow-site-rows tr").length,
@@ -3611,7 +3611,7 @@ for (const viewport of VIEWPORTS) {
       select.dispatchEvent(new CustomEvent("calciteSelectChange", { bubbles: true }));
     });
     await tab.waitForFunction(
-      () => window.__snowReady && window.__snowReady.area === null, { timeout: 10000 });
+      () => window.__snowReady && window.__snowReady.area === null, null, { timeout: 10000 });
     const state = await tab.evaluate(() => ({
       ready: window.__snowReady,
       tableRows: document.querySelectorAll("#snow-site-rows tr").length,
@@ -3703,7 +3703,7 @@ for (const viewport of VIEWPORTS) {
      * actually built, which a blank-canvas screenshot cannot. */
     await tab.waitForFunction(
       () => window.__snowReady && window.__snowReady.mapDay !== undefined,
-      { timeout: 60000 });
+      null, { timeout: 60000 });
     const mapState = await tab.evaluate(() => ({
       ready: window.__snowReady,
       slider: Boolean(document.querySelector("#snow-day")),
@@ -3774,7 +3774,7 @@ for (const viewport of VIEWPORTS) {
       `${label}: the site picker offers no sites`);
     await tab.selectOption("#snow-site", firstStation);
     await tab.waitForFunction(
-      () => window.__snowReady && window.__snowReady.site !== null, { timeout: 10000 });
+      () => window.__snowReady && window.__snowReady.site !== null, null, { timeout: 10000 });
     const siteState = await tab.evaluate(() => ({
       ready: window.__snowReady,
       chart: Boolean(document.querySelector("#snow-site-detail svg")),
@@ -3835,7 +3835,7 @@ for (const viewport of VIEWPORTS) {
     await tab.goto(`${URL}precipitation.html?area=140100`, {
       waitUntil: "domcontentloaded", timeout: 60000
     });
-    await tab.waitForFunction(() => window.__precipReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__precipReady !== undefined, null, { timeout: 60000 });
     const linked = await tab.evaluate(() => ({
       ready: window.__precipReady,
       areaControl: document.querySelector(".drainage-menu calcite-select")?.value,
@@ -3855,7 +3855,7 @@ for (const viewport of VIEWPORTS) {
     await tab.locator("#precip-card").scrollIntoViewIfNeeded();
     await tab.waitForFunction(
       () => window.__precipReady?.precipitation && window.__precipReady.precipitation.state !== "loading",
-      { timeout: 60000 });
+      null, { timeout: 60000 });
     const precip = await tab.evaluate(() => ({
       status: window.__precipReady?.precipitation,
       busy: document.querySelector(".precip-curve-host")?.getAttribute("aria-busy"),
@@ -3911,7 +3911,7 @@ for (const viewport of VIEWPORTS) {
         || storm.notes.some((note) => note === `Mean of ${stormStatus.stations} station${stormStatus.stations === 1 ? "" : "s"}`),
       `${label}: no storm total names its ${stormStatus.stations} stations`);
       await tab.locator(".precip-storm .precip-range button", { hasText: "7 days" }).click();
-      await tab.waitForFunction(() => window.__precipReady?.precipitation?.storm?.window === 7, { timeout: 10000 });
+      await tab.waitForFunction(() => window.__precipReady?.precipitation?.storm?.window === 7, null, { timeout: 10000 });
       await tab.locator(".precip-storm .precip-range button", { hasText: "3 days" }).click();
     } else {
       check(!storm.shown, `${label}: storm totals show with no end day`);
@@ -3922,7 +3922,7 @@ for (const viewport of VIEWPORTS) {
       check(precip.status.range === "season",
         `${label}: the precipitation chart opened on ${precip.status.range}`);
       await tab.locator(".precip-range button", { hasText: "Whole water year" }).click();
-      await tab.waitForFunction(() => window.__precipReady?.precipitation?.range === "year", { timeout: 10000 });
+      await tab.waitForFunction(() => window.__precipReady?.precipitation?.range === "year", null, { timeout: 10000 });
       const pressed = await tab.evaluate(() => [...document.querySelectorAll(".precip-controls .precip-range button")]
         .map((button) => button.getAttribute("aria-pressed")).join(","));
       check(pressed === "false,true", `${label}: the range buttons report ${pressed}`);
@@ -3933,7 +3933,7 @@ for (const viewport of VIEWPORTS) {
      * and after the totals; the canvas is blank headless, so this checks
      * what the map reports and the text beside it, never its pixels. */
     await tab.locator("#precip-map-host").scrollIntoViewIfNeeded();
-    await tab.waitForFunction(() => ["ready", "failed"].includes(window.__precipReady?.map?.state), { timeout: 60000 });
+    await tab.waitForFunction(() => ["ready", "failed"].includes(window.__precipReady?.map?.state), null, { timeout: 60000 });
     const precipMap = await tab.evaluate(() => ({
       map: window.__precipReady?.map,
       busy: document.querySelector("#precip-map-host")?.getAttribute("aria-busy"),
@@ -3950,9 +3950,9 @@ for (const viewport of VIEWPORTS) {
     check(precipMap.keyItems === 7, `${label}: the map key has ${precipMap.keyItems} entries, not 7`);
     if (stormStatus?.endDate) {
       await tab.locator(".precip-storm .precip-range button", { hasText: "7 days" }).click();
-      await tab.waitForFunction(() => window.__precipReady?.map?.window === 7, { timeout: 10000 });
+      await tab.waitForFunction(() => window.__precipReady?.map?.window === 7, null, { timeout: 10000 });
       await tab.locator(".precip-storm .precip-range button", { hasText: "3 days" }).click();
-      await tab.waitForFunction(() => window.__precipReady?.map?.window === 3, { timeout: 10000 });
+      await tab.waitForFunction(() => window.__precipReady?.map?.window === 3, null, { timeout: 10000 });
     }
     await tab.locator(".precip-map-table summary").click();
     /* The rows are built on the toggle event, which follows the click. */
@@ -3980,7 +3980,7 @@ for (const viewport of VIEWPORTS) {
     tab.on("request", onSwitchRequest);
     await tab.locator(".precip-map-mode-head button", { hasText: "Soil moisture" }).click();
     await tab.waitForFunction(() => ["ready", "failed"].includes(window.__precipReady?.map?.soil?.state),
-      { timeout: 30000 });
+      null, { timeout: 30000 });
     tab.off("request", onSwitchRequest);
     const soilView = await tab.evaluate(() => {
       const visible = (element) => Boolean(element && element.getClientRects().length > 0);
@@ -4037,7 +4037,7 @@ for (const viewport of VIEWPORTS) {
     await tab.locator(".precip-soil-table summary").click();
     await checkAccessibility(tab, check, `${label}, soil mode`);
     await tab.locator(".precip-map-mode-head button", { hasText: "Rain" }).click();
-    await tab.waitForFunction(() => window.__precipReady?.map?.mode === "rain", { timeout: 10000 });
+    await tab.waitForFunction(() => window.__precipReady?.map?.mode === "rain", null, { timeout: 10000 });
     const backToRain = await tab.evaluate(() => ({
       dayButtons: Boolean(document.querySelector("[aria-label='Days in the map and the station list']")?.getClientRects().length),
       rainKey: Boolean(document.querySelector(".precip-map-key")?.getClientRects().length)
@@ -4090,7 +4090,7 @@ for (const viewport of VIEWPORTS) {
   });
   try {
     await tab.goto(`${URL}precipitation.html?state=UT`, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__precipReady?.precipitation?.recent === "ready", { timeout: 30000 });
+    await tab.waitForFunction(() => window.__precipReady?.precipitation?.recent === "ready", null, { timeout: 30000 });
     const early = await tab.evaluate(() => ({
       season: window.__precipReady?.precipitation?.state,
       figures: document.querySelectorAll("#precip-card .precip-storm-kpis strong").length,
@@ -4123,7 +4123,7 @@ for (const viewport of VIEWPORTS) {
   console.log(`\n=== ${label}`);
   try {
     await tab.goto(`${URL}snow.html?state=all`, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__snowReady?.mapDay !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__snowReady?.mapDay !== undefined, null, { timeout: 60000 });
     const before = await tab.evaluate(() => window.__snowReady);
     check(before.seasonsOffered >= 2 && before.comparisonSeason === before.season - 1,
       `${label}: offers ${before.seasonsOffered} seasons, compares with ${before.comparisonSeason}`);
@@ -4131,7 +4131,7 @@ for (const viewport of VIEWPORTS) {
      * for a second season. */
     await tab.locator("#snow-curve-host").scrollIntoViewIfNeeded();
     await tab.waitForFunction(() => ["loaded", "failed"]
-      .includes(window.__snowReady?.comparisonStatus), { timeout: 60000 });
+      .includes(window.__snowReady?.comparisonStatus), null, { timeout: 60000 });
     const current = await tab.evaluate(() => ({
       ready: window.__snowReady,
       keyItems: document.querySelectorAll("#snow-curve-key [role=listitem]").length,
@@ -4171,7 +4171,7 @@ for (const viewport of VIEWPORTS) {
     await tab.goto(`${URL}snow.html?state=all&season=${finished - 1}-${
       String(finished % 100).padStart(2, "0")}`,
     { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__snowReady?.mapDay !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__snowReady?.mapDay !== undefined, null, { timeout: 60000 });
     const archived = await tab.evaluate(() => ({
       ready: window.__snowReady,
       reading: document.querySelector("#snow-day-reading")?.textContent ?? "",
@@ -4219,7 +4219,7 @@ for (const viewport of VIEWPORTS) {
     await tab.goto(`${URL}drought.html`, {
       waitUntil: "domcontentloaded", timeout: 60000
     });
-    await tab.waitForFunction(() => window.__droughtReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__droughtReady !== undefined, null, { timeout: 60000 });
     const droughtFiltersOpened = await exerciseMobileFilterDisclosure(
       tab, check, label, "drought", viewport);
     /* The comparison charts sit in sections that start closed, and a chart
@@ -4253,7 +4253,7 @@ for (const viewport of VIEWPORTS) {
         const host = document.getElementById(id);
         return host?.querySelector("svg") !== null
           && host?.getAttribute("aria-busy") !== "true";
-      }), { timeout: 10000 });
+      }), null, { timeout: 10000 });
     /* Every area stays reachable: the control shows the rest. */
     const showAll = tab.locator("#drought-show-all-areas");
     if (await showAll.isVisible()) {
@@ -4381,7 +4381,7 @@ for (const viewport of VIEWPORTS) {
      * drainage outlines. Counted, because a blank canvas screenshots fine. */
     await tab.waitForFunction(
       () => window.__droughtReady && window.__droughtReady.mapClassesDrawn !== undefined,
-      { timeout: 60000 });
+      null, { timeout: 60000 });
     const mapState = await tab.evaluate(() => ({ ready: window.__droughtReady }));
     console.log("  map:", JSON.stringify({
       classes: mapState.ready?.mapClassesDrawn,
@@ -4451,7 +4451,7 @@ for (const viewport of VIEWPORTS) {
     await tab.locator("#drought-show-snow-sites").check();
     await tab.waitForFunction(
       () => window.__droughtReady?.mapSnowSitesShown === true,
-      { timeout: 5000 });
+      null, { timeout: 5000 });
 
     /* The hosted boundaries are optional, so the layer list is checked
      * against what actually loaded rather than against a fixed list -- a
@@ -4557,7 +4557,7 @@ for (const viewport of VIEWPORTS) {
      * the readiness field rather than on a fixed delay. */
     await tab.locator("#drought-decade-card").scrollIntoViewIfNeeded();
     await tab.waitForFunction(() => ["loaded", "failed"].includes(
-      window.__droughtReady?.decadeState ?? ""), { timeout: 30000 });
+      window.__droughtReady?.decadeState ?? ""), null, { timeout: 30000 });
     const decade = await tab.evaluate(() => {
       const host = document.getElementById("drought-decade-host");
       const svg = host?.querySelector("svg");
@@ -4655,7 +4655,7 @@ for (const viewport of VIEWPORTS) {
       waitUntil: "domcontentloaded", timeout: 60000
     });
     await tab.waitForFunction(() => window.__snowReady !== undefined,
-      { timeout: 60000 });
+      null, { timeout: 60000 });
     const summary = await tab.evaluate(() => {
       const cards = [...document.querySelectorAll(".snow-summary .overview-kpi")];
       return {
@@ -4701,7 +4701,7 @@ for (const viewport of VIEWPORTS) {
       waitUntil: "domcontentloaded", timeout: 60000
     });
     await tab.waitForFunction(() => window.__droughtReady !== undefined,
-      { timeout: 60000 });
+      null, { timeout: 60000 });
     const summary = await tab.evaluate(() => {
       const cards = [...document.querySelectorAll(".drought-summary .overview-kpi")];
       return {
@@ -4756,7 +4756,7 @@ for (const viewport of VIEWPORTS) {
     await tab.goto(`${URL}precipitation.html?state=UT`, { waitUntil: "domcontentloaded", timeout: 60000 });
     await tab.waitForFunction(() => window.__precipReady?.precipitation?.recent === "ready", null, { timeout: 60000 });
     await tab.locator("#precip-map-host").scrollIntoViewIfNeeded();
-    await tab.waitForFunction(() => ["ready", "failed"].includes(window.__precipReady?.map?.state), { timeout: 60000 });
+    await tab.waitForFunction(() => ["ready", "failed"].includes(window.__precipReady?.map?.state), null, { timeout: 60000 });
     await tab.waitForTimeout(2000);
     const state = await tab.evaluate(() => ({
       map: window.__precipReady?.map,
@@ -4813,7 +4813,7 @@ for (const viewport of VIEWPORTS) {
   console.log(`\n=== ${label}`);
   try {
     await tab.goto(URL, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     const ready = await tab.evaluate(() => window.__dashboardReady);
     console.log("  ready:", JSON.stringify(ready), `\n  refused: ${refused.length} request(s)`, refused.slice(0,4));
 
@@ -4878,7 +4878,7 @@ for (const viewport of VIEWPORTS) {
   console.log(`\n=== ${label}`);
   try {
     await tab.goto(URL, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     const ready = await tab.evaluate(() => window.__dashboardReady);
     console.log("  ready:", JSON.stringify(ready), `\n  refused: ${refused.length} request(s)`);
     check(refused.length >= 3, `${label}: the complete fallback chain was not exercised`);
@@ -4938,7 +4938,7 @@ for (const viewport of VIEWPORTS) {
     check(Boolean(wanted), `${label}: no two-word reservoir to build a link from`);
     const link = `${URL}?reservoir=${wanted.name.toLowerCase().replace(/ /g, "+")}`;
     await tab.goto(link, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     const ready = await tab.evaluate(() => window.__dashboardReady);
     console.log("  ready:", JSON.stringify(ready));
 
@@ -4990,7 +4990,7 @@ for (const viewport of VIEWPORTS) {
     await tab.goto(`${URL}?reservoir=${wanted.name.toLowerCase().replace(/ /g, "+")}` +
       "&reporting=late&powell=exclude&mead=exclude",
     { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     const restored = await tab.evaluate(() => ({
       ready: window.__dashboardReady,
       search: window.location.search,
@@ -5028,7 +5028,7 @@ for (const viewport of VIEWPORTS) {
      * inclusion choice. */
     await tab.goto(URL,
       { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     const withMead = await tab.evaluate(() => window.__dashboardReady.reservoirs);
     await tab.evaluate(() => {
       const toggle = document.querySelector('#start-panel [data-scope="mead"]');
@@ -5057,7 +5057,7 @@ for (const viewport of VIEWPORTS) {
     const storageClass = sharedFilter?.storageClass;
     await tab.goto(`${URL}?drainage=${area}&class=${storageClass}`,
       { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     const narrowed = await tab.evaluate(() => ({
       ready: window.__dashboardReady,
       control: document.querySelector('#start-panel .drainage-menu calcite-select')?.value,
@@ -5118,7 +5118,7 @@ for (const viewport of VIEWPORTS) {
       `${label}: the scope holds no subregion spanning more than one drainage area`);
     await tab.goto(`${URL}?area=${sharedSubregion?.code}`,
       { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     const bySubregion = await tab.evaluate(() => ({
       ready: window.__dashboardReady,
       control: document.querySelector('#start-panel .drainage-menu calcite-select')?.value,
@@ -5168,7 +5168,7 @@ for (const viewport of VIEWPORTS) {
       `${label}: no state narrows the storage map's scope without emptying it`);
     await tab.goto(`${URL}?state=${storageState?.code}`,
       { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     const byState = await tab.evaluate(() => ({
       ready: window.__dashboardReady,
       summary: document.querySelector('#start-panel [data-filter="summary"]')?.textContent ?? "",
@@ -5221,7 +5221,7 @@ for (const viewport of VIEWPORTS) {
     await tab.goto(
       `${URL}?state=${storageState?.code}&reservoir=${encodeURIComponent(outsideStorageState?.name ?? "")}`,
       { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     const widened = await tab.evaluate(() => ({
       ready: window.__dashboardReady,
       summary: document.querySelector('#start-panel [data-filter="summary"]')?.textContent ?? ""
@@ -5242,7 +5242,7 @@ for (const viewport of VIEWPORTS) {
       `${label}: the scope holds no region narrower than the whole roster`);
     await tab.goto(`${URL}?area=${sharedRegion?.code}`,
       { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     const byRegion = await tab.evaluate(() => ({
       ready: window.__dashboardReady,
       control: document.querySelector('#start-panel .drainage-menu calcite-select')?.value,
@@ -5268,7 +5268,7 @@ for (const viewport of VIEWPORTS) {
     // selection, and the reader gets the ordinary starting view.
     await tab.goto(`${URL}?reservoir=Not+A+Reservoir`,
       { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     const unknown = await tab.evaluate(() => ({
       ready: window.__dashboardReady,
       search: window.location.search
@@ -5317,7 +5317,7 @@ for (const failure of [
   console.log(`\n=== ${label}`);
   try {
     await tab.goto(URL, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     const ready = await tab.evaluate(() => window.__dashboardReady);
     console.log("  ready:", JSON.stringify(ready));
 
@@ -5557,7 +5557,7 @@ for (const failure of [
   await tab.waitForFunction(() =>
     window.__droughtReady?.levelsOffered === 4
       && window.__droughtReady?.mapOutlines !== undefined,
-  { timeout: 90000 });
+  null, { timeout: 60000 });
   const fineState = await tab.evaluate(() => ({
     ready: window.__droughtReady,
     chosen: document.querySelector(".level-control calcite-select")?.value ?? null,
@@ -5587,7 +5587,7 @@ for (const failure of [
   await tab.goto(`${URL}?level=8`, { waitUntil: "domcontentloaded", timeout: 60000 });
   await tab.waitForFunction(() =>
     window.__dashboardReady?.levelsOffered !== undefined
-      && window.__dashboardReady?.drainageAreas !== undefined, { timeout: 90000 });
+      && window.__dashboardReady?.drainageAreas !== undefined, null, { timeout: 60000 });
   const fineStorage = await tab.evaluate(() => ({
     ready: window.__dashboardReady,
     chosen: document.querySelector(".level-control calcite-select")?.value ?? null,
@@ -5606,7 +5606,7 @@ for (const failure of [
   /* The default is the absence of the parameter, so a page with no `?level=`
    * must be the basins page it always was. */
   await tab.goto(URL, { waitUntil: "domcontentloaded", timeout: 60000 });
-  await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 90000 });
+  await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
   const fallback = await tab.evaluate(() => ({
     level: window.__dashboardReady?.level,
     navHrefs: [...document.querySelectorAll("#page-menu calcite-dropdown-item[href], .page-link")]
@@ -5626,7 +5626,7 @@ for (const failure of [
    * page reads. */
   await tab.waitForFunction(() => document.querySelector(
     '#start-panel .drainage-menu calcite-option[value]:not([value="all"])')
-    !== null, { timeout: 60000 });
+    !== null, null, { timeout: 60000 });
   const narrowedBar = await tab.evaluate(() => {
     const select = document.querySelector('#start-panel .drainage-menu calcite-select');
     const area = [...select.querySelectorAll("calcite-option")]
@@ -5673,7 +5673,7 @@ for (const failure of [
   await tab.locator('#start-panel [data-filter="reset"]')
     .evaluate((button) => button.click());
   await tab.waitForFunction(() =>
-    window.__dashboardReady?.areaFilter === null, { timeout: 60000 });
+    window.__dashboardReady?.areaFilter === null, null, { timeout: 60000 });
   const resetSync = await tab.evaluate(() => ({
     menus: [...document.querySelectorAll(".drainage-menu calcite-select")]
       .map((select) => select.value),
@@ -5896,7 +5896,7 @@ for (const failure of [
         `${URL}reservoir.html?name=${encodeURIComponent(candidate.reservoir.name)}`,
         { waitUntil: "domcontentloaded", timeout: 60000 });
       await tab.waitForFunction(() => window.__reservoirReady?.status === "found",
-        { timeout: 90000 });
+        null, { timeout: 60000 });
       const href = await tab.locator(
         'a[href*="snow.html"][href*="upstream="]').getAttribute("href");
       check(Boolean(href), `${label}: the reservoir page offers no Snowpack link`);
@@ -5910,7 +5910,7 @@ for (const failure of [
       await tab.goto(linked.href, { waitUntil: "domcontentloaded", timeout: 60000 });
       await tab.waitForFunction(
         () => window.__snowReady?.upstreamStatus === "applied",
-        { timeout: 90000 });
+        null, { timeout: 60000 });
       const applied = await tab.evaluate(() => ({
         ready: window.__snowReady,
         summary: document.querySelector("#snow-upstream-summary")?.textContent ?? "",
@@ -5935,7 +5935,7 @@ for (const failure of [
           { waitUntil: "domcontentloaded", timeout: 60000 });
         await tab.waitForFunction(
           () => window.__snowReady?.upstreamStatus === "linked-site-wins",
-          { timeout: 90000 });
+          null, { timeout: 60000 });
         const precedence = await tab.evaluate(() => ({
           ready: window.__snowReady,
           summary: document.querySelector("#snow-upstream-summary")?.textContent ?? ""
@@ -6782,7 +6782,7 @@ console.log(`\n=== Rivers page: ${VIEWPORTS.length} widths`);
             : new CustomEvent("calciteSelectChange", { bubbles: true }));
         }, utahCounty);
         await tab.waitForFunction(() =>
-          window.location.search.includes("county="), { timeout: 60000 });
+          window.location.search.includes("county="), null, { timeout: 60000 });
         const pickedCounty = await tab.evaluate(() => window.location.search);
         check(pickedCounty.includes("state=UT") && pickedCounty.includes(`county=${utahCounty}`),
           `picking county ${utahCounty} under ?state=UT produced ` +
@@ -6819,7 +6819,7 @@ console.log(`\n=== Rivers page: ${VIEWPORTS.length} widths`);
           && document.querySelector("#start-panel .storage-county-menu calcite-select") !== null
           && document.querySelector("#start-panel .level-control calcite-select") !== null
           && document.querySelector("#start-panel .storage-drainage-menu calcite-select") !== null,
-      { timeout: 90000 });
+      null, { timeout: 60000 });
       const storageOpening = await tab.evaluate(() => {
         const state = document.querySelector("#start-panel .storage-state-menu");
         const county = document.querySelector("#start-panel .storage-county-menu");
@@ -7013,7 +7013,7 @@ console.log(`\n=== Rivers page: ${VIEWPORTS.length} widths`);
         document.querySelector('.drought-state-menu calcite-select') !== null
           && document.querySelector('.level-control calcite-select') !== null
           && document.querySelector('.drought-drainage-menu calcite-select') !== null,
-      { timeout: 90000 });
+      null, { timeout: 60000 });
       const droughtOpening = await tab.evaluate(() => {
         const state = document.querySelector(".drought-state-menu");
         const level = document.querySelector(".level-control");
@@ -7047,7 +7047,7 @@ console.log(`\n=== Rivers page: ${VIEWPORTS.length} widths`);
       });
       await tab.waitForFunction(() => window.location.search.includes("state=UT")
         && document.querySelectorAll(".drought-county-menu calcite-option").length === 3,
-      { timeout: 90000 });
+      null, { timeout: 60000 });
       const countyState = await tab.evaluate(() => ({
         values: [...document.querySelectorAll(".drought-county-menu calcite-option")]
           .map((option) => option.getAttribute("value")),
@@ -7073,7 +7073,7 @@ console.log(`\n=== Rivers page: ${VIEWPORTS.length} widths`);
       });
       await tab.waitForFunction(() => window.__droughtReady?.countyFilter === "49049"
         && window.__droughtReady?.countyScopeResolved === true,
-      { timeout: 90000 });
+      null, { timeout: 60000 });
       const countyFiltered = await tab.evaluate(() => ({
         ready: window.__droughtReady,
         rows: document.querySelectorAll(".drought-row").length,
