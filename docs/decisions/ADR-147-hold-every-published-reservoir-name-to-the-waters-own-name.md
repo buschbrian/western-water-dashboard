@@ -1,4 +1,4 @@
-# ADR-145: Hold every published reservoir name to the water's own name
+# ADR-147: Hold every published reservoir name to the water's own name
 
 - Status: Accepted
 - Date: 2026-10-31

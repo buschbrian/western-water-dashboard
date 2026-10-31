@@ -83,7 +83,7 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Changed
 
-- **Eighteen more reservoir names are the water's own name** (ADR-145).
+- **Eighteen more reservoir names are the water's own name** (ADR-147).
   Gauge and county text is gone from `Rye Patch Reservoir`, `Stagecoach
   Reservoir`, `Lake San Antonio`, `San Antonio Reservoir`, `Jackson Meadows`,
   `Dwinnell Reservoir`, `Camp Far West`, `Bucks Lake` and `Upper San
