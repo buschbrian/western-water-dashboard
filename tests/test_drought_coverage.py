@@ -503,16 +503,14 @@ class TestCommittedHistory:
     @classmethod
     def history(cls):
         path = ROOT / "data" / "drought" / "usdm-huc6-history.json"
-        if not path.exists():
-            pytest.skip("no drought history has been built in this checkout")
+        assert path.exists(), "the committed HUC-6 drought history is missing"
         return json.loads(path.read_text(encoding="utf-8"))
 
     @pytest.fixture(scope="class", params=[2, 4, 6])
     @classmethod
     def archive(cls, request):
         path = ROOT / "data" / "drought" / f"usdm-huc{request.param}-history.json"
-        if not path.exists():
-            pytest.skip(f"no HUC-{request.param} history in this checkout")
+        assert path.exists(), f"the committed HUC-{request.param} drought history is missing"
         return request.param, json.loads(path.read_text(encoding="utf-8"))
 
     def test_every_week_is_a_tuesday_map_measured_at_one_level(self, archive):
