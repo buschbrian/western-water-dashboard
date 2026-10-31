@@ -75,7 +75,7 @@ if [ "$dry_run" = 1 ]; then
   note "  5b. terminal lakes  $python_bin refresh_lakes.py (keeps the last complete lake payload on failure)"
   note "  5c. soil moisture  $python_bin refresh_soil_moisture.py (keeps the last complete file on failure)"
   note "  5d. river flow     $python_bin refresh_rivers.py (keeps the last complete river payload on failure)"
-  note "  6. assistant indexes $python_bin tools/build_assistant_indexes.py (keeps the last accepted set on failure)"
+  note "  6. place index      $python_bin tools/build_assistant_indexes.py (keeps the last accepted index on failure)"
   note "  7. commit the published set:"
   published_files plan | sed 's/^/       /'
   exit 0
@@ -211,11 +211,11 @@ if ! "$python_bin" refresh_rivers.py; then
   warn "River flow refresh failed" "Keeping the last complete river payload"
 fi
 
-# 6. Compact assistant indexes are an optional reader surface. Their builder
-# validates all three before replacing any; a failure keeps the previous set
-# with its explicit as-of dates and never blocks the core data refresh.
+# 6. The names the header's place search offers. The builder validates the
+# index before replacing it; a failure keeps the previous one with its as-of
+# date and never blocks the core data refresh.
 if ! "$python_bin" tools/build_assistant_indexes.py; then
-  warn "Assistant indexes failed" "Keeping the last accepted assistant indexes"
+  warn "Place index failed" "Keeping the last accepted place index"
 fi
 
 # 7. Commit. Every published file is staged together, which is what keeps the

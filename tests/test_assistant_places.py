@@ -70,23 +70,12 @@ def test_the_committed_sources_build_a_small_complete_index():
     assert len(gzip.compress(builder.encoded(index))) < 30_000
 
 
-def test_main_writes_the_places_index_beside_the_others(monkeypatch, tmp_path):
-    drought = {"map_date": "2026-01-01", "release_date": "2026-01-02", "units": []}
-    history = {"weeks": [drought]}
-    sources = dict(SOURCES)
-    sources["upstream_index.json"] = {"traces": {}}
-    sources["snowpack.json"] = {**SOURCES["snowpack.json"], "as_of": "2026-01-02",
-                                "generated_at": "x", "rollups": [], "source": "s",
-                                "normal_period": {}}
-    for level in (2, 4, 6, 8):
-        sources[f"data/drought/usdm-huc{level}.json"] = drought
-        sources[f"data/drought/usdm-huc{level}-history.json"] = history
-    sources["reservoirs.json"] = {**SOURCES["reservoirs.json"], "reservoirs": [
-        {**item, "as_of": "2026-01-02"} for item in SOURCES["reservoirs.json"]["reservoirs"]]}
-    monkeypatch.setattr(builder, "read", lambda path: sources[path])
+def test_main_writes_the_places_index(monkeypatch, tmp_path):
+    monkeypatch.setattr(builder, "read", lambda path: SOURCES[path])
     monkeypatch.setattr(builder, "ROOT", tmp_path)
     monkeypatch.setattr(builder, "OUTPUT_DIR", tmp_path / "data" / "assistant")
     assert builder.main() == 0
+    assert [path.name for path in (tmp_path / "data" / "assistant").iterdir()] == ["places.json"]
     written = json.loads((tmp_path / "data" / "assistant" / "places.json").read_text())
     assert [item["name"] for item in written["reservoirs"]] == [
         "Lost Creek", "Lost Creek", "Grant Lake"]

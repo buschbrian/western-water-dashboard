@@ -366,27 +366,6 @@
       "note": "One daily representative per date for dense short-history providers, used to request only missing intervals."
     },
     {
-      "path": "data/assistant/reservoirs.json",
-      "class": "generated-daily",
-      "writer": "tools/build_assistant_indexes.py",
-      "staged_by_refresh": true,
-      "note": "Versioned, size-budgeted reservoir facts for the public question service."
-    },
-    {
-      "path": "data/assistant/snow.json",
-      "class": "generated-daily",
-      "writer": "tools/build_assistant_indexes.py",
-      "staged_by_refresh": true,
-      "note": "Current snow facts and upstream joins without complete daily series."
-    },
-    {
-      "path": "data/assistant/drought.json",
-      "class": "generated-daily",
-      "writer": "tools/build_assistant_indexes.py",
-      "staged_by_refresh": true,
-      "note": "Current HUC2/4/6/8 drought facts and the newest 26 weeks of the HUC2/4/6 archives (DROUGHT_HISTORY_WEEKS)."
-    },
-    {
       "path": "data/assistant/places.json",
       "class": "generated-daily",
       "writer": "tools/build_assistant_indexes.py",
