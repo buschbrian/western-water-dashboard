@@ -32,6 +32,29 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   place in the link, with a link to the snowpack view for the same place.
   `snow.html` is the snowpack page again, at the same address, and its map
   notes fold on a phone so the season chart follows the map.
+- **A map of recent precipitation** on the precipitation page (ADR-131):
+  each drainage area filled by the mean of its stations for the last 1, 3
+  or 7 days, every station on the same scale, in the snow map's colours so
+  blue is wet on every map. A table under it lists every station's value.
+  The map and its SDK load only after the totals are drawn and only when a
+  reader scrolls near it.
+- The recent totals draw from the 10 KB daily file before the 500 KB
+  history arrives.
+- Station names in the precipitation list open that site on the snowpack
+  page.
+- **The storage charts draw when they near the screen** (ADR-132). On a
+  390 px screen the page was busy for about 13 seconds after load; it is
+  now busy for about 3.
+- The page name in the bar is short on a phone ("Storage map"), so it is
+  never cut to an ellipsis. Screen readers still hear the full name.
+- **Atkinson Hyperlegible Next** is the site's typeface (ADR-133), served
+  from this site in one 34 KB file. Before, each device drew its own system
+  font. Text shows at once and changes face when the file arrives.
+- The chart-type labels at the foot of each card ("Bar chart", "ArcGIS
+  map" and the rest) are gone.
+- On a phone, the storage charts' opened sections have room: the Lake
+  Powell and Lake Mead switches and Reset view no longer touch, and an
+  opened section's button no longer sits on its content.
 - A snow site's card, and a drainage area's, lead with the newest value and
   the chart; where the site is follows them.
 - **The U.S. Geological Survey provider reads `v1` of the agency's modern

@@ -226,6 +226,14 @@ snow so far".
 The payload's `method.version` names the estimator behind these figures; two
 files written under different versions are not one series.
 
+## Recent precipitation by drainage area
+
+**An area's figure is the mean of its stations with a total** (ADR-131), by
+ADR-129's rule: a station needs a reading on both days, and a falling gauge
+total is left out, never counted as dry. An area needs as many such stations
+as its snow reporting floor (`minimum_reporting_sites`), or it has no figure.
+The map's breaks are amounts in inches, the same for 1, 3 and 7 days.
+
 ## Precipitation against its own history
 
 **One fixed set of stations, and every number a mean over it** (ADR-125).

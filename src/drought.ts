@@ -469,7 +469,6 @@ function renderDrought(
         aria-label="A map of drought classes over the drainage areas. The bars and table on this page carry the same shares as text."></div>
       <p class="card-note" id="drought-map-edge-note">Drought does not stop at the edges of the drainage areas, so the map draws the wider pattern too.</p>
       <p class="card-note">The monitor's map is a weekly expert judgement rather than a single instrument reading. Its authors weigh many kinds of evidence together, including water-supply records.</p>
-      <p class="card-source">ArcGIS map</p>
     </section>
     <section class="overview-card" id="drought-severity-card" aria-labelledby="drought-severity-heading">
       <div class="card-heading">

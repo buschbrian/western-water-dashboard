@@ -32,6 +32,7 @@ import { setupPlaceChooser } from "./ui/opening-splash";
 import { brandMarkup, pageLinksMarkup } from "./ui/page-header";
 import { setupPlaceSearch } from "./ui/place-search";
 import { createPrecipitationCard } from "./ui/precipitation-card";
+import { createPrecipMapSection, type PrecipMapSection } from "./ui/precip-map-section";
 import { createSnowDrainageControl, createSnowStateControl } from "./ui/snow-place-control";
 import { selectionForSnowArea, selectionForSnowState } from "./ui/snow-place-control-model";
 import { wireTheme } from "./ui/theme";
@@ -94,7 +95,6 @@ function renderPage(place: SnowPlace, rosters: OpeningRosters, level: number): v
       <div class="card-heading">
         <div><h2 id="precip-heading">Precipitation</h2><p>Rain and snow caught by the gauges at the measurement sites. The newest totals come first, then the season since 1 October against every year since 1991.</p></div>
       </div>
-      <p class="card-source">Line chart</p>
     </section>
     <section class="overview-card" aria-labelledby="precip-snow-heading">
       <div class="card-heading">
@@ -124,15 +124,28 @@ function renderPage(place: SnowPlace, rosters: OpeningRosters, level: number): v
 
   const section = content.querySelector<HTMLElement>("#precip-card");
   if (!section) return;
-  const card = createPrecipitationCard(section, () => publishReady());
+  const siteHref = (station: string): string => `./snow.html?state=all&site=${encodeURIComponent(station)}`;
+  let mapSection: PrecipMapSection | null = null;
+  const card = createPrecipitationCard(section, () => {
+    mapSection?.update(card.recent.window, card.recent.totals);
+    publishReady();
+  }, { siteHref, recentMap: true });
   const publishReady = (): void => {
     window.__precipReady = {
       level,
       area: place.area ?? place.scope.selection.area,
       sites: place.stations.length,
-      precipitation: card.status
+      precipitation: card.status,
+      ...(mapSection ? { map: mapSection.status } : {})
     };
   };
+  const slot = card.parts.mapSlot;
+  if (slot) {
+    const inPlace = new Set(place.stations);
+    mapSection = createPrecipMapSection(slot, place.payload,
+      place.payload.sites.filter((site) => inPlace.has(site.station)),
+      level, place.scope.box, siteHref, () => publishReady());
+  }
   card.update(place.stations, place.payload.sites);
   publishReady();
 }

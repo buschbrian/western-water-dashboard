@@ -175,7 +175,7 @@ body {
   background: var(--app-surface-raised);
   border: 1px solid var(--app-border);
   border-radius: .3rem;
-  font: 400 var(--app-control-text) "Avenir Next", Avenir, sans-serif;
+  font: 400 var(--app-control-text) var(--app-font);
   letter-spacing: normal;
 }
 .dashboard-filterbar input:focus-visible, .dashboard-filterbar select:focus-visible,
@@ -290,7 +290,7 @@ body {
   background: transparent;
   border: 1px solid var(--app-accent);
   border-radius: .3rem;
-  font: 700 .82rem "Avenir Next", Avenir, sans-serif;
+  font: 700 .82rem var(--app-font);
   cursor: pointer;
 }
 .reset-button:hover { background: color-mix(in srgb, var(--app-accent) 10%, transparent); }
@@ -468,7 +468,7 @@ body {
   background: var(--app-surface-raised);
   border: 1px solid var(--app-border);
   border-radius: .25rem;
-  font: 400 var(--app-control-text) "Avenir Next", Avenir, sans-serif;
+  font: 400 var(--app-control-text) var(--app-font);
   letter-spacing: normal;
 }
 .chart-settings-controls select:focus-visible {
@@ -490,21 +490,12 @@ body {
   color: var(--app-muted);
 }
 .card-note + .card-note { margin-block-start: .4rem; }
-.card-note + .card-source { margin-block-start: .4rem; }
 /* Long fine print, folded on a phone so the next figure is not a screen
  * of text away. Pages open it on wide screens, where it is a few lines. */
-.card-more { margin-block-start: .9rem; }
+.card-more { margin-block-start: var(--space-4); }
 .card-more > summary { color: var(--app-muted); font-size: .8rem; cursor: pointer; }
-.card-more > .card-note:first-of-type { margin-block-start: .5rem; }
+.card-more > .card-note:first-of-type { margin-block-start: var(--space-2); }
 
-/* What drew a card, as a quiet credit under it rather than a pill beside
- * its title: the title and the figures are what a reader came for. */
-.card-source {
-  margin: .75rem 0 0;
-  font-size: .7rem;
-  color: var(--app-muted);
-  text-align: end;
-}
 .chart-host { position: relative; min-height: 27rem; height: 27rem; overflow: hidden; }
 /* One row per category, tall enough for a category name that wraps.
  *
@@ -860,7 +851,7 @@ body {
     background: transparent;
     border: 1px solid var(--app-accent);
     border-radius: .3rem;
-    font: 700 .82rem "Avenir Next", Avenir, sans-serif;
+    font: 700 .82rem var(--app-font);
     cursor: pointer;
   }
   .mobile-filter-toggle:focus-visible,
@@ -879,6 +870,7 @@ body {
   .mobile-filterbar.mobile-filters-open #overview-filter-actions {
     display: grid;
     grid-template-columns: 1fr;
+    gap: var(--space-3);
     width: 100%;
   }
   #overview-filter-actions .switch-label { justify-content: space-between; }
@@ -907,10 +899,13 @@ body {
    * rest of what density can honestly give back. */
   .overview-kpis { column-gap: .5rem; }
   .overview-kpi { padding: .65rem .8rem; }
-  .overview-kpis > .overview-kpi { margin-block-end: .5rem; }
+  .overview-kpis > .overview-kpi { margin-block-end: var(--space-2); }
   .card-heading { flex-wrap: wrap; }
-  /* A wrapped action has nothing under it but the card's next block. */
-  .card-heading > calcite-button { margin-block-end: .65rem; }
+  /* A wrapped action has nothing under it but the card's next block, and
+   * an opened section's button sat flush on the content it revealed. */
+  .card-heading > calcite-button,
+  .weekly-open .card-heading > .mobile-disclosure-toggle,
+  .mobile-table-open .table-actions { margin-block-end: var(--space-3); }
   .table-actions { width: 100%; justify-content: stretch; }
   .table-actions calcite-button { flex: 1 1 auto; }
   .sort-control { width: 100%; }
@@ -972,7 +967,7 @@ body {
   padding: .5rem .25rem;
   border: 1px solid rgba(0, 0, 0, .28);
   border-radius: .25rem;
-  font: 700 .8125rem "Avenir Next", Avenir, sans-serif;
+  font: 700 .8125rem var(--app-font);
   font-variant-numeric: tabular-nums;
   cursor: pointer;
   /* The unchosen segments recede rather than disappear: the spread is the

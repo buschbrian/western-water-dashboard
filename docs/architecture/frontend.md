@@ -16,7 +16,7 @@ module that owns the behaviour and read the entry point only for the sequence.
 |---|---|---|
 | Storage map | `src/main.ts` | `src/ui/map.ts`, `src/ui/layers.ts`, `src/ui/shell.ts`, `src/state/filters.ts`, `src/state/url.ts`, `src/state/detail.ts`, `src/data/rollup.ts` |
 | Storage charts | `src/overview.ts` | `src/overview-model.ts` (all filtering and grouping), `src/overview-charts.ts`, `src/state/overview-url.ts`, `src/weekly-model.ts` |
-| Precipitation | `src/precipitation.ts` | `src/ui/precipitation-card.ts`, `src/precip-model.ts`, `src/precip-storm-model.ts`, `src/viz/precip-*.ts`; the place from `src/snow-place.ts`, as the snow page and story views narrow it (ADR-130) |
+| Precipitation | `src/precipitation.ts` | `src/ui/precipitation-card.ts`, `src/precip-model.ts`, `src/precip-storm-model.ts`, `src/viz/precip-*.ts`; the place from `src/snow-place.ts`, as the snow page and story views narrow it (ADR-130); the map is `src/ui/precip-map-section.ts` (lazy, no static SDK import), `src/ui/precip-map.ts` and `src/precip-map-model.ts` (ADR-131) |
 | Snowpack | `src/snow.ts` | `src/snow-model.ts`, `src/ui/snow-map.ts`, `src/viz/snow-curve.ts`, `src/state/snow-url.ts` |
 | Drought | `src/drought.ts` | `src/drought-model.ts`, `src/ui/drought-map.ts`, `src/viz/drought-*.ts`, `src/state/drought-url.ts` |
 | One reservoir | `src/reservoir.ts` | `src/reservoir-model.ts` (link resolution, both baselines, provenance), `src/ui/reservoir-template.ts`; the reading itself is `describeReservoir`, shared with the map's details panel so the two cannot drift |
@@ -265,6 +265,17 @@ Each was found by a failing test or a screenshot. Do not regress them.
 
 - The pages are tested at **1280, 390 and 360** pixels wide. No page may
   scroll sideways at any of them.
+- **A heavy chart or map loads when it nears the screen, not with the
+  page.** The storage charts draw within one screen of view (ADR-132) and
+  the precipitation map imports the SDK only after the totals are drawn
+  (ADR-131). The suite cannot see an unresponsive page, only readiness, so
+  the measure is a trace: main-thread busy seconds at 390 px.
+- **One typeface and one spacing scale.** `--app-font` (ADR-133) is the
+  only font family a stylesheet names; Calcite takes it through
+  `--calcite-font-family`. Gaps between blocks take a step from
+  `--space-1` to `--space-5` in `app.css` rather than a fresh rem value.
+  Older rules still carry literal values; move them to the scale when they
+  are next touched.
 - **No text is drawn over other text**, at any of those widths. A shared
   class on a block of a different shape is the usual cause: `.overview-kpi`
   gives a card in a summary strip three subgrid rows, and a drought area

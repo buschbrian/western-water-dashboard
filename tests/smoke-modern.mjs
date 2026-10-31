@@ -564,8 +564,43 @@ async function checkTextOverlap(tab, check, label) {
     `${label}: ${found.length} text run(s) drawn over other text, e.g. ${found.slice(0, 3).join("; ")}`);
 }
 
+/* The storage charts draw when they come within a screen of view, so a
+ * check of every chart first brings each one near and waits until none is
+ * left deferred or drawing. Also holds the readiness sum: every host is in
+ * exactly one state. */
+async function drawEveryChart(tab, check, label, hostIds) {
+  /* More than one pass: a redraw asked for while the reader is further
+   * down leaves a chart above waiting until it is near again. */
+  for (let pass = 0; pass < 3; pass += 1) {
+    for (const id of hostIds) {
+      await tab.locator(id).scrollIntoViewIfNeeded();
+      await tab.waitForFunction(() => window.__overviewReady?.chartsPending === 0, null, { timeout: 120000 });
+    }
+    if (await tab.evaluate(() => window.__overviewReady?.chartsDeferred === 0)) break;
+  }
+  await tab.waitForFunction(() => window.__overviewReady?.chartsDeferred === 0
+    && window.__overviewReady?.chartsPending === 0, null, { timeout: 120000 });
+  await tab.evaluate(() => window.scrollTo(0, 0));
+  const ready = await tab.evaluate(() => window.__overviewReady);
+  check(ready.chartsDrawn + ready.chartsEmpty + ready.chartsFailed + ready.chartsDeferred
+    + ready.chartsPending === ready.charts,
+  `${label}: chart states do not add up to ${ready.charts} (${JSON.stringify(ready)})`);
+}
+
+/* The page's name in the bar is whole. It ends in an ellipsis when the bar
+ * runs out of room, which is how "Western Reservoir Storage" read
+ * "Western Reserv…" on a phone beside six actions. */
+async function checkHeaderTitle(tab, check, label) {
+  const title = await tab.evaluate(() => {
+    const element = document.getElementById("brand-title");
+    return element ? { cut: element.scrollWidth > element.clientWidth + 1, text: element.innerText } : null;
+  });
+  if (title) check(!title.cut, `${label}: the page name in the bar is cut short ("${title.text}")`);
+}
+
 async function checkAccessibility(tab, check, label) {
   await checkTextOverlap(tab, check, label);
+  await checkHeaderTitle(tab, check, label);
   /*
    * Scored twice, and only a finding that survives both counts.
    *
@@ -2327,6 +2362,12 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
     await tab.waitForFunction(
       (expected) => window.__overviewReady?.charts === expected, CHART_HOSTS.length,
       { timeout: 120000 });
+    /* Off-screen charts wait until they are near; at load, only those near
+     * the screen draw. */
+    const atLoad = await tab.evaluate(() => window.__overviewReady);
+    console.log("  charts at load:", JSON.stringify({
+      drawn: atLoad.chartsDrawn, deferred: atLoad.chartsDeferred, pending: atLoad.chartsPending }));
+    await drawEveryChart(tab, check, label, CHART_HOSTS);
     const overviewReady = await tab.evaluate(() => window.__overviewReady);
     /* Every chart drew, as the page itself judged it: an SDK chart counts
      * only once its drawing surface exists (`mountChart`). 1.1.0 shipped
@@ -2449,6 +2490,10 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
     check(/^Middle half \d+\.\d% to \d+\.\d%$/.test(histogramKey.lines[2] ?? ""),
       `${label}: the key's middle half reads "${histogramKey.lines[2]}"`);
 
+    /* The disclosures above moved the charts and may have asked for a
+     * redraw while they were far off; a chart draws when it is near
+     * (ADR-132), so the ones read below are brought near first. */
+    await drawEveryChart(tab, check, `${label}, after the disclosures`, CHART_HOSTS);
     const rankedChart = await tab.locator("#capacity-chart arcgis-chart").evaluate((chart) => ({
       sort: chart.model?.getSortOrder(),
       categoryFormat: chart.model?.getAxisValueFormat(0),
@@ -2841,6 +2886,13 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
       check(kept.state === filterState.code && kept.drainage === filterSubregion.code,
         `${label}: a keystroke reset the geographic filters ` +
         `(${kept.state}, ${kept.drainage})`);
+      /* Nothing matches: every chart, once near, settles on its empty
+       * message or an empty drawing, and none fails. */
+      await drawEveryChart(tab, check, `${label}, no match`, CHART_HOSTS);
+      const noMatch = await tab.evaluate(() => window.__overviewReady);
+      check(noMatch.chartsFailed === 0 && noMatch.chartsDrawn + noMatch.chartsEmpty === noMatch.charts,
+        `${label}: with no match the charts report ${JSON.stringify({
+          drawn: noMatch.chartsDrawn, empty: noMatch.chartsEmpty, failed: noMatch.chartsFailed })}`);
 
       /* A shared link carrying the state and the subregion restores both --
        * the subregion needs its options to exist before the restore runs,
@@ -3003,6 +3055,7 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
     /* Drive the actual chart-selection contract last because success leaves
      * this page: selecting its first bar must navigate to the map's public
      * `?reservoir=` link, not turn the chart into a hidden extra filter. */
+    await drawEveryChart(tab, check, `${label}, before the chart selection`, CHART_HOSTS);
     const chartTarget = await tab.locator("#capacity-chart arcgis-chart").evaluate((chart) => {
       const graphic = chart.layer?.source?.toArray()?.[0];
       return {
@@ -3073,6 +3126,8 @@ for (const timing of ["page-start", "after-first-chart"]) {
       { timeout: 120000 });
     const SDK_CHART_HOSTS = ["capacity-chart", "watershed-chart", "trend-chart",
       "normal-chart", "distribution-chart"];
+    await drawEveryChart(tab, check, label,
+      [...SDK_CHART_HOSTS, "spread-chart"].map((id) => `#${id}`));
     const ready = await tab.evaluate(() => window.__overviewReady);
     check(ready.chartsFailed === SDK_CHART_HOSTS.length && ready.chartsDrawn === 1,
       `${label}: readiness reports ${ready.chartsDrawn} drawn and ` +
@@ -3719,7 +3774,7 @@ for (const viewport of VIEWPORTS) {
     const linked = await tab.evaluate(() => ({
       ready: window.__precipReady,
       areaControl: document.querySelector(".drainage-menu calcite-select")?.value,
-      snowLink: document.querySelector("#precip-content a[href*='snow.html']")?.getAttribute("href") ?? null
+      snowLink: document.querySelector("#precip-content a[href*='snow.html']:not(.precip-storm-name)")?.getAttribute("href") ?? null
     }));
     console.log("  ready:", JSON.stringify(linked.ready));
     check(linked.ready?.area === "140100" && linked.areaControl === "140100",
@@ -3782,6 +3837,11 @@ for (const viewport of VIEWPORTS) {
       check(!storm.text.includes("%"), `${label}: the storm totals print a percent`);
       check(storm.listed === stormStatus.rows && storm.listed <= 8,
         `${label}: the storm list shows ${storm.listed} rows, readiness ${stormStatus.rows}`);
+      const stationLinks = await tab.evaluate(() => [...document.querySelectorAll("#precip-card .precip-storm-list a.precip-storm-name")]
+        .map((link) => link.getAttribute("href") ?? ""));
+      check(stationLinks.length === storm.listed
+        && stationLinks.every((href) => href.startsWith("./snow.html?state=all&site=")),
+      `${label}: the station names link to ${JSON.stringify(stationLinks.slice(0, 2))}`);
       check(!stormStatus.available || stormStatus.stations === 0
         || storm.notes.some((note) => note === `Mean of ${stormStatus.stations} station${stormStatus.stations === 1 ? "" : "s"}`),
       `${label}: no storm total names its ${stormStatus.stations} stations`);
@@ -3804,12 +3864,80 @@ for (const viewport of VIEWPORTS) {
       await tab.locator(".precip-range button", { hasText: "Season so far" }).click();
     }
 
+    /* The map of recent totals (ADR-131). It starts only near the screen
+     * and after the totals; the canvas is blank headless, so this checks
+     * what the map reports and the text beside it, never its pixels. */
+    await tab.locator("#precip-map-host").scrollIntoViewIfNeeded();
+    await tab.waitForFunction(() => ["ready", "failed"].includes(window.__precipReady?.map?.state), { timeout: 60000 });
+    const precipMap = await tab.evaluate(() => ({
+      map: window.__precipReady?.map,
+      busy: document.querySelector("#precip-map-host")?.getAttribute("aria-busy"),
+      keyItems: document.querySelectorAll(".precip-map-key [role='listitem']").length
+    }));
+    console.log("  precipitation map:", JSON.stringify(precipMap));
+    check(precipMap.map?.state === "ready", `${label}: the precipitation map ended as ${precipMap.map?.state}`);
+    check(precipMap.busy === "false", `${label}: the map host left aria-busy ${precipMap.busy}`);
+    check(precipMap.map?.stations === linked.ready?.sites
+      && precipMap.map.withValue + precipMap.map.notUsed === precipMap.map.stations,
+    `${label}: the map counts ${JSON.stringify(precipMap.map)} for ${linked.ready?.sites} sites`);
+    check(precipMap.map?.basins > 0 && precipMap.map.basinsWithValue <= precipMap.map.basins,
+      `${label}: the map drew ${precipMap.map?.basins} drainage areas`);
+    check(precipMap.keyItems === 7, `${label}: the map key has ${precipMap.keyItems} entries, not 7`);
+    if (stormStatus?.endDate) {
+      await tab.locator(".precip-storm .precip-range button", { hasText: "7 days" }).click();
+      await tab.waitForFunction(() => window.__precipReady?.map?.window === 7, { timeout: 10000 });
+      await tab.locator(".precip-storm .precip-range button", { hasText: "3 days" }).click();
+      await tab.waitForFunction(() => window.__precipReady?.map?.window === 3, { timeout: 10000 });
+    }
+    await tab.locator(".precip-map-table summary").click();
+    /* The rows are built on the toggle event, which follows the click. */
+    await tab.waitForFunction(() => document.querySelectorAll(".precip-map-table tbody tr").length > 0,
+      null, { timeout: 10000 }).catch(() => {});
+    const tableRows = await tab.locator(".precip-map-table tbody tr").count();
+    check(tableRows === linked.ready?.sites,
+      `${label}: the values table has ${tableRows} rows for ${linked.ready?.sites} sites`);
+    await tab.locator(".precip-map-table summary").click();
     await checkAccessibility(tab, check, label);
     await tab.screenshot({ path: `screenshots/precipitation-${viewport.name}.png`, fullPage: false });
   } catch (err) {
     failures.push(`${label}: ${err.message}`);
   }
   reportHostedOutage(label, hostedOutage);
+  for (const err of errors) failures.push(`${label}: ${err}`);
+  await context.close();
+}
+
+/* The recent totals need only the 10 KB daily file. They must not wait for
+ * the half-megabyte history: held back here for eight seconds, the totals
+ * still draw while the season figures are loading. */
+{
+  const context = await newPageContext(browser, VIEWPORTS[2]);
+  const tab = await context.newPage();
+  const errors = [];
+  tab.on("pageerror", (err) => errors.push(`uncaught: ${err.message}`));
+  const label = "Precipitation view, slow history (small-phone)";
+  console.log(`\n=== ${label}`);
+  await context.route("**/precipitation_history.json", async (route) => {
+    await new Promise((resolve) => setTimeout(resolve, 8000));
+    await route.continue();
+  });
+  try {
+    await tab.goto(`${URL}precipitation.html?state=UT`, { waitUntil: "domcontentloaded", timeout: 60000 });
+    await tab.waitForFunction(() => window.__precipReady?.precipitation?.recent === "ready", { timeout: 30000 });
+    const early = await tab.evaluate(() => ({
+      season: window.__precipReady?.precipitation?.state,
+      figures: document.querySelectorAll("#precip-card .precip-storm-kpis strong").length,
+      listed: document.querySelectorAll("#precip-card .precip-storm-list li").length
+    }));
+    console.log("  before the history:", JSON.stringify(early));
+    check(early.season === "loading",
+      `${label}: the season figures were ${early.season} before the held history arrived`);
+    check(early.figures === 3 && early.listed > 0,
+      `${label}: ${early.figures} recent figures and ${early.listed} stations drew before the history`);
+    await tab.waitForFunction(() => window.__precipReady?.precipitation?.state === "ready", { timeout: 60000 });
+  } catch (err) {
+    failures.push(`${label}: ${err.message}`);
+  }
   for (const err of errors) failures.push(`${label}: ${err}`);
   await context.close();
 }
@@ -4433,6 +4561,52 @@ for (const viewport of VIEWPORTS) {
   } finally {
     await context.close();
   }
+}
+
+/* The precipitation map under the same refusal (ADR-131): its sign-in
+ * policy is installed in its own lazy start, not by any other page, so a
+ * 401 on the first background must fall to the next one with no prompt,
+ * and the totals beside it must not notice. */
+{
+  const context = await newPageContext(browser, VIEWPORTS[0]);
+  const tab = await context.newPage();
+  const errors = [];
+  tab.on("pageerror", (err) => errors.push(`uncaught: ${err.message}`));
+  let firstItem = null;
+  await tab.route(/\/sharing\/rest\/content\/items\/[0-9a-f]+/i, async (route) => {
+    const id = /items\/([0-9a-f]+)/i.exec(route.request().url())?.[1];
+    if (firstItem === null) firstItem = id;
+    if (id !== firstItem) return route.continue();
+    return route.fulfill({
+      status: 401,
+      contentType: "application/json",
+      body: JSON.stringify({ error: { code: 401, message: "You do not have permissions to access this resource." } })
+    });
+  });
+  const label = "Precipitation map (first basemap refused)";
+  console.log(`\n=== ${label}`);
+  try {
+    await tab.goto(`${URL}precipitation.html?state=UT`, { waitUntil: "domcontentloaded", timeout: 60000 });
+    await tab.waitForFunction(() => window.__precipReady?.precipitation?.recent === "ready", { timeout: 60000 });
+    await tab.locator("#precip-map-host").scrollIntoViewIfNeeded();
+    await tab.waitForFunction(() => ["ready", "failed"].includes(window.__precipReady?.map?.state), { timeout: 60000 });
+    await tab.waitForTimeout(2000);
+    const state = await tab.evaluate(() => ({
+      map: window.__precipReady?.map,
+      figures: document.querySelectorAll("#precip-card .precip-storm-kpis strong").length
+    }));
+    console.log("  map:", JSON.stringify(state.map));
+    check(firstItem !== null, `${label}: nothing was refused, so nothing was tested`);
+    check(state.map?.state === "ready" && (state.map.basemapDegraded || !state.map.basemap),
+      `${label}: the map did not fall back (${JSON.stringify(state.map)})`);
+    check(state.figures === 3, `${label}: ${state.figures} recent figures beside the refused map`);
+    const credentialUi = await tab.evaluate(FIND_CREDENTIAL_UI);
+    check(credentialUi.length === 0, `${label}: a credential prompt appeared (${credentialUi.join(", ")})`);
+  } catch (err) {
+    failures.push(`${label}: ${err.message}`);
+  }
+  for (const err of errors) failures.push(`${label}: ${err}`);
+  await context.close();
 }
 
 /*

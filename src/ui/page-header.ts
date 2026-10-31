@@ -69,6 +69,24 @@ const PAGE_SUBJECTS: Record<PageId, string> = {
 };
 
 /**
+ * The same subjects, short enough for a phone's bar. The site name above
+ * them says "Western Water" there, so the page name need not; the storage
+ * map's full name lost half its letters to an ellipsis beside six actions.
+ * The full subject stays the heading's text for a screen reader.
+ */
+const PAGE_SHORT_SUBJECTS: Record<PageId, string> = {
+  map: "Storage map",
+  overview: "Storage charts",
+  precipitation: "Precipitation",
+  snow: "Snowpack",
+  drought: "Drought",
+  methods: "Methods",
+  data: "Data API",
+  reservoir: "Reservoir",
+  lakes: "Lakes"
+};
+
+/**
  * Every page a reader can reach from the bar, in one table.
  *
  * The menu and the buttons are generated from it, so the two cannot offer
@@ -174,7 +192,7 @@ export function brandMarkup(headingLevel: 1 | 2, current: PageId): string {
           <span class="brand-title-wide" aria-hidden="true">${SITE_NAME}</span>
           <span class="brand-title-narrow" aria-hidden="true">${SITE_NAME_SHORT}</span>
         </span>
-        <${tag} id="brand-title">${subject}</${tag}>
+        <${tag} id="brand-title"><span class="brand-subject-full">${subject}</span><span class="brand-subject-short" aria-hidden="true">${PAGE_SHORT_SUBJECTS[current]}</span></${tag}>
         <span id="sdk-name">ArcGIS Maps SDK for JavaScript</span>
       </span>
     </div>`;

@@ -306,7 +306,6 @@ function renderSnow(
         <p class="card-note">The map opens on the day the season held the most snow, because the rest of the year measures against that day. A day counts only when the reporting sites have at least one inch of normal snow on average. Early in the season, the map opens on the newest day instead. Areas and sites without a fair value for that day stay grey. The key shows apart the ones with too little normal snow to compare against.</p>
         <p class="card-note">Mountain snow is a major source of the spring and summer water that runs into western rivers and reservoirs. Not all of it gets there. Some evaporates and some soaks into the ground. What does arrive is stored, released or diverted by the people who operate the reservoirs. So read snow and storage together rather than as one measurement.</p>
       </details>
-      <p class="card-source">ArcGIS map</p>
     </section>
     <section class="overview-card" aria-labelledby="snow-curve-heading">
       <div class="card-heading">
@@ -320,7 +319,6 @@ function renderSnow(
         <div class="table-scroll" tabindex="0" role="region" aria-label="First-of-month table, scrolls sideways"><table class="overview-table"><thead><tr id="snow-month-head"><th>Month</th><th>Of normal</th><th>Reporting sites</th></tr></thead><tbody id="snow-month-rows"></tbody></table></div>
       </details>
       <p class="card-note">The line is the mean of the site values for each day. Normal is the middle value for the same day in the years ${normalPeriodLabel(payload)}. Gaps are days with too few reporting sites, or too little normal snow, to give a fair mean.${season.previous !== null ? ` A thinner grey line shows the ${seasonName(season.previous)} season on the same dates.` : ""}</p>
-      <p class="card-source">Line chart</p>
     </section>
     <section class="overview-card" aria-labelledby="snow-basin-heading">
       <div class="card-heading">
