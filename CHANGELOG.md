@@ -168,6 +168,12 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Fixed
 
+- **Nine California reservoirs no longer show an impossible record figure**
+  (ADR-116). We exclude 116 daily readings that cannot be true, for example
+  Lake Almanor's 8,918,440 acre-feet and its zeros. Each raw value and its
+  reason stay in `admitted_cdec_reservoirs.json`. The reservoirs are Lake
+  Almanor, Bucks Lake, Butt Valley, Cherry Lake, Lake Mathews, Sly Creek,
+  Cogswell Reservoir, Courtright Reservoir and Lake Valley Reservoir.
 - On a reservoir page, "Since the 4-month low" (ADR-134) sits with the other
   answers under the headline, after the changes. It had fallen into the
   Sources section below the satellite view.
