@@ -55,7 +55,11 @@ spelled out and changes in feet, never a percentage; then a water-year chart
 from `elevation_history.json`, fetched only for such a reservoir -- the current
 year strong, the year before lighter, four earlier years muted, reference
 levels dashed and named at the right end, and a level far from the readings
-named under the chart instead of drawn; then the note on why the Geological
+named under the chart instead of drawn. Levels that share a roster label
+(Mead's 1,075, 1,050 and 1,025 ft, "Levels Reclamation's 24-Month Study
+reports against") are one key entry and one line in the list under the chart,
+and each line is marked by its height alone ("1,075 feet"); the loader holds a
+shared label to one authority and source; then the note on why the Geological
 Survey (Powell) or other sources (Mead, on Reclamation's own project datum)
 can show a different level. A project datum is named, never called NGVD 1929,
 and a calculated datum difference says it is calculated. The card says where

@@ -198,6 +198,22 @@ def test_the_loader_refuses_a_reference_level_spelled_as_a_share(tmp_path):
         load(write_roster(tmp_path, row))
 
 
+def test_the_loader_refuses_levels_that_share_a_label_but_not_a_source(tmp_path):
+    row = entry()
+    first = row["reference_levels"][0]
+    row["reference_levels"].append({**first, "elevation_ft": first["elevation_ft"] - 10,
+                                    "url": "https://example.gov/another"})
+    with pytest.raises(ValueError, match="share one authority and source"):
+        load(write_roster(tmp_path, row))
+
+
+def test_levels_that_share_a_label_and_a_source_load(tmp_path):
+    row = entry()
+    first = row["reference_levels"][0]
+    row["reference_levels"].append({**first, "elevation_ft": first["elevation_ft"] - 10})
+    load(write_roster(tmp_path, row))
+
+
 def test_the_loader_refuses_a_station_off_the_reclamation_roster(tmp_path):
     row = entry(source_station_id="99999")
     with pytest.raises(ValueError, match="already on the roster"):

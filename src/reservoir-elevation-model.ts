@@ -56,6 +56,11 @@ export interface ElevationChart {
   drawn: ReferenceLevel[];
   /** Reference levels too far from the readings to draw without flattening them. */
   notDrawn: ReferenceLevel[];
+  /** Labels that more than one level carries: each is one key entry, and its
+   * lines are marked by their height alone. */
+  sharedLabels: string[];
+  /** The chart key's entries for the dashed lines it draws. */
+  referenceKey: string[];
   title: string;
   ariaLabel: string;
   explanation: string;
@@ -269,6 +274,7 @@ export function elevationChart(reservoir: Reservoir, entry: ElevationHistoryEntr
   const high = Math.max(max, ...drawn.map((level) => level.elevation_ft));
   const pad = Math.max(2, (high - low) * 0.04);
   const datum = elevationDatum(elevation);
+  const shared = sharedLevelLabels(levels);
   const newest = lines[0]!;
   const oldest = lines[lines.length - 1]!;
   return {
@@ -277,6 +283,8 @@ export function elevationChart(reservoir: Reservoir, entry: ElevationHistoryEntr
     high: high + pad,
     drawn,
     notDrawn,
+    sharedLabels: shared,
+    referenceKey: referenceKeyEntries(drawn, shared),
     title: "Surface level by water year",
     ariaLabel: `Surface level of ${reservoir.name} for each water year from ${oldest.label} `
       + `to ${newest.label}, in feet above ${datum}. The ${newest.label} water year is `
@@ -292,9 +300,43 @@ export function levelFeet(level: ReferenceLevel): string {
   return level.elevation_ft.toLocaleString("en-US", { maximumFractionDigits: 2 });
 }
 
-/** One sentence per reference level, with who set it. */
-export function referenceLevelText(level: ReferenceLevel): string {
-  return `${levelFeet(level)} feet: ${level.label}. Published by the ${level.authority}.`;
+/** Labels carried by more than one reference level, in the levels' order. */
+export function sharedLevelLabels(levels: readonly ReferenceLevel[]): string[] {
+  const counts = new Map<string, number>();
+  for (const level of levels) counts.set(level.label, (counts.get(level.label) ?? 0) + 1);
+  return [...counts].filter(([, count]) => count > 1).map(([label]) => label);
+}
+
+/** Reference levels that share a label, together, in the order first met.
+ * The loader holds a shared label to one authority and source. */
+export interface ReferenceLevelGroup {
+  label: string;
+  authority: string;
+  url: string;
+  levels: ReferenceLevel[];
+}
+
+export function referenceLevelGroups(levels: readonly ReferenceLevel[]): ReferenceLevelGroup[] {
+  const groups = new Map<string, ReferenceLevelGroup>();
+  for (const level of levels) {
+    const group = groups.get(level.label);
+    if (group) group.levels.push(level);
+    else groups.set(level.label, { label: level.label, authority: level.authority, url: level.url,
+      levels: [level] });
+  }
+  return [...groups.values()];
+}
+
+/** "1,075, 1,050 and 1,025": a group's heights, the highest first. */
+export function groupFeet(levels: readonly ReferenceLevel[]): string {
+  const feet = [...levels].sort((a, b) => b.elevation_ft - a.elevation_ft).map(levelFeet);
+  return feet.length < 2 ? (feet[0] ?? "")
+    : `${feet.slice(0, -1).join(", ")} and ${feet[feet.length - 1]}`;
+}
+
+/** One sentence per label, with its heights and who set them. */
+export function referenceLevelText(group: ReferenceLevelGroup): string {
+  return `${groupFeet(group.levels)} feet: ${group.label}. Published by the ${group.authority}.`;
 }
 
 /** The label drawn on the chart: the reference level's name to its first comma. */
@@ -302,15 +344,29 @@ export function shortLevelLabel(level: ReferenceLevel): string {
   return level.label.split(",")[0]!.trim();
 }
 
-/** The label beside a reference line: its short name and its height. */
-export function chartLevelLabel(level: ReferenceLevel): string {
-  return `${shortLevelLabel(level)}, ${levelFeet(level)} feet`;
+/** The label beside a reference line: its short name and its height, or its
+ * height alone when the name is shared and the key carries it once. */
+export function chartLevelLabel(level: ReferenceLevel, shared: readonly string[] = []): string {
+  return shared.includes(level.label)
+    ? `${levelFeet(level)} feet`
+    : `${shortLevelLabel(level)}, ${levelFeet(level)} feet`;
+}
+
+/** The key's entries for the dashed lines: "Reference level" for lines named
+ * where they are drawn, and each shared name once. */
+export function referenceKeyEntries(drawn: readonly ReferenceLevel[],
+  shared: readonly string[]): string[] {
+  const entries = drawn.some((level) => !shared.includes(level.label)) ? ["Reference level"] : [];
+  for (const label of shared) {
+    if (drawn.some((level) => level.label === label)) entries.push(label);
+  }
+  return entries;
 }
 
 /** The sentence under the chart for levels it does not draw, or null. */
 export function notDrawnSentence(levels: readonly ReferenceLevel[]): string | null {
   if (levels.length === 0) return null;
   return "Not drawn on this chart, because they are far from these readings: "
-    + `${levels.map((level) => `${levelFeet(level)} feet (${shortLevelLabel(level)})`)
-      .join("; ")}.`;
+    + `${referenceLevelGroups(levels).map((group) =>
+      `${groupFeet(group.levels)} feet (${shortLevelLabel(group.levels[0]!)})`).join("; ")}.`;
 }

@@ -94,6 +94,12 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Changed
 
+- **Lake Mead's three 24-Month Study levels are named once.** The chart key
+  and the list under the chart say "Levels Reclamation's 24-Month Study
+  reports against" one time, and each line is marked by its height alone
+  ("1,075 feet"), on the reservoir page and the share picture. Levels that
+  share a roster label must share one source, or the roster loader refuses
+  the file.
 - **River flow is in the page menu and the bar** (ADR-148), between Drought
   and Methods, on every page. It is not in the first-visit chooser. From 1,024
   to 1,151 px wide the page-link buttons show their icons alone, and the river

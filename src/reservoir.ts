@@ -31,7 +31,7 @@ import {
 } from "./reservoir-model";
 import type { ReservoirPageState } from "./reservoir-model";
 import {
-  describeElevation, elevationChart, notDrawnSentence, referenceLevelText
+  describeElevation, elevationChart, notDrawnSentence, referenceLevelGroups, referenceLevelText
 } from "./reservoir-elevation-model";
 import type { ElevationChart, ElevationView } from "./reservoir-elevation-model";
 import type { ReservoirPayload } from "./types";
@@ -154,7 +154,7 @@ function yearKey(chart: ElevationChart): HTMLUListElement {
     tiers.push(["earlier", earlier.length === 1 ? `${earlier[0]!.label} water year`
       : `${earlier[earlier.length - 1]!.label} to ${earlier[0]!.label} water years`]);
   }
-  tiers.push(["reference", "Reference level"]);
+  for (const entry of chart.referenceKey) tiers.push(["reference", entry]);
   for (const [tier, text] of tiers) {
     const item = document.createElement("li");
     const swatch = document.createElement("span");
@@ -264,11 +264,11 @@ function fillElevationChart(host: HTMLElement, chart: ElevationChart | null): bo
   if (chart.drawn.length) {
     const levels = document.createElement("ul");
     levels.className = "elevation-levels";
-    for (const level of chart.drawn) {
+    for (const group of referenceLevelGroups(chart.drawn)) {
       const item = document.createElement("li");
       const anchor = document.createElement("a");
-      anchor.href = level.url;
-      anchor.textContent = referenceLevelText(level);
+      anchor.href = group.url;
+      anchor.textContent = referenceLevelText(group);
       item.append(anchor);
       levels.append(item);
     }
