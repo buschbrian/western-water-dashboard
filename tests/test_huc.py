@@ -1,8 +1,8 @@
 """Tests for the committed watershed boundaries and the point assignment.
 
-Network-free, like the rest of the suite: the boundary files and
-`reservoirs.json` are all committed, so this asserts against exactly what
-ships rather than against whatever the USGS service returns today.
+Network-free, like the rest of the suite: the boundary files and the
+rosters are all committed, so this asserts against exactly what ships rather
+than against whatever the USGS service returns today.
 
 Two files are in play since the coverage moved west (ADR-063). The drawn
 scope's file is what `load_units` reads and what every reservoir is assigned
@@ -33,10 +33,6 @@ from huc import (  # noqa: E402
 )
 
 ROSTER_BOUNDARIES = ROOT / "huc6.geojson"
-RESERVOIRS = ROOT / "reservoirs.json"
-ADMITTED = ROOT / "admitted_reservoirs.json"
-ADMITTED_RISE = ROOT / "admitted_rise_reservoirs.json"
-SHARED_VIZ = ROOT / "shared" / "reservoir-viz.js"
 UTAH_BOUNDARY = ROOT / "utah-boundary.geojson"
 
 # Every hydrologic unit the reservoir roster was admitted from -- the whole
@@ -214,26 +210,32 @@ def units() -> list[dict]:
 
 
 @pytest.fixture(scope="module")
-def reservoirs() -> list[dict]:
-    """Every reservoir on the roster, published or not.
+def reservoirs(units) -> list[dict]:
+    """Every reservoir on the nine rosters, published or not (ADR-056).
 
     Where a reservoir sits is geography, and geography does not depend on
     whether its feed reported this week. A reservoir withdrawn for old data
-    (ADR-056) leaves `reservoirs` and keeps its coordinates in the committed
-    roster, so the assignment tests below go on checking it -- otherwise a
-    quiet feed would quietly retire an assertion, which is the failure mode
-    this whole file exists to prevent.
+    leaves `reservoirs.json` and keeps its coordinates in its roster, so the
+    assignment tests below go on checking it -- otherwise a quiet feed would
+    quietly retire an assertion, which is the failure mode this whole file
+    exists to prevent. The drainage area is assigned the way the pipeline
+    assigns it (`pipeline.geography.attach_watersheds`): by the dam point
+    where one is recorded.
     """
-    records = json.loads(RESERVOIRS.read_text())["reservoirs"]
-    published = {record["name"] for record in records}
-    # Keyed by station since ADR-066; the name it is called by is inside.
-    for roster_path in (ADMITTED, ADMITTED_RISE):
-        roster = json.loads(roster_path.read_text()).get("reservoirs", {})
-        for entry in roster.values():
-            name = entry["name"]
-            if name not in published and entry.get("lat") and entry.get("lon"):
-                records.append({"name": name, "lat": entry["lat"], "lon": entry["lon"],
-                                "huc6": entry.get("huc6")})
+    from pipeline import roster
+    from pipeline.geography import dam_points
+
+    dams = dam_points()
+    records = []
+    for table in (roster.RESERVOIRS, roster.AWDB_RESERVOIRS, roster.CDEC_RESERVOIRS,
+                  roster.CDSS_RESERVOIRS, roster.USGS_RESERVOIRS, roster.SRP_RESERVOIRS,
+                  roster.DNRC_RESERVOIRS, roster.CWMS_RESERVOIRS, roster.CAP_RESERVOIRS):
+        for station, (name, lat, lon, *_) in table.items():
+            fields = describe(lat, lon, units, station=str(station),
+                              assignment_point=dams.get(str(station)))
+            records.append({"station": str(station), "name": name, "lat": lat,
+                            "lon": lon, "huc6": fields["huc6"]})
+    assert {r["station"] for r in records} == {str(s) for s in roster.ALL_RESERVOIR_IDS}
     return records
 
 
@@ -264,10 +266,16 @@ def test_every_roster_unit_lists_utah_among_its_states():
 def test_every_published_reservoir_lands_in_exactly_one_unit(units, reservoirs):
     """Exactly one, not at least one. Hydrologic units tile without
     overlapping, so a point in two of them means the boundaries are wrong."""
+    def in_box(point, unit):
+        # A point outside a unit's box cannot be inside it, so this changes no
+        # answer; it skips ray casting most of the 75 units for every point.
+        west, south, east, north = unit["bounds"]
+        return west <= point[0] <= east and south <= point[1] <= north
+
     for reservoir in reservoirs:
         point = (reservoir["lon"], reservoir["lat"])
-        matches = [unit["huc6"] for unit in units
-                   if any(in_polygon(point, polygon) for polygon in unit["polygons"])]
+        matches = [unit["huc6"] for unit in units if in_box(point, unit)
+                   and any(in_polygon(point, polygon) for polygon in unit["polygons"])]
         assert len(matches) == 1, f"{reservoir['name']} matched {matches}"
 
 
@@ -343,13 +351,12 @@ def test_the_state_outline_includes_the_northeast_notch(name, lon, lat, expected
     assert in_utah((lon, lat)) is expected, name
 
 
-def test_in_utah_describes_the_reservoir_and_not_its_outlet(units):
+def test_in_utah_describes_the_reservoir_and_not_its_outlet(units, reservoirs):
     """Lake Powell is the case this distinction exists for: Glen Canyon Dam
     is in Arizona, the reservoir reaches well into Utah, and it is the
     largest thing on the dashboard. Assigning the drainage area by the dam
     must not drop it out of the Utah view."""
-    powell = next(r for r in json.loads(RESERVOIRS.read_text())["reservoirs"]
-                  if r["name"] == "Lake Powell")
+    powell = next(r for r in reservoirs if r["station"] == "509")
     glen_canyon_dam = (-111.483, 36.937)
     fields = describe(powell["lat"], powell["lon"], units,
                       station="509",  # Lake Powell's RISE item (ADR-066)
