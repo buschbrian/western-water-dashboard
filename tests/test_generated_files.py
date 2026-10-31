@@ -28,6 +28,7 @@ FILES = MANIFEST["files"]
 NOT_DATA = {
     "package.json", "package-lock.json", "tsconfig.json",
     ".claude/launch.json", "data/generated-files.json",
+    "scripts/published-files.json",
 }
 
 
