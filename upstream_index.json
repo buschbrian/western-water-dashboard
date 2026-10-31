@@ -4,11 +4,11 @@
  "retrieved": "2026-08-30",
  "keyed_by": "source_station_id",
  "selection": "every published reservoir, traced from its published point against every other published reservoir and snow-site point",
- "traced_this_run": 1,
+ "traced_this_run": 2,
  "self_exclusion": "deliberate: a dam point lies inside its own basin",
  "area_method": "spherical excess around the ring; approximate, for screening rather than measurement",
  "review_area_sq_mi": 300000.0,
- "traced_count": 404,
+ "traced_count": 406,
  "screened_count": 1,
  "review_count": 0,
  "traces": {
@@ -4484,6 +4484,16 @@
    "upstream_reservoirs": [],
    "upstream_snow_sites": []
   },
+  "GSV": {
+   "name": "Galesville Reservoir",
+   "trace_point": "published point",
+   "comid": "23901301",
+   "basin_vertices": 109,
+   "basin_area_sq_mi": 74,
+   "upstream_reservoirs": [],
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
+  },
   "HARTLKCO": {
    "name": "Heart Lake Reservoir",
    "trace_point": "published point",
@@ -6306,6 +6316,16 @@
    "basin_area_sq_mi": 39,
    "upstream_reservoirs": [],
    "upstream_snow_sites": []
+  },
+  "MLL": {
+   "name": "Bennington Lake",
+   "trace_point": "published point",
+   "comid": "23640590",
+   "basin_vertices": 15,
+   "basin_area_sq_mi": 1,
+   "upstream_reservoirs": [],
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "MMR": {
    "name": "Miramar",
