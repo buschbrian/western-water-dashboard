@@ -307,7 +307,7 @@ async function renderOverview(
           aria-controls="weekly-sections" aria-expanded="false">Show weekly update</button>
       </div>
       <div id="weekly-sections" class="weekly-sections"></div>
-      <p class="card-note weekly-note">The storage figures follow the reservoir filters. The snow and drought figures always describe the whole region.</p>
+      <p class="card-note weekly-note">The storage figures follow the Lake Powell and Lake Mead switches and the drainage area. They do not follow the state, county, search, reporting or storage class filters. The snow and drought figures always describe the whole region.</p>
     </section>
     <!-- What a shared link's ?state= and ?area= narrowed this page to when
          it opened (slice S3d, docs/OPENING-SCOPE-AND-THE-WESTERN-ROSTER.md).
