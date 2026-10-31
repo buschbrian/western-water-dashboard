@@ -67,6 +67,10 @@ export interface PrecipMapSectionOptions {
   showRecentList?: (shown: boolean) => void;
   /** Loads the soil file; the page's own loader unless a test supplies one. */
   loadSoil?: () => Promise<SoilMoisturePayload>;
+  /** The mode the link asked for (ADR-142); rain when absent. */
+  initialMode?: PrecipMapMode;
+  /** The reader switched, or the soil file failed after they did: the mode now shown. */
+  onModeChange?: (mode: PrecipMapMode) => void;
 }
 
 const SOIL_ROWS = 8;
@@ -351,7 +355,7 @@ export function createPrecipMapSection(
     else if (values) map.setValues(values);
   };
 
-  let requested: PrecipMapMode = "rain";
+  let requested: PrecipMapMode = options.initialMode ?? "rain";
   const showMode = (): void => {
     const view = precipMapModeView(requested, status.soil.state);
     status.mode = view.mode;
@@ -393,7 +397,18 @@ export function createPrecipMapSection(
     requested = mode;
     if (mode === "soil" && status.soil.state === "failed") status.soil.state = "idle";
     showMode();
-    if (mode === "soil") void loadSoil().then(showMode);
+    options.onModeChange?.(status.mode);
+    if (mode === "soil") {
+      void loadSoil().then(() => {
+        showMode();
+        options.onModeChange?.(status.mode);
+      });
+    }
+  }
+
+  if (requested === "soil") {
+    showMode();
+    void loadSoil().then(showMode);
   }
 
   const start = async (): Promise<void> => {
