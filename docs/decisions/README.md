@@ -106,6 +106,8 @@ The four different scopes, the hydrologic level, and what a link carries.
   [ADR-105](ADR-105-open-on-the-areas-the-map-draws.md),
   [ADR-108](ADR-108-apply-reviewed-waterbody-points-without-refreshing-readings.md),
   [ADR-109](ADR-109-remove-scofields-rejected-dam-point.md)
+- Proposed, not yet in force: [ADR-145](ADR-145-draw-the-rio-grande-and-arkansas-basins-that-lie-inside-the-west.md)
+  would supersede ADR-053's region rule
 - Boundary sourcing: [ADR-024](ADR-024-use-full-resolution-watersheds-for-snow-sites.md),
   [ADR-034](ADR-034-hosted-boundary-layers-with-a-deadline.md),
   [ADR-037](ADR-037-refetch-the-boundaries-at-the-resolution-the-source-stops-adding.md)
@@ -341,6 +343,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-141](ADR-141-publish-a-share-page-and-a-daily-picture-for-a-reservoir-link.md) | Publish a share page and a daily picture for a reservoir link | Accepted; two hand-kept share pages in `public/share/`, a `view=share` layout of the reservoir page, a picture captured in each deploy with a committed fallback; ADR-136 to ADR-140 and ADR-142 are other records |
 | [ADR-142](ADR-142-show-the-weeks-change-in-mountain-soil-moisture.md) | Show the week's change in mountain soil moisture | Accepted; seven-day change in points at the snow stations, mean of 2 (or 4), 8 and 20 in, frozen readings dropped, snow floor per area; a "Rain \| Soil moisture" switch on the precipitation map; percent of median is phase 2 |
 | [ADR-144](ADR-144-compare-natural-river-gauges-with-the-surveys-day-of-year-percentiles.md) | Compare natural river gauges with the survey's day-of-year percentiles | Accepted; extends ADR-136 and ADR-137; three natural gauges compared with the U.S. Geological Survey Statistics API's approved day-of-year 10th-90th percentiles in WaterWatch's five classes, 30 years per day or no comparison; committed `river_normals.json` read by the daily refresh; `rivers.json` structure version 2; Middle Fork Beaver Creek held out at 22 years; shaped gauges unchanged |
+| [ADR-145](ADR-145-draw-the-rio-grande-and-arkansas-basins-that-lie-inside-the-west.md) | Draw the Rio Grande and Arkansas basins that lie inside the West | Proposed; would supersede ADR-053's region rule with six whole basins in regions 11 and 13; admits no reservoir itself |
 
 ## Relationship to the historical journal
 
