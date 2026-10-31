@@ -230,9 +230,10 @@ def test_the_inventory_uses_a_larger_pool_that_contains_the_observed_series():
 
 
 def test_a_reservoir_above_even_its_own_operators_figure_is_still_held():
-    # Buchanan: 172,105 acre-feet seen against the 150,000 its operator
-    # calls full. The rule chooses a denominator; it does not explain water
-    # standing 15% above the one the operator published.
+    # Buchanan's old evidence: 172,105 acre-feet seen against the 150,000 its
+    # operator calls full. The rule chooses a denominator; it does not explain
+    # water standing 15% above the one the operator published. (That reading
+    # was later excluded against the daily series; the screen is unchanged.)
     decision = Decision("Buchanan Dam", True, "confirmed by position",
                         None, 122576.0, "normal_storage")
     row = review(candidate("BUC", "Buchanan Dam", [172105, 170000, 168000]),

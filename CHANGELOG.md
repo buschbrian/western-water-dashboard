@@ -113,6 +113,11 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   National Hydrography Dataset name of the water at the reservoir's point.
   `Seven Oaks Dam` stays, because no source names its basin. Short names
   stay short. Links that use an old name still open the right reservoir.
+- **Buchanan Dam's December 2022 monthly reading is excluded** (ADR-116).
+  The California Department of Water Resources reports 172,105 acre-feet
+  for that month. Its own daily series reports 22,809 acre-feet on 31
+  December 2022. The raw value and the reason stay in
+  `admitted_cdec_reservoirs.json`. Nothing published changes.
 - **The California audit compares monthly and daily storage.**
   `tools/audit_cdec_stations.py --monthly-daily` compares each monthly
   reading with the same station's daily reading on the month's last day.
