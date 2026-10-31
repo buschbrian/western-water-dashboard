@@ -1,9 +1,10 @@
 import type {
-  ElevationHistoryPayload, LakePayload, ReservoirPayload, UpstreamIndex
+  ElevationHistoryPayload, LakePayload, ReservoirPayload, RiverPayload, UpstreamIndex
 } from "../types";
 import { validateElevationHistory } from "./elevation-validate";
 import { fetchWithin } from "./fetch";
 import { validateLakePayload } from "./lakes-validate";
+import { validateRiverPayload } from "./rivers-validate";
 import { validateReservoirPayload, validateUpstreamIndex } from "./validate";
 
 export async function loadReservoirs(
@@ -36,4 +37,12 @@ export async function loadElevationHistory(
 ): Promise<ElevationHistoryPayload> {
   const response = await fetchWithin(url);
   return validateElevationHistory(await response.json() as unknown);
+}
+
+/** Daily river flow (ADR-136): its own file, never added into anything. */
+export async function loadRivers(
+  url = import.meta.env.DEV ? "./rivers.json" : "./data/rivers.json"
+): Promise<RiverPayload> {
+  const response = await fetchWithin(url);
+  return validateRiverPayload(await response.json() as unknown);
 }

@@ -44,6 +44,12 @@ scripts/refresh-daily.sh          # everything, exactly as the workflow does
    terminal lakes and independent of both snow files. A failure keeps the
    last complete `soil_moisture.json`. It refuses the day when more than a
    tenth of the stations with the standard sensors send nothing.
+
+   **River flow** — `refresh_rivers.py` (ADR-136), after the terminal lakes
+   and independent of every other stage. A failed gauge is carried forward
+   late inside the script; a payload that fails validation keeps the last
+   complete `rivers.json`. Probe one gauge with
+   `.venv/bin/python refresh_rivers.py --only 09379500`, which never writes.
 6. **Commit** — the published set, staged together, so the drought files can
    never be committed apart. The list lives in `data/generated-files.json` and
    `scripts/refresh-daily.sh` reads it; do not retype it into a workflow.

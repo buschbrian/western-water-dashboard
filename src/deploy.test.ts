@@ -53,7 +53,7 @@ const SOURCE_ONLY_ROSTERS = [
 const RUNTIME_DATA = [
   "reservoirs.json", "lakes.json", "snow_sites.json", "snowpack.json",
   "reference.json", "capacities.json", "precipitation.json", "precipitation_history.json",
-  "soil_moisture.json", "elevation_history.json"
+  "soil_moisture.json", "elevation_history.json", "rivers.json"
 ];
 
 describe("a data-only commit deploys on its own", () => {
@@ -130,7 +130,7 @@ describe("a data-only commit deploys on its own", () => {
   it("gives every published page the same content policy", async () => {
     const pages = ["index.html", "modern.html", "overview.html", "precipitation.html", "snow.html",
       "drought.html", "methods.html", "data.html", "explore.html", "lakes.html",
-      "reservoir.html", "story.html", "legacy/index.html", "maplibre/index.html",
+      "rivers.html", "reservoir.html", "story.html", "legacy/index.html", "maplibre/index.html",
       "public/share/lake-powell.html", "public/share/lake-mead.html"];
     const policies = new Set<string>();
 
@@ -305,6 +305,8 @@ describe("a data-only commit deploys on its own", () => {
       "lakes.html", "lakes.json", "data/lakes.json", "api/lakes.json",
       // The reviewed reservoir levels (ADR-135), like the lakes'.
       "elevation_history.json", "data/elevation_history.json", "api/elevation_history.json",
+      // River flow (ADR-136), published the same way.
+      "rivers.html", "rivers.json", "data/rivers.json", "api/rivers.json",
       // The story views (ADR-128): a public URL a published story embeds.
       "story.html",
       // The shared-link pages and their pictures (ADR-141): permanent URLs
@@ -322,7 +324,7 @@ describe("a data-only commit deploys on its own", () => {
     const config = await read("vite.config.ts");
     expect(config).toContain('resolve(outDir, "api")');
     expect(config).toContain('resolve(outDir, "api", file)');
-    for (const file of ["reservoirs.json", "lakes.json", "elevation_history.json",
+    for (const file of ["reservoirs.json", "lakes.json", "elevation_history.json", "rivers.json",
       "snowpack.json", "reference.json"]) {
       expect(config, `the API alias list must name ${file}`).toContain(`"${file}"`);
     }

@@ -21,6 +21,7 @@ from .constants import (
     ADMITTED_RESERVOIRS_PATH, ADMITTED_RISE_RESERVOIRS_PATH,
     ADMITTED_SRP_RESERVOIRS_PATH, ADMITTED_USGS_RESERVOIRS_PATH, ADMITTED_TERMINAL_LAKES_PATH,
     ADMITTED_RESERVOIR_ELEVATIONS_PATH,
+    ADMITTED_RIVER_GAUGES_PATH,
     BASE_AWDB_RESERVOIRS,
     BASE_RISE_RESERVOIRS, CAPACITY_PATH,
 )
@@ -785,6 +786,100 @@ def load_admitted_reservoir_elevations(
     return rows
 
 
+#: The only tier the river payload publishes so far (ADR-136). How a
+#: `natural` or `short` gauge is published is its own method decision.
+PUBLISHED_RIVER_TIERS = frozenset({"shaped"})
+#: A gauge's display name is the reader's; a survey abbreviation or an
+#: all-capitals station name is refused as one.
+_SURVEY_ABBREVIATIONS = (" NR ", " AB ", " BL ", " R ", " WSH ", " SP ", " CR ")
+
+
+def load_admitted_river_gauges(
+    path: Path = ADMITTED_RIVER_GAUGES_PATH,
+) -> dict[str, dict]:
+    """Load the reviewed river gauges (ADR-136).
+
+    A gauge measures a rate of flow, not storage, so nothing here is a
+    reservoir field and the loader refuses one. Each entry must carry a
+    display name a reader can read, the survey's own station name beside it,
+    the reviewed primary series, a tier with its basis, who directed it and
+    when, and -- when it names water downstream -- the evidence for that.
+    """
+    document = json.loads(path.read_text(encoding="utf-8"))
+    if document.get("measurement") != "daily_mean_flow":
+        raise ValueError(f"{path.name} must declare measurement daily_mean_flow")
+    _reviewed_date(path.name, "reviewed", document.get("reviewed"))
+    rows = document.get("gauges")
+    if not isinstance(rows, dict) or not rows:
+        raise ValueError(f"{path.name} must contain a non-empty gauges object")
+    forbidden = {"capacity", "capacity_af", "pct_of_capacity", "nid_id", "dam_lat",
+                 "dam_lon", "normal_cfs", "pct_of_normal", "seasonal_rank"}
+    for station, row in rows.items():
+        if not isinstance(station, str) or not station.isdigit() or not isinstance(row, dict):
+            raise ValueError(f"invalid gauge entry in {path.name}")
+        if row.get("station") != station:
+            raise ValueError(
+                f"{station}: keyed by one station and configured for {row.get('station')!r}")
+        usgs_name = row.get("usgs_name")
+        if not isinstance(usgs_name, str) or not usgs_name.strip():
+            raise ValueError(f"{station}: the survey's station name is required")
+        name = row.get("display_name")
+        if not isinstance(name, str) or not name.strip():
+            raise ValueError(f"{station}: a gauge needs a display name to be called by")
+        if name == name.upper() or name.strip() != name \
+                or any(a in f" {name.upper()} " for a in _SURVEY_ABBREVIATIONS):
+            raise ValueError(
+                f"{station}: {name!r} is not a display name; write it out in plain words")
+        spelled = forbidden & set(row)
+        if spelled:
+            raise ValueError(f"{name}: a river gauge has no {sorted(spelled)}")
+        if not isinstance(row.get("lat"), (int, float)) or not isinstance(
+                row.get("lon"), (int, float)):
+            raise ValueError(f"{name}: coordinates are required")
+        for field in ("state", "huc8", "huc8_name"):
+            if not isinstance(row.get(field), str) or not row[field]:
+                raise ValueError(f"{name}: {field} is required")
+        if not isinstance(row.get("usgs_page"), str) \
+                or not row["usgs_page"].startswith("https://"):
+            raise ValueError(f"{name}: the survey's page for the gauge must be HTTPS")
+        series = row.get("series")
+        if not isinstance(series, dict):
+            raise ValueError(f"{name}: the reviewed series is required")
+        if (series.get("parameter_code"), series.get("statistic_id"),
+                series.get("unit")) != ("00060", "00003", "ft^3/s"):
+            raise ValueError(f"{name}: the series must be daily mean flow in ft^3/s")
+        if not isinstance(series.get("time_series_id"), str) or not series["time_series_id"]:
+            raise ValueError(f"{name}: the reviewed time_series_id is required")
+        if not isinstance(series.get("source_url"), str) \
+                or not series["source_url"].startswith("https://"):
+            raise ValueError(f"{name}: the series must name an HTTPS source")
+        _reviewed_date(name, "series.checked", series.get("checked"))
+        tier = row.get("tier")
+        if not isinstance(tier, dict) or tier.get("tier") not in PUBLISHED_RIVER_TIERS:
+            raise ValueError(
+                f"{name}: tier must be one of {sorted(PUBLISHED_RIVER_TIERS)}; another "
+                "tier needs its own publication decision")
+        for field in ("basis", "directed_by", "status"):
+            if not isinstance(tier.get(field), str) or not tier[field]:
+                raise ValueError(f"{name}: tier.{field} is required")
+        _reviewed_date(name, "tier.directed_on", tier.get("directed_on"))
+        evidence = tier.get("evidence")
+        if not isinstance(evidence, dict) or not evidence.get("worksheet") \
+                or not isinstance(evidence.get("published_reservoirs_upstream"), list):
+            raise ValueError(f"{name}: tier.evidence must name the worksheet and its findings")
+        _reviewed_date(name, "tier.evidence.screened_on", evidence.get("screened_on"))
+        toward = row.get("flows_toward")
+        if toward is not None:
+            if not isinstance(toward, dict) or not toward.get("name") \
+                    or not toward.get("evidence"):
+                raise ValueError(f"{name}: flows_toward needs a name and its evidence")
+            _reviewed_date(name, "flows_toward.reviewed", toward.get("reviewed"))
+    names = [row["display_name"] for row in rows.values()]
+    if len(set(names)) != len(names):
+        raise ValueError(f"{path.name}: two gauges share a display name")
+    return rows
+
+
 @functools.cache
 def admitted_reservoir_elevations() -> dict[str, dict]:
     """The elevation roster, loaded on first use rather than at import.
@@ -793,6 +888,13 @@ def admitted_reservoir_elevations() -> dict[str, dict]:
     where the refresh starts, before any provider is asked for anything.
     """
     return load_admitted_reservoir_elevations()
+
+
+@functools.cache
+def admitted_river_gauges() -> dict[str, dict]:
+    """The river roster, loaded on first use: only `refresh_rivers.py` calls
+    this, so a roster that fails review costs the river payload alone."""
+    return load_admitted_river_gauges()
 
 
 USGS_RESERVOIRS = {

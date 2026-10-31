@@ -1,8 +1,12 @@
 # Recent conditions pilot
 
-Status: authorized scope and implementation plan, 2026-10-23.
-Decision: [ADR-124](decisions/ADR-124-bound-recent-conditions-to-a-static-data-pilot.md).
-No pilot observations, uploader or raster layer are published yet.
+Status: authorized scope and implementation plan, 2026-10-23; first
+published river flow, 2026-10-27.
+Decision: [ADR-124](decisions/ADR-124-bound-recent-conditions-to-a-static-data-pilot.md);
+river flow, [ADR-136](decisions/ADR-136-publish-daily-flow-at-four-rivers-toward-lake-powell.md).
+Daily flow at four gauges is published (see
+[First published flow](#first-published-flow-four-rivers-toward-lake-powell)).
+No precipitation raster, uploader or archive is published yet.
 
 ## What the first view answers
 
@@ -85,7 +89,14 @@ changes `reviewer_ruling` or `notes`.
 | `nldi_basin_sq_mi`, `trace_check` | The NLDI basin indexed to the gauge, and a note when it differs from the published drainage area by more than 25% |
 | `upstream_reservoirs`, `upstream_snow_sites` | Published reservoirs and snow sites inside that basin |
 | `usgs_page` | The gauge's U.S. Geological Survey page, for checking a row by hand |
+| `mean_flow_cfs`, `flow_years` | Mean of the water-year mean flows from 1991 on (the whole record when fewer than five fall there), from the U.S. Geological Survey annual statistics |
+| `dams_upstream`, `dam_storage_af`, `largest_dams` | Every National Inventory of Dams record inside the basin outline the review page draws, and their storage counted once per pool: a dike carrying its reservoir's storage within 10 km is not a second pool |
+| `storage_share_pct` | That storage as a percentage of one year's mean flow (the degree of regulation) |
+| `irrigation_dams` | Dams in the basin whose listed purposes include irrigation, a prompt to look for canals |
+| `dams_near_gauge` | Dams within 1 km of the gauge: the whole local catchment is traced, so one may sit below it |
+| `huc8_name` | The watershed name the review page groups by |
 | `suggested_ruling`, `suggestion_reason` | A tier worked out from the columns above, and every finding behind it. Recomputed on every write; never copied into the ruling |
+| `review_queue` | `bulk` when the suggestion is the safe one and may be agreed a watershed at a time; `check`; otherwise `review` |
 
 An upstream reservoir means storage can shape the flow. It is not a
 finding that the flow is regulated, and the gauge does not measure that
@@ -97,7 +108,8 @@ and 7 are not indexed by NLDI (tunnels, drains and small Wasatch Front
 creeks). 79 have a published reservoir upstream; 34 have none, cover
 1991–2020 and have a snow site upstream. Seven traced areas differ from the
 published drainage area by more than 25%; Daniels Creek at Charleston
-traced about 404 square miles against 50 and is the wrong basin. Early
+traced about 404 square miles against 50 and needs an outlet and flowline
+check; the difference alone does not establish its cause. Early
 requests took 13 to 150 seconds each, against the half second measured in
 August, so the trace runs resumably; later requests were fast.
 
@@ -110,13 +122,15 @@ suggestions offline. Each row gets the strongest of its findings:
 |---|---|---|
 | `exclude` | The gauge's own name is a tunnel, drain or canal (`FAIRVIEW TUNNEL NEAR …`), not a river measured beside one | Not shown |
 | `check` | The basin was not traced, or the trace differs from the published drainage area by more than 25% | Unresolved until the basin is checked |
-| `shaped` | A published reservoir sits in the traced basin, or the name places the gauge below a diversion, canal, tunnel or powerplant | Flow shown and labelled as shaped upstream; not ranked against normal |
+| `shaped` | Inventoried dams in the basin hold at least 2% of a year's flow (or hold storage and the gauge has no mean flow; or, before the storage evidence runs, a published reservoir sits in the basin), or the name places the gauge below a diversion, canal, tunnel or powerplant | Flow shown and labelled as shaped upstream; not ranked against normal |
 | `short` | The record starts after 1 January 1991 | Flow shown; no comparison with normal |
-| `natural` | None of the above | Flow shown and compared with normal for the date |
+| `natural` | None of the above. Storage under 2% of a year's flow, irrigation dams and a dam beside the gauge are kept as findings for the reviewer | Flow shown and compared with normal for the date |
 
-The rules see only published reservoirs and diversions a gauge's name
-mentions. An unlisted reservoir, a canal that takes water upstream or a
-transbasin import can still make a `natural` row wrong. Write the ruling in
+The rules see inventoried dams, published reservoirs and diversions a
+gauge's name mentions. A canal that takes water out without a dam, a
+transbasin import or city use can still make a `natural` row wrong. The 2%
+line sorts rows; it is not a finding that smaller storage leaves the flow
+natural, and a small irrigation dam can take most of a dry-season flow. Write the ruling in
 `reviewer_ruling` as one of the five tiers (blank means not yet reviewed),
 and a reason in `notes` when it differs from the suggestion. How each tier
 is published is a method decision for the pilot's flow record, not settled
@@ -125,6 +139,158 @@ by this worksheet.
 First suggestions, 2026-10-24: 51 `natural`, 81 `shaped`, 18 `short`,
 11 `check`, 3 `exclude`. A useful order is the 14 `check` and `exclude`
 rows first, then the 51 `natural` rows, where a missed diversion costs most.
+
+**Storage evidence, 2026-10-26.** `tools/build_gauge_review.py --evidence
+--basins <bundle>/gauges.json` reads the outlines the review page draws,
+asks the dam inventory for every dam in their combined box (2,473; fetched
+by object id because the service's offset paging overlaps) and the annual
+statistics service for each gauge's water-year means (150 of 164 answered;
+ten sites per request is the service's limit). Suggestions moved to 26
+`natural`, 110 `shaped`, 14 `short`, 11 `check`, 3 `exclude`: 25 rows
+suggested natural had unpublished dams holding 2% or more of a year's flow
+(the Dirty Devil's Johnson, Mill Meadow and Forsyth hold 58%). Queues: 96
+`bulk`, 57 `review`, 11 `check`.
+
+**Agreeing the safe direction in bulk.** The two mistakes do not cost the
+same: a natural river ruled shaped loses only its comparison with normal;
+a shaped river ruled natural publishes a wrong one. So `bulk` holds only
+suggestions in the safe direction -- shaped by storage at or above the line
+or by a named diversion, or excluded by the gauge's own name -- with no dam
+near the gauge. The review page groups gauges by watershed and agrees a
+group's open `bulk` rows after a second press, with a note saying so. A
+ruling already made, or a local draft, is never overwritten.
+
+### Private review page
+
+The maintainable source and republish procedure are in
+[`tools/gauge-review/`](../tools/gauge-review/README.md). The private page saves
+rulings to its own store, not directly to this worksheet. Export and review the
+records before merging by USGS site number. A `natural` ruling is a candidate
+classification, not approval of a normal: completeness within 1991–2020 and
+the flow comparison method still need separate review.
+
+Saved exports can be previewed and explicitly merged with
+`tools/import_gauge_rulings.py` (ADR-130). The default is read-only; existing
+rulings or notes require a site-specific replacement flag. Invalid or unsaved
+records refuse the entire batch. Import does not admit gauges. See the
+[review source procedure](../tools/gauge-review/README.md#merge-an-exported-review).
+
+The area flag compares `(traced - published) / published`. Both numbers must
+refer to the same outlet and area definition before the difference is treated
+as a delineation error. NLDI's default basin is the full upstream network,
+including the whole local catchment; it does not stop at an upstream dam.
+Thus the basin above Deer Creek includes the basin above Jordanelle. Land
+between reservoirs would require subtracting the union of verified upstream
+basins, and an area percentage is not a percentage of flow or storage.
+See the source notes for the worked example and USGS references.
+
+## Next slice: daily river response and Provo drainage review
+
+Brian selected daily river response and drainage review on 2026-10-24,
+ahead of basin precipitation/raster work. Start with observed daily means;
+the normal period, coverage gates and rank method are still undecided.
+
+### Candidate connected set
+
+Proposed first prototype: three gauges spanning the reservoir sequence.
+These are **candidates, not admissions**. The committed worksheet screen is
+dated 2026-10-23; it is not a fresh observation fetch. All seven rows in
+HUC8 `16020203` still have blank reviewer rulings at this checkpoint.
+
+| Candidate | Traced upstream reservoirs | Published / traced area (sq mi) |
+|---|---|---|
+| `10155000` Provo River near Hailstone | Lost, Trial and Washington lakes | 230 / 222 |
+| `10155200` Provo River at River Road Bridge near Heber | Jordanelle and those three lakes | 270 / 261 |
+| `10163000` Provo River at Provo | Deer Creek, Jordanelle and those three lakes | 673 / 675 |
+
+All three suggestions are `shaped`, based on the containment evidence. That
+does not establish the degree or timing of regulation. Their flows must be
+shown separately, never added or described as measured reservoir inflow.
+The middle gauge's record starts in 2001; no baseline claim follows from
+the longer records at the other two gauges either.
+
+Two tributary candidates need explicit drainage investigation before use:
+Snake Creek (`10156000`, 31.8 / 23 sq mi) and Daniels Creek (`10157500`,
+50.1 / 404 sq mi). Compare indexed outlets, flowlines and matching area
+definitions, then inspect full catchment versus split-catchment geometry.
+Do not diagnose a bad trace from area percentages alone. Record the actual
+geometry and source settings before computing an area between reservoirs.
+The existing reservoir index has areas and member IDs, not validated
+difference polygons.
+
+### Acceptance for the first observed-flow prototype
+
+1. Brian reviews the candidate gauges and their context. Saved rulings move
+   through the preview/import workflow; suggestions are never copied into
+   rulings automatically. A review tier alone is not a production roster.
+2. Request a bounded 30-day daily mean discharge series using the USGS v1
+   API and explicitly identified primary series. Preserve agency observation
+   dates, approval status, qualifiers, units and source identity. Keep
+   missing values missing and validate identity/unit/range mismatches before
+   they can become measurements.
+3. Fetch overlapping recent dates on refresh so revisions replace previous
+   values without duplicating days. Determine the overlap and failure/freshness
+   policy in a method decision before connecting a daily job. Keep the old
+   complete snapshot if the replacement fails validation.
+4. Exercise the provider, revision merge and payload validator with synthetic
+   fixtures first, including missing/provisional/estimated values, competing
+   series, duplicate dates, zero flow and provider failures. Real station
+   admission is a separate reviewed input, never a test fixture side effect.
+5. Show exact daily values, dates, quality and downloads in one accessible
+   map/history view. Label it as daily mean flow: it cannot establish a
+   sub-daily storm peak, a present rising-water alert or flood safety.
+6. Keep existing page opening data unchanged, measure the added JSON against
+   the 100 KB gzip budget, and verify the real browser before publication.
+
+The importer and local observed-flow prototype are built. Brian approved this
+three-gauge, 30-day preview on 2026-10-24. It uses the USGS daily mean
+discharge series, validates its site/series/date/unit, preserves daily
+approval statuses and qualifiers, and exports exact readings and flags. The
+window ends 2026-10-23: all 90 returned values are provisional, with no other
+qualifiers reported. The full response is approximately 4.1 KB gzipped. The
+preview output and cached maps remain outside the repository; nothing entered
+the public route or daily refresh. A browser rendering check is still open.
+
+The local prototype is a proof of the observed-value and review presentation,
+not a production delivery. Real roster admission, scheduled revision refresh,
+failure and freshness policy, payload ownership, map measurement, browser
+accessibility and a public view still need review. Raster processing, R2
+delivery, flow normals, automated gauge admission and edits to the private
+Artifact are outside this first slice.
+
+USGS documents daily observations separately from continuous readings and
+keeps approval status distinct from other qualifiers in the
+[OGC migration guide](https://api.waterdata.usgs.gov/docs/ogcapi/migration/)
+(checked 2026-10-24). Verify the v1 schema and exact series metadata when
+implementing the adapter; the current reservoir adapter still uses v0 and
+must not be migrated incidentally.
+
+## First published flow: four rivers toward Lake Powell
+
+Brian directed the first published set on 2026-10-27, ahead of the full
+review: San Juan River near Bluff (09379500), Colorado River near Cisco
+(09180500), Green River at Green River (09315000) and Dirty Devil River above
+Poison Spring Wash near Hanksville (09333500). All four are suggested
+`shaped` in the worksheet and publish under that tier, pending his formal
+ruling in the review page; `reviewer_ruling` stays blank. Three have
+published reservoirs in their traced basins, which is `shaped` under the
+ruling recorded as ADR-137. The Dirty Devil has none: its tier rests on 58% of
+a year's flow held by unpublished inventoried dams, which ADR-137's two rules
+do not decide.
+
+ADR-136 settles the open policy items above for these gauges. The roster is
+`admitted_river_gauges.json`; `refresh_rivers.py` runs daily as stage 5c of
+the refresh, re-reads 90 days of the v1 daily collection so revisions land,
+keeps approval status and qualifiers, carries a failed gauge forward late and
+withdraws it after 60 days, and writes `rivers.json` (2.2 KB gzipped on its
+first run). `rivers.html` shows each gauge's last 30 days, its review status,
+why it has no comparison with normal, and its survey page, with a CSV
+download. Nothing adds two gauges together or calls one an inflow.
+
+Still open for this slice: Brian's formal rulings for the four rows; R8
+(whether `shaped` splits into storage and diversion); how a `natural` or
+`short` gauge is published; and the Provo preview's gauges, which are not on
+the roster.
 
 ## Credentials and hosting
 

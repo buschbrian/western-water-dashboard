@@ -1,18 +1,21 @@
-"""Build the Utah river-gauge review worksheet for the recent-conditions pilot.
+"""Build a river-gauge review worksheet for the recent-conditions pilot.
 
 Step 2 of docs/RECENT-CONDITIONS-PILOT.md: a small reviewed gauge roster,
 with its regulation context, before anything is fetched daily. This tool
 gathers the evidence; the ruling is a person's (ADR-124). It writes
-`gauge-review.csv` and nothing else.
+`gauge-review.csv` (Utah) or, with `--state`, `gauge-review-<state>.csv`, and
+nothing else.
 
     .venv/bin/python tools/build_gauge_review.py              # screen, then trace every row
     .venv/bin/python tools/build_gauge_review.py --no-trace   # screen only
     .venv/bin/python tools/build_gauge_review.py --missing    # trace rows not yet traced
     .venv/bin/python tools/build_gauge_review.py --only 10163000
+    .venv/bin/python tools/build_gauge_review.py --state CO    # gauge-review-co.csv
 
 **The screen.** Two U.S. Geological Survey OGC v1 queries: the daily mean
-discharge series (parameter 00060, statistic 00003) inside Utah's bounding
-box, joined to the stream monitoring locations whose state is Utah. A gauge
+discharge series (parameter 00060, statistic 00003) inside the state's
+bounding box, joined to the stream monitoring locations whose state is that
+state (`STATES`: Utah, Colorado, New Mexico, Arizona). A gauge
 is listed when its primary series has a value within `ACTIVE_WITHIN_DAYS`
 of the run. `covers_1991_2020` says whether the record starts by 1 January
 1991, the start of the closed period ADR-041 publishes; it does not check
@@ -28,6 +31,19 @@ that the gauge measures the reservoir's inflow. When the traced area and the
 gauge's published drainage area differ by more than `AREA_CHECK_RATIO`, the
 row says so: the trace may be the wrong basin.
 
+**The storage evidence** (`--evidence`, offline apart from two services).
+Every dam the National Inventory of Dams places inside a gauge's basin, not
+only the reservoirs this site publishes, and their summed storage as a share
+of one year's mean flow at the gauge (the degree of regulation). The share
+sorts rows; it does not rule them. A share under `SMALL_STORAGE_SHARE` with
+storage upstream suggests natural for review; a share at or above it
+suggests shaped and, when nothing else is in doubt, puts the row in the
+`bulk` queue: a natural river wrongly ruled shaped loses only a comparison
+with normal, the other mistake publishes a wrong one. Basin outlines come
+from the review page's bundle (`--basins`), the simplified outlines the
+reviewer sees, so a dam within a few hundred metres of an edge can fall
+either side.
+
 **Every run merges.** `reviewer_ruling` and `notes` are never touched. A
 gauge that has stopped reporting keeps its row and its older `screened_on`
 date. The file is rewritten after every trace, so an interrupted run keeps
@@ -39,12 +55,16 @@ from __future__ import annotations
 import argparse
 import csv
 import datetime as dt
+import json
+import math
 import os
 import re
 import sys
 import urllib.error
 import urllib.parse
+import urllib.request
 from pathlib import Path
+from typing import NamedTuple
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "tools"))
@@ -54,10 +74,22 @@ OUTPUT_PATH = ROOT / "gauge-review.csv"
 
 USGS_BASE = "https://api.waterdata.usgs.gov/ogcapi/v1/collections"
 USGS_TIMEOUT = 120
-#: West, south, east, north, padded slightly past the state line; the
-#: monitoring-location state code decides membership, not the box.
-UTAH_BBOX = "-114.06,36.99,-109.04,42.01"
-UTAH_STATE_CODE = "49"
+
+class State(NamedTuple):
+    code: str
+    #: West, south, east, north, padded slightly past the state line; the
+    #: monitoring-location state code decides membership, not the box.
+    bbox: str
+    output: Path
+
+
+#: Utah keeps `gauge-review.csv`: the importer and the review page read it.
+STATES = {
+    "UT": State("49", "-114.06,36.99,-109.04,42.01", OUTPUT_PATH),
+    "CO": State("08", "-109.06,36.99,-102.04,41.01", ROOT / "gauge-review-co.csv"),
+    "NM": State("35", "-109.06,31.33,-103.00,37.01", ROOT / "gauge-review-nm.csv"),
+    "AZ": State("04", "-114.82,31.33,-109.04,37.01", ROOT / "gauge-review-az.csv"),
+}
 DISCHARGE_PARAMETER = "00060"
 DAILY_MEAN_STATISTIC = "00003"
 ACTIVE_WITHIN_DAYS = 7
@@ -69,6 +101,30 @@ NLDI_TIMEOUT = 300
 NLDI_GAUGE_URL = f"{upstream.NLDI_BASE}/linked-data/nwissite"
 AREA_CHECK_RATIO = 0.25
 
+NID_LAYER = ("https://geospatial.sec.usace.army.mil/dls/rest/services/NID/"
+             "National_Inventory_of_Dams_Public_Service/FeatureServer/0")
+NID_BATCH = 250
+#: The legacy statistics service: keyless, and the only one serving
+#: annual means per water year today.
+ANNUAL_STATS_URL = "https://waterservices.usgs.gov/nwis/stat/"
+#: The service refuses more than ten sites per request.
+STATS_BATCH = 10
+FLOW_START_WATER_YEAR = 1991
+MIN_FLOW_YEARS = 5
+#: One cubic foot per second for a year, in acre-feet.
+ACRE_FEET_PER_CFS_YEAR = 1.983471 * 365.25
+#: Storage under this share of a year's flow is small enough that the
+#: reviewer, not the rule, decides whether it shapes the daily flow.
+SMALL_STORAGE_SHARE = 2.0
+#: A dam this close to the gauge may sit in the part of the gauge's own
+#: catchment that lies below it, so the row is not bulk-ruled.
+NEAR_GAUGE_KM = 1.0
+#: The inventory lists a reservoir's dikes and saddle dams as dams of their
+#: own, each carrying the whole reservoir's storage (Granby Dam and Granby
+#: Dike 1, 539,760 acre-feet each). Equal storage this close is one pool.
+SAME_POOL_KM = 10.0
+HUC8_PATH = ROOT / "data" / "watersheds" / "west-huc8.geojson"
+
 #: A trace that ended in a finding about the river. Anything else was the
 #: service, and `--missing` tries it again.
 TRACE_FINAL = {"traced", "not_indexed", "no_basin"}
@@ -78,12 +134,17 @@ FIELDS = [
     "drainage_area_sq_mi", "record_begin", "last_daily_value",
     "covers_1991_2020", "screened_on", "trace_screen", "nldi_basin_sq_mi",
     "trace_check", "upstream_reservoirs", "upstream_snow_sites",
-    "usgs_page", "suggested_ruling", "suggestion_reason",
-    "reviewer_ruling", "notes",
+    "mean_flow_cfs", "flow_years", "dams_upstream", "dam_storage_af",
+    "storage_share_pct", "largest_dams", "irrigation_dams", "dams_near_gauge",
+    "huc8_name", "usgs_page", "suggested_ruling", "suggestion_reason",
+    "review_queue", "reviewer_ruling", "notes",
 ]
 SCREEN_FIELDS = FIELDS[:FIELDS.index("trace_screen")]
 TRACE_FIELDS = ["trace_screen", "nldi_basin_sq_mi", "trace_check",
                 "upstream_reservoirs", "upstream_snow_sites"]
+EVIDENCE_FIELDS = ["mean_flow_cfs", "flow_years", "dams_upstream",
+                   "dam_storage_af", "storage_share_pct", "largest_dams",
+                   "irrigation_dams", "dams_near_gauge"]
 
 #: The tiers a suggestion can name, strongest finding first. A suggestion is
 #: arithmetic over the columns beside it; the ruling is still a person's.
@@ -95,30 +156,81 @@ BELOW_DIVERSION_NAME = re.compile(
 USGS_PAGE_URL = "https://waterdata.usgs.gov/monitoring-location/USGS-{site}/"
 
 
-def suggest(row: dict) -> tuple[str, str]:
-    """A suggested ruling and every finding behind it, from the row alone."""
+def _share(row: dict) -> float | None:
+    value = row.get("storage_share_pct")
+    return None if value in ("", None) else float(value)
+
+
+def findings(row: dict) -> list[tuple[str, str]]:
+    """Every finding behind a suggestion, as (tier, reason)."""
     name = row["site_name"].upper()
-    findings: list[tuple[str, str]] = []
+    found: list[tuple[str, str]] = []
     conduit = CONDUIT_NAME.search(name)
     if conduit and not LOCATOR_WORD.search(name[:conduit.start()]):
-        findings.append(("exclude", "the gauge measures a tunnel, drain or canal"))
+        found.append(("exclude", "the gauge measures a tunnel, drain or canal"))
     if row["trace_screen"] != "traced":
-        findings.append(("check", f"basin not traced ({row['trace_screen'] or 'not run'})"))
+        found.append(("check", f"basin not traced ({row['trace_screen'] or 'not run'})"))
     elif row["trace_check"]:
-        findings.append(("check", row["trace_check"]))
+        found.append(("check", row["trace_check"]))
     reservoirs = [r for r in row["upstream_reservoirs"].split("; ") if r]
-    if reservoirs:
-        findings.append(("shaped", f"{len(reservoirs)} published reservoir"
-                         f"{'s' if len(reservoirs) != 1 else ''} upstream"))
+    share = _share(row)
+    dams = int(row.get("dams_upstream") or 0)
+    storage = float(row.get("dam_storage_af") or 0)
+    held = f"{dams} inventoried dam{'s' if dams != 1 else ''} upstream"
+    if dams and share is not None:
+        found.append(("shaped" if share >= SMALL_STORAGE_SHARE else "natural",
+                      f"{held} hold {share:g}% of a year's flow"))
+    elif dams and storage:
+        found.append(("shaped", f"{held} hold {storage:,.0f} acre-feet; "
+                      "no mean flow to compare"))
+    elif dams:
+        found.append(("natural", f"{held} list no storage"))
+    elif reservoirs:
+        found.append(("shaped", f"{len(reservoirs)} published reservoir"
+                      f"{'s' if len(reservoirs) != 1 else ''} upstream"))
     if BELOW_DIVERSION_NAME.search(name):
-        findings.append(("shaped", "the name places it below a diversion"))
+        found.append(("shaped", "the name places it below a diversion"))
+    irrigation = int(row.get("irrigation_dams") or 0)
+    if irrigation:
+        found.append(("natural", f"{irrigation} irrigation dam"
+                      f"{'s' if irrigation != 1 else ''} upstream: look for diversions"))
+    if row.get("dams_near_gauge"):
+        found.append(("natural", f"dam within {NEAR_GAUGE_KM:g} km of the gauge, "
+                      f"perhaps below it: {row['dams_near_gauge']}"))
     if row["covers_1991_2020"] != "yes":
-        findings.append(("short", f"record starts {row['record_begin'] or 'unknown'}"))
-    if not findings:
+        found.append(("short", f"record starts {row['record_begin'] or 'unknown'}"))
+    if not any(tier != "natural" for tier, _ in found):
         snow = "snow sites upstream" if row["upstream_snow_sites"] else "no snow site upstream"
-        findings.append(("natural", f"no published reservoir or named diversion upstream; {snow}"))
-    tier = min((tier for tier, _ in findings), key=SUGGESTIONS.index)
-    return tier, "; ".join(reason for _, reason in findings)
+        what = "large storage" if dams else "reservoir"
+        found.append(("natural", f"no {what} or named diversion upstream; {snow}"))
+    return found
+
+
+def suggest(row: dict) -> tuple[str, str]:
+    """A suggested ruling and every finding behind it, from the row alone."""
+    found = findings(row)
+    tier = min((tier for tier, _ in found), key=SUGGESTIONS.index)
+    return tier, "; ".join(reason for _, reason in found)
+
+
+def review_queue(row: dict, tier: str) -> str:
+    """Which pile a row sits in: `bulk` may be agreed as a group.
+
+    Only the safe direction is bulk: an exclusion by the gauge's own name,
+    or shaped by storage holding at least the small share or by a named
+    diversion, with no dam near the gauge that could sit below it.
+    """
+    if tier == "check":
+        return "check"
+    if tier == "exclude":
+        return "bulk"
+    if tier == "shaped" and not row.get("dams_near_gauge"):
+        share = _share(row)
+        strong = ((share is not None and share >= SMALL_STORAGE_SHARE)
+                  or BELOW_DIVERSION_NAME.search(row["site_name"].upper()))
+        if strong:
+            return "bulk"
+    return "review"
 
 
 def usgs_features(url: str) -> list[dict]:
@@ -144,15 +256,15 @@ def usgs_features(url: str) -> list[dict]:
     return features
 
 
-def fetch_screen_inputs() -> tuple[list[dict], list[dict]]:
+def fetch_screen_inputs(state: State = STATES["UT"]) -> tuple[list[dict], list[dict]]:
     series = usgs_features(
         f"{USGS_BASE}/time-series-metadata/items?" + urllib.parse.urlencode({
             "f": "json", "parameter_code": DISCHARGE_PARAMETER,
-            "statistic_id": DAILY_MEAN_STATISTIC, "bbox": UTAH_BBOX,
+            "statistic_id": DAILY_MEAN_STATISTIC, "bbox": state.bbox,
             "limit": 10000}))
     locations = usgs_features(
         f"{USGS_BASE}/monitoring-locations/items?" + urllib.parse.urlencode({
-            "f": "json", "state_code": UTAH_STATE_CODE,
+            "f": "json", "state_code": state.code,
             "site_type_code": "ST", "limit": 10000}))
     return series, locations
 
@@ -163,7 +275,7 @@ def _date(value: str | None) -> dt.date | None:
 
 def screen(series: list[dict], locations: list[dict],
            today: dt.date) -> dict[str, dict]:
-    """Active Utah stream gauges, keyed by site number, screen fields only."""
+    """Active stream gauges, keyed by site number, screen fields only."""
     by_id = {feature["id"]: feature for feature in locations
              if str(feature.get("id", "")).startswith("USGS-")}
     rows: dict[str, dict] = {}
@@ -244,6 +356,164 @@ def trace(row: dict, reservoirs: list[dict], sites: list[dict],
             "upstream_snow_sites": "; ".join(sorted(snow))}
 
 
+def fetch_dams(box: tuple[float, float, float, float]) -> list[dict]:
+    """Every inventoried dam in the box.
+
+    Offset paging on this service overlaps and ends pages early (measured
+    2026-10-26: six pages, 3,492 rows, 2,473 distinct), so the dams are
+    named by object id first and then fetched by id.
+    """
+    west, south, east, north = box
+    where = {"where": "1=1", "geometry": f"{west},{south},{east},{north}",
+             "geometryType": "esriGeometryEnvelope", "inSR": 4326,
+             "spatialRel": "esriSpatialRelIntersects", "f": "json"}
+    ids = sorted(upstream.get_json(f"{NID_LAYER}/query?" + urllib.parse.urlencode(
+        {**where, "returnIdsOnly": "true"}), timeout=USGS_TIMEOUT).get("objectIds") or [])
+    features: dict[int, dict] = {}
+    for start in range(0, len(ids), NID_BATCH):
+        payload = upstream.get_json(f"{NID_LAYER}/query?" + urllib.parse.urlencode({
+            "objectIds": ",".join(map(str, ids[start:start + NID_BATCH])),
+            "outFields": "OBJECTID,NIDID,NAME,NID_STORAGE,PURPOSES,LATITUDE,LONGITUDE",
+            "returnGeometry": "false", "f": "json"}), timeout=USGS_TIMEOUT)
+        if "error" in payload:
+            raise RuntimeError(f"the dam inventory refused the query: {payload['error']}")
+        for feature in payload.get("features") or []:
+            attributes = feature.get("attributes") or {}
+            features[attributes.get("OBJECTID")] = attributes
+    if len(features) != len(ids):
+        raise RuntimeError(f"the dam inventory named {len(ids)} dams and returned {len(features)}")
+    dams = (dam_record(features[i]) for i in sorted(features))
+    return [dam for dam in dams if dam is not None]
+
+
+def dam_record(attributes: dict) -> dict | None:
+    lat, lon = attributes.get("LATITUDE"), attributes.get("LONGITUDE")
+    if lat is None or lon is None:
+        return None
+    return {"id": attributes.get("NIDID") or "",
+            "name": (attributes.get("NAME") or "unnamed").strip(),
+            "lon": float(lon), "lat": float(lat),
+            "storage_af": float(attributes.get("NID_STORAGE") or 0),
+            "irrigation": "irrigation" in (attributes.get("PURPOSES") or "").lower()}
+
+
+def parse_annual_means(rdb: str) -> dict[str, dict[int, float]]:
+    """Site number to {water year: mean discharge} from the RDB answer."""
+    means: dict[str, dict[int, float]] = {}
+    header: list[str] | None = None
+    for line in rdb.splitlines():
+        if not line or line.startswith("#"):
+            continue
+        cells = line.split("\t")
+        if header is None:
+            header = cells
+            continue
+        if cells[0].endswith("s") and cells[0][:-1].isdigit():
+            continue
+        row = dict(zip(header, cells))
+        try:
+            means.setdefault(row["site_no"], {})[int(row["year_nu"])] = float(row["mean_va"])
+        except (KeyError, ValueError):
+            continue
+    return means
+
+
+def mean_flow(years: dict[int, float]) -> tuple[float | None, int]:
+    """The mean of water-year means from 1991 on, or the whole record when
+    fewer than `MIN_FLOW_YEARS` fall there."""
+    recent = [value for year, value in years.items() if year >= FLOW_START_WATER_YEAR]
+    chosen = recent if len(recent) >= MIN_FLOW_YEARS else list(years.values())
+    if not chosen:
+        return None, 0
+    return round(sum(chosen) / len(chosen), 1), len(chosen)
+
+
+def fetch_annual_means(sites: list[str]) -> dict[str, dict[int, float]]:
+    means: dict[str, dict[int, float]] = {}
+    for start in range(0, len(sites), STATS_BATCH):
+        query = urllib.parse.urlencode({
+            "format": "rdb", "sites": ",".join(sites[start:start + STATS_BATCH]),
+            "statReportType": "annual", "statYearType": "water",
+            "statTypeCd": "mean", "parameterCd": DISCHARGE_PARAMETER})
+        request = urllib.request.Request(f"{ANNUAL_STATS_URL}?{query}",
+                                         headers={"User-Agent": upstream.USER_AGENT})
+        with urllib.request.urlopen(request, timeout=USGS_TIMEOUT) as response:
+            means.update(parse_annual_means(response.read().decode("utf-8")))
+    return means
+
+
+def _km(a: tuple[float, float], b: tuple[float, float]) -> float:
+    (lon1, lat1), (lon2, lat2) = a, b
+    p1, p2 = math.radians(lat1), math.radians(lat2)
+    h = (math.sin((p2 - p1) / 2) ** 2 + math.cos(p1) * math.cos(p2)
+         * math.sin(math.radians(lon2 - lon1) / 2) ** 2)
+    return 2 * upstream.EARTH_RADIUS_M / 1000 * math.asin(math.sqrt(h))
+
+
+def distinct_pools(dams: list[dict]) -> list[dict]:
+    """The dams that hold storage, one per pool, largest first.
+
+    A dam whose storage equals a kept dam's within `SAME_POOL_KM` is that
+    pool's dike; the kept one is the structure not named a dike.
+    """
+    ordered = sorted((d for d in dams if d["storage_af"] > 0), key=lambda d: (
+        -d["storage_af"], "DIKE" in d["name"].upper(), d["name"]))
+    kept: list[dict] = []
+    for dam in ordered:
+        if not any(k["storage_af"] == dam["storage_af"]
+                   and _km((k["lon"], k["lat"]), (dam["lon"], dam["lat"])) <= SAME_POOL_KM
+                   for k in kept):
+            kept.append(dam)
+    return kept
+
+
+def storage_evidence(row: dict, polygons: list, dams: list[dict],
+                     years: dict[int, float] | None) -> dict:
+    """The evidence fields for one row; blank where an input is missing."""
+    result = dict.fromkeys(EVIDENCE_FIELDS, "")
+    flow, count = mean_flow(years or {})
+    if flow is not None:
+        result.update(mean_flow_cfs=flow, flow_years=count)
+    if not polygons:
+        return result
+    box = upstream.bounds_of(upstream.polygons_to_rings(polygons))
+    inside = [d for d in dams
+              if upstream.points_in_basin((d["lon"], d["lat"]), polygons, box)]
+    pools = distinct_pools(inside)
+    storage = sum(d["storage_af"] for d in pools)
+    gauge = (float(row["longitude"]), float(row["latitude"]))
+    near = sorted(d["name"] for d in inside if _km(gauge, (d["lon"], d["lat"])) <= NEAR_GAUGE_KM)
+    largest = pools[:3]
+    result.update(
+        dams_upstream=len(inside), dam_storage_af=round(storage),
+        largest_dams="; ".join(f"{d['name']} ({d['storage_af']:,.0f} AF)" for d in largest),
+        irrigation_dams=sum(d["irrigation"] for d in inside),
+        dams_near_gauge="; ".join(near))
+    if flow:
+        result["storage_share_pct"] = round(storage / (flow * ACRE_FEET_PER_CFS_YEAR) * 100, 1)
+    return result
+
+
+def load_page_basins(path: Path) -> dict[str, list]:
+    """Basin outlines from the review page's bundle, as polygons.
+
+    The bundle stores each basin as a list of rings and the page draws and
+    exports every ring as a polygon of its own, so this reads them the same
+    way: what the reviewer sees is what was counted.
+    """
+    bundle = json.loads(path.read_text(encoding="utf-8"))
+    return {gauge["site"]: [[[(float(x), float(y)) for x, y in ring]]
+                            for ring in gauge["shape"]]
+            for gauge in bundle.get("gauges") or [] if gauge.get("shape")}
+
+
+def huc8_names(path: Path = HUC8_PATH) -> dict[str, str]:
+    if not path.exists():
+        return {}
+    features = json.loads(path.read_text(encoding="utf-8")).get("features") or []
+    return {f["properties"]["huc8"]: f["properties"]["name"] for f in features}
+
+
 def read_rows(path: Path = OUTPUT_PATH) -> dict[str, dict]:
     if not path.exists():
         return {}
@@ -253,9 +523,12 @@ def read_rows(path: Path = OUTPUT_PATH) -> dict[str, dict]:
 
 
 def write_rows(rows: dict[str, dict], path: Path = OUTPUT_PATH) -> None:
+    names = huc8_names()
     for row in rows.values():
         row["usgs_page"] = USGS_PAGE_URL.format(site=row["usgs_site_no"])
+        row["huc8_name"] = names.get(row["huc8"], row.get("huc8_name", ""))
         row["suggested_ruling"], row["suggestion_reason"] = suggest(row)
+        row["review_queue"] = review_queue(row, row["suggested_ruling"])
     ordered = sorted(rows.values(), key=lambda r: (r["huc8"], r["usgs_site_no"]))
     temporary = path.with_suffix(".csv.tmp")
     with temporary.open("w", newline="", encoding="utf-8") as handle:
@@ -279,6 +552,9 @@ def merge_screen(existing: dict[str, dict], screened: dict[str, dict],
 
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description=__doc__.split("\n\n")[0])
+    parser.add_argument("--state", choices=sorted(STATES), default="UT",
+                        help="the state to screen; Utah writes gauge-review.csv, "
+                        "the others gauge-review-<state>.csv")
     parser.add_argument("--only", action="append", default=[], metavar="SITE",
                         help="screen and trace only these site numbers")
     parser.add_argument("--missing", action="store_true",
@@ -287,21 +563,43 @@ def main(argv: list[str] | None = None) -> int:
                         help="refresh the screen fields and stop")
     parser.add_argument("--suggest", action="store_true",
                         help="recompute the suggestions offline and stop")
+    parser.add_argument("--evidence", action="store_true",
+                        help="add dam storage and mean flow, then stop")
+    parser.add_argument("--basins", type=Path, metavar="GAUGES_JSON",
+                        help="the review page's gauges.json, for --evidence")
     args = parser.parse_args(argv)
     only = set(args.only) or None
+    state = STATES[args.state]
+    output = state.output
 
-    rows = read_rows()
+    rows = read_rows(output)
+    if args.evidence:
+        if not args.basins:
+            parser.error("--evidence needs --basins")
+        basins = load_page_basins(args.basins)
+        rings = [ring for polygons in basins.values()
+                 for ring in upstream.polygons_to_rings(polygons)]
+        dams = fetch_dams(upstream.bounds_of(rings))
+        targets = sorted(site for site in rows if not only or site in only)
+        means = fetch_annual_means(targets)
+        for site in targets:
+            rows[site].update(storage_evidence(rows[site], basins.get(site, []),
+                                               dams, means.get(site)))
+        write_rows(rows, output)
+        print(f"{len(dams)} inventoried dams; evidence for {len(targets)} rows; "
+              f"{sum(1 for s in targets if rows[s]['mean_flow_cfs'] != '')} with a mean flow")
+        return 0
     if args.suggest:
-        write_rows(rows)
-        print(f"suggested a ruling for {len(rows)} rows in {OUTPUT_PATH.name}")
+        write_rows(rows, output)
+        print(f"suggested a ruling for {len(rows)} rows in {output.name}")
         return 0
     if not args.missing:
-        series, locations = fetch_screen_inputs()
+        series, locations = fetch_screen_inputs(state)
         screened = screen(series, locations, dt.date.today())
         rows = merge_screen(rows, screened, only)
-        write_rows(rows)
-        print(f"screened {len(screened)} active Utah gauges; "
-              f"{len(rows)} rows in {OUTPUT_PATH.name}")
+        write_rows(rows, output)
+        print(f"screened {len(screened)} active {args.state} gauges; "
+              f"{len(rows)} rows in {output.name}")
     if args.no_trace:
         return 0
 
@@ -316,7 +614,7 @@ def main(argv: list[str] | None = None) -> int:
             print(f"stopped at {site}: {error}; rerun with --missing later")
             return 1
         rows[site].update(result)
-        write_rows(rows)
+        write_rows(rows, output)
         print(f"[{count}/{len(targets)}] {site} {result['trace_screen']}"
               f" {result['upstream_reservoirs']}", flush=True)
     return 0

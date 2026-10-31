@@ -73,6 +73,12 @@ const userTextFiles = [
   "src/viz/elevation-years.ts",
   "src/ui/measurement-card.ts",
   "src/reservoir.ts",
+  // The river-flow page (ADR-136): its frame, entry point, model and chart.
+  "rivers.html",
+  "src/rivers.ts",
+  "src/rivers-model.ts",
+  "src/ui/rivers-template.ts",
+  "src/viz/flow-chart.ts",
   // The story views (ADR-128): their frame, entry point, link sentences and
   // the two shared builders they draw with.
   "story.html",
@@ -165,7 +171,7 @@ describe("user text", () => {
     const publishedPages = [
       "index.html", "modern.html", "overview.html", "precipitation.html", "snow.html", "drought.html",
       "methods.html", "data.html", "reservoir.html", "terms.html",
-      "landscape.html", "explore.html", "lakes.html", "story.html",
+      "landscape.html", "explore.html", "lakes.html", "rivers.html", "story.html",
       "legacy/index.html", "maplibre/index.html"
     ];
     const styleFiles = (await readdir(resolve(root, "src/styles")))

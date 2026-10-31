@@ -1,0 +1,28 @@
+@import "./reservoir.css";
+
+/* The lakes page's frame (ADR-119): one reading page, one article per gauge,
+ * the details panel's row classes so a gauge's rows match a reservoir's. */
+:root { --flow-bar: #4f7d96; }
+:root[data-theme="dark"] { --flow-bar: #8db7cc; }
+
+.river {
+  margin-block-start: 2rem;
+  padding-block-start: 1.25rem;
+  border-block-start: 1px solid var(--app-border);
+}
+.river:first-child { margin-block-start: 1.5rem; border-block-start: 0; padding-block-start: 0; }
+.river-name { font-size: clamp(1.35rem, 3vw, 1.8rem); line-height: 1.15; margin-block: 0.25rem 0.5rem; }
+.river-reading {
+  min-width: 0;
+  margin-block: 1rem 0;
+  padding: 1rem;
+  border: 1px solid var(--app-border);
+  border-radius: 0.5rem;
+  background: var(--app-surface-raised);
+}
+.river-reading .detail-headline { margin-block: 0 0.5rem; }
+.river-reading .detail-headline strong { font-size: 1.35rem; }
+.river-shaped { font-weight: 600; }
+.flow-bar { fill: var(--flow-bar); }
+.rivers-main .trend-chart-host { margin-block-start: 0.5rem; }
+.rivers-main .detail-export { margin-block-start: 2rem; }

@@ -195,6 +195,18 @@ Survey publishes every fifteen minutes, so the two also differ while the
 water moves quickly, by up to about a foot when Powell rose 1 to 1.8 ft a day
 in October 2026.
 
+## River flow
+
+A gauge publishes the survey's daily mean flow (parameter 00060, statistic
+00003) in cubic feet per second, as reported (ADR-136). Nothing is estimated:
+a reported day with no value stays empty, an approval status and qualifiers
+travel with each day, and the 7-day change is the difference from the value
+exactly seven days earlier, null when that day has none. Every published
+gauge is `shaped` (dams upstream store and release water), so no flow is
+compared with normal or ranked, and no flow normal exists yet. Gauges are
+never added together and no gauge is a reservoir's inflow (ADR-124). A daily
+mean cannot show a peak inside the day.
+
 **Never subtract two shares with different denominators** (ADR-046) — see the
 drought section below for the case this exists for.
 

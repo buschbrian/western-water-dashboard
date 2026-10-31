@@ -8,9 +8,13 @@ asked about.
 """
 
 import datetime as dt
+import json
 import sys
 import urllib.error
+import urllib.parse
 from pathlib import Path
+
+import pytest
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
@@ -214,3 +218,202 @@ def test_writing_fills_the_suggestion_and_never_the_ruling(tmp_path):
     assert row["suggested_ruling"] == "natural"
     assert row["usgs_page"].endswith("/USGS-1/")
     assert row["reviewer_ruling"] == ""
+
+
+# --- the storage evidence ----------------------------------------------------
+
+def dam(name, lon=-111.5, lat=40.5, storage=1000.0, irrigation=False):
+    return {"id": name, "name": name, "lon": lon, "lat": lat,
+            "storage_af": storage, "irrigation": irrigation}
+
+
+GAUGE_ROW = {"usgs_site_no": "1", "longitude": "-111.01", "latitude": "40.01"}
+
+
+def test_a_dam_without_a_position_is_dropped_and_irrigation_is_read_from_purposes():
+    assert G.dam_record({"NAME": "X", "LATITUDE": None, "LONGITUDE": -111}) is None
+    record = G.dam_record({"NAME": "Mill Meadow", "LATITUDE": 38.5, "LONGITUDE": -111.6,
+                           "NID_STORAGE": 6870, "PURPOSES": "Recreation, Irrigation"})
+    assert record["storage_af"] == 6870 and record["irrigation"] is True
+
+
+def test_annual_means_are_read_from_the_rdb_answer():
+    rdb = ("# comment\nagency_cd\tsite_no\tparameter_cd\tts_id\tloc_web_ds\tyear_nu\tmean_va\n"
+           "5s\t15s\t5s\t10n\t15s\t4s\t12n\n"
+           "USGS\t09379500\t00060\t1\t\t1990\t3000\nUSGS\t09379500\t00060\t1\t\t1991\t2000\n")
+    assert G.parse_annual_means(rdb) == {"09379500": {1990: 3000.0, 1991: 2000.0}}
+
+
+def test_mean_flow_prefers_1991_on_and_falls_back_to_the_whole_record():
+    long = {year: 100.0 if year >= 1991 else 900.0 for year in range(1980, 2000)}
+    assert G.mean_flow(long) == (100.0, 9)
+    short = {1985: 10.0, 1992: 20.0}
+    assert G.mean_flow(short) == (15.0, 2)
+    assert G.mean_flow({}) == (None, 0)
+
+
+def test_storage_is_summed_inside_the_basin_and_shared_against_a_years_flow():
+    dams = [dam("Inside", storage=7244.0, irrigation=True),
+            dam("Outside", lon=-110.0, storage=99999.0)]
+    years = {year: 100.0 for year in range(1991, 2001)}
+    result = G.storage_evidence(GAUGE_ROW, SQUARE_BASIN, dams, years)
+    assert result["dams_upstream"] == 1
+    assert result["dam_storage_af"] == 7244
+    # 100 cfs for a year is about 72,445 acre-feet.
+    assert result["storage_share_pct"] == 10.0
+    assert result["irrigation_dams"] == 1
+    assert result["largest_dams"] == "Inside (7,244 AF)"
+    assert result["dams_near_gauge"] == ""
+
+
+def test_a_dike_is_not_counted_as_a_second_pool():
+    dams = [dam("Granby Dam", storage=539760.0),
+            dam("Granby Dike 1", lon=-111.45, storage=539760.0),
+            dam("Far Twin", lon=-111.05, lat=40.95, storage=539760.0)]
+    result = G.storage_evidence(GAUGE_ROW, SQUARE_BASIN, dams, None)
+    assert result["dams_upstream"] == 3
+    assert result["dam_storage_af"] == 2 * 539760
+    assert "Granby Dike" not in result["largest_dams"]
+    assert result["storage_share_pct"] == "" and result["mean_flow_cfs"] == ""
+
+
+def test_a_dam_beside_the_gauge_is_named_because_it_may_be_below_it():
+    result = G.storage_evidence(GAUGE_ROW, SQUARE_BASIN, [dam("Weir", lon=-111.012, lat=40.012)], None)
+    assert result["dams_near_gauge"] == "Weir"
+
+
+def test_no_basin_gives_flow_but_no_storage_claims():
+    result = G.storage_evidence(GAUGE_ROW, [], [dam("Inside")], {2000: 5.0})
+    assert result["mean_flow_cfs"] == 5.0
+    assert result["dams_upstream"] == ""
+
+
+def test_dams_are_fetched_by_id_and_a_short_answer_is_refused(monkeypatch):
+    attrs = {i: {"OBJECTID": i, "NAME": f"D{i}", "LATITUDE": 40.5, "LONGITUDE": -111.5,
+                 "NID_STORAGE": i} for i in range(1, 6)}
+
+    def fake(url, timeout=None, headers=None):
+        if "returnIdsOnly" in url:
+            return {"objectIds": [5, 3, 1, 2, 4]}
+        asked = [int(i) for i in urllib.parse.parse_qs(urllib.parse.urlsplit(url).query)["objectIds"][0].split(",")]
+        return {"features": [{"attributes": attrs[i]} for i in asked if i in attrs]}
+
+    monkeypatch.setattr(G.upstream, "get_json", fake)
+    monkeypatch.setattr(G, "NID_BATCH", 2)
+    assert [d["name"] for d in G.fetch_dams((-112, 40, -111, 41))] == ["D1", "D2", "D3", "D4", "D5"]
+    del attrs[4]
+    with pytest.raises(RuntimeError, match="named 5 dams and returned 4"):
+        G.fetch_dams((-112, 40, -111, 41))
+
+
+def test_page_basins_read_each_ring_as_its_own_polygon(tmp_path):
+    ring = [[-112, 40], [-111, 40], [-111, 41], [-112, 40]]
+    lobe = [[-110, 40], [-109, 40], [-109, 41], [-110, 40]]
+    path = tmp_path / "gauges.json"
+    path.write_text(json.dumps({"gauges": [
+        {"site": "1", "shape": [ring, lobe]}, {"site": "3", "shape": []}]}))
+    basins = G.load_page_basins(path)
+    assert len(basins["1"]) == 2 and "3" not in basins
+    box = G.upstream.bounds_of(G.upstream.polygons_to_rings(basins["1"]))
+    assert G.upstream.points_in_basin((-109.5, 40.5), basins["1"], box)
+
+
+# --- the suggestion with storage evidence, and the queue -----------------------
+
+def test_small_storage_suggests_natural_and_large_storage_suggests_shaped():
+    small = plain_row(dams_upstream="3", dam_storage_af="500", storage_share_pct="1.6",
+                      upstream_reservoirs="Trial Lake")
+    tier, reason = G.suggest(small)
+    assert tier == "natural"
+    assert "hold 1.6% of a year's flow" in reason
+    assert G.suggest(plain_row(dams_upstream="1", storage_share_pct="2"))[0] == "shaped"
+
+
+def test_storage_with_no_flow_to_compare_is_shaped_and_dams_without_storage_are_not():
+    assert G.suggest(plain_row(dams_upstream="2", dam_storage_af="900"))[0] == "shaped"
+    tier, reason = G.suggest(plain_row(dams_upstream="2", dam_storage_af="0"))
+    assert tier == "natural" and "list no storage" in reason
+
+
+def test_irrigation_dams_and_a_dam_by_the_gauge_are_kept_as_findings():
+    tier, reason = G.suggest(plain_row(dams_upstream="1", dam_storage_af="10",
+                                       storage_share_pct="0.1", irrigation_dams="1",
+                                       dams_near_gauge="Weir"))
+    assert tier == "natural"
+    assert "1 irrigation dam upstream" in reason and "perhaps below it: Weir" in reason
+
+
+def test_only_the_safe_direction_is_queued_for_bulk_agreement():
+    queue = lambda **kw: G.review_queue(plain_row(**kw), G.suggest(plain_row(**kw))[0])
+    assert queue(site_name="FAIRVIEW TUNNEL NEAR FAIRVIEW, UT") == "bulk"
+    assert queue(dams_upstream="4", storage_share_pct="12") == "bulk"
+    assert queue(site_name="BEAR RIVER BELOW O-LINE CANAL NR BRIGHAM CITY, UT") == "bulk"
+    assert queue(dams_upstream="4", storage_share_pct="12", dams_near_gauge="Weir") == "review"
+    # Storage known only from the published roster has no share to judge.
+    assert queue(upstream_reservoirs="Deer Creek") == "review"
+    assert queue() == "review"
+    assert queue(trace_check="traced about 404 sq mi") == "check"
+
+
+def test_writing_names_the_watershed_and_the_queue(tmp_path, monkeypatch):
+    monkeypatch.setattr(G, "huc8_names", lambda: {"16020203": "Provo"})
+    path = tmp_path / "gauge-review.csv"
+    G.write_rows({"1": plain_row(huc8="16020203")}, path)
+    row = G.read_rows(path)["1"]
+    assert row["huc8_name"] == "Provo"
+    assert row["review_queue"] == "review"
+
+
+# --- states ----------------------------------------------------------------
+
+def test_utah_keeps_the_worksheet_the_importer_and_the_page_read():
+    assert G.STATES["UT"].output == G.OUTPUT_PATH
+    assert G.OUTPUT_PATH.name == "gauge-review.csv"
+
+
+def test_each_state_has_its_own_code_box_and_worksheet():
+    assert {k: v.code for k, v in G.STATES.items()} == {
+        "UT": "49", "CO": "08", "NM": "35", "AZ": "04"}
+    assert len({v.output for v in G.STATES.values()}) == len(G.STATES)
+    for key, state in G.STATES.items():
+        west, south, east, north = map(float, state.bbox.split(","))
+        assert west < east and south < north
+        if key != "UT":
+            assert state.output.name == f"gauge-review-{key.lower()}.csv"
+
+
+def test_the_screen_asks_for_the_chosen_states_box_and_code(monkeypatch):
+    urls = []
+    monkeypatch.setattr(G, "usgs_features", lambda url: urls.append(url) or [])
+    G.fetch_screen_inputs(G.STATES["CO"])
+    queries = [urllib.parse.parse_qs(urllib.parse.urlparse(u).query) for u in urls]
+    assert queries[0]["bbox"] == [G.STATES["CO"].bbox]
+    assert queries[1]["state_code"] == ["08"]
+    G.fetch_screen_inputs()
+    assert urllib.parse.parse_qs(urllib.parse.urlparse(urls[3]).query)["state_code"] == ["49"]
+
+
+def _run(monkeypatch, tmp_path, *argv):
+    paths = {key: tmp_path / s.output.name for key, s in G.STATES.items()}
+    monkeypatch.setattr(G, "STATES", {k: s._replace(output=paths[k])
+                                      for k, s in G.STATES.items()})
+    monkeypatch.setattr(G, "fetch_screen_inputs", lambda state=None: (
+        [series("9")], [location("9")]))
+    assert G.main([*argv, "--no-trace"]) == 0
+    return paths
+
+
+def test_a_state_run_writes_only_its_own_worksheet(monkeypatch, tmp_path):
+    paths = _run(monkeypatch, tmp_path, "--state", "NM")
+    assert paths["NM"].exists()
+    assert [k for k, p in paths.items() if p.exists()] == ["NM"]
+
+
+def test_no_state_means_utah(monkeypatch, tmp_path):
+    paths = _run(monkeypatch, tmp_path)
+    assert [k for k, p in paths.items() if p.exists()] == ["UT"]
+
+
+def test_an_unknown_state_is_refused(capsys):
+    with pytest.raises(SystemExit):
+        G.main(["--state", "WY"])

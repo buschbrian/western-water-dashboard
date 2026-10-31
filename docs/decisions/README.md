@@ -28,6 +28,8 @@ than bundled. **Start with ADR-002.**
   [ADR-121](ADR-121-keep-the-finished-snow-season-and-open-the-new-one-honestly.md),
   [ADR-031](ADR-031-retire-comparison-implementations-and-redirect-their-urls.md),
   [ADR-124](ADR-124-bound-recent-conditions-to-a-static-data-pilot.md),
+  [ADR-130](ADR-130-merge-saved-gauge-reviews-with-explicit-replacement.md),
+  [ADR-136](ADR-136-publish-daily-flow-at-four-rivers-toward-lake-powell.md),
   [ADR-141](ADR-141-publish-a-share-page-and-a-daily-picture-for-a-reservoir-link.md)
 - Superseded, read only for history: ADR-012, ADR-019,
   [ADR-117](ADR-117-close-the-scope-at-version-1-0-0.md) (pilot scope exception only)
@@ -325,6 +327,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-132](ADR-132-draw-storage-charts-when-they-near-the-screen.md) | Draw the storage charts when they near the screen | Accepted; five chart states in readiness; charts are rebuilt, not reused |
 | [ADR-133](ADR-133-serve-atkinson-hyperlegible-next-from-this-site.md) | Serve Atkinson Hyperlegible Next from this site | Accepted; one 34 KB Latin variable file, `font-display: swap`, no preload, one `--app-font` token |
 | [ADR-135](ADR-135-publish-a-reservoir-level-only-above-a-reviewed-datum.md) | Publish a reservoir level only above a reviewed datum | Accepted; the record ADR-117 asks for; Lake Powell above NGVD 1929, Lake Mead above Reclamation's Hoover Dam powerhouse datum; optional `elevation` block with no schema bump, history in `elevation_history.json` |
+| [ADR-136](ADR-136-publish-daily-flow-at-four-rivers-toward-lake-powell.md) | Publish daily flow at four rivers toward Lake Powell | Accepted; four shaped Utah gauges as daily mean flow with no normal, rank or total; tiers directed 2026-10-27 pending formal ruling; own roster, payload and page |
 | [ADR-141](ADR-141-publish-a-share-page-and-a-daily-picture-for-a-reservoir-link.md) | Publish a share page and a daily picture for a reservoir link | Accepted; two hand-kept share pages in `public/share/`, a `view=share` layout of the reservoir page, a picture captured in each deploy with a committed fallback; ADR-136 to ADR-140 and ADR-142 are other records |
 | [ADR-142](ADR-142-show-the-weeks-change-in-mountain-soil-moisture.md) | Show the week's change in mountain soil moisture | Accepted; seven-day change in points at the snow stations, mean of 2 (or 4), 8 and 20 in, frozen readings dropped, snow floor per area; a "Rain \| Soil moisture" switch on the precipitation map; percent of median is phase 2 |
 

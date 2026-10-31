@@ -958,3 +958,85 @@ export interface PrecipitationHistory {
   available_site_count: number;
   sites: ReadonlyMap<string, number[][]>;
 }
+
+/*
+ * Daily mean river flow at a reviewed gauge (ADR-136). A rate, not a stored
+ * volume: no full level, no normal, no rank, and never a total across gauges.
+ */
+
+/** One day in a gauge's window. `cfs` is null on a day with no value. */
+export interface RiverDay {
+  date: string;
+  cfs: number | null;
+  approval: string | null;
+  qualifiers: string[];
+}
+
+export interface RiverGauge {
+  name: string;
+  usgs_name: string;
+  measurement: "daily_mean_flow";
+  source_key: "usgs";
+  source_label: string;
+  source_station_id: string;
+  source_url: string;
+  usgs_page: string;
+  time_series_id: string;
+  parameter_code: string;
+  statistic_id: string;
+  unit: "ft^3/s";
+  state: string;
+  lat: number;
+  lon: number;
+  drainage_area_sq_mi: number | null;
+  huc8: string;
+  huc8_name: string;
+  flows_toward: string | null;
+  tier: "shaped";
+  compared_with_normal: false;
+  data_frequency: "daily";
+  stale_after_days: number;
+  as_of: string;
+  days_stale: number;
+  is_stale: boolean;
+  fetch_ok: boolean;
+  fetch_error?: string;
+  current_cfs: number;
+  current_approval: string | null;
+  current_qualifiers: string[];
+  change_7d_cfs: number | null;
+  change_7d_reference_date: string | null;
+  window_start: string;
+  window_end: string;
+  window_high_cfs: number;
+  window_high_date: string;
+  window_low_cfs: number;
+  window_low_date: string;
+  reported_days: number;
+  provisional_days: number;
+  daily: RiverDay[];
+}
+
+export interface WithdrawnGauge {
+  name: string;
+  as_of: string;
+  days_stale: number;
+  source_label: string | null;
+  reason: string;
+  source_station_id?: string;
+}
+
+export interface RiverPayload {
+  schema_version: number;
+  measurement: "daily_mean_flow";
+  fetched_at: string;
+  run_date: string;
+  window_days: number;
+  stale_after_days: number;
+  withdraw_after_days: number;
+  gauge_count: number;
+  stale_count: number;
+  withdrawn_count: number;
+  gauges: RiverGauge[];
+  withdrawn: WithdrawnGauge[];
+}

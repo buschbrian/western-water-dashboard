@@ -52,6 +52,10 @@ ELEVATION_HISTORY_PATH = ROOT / "elevation_history.json"
 #: The first date asked of a reviewed elevation item. Earlier than any
 #: Reclamation record, so the provider's own first reading starts the series.
 ELEVATION_START_DATE = "19000101"
+#: Reviewed river gauges and their daily-flow payload (ADR-136). A rate of
+#: flow, never a storage: nothing here joins a reservoir or lake file.
+ADMITTED_RIVER_GAUGES_PATH = ROOT / "admitted_river_gauges.json"
+RIVERS_OUTPUT_PATH = ROOT / "rivers.json"
 SOURCE_HISTORY_PATH = ROOT / "data" / "reservoir-source-history.json"
 NORMALS_PATH = ROOT / "normals.json"
 COUNTIES_PATH = ROOT / "counties.json"
@@ -242,6 +246,14 @@ ELEVATION_HISTORY_SCHEMA_VERSION = 1
 #: The shape of `lakes.json`, versioned apart from the reservoir payload: a
 #: lake record has no capacity or percent full to share a contract with.
 LAKE_SCHEMA_VERSION = 1
+
+#: The shape of `rivers.json` (ADR-136).
+RIVER_SCHEMA_VERSION = 1
+#: Daily means published per gauge, ending on its newest reported day.
+RIVER_WINDOW_DAYS = 30
+#: Days asked for on every run. Every publishable record's window is read
+#: again in full, so a revised provisional value replaces the old one.
+RIVER_FETCH_DAYS = WITHDRAW_AFTER_DAYS + RIVER_WINDOW_DAYS
 
 #: The estimator behind the derived numbers, separate from the shape of the
 #: file carrying them. `tools/build_normal_baselines.py` publishes the same

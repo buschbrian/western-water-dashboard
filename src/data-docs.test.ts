@@ -6,6 +6,7 @@ import {
   LAKE_GROUPS,
   REFERENCE_GROUPS,
   RESERVOIR_GROUPS,
+  RIVER_GROUPS,
   SNOW_GROUPS,
   SOIL_GROUPS,
   type ApiFieldGroup
@@ -94,6 +95,19 @@ describe("public API field documentation", () => {
     expectFields(ELEVATION_HISTORY_GROUPS, "elevation-header", data);
     if (data.reservoirs.length > 0) {
       expectFields(ELEVATION_HISTORY_GROUPS, "elevation-entry", merged(data.reservoirs));
+    }
+  });
+
+  it("covers every current river field", () => {
+    const data = read("rivers.json");
+    expectFields(RIVER_GROUPS, "river-header", data);
+    if (data.gauges.length > 0) {
+      expectFields(RIVER_GROUPS, "river-gauge", merged(data.gauges));
+      expectFields(RIVER_GROUPS, "river-day",
+        merged(data.gauges.flatMap((gauge: Record<string, any>) => gauge.daily)));
+    }
+    if (data.withdrawn.length > 0) {
+      expectFields(RIVER_GROUPS, "river-withdrawn", merged(data.withdrawn));
     }
   });
 
@@ -200,7 +214,7 @@ describe("public API field documentation", () => {
 
   it("keeps API explanations in plain language", () => {
     const prose = [...RESERVOIR_GROUPS, ...ELEVATION_HISTORY_GROUPS, ...LAKE_GROUPS,
-      ...SNOW_GROUPS, ...DROUGHT_GROUPS, ...REFERENCE_GROUPS]
+      ...RIVER_GROUPS, ...SNOW_GROUPS, ...DROUGHT_GROUPS, ...REFERENCE_GROUPS]
       .flatMap((section) => [section.title,
         ...section.fields.flatMap((field) => [field.units, field.meaning])])
       .join(" ");

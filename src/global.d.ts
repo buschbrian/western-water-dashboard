@@ -425,4 +425,12 @@ interface Window {
     withdrawn: number;
     failed: boolean;
   };
+  /** The river-flow page (ADR-136): what the payload published and what drew. */
+  __riversReady?: {
+    gauges: number;
+    rendered: number;
+    charts: number;
+    withdrawn: number;
+    failed: boolean;
+  };
 }

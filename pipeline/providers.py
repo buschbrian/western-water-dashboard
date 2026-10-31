@@ -10,6 +10,7 @@ and deduplicated.
 """
 
 import datetime as dt
+import math
 import os
 import time
 
@@ -655,6 +656,146 @@ def fetch_usgs_parameter_series(site_no: str, parameter_code: str,
     df = df[df["date"] <= local_today()]
     return (df.sort_values("date").drop_duplicates(subset="date", keep="last")
               [["date", column]].reset_index(drop=True))
+
+
+#: The v1 OGC collections, read only for river flow (ADR-136). The reservoir
+#: and lake adapters above stay on v0 until that move is reviewed on its own.
+USGS_OGC_V1_URL = "https://api.waterdata.usgs.gov/ogcapi/v1/collections"
+USGS_FLOW_PARAMETER = "00060"
+USGS_DAILY_MEAN_STATISTIC = "00003"
+USGS_FLOW_UNIT = "ft^3/s"
+
+
+def usgs_flow_metadata_url(site_no: str) -> str:
+    return (f"{USGS_OGC_V1_URL}/time-series-metadata/items?f=json"
+            f"&monitoring_location_id=USGS-{site_no}"
+            f"&parameter_code={USGS_FLOW_PARAMETER}"
+            f"&statistic_id={USGS_DAILY_MEAN_STATISTIC}")
+
+
+def usgs_flow_daily_url(time_series_id: str) -> str:
+    return (f"{USGS_OGC_V1_URL}/daily/items?f=json"
+            f"&time_series_id={time_series_id}")
+
+
+def _get_usgs_v1_json(url: str, params: dict | None = None):
+    """GET one v1 page, keyed whenever a key is configured (ADR-098).
+
+    The daily job always has the key. Without one -- a contributor's
+    machine -- the request is anonymous, as the gauge-review tools' are:
+    eight requests a day are inside the anonymous allowance (ADR-136).
+    """
+    headers = {"User-Agent": "western-water-dashboard/refresh "
+                             "(+https://github.com/buschbrian)"}
+    if os.environ.get(USGS_API_KEY_ENV, "").strip():
+        headers["X-Api-Key"] = _usgs_api_key()
+
+    def read():
+        resp = SESSION.get(url, params=params, timeout=60, headers=headers)
+        resp.raise_for_status()
+        return resp.json()
+    return _retry_unreadable_body(read)
+
+
+def _usgs_v1_features(url: str, params: dict | None = None) -> list[dict]:
+    features: list[dict] = []
+    next_url: str | None = url
+    page = 0
+    while next_url and page < MAX_PAGES:
+        payload = _get_usgs_v1_json(next_url, params)
+        params = None
+        page += 1
+        features.extend(payload.get("features") or [])
+        next_url = next((link.get("href") for link in payload.get("links") or []
+                         if link.get("rel") == "next" and link.get("href")), None)
+    if next_url:
+        raise RuntimeError(f"USGS OGC pagination exceeded {MAX_PAGES} pages")
+    return features
+
+
+def confirm_usgs_flow_series(site_no: str, time_series_id: str, *,
+                             features: list[dict] | None = None) -> None:
+    """Refuse a reviewed series id that is no longer the primary daily mean.
+
+    The roster commits the id a person checked. If the survey retires it or
+    names another series primary, the gauge fails this run and its last
+    record is carried forward as late, rather than reading the wrong series.
+    """
+    if features is None:
+        features = _usgs_v1_features(usgs_flow_metadata_url(site_no))
+    primary = [f for f in features
+               if (f.get("properties") or {}).get("primary") == "Primary"
+               and (f.get("properties") or {}).get("unit_of_measure") == USGS_FLOW_UNIT]
+    ids = [f.get("id") for f in primary]
+    if ids != [time_series_id]:
+        raise ValueError(
+            f"{site_no}: expected primary daily mean flow series {time_series_id}, "
+            f"the survey lists {ids}")
+
+
+def fetch_usgs_flow_series(site_no: str, time_series_id: str,
+                           start: dt.date, end: dt.date, *,
+                           features: list[dict] | None = None) -> list[dict]:
+    """One gauge's daily mean flow, one dict per reported day, oldest first.
+
+    Unlike the storage adapter, a row is kept with its approval status and
+    qualifiers, and a reported day with no value stays a day with no value.
+    A row naming another site, series, parameter, statistic or unit refuses
+    the whole series: a flow is published or it is not, never patched.
+    """
+    if features is None:
+        features = _usgs_v1_features(
+            f"{USGS_OGC_V1_URL}/daily/items",
+            {"f": "json", "time_series_id": time_series_id,
+             "datetime": f"{start.isoformat()}/{end.isoformat()}",
+             "limit": USGS_PAGE_LIMIT})
+    expected = {"monitoring_location_id": f"USGS-{site_no}",
+                "time_series_id": time_series_id,
+                "parameter_code": USGS_FLOW_PARAMETER,
+                "statistic_id": USGS_DAILY_MEAN_STATISTIC,
+                "unit_of_measure": USGS_FLOW_UNIT}
+    rows: dict[str, dict] = {}
+    for feature in features:
+        p = feature.get("properties") or {}
+        for key, value in expected.items():
+            if p.get(key) != value:
+                raise ValueError(f"{site_no}: a daily row has {key} {p.get(key)!r}")
+        stamp = p.get("time")
+        try:
+            day = dt.date.fromisoformat(stamp)
+        except (TypeError, ValueError):
+            raise ValueError(f"{site_no}: a daily row has no calendar date") from None
+        if day.isoformat() != stamp or not start <= day <= end:
+            raise ValueError(f"{site_no}: {stamp} is outside the requested window")
+        raw = p.get("value")
+        if raw is None:
+            cfs = None
+        else:
+            if isinstance(raw, bool):
+                raise ValueError(f"{site_no}: {stamp} has a non-numeric flow")
+            try:
+                cfs = float(raw)
+            except (TypeError, ValueError):
+                raise ValueError(f"{site_no}: {stamp} has a non-numeric flow") from None
+            if not math.isfinite(cfs) or cfs < 0:
+                raise ValueError(f"{site_no}: {stamp} has an impossible flow {raw!r}")
+        approval = p.get("approval_status")
+        if approval is not None and not isinstance(approval, str):
+            raise ValueError(f"{site_no}: {stamp} has an unreadable approval status")
+        qualifier = p.get("qualifier")
+        if qualifier is None:
+            qualifiers: list[str] = []
+        elif isinstance(qualifier, str):
+            qualifiers = [qualifier]
+        elif isinstance(qualifier, list) and all(isinstance(q, str) for q in qualifier):
+            qualifiers = list(qualifier)
+        else:
+            raise ValueError(f"{site_no}: {stamp} has an unreadable qualifier")
+        row = {"date": stamp, "cfs": cfs, "approval": approval, "qualifiers": qualifiers}
+        if stamp in rows and rows[stamp] != row:
+            raise ValueError(f"{site_no}: two different flows for {stamp}")
+        rows[stamp] = row
+    return [rows[key] for key in sorted(rows)]
 
 
 def reduce_to_daily_last(frame: pd.DataFrame) -> pd.DataFrame:

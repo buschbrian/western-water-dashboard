@@ -22,6 +22,7 @@ modules in `pipeline/`:
 | `pipeline/lakes.py` | The natural terminal lakes (ADR-112, ADR-118): a record of elevation and volume with no full level, its validator, and the lake payload envelope. |
 | `pipeline/measurement.py` | One daily series summarised: current value, dated extremes, dated changes and the same-date rank. Shared by a lake's level and volume and a reservoir's surface level, so a level means one thing. |
 | `pipeline/elevation.py` | Reviewed reservoir surface elevation (ADR-135): the record's `elevation` block, the history entries, `elevation_history.json` and their checks. |
+| `pipeline/rivers.py` | Daily river flow (ADR-136): a gauge's 30-day record with no normal, rank or total, its validator, and the river payload envelope. |
 | `refresh_reservoirs.py` | Fetch, summarize, assemble, validate, write, and report to CI. |
 
 `refresh_reservoirs` re-exports every public name from those modules, so
@@ -31,7 +32,8 @@ had to learn a new import path.
 Other entry points: `refresh_snowpack.py` (snow payload),
 `refresh_station_readings.py` (precipitation at the snow stations, ADR-125),
 `refresh_soil_moisture.py` (the week's soil-moisture change at the same stations, ADR-142), `refresh_lakes.py`
-(the terminal-lake payload, `lakes.json`), `watershed_scopes.py`
+(the terminal-lake payload, `lakes.json`), `refresh_rivers.py` (daily river
+flow, `rivers.json`), `watershed_scopes.py`
 and `huc.py` (named scopes, drainage assignment, grouping), `admission.py`
 (candidate screening), `tools/` (audits, boundary fetches, drought
 computation, normals).
@@ -43,6 +45,13 @@ Its chosen delivery model is scheduled Python ingestion and static, versioned
 outputs, with R2 available for rasters and archives. It is not connected to the
 daily job or any public page yet. The scope, remaining work and credential
 setup are in [the pilot plan](../RECENT-CONDITIONS-PILOT.md).
+
+`tools/import_gauge_rulings.py` previews saved private review exports offline
+and writes the worksheet only with `--apply` (ADR-130). It changes only
+`reviewer_ruling` and `notes`, keyed by site number. Any existing review needs
+an explicit per-site replacement to change; invalid or unsaved records refuse
+the whole batch. The screen builder still preserves manual review fields.
+This workflow does not create an admitted roster or a published flow payload.
 
 The supported CI runtime is Python 3.14. The pipeline dependency set requires
 Python 3.12 or newer; all data workflows install the shared
@@ -164,6 +173,25 @@ block carrying a percentage, and names any rostered reservoir still without
 one. The history is written whenever the Reclamation source is refreshed
 (a full run or `--source rise`); a run of another source carries the blocks
 inside the records it keeps and leaves the history file alone.
+
+**River flow is published from its own roster to its own payload**
+(ADR-136). `admitted_river_gauges.json` is loaded by
+`pipeline.roster.load_admitted_river_gauges`, which requires a plain display
+name beside the survey's station name, the reviewed primary `time_series_id`,
+a tier with its basis and who directed it, and evidence for any water named
+downstream; it accepts only the `shaped` tier. `refresh_rivers.py` confirms
+each series against the v1 `time-series-metadata` collection and reads the
+last `RIVER_FETCH_DAYS` (90) days from the v1 `daily` collection through
+`fetch_usgs_flow_series`, which keeps approval status and qualifiers and
+refuses the whole series on an identity, unit, date or value fault. Unlike
+the storage adapter it sends the key only when one is configured.
+`pipeline.rivers.summarize_gauge` keeps the 30 days ending on the newest day
+with a value; every run re-reads the whole window, so revisions land without
+a merge. Freshness is ADR-056's, with the notice keyed by station (ADR-126).
+`pipeline.rivers.validate_payload` refuses a normal, rank, capacity, inflow or
+total on a record or the envelope, `compared_with_normal` other than false, a
+window that is not 30 consecutive days ending on the current value, a notice
+carrying a measurement, and a roster gauge in neither list.
 
 ## Freshness: late and withdrawn are different faults
 
