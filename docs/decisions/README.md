@@ -107,7 +107,8 @@ The four different scopes, the hydrologic level, and what a link carries.
   [ADR-097](ADR-097-filter-snow-by-the-committed-upstream-set.md),
   [ADR-105](ADR-105-open-on-the-areas-the-map-draws.md),
   [ADR-108](ADR-108-apply-reviewed-waterbody-points-without-refreshing-readings.md),
-  [ADR-109](ADR-109-remove-scofields-rejected-dam-point.md)
+  [ADR-109](ADR-109-remove-scofields-rejected-dam-point.md),
+  [ADR-149](ADR-149-let-the-weekly-storage-figures-follow-every-filter.md)
 - Boundary sourcing: [ADR-024](ADR-024-use-full-resolution-watersheds-for-snow-sites.md),
   [ADR-034](ADR-034-hosted-boundary-layers-with-a-deadline.md),
   [ADR-037](ADR-037-refetch-the-boundaries-at-the-resolution-the-source-stops-adding.md)
@@ -214,7 +215,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-008](ADR-008-one-class-break-table.md) | One class-break table is the single source of truth for colour | Accepted |
 | [ADR-009](ADR-009-geography-is-drainage-areas-that-touch-utah.md) | The dashboard's geography is drainage areas that intersect Utah | Superseded by ADR-010 |
 | [ADR-010](ADR-010-colorado-and-great-basin-systems-only.md) | Narrow the geography to the Colorado and Great Basin systems | Accepted |
-| [ADR-011](ADR-011-separate-location-scope-from-lake-powell.md) | Separate reservoir location from Lake Powell inclusion | Superseded by ADR-013 |
+| [ADR-011](ADR-011-separate-location-scope-from-lake-powell.md) | Separate reservoir location from Lake Powell inclusion | Superseded by ADR-013; its weekly-card scope line by ADR-149 |
 | [ADR-012](ADR-012-build-phase-2-beside-production.md) | Build the Phase 2 shell beside the production pages | Superseded by ADR-019 |
 | [ADR-013](ADR-013-count-reservoirs-whose-waterbody-intersects-utah.md) | Count reservoirs whose waterbody intersects Utah | Accepted |
 | [ADR-014](ADR-014-use-the-ugrc-utah-state-boundary.md) | Use the maintained UGRC Utah state boundary | Superseded by ADR-067 |
@@ -351,6 +352,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-146](ADR-146-keep-river-flow-and-soil-moisture-change-day-by-day.md) | Keep river flow and the soil-moisture change day by day | Accepted; extends ADR-136 and ADR-142; `river_history.json` (daily flow, status, qualifiers, class) and `soil_moisture_history.json` (published change per drainage area per date) in the `elevation_history.json` layout; merge by date, nothing deleted; no payload changes |
 | [ADR-147](ADR-147-hold-every-published-reservoir-name-to-the-waters-own-name.md) | Hold every published reservoir name to the water's own name | Accepted; extends ADR-079; eighteen more roster names renamed with fifteen former names added; a test refuses provider text in any roster name, with an allow list and a held list |
 | [ADR-148](ADR-148-put-river-flow-in-the-page-menu-and-the-bar.md) | Put river flow in the page menu and the bar | Accepted; supersedes ADR-136's reader-surface clause; a seventh `PAGES` entry between Drought and Methods, not in the first-visit chooser; page-link buttons show icons alone from 64rem to 72rem, the river flow button to 75rem |
+| [ADR-149](ADR-149-let-the-weekly-storage-figures-follow-every-filter.md) | Let the weekly storage figures follow every filter | Accepted; supersedes the ADR-011 scope-versus-filter line for the storage charts' weekly card; its storage figures follow the state, county, search, reporting and storage-class filters as well as both switches and the drainage area; snow and drought stay whole-region; the scope line says "N of M" |
 
 ## Relationship to the historical journal
 

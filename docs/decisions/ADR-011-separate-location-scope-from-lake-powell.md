@@ -4,6 +4,9 @@
 
 Superseded by
 [ADR-013](ADR-013-count-reservoirs-whose-waterbody-intersects-utah.md).
+Its scope-versus-filter line, as the storage charts page applied it to the
+weekly card, is superseded by
+[ADR-149](ADR-149-let-the-weekly-storage-figures-follow-every-filter.md).
 
 ## Date
 

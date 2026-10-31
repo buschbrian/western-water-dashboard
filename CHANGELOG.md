@@ -94,6 +94,11 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Changed
 
+- **The weekly card's storage figures follow every filter** (ADR-149) on the
+  storage charts page: state, county, search, reporting and storage class, as
+  well as the Lake Powell and Lake Mead switches and the drainage area. The
+  scope line says how many reservoirs of how many the figures cover. The snow
+  and drought figures still describe the whole region.
 - **The soil map says how old it is.** Once the soil readings load, the
   switch reads "Soil moisture to Oct 26" (the week's end date), and the date
   line says why it can end before the rain totals: it is the newest day on

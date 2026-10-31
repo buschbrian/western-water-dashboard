@@ -3003,6 +3003,15 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
         await pickPlace(filterCounty.code);
         await tab.waitForFunction((expected) => window.__overviewReady?.visible === expected,
           filterCounty.count, { timeout: 60000 });
+        /* ADR-149: the weekly storage figures follow the filters, and the
+         * card's scope line counts the filtered rows. */
+        const weeklyScope = await tab.waitForFunction((expected) => {
+          const text = document.querySelector('[data-weekly="scope"]')?.textContent ?? "";
+          return text.startsWith(`Storage covers ${expected} of `) ? text : false;
+        }, filterCounty.count, { timeout: 30000 }).then((handle) => handle.jsonValue())
+          .catch(() => null);
+        check(weeklyScope !== null,
+          `${label}: the weekly scope line does not count the ${filterCounty.count} filtered reservoirs`);
         await tab.locator("#reset-filters").click();
         await tab.waitForFunction((expected) => window.__overviewReady?.visible === expected,
           expectedReservoirs, { timeout: 60000 });

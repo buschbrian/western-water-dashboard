@@ -472,6 +472,14 @@ and Lake Mead switches never remove a county or area from its control. A
 coarser saved area may continue to prefix-filter a finer page; the exact-tier
 control shows every area until the reader chooses a row at that tier.
 
+**The storage charts' weekly card follows every filter** (ADR-149). Its
+storage figures are made from the rows the table shows: both dominant switches
+and the drainage area, narrowed by the state, county, search, reporting and
+storage-class filters. Its scope line counts those rows ("Storage covers 40 of
+404 reservoirs") and names Lake Powell and Lake Mead either way: "excluded"
+by a switch, "not in this view" when a filter left one out. The snow and
+drought sections describe the whole region.
+
 **Snowpack orders its place controls sequentially** (ADR-094): State, Area
 size, then exactly one hydrologic tier. The last label follows the chosen
 size: Region, Subregion or Basin. Only areas with a publishable snow figure at

@@ -22,7 +22,7 @@ import {
   EMPTY_OPENING_ROSTERS,
   isOpeningScopeChosen
 } from "./data/opening-scope";
-import { weeklySummary } from "./weekly-model";
+import { weeklyScopeText, weeklySummary } from "./weekly-model";
 import { describeWeek } from "./viz/weekly-summary";
 import { downloadCsv } from "./data/download";
 import { overviewCsv, overviewCsvFilename } from "./data/export";
@@ -307,7 +307,7 @@ async function renderOverview(
           aria-controls="weekly-sections" aria-expanded="false">Show weekly update</button>
       </div>
       <div id="weekly-sections" class="weekly-sections"></div>
-      <p class="card-note weekly-note">The storage figures follow the Lake Powell and Lake Mead switches and the drainage area. They do not follow the state, county, search, reporting or storage class filters. The snow and drought figures always describe the whole region.</p>
+      <p class="card-note weekly-note">The storage figures follow the state, county, search, reporting and storage class filters. They also follow the Lake Powell and Lake Mead switches and the drainage area. The snow and drought figures always describe the whole region.</p>
     </section>
     <!-- What a shared link's ?state= and ?area= narrowed this page to when
          it opened (slice S3d, docs/OPENING-SCOPE-AND-THE-WESTERN-ROSTER.md).
@@ -897,17 +897,16 @@ async function renderOverview(
       ? matching
       : matching.filter((reservoir) => classIndexOf(reservoir) === storageClassFilter);
     updateKpis(visible, period);
-    /* The digest follows the scope, not the filters.
+    /* The digest follows what the reader chose, filters included (ADR-149).
      *
-     * That is the same line the map draws (ADR-011): a scope changes which
-     * reservoirs exist, a filter changes which of them are picked out. A
-     * digest that answered the search box would be describing a text query;
-     * one that ignores the Lake Powell switch is worse, because Powell is
-     * 25 of the region's 34 million acre-feet and "the measured reservoirs
-     * lost 69,480 acre-feet" is very nearly a sentence about Powell alone.
-     * Turning it off has to change the sentence, or the switch is decorative
-     * on this card. */
-    void renderWeekly(scoped);
+     * It used to follow only the scope, the line ADR-011 drew for the map: a
+     * scope changes which reservoirs exist, a filter picks some out. A reader
+     * who chose Colorado then read a storage figure for the whole West beside
+     * a table of Colorado, so the card now takes the same rows as the table
+     * and the charts. The Powell and Mead switches still change the sentence,
+     * and the scope line names both reservoirs whatever took them out. The
+     * snow and drought figures still describe the whole region. */
+    void renderWeekly(visible, scoped);
     renderClassStrip(matching);
     exportRows = filterAndSort(visible, "", sort.value as OverviewSort);
     renderRows(tbody, exportRows, allReservoirs);
@@ -1155,7 +1154,8 @@ function weeklyPayloads(): Promise<[SnowpackPayload | null, DroughtCoveragePaylo
   return weeklyContext;
 }
 
-async function renderWeekly(reservoirs: readonly Reservoir[]): Promise<void> {
+async function renderWeekly(reservoirs: readonly Reservoir[],
+  scoped: readonly Reservoir[]): Promise<void> {
   const card = document.querySelector<HTMLElement>("#weekly-summary");
   const host = card?.querySelector<HTMLElement>(".weekly-sections");
   if (!card || !host) return;
@@ -1167,21 +1167,7 @@ async function renderWeekly(reservoirs: readonly Reservoir[]): Promise<void> {
    * not have to look elsewhere to find out what "the measured reservoirs"
    * means this time. */
   const scopeLine = document.querySelector<HTMLElement>('[data-weekly="scope"]');
-  if (scopeLine) {
-    /* Both dominant reservoirs, whatever their state. Read from the rows the
-     * digest was handed rather than from the controls, so the sentence
-     * describes the figures beside it even if the two ever disagree. Powell
-     * is 25 million acre-feet and Mead 28, against about 34 for everything
-     * else on the roster put together: a digest that names one and stays
-     * quiet about the other invites the reader to assume it is in there
-     * (ADR-011, ADR-062). */
-    const hasPowell = reservoirs.some(isLakePowell);
-    const hasMead = reservoirs.some(isLakeMead);
-    scopeLine.textContent =
-      `Storage covers ${reservoirs.length} reservoirs, Lake Powell ` +
-      `${hasPowell ? "included" : "excluded"}, Lake Mead ` +
-      `${hasMead ? "included" : "excluded"}.`;
-  }
+  if (scopeLine) scopeLine.textContent = weeklyScopeText(reservoirs, scoped);
 
   const sections = describeWeek(weeklySummary(reservoirs, snow, drought));
   host.replaceChildren(...sections.map((section) => {
