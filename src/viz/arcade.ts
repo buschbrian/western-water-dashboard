@@ -2,8 +2,9 @@
  * The Arcade a CIM symbol reads each feature's attributes with.
  *
  * Every expression here is GENERATED from the same constants the TypeScript
- * arithmetic uses -- `RING_MIN_PX`, `RING_MAX_PX`, and the storage class
- * table. None of the numbers or colours is typed into a string by hand.
+ * arithmetic uses -- `RING_MIN_PX` and `RING_MAX_PX`. None of the numbers is
+ * typed into a string by hand. Colour is a renderer key, not an expression
+ * (see `reservoirCIMTemplate`).
  *
  * That generation is the whole point. The legacy ArcGIS page built its
  * renderer from a string-concatenated Arcade expression that existed twice,
@@ -14,11 +15,9 @@
  * needs 35ms to recompile 51 per-feature symbols, and a month slider that
  * re-symbolises on every frame cannot afford the second. The mitigation is
  * that no human writes the numbers, and `arcade.test.ts` asserts every
- * break and every colour in the generated text came from the table.
+ * number in the generated text came from those constants.
  */
 
-import { STALE_COLOR, STORAGE_CLASSES } from "./classes";
-import { hexToRgb } from "./color";
 import { RING_MAX_PX, RING_MIN_PX } from "./symbols";
 import { POINTS_PER_CSS_PIXEL } from "./units";
 
@@ -26,11 +25,6 @@ import { POINTS_PER_CSS_PIXEL } from "./units";
  * a field rename breaks here rather than silently drawing nothing. */
 export const SIZE_BASIS_FIELD = "size_basis";
 export const FILL_PERCENT_FIELD = "fill_percent";
-
-function colorLiteral(hex: string, alpha = 255): string {
-  const [red, green, blue] = hexToRgb(hex);
-  return `[${red}, ${green}, ${blue}, ${alpha}]`;
-}
 
 /**
  * The ring diameter, in the same square-root domain `ringSize` uses. The
@@ -86,21 +80,4 @@ export function shadowSizeExpression(domain: number, spread: number): string {
     `var share = Min(1, Sqrt(basis) / ${domain});`,
     `return (${RING_MIN_PX} + share * ${span} + ${spread}) * ${POINTS_PER_CSS_PIXEL};`
   ].join("\n");
-}
-
-/**
- * The storage class colour, written from the table in descending order so
- * the first matching break wins -- the same order `storageClass` walks it.
- */
-export function storageColorExpression(alpha = 255): string {
-  const lines = [`var pct = $feature.${FILL_PERCENT_FIELD};`,
-    `if (IsEmpty(pct)) { return ${colorLiteral(STALE_COLOR, alpha)}; }`];
-  for (let index = STORAGE_CLASSES.length - 1; index >= 0; index -= 1) {
-    const entry = STORAGE_CLASSES[index];
-    if (!entry) continue;
-    lines.push(index === 0
-      ? `return ${colorLiteral(entry.color, alpha)};`
-      : `if (pct >= ${entry.min}) { return ${colorLiteral(entry.color, alpha)}; }`);
-  }
-  return lines.join("\n");
 }
