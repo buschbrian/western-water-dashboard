@@ -33,6 +33,7 @@ than bundled. **Start with ADR-002.**
   [ADR-137](ADR-137-treat-a-published-reservoir-or-ten-percent-storage-as-shaped-and-propose-gauge-names.md),
   [ADR-138](ADR-138-split-the-shaped-tier-add-reference-evidence-and-widen-the-bulk-queue.md),
   [ADR-144](ADR-144-compare-natural-river-gauges-with-the-surveys-day-of-year-percentiles.md),
+  [ADR-146](ADR-146-keep-river-flow-and-soil-moisture-change-day-by-day.md),
   [ADR-141](ADR-141-publish-a-share-page-and-a-daily-picture-for-a-reservoir-link.md)
 - Superseded, read only for history: ADR-012, ADR-019,
   [ADR-117](ADR-117-close-the-scope-at-version-1-0-0.md) (pilot scope exception only)
@@ -342,6 +343,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-141](ADR-141-publish-a-share-page-and-a-daily-picture-for-a-reservoir-link.md) | Publish a share page and a daily picture for a reservoir link | Accepted; two hand-kept share pages in `public/share/`, a `view=share` layout of the reservoir page, a picture captured in each deploy with a committed fallback; ADR-136 to ADR-140 and ADR-142 are other records |
 | [ADR-142](ADR-142-show-the-weeks-change-in-mountain-soil-moisture.md) | Show the week's change in mountain soil moisture | Accepted; seven-day change in points at the snow stations, mean of 2 (or 4), 8 and 20 in, frozen readings dropped, snow floor per area; a "Rain \| Soil moisture" switch on the precipitation map; percent of median is phase 2 |
 | [ADR-144](ADR-144-compare-natural-river-gauges-with-the-surveys-day-of-year-percentiles.md) | Compare natural river gauges with the survey's day-of-year percentiles | Accepted; extends ADR-136 and ADR-137; three natural gauges compared with the U.S. Geological Survey Statistics API's approved day-of-year 10th-90th percentiles in WaterWatch's five classes, 30 years per day or no comparison; committed `river_normals.json` read by the daily refresh; `rivers.json` structure version 2; Middle Fork Beaver Creek held out at 22 years; shaped gauges unchanged |
+| [ADR-146](ADR-146-keep-river-flow-and-soil-moisture-change-day-by-day.md) | Keep river flow and the soil-moisture change day by day | Accepted; extends ADR-136 and ADR-142; `river_history.json` (daily flow, status, qualifiers, class) and `soil_moisture_history.json` (published change per drainage area per date) in the `elevation_history.json` layout; merge by date, nothing deleted; no payload changes |
 
 ## Relationship to the historical journal
 

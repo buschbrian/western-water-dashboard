@@ -53,7 +53,8 @@ const SOURCE_ONLY_ROSTERS = [
 const RUNTIME_DATA = [
   "reservoirs.json", "lakes.json", "snow_sites.json", "snowpack.json",
   "reference.json", "capacities.json", "precipitation.json", "precipitation_history.json",
-  "soil_moisture.json", "elevation_history.json", "rivers.json"
+  "soil_moisture.json", "elevation_history.json", "rivers.json",
+  "river_history.json", "soil_moisture_history.json"
 ];
 
 describe("a data-only commit deploys on its own", () => {
@@ -307,6 +308,9 @@ describe("a data-only commit deploys on its own", () => {
       "elevation_history.json", "data/elevation_history.json", "api/elevation_history.json",
       // River flow (ADR-136), published the same way.
       "rivers.html", "rivers.json", "data/rivers.json", "api/rivers.json",
+      // Their histories (ADR-146), under data/ and as API aliases.
+      "data/river_history.json", "api/river_history.json",
+      "data/soil_moisture_history.json", "api/soil_moisture_history.json",
       // The story views (ADR-128): a public URL a published story embeds.
       "story.html",
       // The shared-link pages and their pictures (ADR-141): permanent URLs
@@ -325,6 +329,7 @@ describe("a data-only commit deploys on its own", () => {
     expect(config).toContain('resolve(outDir, "api")');
     expect(config).toContain('resolve(outDir, "api", file)');
     for (const file of ["reservoirs.json", "lakes.json", "elevation_history.json", "rivers.json",
+      "river_history.json", "soil_moisture_history.json",
       "snowpack.json", "reference.json"]) {
       expect(config, `the API alias list must name ${file}`).toContain(`"${file}"`);
     }

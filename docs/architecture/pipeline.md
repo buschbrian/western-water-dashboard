@@ -33,7 +33,8 @@ Other entry points: `refresh_snowpack.py` (snow payload),
 `refresh_station_readings.py` (precipitation at the snow stations, ADR-125),
 `refresh_soil_moisture.py` (the week's soil-moisture change at the same stations, ADR-142), `refresh_lakes.py`
 (the terminal-lake payload, `lakes.json`), `refresh_rivers.py` (daily river
-flow, `rivers.json`), `watershed_scopes.py`
+flow, `rivers.json`; with `pipeline/river_history.py` and `pipeline/soil_history.py`
+keeping both daily histories, ADR-146), `watershed_scopes.py`
 and `huc.py` (named scopes, drainage assignment, grouping), `admission.py`
 (candidate screening), `tools/` (audits, boundary fetches, drought
 computation, normals).

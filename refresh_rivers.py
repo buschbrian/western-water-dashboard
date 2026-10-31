@@ -29,7 +29,7 @@ import time
 
 import pandas as pd
 
-from pipeline import rivers
+from pipeline import river_history, rivers
 from pipeline.constants import (
     RIVER_FETCH_DAYS, RIVER_NORMALS_PATH, RIVERS_OUTPUT_PATH, local_today,
 )
@@ -87,6 +87,19 @@ def refresh(targets: dict[str, dict], today: pd.Timestamp, previous: dict[str, d
                     [previous_withdrawn[station]], None, today,
                     roster=set(targets)))
     return records, carried
+
+
+def keep_history(payload: dict, normals: dict, today: pd.Timestamp, fetched_at: str,
+                 output) -> int:
+    """Merge the written payload into river_history.json beside it (ADR-146)."""
+    try:
+        kept = river_history.update(payload, normals, today, fetched_at,
+                                    output.with_name(river_history.RIVER_HISTORY_PATH.name))
+    except (OSError, ValueError, KeyError) as exc:
+        print(f"ERROR: {exc}; river_history.json left untouched", file=sys.stderr)
+        return 1
+    print(f"Merged {payload['gauge_count']} gauge(s) into river_history.json ({kept} kept)")
+    return 0
 
 
 def main(argv: list[str] | None = None, *, fetch=fetch_gauge, output=RIVERS_OUTPUT_PATH,
@@ -157,7 +170,7 @@ def main(argv: list[str] | None = None, *, fetch=fetch_gauge, output=RIVERS_OUTP
     output.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
     print(f"Wrote {output.name}: {payload['gauge_count']} gauge(s), "
           f"{payload['stale_count']} late, {payload['withdrawn_count']} withdrawn")
-    return 0
+    return keep_history(payload, normals, today, fetched_at, output)
 
 
 if __name__ == "__main__":
