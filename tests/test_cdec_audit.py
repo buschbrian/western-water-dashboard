@@ -393,3 +393,113 @@ def test_a_station_the_reviewer_named_nothing_for_keeps_every_reading(monkeypatc
     found = screened(monkeypatch, "SHA", GRANT_LAKE_MONTHS)
     assert found["excluded"] == []
     assert max(found["values"]) == 82410.0
+
+
+# --- the monthly reading against the daily one at month end ---------------
+
+from tools.audit_cdec_stations import (  # noqa: E402
+    MONTH_END_TOLERANCE_AF, MONTH_END_TOLERANCE_SHARE, month_end_day,
+    month_end_disagreements, month_end_screen,
+)
+
+
+def rows(pairs):
+    return [{"date": stamp, "value": value} for stamp, value in pairs]
+
+
+def test_a_monthly_stamp_names_the_month_and_its_value_is_the_last_day():
+    assert month_end_day("2024-2-1 00:00") == "2024-02-29"
+    assert month_end_day("2023-2-1 00:00") == "2023-02-28"
+    assert month_end_day("2022-12-1 00:00") == "2022-12-31"
+    assert month_end_day("not a date") == ""
+
+
+def test_rounding_in_the_monthly_series_is_not_a_disagreement():
+    # Shasta's January 2024 and Folsom's: the monthly value is the 31 January
+    # daily reading rounded to four significant figures.
+    result = month_end_disagreements(
+        "SHA", rows([("2024-1-1 00:00", 3624000), ("2024-2-1 00:00", 537800)]),
+        rows([("2024-1-31 00:00", 3623764), ("2024-2-29 00:00", 537795)]))
+    assert result["compared"] == 2
+    assert result["disagreements"] == []
+
+
+def test_both_floors_must_be_passed():
+    big_but_close = month_end_disagreements(
+        "X", rows([("2024-1-1 00:00", 1000000)]),
+        rows([("2024-1-31 00:00", 1000000 + MONTH_END_TOLERANCE_AF * 2)]))
+    small_and_near = month_end_disagreements(
+        "X", rows([("2024-1-1 00:00", 349)]), rows([("2024-1-31 00:00", 300)]))
+    assert big_but_close["disagreements"] == [], "under the share"
+    assert small_and_near["disagreements"] == [], "under the acre-feet floor"
+    assert MONTH_END_TOLERANCE_SHARE * 1000000 > MONTH_END_TOLERANCE_AF * 2
+
+
+def test_a_monthly_reading_the_daily_series_contradicts_is_reported():
+    # Buchanan's December 2022 month against its own 31 December reading.
+    monthly = rows([("2022-11-1 00:00", 9068), ("2022-12-1 00:00", 172105)])
+    daily = rows([("2022-11-30 00:00", 9068), ("2022-12-30 00:00", 13038),
+                  ("2022-12-31 00:00", 22809)])
+    result = month_end_disagreements("BUC", monthly, daily)
+    assert result["compared"] == 2
+    [found] = result["disagreements"]
+    assert found["month"] == "2022-12"
+    assert found["monthly_stamp"] == "2022-12-1 00:00"
+    assert found["monthly_af"] == 172105
+    assert found["daily_day"] == "2022-12-31"
+    assert found["daily_af"] == 22809
+    assert found["ratio"] == pytest.approx(7.545, abs=0.001)
+    assert monthly[1]["value"] == 172105, "the screen reports and removes nothing"
+
+
+def test_the_screen_does_not_say_which_side_is_wrong():
+    # Lake Almanor's August 2021: the daily is the likelier fault, and the
+    # row reads the same either way round.
+    result = month_end_disagreements(
+        "ALM", rows([("2021-8-1 00:00", 763000)]),
+        rows([("2021-8-31 00:00", 52923)]))
+    [found] = result["disagreements"]
+    assert set(found) == {"month", "monthly_stamp", "monthly_af", "daily_day",
+                          "daily_af", "difference_af", "ratio", "excluded"}
+
+
+def test_a_month_with_no_daily_reading_at_its_end_is_counted_not_judged():
+    result = month_end_disagreements(
+        "X", rows([("2024-1-1 00:00", 5000), ("2024-2-1 00:00", 6000),
+                   ("2024-3-1 00:00", -9999)]),
+        rows([("2024-1-30 00:00", 900), ("2024-2-29 00:00", -9999)]))
+    assert result["compared"] == 0
+    assert result["months_without_a_daily_reading"] == 2
+    assert result["disagreements"] == []
+
+
+def test_a_disagreement_already_excluded_names_its_review():
+    # Grant Lake's March 2023 month is in the committed excluded_readings.
+    result = month_end_disagreements(
+        "GNT", rows([("2023-3-1 00:00", 82410)]),
+        rows([("2023-3-31 00:00", 22694)]))
+    [found] = result["disagreements"]
+    assert found["excluded"].endswith("/issues/47")
+
+
+def test_a_station_whose_requests_fail_is_reported_not_dropped(monkeypatch):
+    monkeypatch.setattr(audit_cdec_stations, "get",
+                        lambda url, params=None: b'{"error": "busy"}')
+    monkeypatch.setattr(audit_cdec_stations.time, "sleep", lambda seconds: None)
+    assert "error" in month_end_screen(["BUC"])["BUC"]
+
+
+def test_the_screen_reads_both_durations_for_one_station(monkeypatch):
+    asked = []
+
+    def answer(url, params=None):
+        asked.append(params["dur_code"])
+        if params["dur_code"] == "M":
+            return json.dumps(rows([("2022-12-1 00:00", 172105)])).encode()
+        return json.dumps(rows([("2022-12-31 00:00", 22809)])).encode()
+
+    monkeypatch.setattr(audit_cdec_stations, "get", answer)
+    monkeypatch.setattr(audit_cdec_stations.time, "sleep", lambda seconds: None)
+    result = month_end_screen(["BUC"])["BUC"]
+    assert asked == ["M", "D"]
+    assert len(result["disagreements"]) == 1

@@ -113,6 +113,12 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   National Hydrography Dataset name of the water at the reservoir's point.
   `Seven Oaks Dam` stays, because no source names its basin. Short names
   stay short. Links that use an old name still open the right reservoir.
+- **The California audit compares monthly and daily storage.**
+  `tools/audit_cdec_stations.py --monthly-daily` compares each monthly
+  reading with the same station's daily reading on the month's last day.
+  It reports each month where they differ by more than 100 acre-feet and
+  5% of the larger value. It removes no reading; a person decides
+  (ADR-116).
 - **Precipitation has its own page**, `precipitation.html` (ADR-130): the
   recent totals, the season since 1 October and the history chart, for the
   place in the link, with a link to the snowpack view for the same place.

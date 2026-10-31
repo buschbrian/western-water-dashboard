@@ -92,6 +92,17 @@ the spike screen and nothing else, and the audit is re-run afterwards to see
 what the remaining screens say. Grant Lake subsequently passed its admission;
 Havasu, O'Neill Forebay and Railroad Canyon remain withheld.
 
+**A monthly reading can be checked against the station's own daily series.**
+A CDEC monthly value is the daily value on the month's last day, rounded to
+about four significant figures. `tools/audit_cdec_stations.py --monthly-daily`
+compares the two for every station the California file names, or for the
+stations given. It reports a month where they differ by more than 100
+acre-feet and 5% of the larger value. It reads the raw series, so a reading
+already excluded is reported too, with its issue. It changes nothing. Which
+side is wrong is a reviewer's decision: Grant Lake's and Buchanan's monthly
+values were wrong, and Lake Almanor's daily value is the likelier fault. A
+confirmed fault becomes an exclusion as above.
+
 **Being listed is not reporting.** The candidate screen asks whether a station
 has answered **within the year**. Bon Tempe is why — five usable readings ever,
 the last in March 2023 — and admitting it would have put a name on the roster
