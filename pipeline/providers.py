@@ -527,7 +527,6 @@ def fetch_cdss_series(abbrev: str, start: str, end: str) -> pd.DataFrame:
 #: key is deliberately supplied in a header so it cannot enter a requested URL
 #: or a provider log (ADR-098).
 USGS_DV_URL = "https://api.waterdata.usgs.gov/ogcapi/v1/collections/daily/items"
-USGS_LEGACY_DV_URL = "https://waterservices.usgs.gov/nwis/dv"
 USGS_API_KEY_ENV = "USGS_API_KEY"
 USGS_STORAGE_PARAMETER = "00054"
 #: 00062 is reservoir (or lake) surface elevation above the site datum, in

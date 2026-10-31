@@ -109,6 +109,13 @@ wetter.**
   of the 51 drainage areas with snow stations had a soil figure: 6 have no
   soil station with the standard sensors and 10 have fewer than two with a
   change.
-- The switch is not in the link. A shared link opens on rain.
+- The switch is in the link (Brian, 2026-10-31). `?layer=soil` opens the
+  precipitation map on soil moisture; rain is the default and is written as
+  no parameter. The reader's switch rewrites the address with `replaceState`
+  and keeps `state` and `area`. An unknown value opens on rain. If the soil
+  file cannot load, the map falls back to rain and a link opened with
+  `layer=soil` is left as it was. The parameter is page-local, not carried
+  to the other pages, and no stored preference exists for the mode.
+  Parsing and writing are in `src/state/precip-layer-url.ts`.
 - Phase 2 (percent of median for the date over each station's record, a
   history builder rebuilt each October) needs its own record.

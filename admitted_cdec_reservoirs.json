@@ -154,7 +154,7 @@
       }
     },
     "ATN": {
-      "name": "Lake San Antonio, Monterey Co",
+      "name": "Lake San Antonio",
       "station": "ATN",
       "lat": 35.798,
       "lon": -120.883,
@@ -176,7 +176,7 @@
       }
     },
     "BCL": {
-      "name": "Bucks Lake Storage",
+      "name": "Bucks Lake",
       "station": "BCL",
       "lat": 39.897,
       "lon": -121.202,
@@ -459,7 +459,7 @@
       }
     },
     "CFW": {
-      "name": "Bear River At Camp Far West Dam",
+      "name": "Camp Far West",
       "station": "CFW",
       "lat": 39.049858,
       "lon": -121.315941,
@@ -526,7 +526,7 @@
       }
     },
     "CHV": {
-      "name": "Cherry Valley Dam",
+      "name": "Cherry Lake",
       "station": "CHV",
       "lat": 37.967,
       "lon": -119.917,
@@ -577,7 +577,7 @@
       }
     },
     "CNV": {
-      "name": "Crane Valley",
+      "name": "Bass Lake",
       "station": "CNV",
       "lat": 37.283,
       "lon": -119.517,
@@ -948,7 +948,7 @@
       }
     },
     "DRE": {
-      "name": "Dwinnell Reservoir Near Edgewood",
+      "name": "Dwinnell Reservoir",
       "station": "DRE",
       "lat": 41.540894,
       "lon": -122.37455,
@@ -1580,7 +1580,7 @@
       }
     },
     "JCK": {
-      "name": "Jackson Meadows (Nevada Co Wd)",
+      "name": "Jackson Meadows",
       "station": "JCK",
       "lat": 39.509,
       "lon": -120.552,
@@ -1946,7 +1946,7 @@
       }
     },
     "MCO": {
-      "name": "Lake Mccloud",
+      "name": "Lake McCloud",
       "station": "MCO",
       "lat": 41.135,
       "lon": -122.074,
@@ -1968,7 +1968,7 @@
       }
     },
     "MCS": {
-      "name": "Lake Mc Swain",
+      "name": "Lake McSwain",
       "station": "MCS",
       "lat": 37.52,
       "lon": -120.309,
@@ -2112,7 +2112,7 @@
       }
     },
     "MOR": {
-      "name": "Morena Dam",
+      "name": "Morena Reservoir",
       "station": "MOR",
       "lat": 32.683,
       "lon": -116.55,
@@ -2313,7 +2313,7 @@
       }
     },
     "ORO": {
-      "name": "Oroville Dam",
+      "name": "Lake Oroville",
       "station": "ORO",
       "lat": 39.54,
       "lon": -121.493,
@@ -2625,7 +2625,7 @@
       }
     },
     "SAT": {
-      "name": "San Antonio Reservoir, Alameda Co",
+      "name": "San Antonio Reservoir",
       "station": "SAT",
       "lat": 37.573,
       "lon": -121.848,
@@ -3417,7 +3417,7 @@
       }
     },
     "USL": {
-      "name": "U San Leandro",
+      "name": "Upper San Leandro",
       "station": "USL",
       "lat": 37.7644,
       "lon": -122.1016,

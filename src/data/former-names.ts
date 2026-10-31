@@ -1,7 +1,9 @@
 /*
  * The names this roster used to carry, and the station each one became.
  *
- * Twenty-six provider names were normalized on 2026-08-22 under ADR-079 --
+ * Twenty-six provider names were normalized on 2026-08-22 under ADR-079, and
+ * eighteen more on 2026-10-31 in the roster-wide sweep (CHANGELOG; three
+ * differ only in capitals, which the lookup ignores, and have no entry) --
  * operator parentheticals removed, gauge abbreviations expanded, plant
  * numbering replaced by the water's own name. The rulings live in
  * `names-worksheet.csv`; this module is what keeps every link written
@@ -40,5 +42,20 @@ export const FORMER_NAMES: Readonly<Record<string, string>> = Object.freeze({
   "thompson falls res": "12390000:MT:BOR",
   "marlette lk nr carson city": "10336710:NV:BOR",
   "nevada creek res": "12336500:MT:BOR",
-  "lake natoma  (nimbus dam)": "NAT"
+  "lake natoma  (nimbus dam)": "NAT",
+  "rye patch re nr rye patch, nv": "10334500:NV:BOR",
+  "stagecoach reservoir nr oak creek": "09237495:CO:BOR",
+  "howard hansen": "12105800:WA:BOR",
+  "lake san antonio, monterey co": "ATN",
+  "san antonio reservoir, alameda co": "SAT",
+  "jackson meadows (nevada co wd)": "JCK",
+  "dwinnell reservoir near edgewood": "DRE",
+  "bear river at camp far west dam": "CFW",
+  "bucks lake storage": "BCL",
+  "u san leandro": "USL",
+  "lake mc swain": "MCS",
+  "oroville dam": "ORO",
+  "cherry valley dam": "CHV",
+  "morena dam": "MOR",
+  "crane valley": "CNV"
 });

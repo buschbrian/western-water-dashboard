@@ -319,3 +319,15 @@ def test_one_bad_day_does_not_hide_a_series_but_a_trend_does():
     assert D.series_checks({"62614": D.paired_difference(rise, usgs)}, 2.9) == [("62614", "NGVD29")]
     trend = D.paired_difference(rise, days(0, 60, 3500.0, step=0.03))
     assert trend[2] > D.DRIFT_FT
+
+
+def test_every_committed_datum_ruling_is_a_known_label_and_says_who_ruled_and_when():
+    import csv
+    import re
+    with D.OUTPUT_PATH.open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+    for row in rows:
+        if row["reviewer_ruling"]:
+            assert row["reviewer_ruling"] in ("NGVD29", "NAVD88", "project datum"), row["station"]
+            assert "Brian Busch" in row["reviewer_notes"], row["station"]
+            assert re.search(r"20\d\d-\d\d-\d\d", row["reviewer_notes"]), row["station"]

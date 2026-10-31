@@ -152,6 +152,7 @@ ADR-041.**
   [ADR-128](ADR-128-publish-compact-story-views-for-embedding.md),
   [ADR-114](ADR-114-publish-a-water-type-and-an-operating-character.md),
   [ADR-079](ADR-079-rename-through-a-former-name-table-and-publish-the-operator.md),
+  [ADR-147](ADR-147-hold-every-published-reservoir-name-to-the-waters-own-name.md),
   [ADR-089](ADR-089-put-reservoir-state-facts-in-their-own-csv-columns.md)
 
 ### Symbology, cartography and map interaction
@@ -345,6 +346,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-142](ADR-142-show-the-weeks-change-in-mountain-soil-moisture.md) | Show the week's change in mountain soil moisture | Accepted; seven-day change in points at the snow stations, mean of 2 (or 4), 8 and 20 in, frozen readings dropped, snow floor per area; a "Rain \| Soil moisture" switch on the precipitation map; percent of median is phase 2 |
 | [ADR-144](ADR-144-compare-natural-river-gauges-with-the-surveys-day-of-year-percentiles.md) | Compare natural river gauges with the survey's day-of-year percentiles | Accepted, amended by ADR-145; extends ADR-136 and ADR-137; three natural gauges compared with the U.S. Geological Survey Statistics API's approved day-of-year 10th-90th percentiles in WaterWatch's five classes, 30 years per day or no comparison; committed `river_normals.json` read by the daily refresh; `rivers.json` structure version 2; Middle Fork Beaver Creek held out at 22 years; shaped gauges unchanged |
 | [ADR-145](ADR-145-compare-river-gauges-above-ten-years-shorten-two-names-and-round-the-page.md) | Compare river gauges above ten years, shorten two names, and round the page | Accepted; amends ADR-144; compare a date with more than 10 approved years, `short_record` true under 30 and said beside the comparison, `ten_years_or_fewer` replaces `fewer_than_30_years`; `rivers.json` structure version 3; Middle Fork Beaver Creek near Lonetree admitted at 22 years; "Mill Creek near Moab" and "South Creek near Monticello"; the reading and normal range at three significant figures on the rivers page |
+| [ADR-147](ADR-147-hold-every-published-reservoir-name-to-the-waters-own-name.md) | Hold every published reservoir name to the water's own name | Accepted; extends ADR-079; eighteen more roster names renamed with fifteen former names added; a test refuses provider text in any roster name, with an allow list and a held list |
 
 ## Relationship to the historical journal
 

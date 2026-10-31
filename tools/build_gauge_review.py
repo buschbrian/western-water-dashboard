@@ -44,7 +44,11 @@ or above it suggests shaped by reservoirs. Either, and a published reservoir,
 goes in the `bulk` queue when nothing else is in doubt (ADR-138). Basin outlines come
 from the review page's bundle (`--basins`), the simplified outlines the
 reviewer sees, so a dam within a few hundred metres of an edge can fall
-either side.
+either side. The yearly mean flow comes from the Water Data Statistics API,
+then from the OGC daily values for a gauge it lacks (complete water years
+only); a year v1 does not serve is read from a committed reference
+(`data/reference/`, Duchesne River near Randlett only). No legacy
+WaterServices request remains.
 
 **Reference evidence** (`--reference-evidence`, keyless; ADR-138). The GAGES-II
 reference class, the NRCS adjusted-over-observed volume at the station with the
@@ -567,10 +571,20 @@ def mean_flow(years: dict[int, float]) -> tuple[float | None, int]:
 #: Daily values, read only for a gauge the statistics service has no year for.
 DAILY_VALUES_URL = "https://api.waterdata.usgs.gov/ogcapi/v1/collections/daily/items"
 DAILY_PAGE_SIZE = 10000
-#: The legacy daily values, read last: on 2026-10-31 v1 served Duchesne River
-#: near Randlett (09302000) only from 2026-07-15, the legacy service from 1942.
-#: It shuts down 2027-02-22.
-LEGACY_DAILY_VALUES_URL = "https://waterservices.usgs.gov/nwis/dv/"
+#: Yearly means stored once from the retired legacy service, for a gauge whose
+#: daily values v1 holds only from a recent date. On 2026-10-31 v1 served Duchesne
+#: River near Randlett (09302000) from 2026-07-15; the legacy service had 1942
+#: on. `tools/fetch_duchesne_flow_reference.py` wrote the file.
+FLOW_REFERENCE_PATH = ROOT / "data" / "reference" / "duchesne-09302000-water-year-flow.json"
+
+
+def load_flow_reference(path: Path = FLOW_REFERENCE_PATH) -> dict[str, dict[int, float]]:
+    """{site: {water year: mean discharge}} from the committed reference."""
+    if not path.exists():
+        return {}
+    record = json.loads(path.read_text(encoding="utf-8"))
+    return {record["site"]: {int(year): entry["mean_cfs"]
+                             for year, entry in record["water_years"].items()}}
 
 
 def annual_means_from_daily(days: dict[dt.date, float]) -> dict[int, float]:
@@ -602,6 +616,7 @@ def fetch_daily_annual_means(sites: list[str]) -> dict[str, dict[int, float]]:
     key = os.environ.get("USGS_API_KEY", "").strip()
     headers = {"X-Api-Key": key} if key else None
     means: dict[str, dict[int, float]] = {}
+    reference = load_flow_reference()
     for site in sites:
         url: str | None = f"{DAILY_VALUES_URL}?" + urllib.parse.urlencode({
             "monitoring_location_id": f"USGS-{site}", "parameter_code": DISCHARGE_PARAMETER,
@@ -616,35 +631,9 @@ def fetch_daily_annual_means(sites: list[str]) -> dict[str, dict[int, float]]:
                 break
         else:
             raise RuntimeError(f"USGS daily values for {site} exceeded 50 pages")
-        if years := annual_means_from_daily(days) or annual_means_from_daily(
-                fetch_legacy_daily_flow(site)):
+        if years := {**reference.get(site, {}), **annual_means_from_daily(days)}:
             means[site] = years
     return means
-
-
-def parse_legacy_daily_flow(payload: dict) -> dict[dt.date, float]:
-    days: dict[dt.date, float] = {}
-    for series in (payload.get("value") or {}).get("timeSeries") or []:
-        if not str(series.get("name", "")).endswith(
-                f":{DISCHARGE_PARAMETER}:{DAILY_MEAN_STATISTIC}"):
-            continue
-        for block in series.get("values") or []:
-            for row in block.get("value") or []:
-                try:
-                    value = float(row["value"])
-                    if value >= 0:
-                        days[dt.date.fromisoformat(row["dateTime"][:10])] = value
-                except (KeyError, TypeError, ValueError):
-                    continue
-    return days
-
-
-def fetch_legacy_daily_flow(site: str) -> dict[dt.date, float]:
-    query = urllib.parse.urlencode({
-        "format": "json", "sites": site, "parameterCd": DISCHARGE_PARAMETER,
-        "statCd": DAILY_MEAN_STATISTIC, "startDT": f"{FLOW_START_WATER_YEAR - 1}-10-01"})
-    return parse_legacy_daily_flow(
-        upstream.get_json(f"{LEGACY_DAILY_VALUES_URL}?{query}", timeout=USGS_TIMEOUT))
 
 
 def fetch_annual_means(sites: list[str]) -> dict[str, dict[int, float]]:

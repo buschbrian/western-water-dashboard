@@ -265,6 +265,14 @@ empty and say so. The tool owns the evidence columns; `reviewer_ruling` and
 the RISE roster gets a row from the next run, and its elevation waits for a
 ruling.
 
+The committed worksheet is the record of the rulings. `reviewer_ruling` is one
+of `NGVD29`, `NAVD88` or `project datum`, and `reviewer_notes` names who ruled,
+when and on what evidence. As of 2026-10-31 two rows carry one: Lake Powell
+(`NGVD29`, ruled 2026-10-27, measured) and Lake Mead (`project datum`, the
+Hoover Dam powerhouse datum, ruled 2026-10-27, an inference from Reclamation's
+reports). Every other row is blank, including Millerton Lake, whose `NAVD88`
+suggestion nobody has ruled on.
+
 ## Checklist
 
 1. Identify the measurement semantics: what the value means, its units, and

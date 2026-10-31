@@ -6,7 +6,7 @@ one New Mexico reservoir, Navajo. This tool gathers, for every storage series
 New Mexico has on the three providers that carry it, what admission needs, and
 decides each with the shared machinery in `admission.py`, unmodified:
 
-- U.S. Geological Survey: every active parameter-00054 site in the state, read
+- U.S. Geological Survey: every parameter-00054 site in the state that reported in the last seven days, read
   from the daily-values service since 2015 (the statistic with the freshest
   last reading is chosen, never the first one listed);
 - Bureau of Reclamation RISE: Lake/Reservoir locations that stand in New Mexico
@@ -27,10 +27,11 @@ run is `data/reviews/new-mexico-admission-screen.json`:
     .venv/bin/python tools/audit_new_mexico_reservoirs.py \\
         > data/reviews/new-mexico-admission-screen.json
 
-USGS is read through the legacy daily-values service, as `probe_nwis_storage`
-does, because it needs no key. The refresh reads the same series through the
-OGC service (ADR-098); the roster edit this screen proposes names the
-statistic the refresh will ask that service for.
+USGS is read through the OGC `daily` collection, as `probe_nwis_storage` does
+and the refresh does (ADR-098), keyless unless `USGS_API_KEY` is set. The
+legacy WaterServices read this tool made until 2026-10-31 ends with that
+service on 2027-02-22. The roster edit this screen proposes names the
+statistic the refresh will ask for.
 """
 
 from __future__ import annotations
@@ -38,6 +39,7 @@ from __future__ import annotations
 import argparse
 import datetime as dt
 import json
+import os
 import re
 import sys
 import time
@@ -60,7 +62,7 @@ CURRENT_WITHIN_DAYS = 30
 #: New Mexico's bounding box, used only to select RISE locations whose own
 #: state tag is another state (Navajo is tagged Colorado, ADR-069).
 NM_BOX = {"south": 31.3, "north": 37.05, "west": -109.1, "east": -102.95}
-NWIS_URL = "https://waterservices.usgs.gov/nwis/dv/"
+USGS_DAILY_URL = "https://api.waterdata.usgs.gov/ogcapi/v1/collections/daily/items"
 NWIS_USER_AGENT = ("western-water-dashboard/nm-admission-screen "
                    "(+https://github.com/buschbrian)")
 #: The agency named by the inventory's operator or owner field decides which
@@ -71,42 +73,26 @@ OPERATOR_MARKERS = (("army corps", "cwms"), ("reclamation", "rise"))
 NO_DATA = -999999.0
 
 
-def parse_nwis(payload: dict) -> dict[str, dict]:
-    """Group a daily-values response by site and statistic.
+def parse_daily(features: list[dict]) -> dict[str, list[tuple[str, float]]]:
+    """Group OGC daily features by statistic, oldest reading first.
 
-    Returns ``{site_no: {"name", "lat", "lon", "statistics": {stat: [(date,
-    value)]}}}`` with dates as ISO strings, the no-data sentinel dropped and
-    negative storage refused, the same screens the refresh applies.
+    Returns ``{statistic_id: [(date, value)]}`` with the no-data sentinel
+    dropped and negative storage refused, the same screens the refresh applies.
     """
-    sites: dict[str, dict] = {}
-    for series in ((payload.get("value") or {}).get("timeSeries")) or []:
-        info = series["sourceInfo"]
-        site_no = info["siteCode"][0]["value"]
-        site = sites.setdefault(site_no, {
-            "name": info["siteName"],
-            "lat": info["geoLocation"]["geogLocation"]["latitude"],
-            "lon": info["geoLocation"]["geogLocation"]["longitude"],
-            "statistics": {},
-        })
-        if series["variable"]["unit"]["unitCode"] != "ac-ft":
+    statistics: dict[str, list[tuple[str, float]]] = {}
+    for feature in features:
+        properties = feature.get("properties") or {}
+        stat = properties.get("statistic_id")
+        if not stat or properties.get("parameter_code") != "00054":
             continue
-        options = series["variable"].get("options", {}).get("option") or []
-        stat = next((o["optionCode"] for o in options
-                     if o.get("name") == "Statistic"), None)
-        if not stat:
+        try:
+            number = float(properties["value"])
+        except (TypeError, ValueError, KeyError):
             continue
-        points = []
-        for block in series.get("values") or []:
-            for reading in block.get("value") or []:
-                try:
-                    number = float(reading["value"])
-                except (TypeError, ValueError, KeyError):
-                    continue
-                if number == NO_DATA or number < 0:
-                    continue
-                points.append((str(reading["dateTime"])[:10], number))
-        site["statistics"].setdefault(stat, []).extend(points)
-    return sites
+        if number == NO_DATA or number < 0:
+            continue
+        statistics.setdefault(stat, []).append((str(properties["time"])[:10], number))
+    return {stat: sorted(points) for stat, points in statistics.items()}
 
 
 def choose_statistic(statistics: dict[str, list]) -> str | None:
@@ -333,34 +319,50 @@ def screen_dams(row: dict, dams: list[dict]) -> None:
 
 # --- Network side ----------------------------------------------------------
 
-def nwis_get(params: dict) -> dict:
+def usgs_daily_features(params: dict) -> list[dict]:
+    """Every feature of one OGC daily query, following its `next` links."""
     import requests
 
-    last = None
-    for attempt in range(3):
-        try:
-            response = requests.get(
-                NWIS_URL, params={**params, "format": "json"}, timeout=120,
-                headers={"User-Agent": NWIS_USER_AGENT})
-            response.raise_for_status()
-            return response.json()
-        except (requests.RequestException, ValueError) as exc:
-            last = exc
-            time.sleep(2 ** attempt)
-    raise RuntimeError(f"NWIS daily values: {last}")
+    headers = {"User-Agent": NWIS_USER_AGENT}
+    key = os.environ.get("USGS_API_KEY", "").strip()
+    if key:
+        headers["X-Api-Key"] = key
+    features: list[dict] = []
+    url: str | None = USGS_DAILY_URL
+    query: dict | None = {**params, "f": "json", "limit": 10000}
+    for _ in range(50):
+        last = None
+        for attempt in range(3):
+            try:
+                response = requests.get(url, params=query, timeout=120, headers=headers)
+                response.raise_for_status()
+                payload = response.json()
+                break
+            except (requests.RequestException, ValueError) as exc:
+                last = exc
+                time.sleep(2 ** attempt)
+        else:
+            raise RuntimeError(f"USGS daily values: {last}")
+        features.extend(payload.get("features") or [])
+        url = next((link["href"] for link in payload.get("links") or []
+                    if link.get("rel") == "next" and link.get("href")), None)
+        query = None
+        if not url:
+            return features
+    raise RuntimeError("USGS daily values exceeded 50 pages")
 
 
 def usgs_candidates(today: dt.date) -> list[dict]:
-    listing = parse_nwis(nwis_get({
-        "stateCd": STATE, "parameterCd": "00054", "siteStatus": "active",
-        "period": "P7D"}))
+    import probe_nwis_storage as probe
+
+    listing = probe.reporting_sites(STATE, 7, NWIS_USER_AGENT)
     rows = []
     for site_no, site in sorted(listing.items()):
-        full = parse_nwis(nwis_get({
-            "sites": site_no, "parameterCd": "00054",
-            "startDT": START_DATE, "endDT": today.isoformat()}))
+        statistics = parse_daily(usgs_daily_features({
+            "monitoring_location_id": f"USGS-{site_no}",
+            "parameter_code": "00054",
+            "datetime": f"{START_DATE}/{today.isoformat()}"}))
         time.sleep(0.5)
-        statistics = (full.get(site_no) or {}).get("statistics") or {}
         stat = choose_statistic(statistics)
         points = statistics.get(stat, [])
         rows.append({
