@@ -42,17 +42,15 @@ REAL_NAMES = {
     "Franklin D. Roosevelt Lake": "a person's initial, with its period",
     "Lake Herbert G. West": "a person's initial, with its period",
     "Howard A. Hanson": "a person's initial, with its period",
+    "C.C. Cragin Reservoir": "initials, with their periods, as the National Hydrography Dataset spells it",
+    "D M A D Reservoir": "single capitals spaced as the National Hydrography Dataset spells it",
 }
 
 #: Names that carry a dam word, or are otherwise probably not the water's own
 #: name, where no source cited in the roster names the water. Not changed; see
 #: the review list. Each is removed from here when it is renamed.
 HELD_FOR_REVIEW = {
-    "Briones Dam", "Bear Valley Dam", "Cuyamaca Dam", "El Capitan Dam",
-    "Frenchman Dam", "Gibraltar Dam", "Isabella Dam", "Los Banos Dam",
-    "Pine Flat Dam", "Ruth Dam", "Seven Oaks Dam", "Soulajule Dam",
-    "Terminus Dam", "Cragin Dam Reservoir", "Conconully Lake Salmon Lake Dam",
-    "DMAD",
+    "Seven Oaks Dam",
 }
 
 PROVIDER_WORDS = {

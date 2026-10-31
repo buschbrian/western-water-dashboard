@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "method_version": "storage-normal-annual-3",
-  "generated_at": "2026-10-31T19:19:22+00:00",
+  "generated_at": "2026-10-31T19:50:21+00:00",
   "start_date": "2015-01-01",
   "normal_period": {
     "start_year": 2015,
@@ -7942,7 +7942,7 @@
       ]
     },
     {
-      "name": "Pine Flat Dam",
+      "name": "Pine Flat Lake",
       "rise_item_id": null,
       "source_key": "cdec",
       "source_label": "California Data Exchange Center",
@@ -10940,7 +10940,7 @@
       ]
     },
     {
-      "name": "Isabella Dam",
+      "name": "Isabella Lake",
       "rise_item_id": null,
       "source_key": "cdec",
       "source_label": "California Data Exchange Center",
@@ -23391,7 +23391,7 @@
       ]
     },
     {
-      "name": "Terminus Dam",
+      "name": "Lake Kaweah",
       "rise_item_id": null,
       "source_key": "cdec",
       "source_label": "California Data Exchange Center",
@@ -31364,7 +31364,7 @@
       ]
     },
     {
-      "name": "El Capitan Dam",
+      "name": "El Capitan Lake",
       "rise_item_id": null,
       "source_key": "cdec",
       "source_label": "California Data Exchange Center",
@@ -37348,7 +37348,7 @@
       ]
     },
     {
-      "name": "Bear Valley Dam",
+      "name": "Big Bear Lake",
       "rise_item_id": null,
       "source_key": "cdec",
       "source_label": "California Data Exchange Center",
@@ -40004,7 +40004,7 @@
       ]
     },
     {
-      "name": "Briones Dam",
+      "name": "Briones Reservoir",
       "rise_item_id": null,
       "source_key": "cdec",
       "source_label": "California Data Exchange Center",
@@ -43304,7 +43304,7 @@
       ]
     },
     {
-      "name": "Ruth Dam",
+      "name": "Ruth Lake",
       "rise_item_id": null,
       "source_key": "cdec",
       "source_label": "California Data Exchange Center",
@@ -45507,7 +45507,7 @@
       ]
     },
     {
-      "name": "Frenchman Dam",
+      "name": "Frenchman Lake",
       "rise_item_id": null,
       "source_key": "cdec",
       "source_label": "California Data Exchange Center",
@@ -56593,7 +56593,7 @@
       ]
     },
     {
-      "name": "Los Banos Dam",
+      "name": "Los Banos Reservoir",
       "rise_item_id": null,
       "source_key": "cdec",
       "source_label": "California Data Exchange Center",
@@ -70121,7 +70121,7 @@
       ]
     },
     {
-      "name": "Conconully Lake Salmon Lake Dam",
+      "name": "Conconully Lake",
       "rise_item_id": null,
       "source_key": "awdb",
       "source_label": "USDA NRCS AWDB",
@@ -71455,7 +71455,7 @@
       ]
     },
     {
-      "name": "Cragin Dam Reservoir",
+      "name": "C.C. Cragin Reservoir",
       "rise_item_id": null,
       "source_key": "awdb",
       "source_label": "USDA NRCS AWDB",
@@ -75227,7 +75227,7 @@
       ]
     },
     {
-      "name": "Cuyamaca Dam",
+      "name": "Lake Cuyamaca",
       "rise_item_id": null,
       "source_key": "cdec",
       "source_label": "California Data Exchange Center",
@@ -76344,7 +76344,7 @@
       ]
     },
     {
-      "name": "Soulajule Dam",
+      "name": "Soulajule Reservoir",
       "rise_item_id": null,
       "source_key": "cdec",
       "source_label": "California Data Exchange Center",
@@ -78111,7 +78111,7 @@
       ]
     },
     {
-      "name": "Gibraltar Dam",
+      "name": "Gibraltar Reservoir",
       "rise_item_id": null,
       "source_key": "cdec",
       "source_label": "California Data Exchange Center",
@@ -81439,7 +81439,7 @@
       ]
     },
     {
-      "name": "DMAD",
+      "name": "D M A D Reservoir",
       "rise_item_id": null,
       "source_key": "awdb",
       "source_label": "USDA NRCS AWDB",

@@ -4,7 +4,7 @@
  "retrieved": "2026-08-30",
  "keyed_by": "source_station_id",
  "selection": "every published reservoir, traced from its published point against every other published reservoir and snow-site point",
- "traced_this_run": 18,
+ "traced_this_run": 15,
  "self_exclusion": "deliberate: a dam point lies inside its own basin",
  "area_method": "spherical excess around the ring; approximate, for screening rather than measurement",
  "review_area_sq_mi": 300000.0,
@@ -382,13 +382,14 @@
    ]
   },
   "09398300:AZ:BOR": {
-   "name": "Cragin Dam Reservoir",
+   "name": "C.C. Cragin Reservoir",
    "trace_point": "published point",
    "comid": "21745665",
    "basin_vertices": 111,
    "basin_area_sq_mi": 72,
    "upstream_reservoirs": [],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "09469000:AZ:BOR": {
    "name": "San Carlos Reservoir",
@@ -472,13 +473,14 @@
    "upstream_snow_sites": []
   },
   "09UTDMAD:UT:BOR": {
-   "name": "DMAD",
+   "name": "D M A D Reservoir",
    "trace_point": "published point",
    "comid": "1202184",
    "basin_vertices": 74,
    "basin_area_sq_mi": 13,
    "upstream_reservoirs": [],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "09UTELLK:UT:BOR": {
    "name": "Electric Lake",
@@ -1499,7 +1501,7 @@
    ]
   },
   "12446453:WA:BOR": {
-   "name": "Conconully Lake Salmon Lake Dam",
+   "name": "Conconully Lake",
    "trace_point": "published point",
    "comid": "23065223",
    "basin_vertices": 100,
@@ -1507,7 +1509,8 @@
    "upstream_reservoirs": [],
    "upstream_snow_sites": [
     "728:WA:SNTL"
-   ]
+   ],
+   "retrieved": "2026-10-31"
   },
   "12446480:WA:BOR": {
    "name": "Conconully Reservoir",
@@ -3759,13 +3762,14 @@
    "retrieved": "2026-10-31"
   },
   "BIO": {
-   "name": "Briones Dam",
+   "name": "Briones Reservoir",
    "trace_point": "published point",
    "comid": "1671843",
    "basin_vertices": 79,
    "basin_area_sq_mi": 25,
    "upstream_reservoirs": [],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "BIT": {
    "name": "Lake Britton",
@@ -3897,13 +3901,14 @@
    "upstream_snow_sites": []
   },
   "BRV": {
-   "name": "Bear Valley Dam",
+   "name": "Big Bear Lake",
    "trace_point": "published point",
    "comid": "22558640",
    "basin_vertices": 120,
    "basin_area_sq_mi": 75,
    "upstream_reservoirs": [],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "BTV": {
    "name": "Butt Valley",
@@ -4216,13 +4221,14 @@
    "upstream_snow_sites": []
   },
   "CUY": {
-   "name": "Cuyamaca Dam",
+   "name": "Lake Cuyamaca",
    "trace_point": "published point",
    "comid": "20334390",
    "basin_vertices": 50,
    "basin_area_sq_mi": 14,
    "upstream_reservoirs": [],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "CVE": {
    "name": "Calaveras",
@@ -4311,7 +4317,7 @@
    "upstream_snow_sites": []
   },
   "ELC": {
-   "name": "El Capitan Dam",
+   "name": "El Capitan Lake",
    "trace_point": "published point",
    "comid": "20337546",
    "basin_vertices": 202,
@@ -4319,7 +4325,8 @@
    "upstream_reservoirs": [
     "CUY"
    ],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "ENG": {
    "name": "Harry L. Englebright Lake",
@@ -4383,13 +4390,14 @@
    "upstream_snow_sites": []
   },
   "FRD": {
-   "name": "Frenchman Dam",
+   "name": "Frenchman Lake",
    "trace_point": "published point",
-   "comid": "8039053",
-   "basin_vertices": 123,
-   "basin_area_sq_mi": 83,
+   "comid": "8041991",
+   "basin_vertices": 45,
+   "basin_area_sq_mi": 12,
    "upstream_reservoirs": [],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "FRL": {
    "name": "French Lake",
@@ -4401,13 +4409,14 @@
    "upstream_snow_sites": []
   },
   "GBL": {
-   "name": "Gibraltar Dam",
+   "name": "Gibraltar Reservoir",
    "trace_point": "published point",
    "comid": "17611543",
    "basin_vertices": 164,
    "basin_area_sq_mi": 216,
    "upstream_reservoirs": [],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "GCL": {
    "name": "Franklin D. Roosevelt Lake",
@@ -4903,13 +4912,14 @@
    "upstream_snow_sites": []
   },
   "ISB": {
-   "name": "Isabella Dam",
+   "name": "Isabella Lake",
    "trace_point": "published point",
    "comid": "14972943",
    "basin_vertices": 628,
    "basin_area_sq_mi": 1901,
    "upstream_reservoirs": [],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "JCK": {
    "name": "Jackson Meadows",
@@ -5220,13 +5230,14 @@
    "upstream_snow_sites": []
   },
   "LBS": {
-   "name": "Los Banos Dam",
+   "name": "Los Banos Reservoir",
    "trace_point": "published point",
    "comid": "16610567",
    "basin_vertices": 192,
    "basin_area_sq_mi": 157,
    "upstream_reservoirs": [],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "LGS": {
    "name": "Lake Bryan",
@@ -6500,7 +6511,7 @@
    "upstream_snow_sites": []
   },
   "PNF": {
-   "name": "Pine Flat Dam",
+   "name": "Pine Flat Lake",
    "trace_point": "published point",
    "comid": "22063199",
    "basin_vertices": 486,
@@ -6509,7 +6520,8 @@
     "CTG",
     "WSN"
    ],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "PRR": {
    "name": "Perris",
@@ -6623,13 +6635,14 @@
    "upstream_snow_sites": []
   },
   "RTD": {
-   "name": "Ruth Dam",
+   "name": "Ruth Lake",
    "trace_point": "published point",
    "comid": "8321259",
    "basin_vertices": 130,
    "basin_area_sq_mi": 120,
    "upstream_reservoirs": [],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "SAT": {
    "name": "San Antonio Reservoir",
@@ -6750,13 +6763,14 @@
    "upstream_snow_sites": []
   },
   "SLJ": {
-   "name": "Soulajule Dam",
+   "name": "Soulajule Reservoir",
    "trace_point": "published point",
    "comid": "5329373",
    "basin_vertices": 66,
    "basin_area_sq_mi": 20,
    "upstream_reservoirs": [],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "SLN": {
    "name": "Santa Margarita Lake",
@@ -7247,13 +7261,14 @@
    "upstream_snow_sites": []
   },
   "TRM": {
-   "name": "Terminus Dam",
+   "name": "Lake Kaweah",
    "trace_point": "published point",
    "comid": "14922787",
    "basin_vertices": 302,
    "basin_area_sq_mi": 551,
    "upstream_reservoirs": [],
-   "upstream_snow_sites": []
+   "upstream_snow_sites": [],
+   "retrieved": "2026-10-31"
   },
   "TUL": {
    "name": "Tulloch",

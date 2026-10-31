@@ -94,6 +94,15 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   `Cherry Lake`, `Morena Reservoir` and `Bass Lake`. Links that use an old
   name still open the right reservoir. A new test refuses provider text in
   any roster name.
+- **Fifteen dam names and one code are now the water's recorded name**
+  (ADR-147). `Isabella Lake`, `Pine Flat Lake`, `Lake Kaweah`, `Big Bear
+  Lake`, `Lake Cuyamaca`, `El Capitan Lake`, `Frenchman Lake`, `Ruth Lake`,
+  `Briones Reservoir`, `Gibraltar Reservoir`, `Los Banos Reservoir`,
+  `Soulajule Reservoir`, `C.C. Cragin Reservoir`, `Conconully Lake` and `D M
+  A D Reservoir` replace the dam word or code, each with one source: the
+  National Hydrography Dataset name of the water at the reservoir's point.
+  `Seven Oaks Dam` stays, because no source names its basin. Short names
+  stay short. Links that use an old name still open the right reservoir.
 - **Precipitation has its own page**, `precipitation.html` (ADR-130): the
   recent totals, the season since 1 October and the history chart, for the
   place in the link, with a link to the snowpack view for the same place.

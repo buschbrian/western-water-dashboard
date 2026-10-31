@@ -832,7 +832,7 @@
       }
     },
     "09398300:AZ:BOR": {
-      "name": "Cragin Dam Reservoir",
+      "name": "C.C. Cragin Reservoir",
       "station_triplet": "09398300:AZ:BOR",
       "lat": 34.55531,
       "lon": -111.18402,
@@ -898,7 +898,7 @@
       }
     },
     "09UTDMAD:UT:BOR": {
-      "name": "DMAD",
+      "name": "D M A D Reservoir",
       "station_triplet": "09UTDMAD:UT:BOR",
       "lat": 39.39495,
       "lon": -112.48244,
@@ -1406,7 +1406,7 @@
       }
     },
     "12446453:WA:BOR": {
-      "name": "Conconully Lake Salmon Lake Dam",
+      "name": "Conconully Lake",
       "station_triplet": "12446453:WA:BOR",
       "lat": 48.5575,
       "lon": -119.7461,

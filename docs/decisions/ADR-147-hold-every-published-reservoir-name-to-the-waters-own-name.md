@@ -43,3 +43,13 @@ fails when a listed name leaves the roster, so neither list goes stale.
 Every surface shows the new names after the next page load, and every saved
 link resolves through the former-name table. A new roster entry with provider
 text fails the test before it can be published.
+
+## Update, 2026-10-31
+
+The source of a water's name is no longer only `point-verification.csv`. For a
+held name, one source suffices if it names the water at the reservoir's point:
+the dam inventory's other-names field, the National Hydrography Dataset
+(GNIS) waterbody, or the operator. Fifteen held names were renamed on that
+basis; only `Seven Oaks Dam` is still held. Short names stay short: a dam word
+is replaced by the water's recorded name, and `Lake` or `Reservoir` is never
+added for style.
