@@ -349,12 +349,7 @@ export function methodsMarkup(search: string): string {
           zero point that a level is measured from. Two national datums are in use, and in
           this region they differ by about 3 feet.
           <br />This site shows a level only where a person checked the datum against
-          evidence. The Bureau of Reclamation publishes Lake Powell's level above the National
-          Geodetic Vertical Datum of 1929. This site confirmed that against the U.S.
-          Geological Survey's readings at the dam. The Bureau of Reclamation publishes Lake
-          Mead's level on its own Hoover Dam powerhouse datum. Add 0.55 feet to a level on
-          that datum to give the level above the National Geodetic Vertical Datum of
-          1929.</dd>
+          evidence. Each reservoir page names the datum of its level.</dd>
         <dt>The last 12 months</dt>
         <dd>For each month, the average, lowest, highest and closing storage, and the normal
           value for that month against whichever period is selected. The chart in the
