@@ -1747,6 +1747,13 @@
       "county_name": "Mono County",
       "state": "CA"
     },
+    "GSV": {
+      "name": "Galesville Reservoir",
+      "county_fips": "41019",
+      "county_name": "Douglas County",
+      "state": "OR",
+      "retrieved": "2026-10-31"
+    },
     "HARTLKCO": {
       "name": "Heart Lake Reservoir",
       "county_fips": "08045",
@@ -2016,6 +2023,13 @@
       "county_fips": "06065",
       "county_name": "Riverside County",
       "state": "CA"
+    },
+    "MLL": {
+      "name": "Bennington Lake",
+      "county_fips": "53071",
+      "county_name": "Walla Walla County",
+      "state": "WA",
+      "retrieved": "2026-10-31"
     },
     "MMR": {
       "name": "Miramar",

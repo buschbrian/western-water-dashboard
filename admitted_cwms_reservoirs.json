@@ -3,7 +3,7 @@
   "storage_source_url": "https://cwms-data.usace.army.mil/cwms-data/",
   "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams. This provider publishes no full level in acre-feet -- its pools are defined by elevation -- so ADR-070 never fires and ADR-003 with ADR-072 decides every denominator (ADR-102).",
   "reviewed": "2026-08-30",
-  "selection": "Every storage-bearing location under the NWDP office, audited with tools/audit_cwms_stations.py on 2026-08-30: one series chosen per location by the stated preference and confirmed by a read, then the shared screens in admission.py. 12 admitted on confirmed dam matches, 24 withheld with the finding behind each. 73 further locations are already published within 3 km through another provider and are deduplicated rather than withheld (ADR-069); their location ids are listed below. Names are reviewed display names, not the service's gauge labels (ADR-079).",
+  "selection": "Every storage-bearing location under the NWDP office, audited with tools/audit_cwms_stations.py on 2026-08-30: one series chosen per location by the stated preference and confirmed by a read, then the shared screens in admission.py. 12 admitted on confirmed dam matches, 24 withheld with the finding behind each. 73 further locations are already published within 3 km through another provider and are deduplicated rather than withheld (ADR-069); their location ids are listed below. Names are reviewed display names, not the service's gauge labels (ADR-079). Re-audited on 2026-10-31: Galesville (GSV) and Mill Creek (MLL), held because no window returned values, now answer inside thirty days and pass every screen, so 14 are admitted and 22 withheld; every other finding is unchanged.",
   "keyed_by": "cwms_location",
   "reservoirs": {
     "BOX": {
@@ -124,6 +124,35 @@
         "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
         "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
         "capacity_source_checked": "2026-08-30"
+      }
+    },
+    "GSV": {
+      "name": "Galesville Reservoir",
+      "station": "GSV",
+      "office": "NWDP",
+      "timeseries": "GSV.Stor.Inst.0.0.MIXED-COMPUTED-REV",
+      "lat": 42.848731,
+      "lon": -123.178949,
+      "cadence": "daily",
+      "operator": "Douglas County",
+      "huc6": "171003",
+      "huc6_name": "Southern Oregon Coastal",
+      "por_start": "2015-01-01",
+      "capacity": {
+        "capacity_af": 41890.0,
+        "capacity_basis": "normal_storage",
+        "normal_storage_af": 41890.0,
+        "max_storage_af": 117000.0,
+        "nid_storage_af": 117000.0,
+        "nid_id": "OR00748",
+        "nid_dam_name": "Galesville",
+        "dam_lon": -123.17881405261292,
+        "dam_lat": 42.849005252727586,
+        "match_distance_km": 0.032,
+        "match_confirmed_by": "name and position",
+        "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
+        "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
+        "capacity_source_checked": "2026-10-31"
       }
     },
     "HCD": {
@@ -329,6 +358,35 @@
         "capacity_source_checked": "2026-08-30"
       }
     },
+    "MLL": {
+      "name": "Bennington Lake",
+      "station": "MLL",
+      "office": "NWDP",
+      "timeseries": "MLL.Stor.Inst.15Minutes.0.USGS-COMPUTED-REV",
+      "lat": 46.063941,
+      "lon": -118.26338,
+      "cadence": "daily",
+      "operator": "U.S. Army Corps of Engineers",
+      "huc6": "170701",
+      "huc6_name": "Middle Columbia",
+      "por_start": "2015-01-01",
+      "capacity": {
+        "capacity_af": 8300.0,
+        "capacity_basis": "max_storage",
+        "normal_storage_af": 3300.0,
+        "max_storage_af": 8300.0,
+        "nid_storage_af": 8300.0,
+        "nid_id": "WA00348",
+        "nid_dam_name": "Mill Creek Storage Dam",
+        "dam_lon": -118.26381385589262,
+        "dam_lat": 46.06418395018805,
+        "match_distance_km": 0.043,
+        "match_confirmed_by": "position",
+        "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
+        "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
+        "capacity_source_checked": "2026-10-31"
+      }
+    },
     "TDA": {
       "name": "Lake Celilo",
       "station": "TDA",
@@ -388,10 +446,6 @@
       "name": "Diablo Reservoir nr Newhalem 6NE",
       "finding": "No storage series answered inside the last thirty days, so it would be withdrawn for late data the morning it joined the map. Tried: DIA.Stor.Inst.1Hour.0.USGS-REV."
     },
-    "GSV": {
-      "name": "Galesville Dam",
-      "finding": "The catalog advertises a current extent and every window tried returns no values. A candidate is confirmed by a read, never by the catalog (ADR-102). Tried: GSV.Stor.Inst.0.0.MIXED-COMPUTED-REV."
-    },
     "HCDI": {
       "name": "Snake R@Hells Canyon Dam",
       "finding": "The catalog advertises a current extent and every window tried returns no values. A candidate is confirmed by a read, never by the catalog (ADR-102). Tried: ."
@@ -423,10 +477,6 @@
     "MIL": {
       "name": "Snake R@Milner Dam nr Burley",
       "finding": "No storage series answered inside the last thirty days, so it would be withdrawn for late data the morning it joined the map. Tried: MIL.Stor.Inst.15Minutes.0.Best."
-    },
-    "MLL": {
-      "name": "Mill Creek Dam",
-      "finding": "The catalog advertises a current extent and every window tried returns no values. A candidate is confirmed by a read, never by the catalog (ADR-102). Tried: MLL.Stor.Inst.15Minutes.0.USGS-COMPUTED-REV."
     },
     "PRD": {
       "name": "Priest Rapids Lake",

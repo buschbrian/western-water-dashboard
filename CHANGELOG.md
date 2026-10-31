@@ -67,6 +67,11 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   3 and 7 days for the place shown, each the mean of the stations that
   measured both days, and the eight stations with the most. A gauge total
   that falls is left out and counted, never shown as zero (ADR-129).
+- **Two Army Corps of Engineers reservoirs**: Galesville Reservoir in
+  Oregon and Bennington Lake in Washington. Both were held because their
+  storage series returned no values; a re-audit on 2026-10-31 found both
+  reporting and passing every admission screen (ADR-102). Their full levels
+  come from the National Inventory of Dams.
 - **Soil moisture this week** (ADR-142): a "Rain | Soil moisture" switch on
   the precipitation map turns the same map to the change in soil moisture
   over 7 days at the snow stations, in percentage points, brown drier and
