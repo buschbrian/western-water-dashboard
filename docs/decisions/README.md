@@ -60,7 +60,8 @@ denominator. **Start with ADR-070, then ADR-072, then ADR-003.**
   [ADR-113](ADR-113-withhold-a-reservoir-whose-full-levels-cannot-be-reconciled.md),
   [ADR-114](ADR-114-publish-a-water-type-and-an-operating-character.md),
   [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md),
-  [ADR-135](ADR-135-publish-a-reservoir-level-only-above-a-reviewed-datum.md)
+  [ADR-135](ADR-135-publish-a-reservoir-level-only-above-a-reviewed-datum.md),
+  [ADR-139](ADR-139-review-each-reservoirs-vertical-datum-before-publishing-an-elevation.md)
 - Freshness and withdrawal:
   [ADR-056](ADR-056-withdraw-a-reading-that-belongs-to-another-season.md),
   [ADR-115](ADR-115-state-a-reviewed-hold-where-the-reservoir-used-to-be.md),
@@ -332,6 +333,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-136](ADR-136-publish-daily-flow-at-four-rivers-toward-lake-powell.md) | Publish daily flow at four rivers toward Lake Powell | Accepted; four shaped Utah gauges as daily mean flow with no normal, rank or total; tiers directed 2026-10-27 pending formal ruling; own roster, payload and page |
 | [ADR-137](ADR-137-treat-a-published-reservoir-or-ten-percent-storage-as-shaped-and-propose-gauge-names.md) | Treat a published reservoir or ten percent storage as shaped, and propose gauge names | Accepted; a published reservoir in the basin shapes the gauge, storage under 10% of a year's flow with none is natural; adds proposed display names to the worksheet; renames nothing published |
 | [ADR-138](ADR-138-split-the-shaped-tier-add-reference-evidence-and-widen-the-bulk-queue.md) | Split the shaped tier, add reference evidence, and widen the bulk queue | Accepted; extends ADR-137 and ADR-130; Shaped by reservoirs and Reduced by diversions, GAGES-II, NRCS adjustment and canal site type columns, an accepted display name, small-storage natural and shaped-by-reservoirs both bulk when nothing else is in doubt |
+| [ADR-139](ADR-139-review-each-reservoirs-vertical-datum-before-publishing-an-elevation.md) | Review each reservoir's vertical datum before publishing an elevation | Accepted; `tools/build_datum_review.py` writes `datum-review.csv`; a suggestion needs a Reclamation statement or two agreeing USGS locations, and the reviewer's ruling is the gate |
 | [ADR-141](ADR-141-publish-a-share-page-and-a-daily-picture-for-a-reservoir-link.md) | Publish a share page and a daily picture for a reservoir link | Accepted; two hand-kept share pages in `public/share/`, a `view=share` layout of the reservoir page, a picture captured in each deploy with a committed fallback; ADR-136 to ADR-140 and ADR-142 are other records |
 | [ADR-142](ADR-142-show-the-weeks-change-in-mountain-soil-moisture.md) | Show the week's change in mountain soil moisture | Accepted; seven-day change in points at the snow stations, mean of 2 (or 4), 8 and 20 in, frozen readings dropped, snow floor per area; a "Rain \| Soil moisture" switch on the precipitation map; percent of median is phase 2 |
 

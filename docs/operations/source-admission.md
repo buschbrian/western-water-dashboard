@@ -236,6 +236,26 @@ absent from the payload is what a silently failed fetch looks like.
   write its one reservoir as the whole file, and a full run used to drop the
   normal of every reservoir withdrawn that morning.
 
+## Vertical datum review
+
+A reservoir elevation is published only after a person has ruled on its datum
+(ADR-139). `tools/build_datum_review.py` writes `datum-review.csv`, one row
+per Bureau of Reclamation reservoir, with the evidence and a suggestion:
+
+```bash
+.venv/bin/python tools/build_datum_review.py              # every published RISE reservoir
+.venv/bin/python tools/build_datum_review.py --missing    # rows not yet complete
+.venv/bin/python tools/build_datum_review.py --only 509   # one storage item id
+.venv/bin/python tools/build_datum_review.py --no-reports # skip the PDF step
+.venv/bin/python tools/build_datum_review.py --suggest    # recompute offline
+```
+
+The PDF step needs `pdftotext` (poppler); without it the report columns stay
+empty and say so. The tool owns the evidence columns; `reviewer_ruling` and
+`reviewer_notes` are the reviewer's and survive every run. A reservoir added to
+the RISE roster gets a row from the next run, and its elevation waits for a
+ruling.
+
 ## Checklist
 
 1. Identify the measurement semantics: what the value means, its units, and
