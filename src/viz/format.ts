@@ -1,3 +1,7 @@
+const readingDateFormat = new Intl.DateTimeFormat("en-US", {
+  year: "numeric", month: "short", day: "numeric", timeZone: "UTC"
+});
+
 export function formatAcreFeet(value: number | null): string {
   return value === null || !Number.isFinite(value)
     ? "—" : Math.round(value).toLocaleString("en-US");
@@ -9,9 +13,7 @@ export function formatPercent(value: number | null): string {
 
 export function formatDate(value: string): string {
   const date = new Date(`${value}T00:00:00Z`);
-  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", {
-    year: "numeric", month: "short", day: "numeric", timeZone: "UTC"
-  });
+  return Number.isNaN(date.getTime()) ? value : readingDateFormat.format(date);
 }
 
 /**

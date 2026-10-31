@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { drainageLabel } from "./format";
+import { drainageLabel, formatDate } from "./format";
+
+it("formats reading dates in UTC and preserves an unreadable date", () => {
+  expect(formatDate("2026-01-01")).toBe("Jan 1, 2026");
+  expect(formatDate("2024-02-29")).toBe("Feb 29, 2024");
+  expect(formatDate("2026-12-31")).toBe("Dec 31, 2026");
+  expect(formatDate("unknown")).toBe("unknown");
+});
 
 describe("the drainage label the axis shows", () => {
   it("puts the states after the name", () => {
