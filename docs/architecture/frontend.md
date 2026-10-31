@@ -108,7 +108,14 @@ fetches `rivers.json` through `loadRivers`, whose validator refuses a rank,
 an inflow or a total on a gauge or the envelope, a band or class on a shaped
 gauge, a natural gauge's class that does not follow from its flow and band, a
 window that is not 30 consecutive days ending on the current value,
-and a notice carrying a measurement. Each gauge is one article: its plain
+and a notice carrying a measurement. The page opens on a summary table,
+"Flow at each gauge": one row per gauge with its flow on the newest reading
+date at three significant figures (the unit in the column heading, a late
+row with its own date) and its class in words, or "Not compared: dams
+upstream" for a shaped gauge; each row links to its card. The cards follow in
+two groups, "Compared with normal" (natural gauges) and then "Flow only: dams
+upstream" (shaped gauges), each in the payload's order. The table fits 360 px
+without scrolling; its scroller is a guard only. Each gauge is one article: its plain
 name, where it is and that the river flows on toward the reviewed water
 downstream, the shaped sentence ("Dams upstream store and release water, so
 this flow is not compared with normal.") or, for a natural gauge, "Little or
@@ -123,7 +130,8 @@ in a collapsed table, the survey's station name and its monitoring-location
 page. One CSV button downloads every gauge's days. Readiness is
 `window.__riversReady`: `gauges` published, `rendered` drawn, `charts` drawn,
 `withdrawn` notices, `compared` natural gauges with a class, `failed` a fetch
-that did not answer. Each article carries `data-tier`.
+that did not answer. Each article carries `data-tier` and the id
+`gauge-<station>` the summary row links to.
 
 ### The story views
 

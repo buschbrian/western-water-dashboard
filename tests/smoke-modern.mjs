@@ -6290,6 +6290,15 @@ for (const viewport of VIEWPORTS) {
     pageLinks: [...document.querySelectorAll("#rivers-main a[href]")]
       .filter((link) => link.href.startsWith("https://waterdata.usgs.gov/monitoring-location/"))
       .length,
+    /* The summary table: one row per card, in the cards' order, each row
+     * linking to its card; natural gauges before shaped ones. */
+    summary: [...document.querySelectorAll(".rivers-summary-table tbody tr")].map((row) => ({
+      target: row.querySelector("a")?.getAttribute("href") ?? "",
+      tier: row.getAttribute("data-tier"),
+      comparison: row.lastElementChild?.textContent ?? ""
+    })),
+    cardOrder: [...document.querySelectorAll("#rivers-main article.river[data-station]")]
+      .map((article) => `#${article.id}`),
     scroll: document.documentElement.scrollWidth,
     viewport: document.documentElement.clientWidth
   }));
@@ -6320,6 +6329,13 @@ for (const viewport of VIEWPORTS) {
   check(natural.filter((a) => a.verdict !== null).length === state.ready?.compared,
     `Rivers page (${viewport.name}): ${state.ready?.compared} compared in readiness, `
     + `${natural.filter((a) => a.verdict !== null).length} classes drawn`);
+  check(state.summary.length === state.articles
+    && state.summary.map((row) => row.target).join() === state.cardOrder.join()
+    && state.summary.every((row) => row.tier === "natural"
+      || row.comparison === "Not compared: dams upstream")
+    && /^(natural,)*(shaped,)*$/.test(state.summary.map((row) => `${row.tier},`).join("")),
+  `Rivers page (${viewport.name}): the summary table does not match the grouped cards `
+    + JSON.stringify(state.summary.slice(0, 3)));
   check(state.pageLinks === state.articles,
     `Rivers page (${viewport.name}): ${state.pageLinks} survey page links for ${state.articles} gauges`);
   check(state.text.includes("cubic feet per second"),

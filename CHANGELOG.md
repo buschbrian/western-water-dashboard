@@ -94,6 +94,11 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Changed
 
+- **The river flow page opens on a summary table.** "Flow at each gauge" gives
+  each gauge's flow on the newest reading date and how it compares with
+  normal, or "Not compared: dams upstream"; each row links to its card. The
+  cards follow in two groups: "Compared with normal", then "Flow only: dams
+  upstream".
 - **Eighteen more reservoir names are the water's own name** (ADR-147).
   Gauge and county text is gone from `Rye Patch Reservoir`, `Stagecoach
   Reservoir`, `Lake San Antonio`, `San Antonio Reservoir`, `Jackson Meadows`,

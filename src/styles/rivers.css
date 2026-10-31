@@ -10,8 +10,31 @@
   padding-block-start: 1.25rem;
   border-block-start: 1px solid var(--app-border);
 }
-.river:first-child { margin-block-start: 1.5rem; border-block-start: 0; padding-block-start: 0; }
-.river-name { font-size: clamp(1.35rem, 3vw, 1.8rem); line-height: 1.15; margin-block: 0.25rem 0.5rem; }
+.rivers-group-heading + .river { margin-block-start: 1rem; border-block-start: 0; padding-block-start: 0; }
+.rivers-summary, .rivers-group { margin-block-start: 2rem; }
+/* The groups are a level above the gauges' own names, so they take the
+ * page's heading size and the names step down under them. */
+.rivers-group-heading { font-size: clamp(1.4rem, 3.5vw, 1.8rem); line-height: 1.15; margin-block: 0 0.5rem; }
+.rivers-group + .rivers-group { padding-block-start: 1.5rem; border-block-start: 2px solid var(--app-border); }
+
+/* The summary fits 360 px without scrolling: the unit sits in the flow
+ * column's heading, so a cell holds only its number. The scroller is a
+ * guard for a longer name, not the layout. */
+.rivers-summary-scroll { overflow-x: auto; }
+.rivers-summary-table { inline-size: 100%; border-collapse: collapse; }
+.rivers-summary-table th, .rivers-summary-table td {
+  padding: 0.45rem 0.5rem;
+  border-block-end: 1px solid var(--app-border);
+  text-align: start;
+  vertical-align: top;
+}
+.rivers-summary-table th:first-child, .rivers-summary-table td:first-child { padding-inline-start: 0; }
+.rivers-summary-table thead th { font-size: 0.85rem; font-weight: 600; vertical-align: bottom; }
+.rivers-summary-table tbody th { font-weight: 400; }
+.rivers-summary-unit { display: block; font-weight: 400; color: var(--app-muted); }
+.rivers-summary-table .rivers-summary-flow { text-align: end; font-variant-numeric: tabular-nums; white-space: nowrap; }
+.rivers-summary-table thead th:nth-child(2) { text-align: end; }
+.river-name { font-size: clamp(1.15rem, 2.5vw, 1.35rem); line-height: 1.15; margin-block: 0.25rem 0.5rem; }
 .river-reading {
   min-width: 0;
   margin-block: 1rem 0;
@@ -27,3 +50,6 @@
 .flow-bar { fill: var(--flow-bar); }
 .rivers-main .trend-chart-host { margin-block-start: 0.5rem; }
 .rivers-main .detail-export { margin-block-start: 2rem; }
+@media (min-width: 40rem) {
+  .rivers-summary-table td:last-child { white-space: nowrap; }
+}

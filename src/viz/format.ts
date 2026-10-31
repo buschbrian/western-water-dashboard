@@ -14,6 +14,14 @@ export function formatDate(value: string): string {
   });
 }
 
+/** The same date without its year, for a label beside dated text: "Oct 26". */
+export function formatShortDate(value: string): string {
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", {
+    month: "short", day: "numeric", timeZone: "UTC"
+  });
+}
+
 /**
  * A drainage area's name with the states its water reaches after it.
  *
