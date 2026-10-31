@@ -166,6 +166,23 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   since 2015, and no reading changed. A terminal lake's `source_url` in
   `lakes.json` names the new address from the next morning's refresh.
 
+### Removed
+
+- **The unconnected question service and code nothing used.** `worker/`
+  and `npm run verify:worker` are gone, with the three indexes only it read:
+  `data/assistant/reservoirs.json`, `snow.json` and `drought.json` are no
+  longer written or published. `data/assistant/places.json`, which the
+  header's place search fetches, is unchanged. Also removed: unused
+  TypeScript (the browser drainage assignment in `huc.ts`, the retired
+  `reservoirCIM` builder, `gradient.ts`, `storageColorExpression`) and the
+  tests that exercised only it or only the frozen oracle; a byte-for-byte
+  copy of the 2026 snow season under `tests/fixtures/`; the manual RISE
+  probe workflow and two unused tools; and the dormant review tools for the
+  operating-character census (with its unapplied output), the SNOTEL audit
+  and the Provo daily-flow prototype. The tests the shipped reservoir
+  symbols lacked were added, and the published-file list now lives once, in
+  `scripts/published-files.json`.
+
 ### Fixed
 
 - On a reservoir page, "Since the 4-month low" (ADR-134) sits with the other
