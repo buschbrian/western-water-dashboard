@@ -24,6 +24,9 @@ export function riversTemplate(search: string): string {
     <p class="reservoir-note">Each value is the mean flow for one day, in cubic feet per
       second, from the U.S. Geological Survey. A daily mean cannot show a peak inside
       the day, and this page is not a flood warning.</p>
+    <p class="reservoir-note">Where little or no water is stored upstream, the newest
+      flow is compared with normal for the same date in earlier years. Where dams
+      store and release water, the flow is shown alone.</p>
     <p class="reservoir-note">Each gauge measures a different river. Water joins and
       leaves below each gauge, so this site does not add the gauges together. No gauge
       here measures the water that goes into a reservoir.</p>

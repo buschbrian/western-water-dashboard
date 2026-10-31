@@ -105,6 +105,9 @@ describe("public API field documentation", () => {
       expectFields(RIVER_GROUPS, "river-gauge", merged(data.gauges));
       expectFields(RIVER_GROUPS, "river-day",
         merged(data.gauges.flatMap((gauge: Record<string, any>) => gauge.daily)));
+      const bands = data.gauges.map((gauge: Record<string, any>) => gauge.normal_band)
+        .filter((band: unknown) => band !== null && band !== undefined);
+      if (bands.length > 0) expectFields(RIVER_GROUPS, "river-normal-band", merged(bands));
     }
     if (data.withdrawn.length > 0) {
       expectFields(RIVER_GROUPS, "river-withdrawn", merged(data.withdrawn));

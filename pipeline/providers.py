@@ -819,6 +819,89 @@ def fetch_usgs_flow_series(site_no: str, time_series_id: str,
     return [rows[key] for key in sorted(rows)]
 
 
+#: The survey's statistics service (beta), read only for the natural river
+#: gauges' day-of-year percentiles (ADR-144). Its percentiles are computed
+#: from approved daily means alone, over the whole approved record.
+USGS_STATISTICS_NORMALS_URL = "https://api.waterdata.usgs.gov/statistics/v0/observationNormals"
+#: Every calendar day of a leap year, the set the service answers with.
+DAYS_OF_YEAR = tuple(
+    (dt.date(2024, 1, 1) + dt.timedelta(days=offset)).strftime("%m-%d")
+    for offset in range(366))
+
+
+def usgs_flow_normals_url(site_no: str) -> str:
+    return (f"{USGS_STATISTICS_NORMALS_URL}?monitoring_location_id=USGS-{site_no}"
+            f"&parameter_code={USGS_FLOW_PARAMETER}&computation_type=percentile"
+            f"&normal_type=DOY&page_size=1000")
+
+
+def fetch_usgs_flow_normals(site_no: str, time_series_id: str, percentiles: tuple[int, ...],
+                            *, payload: dict | None = None) -> dict[str, dict]:
+    """One gauge's day-of-year flow percentiles, keyed by "MM-DD".
+
+    Each day is `{"years": n, "p10": value, ...}` for the asked percentiles;
+    a percentile the service answers as "nan" is None, so the caller can
+    withhold that day. Anything else unexpected refuses the gauge whole: the
+    wrong series, a missing day, an unapproved or non-percentile value, or
+    percentiles out of order.
+    """
+    if payload is None:
+        payload = _get_usgs_v1_json(usgs_flow_normals_url(site_no))
+    if payload.get("next"):
+        raise ValueError(f"{site_no}: the percentiles span more than one page")
+    features = [f for f in payload.get("features") or []
+                if (f.get("properties") or {}).get("monitoring_location_id") == f"USGS-{site_no}"]
+    if len(features) != 1 or len(payload.get("features") or []) != 1:
+        raise ValueError(f"{site_no}: expected one monitoring location in the percentiles")
+    series = [d for d in features[0]["properties"].get("data") or []
+              if d.get("parameter_code") == USGS_FLOW_PARAMETER]
+    if len(series) != 1:
+        raise ValueError(f"{site_no}: expected one flow series in the percentiles")
+    data = series[0]
+    if (data.get("parent_time_series_id"), data.get("parent_statistic_id"),
+            data.get("unit_of_measure")) != (time_series_id, USGS_DAILY_MEAN_STATISTIC,
+                                             USGS_FLOW_UNIT):
+        raise ValueError(
+            f"{site_no}: the percentiles belong to series {data.get('parent_time_series_id')!r} "
+            f"({data.get('parent_statistic_id')!r}, {data.get('unit_of_measure')!r}), "
+            f"not the reviewed daily mean {time_series_id}")
+    wanted = [str(p) for p in percentiles]
+    days: dict[str, dict] = {}
+    for value in data.get("values") or []:
+        day = value.get("time_of_year")
+        if (value.get("time_of_year_type"), value.get("computation"),
+                value.get("approval_status")) != ("day_of_year", "percentile", "approved"):
+            raise ValueError(f"{site_no}: {day} is not an approved day-of-year percentile")
+        if day not in DAYS_OF_YEAR or day in days:
+            raise ValueError(f"{site_no}: unexpected or repeated day {day!r}")
+        labels, numbers = value.get("percentiles"), value.get("values")
+        years = value.get("sample_count")
+        if not isinstance(labels, list) or not isinstance(numbers, list) \
+                or len(labels) != len(numbers) or not set(wanted) <= set(labels) \
+                or isinstance(years, bool) or not isinstance(years, int) or years < 0:
+            raise ValueError(f"{site_no}: {day} has unreadable percentiles")
+        entry: dict = {"years": years}
+        for label in wanted:
+            raw = numbers[labels.index(label)]
+            if isinstance(raw, str) and raw.strip().lower() == "nan":
+                entry[f"p{label}"] = None
+                continue
+            try:
+                number = float(raw)
+            except (TypeError, ValueError):
+                raise ValueError(f"{site_no}: {day} p{label} is {raw!r}") from None
+            if not math.isfinite(number) or number < 0:
+                raise ValueError(f"{site_no}: {day} p{label} is {raw!r}")
+            entry[f"p{label}"] = number
+        present = [entry[f"p{label}"] for label in wanted if entry[f"p{label}"] is not None]
+        if present != sorted(present):
+            raise ValueError(f"{site_no}: {day} percentiles are out of order")
+        days[day] = entry
+    if set(days) != set(DAYS_OF_YEAR):
+        raise ValueError(f"{site_no}: the percentiles cover {len(days)} of 366 days")
+    return {day: days[day] for day in DAYS_OF_YEAR}
+
+
 def reduce_to_daily_last(frame: pd.DataFrame) -> pd.DataFrame:
     """Reduce sub-daily observations to one row per day: the day's last.
 

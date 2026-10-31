@@ -786,9 +786,12 @@ def load_admitted_reservoir_elevations(
     return rows
 
 
-#: The only tier the river payload publishes so far (ADR-136). How a
-#: `natural` or `short` gauge is published is its own method decision.
-PUBLISHED_RIVER_TIERS = frozenset({"shaped"})
+#: The tiers the river payload publishes: `shaped` as flow alone (ADR-136),
+#: `natural` against the survey's day-of-year percentiles (ADR-144). How a
+#: `short` gauge is published is its own method decision.
+PUBLISHED_RIVER_TIERS = frozenset({"shaped", "natural"})
+#: ADR-137's storage line: at or above it a gauge is shaped.
+RIVER_NATURAL_STORAGE_SHARE_PCT = 10.0
 #: A gauge's display name is the reader's; a survey abbreviation or an
 #: all-capitals station name is refused as one.
 _SURVEY_ABBREVIATIONS = (" NR ", " AB ", " BL ", " R ", " WSH ", " SP ", " CR ")
@@ -797,7 +800,7 @@ _SURVEY_ABBREVIATIONS = (" NR ", " AB ", " BL ", " R ", " WSH ", " SP ", " CR ")
 def load_admitted_river_gauges(
     path: Path = ADMITTED_RIVER_GAUGES_PATH,
 ) -> dict[str, dict]:
-    """Load the reviewed river gauges (ADR-136).
+    """Load the reviewed river gauges (ADR-136, ADR-144).
 
     A gauge measures a rate of flow, not storage, so nothing here is a
     reservoir field and the loader refuses one. Each entry must carry a
@@ -868,6 +871,17 @@ def load_admitted_river_gauges(
                 or not isinstance(evidence.get("published_reservoirs_upstream"), list):
             raise ValueError(f"{name}: tier.evidence must name the worksheet and its findings")
         _reviewed_date(name, "tier.evidence.screened_on", evidence.get("screened_on"))
+        if tier["tier"] == "natural":
+            # ADR-137, checked rather than trusted: no published reservoir in
+            # the traced basin, and inventoried storage under 10% of a year's flow.
+            share = evidence.get("storage_share_pct")
+            if evidence["published_reservoirs_upstream"] or isinstance(share, bool) \
+                    or not isinstance(share, (int, float)) \
+                    or share >= RIVER_NATURAL_STORAGE_SHARE_PCT:
+                raise ValueError(
+                    f"{name}: a natural gauge has no published reservoir upstream and "
+                    "inventoried storage under 10% of a year's flow (ADR-137)")
+            _reviewed_date(name, "tier.tier_ruled_on", tier.get("tier_ruled_on"))
         toward = row.get("flows_toward")
         if toward is not None:
             if not isinstance(toward, dict) or not toward.get("name") \

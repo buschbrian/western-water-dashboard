@@ -921,8 +921,11 @@ export const RIVER_GROUPS: readonly ApiFieldGroup[] = [
     f("huc8", "code", "Eight-digit subbasin that contains the gauge."),
     f("huc8_name", "text", "Name of that subbasin."),
     f("flows_toward", "text", "A reviewed name of water the river flows on toward, or null. Never a claim that the gauge measures what goes into it."),
-    f("tier", "identifier", "The review tier. Always shaped: dams upstream store and release water."),
-    f("compared_with_normal", "true or false", "Always false. A shaped gauge has no normal and no rank."),
+    f("tier", "identifier", "The review tier: shaped (dams upstream store and release water) or natural (little or no water is stored upstream)."),
+    f("compared_with_normal", "true or false", "True when the newest value is compared with normal for its date. Always false for a shaped gauge, which has no normal and no rank."),
+    f("normal_band", "object", "A natural gauge's normal for the as_of date, or null when it is not compared today. Fields are listed below. Never on a shaped gauge.", true),
+    f("flow_class", "identifier", "Where current_cfs falls in normal_band: much_below_normal (under p10), below_normal (under p25), normal (p25 to p75), above_normal (up to p90) or much_above_normal (over p90). A value on a boundary takes the class nearer normal. Null when not compared. Never on a shaped gauge.", true),
+    f("normal_withheld", "identifier", "Why a natural gauge is not compared today: fewer_than_30_years or percentile_missing. Null when compared. Never on a shaped gauge.", true),
     f("data_frequency", "identifier", "Always daily."),
     f("stale_after_days", "days", "Days allowed before this gauge's reading is late."),
     f("as_of", "date", "Date of the newest day with a value."),
@@ -950,6 +953,17 @@ export const RIVER_GROUPS: readonly ApiFieldGroup[] = [
     f("cfs", "cubic feet per second", "Mean flow for the day, or null when the day has no value."),
     f("approval", "text", "The publisher's review status, or null when the day has no record."),
     f("qualifiers", "array", "The publisher's qualifiers for the day. Empty when there are none.")
+  ]},
+  { id: "river-normal-band", title: "Normal band", path: "gauges[].normal_band", fields: [
+    f("day", "month and day", "The calendar day the band is for, as MM-DD. Always the month and day of as_of."),
+    f("p10", "cubic feet per second", "10th percentile of the approved daily means on this calendar day."),
+    f("p25", "cubic feet per second", "25th percentile. The low end of the normal range."),
+    f("p50", "cubic feet per second", "50th percentile, the median."),
+    f("p75", "cubic feet per second", "75th percentile. The high end of the normal range."),
+    f("p90", "cubic feet per second", "90th percentile."),
+    f("years", "years", "Years with an approved value on this calendar day. Always 30 or more."),
+    f("retrieved", "date", "Date the percentiles were read from the publisher."),
+    f("source_url", "web address", "The publisher's statistics request the percentiles came from.")
   ]},
   { id: "river-withdrawn", title: "Withdrawn gauges", path: "withdrawn[]", fields: [
     f("name", "text", "Name of the gauge."),

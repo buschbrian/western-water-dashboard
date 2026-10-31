@@ -165,7 +165,14 @@
       "class": "generated-daily",
       "writer": "refresh_rivers.py",
       "staged_by_refresh": true,
-      "note": "Daily mean river flow at the reviewed gauges in admitted_river_gauges.json (ADR-136): 30 days per gauge with approval status and qualifiers. No normal, no rank and no total across gauges."
+      "note": "Daily mean river flow at the reviewed gauges in admitted_river_gauges.json (ADR-136): 30 days per gauge with approval status and qualifiers. A natural gauge's newest value carries its day-of-year percentile band and class from river_normals.json (ADR-144); a shaped gauge has no normal. No rank and no total across gauges."
+    },
+    {
+      "path": "river_normals.json",
+      "class": "derived-on-demand",
+      "writer": "tools/build_river_normals.py",
+      "staged_by_refresh": false,
+      "note": "Day-of-year flow percentiles (10th to 90th) for the natural river gauges, read from the U.S. Geological Survey's statistics service (ADR-144). The daily refresh reads it and never fetches it. Moves when the survey approves another year of values; network job; every run merges. Never copied to dist."
     },
     {
       "path": "precipitation_history.json",

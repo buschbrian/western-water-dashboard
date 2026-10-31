@@ -48,8 +48,14 @@ scripts/refresh-daily.sh          # everything, exactly as the workflow does
    **River flow** — `refresh_rivers.py` (ADR-136), after the terminal lakes
    and independent of every other stage. A failed gauge is carried forward
    late inside the script; a payload that fails validation keeps the last
-   complete `rivers.json`. Probe one gauge with
+   complete `rivers.json`, and so does a `river_normals.json` that fails its
+   checks. Probe one gauge with
    `.venv/bin/python refresh_rivers.py --only 09379500`, which never writes.
+   The natural gauges' percentiles are not fetched here: rebuild them with
+   `.venv/bin/python tools/build_river_normals.py` (about once a year, when
+   `tools/check_reference_freshness.py` says so, and with `--only SITE` when a
+   natural gauge joins the roster). It refuses a reply it cannot trust and
+   leaves that gauge's entry as it was (ADR-144).
 6. **Commit** — the published set, staged together, so the drought files can
    never be committed apart. The list lives in `data/generated-files.json` and
    `scripts/refresh-daily.sh` reads it; do not retype it into a workflow.

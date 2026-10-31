@@ -22,7 +22,7 @@ modules in `pipeline/`:
 | `pipeline/lakes.py` | The natural terminal lakes (ADR-112, ADR-118): a record of elevation and volume with no full level, its validator, and the lake payload envelope. |
 | `pipeline/measurement.py` | One daily series summarised: current value, dated extremes, dated changes and the same-date rank. Shared by a lake's level and volume and a reservoir's surface level, so a level means one thing. |
 | `pipeline/elevation.py` | Reviewed reservoir surface elevation (ADR-135): the record's `elevation` block, the history entries, `elevation_history.json` and their checks. |
-| `pipeline/rivers.py` | Daily river flow (ADR-136): a gauge's 30-day record with no normal, rank or total, its validator, and the river payload envelope. |
+| `pipeline/rivers.py` | Daily river flow (ADR-136): a gauge's 30-day record with no rank or total, its validator, and the river payload envelope; for a natural gauge, the committed day-of-year percentiles' loader and WaterWatch's class (ADR-144). |
 | `refresh_reservoirs.py` | Fetch, summarize, assemble, validate, write, and report to CI. |
 
 `refresh_reservoirs` re-exports every public name from those modules, so
@@ -181,7 +181,9 @@ inside the records it keeps and leaves the history file alone.
 `pipeline.roster.load_admitted_river_gauges`, which requires a plain display
 name beside the survey's station name, the reviewed primary `time_series_id`,
 a tier with its basis and who directed it, and evidence for any water named
-downstream; it accepts only the `shaped` tier. `refresh_rivers.py` confirms
+downstream; it accepts `shaped`, and `natural` only when the evidence meets
+ADR-137 (no published reservoir, storage under 10%) and names `tier_ruled_on`
+(ADR-144). `refresh_rivers.py` confirms
 each series against the v1 `time-series-metadata` collection and reads the
 last `RIVER_FETCH_DAYS` (90) days from the v1 `daily` collection through
 `fetch_usgs_flow_series`, which keeps approval status and qualifiers and
@@ -190,10 +192,23 @@ the storage adapter it sends the key only when one is configured.
 `pipeline.rivers.summarize_gauge` keeps the 30 days ending on the newest day
 with a value; every run re-reads the whole window, so revisions land without
 a merge. Freshness is ADR-056's, with the notice keyed by station (ADR-126).
-`pipeline.rivers.validate_payload` refuses a normal, rank, capacity, inflow or
-total on a record or the envelope, `compared_with_normal` other than false, a
-window that is not 30 consecutive days ending on the current value, a notice
-carrying a measurement, and a roster gauge in neither list.
+`pipeline.rivers.validate_payload` refuses a rank, capacity, inflow or
+total on a record or the envelope, a band or class on a shaped gauge, a
+natural record whose class does not follow from its flow and band or whose
+band is for another date, out of order or under 30 years, a tier other than
+the roster's, a window that is not 30 consecutive days ending on the current
+value, a notice carrying a measurement, and a roster gauge in neither list.
+
+**A natural gauge's percentiles are committed, not fetched daily** (ADR-144).
+`tools/build_river_normals.py` reads them from the Statistics API through
+`fetch_usgs_flow_normals` (the key in a header only when configured), refuses
+a reply for another series or with a missing day, keeps `nan` as missing, and
+merges into `river_normals.json` with the date it read them. The refresh
+loads the file through `pipeline.rivers.load_river_normals`, which refuses it
+when a natural roster gauge has no entry or an entry fails a check; the
+refresh then writes nothing, so no class is published against a band that did
+not load. `summarize_gauge` takes the band for the newest value's calendar
+day or records why there is none.
 
 ## Freshness: late and withdrawn are different faults
 

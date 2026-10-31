@@ -2,8 +2,8 @@
   "measurement": "daily_mean_flow",
   "source": "U.S. Geological Survey",
   "source_url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/daily/items",
-  "reviewed": "2026-10-27",
-  "selection": "The first published river gauges (ADR-136): the four rivers that flow toward Lake Powell named in the recent-conditions plan, directed by Brian Busch on 2026-10-27 as the first set to publish. Each is a Utah gauge from gauge-review.csv with a 1991-2020 record and a traced basin within 25% of its published drainage area. Under the tier ruling recorded as ADR-137, each is shaped: three have a published reservoir inside the basin, and the Dirty Devil's inventoried dams hold at least 10% of a year's flow. Each gauge's daily mean flow is published without a comparison with normal and without a rank. The tier was taken from the worksheet's suggestion at Brian's direction and is pending his formal ruling in the review page; reviewer_ruling in gauge-review.csv is still blank for all four. No gauge here is a reservoir's inflow, and no two are ever added together.",
+  "reviewed": "2026-10-31",
+  "selection": "The first published river gauges (ADR-136): the four rivers that flow toward Lake Powell named in the recent-conditions plan, directed by Brian Busch on 2026-10-27 as the first set to publish. Each is a Utah gauge from gauge-review.csv with a 1991-2020 record and a traced basin within 25% of its published drainage area. Under the tier ruling recorded as ADR-137, each is shaped: three have a published reservoir inside the basin, and the Dirty Devil's inventoried dams hold at least 10% of a year's flow. Each gauge's daily mean flow is published without a comparison with normal and without a rank. The tier was taken from the worksheet's suggestion at Brian's direction and is pending his formal ruling in the review page; reviewer_ruling in gauge-review.csv is still blank for all four. No gauge here is a reservoir's inflow, and no two are ever added together. Three natural gauges were added on 2026-10-31 (ADR-144), directed by Brian Busch from his explicit natural rulings of 2026-10-27: Mill Creek at Sheley Tunnel near Moab, Blacks Fork near Robertson and South Creek above the reservoir near Monticello. Each is a GAGES-II reference gauge with no published reservoir in its traced basin and inventoried storage under 10% of a year's flow, and each newest flow is compared with the U.S. Geological Survey's day-of-year percentiles in river_normals.json. Middle Fork Beaver Creek near Lonetree (09226500), the fourth natural ruling, is held out: the survey has 22 years of approved values for each calendar day, under the 30 a comparison needs. reviewer_ruling in gauge-review.csv is still blank for all three until the review export is imported.",
   "keyed_by": "usgs_site_no",
   "gauges": {
     "09379500": {
@@ -180,6 +180,141 @@
         "name": "Lake Powell",
         "evidence": "The gauge is in subbasin 14070004, inside the Upper Colorado region (HUC 14), which is the Colorado River basin above Lee Ferry. Below the gauge the Dirty Devil River reaches Lake Powell. Lake Powell is a reservoir on the storage map; this gauge is not its inflow.",
         "reviewed": "2026-10-27"
+      }
+    },
+    "09183500": {
+      "station": "09183500",
+      "display_name": "Mill Creek at Sheley Tunnel, near Moab",
+      "usgs_name": "MILL CREEK AT SHELEY TUNNEL, NEAR MOAB, UT",
+      "state": "UT",
+      "lat": 38.4819972222222,
+      "lon": -109.405025,
+      "drainage_area_sq_mi": 26.8,
+      "huc8": "14030005",
+      "huc8_name": "Upper Colorado-Kane Springs",
+      "usgs_page": "https://waterdata.usgs.gov/monitoring-location/USGS-09183500/",
+      "series": {
+        "time_series_id": "b60b1867473c4c4ca93df1b231d3178f",
+        "parameter_code": "00060",
+        "statistic_id": "00003",
+        "unit": "ft^3/s",
+        "record_begin": "1954-10-01",
+        "source_url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/time-series-metadata/items?f=json&monitoring_location_id=USGS-09183500&parameter_code=00060&statistic_id=00003",
+        "checked": "2026-10-31"
+      },
+      "tier": {
+        "tier": "natural",
+        "basis": "ADR-137: no published reservoir in the traced basin, and its one inventoried dam (Lake Oowah Dam, 52 acre-feet) holds 0.7% of a year's flow, under 10%.",
+        "directed_by": "Brian Busch",
+        "directed_on": "2026-10-31",
+        "tier_ruled_on": "2026-10-27",
+        "status": "ruled_natural",
+        "evidence": {
+          "worksheet": "gauge-review.csv",
+          "screened_on": "2026-10-23",
+          "suggested_ruling": "natural",
+          "review_queue": "bulk",
+          "published_reservoirs_upstream": [],
+          "dams_upstream": 1,
+          "dam_storage_af": 52,
+          "storage_share_pct": 0.7,
+          "largest_dams": "Lake Oowah Dam (Fs) (52 AF)",
+          "irrigation_dams": 0,
+          "gages2_class": "reference",
+          "nrcs_adjustment_pct": 0.0,
+          "flow_years": 35,
+          "trace": "traced; NLDI basin 22 sq mi against a published 26.8"
+        }
+      }
+    },
+    "09217900": {
+      "station": "09217900",
+      "display_name": "Blacks Fork near Robertson",
+      "usgs_name": "BLACKS FORK NEAR ROBERTSON, WY",
+      "state": "WY",
+      "lat": 40.9590277777778,
+      "lon": -110.579722222222,
+      "drainage_area_sq_mi": 126.0,
+      "huc8": "14040107",
+      "huc8_name": "Blacks Fork",
+      "usgs_page": "https://waterdata.usgs.gov/monitoring-location/USGS-09217900/",
+      "series": {
+        "time_series_id": "4e7916e98e5e416c8a7ea01609a93a07",
+        "parameter_code": "00060",
+        "statistic_id": "00003",
+        "unit": "ft^3/s",
+        "record_begin": "1966-08-01",
+        "source_url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/time-series-metadata/items?f=json&monitoring_location_id=USGS-09217900&parameter_code=00060&statistic_id=00003",
+        "checked": "2026-10-31"
+      },
+      "tier": {
+        "tier": "natural",
+        "basis": "ADR-137: no published reservoir in the traced basin, and its one inventoried dam (Fish Lake - Elizabeth Pass, 650 acre-feet, listed for irrigation) holds 0.6% of a year's flow, under 10%. No diversion is named above the gauge.",
+        "directed_by": "Brian Busch",
+        "directed_on": "2026-10-31",
+        "tier_ruled_on": "2026-10-27",
+        "status": "ruled_natural",
+        "evidence": {
+          "worksheet": "gauge-review.csv",
+          "screened_on": "2026-10-23",
+          "suggested_ruling": "natural",
+          "review_queue": "review",
+          "published_reservoirs_upstream": [],
+          "dams_upstream": 1,
+          "dam_storage_af": 650,
+          "storage_share_pct": 0.6,
+          "largest_dams": "Fish Lake - Elizabeth Pass (650 AF)",
+          "irrigation_dams": 1,
+          "gages2_class": "reference",
+          "nrcs_adjustment_pct": 0.0,
+          "flow_years": 33,
+          "trace": "traced; NLDI basin 129 sq mi against a published 126"
+        }
+      }
+    },
+    "09378170": {
+      "station": "09378170",
+      "display_name": "South Creek above Reservoir near Monticello",
+      "usgs_name": "SOUTH CREEK ABOVE RESERVOIR NEAR MONTICELLO, UT",
+      "state": "UT",
+      "lat": 37.8466608313115,
+      "lon": -109.369562472974,
+      "drainage_area_sq_mi": 8.64,
+      "huc8": "14080203",
+      "huc8_name": "Montezuma",
+      "usgs_page": "https://waterdata.usgs.gov/monitoring-location/USGS-09378170/",
+      "series": {
+        "time_series_id": "eb71d587ce7949b08cee2193c37b1c2f",
+        "parameter_code": "00060",
+        "statistic_id": "00003",
+        "unit": "ft^3/s",
+        "record_begin": "1985-10-01",
+        "source_url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/time-series-metadata/items?f=json&monitoring_location_id=USGS-09378170&parameter_code=00060&statistic_id=00003",
+        "checked": "2026-10-31"
+      },
+      "tier": {
+        "tier": "natural",
+        "basis": "ADR-137: no published reservoir and no inventoried dam in the traced basin; storage is 0% of a year's flow, under 10%.",
+        "directed_by": "Brian Busch",
+        "directed_on": "2026-10-31",
+        "tier_ruled_on": "2026-10-27",
+        "status": "ruled_natural",
+        "evidence": {
+          "worksheet": "gauge-review.csv",
+          "screened_on": "2026-10-23",
+          "suggested_ruling": "natural",
+          "review_queue": "bulk",
+          "published_reservoirs_upstream": [],
+          "dams_upstream": 0,
+          "dam_storage_af": 0,
+          "storage_share_pct": 0.0,
+          "largest_dams": "",
+          "irrigation_dams": 0,
+          "gages2_class": "reference",
+          "nrcs_adjustment_pct": 0.0,
+          "flow_years": 35,
+          "trace": "traced; NLDI basin 8 sq mi against a published 8.64"
+        }
       }
     }
   }

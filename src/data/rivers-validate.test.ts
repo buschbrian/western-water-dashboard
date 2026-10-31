@@ -1,8 +1,8 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 
-import { riverDays, riverGauge, riverPayload } from "./river-fixture";
-import { REFUSED_RIVER_FIELDS, validateRiverPayload } from "./rivers-validate";
+import { naturalRiverGauge, riverBand, riverDays, riverGauge, riverPayload } from "./river-fixture";
+import { REFUSED_RIVER_FIELDS, flowClass, validateRiverPayload } from "./rivers-validate";
 
 const copy = <T>(value: T): T => JSON.parse(JSON.stringify(value)) as T;
 
@@ -28,7 +28,44 @@ describe("validateRiverPayload", () => {
 
   it("refuses a comparison with normal on a shaped gauge", () => {
     const gauge = { ...riverGauge(), compared_with_normal: true };
-    expect(() => validateRiverPayload(copy(riverPayload([gauge as never])))).toThrow("comparison");
+    expect(() => validateRiverPayload(copy(riverPayload([gauge as never])))).toThrow("never compared");
+    const banded = { ...riverGauge(), normal_band: riverBand() };
+    expect(() => validateRiverPayload(copy(riverPayload([banded as never])))).toThrow("never compared");
+    const classed = { ...riverGauge(), flow_class: null };
+    expect(() => validateRiverPayload(copy(riverPayload([classed as never])))).toThrow("never compared");
+  });
+
+  it("accepts a natural gauge with its band, or with its reason and nothing else", () => {
+    const compared = validateRiverPayload(copy(riverPayload([riverGauge(), naturalRiverGauge()])));
+    expect(compared.gauges[1]!.compared_with_normal).toBe(true);
+    const withheld = validateRiverPayload(copy(riverPayload([
+      naturalRiverGauge({}, "fewer_than_30_years")])));
+    expect(withheld.gauges[0]!.compared_with_normal).toBe(false);
+  });
+
+  it("refuses a natural gauge whose class, band or reason does not hold together", () => {
+    const gauge = naturalRiverGauge();
+    const bad: [unknown, string][] = [
+      [{ ...gauge, flow_class: "much_above_normal" }, "does not follow"],
+      [{ ...gauge, normal_band: riverBand("2026-10-25") }, "reading's date"],
+      [{ ...gauge, normal_band: riverBand(gauge.as_of, { years: 29 }) }, "malformed"],
+      [{ ...gauge, normal_band: riverBand(gauge.as_of, { p25: 450 }) }, "malformed"],
+      [{ ...gauge, normal_band: { ...riverBand(gauge.as_of), percentile: 50 } }, "malformed"],
+      [{ ...gauge, normal_withheld: "fewer_than_30_years" }, "malformed"],
+      [{ ...gauge, compared_with_normal: false }, "says why"],
+      [{ ...naturalRiverGauge({}, "percentile_missing"), normal_withheld: "guessed" }, "says why"],
+      [{ ...gauge, tier: "short" }, "unknown tier"]
+    ];
+    for (const [record, match] of bad) {
+      expect(() => validateRiverPayload(copy(riverPayload([record as never])))).toThrow(match);
+    }
+  });
+
+  it("classes a flow the way the pipeline does, nearer normal at a boundary", () => {
+    const band = riverBand();
+    expect([99, 100, 199, 200, 400, 401, 500, 501].map((cfs) => flowClass(cfs, band))).toEqual([
+      "much_below_normal", "below_normal", "below_normal", "normal", "normal",
+      "above_normal", "above_normal", "much_above_normal"]);
   });
 
   it("refuses a window that skips a day or does not end on the current reading", () => {

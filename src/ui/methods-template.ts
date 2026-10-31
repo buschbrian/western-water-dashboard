@@ -384,7 +384,10 @@ export function methodsMarkup(search: string): string {
           U.S. Geological Survey gauge. The <a href="./rivers.html">river flow page</a>
           shows the last 30 days at a small reviewed set of gauges. Each value has its
           review status. Where dams upstream store and release
-          water, the flow is not compared with normal. This site never adds two gauges
+          water, the flow is not compared with normal. Where little or no water is
+          stored upstream, the newest flow is compared with the normal range for the
+          same date: the middle half of the daily values the U.S. Geological Survey
+          approved, from 30 years or more. This site never adds two gauges
           together, and never calls a gauge the flow into a reservoir.</dd>
         <dt>Capacity</dt>
         <dd>The amount of water that a reservoir is designed to hold.</dd>
