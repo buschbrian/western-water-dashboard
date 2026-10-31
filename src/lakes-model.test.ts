@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { lake, payload } from "./data/lakes-validate.test";
+import { lake, payload } from "./data/lake-fixture";
 import { validateLakePayload } from "./data/lakes-validate";
 import {
   datumName, describeLake, formatFeet, lakeMonths, lakeStatement, targetsSentence,
