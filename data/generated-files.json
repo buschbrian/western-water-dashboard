@@ -222,13 +222,6 @@
       "note": "A committed reference, read once from the legacy USGS WaterServices daily values (shut down 2027-02-22) and never refreshed: the mean discharge of each complete water year at Duchesne River near Randlett (09302000), with source URL, fetched_at, parameter and approval-code counts. tools/build_gauge_review.py reads it for the years the OGC v1 daily series lacks. Its writer cannot run once the legacy service ends; the file is the record."
     },
     {
-      "path": "data/reviews/operating-character-census.json",
-      "class": "derived-on-demand",
-      "writer": "tools/build_operating_character_census.py",
-      "staged_by_refresh": false,
-      "note": "Proposed operating characters (ADR-114) and natural-lake flags for every published reservoir, with the inventory and hydrography evidence behind each. Candidates for a reviewer: nothing here is applied to a roster or a payload, and no page fetches it. Rebuild when the roster changes or a service is asked again."
-    },
-    {
       "path": "data/reviews/new-mexico-admission-screen.json",
       "class": "derived-on-demand",
       "writer": "tools/audit_new_mexico_reservoirs.py",
