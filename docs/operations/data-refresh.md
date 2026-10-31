@@ -101,8 +101,8 @@ into the issue, and four leading spaces is a Markdown code block.
 
 For an approved published-point correction, edit its owning roster first.
 Verify the new point's county; rebuild `counties.json` if the assignment
-changes. Then apply only the approved station IDs and rebuild the assistant
-indexes:
+changes. Then apply only the approved station IDs and rebuild the place
+index:
 
 ```bash
 .venv/bin/python tools/build_county_assignments.py --only 10774
