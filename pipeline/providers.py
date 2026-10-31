@@ -193,7 +193,7 @@ def fetch_rise_series(item_id: int, start: str, end: str, *,
 
     # A reviewed exclusion is applied where RISE readings are read (ADR-116).
     gone = [excluded_reading(str(item_id), stamp, reading, RISE_EXCLUDED_READINGS)
-            for stamp, reading in zip(df["dateTime"], df["storage_af"])]
+            for stamp, reading in zip(df["dateTime"], df[column])]
     if any(found is not None for found in gone):
         dropped = [found for found in gone if found is not None]
         print(f"  item {item_id}: {len(dropped)} reviewed reading(s) excluded "

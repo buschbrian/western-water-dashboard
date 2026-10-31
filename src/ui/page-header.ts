@@ -85,7 +85,8 @@ const PAGE_SHORT_SUBJECTS: Record<PageId, string> = {
   methods: "Methods",
   data: "Data API",
   reservoir: "Reservoir",
-  lakes: "Lakes"
+  lakes: "Lakes",
+  rivers: "Rivers"
 };
 
 /**
