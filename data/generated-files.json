@@ -201,6 +201,13 @@
       "note": "Proposed operating characters (ADR-114) and natural-lake flags for every published reservoir, with the inventory and hydrography evidence behind each. Candidates for a reviewer: nothing here is applied to a roster or a payload, and no page fetches it. Rebuild when the roster changes or a service is asked again."
     },
     {
+      "path": "data/reviews/new-mexico-admission-screen.json",
+      "class": "derived-on-demand",
+      "writer": "tools/audit_new_mexico_reservoirs.py",
+      "staged_by_refresh": false,
+      "note": "One run of the New Mexico admission screen (R11): every storage series the state has on USGS, RISE and the Corps' Albuquerque District, matched to its dam, with the drawn-scope check and a suggestion. Candidates for a reviewer: nothing here is applied to a roster or a payload, and no page fetches it."
+    },
+    {
       "path": "data/us-land.geojson",
       "class": "derived-on-demand",
       "writer": "tools/fetch_us_land_mask.py",
