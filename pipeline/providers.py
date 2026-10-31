@@ -500,7 +500,7 @@ def fetch_cdss_series(abbrev: str, start: str, end: str) -> pd.DataFrame:
 #: 00054 is the agency's own code for reservoir storage in acre-feet. The API
 #: key is deliberately supplied in a header so it cannot enter a requested URL
 #: or a provider log (ADR-098).
-USGS_DV_URL = "https://api.waterdata.usgs.gov/ogcapi/v0/collections/daily/items"
+USGS_DV_URL = "https://api.waterdata.usgs.gov/ogcapi/v1/collections/daily/items"
 USGS_LEGACY_DV_URL = "https://waterservices.usgs.gov/nwis/dv"
 USGS_API_KEY_ENV = "USGS_API_KEY"
 USGS_STORAGE_PARAMETER = "00054"

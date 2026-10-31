@@ -1,6 +1,6 @@
 {
   "storage_source": "U.S. Geological Survey modern OGC daily values service",
-  "storage_source_url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/daily/items",
+  "storage_source_url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/daily/items",
   "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams. This provider publishes no full level of its own, so ADR-070 never fires and ADR-003's inventory rule decides every denominator.",
   "reviewed": "2026-09-04",
   "selection": "Eleven USGS parameter-00054 sites ruled new by the 2026-08-22 review of nwis-review.csv. Re-audited with tools/audit_usgs_stations.py on 2026-08-28: seven remain admitted on confirmed dam matches and three remain held with current findings under admission.py's shared screens; Topaz Lake was admitted on 2026-09-04 under ADR-110's reviewed water report without an inventory record.",
