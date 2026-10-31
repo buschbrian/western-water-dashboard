@@ -170,6 +170,6 @@ def test_the_river_refresh_writes_its_history_beside_rivers_json(tmp_path):
                                    pause=0, normals_path=normals_path) == 0
     kept = json.loads((tmp_path / "river_history.json").read_text())
     river_history.validate_payload(kept)
-    assert len(kept["gauges"]) == 7
+    assert len(kept["gauges"]) == len(json.loads(out.read_text())["gauges"])
     assert all(len(g["cfs"]) == flow.RIVER_WINDOW_DAYS for g in kept["gauges"])
     assert not (ROOT / "river_history.json").stat().st_mtime > out.stat().st_mtime
