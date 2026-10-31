@@ -25,7 +25,7 @@
   `tests/test_reference_freshness.py` are where repository invariants live.
 - Browser suites serve `dist/`, not `src/`. Rebuild before running them, or you
   are testing the previous build.
-- One accessibility violation is accepted, in a vendor component;
+- Two accessibility violations are accepted, both in vendor components;
   `AXE_EXCEPTIONS` in `tests/smoke-modern.mjs` says why.
 
 Verify: `npm run verify:fast` for unit work, `npm run verify:pipeline` for
