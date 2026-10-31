@@ -279,7 +279,7 @@
       }
     },
     "09237495:CO:BOR": {
-      "name": "Stagecoach Reservoir nr Oak Creek",
+      "name": "Stagecoach Reservoir",
       "station_triplet": "09237495:CO:BOR",
       "lat": 40.28503,
       "lon": -106.834,
@@ -589,7 +589,7 @@
       }
     },
     "MPHC2000:CO:BOR": {
-      "name": "Mcphee Reservoir",
+      "name": "McPhee Reservoir",
       "station_triplet": "MPHC2000:CO:BOR",
       "lat": 37.57741,
       "lon": -108.57076,
@@ -986,7 +986,7 @@
       }
     },
     "10334500:NV:BOR": {
-      "name": "Rye Patch Re nr Rye Patch, NV",
+      "name": "Rye Patch Reservoir",
       "station_triplet": "10334500:NV:BOR",
       "lat": 40.4702,
       "lon": -118.30821,
@@ -2309,7 +2309,7 @@
       }
     },
     "14023000:OR:BOR": {
-      "name": "Mckay",
+      "name": "McKay",
       "station_triplet": "14023000:OR:BOR",
       "lat": 45.6071,
       "lon": -118.79281,
@@ -2929,7 +2929,7 @@
       }
     },
     "12105800:WA:BOR": {
-      "name": "Howard Hansen",
+      "name": "Howard A. Hanson",
       "station_triplet": "12105800:WA:BOR",
       "lat": 47.27705,
       "lon": -121.78538,
