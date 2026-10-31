@@ -187,11 +187,9 @@ MIN_ASSIGNMENT_MARGIN_KM = 2.0
 def in_ring(point: Point, ring) -> bool:
     """Ray casting, counting a crossing on the half-open edge [y0, y1).
 
-    The same algorithm as `inRing` in src/data/huc.ts, kept in step by a
-    shared set of fixtures in the two test suites. A point exactly on the
-    boundary is not specified either way and is not worth defining: dam
-    points do not land on watershed boundaries, and pretending otherwise
-    would invent a rule nothing tests.
+    A point exactly on the boundary is not specified either way and is not
+    worth defining: dam points do not land on watershed boundaries, and
+    pretending otherwise would invent a rule nothing tests.
     """
     x, y = point
     inside = False
