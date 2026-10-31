@@ -5,10 +5,13 @@ import "@esri/calcite-components/components/calcite-navigation";
 
 import {
   DROUGHT_GROUPS,
+  ELEVATION_HISTORY_GROUPS,
   LAKE_GROUPS,
   REFERENCE_GROUPS,
   RESERVOIR_GROUPS,
+  RIVER_GROUPS,
   SNOW_GROUPS,
+  SOIL_GROUPS,
   type ApiFieldGroup
 } from "./data-docs-schema";
 import { brandMarkup, pageLinksMarkup } from "./ui/page-header";
@@ -43,8 +46,11 @@ root.innerHTML = `
       <ul>
         <li><a href="#files">Published files</a></li>
         <li><a href="#reservoir-fields">Reservoir fields</a></li>
+        <li><a href="#elevation-fields">Reservoir level history fields</a></li>
         <li><a href="#lake-fields">Terminal lake fields</a></li>
+        <li><a href="#river-fields">River flow fields</a></li>
         <li><a href="#snow-fields">Snow fields</a></li>
+        <li><a href="#soil-fields">Soil moisture fields</a></li>
         <li><a href="#drought-fields">Drought fields</a></li>
         <li><a href="#reference-fields">Reference fields</a></li>
         <li><a href="#examples">Examples</a></li>
@@ -64,6 +70,18 @@ root.innerHTML = `
           last published file. Shown on the <a href="./">storage map</a>.</p>
       </article>
       <article class="api-file">
+        <h3>Reservoir level history</h3>
+        <p><a href="./api/elevation_history.json"><code>/api/elevation_history.json</code></a></p>
+        <p>The daily surface level, in feet, of each reservoir whose level datum has been
+          reviewed, from the Bureau of Reclamation's first reading. Each entry names its
+          datum. The reservoir file carries the summary of the same level in each
+          record's <code>elevation</code> block; this file carries every day. Structure
+          version 1. Refreshed each morning with the reservoirs. If a level request fails,
+          the last good entry stays. Shown on the
+          <a href="./reservoir.html?name=Lake%20Powell">Lake Powell</a> and
+          <a href="./reservoir.html?name=Lake%20Mead">Lake Mead</a> pages.</p>
+      </article>
+      <article class="api-file">
         <h3>Terminal lakes</h3>
         <p><a href="./api/lakes.json"><code>/api/lakes.json</code></a></p>
         <p>Natural lakes with no outlet and no dam. Each record carries the surface
@@ -72,6 +90,24 @@ root.innerHTML = `
           full, because none is defined for a terminal lake. Structure version 1.
           Refreshed each morning, separately from the reservoirs, and never added to a
           reservoir total. Shown on the <a href="./lakes.html">terminal lakes page</a>.</p>
+      </article>
+      <article class="api-file">
+        <h3>River flow</h3>
+        <p><a href="./api/rivers.json"><code>/api/rivers.json</code></a></p>
+        <p>Daily mean flow in cubic feet per second at a small reviewed set of U.S.
+          Geological Survey gauges. Each gauge carries its last 30 days. Each day has the
+          survey's review status and qualifiers. A gauge also carries the change from 7
+          days earlier, and the survey's own station name and page. Refreshed each morning;
+          every refresh reads the last 90 days again, so a revised provisional value
+          replaces the earlier one. Where dams upstream store and release water, a gauge
+          has no comparison with normal and no rank. Where little or no water is stored
+          upstream, the newest value is compared with the U.S. Geological Survey's
+          percentiles for the same date: the 10th, 25th, 50th, 75th and 90th of the
+          approved daily values, from 30 years or more. Structure version 2. The file has
+          no total across gauges,
+          because one gauge can measure water that another measured upstream, and no gauge
+          is a reservoir's inflow. Shown on the <a href="./rivers.html">river flow page</a>,
+          which also offers the values as a CSV file.</p>
       </article>
       <article class="api-file">
         <h3>Snow monitoring</h3>
@@ -86,6 +122,17 @@ root.innerHTML = `
           named for the water year it ends in. It is the file as it was published on the
           season's last day, with the same fields as the current file. The first refresh
           of each October adds the season that ended, and no file is changed after that.</p>
+      </article>
+      <article class="api-file">
+        <h3>Soil moisture</h3>
+        <p><a href="./data/soil_moisture.json"><code>/data/soil_moisture.json</code></a></p>
+        <p>Soil moisture at the snow monitoring sites for the last fifteen days, in percent
+          of the soil's volume. Each site's change over 7 days, in percentage points.
+          A site's value is the mean of its 2 in (or 4 in), 8 in and 20 in sensors. A
+          reading is not used on a day the soil at that depth is frozen. No median and no
+          comparison with normal. Structure version 1. Refreshed independently each
+          morning. A failed refresh does not replace the last complete file. Shown on the
+          <a href="./precipitation.html">precipitation page</a>.</p>
       </article>
       <article class="api-file">
         <h3>Drought coverage by drainage area</h3>
@@ -141,13 +188,25 @@ root.innerHTML = `
       aria-labelledby="reservoir-fields-heading">
       <h2 id="reservoir-fields-heading">Reservoir fields</h2>
     </section>
+    <section class="methods-section api-fields" id="elevation-fields"
+      aria-labelledby="elevation-fields-heading">
+      <h2 id="elevation-fields-heading">Reservoir level history fields</h2>
+    </section>
     <section class="methods-section api-fields" id="lake-fields"
       aria-labelledby="lake-fields-heading">
       <h2 id="lake-fields-heading">Terminal lake fields</h2>
     </section>
+    <section class="methods-section api-fields" id="river-fields"
+      aria-labelledby="river-fields-heading">
+      <h2 id="river-fields-heading">River flow fields</h2>
+    </section>
     <section class="methods-section api-fields" id="snow-fields"
       aria-labelledby="snow-fields-heading">
       <h2 id="snow-fields-heading">Snow fields</h2>
+    </section>
+    <section class="methods-section api-fields" id="soil-fields"
+      aria-labelledby="soil-fields-heading">
+      <h2 id="soil-fields-heading">Soil moisture fields</h2>
     </section>
     <section class="methods-section api-fields" id="drought-fields"
       aria-labelledby="drought-fields-heading">
@@ -245,8 +304,11 @@ function renderGroups(hostId: string, groups: readonly ApiFieldGroup[]): void {
 }
 
 renderGroups("reservoir-fields", RESERVOIR_GROUPS);
+renderGroups("elevation-fields", ELEVATION_HISTORY_GROUPS);
 renderGroups("lake-fields", LAKE_GROUPS);
+renderGroups("river-fields", RIVER_GROUPS);
 renderGroups("snow-fields", SNOW_GROUPS);
+renderGroups("soil-fields", SOIL_GROUPS);
 renderGroups("drought-fields", DROUGHT_GROUPS);
 renderGroups("reference-fields", REFERENCE_GROUPS);
 wireTheme();
@@ -255,6 +317,7 @@ setupPlaceSearch("data");
 
 window.__dataDocsReady = {
   files: document.querySelectorAll(".api-file").length,
-  groups: RESERVOIR_GROUPS.length + LAKE_GROUPS.length + SNOW_GROUPS.length
+  groups: RESERVOIR_GROUPS.length + ELEVATION_HISTORY_GROUPS.length
+    + LAKE_GROUPS.length + RIVER_GROUPS.length + SNOW_GROUPS.length + SOIL_GROUPS.length
     + DROUGHT_GROUPS.length + REFERENCE_GROUPS.length
 };

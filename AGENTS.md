@@ -34,7 +34,7 @@ agent files route, the documents explain.
 | Path | Role |
 |---|---|
 | `index.html` + `modern.html`, `src/main.ts` | Primary reservoir storage map and its stable alias. |
-| `overview.html`, `snow.html`, `drought.html` | Storage charts, snowpack, weekly drought. |
+| `overview.html`, `precipitation.html`, `snow.html`, `drought.html` | Storage charts, precipitation, snowpack, weekly drought. |
 | `reservoir.html`, `src/reservoir*` | One reservoir's own page; link resolution and provenance. |
 | `methods.html`, `data.html`, `terms.html` | Methods, public data API, terms. |
 | `legacy/`, `maplibre/`, `explore.html`, `public/retired-route.js` | Compatibility redirects and their URL translation. Bookmarks, not runtimes (ADR-031). |

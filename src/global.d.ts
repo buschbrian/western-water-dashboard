@@ -140,6 +140,14 @@ interface Window {
     /** Chart hosts showing "This chart could not be drawn" in place of a
      * chart. */
     chartsFailed: number;
+    /** Hosts showing their empty message, such as a search with no match. */
+    chartsEmpty?: number;
+    /** Hosts not yet drawn because they are off screen: each chart draws
+     * when it comes within a screen of view. */
+    chartsDeferred?: number;
+    /** Hosts with a draw in progress. drawn + empty + failed + deferred +
+     * pending is always `charts`. */
+    chartsPending?: number;
     lakePowellExcluded: boolean;
     /** Lake Mead's own control, reported beside Powell's (ADR-062). */
     lakeMeadExcluded: boolean;
@@ -217,15 +225,50 @@ interface Window {
      * engine (ADR-047). */
     mapBasinLabels?: number;
     mapBasinLabelsDeconflicted?: boolean;
+  };
+  /** The precipitation view (ADR-130). `sites` is how many measurement sites
+   * the place holds; the card reports what it drew from them, and is null
+   * only when the page itself could not load. */
+  __precipReady?: {
+    level: number;
+    area: string | null;
+    sites: number;
     /** The precipitation card (ADR-125): its own load, so its own state. */
-    precipitation?: {
+    precipitation: {
       state: "loading" | "ready" | "failed";
+      /** The recent totals, drawn from the daily file before the history. */
+      recent?: "loading" | "ready" | "failed";
       stations: number;
       curveDays: number;
       bandDays: number;
       range: "season" | "year";
       date?: string | null;
       stripYears?: number;
+    } | null;
+    /** The map of recent totals (ADR-131): waiting until there are totals
+     * and the map is near the screen, then loading, ready or failed. */
+    map?: {
+      state: "waiting" | "loading" | "ready" | "failed";
+      stations: number;
+      withValue: number;
+      notUsed: number;
+      /** Drainage areas drawn, and those with a mean for the window. */
+      basins: number;
+      basinsWithValue: number;
+      window: 1 | 3 | 7 | null;
+      basemap: boolean;
+      basemapDegraded: boolean;
+      viewReady: boolean;
+      /** The "Rain | Soil moisture" switch (ADR-142), and the soil file it
+       * loads on first use: idle until then. */
+      mode?: "rain" | "soil";
+      soil?: {
+        state: "idle" | "loading" | "ready" | "failed";
+        endDate: string | null;
+        stations: number;
+        withChange: number;
+        rows: number;
+      };
     };
   };
   /** The drought view finished drawing. `units` is what the coverage file
@@ -347,6 +390,11 @@ interface Window {
    * explains itself). */
   __reservoirReady?: {
     status: "found" | "withdrawn" | "held" | "unknown" | "none";
+    /** The surface level (ADR-135): "drawn" when the card and the water-year
+     * chart are on the page, "card" when the history could not be read and
+     * only the card is, "none" for a reservoir with no reviewed level. Absent
+     * on every state but "found". */
+    elevation?: "drawn" | "card" | "none";
   };
   /** The terminal-lakes page settled (ADR-119). `lakes` is what the payload
    * published and `rendered` what the page drew, so a page that loaded its
@@ -375,6 +423,16 @@ interface Window {
     lakes: number;
     rendered: number;
     withdrawn: number;
+    failed: boolean;
+  };
+  /** The river-flow page (ADR-136): what the payload published and what drew. */
+  __riversReady?: {
+    gauges: number;
+    rendered: number;
+    charts: number;
+    withdrawn: number;
+    /** Natural gauges whose newest flow is compared with normal (ADR-144). */
+    compared: number;
     failed: boolean;
   };
 }

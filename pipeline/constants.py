@@ -44,6 +44,22 @@ ADMITTED_CAP_RESERVOIRS_PATH = ROOT / "admitted_cap_reservoirs.json"
 #: payload (ADR-112). Never merged into the reservoir file above.
 ADMITTED_TERMINAL_LAKES_PATH = ROOT / "admitted_terminal_lakes.json"
 LAKES_OUTPUT_PATH = ROOT / "lakes.json"
+#: Reviewed reservoir surface elevations (ADR-135): which reservoirs publish a
+#: level, above which datum, on what evidence. The daily history the reservoir
+#: page charts is its own payload, never part of reservoirs.json.
+ADMITTED_RESERVOIR_ELEVATIONS_PATH = ROOT / "admitted_reservoir_elevations.json"
+ELEVATION_HISTORY_PATH = ROOT / "elevation_history.json"
+#: The first date asked of a reviewed elevation item. Earlier than any
+#: Reclamation record, so the provider's own first reading starts the series.
+ELEVATION_START_DATE = "19000101"
+#: Reviewed river gauges and their daily-flow payload (ADR-136). A rate of
+#: flow, never a storage: nothing here joins a reservoir or lake file.
+ADMITTED_RIVER_GAUGES_PATH = ROOT / "admitted_river_gauges.json"
+RIVERS_OUTPUT_PATH = ROOT / "rivers.json"
+#: Day-of-year flow percentiles for the natural gauges (ADR-144), read from
+#: the survey's statistics service by `tools/build_river_normals.py` and
+#: committed, so the daily refresh asks nothing more than ADR-136's requests.
+RIVER_NORMALS_PATH = ROOT / "river_normals.json"
 SOURCE_HISTORY_PATH = ROOT / "data" / "reservoir-source-history.json"
 NORMALS_PATH = ROOT / "normals.json"
 COUNTIES_PATH = ROOT / "counties.json"
@@ -187,6 +203,15 @@ SOURCE_COVERAGE = {
 # through. ADR-056.
 WITHDRAW_AFTER_DAYS = 60
 
+# Storage gained since the low (ADR-134): each daily reservoir's own lowest
+# reading in the last 120 days, ending on its reading date. Long enough to
+# reach back past the late-summer low in autumn and the winter low in June;
+# short enough that the low is this season's, not last year's. A window
+# holding fewer than 100 daily readings has a gap the low could sit in, so it
+# publishes none rather than a low it may have missed.
+LOW_WINDOW_DAYS = 120
+LOW_MIN_READINGS = 100
+
 # Which baseline the site opens on.
 #
 # "climate" is the 1991-2020 standard, and it is the default because the
@@ -222,11 +247,32 @@ EXPORT_SCHEMA_VERSION = 4
 # Still 1 after `reviewed_holds` (ADR-115): the array is optional and
 # additive, as every field added to this payload has been, and a bump is
 # how a consumer is told something it reads has changed shape.
+#
+# Still 1 after the optional `elevation` block (ADR-135), for the same reason:
+# only reservoirs on the reviewed elevation roster carry it, and nothing a
+# consumer already reads changed shape.
 RESERVOIR_SCHEMA_VERSION = 1
+
+#: The shape of `elevation_history.json` (ADR-135).
+ELEVATION_HISTORY_SCHEMA_VERSION = 1
 
 #: The shape of `lakes.json`, versioned apart from the reservoir payload: a
 #: lake record has no capacity or percent full to share a contract with.
 LAKE_SCHEMA_VERSION = 1
+
+#: The shape of `rivers.json` (ADR-136). Version 2 admits the natural tier
+#: and its comparison with normal (ADR-144).
+RIVER_SCHEMA_VERSION = 2
+#: The percentiles a natural gauge's day carries, and the fewest years with an
+#: approved value on that calendar day for a comparison to be made: the
+#: WaterWatch rule, since the statistics service sets no minimum (ADR-144).
+RIVER_NORMAL_PERCENTILES = (10, 25, 50, 75, 90)
+RIVER_NORMAL_MIN_YEARS = 30
+#: Daily means published per gauge, ending on its newest reported day.
+RIVER_WINDOW_DAYS = 30
+#: Days asked for on every run. Every publishable record's window is read
+#: again in full, so a revised provisional value replaces the old one.
+RIVER_FETCH_DAYS = WITHDRAW_AFTER_DAYS + RIVER_WINDOW_DAYS
 
 #: The estimator behind the derived numbers, separate from the shape of the
 #: file carrying them. `tools/build_normal_baselines.py` publishes the same

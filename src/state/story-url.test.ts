@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 import {
-  invalidSentence, reservoirPageHref, snowPageHref, storyPlaceFromSearch,
+  invalidSentence, reservoirPageHref, precipitationPageHref, storyPlaceFromSearch,
   storyRequestFromSearch, storyThemeFromSearch, STORY_VIEWS, type StoryInvalid
 } from "./story-url";
 
@@ -59,9 +59,9 @@ describe("story view links (ADR-128)", () => {
   });
 
   it("links to the full page with the same place, and always says the state", () => {
-    expect(snowPageHref({ state: "UT", area: null, level: 6 })).toBe("snow.html?state=UT");
-    expect(snowPageHref({ state: "all", area: "1405", level: 4 }))
-      .toBe("snow.html?state=all&area=1405&level=4");
+    expect(precipitationPageHref({ state: "UT", area: null, level: 6 })).toBe("precipitation.html?state=UT");
+    expect(precipitationPageHref({ state: "all", area: "1405", level: 4 }))
+      .toBe("precipitation.html?state=all&area=1405&level=4");
     expect(reservoirPageHref("Lost Creek, OR")).toBe("reservoir.html?name=Lost+Creek%2C+OR");
   });
 

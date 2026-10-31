@@ -57,6 +57,8 @@ import watershed_scopes  # noqa: E402
 #:   different thing from the period moving. Annual, and see ADR-041.
 #: - The snow site inventory changes when a station is installed or retired,
 #:   which happens every season.
+#: - The river percentiles cover the whole approved record, so each year the
+#:   survey approves adds a year to them.
 REFERENCES: tuple[dict, ...] = (
     {"path": "capacities.json", "field": "retrieved", "days": 365,
      "what": "Reservoir full levels, from the National Inventory of Dams"},
@@ -77,6 +79,10 @@ REFERENCES: tuple[dict, ...] = (
              "so it is due after an admission, not on a date"},
     {"path": "data/us-land.geojson", "field": "retrieved", "days": 365,
      "what": "The land mask the drought engine measures against"},
+    {"path": "river_normals.json", "field": "retrieved", "days": 365,
+     "what": "The natural river gauges' day-of-year flow percentiles (ADR-144). "
+             "They move when the survey approves another year of values, "
+             "about once a year"},
 )
 
 

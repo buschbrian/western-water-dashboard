@@ -1,0 +1,53 @@
+:root { color-scheme: light dark; --ink: #243640; --paper: #f5f7f7; --surface: #fff; --line: #bdc9cf; --accent: #245c70; --muted: #4e626c; --note: #eef3f5; font-family: system-ui, sans-serif; font-size: 16px; }
+@media (prefers-color-scheme: dark) { :root { --ink: #e5eef2; --paper: #142127; --surface: #1b2b33; --line: #516873; --accent: #9ccddd; --muted: #b4c6cf; --note: #253b46; } }
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--paper); color: var(--ink); line-height: 1.55; }
+header, main, footer { max-width: 1200px; margin: auto; padding: 1.5rem; }
+header { padding-top: 2.5rem; padding-bottom: .5rem; }
+h1 { font-size: clamp(2rem, 5vw, 3.5rem); line-height: 1.1; margin: .5rem 0; letter-spacing: -.035em; }
+h2 { font-size: 1.4rem; line-height: 1.3; margin: .5rem 0 1rem; }
+h3 { font-size: 1rem; margin: 0 0 .75rem; }
+p { margin: .5rem 0 1rem; }
+section { min-width: 0; }
+.eyebrow { color: var(--muted); font-size: .875rem; }
+button, a { touch-action: manipulation; }
+button { font: inherit; color: inherit; background: var(--surface); border: 1px solid var(--line); padding: .75rem 1rem; cursor: pointer; text-align: left; }
+a { color: var(--accent); overflow-wrap: anywhere; }
+button:hover { border-color: var(--accent); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
+.stations { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: .75rem; margin-bottom: 2rem; }
+.stations button { display: flex; flex-direction: column; gap: .5rem; min-width: 0; }
+.stations button[aria-pressed="true"] { border: 2px solid var(--accent); padding: calc(.75rem - 1px) calc(1rem - 1px); background: var(--note); }
+.stations small { color: var(--muted); }
+#notice, .note { background: var(--note); border-left: 3px solid var(--accent); padding: 1rem; }
+#notice[data-error="true"] { border-left-width: 6px; }
+#detail { background: var(--surface); padding: 1.5rem; border: 1px solid var(--line); }
+.heading { display: flex; justify-content: space-between; align-items: baseline; flex-wrap: wrap; gap: .5rem 1rem; }
+.facts { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1.5rem; border-top: 1px solid var(--line); padding-top: 1.5rem; }
+.reading { font-size: 1.75rem; font-variant-numeric: tabular-nums; line-height: 1.3; }
+.facts h3, .facts p:last-child { color: var(--muted); }
+.chart { width: 100%; min-height: 200px; }
+.chart svg { display: block; width: 100%; height: 260px; }
+.chart text { font: 12px system-ui, sans-serif; fill: var(--ink); }
+.chart .grid { stroke: var(--line); stroke-width: 1; }
+.chart .flow-line { fill: none; stroke: var(--accent); stroke-width: 2.5; }
+.chart circle { fill: var(--accent); }
+.context { display: grid; grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr); gap: 2rem; border-top: 1px solid var(--line); padding-top: 1.5rem; margin-top: 1.5rem; }
+.map { position: relative; width: 100%; }
+.map img { display: block; width: 100%; height: auto; }
+.map svg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.map .basin { fill: rgb(36 92 112 / .18); stroke: #245c70; stroke-width: 2; }
+.map .gauge { fill: #111; stroke: #fff; stroke-width: 3; }
+.context p, footer { color: var(--muted); font-size: .9rem; }
+.downloads { display: flex; flex-wrap: wrap; gap: .75rem; }
+.table-wrap { max-height: 30rem; overflow: auto; margin-top: 1rem; border: 1px solid var(--line); }
+table { border-collapse: collapse; width: 100%; font-size: .9rem; font-variant-numeric: tabular-nums; }
+caption { text-align: left; padding: .75rem; color: var(--muted); }
+th, td { text-align: left; padding: .75rem; border-bottom: 1px solid var(--line); vertical-align: top; }
+th { background: var(--note); }
+td:first-child { white-space: nowrap; }
+#table-heading { margin-top: 2rem; }
+.skip { position: absolute; top: -100px; }
+.skip:focus { top: 0; padding: .75rem; background: var(--surface); z-index: 1; }
+[hidden] { display: none !important; }
+@media (max-width: 700px) { header, main, footer { padding: 1rem; } #detail { padding: 1rem; } .stations, .facts, .context { grid-template-columns: 1fr; } .stations { gap: .5rem; } .stations button { padding: .75rem; } .facts { gap: .5rem; } .reading { font-size: 1.5rem; } }

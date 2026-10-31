@@ -19,8 +19,8 @@ import "@esri/calcite-components/components/calcite-icon";
 import { linkHref, portableSearch } from "../state/portable-url";
 
 export type PageId =
-  | "map" | "overview" | "snow" | "drought" | "methods" | "data"
-  | "reservoir" | "lakes";
+  | "map" | "overview" | "precipitation" | "snow" | "drought" | "methods" | "data"
+  | "reservoir" | "lakes" | "rivers";
 
 interface PageLink {
   id: PageId;
@@ -45,14 +45,15 @@ interface PageLink {
  * quietly losing an entry.
  *
  * These are longer than the bar's button text on purpose. The navigation
- * clips rather than scrolls, so "Precipitation" is all that fits beside the other
- * buttons; "Western Precipitation and Snow" is what a tab, a bookmark or a shared link
+ * clips rather than scrolls, so "Snowpack" is all that fits beside the other
+ * buttons; "Western Snowpack" is what a tab, a bookmark or a shared link
  * needs, where there is no bar around it to supply the context.
  */
 const PAGE_SUBJECTS: Record<PageId, string> = {
   map: "Western Reservoir Storage",
   overview: "Western Storage Charts",
-  snow: "Western Precipitation and Snow",
+  precipitation: "Western Precipitation",
+  snow: "Western Snowpack",
   drought: "Western Drought",
   methods: "Methods and Sources",
   data: "Public Data API",
@@ -64,7 +65,28 @@ const PAGE_SUBJECTS: Record<PageId, string> = {
   /* The natural terminal lakes (ADR-119). Reached from the methods and data
    * pages rather than from the bar: the bar clips rather than scrolls, and
    * whether one lake earns a place in it is a decision not yet made. */
-  lakes: "Terminal Lakes"
+  lakes: "Terminal Lakes",
+  /* Daily river flow (ADR-136), reached like the lakes page. */
+  rivers: "River Flow"
+};
+
+/**
+ * The same subjects, short enough for a phone's bar. The site name above
+ * them says "Western Water" there, so the page name need not; the storage
+ * map's full name lost half its letters to an ellipsis beside six actions.
+ * The full subject stays the heading's text for a screen reader.
+ */
+const PAGE_SHORT_SUBJECTS: Record<PageId, string> = {
+  map: "Storage map",
+  overview: "Storage charts",
+  precipitation: "Precipitation",
+  snow: "Snowpack",
+  drought: "Drought",
+  methods: "Methods",
+  data: "Data API",
+  reservoir: "Reservoir",
+  lakes: "Lakes",
+  rivers: "Rivers"
 };
 
 /**
@@ -85,9 +107,14 @@ const PAGES: readonly PageLink[] = [
     label: "Open the storage charts and table"
   },
   {
+    id: "precipitation", href: "./precipitation.html", icon: "rain",
+    text: "Precipitation", menuText: "Precipitation",
+    label: "Open the precipitation view"
+  },
+  {
     id: "snow", href: "./snow.html", icon: "snow",
-    text: "Precipitation", menuText: "Precipitation and snow",
-    label: "Open the precipitation and snow view"
+    text: "Snowpack", menuText: "Snowpack",
+    label: "Open the mountain snowpack view"
   },
   {
     id: "drought", href: "./drought.html", icon: "gauge",
@@ -168,7 +195,7 @@ export function brandMarkup(headingLevel: 1 | 2, current: PageId): string {
           <span class="brand-title-wide" aria-hidden="true">${SITE_NAME}</span>
           <span class="brand-title-narrow" aria-hidden="true">${SITE_NAME_SHORT}</span>
         </span>
-        <${tag} id="brand-title">${subject}</${tag}>
+        <${tag} id="brand-title"><span class="brand-subject-full">${subject}</span><span class="brand-subject-short" aria-hidden="true">${PAGE_SHORT_SUBJECTS[current]}</span></${tag}>
         <span id="sdk-name">ArcGIS Maps SDK for JavaScript</span>
       </span>
     </div>`;

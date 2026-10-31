@@ -21,6 +21,7 @@ import requests
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import huc  # noqa: E402
 import refresh_reservoirs as R  # noqa: E402
+from pipeline.constants import LOW_WINDOW_DAYS  # noqa: E402
 
 # The provider adapters live in `pipeline.providers`, re-exported through R.
 # A stub has to replace the name the fetcher actually calls, so these tests
@@ -2231,6 +2232,97 @@ def test_a_change_that_cannot_be_made_names_no_reference():
     json.dumps(record)
 
 
+
+# --- storage gained since the low (ADR-134) --------------------------------
+
+def _daily_frame(values, end=TODAY):
+    index = pd.date_range(end=end, periods=len(values), freq="D")
+    return pd.DataFrame({"date": index, "storage_af": np.asarray(values, dtype="float64")})
+
+
+def test_the_gain_is_measured_from_a_low_inside_the_window():
+    """Falling for 140 days, then rising for 60: the low is 60 days back."""
+    values = list(np.linspace(9000, 2000, 140)) + list(np.linspace(2100, 8000, 60))
+    record = R.summarize("Storm", 980, 40.0, -111.0, _daily_frame(values), TODAY)
+
+    assert record["low_120d_af"] == 2000
+    assert record["low_120d_date"] == (TODAY - pd.Timedelta(days=60)).date().isoformat()
+    assert record["change_since_low_af"] == 6000
+    json.dumps(record)
+
+
+def test_a_low_older_than_the_window_is_not_the_low():
+    """The low is this season's: a deeper one 179 days back is outside it."""
+    values = [100.0] + [5000.0] * 29 + list(np.linspace(4000, 6000, 150))
+    record = R.summarize("Old low", 979, 40.0, -111.0, _daily_frame(values), TODAY)
+
+    start = TODAY - pd.Timedelta(days=LOW_WINDOW_DAYS)
+    assert pd.Timestamp(record["low_120d_date"]) > start
+    assert record["low_120d_af"] > 100
+
+
+def test_a_reservoir_at_its_low_today_has_gained_nothing():
+    values = list(np.linspace(9000, 3000, 200))
+    record = R.summarize("Falling", 978, 40.0, -111.0, _daily_frame(values), TODAY)
+
+    assert record["low_120d_date"] == record["as_of"]
+    assert record["change_since_low_af"] == 0
+
+
+def test_a_tie_takes_the_latest_date():
+    """Held flat at the low, the gain is measured from the last day there."""
+    values = [6000.0] * 100 + [2500.0] * 10 + [3000.0] * 5 + [2500.0] * 3 + [4000.0] * 2
+    record = R.summarize("Flat", 977, 40.0, -111.0, _daily_frame(values), TODAY)
+
+    assert record["low_120d_af"] == 2500
+    assert record["low_120d_date"] == (TODAY - pd.Timedelta(days=2)).date().isoformat()
+    assert record["change_since_low_af"] == 1500
+
+
+def test_a_gap_in_the_window_publishes_no_low():
+    """99 readings in 120 days: the missing 21 are where the low could be."""
+    frame = _daily_frame(list(np.linspace(9000, 3000, 200)))
+    gap = frame["date"].between(TODAY - pd.Timedelta(days=60),
+                                TODAY - pd.Timedelta(days=40))
+    assert int(gap.sum()) == 21
+    record = R.summarize("Gappy", 976, 40.0, -111.0, frame[~gap], TODAY)
+
+    assert record["low_120d_af"] is None
+    assert record["low_120d_date"] is None
+    assert record["change_since_low_af"] is None
+    # One reading fewer missing is enough.
+    record = R.summarize("Gappy", 976, 40.0, -111.0,
+                         frame[~gap].pipe(lambda f: pd.concat(
+                             [f, frame[gap].head(1)]).sort_values("date")), TODAY)
+    assert record["change_since_low_af"] is not None
+
+
+def test_a_monthly_record_publishes_no_low():
+    index = pd.DatetimeIndex(pd.date_range("2015-01-31", TODAY, freq="ME"))
+    frame = pd.DataFrame({"date": index, "storage_af": np.arange(len(index), dtype="float64")})
+    record = R.summarize("Monthly", 975, 40.0, -111.0, frame, TODAY,
+                         data_frequency="monthly", change_tolerance_days=45)
+
+    assert record["low_120d_af"] is None
+    assert record["low_120d_date"] is None
+    assert record["change_since_low_af"] is None
+
+
+def test_a_late_record_publishes_no_low():
+    values = list(np.linspace(9000, 3000, 200))
+    late = R.summarize("Late", 974, 40.0, -111.0,
+                       _daily_frame(values, end=TODAY - pd.Timedelta(days=5)), TODAY)
+    assert late["is_stale"] is True
+    assert late["change_since_low_af"] is None
+
+    fresh = R.summarize("Fresh", 973, 40.0, -111.0, _daily_frame(values), TODAY)
+    assert fresh["change_since_low_af"] is not None
+    carried = R.carry_forward(fresh, TODAY, "fetch failed")
+    assert carried["low_120d_af"] is None
+    assert carried["low_120d_date"] is None
+    assert carried["change_since_low_af"] is None
+    assert carried["current_storage_af"] == fresh["current_storage_af"]
+
 # --- the fourth provider: Colorado's telemetry service ----------------------
 
 def cdss_row(day, value):
@@ -2849,3 +2941,50 @@ class TestTheSharedProviderSession:
 
         with pytest.raises(ValueError):
             R.providers._retry_unreadable_body(read)
+
+
+def rise_page(rows):
+    return {"data": [{"attributes": {"dateTime": stamp, "result": result}}
+                     for stamp, result in rows],
+            "meta": {"itemsPerPage": 2000, "totalItems": len(rows)}}
+
+
+def test_rise_exclusions_drop_the_named_readings_and_nothing_else(tmp_path, monkeypatch, capsys):
+    """ADR-116 for a RISE item: the item is the station and its own sensor.
+
+    The same value on another item, and a corrected value at an excluded
+    stamp, both survive; the series simply ends at the last reading nobody
+    has excluded and the freshness rules take it from there.
+    """
+    path = exclusion_file(
+        tmp_path, [exclusion(
+            sensor=134092, stamp="2026-10-24T07:00:00+00:00", value=253.47)],
+        station="134092", withheld=False)
+    table = R.load_excluded_readings(path, None)
+    monkeypatch.setattr(R.providers, "RISE_EXCLUDED_READINGS", table)
+    rows = [("2026-10-22T07:00:00+00:00", 1204.13),
+            ("2026-10-23T07:00:00+00:00", 1250.26),
+            ("2026-10-24T07:00:00+00:00", 253.47),
+            ("2026-10-25T07:00:00+00:00", 1300.0)]
+    monkeypatch.setattr(R.providers, "_get_json", lambda params: rise_page(rows))
+    frame = R.fetch_rise_series(134092, "20260101", "20261101")
+    assert frame["storage_af"].tolist() == [1204.13, 1250.26, 1300.0]
+    assert "item 134092: 1 reviewed reading(s) excluded (ADR-116)" in capsys.readouterr().out
+
+    monkeypatch.setattr(R.providers, "_get_json", lambda params: rise_page(rows))
+    other = R.fetch_rise_series(999, "20260101", "20261101")
+    assert 253.47 in other["storage_af"].tolist()
+
+
+def test_rise_exclusions_must_name_their_own_item(tmp_path):
+    path = exclusion_file(tmp_path, [exclusion(sensor=1)],
+                          station="134092", withheld=False)
+    with pytest.raises(ValueError, match="sensor 134092"):
+        R.load_excluded_readings(path, None)
+
+
+def test_the_committed_rise_exclusions_are_the_reviewed_rifle_gap_readings():
+    named = {item: sorted((record["stamp"][:10], record["value"]) for record in records)
+             for item, records in R.RISE_EXCLUDED_READINGS.items()}
+    assert named == {"134092": [("2026-10-28", 263.24), ("2026-10-29", 263.24),
+                                ("2026-10-30", 263.24)]}

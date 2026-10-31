@@ -53,12 +53,13 @@ import { regionNameInContext } from "./place-label";
 
 const DISMISSED_STORAGE_KEY = "utah-reservoir-dashboard-splash-dismissed";
 
-/** The four data surfaces a place can be applied to. `href` is what the reader's
+/** The five data surfaces a place can be applied to. `href` is what the reader's
  * choice is appended to; `label` is what the button says. */
 const SUBJECTS = [
   { key: "storage-map", href: "./index.html", label: "Storage map" },
   { key: "storage-charts", href: "./overview.html", label: "Storage charts" },
-  { key: "snow", href: "./snow.html", label: "Precipitation" },
+  { key: "precipitation", href: "./precipitation.html", label: "Precipitation" },
+  { key: "snow", href: "./snow.html", label: "Snowpack" },
   { key: "drought", href: "./drought.html", label: "Drought" }
 ] as const;
 

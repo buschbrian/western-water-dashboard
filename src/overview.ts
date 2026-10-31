@@ -64,6 +64,7 @@ import {
   reservoirInState,
   spreadBoxes,
   countyOptions,
+  describeSinceLowTotal,
   stateOptions,
   watershedOptions,
   watershedRecords,
@@ -218,9 +219,10 @@ function updateKpis(
     `${value >= 0 ? "+" : ""}${formatAcreFeet(value)}`;
   const years = periodLabel(period.choices, rollup.normalBaseline);
   const { coverage } = rollup;
+  const sinceLow = describeSinceLowTotal(rollup.sinceLow);
   const values: Record<string, string> = {
     percent: formatPercent(rollup.percentFull),
-    volume: `${formatAcreFeet(rollup.storageAf)} of ${formatAcreFeet(rollup.capacityAf)}`,
+    volume: `${formatAcreFeet(rollup.storageAf)} of ${formatAcreFeet(rollup.capacityAf)} acre-feet`,
     count: String(rollup.count),
     /* Which reservoirs, and against how many kinds of full level. The tile
      * used to say "Utah-intersecting waterbodies", which was the whole
@@ -237,7 +239,9 @@ function updateKpis(
       : `Of the usual storage for this date, ${years}, for ${rollup.normalCovers} `
         + `of ${rollup.count} reservoirs`,
     year: signed(rollup.change365dAf),
-    change: `30 days: ${signed(rollup.change30dAf)}`,
+    change: `Acre-feet. 30 days: ${signed(rollup.change30dAf)}`,
+    "since-low": sinceLow.value,
+    "since-low-note": sinceLow.note,
     late: String(rollup.stale),
     /* The readings are not all from the publication date, and until now the
      * tile said only "Observation dates vary by reservoir" -- true, and no
@@ -337,7 +341,7 @@ async function renderOverview(
            closed list and narrows to one member of it. Laid out among them
            it read as the first dropdown. -->
       <div id="overview-filter-search" class="filterbar-search">
-        <label>Find a reservoir<input id="reservoir-search" type="search" placeholder="Name, operator, provider, drainage area or county" autocomplete="off" /></label>
+        <label>Find a reservoir<input id="reservoir-search" type="search" placeholder="Name, operator, area or county" autocomplete="off" /></label>
       </div>
       <!-- Coarsest first, then finest: Where (state, with counties beneath),
            then one Drainage area menu spanning region, subregion and basin.
@@ -364,7 +368,8 @@ async function renderOverview(
       <article class="overview-kpi overview-kpi-primary"><span>Combined storage</span><strong data-kpi="percent">—</strong><small data-kpi="volume">—</small></article>
       <article class="overview-kpi"><span>Reservoirs in view</span><strong data-kpi="count">—</strong><small data-kpi="count-note">—</small></article>
       <article class="overview-kpi"><span>Compared with normal</span><strong data-kpi="normal">—</strong><small data-kpi="normal-note">—</small></article>
-      <article class="overview-kpi"><span>Change over the year</span><strong data-kpi="year">—</strong><small data-kpi="change">30 days: —</small></article>
+      <article class="overview-kpi"><span>Change over the year</span><strong data-kpi="year">—</strong><small data-kpi="change">Acre-feet. 30 days: —</small></article>
+      <article class="overview-kpi"><span>Gained since the low</span><strong data-kpi="since-low">—</strong><small data-kpi="since-low-note">—</small></article>
       <article class="overview-kpi"><span>Late or unavailable</span><strong data-kpi="late">—</strong><small>Evaluated against each source update schedule</small></article>
       <article class="overview-kpi"><span>Data published</span><strong>${formatDate(generatedAt.slice(0, 10))}</strong><small data-kpi="observed">—</small></article>
     </section>
@@ -395,55 +400,61 @@ async function renderOverview(
           <div><h2 id="capacity-heading">Largest reservoirs</h2><p>Bars show how full the largest reservoirs are. Click a bar to open that reservoir on the storage map.</p></div>
         </div>
         <div id="capacity-chart" class="chart-host" aria-busy="true"></div>
-        <div class="chart-legend" data-legend></div>
-        <p class="card-note">A reservoir can hold more than its full level when water is held above the usual pool. A bar can then run past 100%.</p>
-        <p class="card-source">Bar chart</p>
+        <div class="card-foot">
+          <div class="chart-legend" data-legend></div>
+          <p class="card-note">A reservoir can hold more than its full level when water is held above the usual pool. A bar can then run past 100%.</p>
+        </div>
       </section>
       <section class="overview-card overview-card-wide" aria-labelledby="watershed-heading">
         <div class="card-heading"><div><h2 id="watershed-heading">Drainage-area conditions</h2><p>Combined storage divided by the combined full level within each area. Click a bar to filter to it.</p></div></div>
         <div id="watershed-chart" class="chart-host" aria-busy="true"></div>
-        <div class="chart-legend" data-legend></div>
-        <p class="card-source">Bar chart</p>
+        <div class="card-foot">
+          <div class="chart-legend" data-legend></div>
+        </div>
       </section>
       <section class="overview-card" aria-labelledby="trend-heading">
         <div class="card-heading"><div><h2 id="trend-heading">The last 12 months</h2><p>Combined storage for the reservoirs in view, month by month. The only chart here that shows direction.</p></div></div>
         <div id="trend-chart" class="chart-host" aria-busy="true"></div>
-        <p class="card-note">Each month counts only the reservoirs that reported it, so the months are not all drawn from the same set. Hover any month to see how many reservoirs are behind it.</p>
-        <p class="card-note">The newest month is the one to read with care. Reservoirs read once a month report at month end, so that month is thin until they do.</p>
-        <p class="card-source">Bar and line chart</p>
+        <div class="card-foot">
+          <p class="card-note">Each month counts only the reservoirs that reported it, so the months are not all drawn from the same set. Hover any month to see how many reservoirs are behind it.</p>
+          <p class="card-note">The newest month is the one to read with care. Reservoirs read once a month report at month end, so that month is thin until they do.</p>
+        </div>
       </section>
       <section class="overview-card" aria-labelledby="normal-heading">
         <div class="card-heading"><div><h2 id="normal-heading">Stored now against normal</h2><p>Each dot is a reservoir. Dots below the dashed line hold less than they usually do on this date.</p></div></div>
         <div id="normal-chart" class="chart-host" aria-busy="true"></div>
-        <!-- Which reservoirs the ratio axis could not reach, named rather
-             than dropped. Filled by offScaleNote and hidden when every
-             reservoir fits, so this never announces an empty status. -->
-        <div id="normal-off-scale" class="chart-note" role="status" hidden></div>
-        <div class="chart-legend" data-legend></div>
-        <p class="card-note">The reservoirs get larger to the right, in tenfold steps, so the small ones are as readable as Flaming Gorge.</p>
-        <p class="card-note">The scale stops at twice the usual level. A reservoir that usually holds very little on this date can read far above that. A small change in storage is then a large change in the percentage.</p>
-        <p class="card-source">Scatter plot</p>
+        <div class="card-foot">
+          <!-- Which reservoirs the ratio axis could not reach, named rather
+               than dropped. Filled by offScaleNote and hidden when every
+               reservoir fits, so this never announces an empty status. -->
+          <div id="normal-off-scale" class="chart-note" role="status" hidden></div>
+          <div class="chart-legend" data-legend></div>
+          <p class="card-note">The reservoirs get larger to the right, in tenfold steps, so the small ones are as readable as Flaming Gorge.</p>
+          <p class="card-note">The scale stops at twice the usual level. A reservoir that usually holds very little on this date can read far above that. A small change in storage is then a large change in the percentage.</p>
+        </div>
       </section>
       <section class="overview-card overview-card-wide" aria-labelledby="distribution-heading">
         <div class="card-heading"><div><h2 id="distribution-heading">How full, across all of them</h2><p>Reservoirs sorted into ten equal bands of percent full, with the mean, the middle value, and the range the middle half of them fall in.</p></div></div>
         <div id="distribution-chart" class="chart-host" aria-busy="true"></div>
-        <!-- Under the chart, not beside it. The histogram is the widest thing
-             on this page and a key in a side rail would take width from the
-             bars; a row underneath spreads across the full card and keeps the
-             chart symmetrical. -->
-        <ul class="overlay-key" id="distribution-key"
-          aria-label="What the lines across the histogram mean"></ul>
-        <p class="card-note">These reservoirs differ in size, purpose and operating rules, so they are not one population with a shape to fit a curve to.</p>
-        <p class="card-source">Histogram</p>
+        <div class="card-foot">
+          <!-- Under the chart, not beside it. The histogram is the widest thing
+               on this page and a key in a side rail would take width from the
+               bars; a row underneath spreads across the full card and keeps the
+               chart symmetrical. -->
+          <ul class="overlay-key" id="distribution-key"
+            aria-label="What the lines across the histogram mean"></ul>
+          <p class="card-note">These reservoirs differ in size, purpose and operating rules, so they are not one population with a shape to fit a curve to.</p>
+        </div>
       </section>
       <section class="overview-card overview-card-wide" aria-labelledby="spread-heading">
         <div class="card-heading"><div><h2 id="spread-heading">Spread within each drainage area</h2><p>Each row is one drainage area, driest first. The box holds the middle half of its reservoirs and the line inside it is the middle value.</p></div></div>
         <div id="spread-chart" class="chart-host" aria-busy="true"></div>
-        <div class="chart-legend" data-legend></div>
-        <p class="card-note">The whiskers reach the rest, and every dot beyond them is one reservoir worth opening on the map. The figure at the right of each row is how many reservoirs the row holds. A box drawn over three of them carries less weight than one drawn over forty.</p>
-        <p class="card-note">The box takes its colour from that area's middle value, in the same colours as the map circles. An area at 60% can be forty reservoirs near 60, or half full and half empty.</p>
-        <p class="card-note">Areas with fewer than three reservoirs are left out, because a box drawn over two of them is just the two values again. A reservoir can hold more than its full level when water is held above the usual pool. A whisker or a mark pressed against the right edge can then stand for a value past 100%.</p>
-        <p class="card-source">Box plot</p>
+        <div class="card-foot">
+          <div class="chart-legend" data-legend></div>
+          <p class="card-note">The whiskers reach the rest, and every dot beyond them is one reservoir worth opening on the map. The figure at the right of each row is how many reservoirs the row holds. A box drawn over three of them carries less weight than one drawn over forty.</p>
+          <p class="card-note">The box takes its colour from that area's middle value, in the same colours as the map circles. An area at 60% can be forty reservoirs near 60, or half full and half empty.</p>
+          <p class="card-note">Areas with fewer than three reservoirs are left out, because a box drawn over two of them is just the two values again. A reservoir can hold more than its full level when water is held above the usual pool. A whisker or a mark pressed against the right edge can then stand for a value past 100%.</p>
+        </div>
       </section>
     </div>
     <section class="overview-card table-card mobile-table-card" aria-labelledby="table-heading">
@@ -748,6 +759,121 @@ async function renderOverview(
     rank: chartRank.value as ChartRank
   });
 
+  /* Each chart host's state, so readiness can say what every host holds:
+   * a chart (`drawn`), its empty message, its failure message, nothing yet
+   * because it is off screen (`deferred`), or a draw in progress
+   * (`pending`). The five always add up to the six hosts. */
+  type ChartState = "drawn" | "empty" | "failed" | "deferred" | "pending";
+  const chartStates = new Map<HTMLElement, ChartState>(chartHosts.map((host) => [host, "deferred"]));
+  /* The revision each host's newest draw belongs to, so an older draw that
+   * settles late cannot overwrite a newer one's state. */
+  const hostRevisions = new Map<HTMLElement, number>();
+  const deferredJobs = new Map<HTMLElement, { job: () => Promise<unknown>; revision: number }>();
+  let readyBase: {
+    reservoirs: number; visible: number; lakePowellExcluded: boolean; lakeMeadExcluded: boolean;
+  } | null = null;
+  const publishOverview = (): void => {
+    if (!readyBase) return;
+    const count = (state: ChartState): number =>
+      [...chartStates.values()].filter((entry) => entry === state).length;
+    window.__overviewReady = {
+      ...(window.__overviewReady ?? {}),
+      ...readyBase,
+      charts: chartHosts.length,
+      chartsDrawn: count("drawn"),
+      chartsFailed: count("failed"),
+      chartsEmpty: count("empty"),
+      chartsDeferred: count("deferred"),
+      chartsPending: count("pending")
+    };
+  };
+
+  /* Each host settles on its own. One chart that threw used to abandon
+   * the others mid-draw, and a chart whose SDK component threw inside
+   * itself never reached a catch here at all: it stayed on the page blank
+   * while readiness reported success (E1). `mountChart` now rejects a chart
+   * that drew nothing, so both land here as one failure, on one host. */
+  const settleChart = async (host: HTMLElement, drawing: Promise<unknown>, chartRevision: number):
+    Promise<"drawn" | "empty" | "failed"> => {
+    try {
+      await drawing;
+    } catch (error) {
+      console.error("A chart could not be drawn:", error);
+      /* Say what happened and stop claiming to be busy; the table below
+       * still has every value. */
+      if (hostRevisions.get(host) === chartRevision) {
+        const failed = document.createElement("p");
+        failed.className = "chart-empty";
+        failed.setAttribute("role", "alert");
+        failed.textContent =
+          "This chart could not be drawn. The table below has the same values.";
+        host.replaceChildren(failed);
+        host.setAttribute("aria-busy", "false");
+      }
+      return "failed";
+    }
+    /* Resolved: the host holds a chart checked as drawn, or its empty
+     * message. */
+    return host.querySelector("arcgis-chart, svg") ? "drawn" : "empty";
+  };
+
+  const runChart = (host: HTMLElement, job: () => Promise<unknown>, chartRevision: number): Promise<unknown> => {
+    deferredJobs.delete(host);
+    hostRevisions.set(host, chartRevision);
+    chartStates.set(host, "pending");
+    host.setAttribute("aria-busy", "true");
+    publishOverview();
+    /* Started inside a promise, so a chart that throws before it returns
+     * one is this host's failure and not an escape from the page. */
+    return settleChart(host, Promise.resolve().then(job), chartRevision).then((outcome) => {
+      if (hostRevisions.get(host) !== chartRevision) return;
+      /* A newer draw was asked for while this one ran, and this one stopped
+       * short of drawing: run the newer one now if the host is near, or say
+       * it is waiting. Reporting this run's outcome would call a blank host
+       * "empty" while its real draw sat in the queue. */
+      const waiting = deferredJobs.get(host);
+      if (waiting) {
+        if (near(host)) {
+          void runChart(host, waiting.job, waiting.revision);
+          return;
+        }
+        chartStates.set(host, "deferred");
+      } else {
+        chartStates.set(host, outcome);
+      }
+      host.setAttribute("aria-busy", "false");
+      publishOverview();
+    });
+  };
+  const deferChart = (host: HTMLElement, job: () => Promise<unknown>, chartRevision: number): void => {
+    deferredJobs.set(host, { job, revision: chartRevision });
+    /* A host whose newest draw is still running keeps its pending state;
+     * the job waits here and runs when the host is next near the screen. */
+    if (chartStates.get(host) !== "pending") {
+      chartStates.set(host, "deferred");
+      host.setAttribute("aria-busy", "false");
+    }
+  };
+  /* One screen of margin each way, so a chart is usually drawn before the
+   * reader reaches it. Without the observer every chart is near. */
+  const nearHosts = new Set<HTMLElement>();
+  const nearObserver = "IntersectionObserver" in window
+    ? new IntersectionObserver((entries) => {
+      for (const entry of entries) {
+        const host = entry.target as HTMLElement;
+        if (!entry.isIntersecting) {
+          nearHosts.delete(host);
+          continue;
+        }
+        nearHosts.add(host);
+        const waiting = deferredJobs.get(host);
+        if (waiting && waiting.revision === revision) void runChart(host, waiting.job, waiting.revision);
+      }
+    }, { rootMargin: "100% 0px" })
+    : null;
+  for (const host of chartHosts) nearObserver?.observe(host);
+  const near = (host: HTMLElement): boolean => nearObserver === null || nearHosts.has(host);
+
   let revision = 0;
   const update = async (): Promise<void> => {
     const currentRevision = ++revision;
@@ -798,7 +924,6 @@ async function renderOverview(
       `Every reservoir · Lake Powell ` +
       `${lakePowell.checked ? "included" : "excluded"} · Lake Mead ` +
       `${lakeMead.checked ? "included" : "excluded"}${chosenClass}`;
-    for (const host of chartHosts) host.setAttribute("aria-busy", "true");
     const still = (): boolean => currentRevision === revision;
     const measure = chartMeasure.value as ChartMeasure;
     const limit = Number(chartLimit.value) || visible.length;
@@ -828,36 +953,8 @@ async function renderOverview(
         offScaleHost.append(lead, list);
       }
     }
-    /* Each host settles on its own. One chart that threw used to abandon
-     * the others mid-draw, and a chart whose SDK component threw inside
-     * itself never reached a catch here at all: it stayed on the page blank
-     * while readiness reported success (E1). `mountChart` now rejects a chart
-     * that drew nothing, so both land here as one failure, on one host. */
-    const settleChart = async (host: HTMLElement, drawing: Promise<unknown>):
-      Promise<"drawn" | "empty" | "failed"> => {
-      try {
-        await drawing;
-      } catch (error) {
-        console.error("A chart could not be drawn:", error);
-        /* Say what happened and stop claiming to be busy; the table below
-         * still has every value. */
-        if (currentRevision === revision) {
-          const failed = document.createElement("p");
-          failed.className = "chart-empty";
-          failed.setAttribute("role", "alert");
-          failed.textContent =
-            "This chart could not be drawn. The table below has the same values.";
-          host.replaceChildren(failed);
-          host.setAttribute("aria-busy", "false");
-        }
-        return "failed";
-      }
-      /* Resolved: the host holds a chart checked as drawn, or its empty
-       * message. */
-      return host.querySelector("arcgis-chart, svg") ? "drawn" : "empty";
-    };
-    const outcomes = await Promise.all([
-      settleChart(capacityHost, renderArcgisBarChart(capacityHost,
+    const jobs: [HTMLElement, () => Promise<unknown>][] = [
+      [capacityHost, () => renderArcgisBarChart(capacityHost,
           largestReservoirRecords(visible, {
             limit, measure, rank: chartRank.value as ChartRank,
             labelAmong: allReservoirs
@@ -876,8 +973,8 @@ async function renderOverview(
               const label = labels[0];
               if (label) window.location.assign(`./?reservoir=${encodeURIComponent(label)}`);
             }
-          })),
-      settleChart(watershedHost, renderArcgisBarChart(watershedHost, watershedRecords(visible),
+          })],
+      [watershedHost, () => renderArcgisBarChart(watershedHost, watershedRecords(visible),
           "Combined percent full by drainage area in the filtered view", still, {
             categoryTitle: "Drainage area",
             onSelect: (labels) => {
@@ -886,19 +983,19 @@ async function renderOverview(
               reflectDrainage();
               void update();
             }
-          })),
-      settleChart(trendHost, renderArcgisTrendChart(trendHost, monthlyTrend(visible),
+          })],
+      [trendHost, () => renderArcgisTrendChart(trendHost, monthlyTrend(visible),
           "Combined storage for the filtered reservoirs over the last twelve months",
-          still, measure)),
-      settleChart(normalHost, renderArcgisNormalChart(normalHost, normalPoints,
+          still, measure)],
+      [normalHost, () => renderArcgisNormalChart(normalHost, normalPoints,
           "Percent of the usual storage for this date against how large that usual "
           + "storage is, one point per reservoir",
-          still)),
-      settleChart(distributionHost, renderArcgisDistributionChart(distributionHost, values,
-          "How many reservoirs fall in each of ten equal bands of percent full", still)),
+          still)],
+      [distributionHost, () => renderArcgisDistributionChart(distributionHost, values,
+          "How many reservoirs fall in each of ten equal bands of percent full", still)],
       /* Deferred a microtask so a throw inside the hand-built chart rejects
        * this promise instead of escaping the array. */
-      settleChart(spreadHost, Promise.resolve().then(() =>
+      [spreadHost, () => Promise.resolve().then(() =>
         renderSpread(spreadHost, spreadBoxes(values), {
           ariaLabel: "The spread of percent full within each drainage area, "
             + "driest first. Each row is a box for the middle half, a line at "
@@ -913,12 +1010,20 @@ async function renderOverview(
             spreadHost.append(empty);
           }
           spreadHost.setAttribute("aria-busy", "false");
-        }))
-    ]);
-    // Only the winning revision owns these: a superseded run clearing them
-    // would report "not busy" while its successor is still drawing.
+        })]
+    ];
+    /* Only the charts near the screen draw now. The rest keep their job and
+     * draw when they come within a screen of view: five SDK charts at once
+     * held a phone's main thread for many seconds after load. */
+    const immediate: Promise<unknown>[] = [];
+    for (const [host, job] of jobs) {
+      if (near(host)) immediate.push(runChart(host, job, currentRevision));
+      else deferChart(host, job, currentRevision);
+    }
+    await Promise.all(immediate);
+    // Only the winning revision owns these: a superseded run writing them
+    // would describe a view its successor is replacing.
     if (currentRevision !== revision) return;
-    for (const host of chartHosts) host.setAttribute("aria-busy", "false");
     /* The address bar last, once the view it describes is actually on
      * screen: written earlier it would advertise a state the page was still
      * drawing, and a reader who copied it mid-render would send a link to
@@ -927,15 +1032,13 @@ async function renderOverview(
     /* The write is a `replaceState`; there is no navigation to re-render the
      * bar, so its links are brought up to date here or not at all. */
     updatePageLinks(window.location.search);
-    window.__overviewReady = {
+    readyBase = {
       reservoirs: scoped.length,
       visible: visible.length,
-      charts: chartHosts.length,
-      chartsDrawn: outcomes.filter((outcome) => outcome === "drawn").length,
-      chartsFailed: outcomes.filter((outcome) => outcome === "failed").length,
       lakePowellExcluded: !visible.some(isLakePowell),
       lakeMeadExcluded: !visible.some(isLakeMead)
     };
+    publishOverview();
   };
   /* The Where menu is deliberately absent: its own pick handler calls
    * `update`, because a pick also has to move the two held axes before any

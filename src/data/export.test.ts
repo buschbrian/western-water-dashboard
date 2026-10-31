@@ -18,6 +18,7 @@ import {
   tableCsv,
   tableGeoJson
 } from "./export";
+import { syntheticElevation, syntheticProjectElevation } from "./elevation-fixture";
 
 describe("CSV serialization", () => {
   it("credits an operator record when it resolves a capacity conflict", () => {
@@ -137,6 +138,20 @@ describe("CSV serialization", () => {
     expect(lines).toHaveLength(reservoir.monthly.length + 1);
     expect(lines[0]).toContain("Station or item identifier");
     expect(lines[0]).toContain("History month");
+  });
+
+  it("adds the surface level to a reservoir that publishes one, and only to it", () => {
+    const plain = readPayload().reservoirs.find((row) => row.elevation === undefined)!;
+    const withLevel = { ...plain, elevation: syntheticElevation() };
+    const header = reservoirHistoryCsv(withLevel).split("\r\n")[0]!;
+    expect(header).toContain("Surface level (feet)");
+    expect(header).toContain("Level datum");
+    expect(reservoirHistoryCsv(withLevel)).toContain("National Geodetic Vertical Datum of 1929");
+    expect(header).not.toMatch(/Level.*percent/i);
+    expect(reservoirHistoryCsv(plain).split("\r\n")[0]).not.toContain("Surface level");
+    expect(reservoirHistoryCsv({ ...plain, elevation: syntheticProjectElevation() }))
+      .toContain("Bureau of Reclamation Hoover Dam powerhouse datum; add 0.55 feet for the "
+        + "National Geodetic Vertical Datum of 1929");
   });
 
   it("constructs stable, readable filenames", () => {

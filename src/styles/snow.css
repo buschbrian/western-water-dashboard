@@ -2,6 +2,10 @@
  * navigation, cards, filter bar and tables reuse the workspace stylesheet,
  * so the two data pages stay one design that is edited in one place. */
 
+/* Cards one after another. Without a gap each card's border sat on the
+ * next one's. */
+:is(#snow-content, #precip-content) > .overview-card + .overview-card { margin-block-start: var(--space-3); }
+
 /* The season curves render with a viewBox measured from their host rather
    than a fixed 640-unit canvas scaled to the card, so one unit is one CSS
    pixel at every width: the axis type and padding stay the size they were
@@ -74,7 +78,7 @@
 
 /* A site name in the table is a real button; it looks like the link it
  * behaves as, and keeps the row's text metrics. */
-.site-name-button, button.precip-storm-name {
+.site-name-button, a.precip-storm-name {
   padding: 0;
   border: none;
   background: none;
@@ -357,15 +361,15 @@
 /* Recent totals (ADR-129): three small figures and a short ranked list.
  * Rows of text, not bars. */
 .precip-storm { margin-block-end: 1rem; padding-block-end: .75rem; border-block-end: 1px solid var(--app-border); }
-.precip-storm[hidden], .precip-storm-list[hidden] { display: none; }
+.precip-storm[hidden], .precip-storm-list[hidden], .precip-soil-list[hidden] { display: none; }
 .precip-storm-title { margin: 0; font-size: var(--app-group-heading); }
 #precip-card .precip-storm-kpis { grid-template-columns: repeat(3, minmax(0, 1fr)); max-inline-size: 36rem; margin-block: .5rem 0; }
 #precip-card .precip-storm-kpis > .overview-kpi { grid-column: auto; padding: .6rem .7rem; }
 #precip-card .precip-storm-kpis strong { font-size: clamp(1.1rem, 2vw, 1.5rem); }
 .precip-storm-head { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.25rem; margin-block: .75rem .25rem; }
 .precip-storm-head .chart-axis-title { margin: 0; }
-.precip-storm-list { margin: 0; padding: 0; list-style: none; max-inline-size: 30rem; }
-.precip-storm-list li {
+.precip-storm-list, .precip-soil-list { margin: 0; padding: 0; list-style: none; max-inline-size: 30rem; }
+.precip-storm-list li, .precip-soil-list li {
   display: grid;
   grid-template-columns: 1.5rem minmax(0, 1fr) auto;
   column-gap: .5rem;
@@ -378,3 +382,15 @@
 .precip-storm-value { grid-column: 3; grid-row: 1; font-variant-numeric: tabular-nums; }
 .precip-storm-area { grid-column: 2; font-size: .78rem; color: var(--app-muted); }
 .precip-storm-area:empty { display: none; }
+
+/* The precipitation map sits between the recent figures and the station
+ * list, so on a phone it stays shorter than the snow map's full card. */
+.precip-map-slot { margin-block: var(--space-2) var(--space-1); }
+.precip-map-slot .view-map-host { block-size: clamp(20rem, 58vh, 36rem); }
+.precip-map-key, .precip-soil-key { margin-block-start: var(--space-2); }
+
+/* The precipitation map's "Rain | Soil moisture" switch (ADR-142). The day
+ * buttons and the rain list hide in soil mode; a flex row needs its own
+ * rule for `hidden`. */
+.precip-storm-head[hidden], .precip-map-mode-rain[hidden], .precip-map-mode-soil[hidden] { display: none; }
+.precip-map-mode-head { margin-block-start: var(--space-2); }

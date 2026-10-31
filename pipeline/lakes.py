@@ -26,10 +26,10 @@ from .constants import (
     LAKE_SCHEMA_VERSION, METHOD_VERSION, STALE_AFTER_DAYS, WITHDRAW_AFTER_DAYS,
 )
 from .freshness import partition_by_age, withdrawal_notice
-from .history import monthly_history, value_asof
-from .numbers import _pct, _round
+from .history import monthly_history
+from .measurement import summarize_measurement
+from .numbers import _round
 from .providers import USGS_DV_URL
-from .seasonal import seasonal_rank
 
 WATER_TYPE = "natural_terminal_lake"
 SOURCE_KEY = "usgs"
@@ -48,49 +48,6 @@ RESERVOIR_ONLY_FIELDS = frozenset({
 #: that carried a level or a volume would be publishing the figure it exists
 #: to withhold.
 NOTICE_FIELDS = frozenset({"name", "as_of", "days_stale", "source_label", "reason"})
-
-CHANGE_WINDOWS = (("7d", 7), ("30d", 30), ("365d", 365))
-
-
-def _measurement(series: pd.Series, last_date: pd.Timestamp, *, places: int,
-                 with_pct: bool, change_tolerance_days: int = 10) -> dict:
-    """Current value, record extremes, dated changes and the same-date rank.
-
-    `places` is how the figure is rounded: a level is read to hundredths of a
-    foot and a volume to whole acre-feet. `with_pct` is False for elevation --
-    a percentage change in a level above an arbitrary datum has no hydrologic
-    meaning, which is why ADR-112 refused percent-of-datum outright.
-    """
-    current = float(series.iloc[-1])
-    out = {
-        "current": _round(current, places),
-        "as_of": last_date.date().isoformat(),
-        "record_high": _round(float(series.max()), places),
-        "record_high_date": series.idxmax().date().isoformat(),
-        "record_low": _round(float(series.min()), places),
-        "record_low_date": series.idxmin().date().isoformat(),
-        "first_obs": series.index[0].date().isoformat(),
-        "n_obs": int(series.size),
-    }
-    for label, days in CHANGE_WINDOWS:
-        found = value_asof(series, last_date - pd.Timedelta(days=days),
-                           tolerance_days=change_tolerance_days)
-        past, past_date = found if found else (None, None)
-        out[f"change_{label}"] = _round(None if past is None else current - past, places)
-        if with_pct:
-            out[f"change_{label}_pct"] = (
-                None if not past else _round((current - past) / past * 100, 1))
-        # What the change is a change from: the tolerance means "365-day
-        # change" has covered 355 to 375 days, and the record says which.
-        out[f"change_{label}_reference_date"] = (
-            None if past_date is None else past_date.date().isoformat())
-        out[f"change_{label}_elapsed_days"] = (
-            None if past_date is None else int((last_date - past_date).days))
-    rank = seasonal_rank(series, last_date, current)
-    out["seasonal_rank"] = rank[0] if rank else None
-    out["seasonal_rank_of"] = rank[1] if rank else None
-    return out
-
 
 def summarize_lake(entry: dict, elevation: pd.DataFrame, volume: pd.DataFrame,
                    today: pd.Timestamp) -> dict:
@@ -136,7 +93,7 @@ def summarize_lake(entry: dict, elevation: pd.DataFrame, volume: pd.DataFrame,
             "vertical_datum": entry["elevation"]["vertical_datum"],
             "parameter_code": entry["elevation"]["parameter_code"],
             "statistic_id": entry["elevation"]["statistic_id"],
-            **_measurement(levels, last_level, places=2, with_pct=False),
+            **summarize_measurement(levels, last_level, places=2, with_pct=False),
         },
         "volume": {
             "unit": "acre_feet",
@@ -149,7 +106,7 @@ def summarize_lake(entry: dict, elevation: pd.DataFrame, volume: pd.DataFrame,
                 "source_url": entry["volume"]["relation"]["source_url"],
                 "in_use_from": entry["volume"]["relation"].get("in_use_from"),
             },
-            **_measurement(volumes, last_volume, places=0, with_pct=True),
+            **summarize_measurement(volumes, last_volume, places=0, with_pct=True),
             "monthly": monthly_history(volumes),
         },
 

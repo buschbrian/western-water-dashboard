@@ -66,6 +66,19 @@ const userTextFiles = [
   "src/lakes.ts",
   "src/lakes-model.ts",
   "src/ui/lakes-template.ts",
+  // A reservoir's surface level (ADR-135): the shared card's words, the
+  // datum note, the water-year chart and the page that places them.
+  "src/measurement-model.ts",
+  "src/reservoir-elevation-model.ts",
+  "src/viz/elevation-years.ts",
+  "src/ui/measurement-card.ts",
+  "src/reservoir.ts",
+  // The river-flow page (ADR-136): its frame, entry point, model and chart.
+  "rivers.html",
+  "src/rivers.ts",
+  "src/rivers-model.ts",
+  "src/ui/rivers-template.ts",
+  "src/viz/flow-chart.ts",
   // The story views (ADR-128): their frame, entry point, link sentences and
   // the two shared builders they draw with.
   "story.html",
@@ -73,6 +86,9 @@ const userTextFiles = [
   "src/state/story-url.ts",
   "src/ui/upstream-section.ts",
   "src/ui/precipitation-card.ts",
+  // The precipitation view's own lead, place line and links.
+  "precipitation.html",
+  "src/precipitation.ts",
   // The snowpack view writes all of its own visible text, including the
   // seasonal caveat and the axis words on the curve.
   "snow.html",
@@ -153,9 +169,9 @@ const oldUnexplainedTerms = [
 describe("user text", () => {
   it("does not transform visible text in CSS", async () => {
     const publishedPages = [
-      "index.html", "modern.html", "overview.html", "snow.html", "drought.html",
+      "index.html", "modern.html", "overview.html", "precipitation.html", "snow.html", "drought.html",
       "methods.html", "data.html", "reservoir.html", "terms.html",
-      "landscape.html", "explore.html", "lakes.html", "story.html",
+      "landscape.html", "explore.html", "lakes.html", "rivers.html", "story.html",
       "legacy/index.html", "maplibre/index.html"
     ];
     const styleFiles = (await readdir(resolve(root, "src/styles")))

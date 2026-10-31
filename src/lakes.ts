@@ -15,9 +15,9 @@ import { hydrologicPath, referenceRosters } from "./data/hydrologic-path";
 import type { HydrologicRosters } from "./data/hydrologic-path";
 import { loadLakes } from "./data/load";
 import { describeLake, withdrawnSentence } from "./lakes-model";
-import type { LakeMeasurementView, LakeRow } from "./lakes-model";
 import type { LakePayload, TerminalLake } from "./types";
 import { lakesTemplate } from "./ui/lakes-template";
+import { definitionList, measurementCard } from "./ui/measurement-card";
 import { createLocationFacts } from "./ui/location-facts";
 import { setupPlaceChooser } from "./ui/opening-splash";
 import { setupPlaceSearch } from "./ui/place-search";
@@ -62,33 +62,6 @@ function heading(level: "h2" | "h3", text: string, className: string): HTMLHeadi
   return element;
 }
 
-function definitionList(rows: readonly LakeRow[]): HTMLDListElement {
-  const dl = document.createElement("dl");
-  dl.className = "detail-rows";
-  for (const row of rows) {
-    const term = document.createElement("dt");
-    term.textContent = row.label;
-    const definition = document.createElement("dd");
-    definition.textContent = row.value;
-    dl.append(term, definition);
-  }
-  return dl;
-}
-
-function measurementCard(view: LakeMeasurementView): HTMLElement {
-  const card = document.createElement("section");
-  card.append(heading("h3", view.heading, "lake-measure-heading"));
-  const headline = document.createElement("p");
-  headline.className = "detail-headline";
-  const value = document.createElement("strong");
-  value.textContent = view.headline;
-  const basis = document.createElement("span");
-  basis.textContent = view.basis;
-  headline.append(value, basis);
-  card.append(headline, definitionList(view.rows));
-  return card;
-}
-
 function renderLake(lake: TerminalLake, rosters: HydrologicRosters): HTMLElement {
   const view = describeLake(lake, LAKE_BAR_COLOR);
   const article = document.createElement("article");
@@ -98,7 +71,8 @@ function renderLake(lake: TerminalLake, rosters: HydrologicRosters): HTMLElement
 
   const cards = document.createElement("div");
   cards.className = "lake-measurements";
-  cards.append(measurementCard(view.level), measurementCard(view.volume));
+  cards.append(measurementCard(view.level, "h3", "lake-measure-heading"),
+    measurementCard(view.volume, "h3", "lake-measure-heading"));
   article.append(cards);
 
   const chartHost = document.createElement("div");

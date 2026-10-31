@@ -2,9 +2,13 @@ import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import {
   DROUGHT_GROUPS,
+  ELEVATION_HISTORY_GROUPS,
+  LAKE_GROUPS,
   REFERENCE_GROUPS,
   RESERVOIR_GROUPS,
+  RIVER_GROUPS,
   SNOW_GROUPS,
+  SOIL_GROUPS,
   type ApiFieldGroup
 } from "./data-docs-schema";
 
@@ -60,6 +64,54 @@ describe("public API field documentation", () => {
     expectFields(RESERVOIR_GROUPS, "reservoir-record", merged(data.reservoirs));
     expectFields(RESERVOIR_GROUPS, "reservoir-month",
       merged(data.reservoirs.flatMap((record: Record<string, any>) => record.monthly)));
+    /* A reviewed level is on a few reservoirs only (ADR-135); checked when any
+     * record carries one. */
+    const levels = data.reservoirs
+      .map((record: Record<string, any>) => record.elevation)
+      .filter((block: unknown) => block !== undefined) as Record<string, any>[];
+    if (levels.length > 0) {
+      expectFields(RESERVOIR_GROUPS, "reservoir-elevation", merged(levels));
+      const offsets = levels.map((block) => block.datum_offset).filter(Boolean);
+      if (offsets.length) expectFields(RESERVOIR_GROUPS, "reservoir-elevation-offset", merged(offsets));
+      const derived = levels.map((block) => block.derived_offset).filter(Boolean);
+      if (derived.length) expectFields(RESERVOIR_GROUPS, "reservoir-elevation-derived", merged(derived));
+      const starts = levels.map((block) => block.record_starts).filter(Boolean);
+      if (starts.length) {
+        expectFields(RESERVOIR_GROUPS, "reservoir-elevation-record-start", merged(starts));
+      }
+      const relations = levels.map((block) => block.datum_relation).filter(Boolean);
+      if (relations.length) {
+        expectFields(RESERVOIR_GROUPS, "reservoir-elevation-relation", merged(relations));
+      }
+      const references = levels.flatMap((block) => block.reference_levels);
+      if (references.length) {
+        expectFields(RESERVOIR_GROUPS, "reservoir-reference-level", merged(references));
+      }
+    }
+  });
+
+  it("covers every current reservoir level history field", () => {
+    const data = read("elevation_history.json");
+    expectFields(ELEVATION_HISTORY_GROUPS, "elevation-header", data);
+    if (data.reservoirs.length > 0) {
+      expectFields(ELEVATION_HISTORY_GROUPS, "elevation-entry", merged(data.reservoirs));
+    }
+  });
+
+  it("covers every current river field", () => {
+    const data = read("rivers.json");
+    expectFields(RIVER_GROUPS, "river-header", data);
+    if (data.gauges.length > 0) {
+      expectFields(RIVER_GROUPS, "river-gauge", merged(data.gauges));
+      expectFields(RIVER_GROUPS, "river-day",
+        merged(data.gauges.flatMap((gauge: Record<string, any>) => gauge.daily)));
+      const bands = data.gauges.map((gauge: Record<string, any>) => gauge.normal_band)
+        .filter((band: unknown) => band !== null && band !== undefined);
+      if (bands.length > 0) expectFields(RIVER_GROUPS, "river-normal-band", merged(bands));
+    }
+    if (data.withdrawn.length > 0) {
+      expectFields(RIVER_GROUPS, "river-withdrawn", merged(data.withdrawn));
+    }
   });
 
   it("covers every current snow field", () => {
@@ -87,6 +139,16 @@ describe("public API field documentation", () => {
     for (const site of data.sites as Record<string, any>[]) {
       expect(site.series_values.length).toBe(site.series_days.length);
       expect(site.series_normals.length).toBe(site.series_days.length);
+    }
+  });
+
+  it("covers every current soil moisture field", () => {
+    const data = read("soil_moisture.json");
+    expectFields(SOIL_GROUPS, "soil-header", data);
+    expectFields(SOIL_GROUPS, "soil-rollup", merged(data.rollups));
+    expectFields(SOIL_GROUPS, "soil-site", merged(data.sites));
+    if (data.other_depth_sites.length > 0) {
+      expectFields(SOIL_GROUPS, "soil-other-depth-site", merged(data.other_depth_sites));
     }
   });
 
@@ -154,7 +216,8 @@ describe("public API field documentation", () => {
   });
 
   it("keeps API explanations in plain language", () => {
-    const prose = [...RESERVOIR_GROUPS, ...SNOW_GROUPS, ...DROUGHT_GROUPS, ...REFERENCE_GROUPS]
+    const prose = [...RESERVOIR_GROUPS, ...ELEVATION_HISTORY_GROUPS, ...LAKE_GROUPS,
+      ...RIVER_GROUPS, ...SNOW_GROUPS, ...DROUGHT_GROUPS, ...REFERENCE_GROUPS]
       .flatMap((section) => [section.title,
         ...section.fields.flatMap((field) => [field.units, field.meaning])])
       .join(" ");
