@@ -81,6 +81,17 @@ refresh time, and a gauge enters the pilot only when `reviewer_ruling` says
 so. Rerunning the builder refreshes the screen and trace columns and never
 changes `reviewer_ruling` or `notes`.
 
+The committed worksheet is the record of Brian's rulings: `reviewer_ruling`
+holds the tier and `notes` holds who ruled, when, and on what basis. The
+columns are committed in the worksheet itself, so no second rulings file
+exists to drift from it, and the builder's merge keeps them through every
+rerun. A ruling enters through the private review export and
+`tools/import_gauge_rulings.py` (ADR-130), or, for a ruling recorded outside
+the page, as a reviewed edit to the worksheet that names the ruling's date
+and source in `notes`. As of 2026-10-31 eight Utah rows carry a ruling (the
+four Lake Powell rivers `reservoir`, four gauges `natural`), and three carry a
+note on the whole-water-year flow rule. Every other row is blank.
+
 | Column | Meaning |
 |---|---|
 | `record_begin`, `last_daily_value` | The series' own period, from `time-series-metadata` |

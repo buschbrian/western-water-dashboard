@@ -9,6 +9,7 @@ asked about.
 
 import datetime as dt
 import json
+import re
 import sys
 import urllib.error
 import urllib.parse
@@ -730,3 +731,14 @@ def test_writing_fills_the_proposed_name_and_leaves_site_name_alone(tmp_path):
     assert row["site_name"] == "DUCHESNE RIV ABV UINTA RIV, NR RANDLETT, UT"
     assert row["proposed_display_name"] == "Duchesne River above Uinta River, near Randlett"
     assert row["name_check"] == ""
+
+
+def test_every_committed_ruling_is_a_known_tier_and_says_who_ruled_and_when():
+    import csv
+    with G.OUTPUT_PATH.open(newline="", encoding="utf-8") as handle:
+        rows = list(csv.DictReader(handle))
+    for row in rows:
+        if row["reviewer_ruling"]:
+            assert row["reviewer_ruling"] in G.VALID_RULINGS, row["usgs_site_no"]
+            assert "Brian Busch" in row["notes"], row["usgs_site_no"]
+            assert re.search(r"20\d\d-\d\d-\d\d", row["notes"]), row["usgs_site_no"]
