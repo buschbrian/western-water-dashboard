@@ -885,7 +885,7 @@ export const ELEVATION_HISTORY_GROUPS: readonly ApiFieldGroup[] = [
   ]}
 ];
 
-/* The river-flow payload (ADR-136). */
+/* The river-flow payload (ADR-136, ADR-144, ADR-145). */
 export const RIVER_GROUPS: readonly ApiFieldGroup[] = [
   { id: "river-header", title: "File header", path: "root", fields: [
     f("schema_version", "version number", "Version of this JSON structure."),
@@ -925,7 +925,8 @@ export const RIVER_GROUPS: readonly ApiFieldGroup[] = [
     f("compared_with_normal", "true or false", "True when the newest value is compared with normal for its date. Always false for a shaped gauge, which has no normal and no rank."),
     f("normal_band", "object", "A natural gauge's normal for the as_of date, or null when it is not compared today. Fields are listed below. Never on a shaped gauge.", true),
     f("flow_class", "identifier", "Where current_cfs falls in normal_band: much_below_normal (under p10), below_normal (under p25), normal (p25 to p75), above_normal (up to p90) or much_above_normal (over p90). A value on a boundary takes the class nearer normal. Null when not compared. Never on a shaped gauge.", true),
-    f("normal_withheld", "identifier", "Why a natural gauge is not compared today: fewer_than_30_years or percentile_missing. Null when compared. Never on a shaped gauge.", true),
+    f("normal_withheld", "identifier", "Why a natural gauge is not compared today: ten_years_or_fewer or percentile_missing. Null when compared. Never on a shaped gauge.", true),
+    f("short_record", "true or false", "True when normal_band rests on fewer than 30 years, false when on 30 or more. Null when not compared. Never on a shaped gauge.", true),
     f("data_frequency", "identifier", "Always daily."),
     f("stale_after_days", "days", "Days allowed before this gauge's reading is late."),
     f("as_of", "date", "Date of the newest day with a value."),
@@ -961,7 +962,7 @@ export const RIVER_GROUPS: readonly ApiFieldGroup[] = [
     f("p50", "cubic feet per second", "50th percentile, the median."),
     f("p75", "cubic feet per second", "75th percentile. The high end of the normal range."),
     f("p90", "cubic feet per second", "90th percentile."),
-    f("years", "years", "Years with an approved value on this calendar day. Always 30 or more."),
+    f("years", "years", "Years with an approved value on this calendar day. Always more than 10; under 30, short_record is true."),
     f("retrieved", "date", "Date the percentiles were read from the publisher."),
     f("source_url", "web address", "The publisher's statistics request the percentiles came from.")
   ]},
