@@ -74,7 +74,7 @@ jobs:
                       data/river_history.json data/soil_moisture_history.json \
                       data/drought/usdm-current.geojson data/drought/usdm-huc6.json \
                       explore.html maplibre/index.html retired-route.js \
-                      terms.html landscape.html story.html \
+                      terms.html reporters.html landscape.html story.html \
                       share/lake-powell.html share/lake-mead.html \
                       share/lake-powell.png share/lake-mead.png \
                       reservoirs.json capacities.json \

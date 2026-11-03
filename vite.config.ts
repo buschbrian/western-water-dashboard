@@ -133,6 +133,7 @@ export default defineConfig({
         story: resolve(root, "story.html"),
         explore: resolve(root, "explore.html"),
         terms: resolve(root, "terms.html"),
+        reporters: resolve(root, "reporters.html"),
         landscape: resolve(root, "landscape.html")
       }
     }
