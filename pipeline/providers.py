@@ -10,6 +10,7 @@ and deduplicated.
 """
 
 import datetime as dt
+import functools
 import math
 import os
 import time
@@ -301,13 +302,16 @@ CDEC_EXCLUDED_READINGS = load_excluded_readings(
 RISE_EXCLUDED_READINGS = load_excluded_readings(ADMITTED_RISE_RESERVOIRS_PATH, None)
 
 
+@functools.lru_cache(maxsize=None)
 def _reading_day(stamp):
     """One stamp's own calendar day, or None where it does not parse.
 
     The service writes `2026-8-10 00:00` -- unpadded, so two spellings of one
     day do not compare as strings. Both sides of an exclusion go through this,
     so a reviewed stamp matches the reading it names however the service pads
-    it.
+    it. Cached: a station with 34 exclusions and 4,300 daily readings parsed
+    each record's stamp once per reading, which took 80 seconds. The stamps
+    are a few thousand calendar days, so the cache stays small.
     """
     parsed = pd.to_datetime(stamp, errors="coerce")
     return None if pd.isna(parsed) else parsed.normalize()
@@ -323,12 +327,15 @@ def excluded_reading(station_id: str, stamp, reading,
     corrected figure at the same stamp is a different reading and flows
     through untouched. Nothing here substitutes a value for another.
     """
+    if table is None:
+        table = CDEC_EXCLUDED_READINGS
+    records = table.get(station_id, ())
+    if not records:
+        return None
     day = _reading_day(stamp)
     if day is None:
         return None
-    if table is None:
-        table = CDEC_EXCLUDED_READINGS
-    for record in table.get(station_id, ()):
+    for record in records:
         if _reading_day(record["stamp"]) == day \
                 and float(record["value"]) == float(reading):
             return record

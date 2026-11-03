@@ -112,6 +112,13 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Changed
 
+- **The California audit reads the daily series where the monthly series
+  is silent** (ADR-150). A station is quiet only when neither series
+  reported within the year. A monthly high is not a spike when the daily
+  reading for the same day agrees. The audit admits no station.
+- **The refresh reports record figures for review** (ADR-150). It warns
+  when a record high is above the full level, or when a record low is far
+  below the readings near it. It removes no reading; a person decides.
 - **Eighteen more reservoir names are the water's own name** (ADR-147).
   Gauge and county text is gone from `Rye Patch Reservoir`, `Stagecoach
   Reservoir`, `Lake San Antonio`, `San Antonio Reservoir`, `Jackson Meadows`,
@@ -186,6 +193,12 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Fixed
 
+- **Nine California reservoirs no longer show an impossible record figure**
+  (ADR-116). We exclude 116 daily readings that cannot be true, for example
+  Lake Almanor's 8,918,440 acre-feet and its zeros. Each raw value and its
+  reason stay in `admitted_cdec_reservoirs.json`. The reservoirs are Lake
+  Almanor, Bucks Lake, Butt Valley, Cherry Lake, Lake Mathews, Sly Creek,
+  Cogswell Reservoir, Courtright Reservoir and Lake Valley Reservoir.
 - On a reservoir page, "Since the 4-month low" (ADR-134) sits with the other
   answers under the headline, after the changes. It had fallen into the
   Sources section below the satellite view.

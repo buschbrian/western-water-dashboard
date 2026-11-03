@@ -109,11 +109,34 @@ side is wrong is a reviewer's decision: Grant Lake's and Buchanan's monthly
 values were wrong, and Lake Almanor's daily value is the likelier fault. A
 confirmed fault becomes an exclusion as above.
 
+**A published record figure is screened too** (ADR-150). The record high and
+low are the series' own maximum and minimum, so one bad daily reading becomes
+a published figure. On 2026-10-31 nine California reservoirs published one no
+reservoir could have set, and 116 daily readings were excluded under ADR-116:
+each one would otherwise set its reservoir's record high or low. They are
+Lake Almanor (21), Bucks Lake (34), Butt Valley (24), Cherry Lake (3), Lake
+Mathews (2), Sly Creek (3), Cogswell (4), Courtright (9) and Lake Valley (16),
+each with the readings either side or the full level as the evidence. Many
+zeros fall on the same days at Lake Almanor, Bucks Lake and Butt Valley. The
+provider issues are drafted and not yet open, so each `issue_url` ends in
+`PENDING`. The refresh now prints a "Record figure for review" warning for a
+record high above the full level or a record low far below its neighbours
+(`admission.record_figure_findings`). It removes nothing; a person decides.
+
+**The audit reads the daily series where the monthly one is silent**
+(ADR-150). A station is quiet only when neither series has reported within
+the year; a station whose monthly series is silent or stopped and whose daily
+series reports is screened on the daily series. A monthly high is not a spike
+when the daily reading on the day it describes agrees inside the month-end
+tolerance; each evidence row carries `screened_series` and
+`highest_daily_check`.
+
 **Being listed is not reporting.** The candidate screen asks whether a station
-has answered **within the year**. Bon Tempe is why — five usable readings ever,
-the last in March 2023 — and admitting it would have put a name on the roster
-that is withdrawn for a quiet feed the same morning, which is what a silently
-failed fetch looks like.
+has answered **within the year**, on either series (ADR-150). Bon Tempe is
+why — five usable monthly readings ever, the last in March 2023, and daily
+readings to November 2023 — and admitting it would have put a name on the
+roster that is withdrawn for a quiet feed the same morning, which is what a
+silently failed fetch looks like.
 
 ## The denominator
 
