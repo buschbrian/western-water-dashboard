@@ -17,6 +17,7 @@
     h1 { margin: 0; font-size: 120px; line-height: 1.05; }
     .what { margin-top: 20px; font-size: 44px; color: #1d4e6b; font-weight: 600; }
     .more { font-size: 30px; color: #655f55; }
+    .source { margin-top: 10px; font-size: 24px; color: #655f55; }
     .rule { block-size: 0; border-block-start: 6px solid #1d4e6b; inline-size: 120px; margin-bottom: 28px; }
   </style>
 </head>
@@ -27,7 +28,10 @@
     <h1 id="name"></h1>
     <p class="what">Surface level by water year</p>
   </div>
-  <p class="more">Open the page to see the level now and the chart.</p>
+  <div>
+    <p class="more">Open the page to see the level now and the chart.</p>
+    <p class="source">Readings: Bureau of Reclamation · buschbrian.github.io/western-water-dashboard</p>
+  </div>
   <script>
     document.getElementById("name").textContent =
       new URLSearchParams(location.search).get("name") ?? "";

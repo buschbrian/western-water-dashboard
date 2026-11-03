@@ -4,8 +4,9 @@ import {
   naturalRiverGauge, riverBand, riverDays, riverGauge, riverPayload
 } from "./data/river-fixture";
 import {
-  NATURAL_SENTENCE, SHAPED_SENTENCE, approvalText, calendarDay, describeGauge, formatFlow,
-  formatFlowFigures, lateMessage, riversCsv, riversCsvFilename, shortRecordSentence,
+  NATURAL_SENTENCE, SHAPED_SENTENCE, SHAPED_SUMMARY, approvalText, calendarDay, describeGauge,
+  formatFlow, formatFlowFigures, gaugeAnchor, groupGauges, lateMessage, riversCsv,
+  riversCsvFilename, shortRecordSentence, summaryDate, summaryFlowHeading, summaryRow,
   whereSentence, withdrawnSentence
 } from "./rivers-model";
 
@@ -141,5 +142,34 @@ describe("river model", () => {
   it("states a withdrawal without a measurement", () => {
     expect(withdrawnSentence({ name: "Gone River", as_of: "2026-07-01", days_stale: 118,
       source_label: null, reason: "quiet" })).toContain("It was last read Jul 1, 2026.");
+  });
+
+  it("groups natural gauges first and keeps the payload's order in each group", () => {
+    const shapedA = riverGauge({ source_station_id: "A" });
+    const natural = naturalRiverGauge();
+    const shapedB = riverGauge({ source_station_id: "B" });
+    const groups = groupGauges([shapedA, natural, shapedB]);
+    expect(groups.natural).toEqual([natural]);
+    expect(groups.shaped).toEqual([shapedA, shapedB]);
+  });
+
+  it("summarises each gauge in one row that links to its card", () => {
+    const shaped = riverGauge({ current_cfs: 3921.4 });
+    const natural = naturalRiverGauge({ current_cfs: 15.44 });
+    const date = summaryDate([shaped, natural]);
+    expect(summaryFlowHeading(date)).toMatch(/^Flow on [A-Z][a-z]{2} \d{1,2}$/);
+    expect(summaryRow(shaped, date)).toMatchObject({
+      anchor: gaugeAnchor(shaped), flow: "3,921", comparison: SHAPED_SUMMARY });
+    expect(summaryRow(natural, date)).toMatchObject({ flow: "15.4", comparison: "Normal" });
+    expect(summaryRow(naturalRiverGauge({}, "ten_years_or_fewer"), date).comparison)
+      .toBe("Not compared: 10 years of record or fewer");
+  });
+
+  it("dates a row whose reading is older than the column's", () => {
+    const late = riverGauge({ as_of: "2026-10-24", current_cfs: 101 });
+    const row = summaryRow(late, "2026-10-26");
+    expect(row.flow).toBe("101 on Oct 24");
+    expect(summaryDate([late, riverGauge({ as_of: "2026-10-26" })])).toBe("2026-10-26");
+    expect(summaryDate([])).toBeNull();
   });
 });

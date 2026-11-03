@@ -783,6 +783,15 @@ def load_admitted_reservoir_elevations(
                 raise ValueError(f"{name}: a reference level needs an HTTPS source")
             if any(key in level for key in ("pct", "capacity_af", "volume_af")):
                 raise ValueError(f"{name}: a reference level is a level, never a share")
+        # Levels that share a label are one key entry on the page, their lines
+        # marked only by height, so they must share the source that key cites.
+        shared: dict[str, tuple] = {}
+        for level in levels:
+            source = (level["authority"], level["url"])
+            if shared.setdefault(level["label"], source) != source:
+                raise ValueError(
+                    f"{name}: reference levels that share the label {level['label']!r} "
+                    "must share one authority and source")
     return rows
 
 

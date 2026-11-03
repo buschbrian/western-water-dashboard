@@ -31,7 +31,8 @@ import {
 } from "./reservoir-model";
 import type { ReservoirPageState } from "./reservoir-model";
 import {
-  describeElevation, elevationChart, notDrawnSentence, referenceLevelText
+  describeElevation, elevationChart, levelHeadline, notDrawnSentence, referenceLevelGroups,
+  referenceLevelText, yearKeyEntries
 } from "./reservoir-elevation-model";
 import type { ElevationChart, ElevationView } from "./reservoir-elevation-model";
 import type { ReservoirPayload } from "./types";
@@ -40,7 +41,7 @@ import { formatAcreFeet, formatDate } from "./viz/format";
 import { storageColor } from "./viz/classes";
 import { headlinePercent } from "./viz/symbols";
 import {
-  describeReservoir
+  describeReservoir, percentFullBasis
 } from "./state/detail";
 import {
   baselineChoices
@@ -144,18 +145,7 @@ function sectionHeading(text: string): HTMLHeadingElement {
 function yearKey(chart: ElevationChart): HTMLUListElement {
   const list = document.createElement("ul");
   list.className = "elevation-key";
-  const tiers: [string, string][] = [];
-  const current = chart.lines.find((line) => line.tier === "current");
-  const previous = chart.lines.find((line) => line.tier === "previous");
-  const earlier = chart.lines.filter((line) => line.tier === "earlier");
-  if (current) tiers.push(["current", `${current.label} water year`]);
-  if (previous) tiers.push(["previous", `${previous.label} water year`]);
-  if (earlier.length) {
-    tiers.push(["earlier", earlier.length === 1 ? `${earlier[0]!.label} water year`
-      : `${earlier[earlier.length - 1]!.label} to ${earlier[0]!.label} water years`]);
-  }
-  tiers.push(["reference", "Reference level"]);
-  for (const [tier, text] of tiers) {
+  for (const { tier, text } of yearKeyEntries(chart)) {
     const item = document.createElement("li");
     const swatch = document.createElement("span");
     swatch.className = `elevation-swatch elevation-swatch-${tier}`;
@@ -264,11 +254,11 @@ function fillElevationChart(host: HTMLElement, chart: ElevationChart | null): bo
   if (chart.drawn.length) {
     const levels = document.createElement("ul");
     levels.className = "elevation-levels";
-    for (const level of chart.drawn) {
+    for (const group of referenceLevelGroups(chart.drawn)) {
       const item = document.createElement("li");
       const anchor = document.createElement("a");
-      anchor.href = level.url;
-      anchor.textContent = referenceLevelText(level);
+      anchor.href = group.url;
+      anchor.textContent = referenceLevelText(group);
       item.append(anchor);
       levels.append(item);
     }
@@ -318,8 +308,26 @@ async function renderFound(payload: ReservoirPayload,
   const value = document.createElement("strong");
   value.textContent = view.percent;
   const basis = document.createElement("span");
-  basis.textContent = view.basis;
+  /* A reservoir with a reviewed level (ADR-135) leads with two tiles: the
+   * level above its named datum, and percent full with the level it is
+   * measured against. Every other reservoir keeps the sentence. */
+  const level = levelHeadline(reservoir);
+  basis.textContent = level && headlinePercent(reservoir) !== null
+    ? percentFullBasis(reservoir) : view.basis;
   headline.append(value, basis);
+  let headlineBlock: HTMLElement = headline;
+  if (level) {
+    const levelTile = document.createElement("p");
+    levelTile.className = "detail-headline reservoir-level-headline";
+    const figure = document.createElement("strong");
+    figure.textContent = level.figure;
+    const datum = document.createElement("span");
+    datum.textContent = level.basis;
+    levelTile.append(figure, datum);
+    headlineBlock = document.createElement("div");
+    headlineBlock.className = "reservoir-headline-pair";
+    headlineBlock.append(levelTile, headline);
+  }
 
   /* The answer first: how much is stored, how full that is, how it has
    * moved and whether that is normal. Every other row of the details view
@@ -343,7 +351,7 @@ async function renderFound(payload: ReservoirPayload,
     figure.append(label, amount);
     children.push(figure);
   }
-  children.push(headline, answerTiles(answerRows, (label) =>
+  children.push(headlineBlock, answerTiles(answerRows, (label) =>
     label === view.baseline.label || label === "Since the 4-month low"));
 
   // The twelve months, drawn by the same SVG builder the details panel uses.
@@ -504,7 +512,7 @@ async function renderShare(payload: ReservoirPayload,
   const entry = history?.reservoirs.find(
     (candidate) => candidate.source_station_id === reservoir.source_station_id);
   const chart = entry ? elevationChart(reservoir, entry) : null;
-  const frame = chart ? shareFrame(reservoir, label, payload.generated_at, chart) : null;
+  const frame = chart ? shareFrame(reservoir, label, payload.generated_at) : null;
   if (!chart || !frame) {
     const heading = document.createElement("h1");
     heading.className = "reservoir-name";
@@ -532,7 +540,12 @@ async function renderShare(payload: ReservoirPayload,
   const chartHost = document.createElement("div");
   chartHost.className = "elevation-chart-host";
   chartHost.id = "reservoir-elevation-chart";
-  main.replaceChildren(head, chartHost, text("p", "share-caption", frame.caption));
+  const key = yearKey(chart);
+  key.classList.add("share-key");
+  const foot = document.createElement("footer");
+  foot.className = "share-foot";
+  foot.append(key, text("p", "share-source", frame.source));
+  main.replaceChildren(head, chartHost, foot);
   const drawn = renderElevationYears(chartHost, chart,
     { scale: SHARE_CHART_SCALE, height: SHARE_CHART_HEIGHT });
   finish("found", drawn ? "drawn" : "card");

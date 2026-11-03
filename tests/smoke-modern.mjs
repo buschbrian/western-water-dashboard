@@ -1479,21 +1479,21 @@ for (const viewport of VIEWPORTS) {
       };
       return {
         menu: shown("#page-menu"),
-        buttons: ["#overview-link", "#precipitation-link", "#snow-link", "#drought-link", "#methods-link"].filter(shown),
+        buttons: ["#overview-link", "#precipitation-link", "#snow-link", "#drought-link", "#rivers-link", "#methods-link"].filter(shown),
         menuItems: [...document.querySelectorAll("#page-menu calcite-dropdown-item[href]")]
           .map((item) => item.getAttribute("href")),
-        buttonHrefs: ["#overview-link", "#precipitation-link", "#snow-link", "#drought-link", "#methods-link"]
+        buttonHrefs: ["#overview-link", "#precipitation-link", "#snow-link", "#drought-link", "#rivers-link", "#methods-link"]
           .map((selector) => document.querySelector(selector)?.getAttribute("href"))
       };
     });
     const wideBar = viewport.width >= 1024;
     check(pageLinks.menu === !wideBar,
       `${label}: the page menu is ${pageLinks.menu ? "showing" : "hidden"} at ${viewport.width}px`);
-    check(pageLinks.buttons.length === (wideBar ? 5 : 0),
+    check(pageLinks.buttons.length === (wideBar ? 6 : 0),
       `${label}: ${pageLinks.buttons.length} page link buttons are showing at ${viewport.width}px`);
-    check(pageLinks.menuItems.join(",") === "./,./overview.html,./precipitation.html,./snow.html,./drought.html,./methods.html",
+    check(pageLinks.menuItems.join(",") === "./,./overview.html,./precipitation.html,./snow.html,./drought.html,./rivers.html,./methods.html",
       `${label}: the page menu offers ${pageLinks.menuItems.join(", ")}`);
-    check(pageLinks.buttonHrefs.join(",") === "./overview.html,./precipitation.html,./snow.html,./drought.html,./methods.html",
+    check(pageLinks.buttonHrefs.join(",") === "./overview.html,./precipitation.html,./snow.html,./drought.html,./rivers.html,./methods.html",
       `${label}: the page link buttons point at ${pageLinks.buttonHrefs.join(", ")}`);
     check(await tab.locator(".map-stage > .map-alternative").count() === 0,
       `${label}: the old table and charts overlay still covers the map`);
@@ -2037,7 +2037,7 @@ for (const viewport of VIEWPORTS) {
       /* Whatever is actually on the bar at this width. The link buttons
        * swap for the menu below 64rem, so naming a fixed set here would
        * measure a control that is display:none and pass on a zero box. */
-      const ids = ["brand", "place-search-trigger", "page-menu", "overview-link", "snow-link", "drought-link", "methods-link",
+      const ids = ["brand", "place-search-trigger", "page-menu", "overview-link", "snow-link", "drought-link", "rivers-link", "methods-link",
         "controls-toggle", "detail-toggle", "table-toggle", "theme-toggle"]
         .filter((id) => {
           const element = document.getElementById(id);
@@ -3003,6 +3003,15 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
         await pickPlace(filterCounty.code);
         await tab.waitForFunction((expected) => window.__overviewReady?.visible === expected,
           filterCounty.count, { timeout: 60000 });
+        /* ADR-149: the weekly storage figures follow the filters, and the
+         * card's scope line counts the filtered rows. */
+        const weeklyScope = await tab.waitForFunction((expected) => {
+          const text = document.querySelector('[data-weekly="scope"]')?.textContent ?? "";
+          return text.startsWith(`Storage covers ${expected} of `) ? text : false;
+        }, filterCounty.count, { timeout: 30000 }).then((handle) => handle.jsonValue())
+          .catch(() => null);
+        check(weeklyScope !== null,
+          `${label}: the weekly scope line does not count the ${filterCounty.count} filtered reservoirs`);
         await tab.locator("#reset-filters").click();
         await tab.waitForFunction((expected) => window.__overviewReady?.visible === expected,
           expectedReservoirs, { timeout: 60000 });
@@ -3064,7 +3073,7 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
       ...(viewport.width >= 1024
         ? {
           "map-link": "./", "precipitation-link": "./precipitation.html", "snow-link": "./snow.html",
-          "drought-link": "./drought.html", "methods-link": "./methods.html"
+          "drought-link": "./drought.html", "rivers-link": "./rivers.html", "methods-link": "./methods.html"
         }
         : { "page-menu-trigger": null })
     };
@@ -3980,12 +3989,23 @@ for (const viewport of VIEWPORTS) {
         map: window.__precipReady?.map,
         pressed: [...document.querySelectorAll(".precip-map-mode-head button")]
           .map((button) => button.getAttribute("aria-pressed")).join(","),
+        switchLabel: document.querySelectorAll(".precip-map-mode-head button")[1]?.textContent ?? "",
+        switchOverflow: (() => {
+          const head = document.querySelector(".precip-map-mode-head");
+          return head ? head.scrollWidth - head.clientWidth : -1;
+        })(),
         keyItems: [...document.querySelectorAll(".precip-soil-key [role='listitem']")].map((item) => item.textContent),
         keyShown: visible(document.querySelector(".precip-soil-key")),
         rainKeyShown: visible(document.querySelector(".precip-map-key")),
         dayButtonsShown: visible(document.querySelector("[aria-label='Days in the map and the station list']")),
         rainListShown: visible(document.querySelector(".precip-storm-list")),
         listed: document.querySelectorAll(".precip-soil-list li").length,
+        sides: [...document.querySelectorAll(".precip-soil-side")].map((side) => ({
+          title: side.querySelector(".chart-axis-title")?.textContent ?? "",
+          rows: side.querySelectorAll("li").length,
+          shown: visible(side),
+          empty: visible(side.querySelector(".precip-soil-empty"))
+        })),
         values: [...document.querySelectorAll(".precip-soil-list .precip-storm-value")].map((node) => node.textContent),
         busy: document.querySelector(".precip-map-mode-soil")?.getAttribute("aria-busy"),
         overflow: card ? card.scrollWidth - card.clientWidth : -1
@@ -3998,13 +4018,22 @@ for (const viewport of VIEWPORTS) {
     check(soilView.busy === "false", `${label}: the soil block left aria-busy ${soilView.busy}`);
     check(soilView.keyShown && !soilView.rainKeyShown && soilView.keyItems.length === 7
       && soilView.keyItems.includes("Within 2 points: steady")
-      && soilView.keyItems.includes("No change measured, or too few stations"),
+      && soilView.keyItems.includes("No value: too few stations, or no reading on both days"),
     `${label}: the soil key reads ${JSON.stringify(soilView.keyItems)}`);
     check(!soilView.dayButtonsShown && !soilView.rainListShown,
       `${label}: soil mode still shows the day buttons (${soilView.dayButtonsShown}) or the rain list (${soilView.rainListShown})`);
     check(soilView.listed === soilView.map?.soil?.rows && soilView.listed <= 8
       && soilView.values.every((value) => /^(\d+\.\d points? (wetter|drier)|No change)$/.test(value)),
     `${label}: the soil list shows ${soilView.listed} rows (${JSON.stringify(soilView.values.slice(0, 3))})`);
+    /* Ruling U6: the soil end date is on the switch, and the switch fits. */
+    check(/^Soil moisture to [A-Z][a-z]{2} \d{1,2}$/.test(soilView.switchLabel)
+      && soilView.switchOverflow <= 1,
+    `${label}: the soil switch reads "${soilView.switchLabel}" and overflows by ${soilView.switchOverflow}px`);
+    /* Ruling U5: four wetter and four drier, apart; an empty side says so. */
+    check(soilView.sides.map((side) => side.title).join() === "Largest increase,Largest decrease"
+      && soilView.sides.every((side) => side.rows <= 4
+        && (!side.shown || (side.rows > 0) !== side.empty)),
+    `${label}: the soil lists read ${JSON.stringify(soilView.sides)}`);
     check(soilView.map?.withValue + soilView.map?.notUsed === soilView.map?.stations
       && soilView.map?.soil?.withChange <= soilView.map?.soil?.stations,
     `${label}: soil mode counts ${JSON.stringify(soilView.map)}`);
@@ -6013,7 +6042,10 @@ for (const failure of [
           ?.getAttribute("aria-busy") ?? null,
         levelText: document.querySelector("#reservoir-main .reservoir-elevation")
           ?.textContent ?? "",
-        chartTarget: Boolean(document.querySelector("#reservoir-elevation-chart svg"))
+        chartTarget: Boolean(document.querySelector("#reservoir-elevation-chart svg")),
+        headlineTiles: [...document.querySelectorAll(
+          "#reservoir-main .reservoir-headline-pair > .detail-headline")]
+          .map((tile) => tile.textContent ?? "")
       }));
       const caseName = cases.find(([caseLabel]) => caseLabel === label)?.[2];
       const elevationExpected = Boolean(elevationRoster[payload.reservoirs.find(
@@ -6036,7 +6068,17 @@ for (const failure of [
             `Reservoir page (${viewport.name}, ${label}): the datum reaches a reader as its initials`);
           check(!state.levelText.includes("%"),
             `Reservoir page (${viewport.name}, ${label}): a level was given a percentage`);
+          /* Ruling U7: the level and percent full side by side, each with its basis. */
+          check(state.headlineTiles.length === 2
+            && /^[\d,]+\.\d\d feetabove \S/.test(state.headlineTiles[0])
+            && !state.headlineTiles[0].includes("%")
+            && /^[\d.]+%full( \(.+\))?$/.test(state.headlineTiles[1]),
+          `Reservoir page (${viewport.name}, ${label}): the headline tiles read `
+            + JSON.stringify(state.headlineTiles));
         } else {
+          check(state.headlineTiles.length === 0,
+            `Reservoir page (${viewport.name}, ${label}): a reservoir with no reviewed level `
+            + "has a level tile");
           check(state.elevation === "none" && state.levelCards === 0 && state.levelLines === 0
             && !/can show a different level/.test(state.text),
           `Reservoir page (${viewport.name}, ${label}): a reservoir with no reviewed level `
@@ -6147,6 +6189,9 @@ for (const failure of [
       fitsHeight: document.documentElement.scrollHeight <= window.innerHeight,
       fitsWidth: document.documentElement.scrollWidth <= window.innerWidth,
       level: document.querySelector(".share-figure")?.textContent ?? "",
+      source: document.querySelector(".share-source")?.textContent ?? "",
+      keyYears: [...document.querySelectorAll(".share-key li")]
+        .filter((item) => /water years?$/.test(item.textContent ?? "")).length,
       axis: (() => {
         const svg = document.querySelector("#reservoir-elevation-chart svg");
         const label = svg?.querySelector(".elevation-axis");
@@ -6163,6 +6208,12 @@ for (const failure of [
         && share.text.includes("Reading date:") && share.text.includes("above the "),
       `Share frame (${name}): the name, level, datum, date and chart are not all there `
         + JSON.stringify({ elevation: share.elevation, lines: share.lines, level: share.level }));
+      /* Ruling U9: the picture names its source and the year before. */
+      check(share.source.startsWith("Readings: Bureau of Reclamation")
+        && share.source.includes("buschbrian.github.io/western-water-dashboard")
+        && share.keyYears >= 2,
+      `Share frame (${name}): the source line or the key is missing `
+        + JSON.stringify({ source: share.source, keyYears: share.keyYears }));
       check(share.axis >= 20,
         `Share frame (${name}): the axis type is ${share.axis}px; a link card shrinks it to a fifth`);
       check(!/\bNGVD29\b|\bNAVD88\b/.test(share.text) && !share.text.includes("%"),
@@ -6290,6 +6341,15 @@ for (const viewport of VIEWPORTS) {
     pageLinks: [...document.querySelectorAll("#rivers-main a[href]")]
       .filter((link) => link.href.startsWith("https://waterdata.usgs.gov/monitoring-location/"))
       .length,
+    /* The summary table: one row per card, in the cards' order, each row
+     * linking to its card; natural gauges before shaped ones. */
+    summary: [...document.querySelectorAll(".rivers-summary-table tbody tr")].map((row) => ({
+      target: row.querySelector("a")?.getAttribute("href") ?? "",
+      tier: row.getAttribute("data-tier"),
+      comparison: row.lastElementChild?.textContent ?? ""
+    })),
+    cardOrder: [...document.querySelectorAll("#rivers-main article.river[data-station]")]
+      .map((article) => `#${article.id}`),
     scroll: document.documentElement.scrollWidth,
     viewport: document.documentElement.clientWidth
   }));
@@ -6320,6 +6380,13 @@ for (const viewport of VIEWPORTS) {
   check(natural.filter((a) => a.verdict !== null).length === state.ready?.compared,
     `Rivers page (${viewport.name}): ${state.ready?.compared} compared in readiness, `
     + `${natural.filter((a) => a.verdict !== null).length} classes drawn`);
+  check(state.summary.length === state.articles
+    && state.summary.map((row) => row.target).join() === state.cardOrder.join()
+    && state.summary.every((row) => row.tier === "natural"
+      || row.comparison === "Not compared: dams upstream")
+    && /^(natural,)*(shaped,)*$/.test(state.summary.map((row) => `${row.tier},`).join("")),
+  `Rivers page (${viewport.name}): the summary table does not match the grouped cards `
+    + JSON.stringify(state.summary.slice(0, 3)));
   check(state.pageLinks === state.articles,
     `Rivers page (${viewport.name}): ${state.pageLinks} survey page links for ${state.articles} gauges`);
   check(state.text.includes("cubic feet per second"),

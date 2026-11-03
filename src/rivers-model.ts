@@ -12,7 +12,7 @@ import { FULL_RECORD_YEARS } from "./data/rivers-validate";
 import type {
   NaturalRiverGauge, RiverDay, RiverFlowClass, RiverGauge, RiverPayload, WithdrawnGauge
 } from "./types";
-import { formatDate } from "./viz/format";
+import { formatDate, formatShortDate } from "./viz/format";
 
 export interface RiverRow {
   label: string;
@@ -211,17 +211,10 @@ export function lateMessage(gauge: RiverGauge): string | null {
   return parts.length ? parts.join(" ") : null;
 }
 
-function dayLabel(date: string): string {
-  const parsed = new Date(`${date}T00:00:00Z`);
-  return Number.isNaN(parsed.getTime()) ? date : parsed.toLocaleDateString("en-US", {
-    month: "short", day: "numeric", timeZone: "UTC"
-  });
-}
-
 export function riverDays(gauge: RiverGauge): RiverDayView[] {
   return gauge.daily.map((day) => ({
     date: day.date,
-    label: dayLabel(day.date),
+    label: formatShortDate(day.date),
     fullLabel: formatDate(day.date),
     cfs: day.cfs,
     value: day.cfs === null ? "No value" : formatFlow(day.cfs),
@@ -273,6 +266,71 @@ export function describeGauge(gauge: RiverGauge): RiverView {
       ...normal.source
     ],
     pageUrl: gauge.usgs_page
+  };
+}
+
+/** One row of the summary table above the cards. */
+export interface RiverSummaryRow {
+  station: string;
+  /** The id of the gauge's card, which the row links to. */
+  anchor: string;
+  name: string;
+  flow: string;
+  comparison: string;
+  tier: RiverGauge["tier"];
+}
+
+/** The two groups the cards are shown in, natural gauges first. */
+export interface RiverGroups {
+  natural: RiverGauge[];
+  shaped: RiverGauge[];
+}
+
+export const NATURAL_GROUP_HEADING = "Compared with normal";
+export const SHAPED_GROUP_HEADING = "Flow only: dams upstream";
+export const SHAPED_SUMMARY = "Not compared: dams upstream";
+
+export function gaugeAnchor(gauge: RiverGauge): string {
+  return `gauge-${gauge.source_station_id}`;
+}
+
+/** Natural gauges, then shaped ones, each in the payload's own order. */
+export function groupGauges(gauges: readonly RiverGauge[]): RiverGroups {
+  return {
+    natural: gauges.filter((gauge) => gauge.tier === "natural"),
+    shaped: gauges.filter((gauge) => gauge.tier !== "natural")
+  };
+}
+
+/** The newest reading date of any gauge: the date the flow column names. */
+export function summaryDate(gauges: readonly RiverGauge[]): string | null {
+  return gauges.reduce<string | null>((newest, gauge) =>
+    newest === null || gauge.as_of > newest ? gauge.as_of : newest, null);
+}
+
+export function summaryFlowHeading(date: string | null): string {
+  return date === null ? "Flow" : `Flow on ${formatShortDate(date)}`;
+}
+
+function summaryComparison(gauge: RiverGauge): string {
+  if (gauge.tier !== "natural") return SHAPED_SUMMARY;
+  if (gauge.compared_with_normal) return FLOW_CLASS_WORDS[gauge.flow_class];
+  return gauge.normal_withheld === "ten_years_or_fewer"
+    ? "Not compared: 10 years of record or fewer"
+    : "Not compared: no normal for this date";
+}
+
+/** A gauge's row: the flow at three significant figures, with its own date
+ * when it is older than the column's. */
+export function summaryRow(gauge: RiverGauge, date: string | null): RiverSummaryRow {
+  const flow = formatFlowFigures(gauge.current_cfs);
+  return {
+    station: gauge.source_station_id,
+    anchor: gaugeAnchor(gauge),
+    name: gauge.name,
+    flow: date !== null && gauge.as_of !== date ? `${flow} on ${formatShortDate(gauge.as_of)}` : flow,
+    comparison: summaryComparison(gauge),
+    tier: gauge.tier
   };
 }
 

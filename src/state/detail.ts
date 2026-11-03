@@ -217,6 +217,42 @@ export function capacityBasisName(basis: string | null): string | null {
   return CAPACITY_BASIS_NAMES[basis] ?? null;
 }
 
+/** The same bases, short enough to sit in brackets after a percent full:
+ * "23.7% full (maximum level)". Keyed like the table above, which says each
+ * one in full lower down the page. */
+const CAPACITY_BASIS_SHORT_NAMES: Record<string, string> = {
+  normal_storage: "normal full level",
+  max_storage: "maximum level",
+  nid_storage: "largest inventory level",
+  reclamation_project_record: "operator's full level",
+  awdb_reservoir_metadata: "published full level",
+  cdec_reservoir_report: "operator's full level",
+  srp_reservoir_metadata: "operator's full level",
+  dnrc_stage_metadata: "operator's full level",
+  authoritative_water_report: "full level in a water report",
+  operating_restriction: "full level a safety order allows"
+};
+
+/** The short words for a basis, or null when the provider named none. */
+export function capacityBasisShortName(basis: string | null): string | null {
+  if (!basis) return null;
+  return CAPACITY_BASIS_SHORT_NAMES[basis] ?? null;
+}
+
+/** Every basis the full-name table knows, for a test that holds the two tables together. */
+export const CAPACITY_BASIS_KEYS: readonly string[] = Object.keys(CAPACITY_BASIS_NAMES);
+
+/**
+ * "full (maximum level)": what a percent full is measured against, in the
+ * words a headline has room for. A reservoir measured against its highest
+ * recorded storage says so; a basis the table does not know says "full".
+ */
+export function percentFullBasis(reservoir: Reservoir): string {
+  if (headlineBasis(reservoir) !== "capacity") return "full (highest recorded storage)";
+  const short = capacityBasisShortName(reservoir.capacity_basis);
+  return short ? `full (${short})` : "full";
+}
+
 /**
  * The history rank, said as a position first and a percentage second.
  *

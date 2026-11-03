@@ -2,7 +2,11 @@
 
 ## Status
 
-Accepted
+Accepted. Amended 2026-10-31 by the owner's display ruling U4: the three
+24-Month Study levels share one roster label, "Levels Reclamation's 24-Month
+Study reports against", named once in the chart key, and each line is marked
+by its height alone. No successor record; see
+[`frontend.md`](../architecture/frontend.md).
 
 ## Date
 

@@ -108,7 +108,8 @@ The four different scopes, the hydrologic level, and what a link carries.
   [ADR-097](ADR-097-filter-snow-by-the-committed-upstream-set.md),
   [ADR-105](ADR-105-open-on-the-areas-the-map-draws.md),
   [ADR-108](ADR-108-apply-reviewed-waterbody-points-without-refreshing-readings.md),
-  [ADR-109](ADR-109-remove-scofields-rejected-dam-point.md)
+  [ADR-109](ADR-109-remove-scofields-rejected-dam-point.md),
+  [ADR-149](ADR-149-let-the-weekly-storage-figures-follow-every-filter.md)
 - Boundary sourcing: [ADR-024](ADR-024-use-full-resolution-watersheds-for-snow-sites.md),
   [ADR-034](ADR-034-hosted-boundary-layers-with-a-deadline.md),
   [ADR-037](ADR-037-refetch-the-boundaries-at-the-resolution-the-source-stops-adding.md)
@@ -182,6 +183,7 @@ ADR-008, then ADR-032 and ADR-061.**
   [ADR-040](ADR-040-open-the-snow-map-on-the-season-peak.md),
   [ADR-121](ADR-121-keep-the-finished-snow-season-and-open-the-new-one-honestly.md),
   [ADR-086](ADR-086-open-the-place-chooser-from-every-page-header.md),
+  [ADR-148](ADR-148-put-river-flow-in-the-page-menu-and-the-bar.md),
   [ADR-120](ADR-120-ask-where-to-start-before-loading-the-map.md),
   [ADR-123](ADR-123-draw-ten-years-of-drought-on-the-drought-page.md),
   [ADR-130](ADR-130-give-precipitation-its-own-page.md),
@@ -214,7 +216,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-008](ADR-008-one-class-break-table.md) | One class-break table is the single source of truth for colour | Accepted |
 | [ADR-009](ADR-009-geography-is-drainage-areas-that-touch-utah.md) | The dashboard's geography is drainage areas that intersect Utah | Superseded by ADR-010 |
 | [ADR-010](ADR-010-colorado-and-great-basin-systems-only.md) | Narrow the geography to the Colorado and Great Basin systems | Accepted |
-| [ADR-011](ADR-011-separate-location-scope-from-lake-powell.md) | Separate reservoir location from Lake Powell inclusion | Superseded by ADR-013 |
+| [ADR-011](ADR-011-separate-location-scope-from-lake-powell.md) | Separate reservoir location from Lake Powell inclusion | Superseded by ADR-013; its weekly-card scope line by ADR-149 |
 | [ADR-012](ADR-012-build-phase-2-beside-production.md) | Build the Phase 2 shell beside the production pages | Superseded by ADR-019 |
 | [ADR-013](ADR-013-count-reservoirs-whose-waterbody-intersects-utah.md) | Count reservoirs whose waterbody intersects Utah | Accepted |
 | [ADR-014](ADR-014-use-the-ugrc-utah-state-boundary.md) | Use the maintained UGRC Utah state boundary | Superseded by ADR-067 |
@@ -340,23 +342,15 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-133](ADR-133-serve-atkinson-hyperlegible-next-from-this-site.md) | Serve Atkinson Hyperlegible Next from this site | Accepted; one 34 KB Latin variable file, `font-display: swap`, no preload, one `--app-font` token |
 | [ADR-134](ADR-134-state-storage-gained-since-each-reservoirs-recent-low.md) | State storage gained since each reservoir's recent low | Accepted; each daily reservoir's own lowest reading in 120 days, ties to the latest date; null for monthly, late or gappy records; totals say "N of M daily reservoirs"; no version moves |
 | [ADR-135](ADR-135-publish-a-reservoir-level-only-above-a-reviewed-datum.md) | Publish a reservoir level only above a reviewed datum | Accepted; the record ADR-117 asks for; Lake Powell above NGVD 1929, Lake Mead above Reclamation's Hoover Dam powerhouse datum; optional `elevation` block with no schema bump, history in `elevation_history.json` |
-| [ADR-136](ADR-136-publish-daily-flow-at-four-rivers-toward-lake-powell.md) | Publish daily flow at four rivers toward Lake Powell | Accepted; four shaped Utah gauges as daily mean flow with no normal, rank or total; tiers directed 2026-10-27 pending formal ruling; own roster, payload and page |
+| [ADR-136](ADR-136-publish-daily-flow-at-four-rivers-toward-lake-powell.md) | Publish daily flow at four rivers toward Lake Powell | Accepted, reader-surface clause superseded by ADR-148; four shaped Utah gauges as daily mean flow with no normal, rank or total; tiers directed 2026-10-27 pending formal ruling; own roster, payload and page |
 | [ADR-137](ADR-137-treat-a-published-reservoir-or-ten-percent-storage-as-shaped-and-propose-gauge-names.md) | Treat a published reservoir or ten percent storage as shaped, and propose gauge names | Accepted; a published reservoir in the basin shapes the gauge, storage under 10% of a year's flow with none is natural; adds proposed display names to the worksheet; renames nothing published |
 | [ADR-138](ADR-138-split-the-shaped-tier-add-reference-evidence-and-widen-the-bulk-queue.md) | Split the shaped tier, add reference evidence, and widen the bulk queue | Accepted; extends ADR-137 and ADR-130; Shaped by reservoirs and Reduced by diversions, GAGES-II, NRCS adjustment and canal site type columns, an accepted display name, small-storage natural and shaped-by-reservoirs both bulk when nothing else is in doubt |
 | [ADR-139](ADR-139-review-each-reservoirs-vertical-datum-before-publishing-an-elevation.md) | Review each reservoir's vertical datum before publishing an elevation | Accepted; `tools/build_datum_review.py` writes `datum-review.csv`; a suggestion needs a Reclamation statement or two agreeing USGS locations, and the reviewer's ruling is the gate |
 | [ADR-141](ADR-141-publish-a-share-page-and-a-daily-picture-for-a-reservoir-link.md) | Publish a share page and a daily picture for a reservoir link | Accepted; two hand-kept share pages in `public/share/`, a `view=share` layout of the reservoir page, a picture captured in each deploy with a committed fallback; ADR-136 to ADR-140 and ADR-142 are other records |
-| [ADR-142](ADR-142-show-the-weeks-change-in-mountain-soil-moisture.md) | Show the week's change in mountain soil moisture | Accepted; seven-day change in points at the snow stations, mean of 2 (or 4), 8 and 20 in, frozen readings dropped, snow floor per area; a "Rain \| Soil moisture" switch on the precipitation map, carried in the link as `layer=soil`; percent of median is phase 2 |
+| [ADR-142](ADR-142-show-the-weeks-change-in-mountain-soil-moisture.md) | Show the week's change in mountain soil moisture | Accepted, list split four wetter and four drier by the 2026-10-31 update; seven-day change in points at the snow stations, mean of 2 (or 4), 8 and 20 in, frozen readings dropped, snow floor per area; a "Rain \| Soil moisture" switch on the precipitation map, carried in the link as `layer=soil`; percent of median is phase 2 |
 | [ADR-144](ADR-144-compare-natural-river-gauges-with-the-surveys-day-of-year-percentiles.md) | Compare natural river gauges with the survey's day-of-year percentiles | Accepted, amended by ADR-145; extends ADR-136 and ADR-137; three natural gauges compared with the U.S. Geological Survey Statistics API's approved day-of-year 10th-90th percentiles in WaterWatch's five classes, 30 years per day or no comparison; committed `river_normals.json` read by the daily refresh; `rivers.json` structure version 2; Middle Fork Beaver Creek held out at 22 years; shaped gauges unchanged |
 | [ADR-145](ADR-145-compare-river-gauges-above-ten-years-shorten-two-names-and-round-the-page.md) | Compare river gauges above ten years, shorten two names, and round the page | Accepted; amends ADR-144; compare a date with more than 10 approved years, `short_record` true under 30 and said beside the comparison, `ten_years_or_fewer` replaces `fewer_than_30_years`; `rivers.json` structure version 3; Middle Fork Beaver Creek near Lonetree admitted at 22 years; "Mill Creek near Moab" and "South Creek near Monticello"; the reading and normal range at three significant figures on the rivers page |
 | [ADR-146](ADR-146-keep-river-flow-and-soil-moisture-change-day-by-day.md) | Keep river flow and the soil-moisture change day by day | Accepted; extends ADR-136 and ADR-142; `river_history.json` (daily flow, status, qualifiers, class) and `soil_moisture_history.json` (published change per drainage area per date) in the `elevation_history.json` layout; merge by date, nothing deleted; no payload changes |
 | [ADR-147](ADR-147-hold-every-published-reservoir-name-to-the-waters-own-name.md) | Hold every published reservoir name to the water's own name | Accepted; extends ADR-079; eighteen more roster names renamed with fifteen former names added; a test refuses provider text in any roster name, with an allow list and a held list |
-| [ADR-150](ADR-150-read-the-daily-series-before-calling-a-station-quiet-or-a-high-a-spike.md) | Read the daily series before calling a station quiet or a high a spike | Accepted; extends ADR-116; the California audit screens the daily series where the monthly one is silent, a monthly high the daily reading confirms is not a spike, and the refresh reports a record high above the full level or a record low far below its neighbours, removing nothing; ADR-148 and ADR-149 are other records |
-
-## Relationship to the historical journal
-
-[`docs/history/modernization-2026.md`](../history/modernization-2026.md) is a
-journal: it changed as phases landed, and it records measurements, spikes and
-things noticed while testing. These records are the opposite — each one is
-fixed at the moment of decision. Where the two overlap, the journal is the
-narrative and the record is the decision. Neither is current architecture;
-that is [`docs/architecture/`](../architecture/README.md).
+| [ADR-148](ADR-148-put-river-flow-in-the-page-menu-and-the-bar.md) | Put river flow in the page menu and the bar | Accepted; supersedes ADR-136's reader-surface clause; a seventh `PAGES` entry between Drought and Methods, not in the first-visit chooser; page-link buttons show icons alone from 64rem to 72rem, the river flow button to 75rem |
+| [ADR-149](ADR-149-let-the-weekly-storage-figures-follow-every-filter.md) | Let the weekly storage figures follow every filter | Accepted; supersedes the ADR-011 scope-versus-filter line for the storage charts' weekly card; its storage figures follow the state, county, search, reporting and storage-class filters as well as both switches and the drainage area; snow and drought stay whole-region; the scope line says "N of M" |

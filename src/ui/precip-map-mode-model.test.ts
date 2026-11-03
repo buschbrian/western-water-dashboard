@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { precipMapLabel, precipMapModeView, SOIL_FAILED_TEXT } from "./precip-map-mode-model";
+import { precipMapLabel, precipMapModeView, SOIL_FAILED_TEXT, soilSwitchLabel } from "./precip-map-mode-model";
 
 /* ADR-142: one map, two modes. Soil mode hides the day buttons and the rain
  * list, and a soil file that could not load returns the map to rain rather
@@ -32,5 +32,10 @@ describe("the precipitation map's mode switch", () => {
   it("names the map for what it shows", () => {
     expect(precipMapLabel("rain")).toContain("recent precipitation");
     expect(precipMapLabel("soil")).toContain("change in soil moisture");
+  });
+
+  it("puts the soil end date on the switch once the file is in", () => {
+    expect(soilSwitchLabel(null)).toBe("Soil moisture");
+    expect(soilSwitchLabel("2026-10-26")).toBe("Soil moisture to Oct 26");
   });
 });

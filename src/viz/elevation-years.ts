@@ -199,7 +199,8 @@ export function renderElevationYears(host: HTMLElement, chart: ElevationChart | 
       /* Drawn last, over a plate, so no line runs through the words; placed
        * where it hides the fewest readings, at the right end above the line
        * when nothing is better. */
-      labels.push(leastCovering(chartLevelLabel(level), lineY, chartWidth, height, marks));
+      labels.push(leastCovering(chartLevelLabel(level, chart.sharedLabels), lineY, chartWidth,
+        height, marks));
     }
 
     const ordered = [...chart.lines].sort((a, b) => TIER_ORDER[a.tier] - TIER_ORDER[b.tier]);
