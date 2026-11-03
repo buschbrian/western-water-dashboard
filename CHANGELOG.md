@@ -242,6 +242,12 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Fixed
 
+- The map scale has an opaque background so its labels stay readable in both themes.
+- The dark-phone place-search audit waits for the map's loading state to finish,
+  then uses the shared full-page accessibility checker. No exception is added.
+- The California exclusions also reach the 1991–2020 reference file: nine records
+  were rebuilt, correcting 43 day-of-year and seven monthly comparison entries.
+
 - The snow place sentence follows the current drainage selection (ADR-151).
   Clearing that selection no longer leaves the old place above regional figures.
 - The weekly snow and drought headings explicitly name the whole region.

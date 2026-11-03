@@ -130,6 +130,12 @@ arcgis-map > [slot="bottom-right"] {
   translate: calc(-1 * var(--map-right-inset)) 0;
 }
 
+arcgis-scale-bar {
+  padding: 2px 4px;
+  background: var(--app-surface-raised);
+  border-radius: 2px;
+}
+
 .map-state {
   position: absolute;
   z-index: 2;

@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "method_version": "storage-normal-annual-3",
-  "generated_at": "2026-11-03T00:40:22+00:00",
+  "generated_at": "2026-11-03T01:05:43+00:00",
   "start_date": "2015-01-01",
   "normal_period": {
     "start_year": 2015,
@@ -28,7 +28,7 @@
   ],
   "default_baseline": "climate",
   "climate_normals": {
-    "built": "2026-10-31",
+    "built": "2026-11-02",
     "file": "normals.json",
     "method_version": "storage-normal-annual-3",
     "available_count": 343,
@@ -30902,7 +30902,7 @@
           "days": 30,
           "normal_af": 69434.28,
           "normal_years": 10,
-          "climate_normal_af": 67503.19
+          "climate_normal_af": 68085.53
         },
         {
           "month": "2026-10",
@@ -33753,7 +33753,7 @@
           "days": 31,
           "normal_af": 97349.72,
           "normal_years": 10,
-          "climate_normal_af": 96119.63
+          "climate_normal_af": 96869.52
         },
         {
           "month": "2026-08",
@@ -33775,7 +33775,7 @@
           "days": 30,
           "normal_af": 81820.08,
           "normal_years": 10,
-          "climate_normal_af": 77723.0
+          "climate_normal_af": 77996.67
         },
         {
           "month": "2026-10",
@@ -42139,7 +42139,7 @@
           "days": 30,
           "normal_af": 53696.78,
           "normal_years": 10,
-          "climate_normal_af": 51610.48
+          "climate_normal_af": 52752.97
         },
         {
           "month": "2026-05",
@@ -49394,7 +49394,7 @@
           "days": 30,
           "normal_af": 40140.75,
           "normal_years": 10,
-          "climate_normal_af": 38019.43
+          "climate_normal_af": 38026.4
         },
         {
           "month": "2025-12",
@@ -49416,7 +49416,7 @@
           "days": 31,
           "normal_af": 40036.27,
           "normal_years": 10,
-          "climate_normal_af": 37011.08
+          "climate_normal_af": 37161.15
         },
         {
           "month": "2026-02",
@@ -49438,7 +49438,7 @@
           "days": 31,
           "normal_af": 40227.35,
           "normal_years": 10,
-          "climate_normal_af": 38885.87
+          "climate_normal_af": 39561.68
         },
         {
           "month": "2026-04",
