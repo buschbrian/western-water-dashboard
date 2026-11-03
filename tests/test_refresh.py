@@ -3056,4 +3056,5 @@ def test_the_committed_rise_exclusions_are_the_reviewed_rifle_gap_readings():
     named = {item: sorted((record["stamp"][:10], record["value"]) for record in records)
              for item, records in R.RISE_EXCLUDED_READINGS.items()}
     assert named == {"134092": [("2026-10-28", 263.24), ("2026-10-29", 263.24),
-                                ("2026-10-30", 263.24)]}
+                                ("2026-10-30", 263.24), ("2026-10-31", 278.55),
+                                ("2026-11-01", 400.65)]}

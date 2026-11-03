@@ -12,7 +12,6 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 ## [Unreleased]
 
 ### Added
-
 - **A page for reporters.** `reporters.html` says how to cite a figure (the
   provider first, then this site, with the reading date and a link to the page
   that shows it), what the main figures mean, and what they cannot support: no
@@ -20,6 +19,7 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   provisional readings. It is words only, like the terms page: no script and no
   new computation. The reservoir, terminal lakes, terms and landscape pages
   link to it from their footers.
+
 - **River flow and the soil-moisture change kept day by day** (ADR-146).
   `river_history.json` keeps every day of mean flow at each gauge, with its
   review status, qualifiers and, at a natural gauge, its flow class.
@@ -118,7 +118,6 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   `precipitation.html?layer=soil` opens on soil moisture.
 
 ### Changed
-
 - **The weekly card's storage figures follow every filter** (ADR-149) on the
   storage charts page: state, county, search, reporting and storage class, as
   well as the Lake Powell and Lake Mead switches and the drainage area. The
@@ -133,7 +132,7 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 - **Soil moisture lists wetter and drier stations apart.** The soil map's
   list of eight is now "Largest increase" (four) and "Largest decrease" (four),
   each by 2 points or more; an empty side says no station moved that way (ADR-142,
-  update of 2026-10-31).
+  presentation amended by ADR-151).
 - **The share picture names its source and its lines.** The Lake Powell and
   Lake Mead pictures end with a key (this water year, the year before, the
   earlier years and the dashed lines) and "Readings: Bureau of Reclamation ·
@@ -159,3 +158,1930 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   normal, or "Not compared: dams upstream"; each row links to its card. The
   cards follow in two groups: "Compared with normal", then "Flow only: dams
   upstream".
+- **The California audit reads the daily series where the monthly series
+  is silent** (ADR-150). A station is quiet only when neither series
+  reported within the year. A monthly high is not a spike when the daily
+  reading for the same day agrees. The audit admits no station.
+- **The refresh reports record figures for review** (ADR-150). It warns
+  when a record high is above the full level, or when a record low is far
+  below the readings near it. It removes no reading; a person decides.
+
+- **Eighteen more reservoir names are the water's own name** (ADR-147).
+  Gauge and county text is gone from `Rye Patch Reservoir`, `Stagecoach
+  Reservoir`, `Lake San Antonio`, `San Antonio Reservoir`, `Jackson Meadows`,
+  `Dwinnell Reservoir`, `Camp Far West`, `Bucks Lake` and `Upper San
+  Leandro`. `McPhee Reservoir`, `McKay`, `Lake McCloud` and `Lake McSwain`
+  have the right capitals, and `Howard A. Hanson` is spelled as the dam
+  inventory spells it. Four dam names now name the water: `Lake Oroville`,
+  `Cherry Lake`, `Morena Reservoir` and `Bass Lake`. Links that use an old
+  name still open the right reservoir. A new test refuses provider text in
+  any roster name.
+- **Fifteen dam names and one code are now the water's recorded name**
+  (ADR-147). `Isabella Lake`, `Pine Flat Lake`, `Lake Kaweah`, `Big Bear
+  Lake`, `Lake Cuyamaca`, `El Capitan Lake`, `Frenchman Lake`, `Ruth Lake`,
+  `Briones Reservoir`, `Gibraltar Reservoir`, `Los Banos Reservoir`,
+  `Soulajule Reservoir`, `C.C. Cragin Reservoir`, `Conconully Lake` and `DMAD
+  Reservoir` replace the dam word or code, each with one source: the
+  National Hydrography Dataset name of the water at the reservoir's point.
+  `Seven Oaks Dam` stays, because no source names its basin. Short names
+  stay short. Links that use an old name still open the right reservoir.
+- **Success Lake and Guadalupe Reservoir stay held, with corrected
+  reasons.** Their highest readings are real; each matches the daily
+  value for the same day. Success Lake is held because no published full
+  level for 2019 contains its June 2019 water. Guadalupe is held because
+  a dam-safety order sets its full level, and the operator gives two
+  volumes for it.
+- **Buchanan Dam's December 2022 monthly reading is excluded** (ADR-116).
+  The California Department of Water Resources reports 172,105 acre-feet
+  for that month. Its own daily series reports 22,809 acre-feet on 31
+  December 2022. The raw value and the reason stay in
+  `admitted_cdec_reservoirs.json`. Nothing published changes.
+- **The California audit compares monthly and daily storage.**
+  `tools/audit_cdec_stations.py --monthly-daily` compares each monthly
+  reading with the same station's daily reading on the month's last day.
+  It reports each month where they differ by more than 100 acre-feet and
+  5% of the larger value. It removes no reading; a person decides
+  (ADR-116).
+- **Precipitation has its own page**, `precipitation.html` (ADR-130): the
+  recent totals, the season since 1 October and the history chart, for the
+  place in the link, with a link to the snowpack view for the same place.
+  `snow.html` is the snowpack page again, at the same address, and its map
+  notes fold on a phone so the season chart follows the map.
+- **A map of recent precipitation** on the precipitation page (ADR-131):
+  each drainage area filled by the mean of its stations for the last 1, 3
+  or 7 days, every station on the same scale, in the snow map's colours so
+  blue is wet on every map. A table under it lists every station's value.
+  The map and its SDK load only after the totals are drawn and only when a
+  reader scrolls near it.
+- The recent totals draw from the 10 KB daily file before the 500 KB
+  history arrives.
+- Station names in the precipitation list open that site on the snowpack
+  page.
+- **The storage charts draw when they near the screen** (ADR-132). On a
+  390 px screen the page was busy for about 13 seconds after load; it is
+  now busy for about 3.
+- The page name in the bar is short on a phone ("Storage map"), so it is
+  never cut to an ellipsis. Screen readers still hear the full name.
+- **Atkinson Hyperlegible Next** is the site's typeface (ADR-133), served
+  from this site in one 34 KB file. Before, each device drew its own system
+  font. Text shows at once and changes face when the file arrives.
+- The chart-type labels at the foot of each card ("Bar chart", "ArcGIS
+  map" and the rest) are gone.
+- On a phone, the storage charts' opened sections have room: the Lake
+  Powell and Lake Mead switches and Reset view no longer touch, and an
+  opened section's button no longer sits on its content.
+- A snow site's card, and a drainage area's, lead with the newest value and
+  the chart; where the site is follows them.
+- **The U.S. Geological Survey provider reads `v1` of the agency's modern
+  service**, which the agency now names its current version. Every series
+  the site publishes from it was read from both versions first, day by day
+  since 2015, and no reading changed. A terminal lake's `source_url` in
+  `lakes.json` names the new address from the next morning's refresh.
+
+### Fixed
+
+- The snow place sentence follows the current drainage selection (ADR-151).
+  Clearing that selection no longer leaves the old place above regional figures.
+- The weekly snow and drought headings explicitly name the whole region.
+- The public data reference documents daily precipitation and its historical
+  encoding, with all emitted fields checked against the files.
+- Two further Rifle Gap readings, 31 October and 1 November 2026, are excluded
+  under ADR-116 while the source disagreement in issue #91 continues. No
+  replacement values are inferred.
+- **Nine California reservoirs no longer show an impossible record figure**
+  (ADR-116). We exclude 116 daily readings that cannot be true, for example
+  Lake Almanor's 8,918,440 acre-feet and its zeros. Each raw value and its
+  reason stay in `admitted_cdec_reservoirs.json`. The reservoirs are Lake
+  Almanor, Bucks Lake, Butt Valley, Cherry Lake, Lake Mathews, Sly Creek,
+  Cogswell Reservoir, Courtright Reservoir and Lake Valley Reservoir.
+
+- On a reservoir page, "Since the 4-month low" (ADR-134) sits with the other
+  answers under the headline, after the changes. It had fallen into the
+  Sources section below the satellite view.
+- The history rank reads "Lowest of 12 years", "3rd-lowest of 12 years" or
+  "2nd-highest of 12 years", counted from the nearer end. At either end it
+  no longer adds "0.0%" or "100.0%", which only repeated the position.
+- The weekly card on the storage charts page no longer says its storage
+  figures follow the reservoir filters. They follow the Lake Powell and Lake
+  Mead switches and the drainage area, as the note now says, and not the
+  state, county, search, reporting or storage class filters.
+- The Methods page names what the site shows, river flow included, and no
+  longer counts its storage publishers wrongly. It gains entries for the
+  soil moisture change (ADR-142), the gain since the 4-month low (ADR-134)
+  and surface level and its datum (ADR-135, ADR-139).
+- On the storage charts page, the scatter plot no longer prints "Usual level"
+  over the biggest reservoirs' dots, and the combined-storage and change
+  figures say "acre-feet".
+- A long reservoir name in the storage map's list wraps to a second line
+  on a phone instead of ending in an ellipsis. The browser suite now fails
+  when any box cuts its text short.
+- On the drought page, each area's reading no longer covers its links on a
+  phone. A summary-card rule from 1.2.0 gave every area row three grid rows
+  for four blocks.
+- On the storage charts page, the notes, key and chart credit under each
+  chart no longer draw over one another. Each card had four shared grid
+  rows and up to seven blocks.
+- The precipitation chart's first date no longer runs into its inch labels,
+  and the "Where this year stands" year names sit clear of the axis.
+- Cards on the snow page no longer sit border to border, and a card's
+  download button no longer touches the block under it on a phone.
+- The browser suite now fails when text is drawn over other text, at every
+  tested width.
+
+## [1.2.0] - 2026-10-24
+
+### Added
+
+- **Find a place**, in the header of every page: type a reservoir, drainage
+  area or snow measurement site and go straight to it. Places that share a
+  name are told apart by state and area.
+- **A chart that fails to draw now says so.** Each storage chart is checked
+  for a drawing surface; one that never draws is replaced with a sentence
+  pointing to the table, and the browser suite reproduces the 1.1.0 colour
+  break to prove the check catches it.
+- **What is above a reservoir, as stored water** (ADR-127). A reservoir's
+  page states the upstream reservoirs' combined storage, then groups them by
+  drainage area with a total and a fill bar for each, in place of a wall of
+  name chips.
+- **Where this year stands**, on the snow page's precipitation card: every
+  past water year as a dot on the latest date, this year as the large one.
+- An Esri defect register (`docs/operations/esri-register.md`) and draft
+  reports for the defects worth filing.
+
+### Changed
+
+- **Every card leads with what it shows.** Each card opens with a one- or
+  two-sentence lead; how a figure is measured and what it does not say sit
+  in full as notes at the foot of the same card. The chart and map labels
+  ("ArcGIS map", "Bar chart") moved from beside each title to a quiet credit
+  under each card.
+- **The drought page is about a quarter of its length** (20,300 to about
+  5,300 pixels at desktop width): an "On this page" row, the three
+  comparison charts folded behind their own headings, and the area list
+  showing twelve until a reader asks for all.
+- **A reservoir's page leads with its water**: current storage, percent
+  full, its changes, the seasonal comparison and history rank, then the
+  twelve-month chart; location and sources follow.
+- **Summary cards align**: on every page and width, each card's label,
+  value and note sit on the same lines as its neighbours'.
+- The drought map's polygon file is about a third smaller (506 KB to 322 KB
+  gzipped): its coordinates carry three decimal places, the grain the drought
+  service already simplifies to, rather than five.
+
+### Fixed
+
+- Badge and label contrast in the dark theme now meets 4.5:1.
+- The precipitation card's latest reading no longer lags when one station
+  misses a day.
+- The snow map and methods page now describe an area's figure as the sites'
+  snow water added up over their normals added up (ADR-081), not a plain
+  average.
+
+## [1.1.1] - 2026-10-24
+
+### Fixed
+
+- **The storage charts draw again.** 1.1.0 moved Calcite to 5.2, which writes
+  its theme colours with CSS `light-dark()`; the ArcGIS charts components
+  cannot read that syntax, so every chart on the storage charts page showed
+  its key and no bars. Calcite is held on 5.1 until a charts release draws
+  under 5.2.
+
+## [1.1.0] - 2026-10-24
+
+
+### Added
+
+- **Precipitation since 1 October on the snow page** (ADR-125). A new card
+  compares this water year's gauge precipitation with every water year since
+  1991 at the same stations, for whatever place the page shows. It opens on
+  the season so far, and states the same stations' snow water beside the
+  figures rather than on the chart. Inches lead; the percentage waits for a
+  median worth dividing by. Two new data files,
+  `precipitation.json` (daily) and `precipitation_history.json` (rebuilt each
+  October), written by `refresh_station_readings.py` and
+  `tools/build_precipitation_history.py`.
+- **Ten years of drought on the drought page** (ADR-123). Two new cards below
+  the week's figures. One draws a single drainage area's last decade the way
+  the Drought Monitor draws its own: the share of the measured land at each
+  class or worse, every week, in the map's colours, with this week marked and
+  weeks with no map left as gaps. The other is a calendar of every area in
+  view, one row each and one column a week, coloured by the most severe class
+  that at least half of the area's measured land is in. Both read the archive
+  at the page's area size, and the archive is fetched only when the cards come
+  near the screen, so the page opens as fast as before. Each has a table that
+  says the same thing in words, and the chart can be read a week at a time
+  with the arrow keys.
+
+### Changed
+
+- **Every drought share is measured from the monitor's full-resolution map**
+  (ADR-122, method `drought-coverage-3`). The weekly figures used to be
+  measured from the simplified polygons the map draws. Checked against the
+  monitor's archive of the same weeks, that simplification moved 47 of 5,955
+  published shares by one tenth. The weekly run now measures the archive's map
+  of the week, and when that map is not posted yet it keeps last week rather
+  than measure the simplified one. The published weeks were measured again, so
+  those 47 shares each moved by one tenth.
+- **The drought archives reach back ten years** (ADR-122). The region,
+  subregion and basin archives were rebuilt from the monitor's weekly maps
+  back to November 2016, every week measured the same way. A week the archive
+  cannot supply is named in the file and left as a gap. The question service's
+  drought index carries the newest 26 weeks of each.
+
+
+- Update ArcGIS to 5.1.27, Calcite to 5.2, Vite to 8.3 and Vitest to 5.
+  Keep TypeScript on current 7.0.2, update accessibility tooling and Node
+  types, and run CI on Node 26.
+- Update the Python dependency baseline to pandas 3.1, NumPy 2.5,
+  requests 2.34, pytest 9.1 and ArcGIS for Python 2.4.4. Run Python jobs on
+  3.14 and use the shared requirements for manual data workflows.
+  Use pandas' supported `day_of_year` spelling without changing the calendar
+  method.
+- Record the bounded recent-conditions pilot and credential setup, with
+  ignored local environment files. No pilot data or R2 uploader is published.
+
+### Fixed
+
+- **A withdrawal notice no longer disappears when a same-named reservoir
+  publishes.** Notices were matched by name, and the roster holds two Lost
+  Creek and two Clear Lake. A notice now carries its station
+  (`source_station_id`) and is matched by it. Older notices without one fall
+  back to the name for one run (ADR-126).
+- Keep wrapped snow summary cards equally tall when the early-season note
+  needs several lines.
+
+## [1.0.0] - 2026-09-18
+
+The first tagged release, and the state the site has run in for several weeks.
+Everything below this heading shipped before the tag: it is the whole history
+of the modernization, gathered into one release rather than rewritten. The
+scope is closed at this version (ADR-117). Further work is content and
+maintenance, not new geographic analysis.
+
+### Added
+
+- **What the drought looks like on the ground.** A new page,
+  `landscape.html`, carries photographs of the western landscape beside the
+  measurements the rest of the site publishes. It says what a photograph is
+  evidence of -- one place on one day, not a measurement and not a trend --
+  and states that every frame is a real capture with no generative content.
+  Every frame is made on public land and names the place it was made, with a
+  location where that helps a reader find the same view. The gallery is empty
+  today and says so.
+
+- **Two more providers, both of them reservoir operators: five more
+  reservoirs.** The Salt River Project publishes total storage for the four
+  reservoirs it runs on Arizona's Salt River system -- Roosevelt, Apache,
+  Canyon and Saguaro -- and Montana's Department of Natural Resources and
+  Conservation publishes East Fork Rock Creek, the one sensor of its ten that
+  drains west rather than to the Gulf of Mexico. Both publish a full level for
+  water they operate themselves, so both denominators are the operator's own
+  figure rather than the dam inventory's (ADR-070). East Fork Rock Creek is
+  the only reservoir on the roster with no dam inventory record at all: ADR-099
+  admits it on the operator's own location and full level, and its roster file
+  states that absence as a finding instead of leaving the field blank. The
+  details panel names which full level each percentage is measured against for
+  all five, the same way it does for every other operator's figure.
+
+- **The weekly drought table can be downloaded.** The list of drainage areas
+  now has a download action, and it writes exactly what is on screen: the
+  filter and the sort a reader chose, not the whole payload. Each row carries
+  the class shares, the severity index, the change since last week and the
+  combined storage figure shown beside the name.
+
+- **Compact published facts for a question service.** Three new files under
+  `/data/assistant/` carry current reservoir, snow and drought facts with
+  their as-of dates, each under a size budget, rebuilt every morning after the
+  payloads they are read from. The builder validates all three before
+  replacing any, so a failure keeps the last accepted set and never blocks the
+  data refresh. The service that reads them is in `worker/` and is not
+  connected to any page yet.
+
+- **Point geography that can leave the dashboard.** Reservoir and snow-site
+  details now show the full Region, Subregion and Basin path from the
+  published HUC rosters, plus decimal and degrees-minutes-seconds coordinates
+  with a copy action. Storage and Snowpack can download the points currently
+  listed as WGS84 GeoJSON, with provider identities and raw measurements.
+  Reservoir coordinates remain the published waterbody point; the separate
+  dam or outlet assignment point is not relabelled as the same fact
+  (ADR-096).
+
+- **Snow above one reservoir.** A reservoir page now opens Snowpack on the
+  current measurement sites in its committed upstream set. Every headline,
+  area mean, curve, map value and table row is rebuilt from those stations
+  with the existing ratio-of-sums method. The filter intersects an explicit
+  place, reports indexed sites missing from today's snow payload, and yields
+  to a more specific linked station rather than hiding it (ADR-097).
+
+- **A fifth provider: the U.S. Geological Survey, seven reservoirs.** The
+  sites the 2026-08-22 review ruled new -- Horseshoe and Bartlett on the Salt
+  River system in Arizona, Weber in Nevada, Wynoochee, Alder, Mud Mountain
+  and Lake Tapps around the Puget Sound. Every one admitted on a confirmed
+  National Inventory of Dams match with the shared admission screens run
+  unmodified; four further candidates are held with findings named in
+  `admitted_usgs_reservoirs.json`, among them Walker Lake, whose admission
+  would need ADR-078's dam rule changed first. The provider publishes no full
+  level of its own, so every denominator comes from the dam inventory.
+  Built against the keyless legacy service by decision of ADR-080; the
+  documented 2027 retirement is recorded debt with a date.
+
+- **Twenty-six provider names normalized, and every old link kept working.**
+  Names like `Courtright (Pg&E)`, `Mossyrock Dam (Riffe Lk)` and
+  `Lake Pillsbury Nr Potter Vly 24Hr Avg` are now `Courtright Reservoir`,
+  `Riffe Lake` and `Lake Pillsbury` -- the water's own name, ruled per row
+  against NHD and GNIS evidence. A committed former-name table teaches the
+  name resolver each old spelling as a last resolution step, so saved links
+  and retired routes resolve forever. The operator each parenthetical used to
+  carry is now its own published field and joins the search text, so "PG&E"
+  still finds Courtright after the parenthetical leaves (ADR-079).
+
+- **The site now says what drains to each reservoir.** Every published
+  reservoir was traced once against the U.S. Geological Survey's Network-Linked
+  Data Index -- the contributing basin above its dam, then which published
+  reservoirs and snow-measuring sites sit on that land. The storage map's
+  details panel names the counts, and each reservoir page lists its upstream
+  reservoirs as links to their own pages ("What is above it"). An upstream set
+  is an unordered containment answer, so the site says "upstream of" and never
+  "feeds": several of these reservoirs sit on transbasin diversions, and the
+  water they hold does not always go where the river points. The trace is
+  committed with its evidence (ADR-077); the polygon it was traced against is
+  never published. All 375 traced cleanly, none screened or flagged.
+
+- **Every reservoir page shows its own ground: an aerial image.** Esri's
+  World Imagery centred on the reservoir's published point, one marker over
+  it, zoom, full screen and a scale bar around it. The picture is the page's
+  subject -- the dam, the shore and the water's actual extent against the
+  land -- so it asks for imagery directly rather than for the themed canvas
+  every other map wears. It loads after the page's facts are on screen from
+  its own small chunk, carries its own deadline (a slow image says it did
+  not arrive instead of holding the page), and readiness includes it so no
+  reader or checker ever meets its controls half-built. Roughly 377 KB of
+  tile traffic on first view; see `docs/data-transfer.md` for how that was
+  measured honestly.
+
+- **Chart hovers answer the question a hover is really asking.** The bar
+  charts' tooltips were one line -- the number the bar already showed. They
+  now add the full level (naming which kind of full level it is), the
+  history rank said as a position, the thirty-day movement labelled with the
+  interval it actually covers, and the county; a drainage area's bar says how
+  many reservoirs its numbers answer for instead of inventing facts its group
+  cannot have. The wording comes from the details panel's own helpers, so a
+  fact reads the same wherever it is asked, and the storage-against-normal
+  scatter and the histogram gained rows in the same vocabulary.
+
+- **A way back to the opening chooser.** "Choose another place" sits beside
+  the storage map's place filters and reopens the first-visit dialog. The
+  chooser still never interrupts an arrival -- a shared link opens nothing
+  over it -- but a reader who answered once no longer has to clear site data
+  to answer differently.
+
+- **The place menus show their hierarchy instead of implying it.** Drainage
+  areas sit under their subregion and subregions under their region in the
+  storage map's place control; counties group under their state and basins
+  under their subregion in the storage charts' filter bar. Indented groups
+  inside one menu, chosen over flyout submenus after measuring both at 360
+  pixels, where a flyout's full county list is several screens of popup
+  scroll. One consequence a reader can see: the charts' county rows no longer
+  carry ", ST" -- the state is the heading the rows sit under -- so two Summit
+  Counties stay apart by their groups rather than by a suffix (ADR-076). The
+  charts' county list also narrows to the chosen state now, the way the
+  subregion list beside it always did, and holds a county across a subregion
+  change because a county cuts across drainage areas.
+
+- **Every reservoir has a page: `reservoir.html?name=...`.** One static
+  shell, the morning's payload fetched at runtime, and nothing generated --
+  so a reservoir whose feed goes quiet keeps its page and its link says the
+  reading was withdrawn instead of stopping at an error. The page carries
+  the reading and what it is measured against, both comparison periods with
+  their sample sizes, the twelve-month chart, where the numbers come from,
+  and a CSV download. It names a reservoir the way every other surface does:
+  a unique name works bare, two reservoirs sharing one need the state --
+  "Lost Creek, OR" -- and an ambiguous link opens no reservoir rather than
+  picking one.
+
+- **Colorado is on the roster: ten reservoirs from the state's own telemetry.**
+  The readings come from the Colorado Division of Water Resources, the fourth
+  provider beside Reclamation, the Conservation Service and California's
+  department, and they put the Colorado headwaters' small reservoirs -- Pearl
+  Lake, Stillwater, Buckeye, Upper Blue among them -- on the same map as the
+  federal projects downstream of them. The projection of 119 additions was
+  never scoped to the drawn drainages: 91 of the state's storage stations sit
+  on the eastern slope, whose water reaches the Mississippi basin and which
+  the maps do not draw, so ten is what the geography allows and three more
+  candidates are held with findings in `admitted_cdss_reservoirs.json`.
+
+- **A fourth provider means a fourth name everywhere a provider is named** --
+  the methods page's live counts, the CSV export, the details panel and the
+  data dictionary among them. The tables are exhaustive on purpose: an
+  unnamed provider fails in tests rather than reaching a reader as
+  "undefined".
+
+- **California is on the roster: 142 reservoirs, 25.7 million acre-feet of
+  full level.** The site publishes 365 reservoirs instead of 223, and
+  California is now its largest state by count -- 160 of them. The readings
+  come from the state's own Data Exchange Center, the third provider beside
+  the Bureau of Reclamation and the Natural Resources Conservation Service,
+  and every page that names a provider names three now. Nine drainage areas
+  gained their first reservoir, among them Tulare-Buena Vista Lakes, San
+  Francisco Bay and Laguna-San Diego Coastal, taking the roster from 43 of
+  the 75 drawn areas to 52.
+
+  **What the reader pays for it.** The storage payload is 215.2 KB gzipped,
+  up from 132.9 KB; `reference.json` is 23.0 KB, up from 14.4 KB. No page
+  makes a new request: the same two files carry more rows.
+
+### Changed
+
+- **The U.S. Geological Survey provider reads the agency's modern service.**
+  The seven reservoirs admitted in August moved off the keyless daily-values
+  service, which is documented to retire in early 2027, onto the modern
+  collection that replaces it. That service needs an API key, so the pipeline
+  holds one: a secret the morning job sends in a request header and that never
+  reaches a reader's browser, which leaves the public pages anonymous as before
+  (ADR-098, superseding ADR-080 and narrowing ADR-004). The reviewed daily
+  statistic is now committed beside each station, because one admitted station
+  publishes two of them and picking by response order would let a published
+  number change without anyone deciding it should. A missing key reads as a
+  provider failure, and the last verified records stay.
+
+- **The morning job asks dense providers only for the days it is missing.** A
+  committed daily history keeps one representative value per date for
+  providers that publish far more often than daily and clip their record --
+  the Salt River Project publishes every five minutes and keeps three years.
+  The estimator receives the same daily series it always did.
+
+- **The place menus show their hierarchy instead of implying it.** The
+  drainage-area lists now carry their region and subregion as headings, and
+  the county list on Storage Charts carries its state -- so a subregion reads
+  as something inside a region rather than as one more row. The county list
+  also narrows to the state that is chosen: picking California leaves that
+  state's counties instead of all 157 across eleven states. Choosing a state
+  that does not hold the chosen county falls the county back to all rather
+  than filtering to nothing.
+
+- **The details panel's history-rank explanation reads in shorter sentences.**
+  The reservoir page now publishes that note outside a panel, and the
+  sentence-length rule (ADR-006) caught a 30-word sentence that had been
+  folded inside the map's details panel where no page-level check could see
+  it. Same words, split; both surfaces read it.
+
+- **A reservoir too young to hold either comparison publishes no comparison
+  choice at all.** Colorado's 2025-vintage stations arrived with no baseline
+  a percentage could be measured against, and the record named `recent` as
+  its opening period anyway -- offering a comparison that does not exist.
+  The runtime validator refused it, correctly; the pipeline now omits the
+  baselines block when both comparisons are empty.
+
+- **Where the operator publishes a full level, that is what a percentage
+  divides by** (ADR-070). The dam inventory's conservation pool was the
+  denominator because it was the only one this project could read, and
+  ADR-003's reason for preferring it -- that a conservation pool is what an
+  operator means by full -- now points at the operator's own published figure
+  wherever there is one. It reaches 25 of the 159 California candidates and
+  no reservoir anywhere else; 33 published reservoirs divide by it.
+
+  The measurement is what settled it. Twelve reservoirs had stood *above* the
+  inventory's pool and inside the operator's -- Pine Flat at 991,966
+  acre-feet against 772,300 and 1,000,000 -- and this project had already
+  made the same choice twice, for two other providers: Keswick is published
+  at 23,800 acre-feet from Reclamation's own record against an inventory pool
+  of 7,470.
+
+- **The storage-charts full-level sentence groups two sources under one
+  phrase.** A reservoir measured against its operator's own figure reads the
+  same whichever operator published it, so the sentence no longer says
+  "published by the reservoir operator" twice with two counts.
+
+- **A monthly California reading is dated the end of the month it measures.**
+  The service stamps such a value on the first day of the month and the value
+  is that month's last reading -- Oroville's monthly figure dated 1 June is
+  its 30 June measurement. Every date this pipeline publishes means when the
+  water was measured, so the stamp is moved to the month's end. Left alone,
+  all 33 monthly California stations read 50 days late on the morning they
+  were admitted and would have been withdrawn as quiet feeds before September
+  while reporting normally. The reading itself is untouched.
+
+- **A station that has not reported for a year is not a candidate.** "Being
+  listed is not reporting" was measured over a week and asked of the whole
+  record, so a station with five readings ever and none since March 2023 was
+  admissible. It would have joined the roster and been withdrawn for a quiet
+  feed the same morning (ADR-056), which is a roster addition that publishes
+  nothing and reads exactly like a failed fetch. Measured across the 159
+  candidates, the screen moves two: Bon Tempe, which was publishable, and
+  Guadalupe, which was held for an unexplained spike anyway.
+
+- **Twenty-one California candidates are held rather than published, and the
+  file says why for each.** Five were admitted by review against a screen and
+  carry the screen and the reason -- Lake Mohave and San Luis on reviewed dam
+  evidence, Martis Creek and Seven Oaks as flood-control dams operated empty
+  on purpose, Morena as a real reservoir that is simply low. The rest stay
+  out with the finding recorded beside them: O'Neill Forebay carrying San
+  Luis Reservoir's denominator from 1.18 km away, Fairmont measured against
+  7,507 acre-feet when its operator describes a forebay of about 500, and
+  Lake Havasu, whose reviewed full level of 646,200 acre-feet is now on
+  record and whose series still carries two readings near ten times the
+  reservoir.
+
+
+- **The two largest reservoirs in the west are in the opening view.** Lake
+  Powell and Lake Mead are still controls rather than filters (ADR-011,
+  ADR-062) -- each is most of any total it enters, each keeps its own switch,
+  and every page still states which of the two the figure beside it holds.
+  What moved is which way they start. A map whose subject is western water
+  opened with 51 million acre-feet taken out of it, behind two switches a
+  reader had to find. The storage map, the storage charts, the reset control,
+  and the combined summaries all open with both in.
+
+  This changes what an existing link means. `powell` and `mead` are written
+  as absence when they carry the default, so a link made before this and
+  carrying neither parameter now reads as "include" rather than "exclude" --
+  the same trade `reservoirs=` made when the roster went west. The narrow
+  answer is what a link spells now: `?powell=exclude`, `?mead=exclude`. Both
+  spellings are read on both pages, so a scope still carries between them.
+
+- **Small labels are sentence case.** Panel eyebrows, filter and chart
+  labels, the summary tiles, both table headers, the weekly section headings
+  and the site name were rendered through `text-transform: uppercase`. Long
+  uppercase strings are harder to read than the words they are made of, and
+  these labels now name periods and measurements rather than one or two
+  words. It is also what every reader through rendered text receives:
+  `innerText` returns what CSS transformed, so a screen reader and the smoke
+  suite were both handed `STORED NOW`.
+
+### Fixed
+
+- **The Salt River Project reservoirs published a mid-morning reading as the
+  day's storage.** That provider publishes every five minutes, and the
+  reduction to one value a day kept whichever reading the sort happened to
+  leave last rather than the day's final one -- an 08:10 figure standing in
+  for the day on a two-day fetch. 4,348 of the 4,388 committed daily values
+  were affected, by as much as 10,206 acre-feet, and none of them would ever
+  have corrected themselves: the refresh asks only for days it has not
+  cached. Every stored figure for the four reservoirs has been re-read from
+  the provider. Canyon Lake's history rank moves from 66.7 to 100.0, Apache
+  Lake's change over a year from -2,402 to -1,314 acre-feet, and every other
+  published figure for the four moves with them. Montana's readings are
+  reduced the same way and were corrected with them.
+
+- **A revised reading could not replace the one already cached.** The daily
+  cache and the day's fetch overlap on purpose, because a provider revises a
+  provisional reading after publishing it. Merging the two kept the cached
+  value on about half the overlapping days, so a correction the provider
+  published could not reach a reader.
+
+- **Montana's published source address pointed at no service.** The address
+  recorded beside the standard-period values named a service path that does
+  not exist. It is now read from the same constant the provider requests
+  with, so the two cannot drift apart again.
+
+- **The first visit no longer waits on the map's background.** The storage
+  map picks its background from a list of candidates, trying each in turn.
+  Every candidate had a time limit and the list itself had none, so a reader
+  whose first choice was slow could wait up to a hundred seconds looking at
+  "Loading reservoir data" -- while that data sat fetched and checked behind a
+  background image it does not need. The list now has fifteen seconds in
+  total. Past that the reservoirs are drawn on a plain background and the
+  reader can choose a background from the map's own list (ADR-101). A reload
+  used to look like the fix, which is why this read as an occasional fault
+  rather than a slow one.
+
+- **A dashboard that fails to start now says so.** The whole start-up ran
+  without anything to catch a failure in it, so a single error anywhere in it
+  left the page showing its loading message for as long as the reader was
+  willing to look at it -- no warning, nothing to act on, and nothing to do
+  but reload. A start-up that fails now reports that the data is unavailable
+  and asks for a reload, and it stops every surface from saying it is still
+  waiting.
+
+- **The storage map's key no longer covers the map's credit line.** Both the
+  key and the mapping service's own credit line are pinned to the bottom of
+  the same map area, and the key was placed against the area rather than
+  against the line, so it took a bite out of "Esri | GEBCO | Garmin |
+  NaturalVue" at every window size. The key now clears it. The browser suite
+  measures the two against each other from now on, at every width it tests.
+
+- **Every ranked reservoir is named again.** The storage map's ranking chart
+  gave each bar 18 pixels. A reservoir name wraps to two lines in that axis
+  lane and the SDK drops a category label it cannot fit, so the chart
+  published a name for every second bar and left the ones between it
+  anonymous. The row is 26 pixels now and the whole set keeps its names.
+
+- **Long drainage-area names no longer land on each other.** The storage
+  charts allowed two lines for a category label. A drainage area carries its
+  states, so "Lower Colorado-Lake Mead (AZ, NV, UT)" wraps to three and the
+  third line sat on the neighbouring name. Category rows now hold three lines.
+
+- **The two comparison charts fill their row.** Four of the six chart cards
+  span every column, so only two can share a row -- but the grid fitted as
+  many columns as the width allowed and opened a third at about 1400px that
+  nothing could fill. The twelve-month and scatter cards shrank to 417 pixels
+  beside an empty third of the row. The grid now stops at two columns.
+
+- **A reference line is drawn over the data it explains.** The scatter's usual
+  level ran behind the dots, and several hundred reservoirs sit within a few
+  points of it, so the line disappeared exactly where "above or below normal"
+  is read. The same rule now applies to the snow season curve's normal line.
+  The drought scatter's halfway lines stay behind its points: those are
+  scaffolding for reading the corners, not a claim about the data.
+
+- **The drought severity axis is readable at every area size.** It drew a
+  gridline and a label for every whole drainage area, which was right for
+  fourteen of them and wrong once the roster went west: 23 basins put 24
+  labels into 152 pixels of axis and the numbers ran together into a grey
+  smear, and the subbasin size drew 153. The step is chosen from a ladder of
+  whole areas now, so the count stays near eight however many areas are in
+  view.
+
+- **The longest drainage-area name is no longer cut off.** The two drought
+  comparison charts wrote names into a lane measured when the longest was
+  "Escalante Desert-Sevier Lake". "Klamath-Northern California Coastal" is
+  wider, so at the subregion size the top row read "hath-Northern California
+  Coastal". The lane is measured from the names each chart is about to draw,
+  growing until the data lane reaches the width the chart already reserved
+  for it.
+
+- **Snowpack's class spread bar is visible again.** The bar above the
+  measurement site table is built from the stacked share shape the drought
+  view uses, on purpose, but two of that shape's rules had stayed behind in a
+  stylesheet Snowpack does not load. The bar drew its seven segments with no
+  height at all, so the card showed a caption over nothing. The shape now
+  lives beside the segment fill it shares, in the stylesheet both pages load.
+
+- **The snow season curves keep one type size at every width.** Both curves
+  were drawn on a fixed canvas scaled to fit the card, so the whole picture
+  stretched with it: the axis type rendered at roughly 21 pixels on a 1280
+  desktop and roughly 5 on a 360 phone, and the plot fell from 456 pixels tall
+  to 119. They now measure their host the way the drought charts do, so one
+  unit is one CSS pixel; the type, the padding and the axis stay put and only
+  the plot lane spreads.
+
+- **A reservoir's twelve-month chart labels every month it has room for.** The
+  chart dropped to every third month whatever its size, a rule set when it
+  only ever drew at about 300 pixels in the storage details panel. The
+  reservoir page gives it around 700, where all twelve labels fit with room to
+  spare, so seven of them were being left off a chart wide enough to carry
+  them. The interval is chosen from the width now, and counted back from the
+  newest month, so the month a reader looks for first is always named.
+
+- **The storage spread chart shows every drainage-area name in full.** Eight
+  of them ran off its left edge -- "Escalante Desert-Sevier Lake (NV, UT)"
+  began as "ante Desert-Sevier Lake" -- because the name lane was fixed at the
+  width the Utah roster needed. It is measured from the names on the chart
+  now, the same rule the drought comparison charts follow. The count column
+  beside the boxes was reserving 40 units for a figure that needs 15, and the
+  25 units that freed are what let the longest name fit on a phone.
+
+### Documentation
+
+- **The maintained documentation describes the western product.** The project
+  README, documentation index, modernization closeout, source inventory,
+  contributor guidance, historical plan status notes, archived MapLibre
+  findings, and GitHub wiki now use the current repository name, production
+  pages, western scope, data contracts, and remaining-work boundary. Accepted
+  architecture decision records remain unchanged history.
+
+### Added
+
+- **Twenty-five more western reservoirs from the Bureau of Reclamation.** The
+  R2 audit narrows 1,012 catalogue locations to 38 usable daily storage series,
+  removes Lake Mead by its reviewed dam point and Blue Mesa, Navajo and McPhee
+  by dam identity, and admits 25 new reservoirs (ADR-069). The delivery-day
+  payload now publishes 223 reservoirs and names five withdrawn; 43 of the 75
+  drawn drainage areas hold at least one. Shasta, Trinity, New Melones,
+  Berryessa and Folsom add the major California storage the federal roster was
+  missing. Twenty-four additions have a 1991 through 2020 comparison; Scooteney
+  accurately reports that the closed period has no observations.
+
+- **A reservoir operator can resolve a documented full-level conflict.** The
+  national dam inventory remains the default and still supplies identity and
+  outlet points. Billy Clapp, Keswick and Cachuma retain that evidence but use
+  explicit Bureau project records for their selected full levels. The details
+  panel, combined summaries and CSV export name this basis instead of presenting
+  it as a national inventory value.
+
+- **The maps cover the west.** Seventy-five drainage areas instead of
+  fourteen: everything draining to the Pacific, plus the Great Basin, which
+  drains nowhere. The drought map has a real measurement for every one of them
+  and draws every one of them. The snow map still draws fourteen, because the
+  snow network reports in fourteen and an outline with nothing behind it is
+  less to look at rather than more. The reservoir roster has not moved and is
+  still 69, so 61 of the drawn areas hold none -- admitting a reservoir means
+  tracing a full level and reviewing it, and that work is separate from
+  drawing the ground (ADR-063).
+
+- **Building the climate normals takes minutes rather than an hour.** The job
+  spends almost all of its time waiting for the two providers to answer, so it
+  now asks for six reservoirs at once rather than one: 69 reservoirs in 1.6
+  minutes instead of about fourteen, and the same file byte for byte.
+  `--missing` builds only what has no normal yet, which is what a roster
+  addition costs and how an interrupted run is resumed.
+
+- **Choose how finely the ground is divided.** Every map now offers two area
+  sizes: 75 basins, which is what a map opens with, or 44 subregions. Each
+  subregion holds whole basins, so the choice splits nothing, and every figure
+  is measured again at the size chosen rather than averaged up from the
+  smaller one -- the drought shares are computed over the larger areas, the
+  reservoir totals are added over them, and the snow figures are the mean over
+  the same sites grouped differently (ADR-064). The choice travels in the
+  address, so a link carries it.
+
+- **The snow network covers the west.** 217 measurement sites became 637, in
+  51 drainage areas instead of 14, across eleven states. Twenty-four of the
+  western areas hold no automated snow site at all -- desert, coastal lowland,
+  valley floor -- and the inventory says so rather than refusing to publish.
+  The reservoir roster has not moved yet, so the storage figures are still
+  Utah's.
+
+- **Drought is measured over larger areas too.** The same weekly measurement
+  is now published over the 44 subregions of the west as well as its 75
+  basins, so the site can offer a reader the choice of how finely the ground
+  is divided. Nothing else about the data changed: the same snow sites and the
+  same reservoirs, grouped differently (ADR-064). The engine reads and writes
+  each area's code under the name its size implies, which is what it had
+  always asked of the maps and never of itself.
+
+- **The storage map still opens where the reservoirs are.** Where a reader may
+  pan now comes from the areas that hold reservoirs rather than from every
+  area drawn, so covering the west did not open the map on 19 degrees of
+  longitude with every reservoir in one corner of it. The opening view is
+  unchanged, and it will follow the reservoirs out when they go.
+
+- **Lake Mead, and a control for it.** Lake Mead sits in Lower Colorado-Lake
+  Mead, one of the fourteen drainage areas this site has always published, and
+  had never been admitted -- so the area named after it carried none of it. At
+  28,255,000 acre-feet it is larger than Lake Powell and would be
+  substantially the whole of that area's storage, so it gets its own
+  include/exclude control for the same reason Powell has one: a total with it
+  and a total without are both true and are not the same measurement
+  (ADR-062). Excluded by default. Its water is 67% in Nevada and 33% in
+  Arizona and never reaches Utah, so it appears only under the connected
+  geography.
+
+- **Filter by state and by subregion, and drill down.** Three geographic
+  controls that narrow each other, coarsest first: a state holds subregions, a
+  subregion holds drainage areas, and a reader can start anywhere and stop
+  anywhere. Picking Wyoming does not then offer a subregion Wyoming has none
+  of. "In a state" means where the *water* is, so Bear Lake — whose point is
+  in Idaho — is in Utah's list, which is what the site has always meant by it.
+  Subregion codes cost nothing to publish: they are the first four digits of a
+  code every record already carries. Only the eleven names are new.
+
+- **Find a reservoir by its county.** Counties are a search and filter axis,
+  not a grouping one -- measured first: 69 reservoirs fall in 35 counties and
+  19 of those hold exactly one, so a county chart would be a reservoir chart
+  wearing a county's name (ADR-058). The county comes from the reservoir's own
+  waterbody point, deliberately not the dam point the drainage area uses: Glen
+  Canyon Dam is in Coconino County, Arizona and Lake Powell is the lake in San
+  Juan County, Utah.
+
+- **Three ways to ask about a state.** Where a reservoir is, where its water
+  is, and what its water drains are three different questions, and the Utah
+  pair only ever answered two of them for one state (ADR-060). Hyrum is wholly
+  inside Utah and fed from Idaho; a reader asking what Idaho's snow feeds and
+  one asking what is in Idaho now get different answers.
+
+- **The drought engine knows the difference between dry and unmeasured.** The
+  U.S. Drought Monitor stops at both borders, and every cell beyond one used
+  to count as land with no drought on it. Nothing published today changes --
+  all fourteen current areas are inside the country -- but at western coverage
+  it mattered a great deal: Kootenai would have reported 75 points of
+  drought-free area that is really British Columbia (ADR-059).
+
+### Changed
+
+- **The drought map is quieter.** No terrain under the classes, the state and
+  county outlines above them rather than beneath, and thinner, fainter
+  drainage lines. What may sit over the subject now depends on whether the
+  subject is continuous or discrete: a line over a drought class partitions
+  it, a line over a reservoir hides it (ADR-061).
+
+- **The dam inventory is read from the agency that maintains it.** The
+  National Inventory of Dams now comes from the U.S. Army Corps service rather
+  than a hosted copy found by searching ArcGIS Online for the most-viewed
+  result. No published number moved. A dam identifier turns out to name a
+  project rather than a structure, and three of ours return several; the point
+  is now chosen by rule instead of by whichever row arrived last (ADR-057).
+
+### Fixed
+
+- **A single-source refresh stopped naming the reservoirs the other
+  providers had withdrawn.** `refresh_reservoirs.py --source rise` republishes
+  the other providers from the last payload, and a withdrawn reservoir is not
+  in the part of it that merge reads -- it left `reservoirs` entirely and is
+  stated in the envelope instead (ADR-056). So a partial refresh published
+  `withdrawn_count: 0` and quietly stopped saying that any of them had gone,
+  which is the silence that record exists to prevent. The notices are carried
+  now, matched on the provider rather than the reservoir, and their age is
+  recomputed from the date they already publish so a carried notice cannot
+  say a reservoir is 477 days late beside a date 484 days ago. Nothing is
+  re-derived from a reading: a carried notice still holds no measurement.
+
+- **The subregion drought figures were a week behind the map they belong
+  to.** Every offered hydrologic level is measured from the same weekly
+  polygons, and a reader who switches from basins to subregions fetches a
+  different file (ADR-064). The daily job recomputed both and committed only
+  one: the list of files it commits was typed into the workflow, and
+  `data/drought/usdm-huc4.json` was never added to it. The published
+  subregion figures therefore described the week before the map's. The list
+  now comes from `data/generated-files.json`, a test refuses any offered
+  level that the refresh does not commit, and the committed file is
+  recomputed to the week its polygons describe -- same method, same 44
+  areas, only the week moved.
+
+- **A history rank and its percentile disagreed about a tie.** The rank
+  counted the years strictly below today's reading and the percentile counted
+  ties as at-or-below, so a reservoir sitting exactly where a past year sat
+  published both figures from one comparison and they did not match. Four
+  reservoirs in the committed payload said so out loud: Thief Valley read
+  "1st-lowest of 12" -- the lowest it has ever been for the date -- beside a
+  percentile of 9.1, in the same details-panel row. Both count strictly below
+  now, so the lowest reading on record reads 0 whether or not it ties one,
+  and 100 arrives exactly when the rank reads highest.
+
+- **A comparison near New Year averaged two different winters.** The
+  day-of-year window wraps across the year end, and the readings it kept were
+  then grouped by their own calendar year -- so one "year" of evidence held
+  early-January readings from the winter before and late-December readings
+  from the winter after, about 360 days apart, medianed into a single value
+  describing neither. The same rule chose which years counted as prior, which
+  admitted the current winter's December as history and split a finished
+  winter in half. Each reading now votes with the winter it is evidence
+  about. Fourteen days of the climate normals move, and those fourteen now
+  count 31 winters against a thirty-year period -- the honest number, because
+  a winter spans two calendar years and the period cuts its first and last one
+  in half. `normals.json` is rebuilt (`storage-normal-annual-3`).
+
+- **The snowpack page blamed the wrong thing for a missing comparison.**
+  Where percent of normal could not carry a headline, the page led with the
+  depth and said "there is too little normal snow for this date to compare
+  against". But the headline is refused for two reasons -- too small a normal
+  to divide by, or too few sites reporting -- and the fallback took both,
+  so five reporting stations in October put their mean depth in the page's
+  largest type under a note about the normal. The fallback holds the
+  reporting floor now, and too few sites has its own message again.
+
+- **The weekly digest printed a percentage the snowpack page suppresses.**
+  Both read one payload, and the snowpack page refuses to headline a percent
+  of normal measured against a normal under an inch -- 147 sites reporting
+  produced "266% of normal" against a quarter-inch normal on 27 October. The
+  digest held no such floor, so the overview could state that figure while
+  the snowpack page, reading the same file the same morning, would not. It
+  holds the same floor now and says why when it has nothing to compare.
+
+- **A reservoir that has stood empty could hide a bad reading.** The
+  admission screen that catches an unstable maximum -- one reading far above
+  the rest of the series -- read a third-highest of exactly zero acre-feet as
+  a missing value and skipped the check. A series of one large spike over an
+  empty pond is the purest form of what the screen exists to catch, and it
+  was the one shape that got through.
+
+- **The headline counted Utah's reservoirs on a map of the west.** The
+  storage summary read 59 reservoirs and 5.5 million acre-feet under a card
+  that said "Every reservoir", above a map drawing 196 of them. `inScope` had
+  already applied all three scope dimensions, and `updateSummary` then passed
+  its own options into `statewideRollup` with `geography` pinned to `utah` --
+  so the set was narrowed a second time, by a question the reader had already
+  answered. `?state=CO` was the clearest case: a Colorado view reporting
+  Utah's water. The same call left `lakeMead` absent, and absent means
+  excluded, so the reader's own Lake Mead switch could not move a total the
+  map had already drawn Mead into. It spreads `WIDEST_SCOPE` now, which is
+  how the storage charts have said "already scoped" since ADR-062. The
+  connected total is 196 reservoirs at 61.8%, and the count on the card
+  matches the count on the map in every scope. The month view was never
+  wrong: `monthlyRollup` sums what it is given and never re-scoped.
+
+- **The storage charts offer every drainage area again.** The subregion and
+  drainage-area controls were rebuilt from the reservoirs the reader's scope
+  had already narrowed to, so excluding Lake Powell -- which is what the page
+  opens with -- took four of the fourteen drainage areas off the list,
+  Lake Powell's own among them. Where a reader can go is a question about the
+  roster; what is in the total is a different question, and the controls now
+  answer only the first.
+
+- **One dead snow station no longer costs every other station's reading.** A
+  station can be listed as active and answer with a whole winter of empty
+  rows; the refresh treated that as a fault and published nothing. It is now
+  counted with the stations that did not answer at all, named in the log, and
+  held to the same small tolerance -- so a real outage still stops the file
+  and one silent station does not.
+
+- **A quiet feed no longer costs a reservoir its climate normal.** The
+  thirty-year baselines are built from the reservoirs published that morning,
+  and a reservoir whose provider has gone quiet is not among them — so a full
+  rebuild would drop a fact about 1991 through 2020 over a fortnight of
+  silence. Every build merges now, and says which normals it kept without
+  being asked for them.
+
+- **The histogram had two legends, and the numbers were in the wrong one.**
+  The key naming its four lines had been moved under the chart, and the
+  chart's own key was left where it was -- inside the plot, on the right,
+  holding the values. One key now, under the horizontal axis, carrying both
+  the names and the values: the mean, the middle value and one standard
+  deviation. The values follow the filters, and the bars get back the width
+  the old key was taking.
+
+- **`--only` no longer destroys the file it is meant to add to.** Building one
+  reservoir's climate normal wrote that reservoir as the whole of
+  `normals.json`, discarding the other sixty-eight and the thirty-year job
+  that produced them. It merges now.
+
+- **The western boundaries were refetched at 56 metres.** They had been
+  fetched at 100, the ordinary tolerance for a new scope, and publishing them
+  made them the file every drought figure is measured against. At the coarser
+  tolerance two of the fourteen areas published today moved by a tenth of a
+  point -- one rounding step, with no weather behind it. Refetched, the
+  fourteen are identical to the reviewed file they have always been measured
+  with, and no published figure moved at all.
+
+- **Groundwork for covering the whole west.** Nothing on the site looks
+  different yet, and that is the point of this step. The machinery that
+  decides which drainage areas the project reads now takes the size of those
+  areas as a setting rather than assuming the six-digit ones, and the western
+  scopes are registered so their geography can be fetched and checked before
+  any page draws it. The scope is drawn by where the water goes, not by
+  longitude: everything draining to the Pacific plus the Great Basin, which
+  is 44 subregions, 75 basins and 571 subbasins across hydrologic regions 14
+  through 18 (ADR-053). The Missouri, Arkansas, Texas-Gulf and Rio Grande are
+  western in longitude, eastern in hydrology, and out.
+
+- **The maps take their drainage outlines from the hosted Watershed Boundary
+  Dataset, and the pages got much lighter for it.** The outlines used to
+  travel inside `reference.json` — 982 KB of a 1,001 KB file, fetched whole
+  by every map page on every visit — and the drainage-area names were placed
+  as fixed text that cannot avoid covering things at western density. The
+  hosted layer sends only what the current view can show, the label engine
+  places the names and drops one it cannot fit (ADR-047, ADR-048), and
+  `reference.json` now carries each area's code, name and states in 21 KB.
+  The snowpack payload also stopped repeating its calendar once per site
+  (ADR-052) — 54% off the wire — and runtime fetches now revalidate instead
+  of re-downloading, so an unchanged file costs a "not modified" answer
+  rather than its whole weight (ADR-051). `docs/data-transfer.md` holds the
+  before-and-after measurements.
+
+- **The pipeline is ready for a western roster.** Point-in-area assignment
+  short-circuits on bounding boxes (30 seconds down to a tenth for a
+  690-reservoir roster at HUC-8); the snow refresh tolerates up to 2% of
+  stations not answering — solar radios in mountain winters — naming the
+  absentees instead of refusing the whole day; and dam matching for new
+  candidates confirms by position first and name second, screening out
+  structures that could not hold the observed water, like the settling pond
+  0.29 km from Huntington North's gauge.
+
+- **The snowpack and drought maps can change their background.** Both now
+  carry the basemap gallery the storage map has always had. It was left out
+  because these maps follow the page theme and a background you picked would
+  have been overruled by the next theme change; the theme now stands down
+  once you have chosen one of your own.
+
+- **The drought map names its drainage areas.** Every figure on that page is
+  keyed to one of the fourteen areas by name, and the map carried none — so
+  matching an outline to a table row meant counting positions. The names sit
+  above the drought classes and below the reservoirs.
+
+- **Its drainage boundaries are cased, so they read on every class.** The
+  Drought Monitor's palette runs from bright yellow to near-black maroon, and
+  one dark line cannot survive both: it was clear on the pale end and all but
+  invisible on the dark end, which is exactly where a reader is trying to see
+  which basin the worst class is inside. Each boundary is drawn twice now, a
+  wide pale casing under a narrow dark core, so one of the two is always
+  visible whatever is underneath.
+
+- **A compass and a "find my location" control on all three maps.** Rotation
+  was always possible and there was no way back to north. The location
+  control uses the browser's own geolocation and asks no outside service.
+
+- **The map and the table share a split you can drag.** The row under the map
+  opens at two-fifths of the window and the divider between them moves, by
+  pointer or by arrow keys, so both stay live at whatever ratio suits the
+  reading. It stops short of hiding either one: the row cannot be dragged
+  shut, which is what its close control is for, and it cannot be pulled over
+  the whole map.
+
+  Where you leave it is remembered for next time. It is kept as a share of
+  the window rather than a number of pixels, so it means the same thing on a
+  different screen, and it is *not* in the address bar — a link to a
+  reservoir should not impose the sender's pane sizes on whoever opens it.
+
+- **The drought pipeline keeps its weekly maps.** Every week the monitor
+  publishes is now retained, so week-over-week change becomes possible for
+  the first time. Two files do it: the current week's coverage carries the
+  week before it, which is about a kilobyte and is all a change needs, and a
+  separate archive keeps ten years of Thursdays for work that wants a series.
+  Reruns replace a week rather than repeating it, which also lets a revised
+  map correct its own entry.
+
+  The weekly digest uses it straight away. It counts the drainage areas that
+  gained or lost land in severe drought or worse and names the one that moved
+  most — counted rather than averaged, because a share of land averaged
+  across areas of very different sizes is not a quantity anybody can act on.
+  Until a second week is published it says so plainly.
+
+- **Two new charts on the drought page.**
+
+  **How the areas are divided** counts every drainage area once, at the most
+  severe class with land in it. The page reported this as a single number —
+  "areas in extreme drought or worse: 11 of 14" — which hides the shape
+  behind it: nine clear areas and nine areas sitting one class below the line
+  give the same count and are not the same week. Drawn for this week, it
+  shows that no drainage area at all is clear, abnormally dry or in moderate
+  drought — every one of the fourteen is at severe drought or worse.
+
+  **The same comparison, in order** ranks the areas by how far their banked
+  water sits from their dry land, worst first. The scatter above it shows the
+  same relationship as a cloud and asks the reader to judge each point's
+  distance from a diagonal that is not drawn. This states the order: this
+  week it leads with Escalante Desert-Sevier Lake, 91% of its land in severe
+  drought with its reservoirs 6.6% full.
+
+  Each area is two dots on one scale with a line between them, rather than
+  one bar of the difference. The two shares divide by different things — one
+  by land, one by reservoir capacity — so their difference is not a quantity
+  of anything, and the site never states it as a number.
+
+- **The drought map is drawn on terrain.** A public hillshade is multiplied
+  over the drought classes, so the pattern now sits on ground that shows
+  where the mountains and the desert basins are. It is drawn *above* the
+  classes rather than beneath them, which keeps every class exactly the
+  colour the Drought Monitor published and varies only its lightness.
+
+- **The snowpack map carries its key inside the map**, as the drought map
+  already did. Matching a colour to a class no longer means looking away
+  from the pattern.
+
+- **The histogram on the storage charts page says what its lines mean.** It
+  draws a mean, a middle value, a standard deviation band and a fitted
+  normal curve in four line styles, and carried no key at all. The key sits
+  under the chart, so the bars keep the full width of the card.
+
+- **You can choose which years "normal" means.** The storage map has a
+  "Compare against" control with two periods: **1991 through 2020**, the
+  standard thirty-year climate period and the same one the mountain snow
+  measurements already used, and **2015 through last year**, every year this
+  site collects. Each reservoir's details now name the period its comparison
+  came from and how many years stand behind it.
+
+  This matters more than it sounds. The site's only "normal" used to be the
+  2015-onward one, and it was that period by accident — 2015 is simply where
+  the data pipeline starts asking. Those years are the driest stretch in the
+  modern record here, so every reservoir was being measured against a drought.
+  Lake Powell reads **44.6% of normal against 2015 through 2025 and 35.0%
+  against 1991 through 2020**. Both are correct; the second is the standard.
+
+  Sixty-three of the sixty-nine reservoirs have enough years for the standard
+  period. The rest are newer than it — Jackson Flat's dam dates from 2017 —
+  and their details say so and show the other period instead of a middle value
+  drawn from three years. The history rank is unaffected and still uses the
+  years this site collects, which the reservoir details and the methods page
+  both state.
+
+- **A weekly summary of what moved.** The storage charts page opens with the
+  last seven days in plain sentences: how much water the region gained or
+  lost, how far the combined level moved, how many reservoirs rose and fell,
+  and which ones moved most — by volume, and separately by share of their own
+  size, because those are usually different reservoirs and calling either one
+  "the biggest" without saying which measure would mislead. It also says what
+  it could not measure: the twenty-nine reservoirs that report monthly cannot
+  show a weekly change, snow has no comparison once the sites melt out, and
+  only one week of drought coverage is kept so there is no change to report
+  yet. It describes the whole region and does not follow the filters below it.
+
+### Changed
+
+- **The drought map sits above the charts**, which is the order the page is
+  read in: the map first, then the figures that describe it.
+
+- **The drought page's charts no longer stretch to fill the window.** All
+  three are drawn as SVG with a fixed 640-unit frame, so on a wide screen
+  they scaled up bodily — measured at 1280px, everything inside them grew by
+  1.88 times, padding and gaps included. The ranked comparison was 796 pixels
+  tall and the scatter 639. They are capped and centred now, and the ranked
+  rows are tighter: 478 and 459.
+
+- **One set of state names on the drought map.** That map draws its own state
+  and county boundaries and labels them, and the background was labelling the
+  same states underneath — a duplicate buried under the drought classes,
+  where it read as mush. The background's copy is removed there rather than
+  moved down.
+
+- **The drought map's terrain now brightens as well as shades.** It was
+  combined with `multiply`, which can only darken — where the hillshade is
+  light it does nothing at all, so lit slopes disappeared and only shadows
+  showed. `soft-light` lightens above mid-grey and darkens below it, which is
+  what relief shading is for.
+
+- **The map key lines up.** Five classes in a wrapping row broke wherever
+  they fitted, so the swatches started at a different place on every line.
+
+- **The month table in the reservoir details no longer scrolls sideways.**
+  The values always fitted; the column headings held on one line each are
+  what pushed it past the panel. They wrap now and the values do not.
+
+- **Every page now names itself.** The site is the **Utah Water Dashboard** —
+  it carries mountain snow and the weekly drought map beside the storage, and
+  two of its five surfaces are not about reservoirs at all, so the old name
+  described a third of it. Each page is now "Utah Snowpack", "Utah Drought",
+  "Utah Reservoir Storage" and so on, in the browser tab and as the page's
+  own heading. Every page's heading used to be the site name, so moving
+  between five surfaces told you the same thing five times.
+
+- **Borrowed map boundaries no longer draw over the reservoirs.** A basemap
+  has two layer stacks, and its reference stack draws above everything a map
+  puts on top of the ground — so the background's own state boundaries were
+  landing on the data, most visibly as a line straight through Flaming Gorge,
+  which sits on the Utah–Wyoming border. Those layers are now moved beneath
+  this project's own. An earlier attempt reordered the wrong stack and could
+  never have worked.
+
+- **The reservoir details panel stacks its labels above their values.** The
+  two columns worked while every label was two words; once a label had to
+  name a period, the label column took 261 of 320 pixels and left the values
+  14 pixels to wrap inside.
+
+- **The maps hold a tighter zoom envelope.** They could be zoomed out to
+  about 1:37,000,000 — most of North America — and in to about 1:70, well
+  past the point where there is anything left to draw. The range is now
+  1:18,500,000 to about 1:9,000. Holding the view inside the region does not
+  do this on its own: that restricts where the centre may go, not how far
+  out you may zoom.
+
+- **The snow and drought maps are taller, and show far less empty ground.**
+  The drawn region is 869 km wide by 923 km tall and the cards were nearly
+  three times wider than they were tall, so the view fitted the height and
+  spent the rest on emptiness — 2,509 km of width for an 869 km region. They
+  are now slightly narrower in proportion than the storage map's own stage.
+
+- **Reservoirs on the drought map are a dark point inside a light ring.** A
+  single dark dot is clearly visible on the pale end of the drought ramp and
+  effectively invisible on the dark end, which is exactly where a reservoir
+  inside extreme drought is most worth seeing.
+
+- **The weekly summary follows the reservoirs you are looking at.** It always
+  described every published reservoir, so the Lake Powell switch above it did
+  nothing — and Lake Powell is roughly half of the region's weekly movement.
+  The snow and drought parts still describe the whole region, because they
+  are not made of reservoirs, and each says so.
+
+- **The header actions report whether their panel is open.** The storage
+  summary's was written as always-on in the markup, so it was lit from first
+  paint whether the panel was open or shut, and the reservoir details action
+  never lit at all.
+
+- **The map now opens on the standard climate period, so most numbers read
+  lower than they did.** That is the correction, not a fault: comparing
+  against a period that includes wet years is a higher bar than comparing
+  against a decade of drought. Choose "Recent years" in the "Compare against"
+  control to see the previous figures, and a shared link carries whichever you
+  picked.
+
+- **State and county outlines now draw behind everything else on the map.**
+  They are borrowed reference geography — they say which land the pattern
+  crosses — and drawing them over the drought classes put a borrowed line on
+  top of the subject. Their names are unaffected and still read clearly.
+
+- **The snowpack map opens on the season's peak snow.** It used to open on the
+  most recent day half the sites reported — which, late in the melt season, is
+  the most melted day that still counts, so the map showed the worst picture
+  of the year every time you arrived. It now opens on the day the region held
+  the most snow, which is the day the rest of the season is judged against.
+  Peak snow, not peak percent of normal: the highest-percentage day this
+  season was in early December on two inches of snow, because December's
+  normal is small too. The slider still reaches every other day, and a shared
+  link still carries whichever day its author chose.
+
+- **The storage map's colours run one direction now.** Percent full goes from
+  empty to full and nothing happens in the middle, but it was drawn with a
+  scale that fades from red through pale yellow to blue — a shape that says
+  something changes at halfway. It now runs pale and dry at empty to deep
+  water at full, getting steadily darker, so the order reads even in black and
+  white or to someone who cannot separate the colours. The five 20-point bands
+  are unchanged.
+
+- **A reservoir's outline no longer takes its storage colour.** The circle's
+  size has always meant capacity and the filled part how full it is; colouring
+  the outline by storage too meant a nearly empty reservoir was a pale ring
+  with nothing inside — the hardest thing to see on the map, and the one that
+  matters most. The outline is now a constant dark edge, so every reservoir is
+  visible whatever its level, and the colour means one thing.
+
+- **The snowpack map now has six classes instead of five, and the extra one is
+  where the readings actually are.** The four thresholds the measuring service
+  reports against are unchanged; a fifth was added at 25% of normal, because
+  the old set put 62% of every published day into the single lowest class. In
+  a dry year the map was one colour and four of the five colours only ever
+  appeared in the legend. The season now spreads across the whole range.
+
+- **Its colours come from a published scientific colour map.** Crameri's
+  *roma*, chosen by testing every candidate against four rules at once — every
+  class visible as a see-through fill over terrain, every class distinct from
+  its neighbours, dry reading warm and wet reading cool, and nothing close to
+  a colour used on the storage or drought maps.
+
+### Added
+
+- **The methods page opens by saying what this site is not.** It is a personal
+  open-source project, not made, endorsed, sponsored or checked by any agency
+  or organization, and it does not speak for any of them. Where this site and
+  a publisher disagree, the publisher is right. Naming an agency in the
+  credits thanks it for its work and means nothing more than that. The page
+  also says how the project is built: much of the code is written by AI agents
+  from stated requirements, with every change reviewed by a person, tested,
+  and recorded — so the way each number is produced can be read rather than
+  taken on trust.
+
+- **The methods page now says three things it should have said all along.**
+  These reservoirs are operated, so a falling level can be a release rather
+  than a dry watershed. Snow is compared against thirty years and storage
+  against eleven, so the two "normals" are not equivalent and storage will
+  tend to look better against its own. And "full" is measured against more
+  than one kind of full level.
+
+- **Every reservoir now says which full level its percentage is measured
+  against.** Three different quantities arrive as "capacity": a normal full
+  level, a maximum level that includes storage kept for floods, and the level
+  the water and climate service publishes with its readings. Four reservoirs
+  use the maximum — and because Lake Powell is one, those four are about
+  seven tenths of the combined full level every regional percentage is
+  divided by.
+
+- **Every history rank says how many years it came from.** The record starts
+  in 2015, so each rank is a position among eight to eleven values. Two ranks
+  a few points apart are not meaningfully different, and the panel now says
+  so instead of presenting a percentile as a measurement.
+
+### Changed
+
+- **The drainage-area outlines are drawn from much finer boundaries.** They
+  were simplified to about 500 metres, which was invisible while they were
+  background context and obvious once you could zoom to a dam: neighbouring
+  areas whose shared ridge had been simplified separately no longer met, so
+  the map showed slivers and gaps that do not exist on the ground. They are
+  now at about 56 metres, which is the point where the source stops adding
+  detail — past it you are downloading decimal places, not shape. The
+  published drought figures moved by at most a tenth of a percentage point,
+  which confirms the coarse file was never producing wrong numbers; it just
+  drew badly up close.
+
+- **The drought map has a quieter background, and its key sits on the map.**
+  It labels states itself, and the previous background labelled them too, so
+  every state carried two names in two typefaces. It now uses the plain
+  canvas that matches the theme. The class key moved from a band above the
+  map to a panel in the corner of it, so the colour and its name are inches
+  apart instead of a glance apart — on a phone it stays below the map, where
+  a short map cannot afford to lose a third of itself to it.
+
+- **The reservoir dots on the drought map are quieter.** They were a
+  translucent dot inside a near-opaque white ring, and at that size the ring
+  was a third of the symbol — a field of them read as pale specks and the
+  white fought the monitor's yellows. Solid, smaller, with a hairline edge.
+
+### Added
+
+- **Every page now carries a content policy.** Fetches, images and fonts are
+  confined to this site and the named Esri services, forms cannot post
+  anywhere, and no plugin can load. It was written from a measurement of what
+  the pages actually request rather than from a template, and the whole
+  browser test suite runs with it in place.
+
+### Fixed
+
+- **Every map label was rendering in the wrong typeface.** The new reading
+  font was requested by a name that already included its weight, which asked
+  for a font file that does not exist — and a missing label font does not
+  fail, it quietly falls back. The maps looked fine and were not using the
+  font at all. The browser tests now watch for this directly, because it is
+  invisible on the page.
+
+- **Small text and scrolling regions now meet the accessibility standard.**
+  The badge on each card was slightly too light against its own background;
+  six tables and two code samples could be scrolled with a mouse but not with
+  a keyboard; and both sliders announced a number to a screen reader without
+  saying what the number was. All found by an automated audit that now runs
+  over every page, at every screen width, on every test run.
+
+- **The drought map would have broken on the next weekly release.** The daily
+  job downloaded the new drought polygons but never recomputed the coverage
+  figures the page draws from them, so the two files would have described
+  different weeks — and the page refuses to draw that, correctly, rather than
+  showing one week's map over another week's numbers. It now recomputes the
+  coverage from the polygons it just downloaded and commits both together, so
+  either both move to the new week or neither does.
+
+### Added
+
+- **The drought data says when it has stopped arriving.** The monitor
+  publishes each Thursday. When a week goes by without one, the page has
+  always shown the age — but nothing told anyone. A missed release now opens
+  an issue on its own and closes it again when the next map arrives, the same
+  way the quiet-reservoir-feed alert already works.
+
+- **Dry land against banked water, as a chart.** The drought page now plots
+  every drainage area as one point: how much of its land is in severe drought
+  or worse across the bottom, how full its reservoirs are up the side. The two
+  do not have to agree, and where they disagree is the whole point — an area
+  to the right and high up is living on water banked in better years; one to
+  the right and low has neither the rain nor the savings. An area with no
+  reservoir reading is left out rather than drawn at the bottom, and the page
+  says how many were left out.
+
+- **The drought page can be narrowed.** Show only the areas with land in a
+  chosen class or worse, and order them by severity, by emptiest reservoirs
+  first, or by name. A sentence under the controls says what is being shown,
+  and the address bar carries both choices, so a narrowed view can be shared.
+
+- **The snowpack site table can be searched and narrowed.** Search by site
+  name or county, filter to an elevation band — snow behaves differently high
+  and low, so a single average mixes two seasons — and show only the sites
+  with late data, or only the ones still sending values. All three combine,
+  all three are in the address bar, and the sentence above the table says
+  which are applied.
+
+- **How the snow sites are spread on the chosen day.** A bar above the site
+  table shows how many sites fell in each class, in the same colours and the
+  same shape as the drought page's coverage bars. The average on the chart is
+  one number over more than two hundred stations, and it cannot tell a region
+  that is evenly poor from one where half the sites are bare and half are near
+  normal. Those are different winters.
+
+- **Reservoirs draw in less detail when you are far away.** Zoomed out, each
+  reservoir is a plain circle: still sized by its capacity, still coloured by
+  how full it is. Zoom past about one step in and the full drawing returns —
+  the drop shadow, the outlined water level, the dashed ring on an old
+  reading — at the same moment the names appear. One threshold, so the map
+  gets more detailed in every way at once instead of piece by piece.
+
+### Changed
+
+- **Every label is set in Atkinson Hyperlegible Next.** It was drawn for the
+  Braille Institute to be read by people with low vision: the characters that
+  usually blur together at small sizes — capital I and lowercase l, 0 and O —
+  are given clearly different shapes. Every name on these maps is small type
+  over a detailed background, which is exactly what it is for.
+
+- **The snowpack map has its own colours.** It ran brown for the driest
+  through to teal for the wettest, replacing a red-to-blue scale that
+  overlapped the storage map's — two of the five colours were the same in
+  both. Brown to teal is the usual way of showing wet and dry, so the map
+  reads without the legend, and every step stays visible over the background
+  relief. The scale is one Esri publishes and has tested for colour blindness.
+
+- **The snowpack map no longer shows reservoirs.** It already carries fourteen
+  filled drainage areas and 217 measurement sites; adding sixty-nine named
+  points on top buried the readings the page is for. They stay on the drought
+  map, which has room for them, and they have their own map besides.
+
+- **The credits name the right tools.** MapLibre and CARTO are gone — those
+  were for a second map engine the site no longer runs. In their place: the
+  Python libraries that turn the published measurements into everything the
+  maps draw.
+
+- **The snow and drought maps work like the storage map now.** Both had
+  shipped as pictures: a background, some shapes, and one zoom button.
+  They now carry the same tools in the same corner — zoom, home, full
+  screen and a scale bar — refuse to be dragged out of the region, and
+  stop at the same widest view. Pointing at anything on any of the three
+  maps brings up a card that travels with the pointer: a reservoir gives
+  how full it is and what that is a percent *of*, a drainage area gives
+  its mean snow or its drought share with the storage banked in it, and a
+  measurement site gives its reading beside the normal depth for the day.
+
+- **The reservoirs are named on every map.** They appear on the snow and
+  drought maps as small neutral points — no storage colours there, because
+  each map keeps one colour language — so a reader can see which
+  reservoirs sit in the basin at half its normal snow, or under the
+  driest land, without matching two lists of names by eye.
+
+- **The names come in as you zoom, not all at once.** State names carry
+  the widest views and step aside; drainage-area names hold the middle;
+  reservoir names arrive one zoom step in from where each map opens;
+  county names last. A name is never larger than the shape it sits
+  inside, and only the drainage-area names are bold. The result is that
+  no view is a wall of text and no name is lost — the crowded ones step
+  back and return as you zoom toward them.
+
+- **State and county outlines on the drought map.** The drought map draws
+  the whole national pattern, so it now says which land that pattern
+  crosses. Both come from Esri's public boundary services rather than from
+  files in this repository; the counties stay hidden until you are close
+  enough for them to mean something, and if either service does not answer
+  within eight seconds the map simply draws without it.
+
+- **The drought page has its map.** A map card above the coverage bars draws
+  the monitor's weekly national polygons in the monitor's own colours, with
+  the fourteen drainage areas outlined over them — drought does not stop at
+  the region's edge, so the wider pattern is drawn whole while the outlines
+  say which land the figures describe. The polygons are the same committed
+  weekly download the coverage shares were computed from, and the page
+  refuses to draw them over figures from a different week. The map follows
+  the color theme like the others, one degenerate sliver in a future weekly
+  file cannot blank it, and if it cannot start the bars and table keep
+  every share with a visible note.
+
+- **The map background follows the color theme.** Both maps now open on the
+  canvas that matches the page: light gray in the light theme, dark gray in
+  the dark one, and they swap when the theme control is used. A background
+  the reader has chosen from the storage map's gallery is a choice, and a
+  theme change does not overrule it. The dark canvas serves without
+  credentials like the two verified backgrounds, and its chain falls
+  through to the light canvas if that ever changes.
+
+- **The data reference documents everything the site publishes.** The
+  drought coverage file joins the published-files list with all of its
+  fields explained — the calculation method, the share of each drainage
+  area's land in exactly each class, and the "this class or worse" sums —
+  and a test holds the documentation to the committed file, field for
+  field. Each file card now links to the page that displays it, and the
+  snow card notes the per-site season timing the snowpack page draws.
+
+- **Every snow site has its own season.** A new card on the snowpack page
+  draws one measurement site's water year in inches, day by day, against
+  the middle value for the same days in 1991 through 2020 — with the site's
+  published normal season marked: when snow usually starts to build, its
+  usual highest value, and when it has usually melted. The reader reaches a
+  site through a grouped picker or by selecting its name in the site table,
+  a shared link carries the choice, and the exact first-of-month values sit
+  in a table behind the chart. A site whose normal timing the data service
+  does not publish says so rather than inventing one.
+
+- **The snowpack view has its map.** A map card now sits above the seasonal
+  curve: each drainage area is filled by its mean percent of normal for a
+  chosen day, and every measurement site is a point on the same red-to-blue
+  scale, with its own legend and a day control across the whole water year.
+  The day opens on the newest one where at least half the sites reported —
+  the same floor the headline values use — and a shared link carries the
+  chosen day. Areas and sites without a fair value for the shown day stay
+  grey rather than borrowing a colour. The view frames the fourteen
+  drainage areas exactly, the basemap uses the same keyless fallback chain
+  as the storage map, and a map that cannot start leaves every number on
+  the page in the chart and tables with a visible note.
+
+- **A drought view.** The navigation now carries a Drought page reading the
+  U.S. Drought Monitor's weekly map by drainage area, most severe first.
+  Each area shows the share of its land in each class as a bar in the
+  monitor's own colours, with the exact values in a table behind it — and
+  beside each area, the combined reservoir storage that drains it, because
+  the two can disagree and that disagreement is the story. The page states
+  the map's week, its release date, and its age, and marks the data late
+  when a weekly release has been missed. Each area links across to the
+  storage map and the snowpack view with the same shared address. If the
+  reservoir payload cannot be read the drought figures still render and
+  each row says the storage comparison is missing. The methods page gains
+  the Drought Monitor as a named, linked source.
+
+- **Weekly drought coverage by drainage area, as published data.** A new
+  analysis tool reads the committed U.S. Drought Monitor polygons and writes
+  the percent of each drainage area's land in each drought class, with the
+  monitor's own map and release dates. The figures ship beside the polygons
+  in the published data directory and are held by tests to shapes with known
+  answers and to their own arithmetic. Nothing on the pages reads them yet;
+  they are the data half of the coming drought view.
+
+- **A snowpack view.** The navigation now carries a Snowpack page showing the
+  water stored in mountain snow: the seasonal curve of mean percent of normal
+  for the whole region or one drainage area, the value on the first day of
+  each month, and a table of every measurement site with its newest reading.
+  Normal is the middle value for the same day in the years 1991 through 2020,
+  and the page says so. Headline numbers require at least half the sites to
+  report, so October's first flurries and June's last unmelted stations
+  cannot become the page's largest numbers; the curve keeps the published
+  two-site floor and breaks where it is not met. A shared link carries the
+  drainage-area choice with the same name the storage map uses. The snow
+  payload is validated at the fetch boundary like the reservoir payload, and
+  a unit test holds the page's percent arithmetic to the pipeline's rollups
+  value for value.
+
+- **Every source on the methods page is now a link.** The sources and credit
+  sections link to the pages the data is actually driven from — the
+  Reclamation open-data service, the Natural Resources Conservation Service
+  water and climate service, the National Inventory of Dams, the Watershed
+  Boundary Dataset, the Utah Geospatial Resource Center, and the map and
+  design tooling — and the credit section links the public repository with
+  its pipeline and decision records. A new snow measurements entry names the
+  1991 through 2020 comparison period the snowpack page uses.
+
+- **A ranking chart beside the table under the map.** The bottom row now
+  pairs the sortable table with a bar chart that ranks every reservoir the
+  analysis controls match, lowest percent full first. It is drawn from the
+  same rows the table renders and the CSV export writes, follows the month
+  slider and the scope the same way, and its bar colors are the storage
+  levels in the map key. Clicking a bar selects that reservoir, the same
+  selection the map, the list and the table set. A reservoir with no
+  readable percentage is not ranked, and the caption says how many are. The
+  chart is loaded only when the row is opened, so the map does not wait on
+  it.
+
+- **A reservoir table under the map, with its own CSV file.** The header now
+  carries a table control that opens a panel below the map listing every
+  reservoir the analysis controls match, with its storage, full level,
+  drainage area and reading date. Any column can be sorted, and the values
+  follow the month slider the way the map and the storage summary do. The
+  download button writes exactly the rows on screen, in the order they are
+  shown. A shared link carries the table's order and whether it is open, so a
+  sorted view can be sent to somebody else.
+
+- **The primary map and data workspace can export CSV files.** The workspace export follows
+  the current filters and table order. Reservoir details export the current record and its
+  12-month history. Both exports keep raw numbers and include provider, identifier,
+  observation date, full-level source and drainage area.
+
+- **The dashboard data now has a documented public API.** Stable `/api/` paths publish
+  reservoir, snow and reference JSON from the same files the site uses. A new documentation
+  page lists every field, refresh and failure behavior, browser access, code examples and
+  plain terms of use.
+
+- **A shared map link now has a visible copy control and public filter names.** The
+  map writes drainage area, storage class, late-data choice and month as
+  `?drainage=`, `?class=`, `?late=` and `?month=`. Older links using `?area=`,
+  `?storage=` and `?reporting=` still open correctly. The copy button confirms
+  success without adding another repeating announcement.
+
+- **All 217 snow monitoring sites in the published drainage areas are now
+  verified and refreshed independently.** The inventory uses full-resolution
+  federal watershed geometry for sites near a divide, records the official
+  1991–2020 comparison period, and refuses to replace the last complete file
+  when even one listed station is missing. Seasonal drainage-area values
+  average station percentages and state how many sites reported; late readings
+  stay present and are marked as late data. The snow interface remains a
+  separate view under ADR-021.
+
+- **Every published drainage area now has tracked reservoir storage.** The
+  connected view adds 15 reviewed Colorado and Wyoming sites: ten in Colorado
+  Headwaters, four in White-Yampa, and one in Lower San Juan. Each capacity is
+  tied to a position-confirmed dam in the National Inventory of Dams. Nine
+  sites update daily and six update monthly; old readings continue to be
+  marked as late data.
+- **Current U.S. Drought Monitor polygons are now available as GeoJSON.** A
+  checked downloader retrieves every national D0-D4 feature from the official
+  service, verifies that all features describe the same week, and keeps the
+  last good file if that independent service is unavailable during a daily
+  reservoir update.
+
+- **The primary application filters by drainage area.** The overview has had
+  this control since it gained drainage areas; the map did not, so a reader who
+  wanted one basin had to read fifty-one circles for it. It is a filter and not
+  a scope: the reservoirs outside the chosen area stay on the map in grey and
+  stay in every total, so an area is read *against* the state rather than
+  instead of it. The choices come from the reservoirs the map currently holds,
+  so they follow the Utah and connected scopes, and a choice that leaves the
+  scope falls back to all areas rather than dimming everything. It joins the
+  address bar as `?area=…` with the rest of the view.
+- **A shared link now carries the whole view.** The analysis controls join the
+  address bar beside the selection: `?reservoir=…&storage=…&reporting=…&powell=…`
+  restores the filters and the Lake Powell scope as well as the reservoir, so a
+  filtered view can be handed to somebody else and arrive as what the sender was
+  looking at. Anything left at its default is written as absence, so an
+  untouched dashboard still has a clean URL, and a parameter belonging to
+  another page is preserved rather than dropped.
+
+- **Shareable links on the modern map.** Selecting a reservoir now writes
+  `?reservoir=` into the address bar without a reload, and opening such a link
+  restores the selection and eases the map to it. The parameter name and its
+  encoding are the ones the statewide overview has always produced, so a link
+  opens the same reservoir on all four pages. History is replaced rather than
+  pushed: the address bar describes the view, it does not log how the reader
+  reached it.
+
+- **Analysis controls on the modern map.** The storage summary's placeholder
+  is now two working filters: storage level, whose choices are the storage
+  classes themselves, and reporting state. Reservoirs the filter excludes stay
+  on the map in grey and stay in the list, dimmed and still selectable — the
+  panel reports how many of how many are shown. Moving the pointer over a
+  reservoir now uses the SDK's own emphasis on the layer view instead of a
+  drawn ring.
+
+- **One reservoir feature layer, one composed symbol.** The modern map draws
+  each reservoir as a single feature of a client-side `FeatureLayer` rather
+  than as a pair of stacked markers. Capacity ring, proportional storage fill,
+  the dashed late-reading accent and a soft shadow are now one CIM symbol
+  built from the same tested radii and class colours as before. The layer
+  carries the object ID, name, size basis, fill percentage and late-reading
+  state that the upcoming map filters need, and the readiness signal reports
+  how many symbols the renderer actually holds.
+
+- **ArcGIS Charts data workspace.** The primary overview now cross-filters its
+  KPI strip, largest-reservoir chart, drainage-area chart, and semantic table
+  by reservoir, drainage area, and reporting status. Esri chart action bars
+  provide interactive inspection and export, and a muted Southwest theme keeps
+  the analytical layout usable from desktop to phone widths.
+
+- **ArcGIS is the primary application.** `modern.html` now carries the official
+  ArcGIS Maps SDK for JavaScript name; MapLibre and the original chart/table
+  page remain clearly labeled legacy comparisons.
+
+- **Phase 3 pointer interaction.** The modern map now throttles hover hit tests,
+  shows reservoir name, percent full, and reading date in a lightweight card,
+  and supports pointer selection through the map component's documented event
+  coordinates.
+- **A browser smoke test for the Phase 2 shell**, at 1280, 390 and 360 pixels,
+  asserting every reservoir drew, the details a selection produces, no
+  sideways scroll, and no retired vocabulary anywhere a reader can see it —
+  open shadow roots included.
+- **Reservoirs on the Phase 2 shell.** `modern.html` now draws every reservoir
+  in the selected Utah waterbody scope, excluding Lake Powell, from the
+  committed data, over the Utah mask and the
+  drainage-area outlines, with the same class colours and the same size basis
+  the production maps use. Selecting one — by pointer on the map, or from a
+  focusable list of every reservoir in the storage summary — gives its name,
+  percent full, what that percentage is measured against, stored volume,
+  reading date, measuring agency and drainage area, and says so when the
+  reading is late. Boundaries load on their own path: a missing or malformed
+  boundary file costs the reader context and leaves every reservoir drawn.
+- **The Phase 2 application shell.** `modern.html` now uses the ArcGIS 5.1 and
+  Calcite 5 components with responsive summary and detail surfaces, persisted
+  system/light/dark themes, anonymous-only map authentication, and visible
+  loading, empty, data-error, map-error, and unsupported-browser states.
+- **Hover reading on both maps.** Pointing at a reservoir shows its name,
+  percent full and reading date without a click.
+- **Filter dimming.** A percent-full class filter and a "show only late data"
+  switch keep matching reservoirs bright and let the rest recede, rather than
+  removing them — the empty reservoirs being the southern half of the state is
+  the answer, and deleting the others deletes it.
+- **A twelve-month time slider** on both maps, with play, pause and a return to
+  today. The data already held twelve months per reservoir and the maps only
+  ever drew today. A month a reservoir never reported draws as a small grey
+  circle, not as an empty one.
+- **Deep links on both maps.** `?reservoir=Deer+Creek` opens that reservoir,
+  selecting one updates the address bar, and the back and forward buttons work.
+  The parameter matches the overview's, so links are interchangeable across all
+  three pages.
+- **A keyboard path to every reservoir.** Both maps now carry a focusable list
+  of every published reservoir, in size order, with focus moving into a popup
+  when it opens and back to the button when it closes. Chart bars are reachable,
+  and selections are announced politely.
+- **Drainage areas on the overview.** A capacity-weighted total per hydrologic
+  unit, with the reservoir count and combined full level beside each one.
+  Selecting an area filters the ranking, table and cards together and is
+  shareable as `?area=160201`.
+- **Upper Snake is out of scope.** The drainage areas are now those that touch
+  Utah *and* belong to the Colorado River or Great Basin systems. Upper Snake
+  clips Utah's northern edge but drains to the Columbia, and its thirteen
+  storage stations are Idaho reservoirs. Fourteen areas, not fifteen; no
+  published number changes, because it never held a tracked reservoir.
+- **Fontenelle Reservoir**, in Wyoming on the Green above Flaming Gorge. The
+  54th reservoir, and the only one of Reclamation's five Upper Colorado
+  candidates whose drainage area touches Utah.
+- **Watershed assignment now uses each dam's own coordinates** where the
+  National Inventory of Dams has them (29 of 54), instead of a point out on
+  the lake. No reservoir changed drainage area; each record says which kind
+  of point was used.
+- **Watershed membership.** Every reservoir carries the six-digit hydrologic
+  unit its water drains through, whether it is in Utah, and the point the
+  assignment used. Boundaries ship as a committed `huc6.geojson`.
+- Architecture decision records, in [`docs/decisions/`](docs/decisions/).
+
+### Changed
+
+- **Every map opens on the Oceans background.** It carries seafloor and
+  land relief under a quiet set of labels, so the terrain the water sits
+  in is visible — which the deliberately blank gray canvases could not
+  show. The theme-matching canvases are kept as the next choice, so a
+  reader on the dark page still gets a dark background if the preferred
+  one is ever unavailable.
+
+- **The snow and drought map cards are taller, and open on the drainage
+  areas.** A wide, short card has to sit much further out to hold the same
+  region, which had left both maps opening about a third further out than
+  the storage map. They now open within half a zoom step of it.
+
+- **Storage colours now use an accessible red-to-blue scale and regular
+  intervals.** Five equal 20-point bands replace the uneven red-to-green
+  classes. Low storage is red, high storage is blue, and the pale middle
+  colours have visible edges on map and chart marks. Overview counts choose
+  dark or light text from their background colour instead of assuming one
+  foreground works across the scale.
+- **Reservoir summaries now make changes comparable across reservoir sizes.**
+  The details panel and comparison-map popup show both acre-feet and percentage
+  change for 30 days and one year. The primary-map hover summary also includes
+  current storage and the 30-day percentage change. Monthly comparison tables
+  use the same full-level basis as their map symbols.
+
+- The starting extent is one zoom level wider. It is marked provisional: it
+  stops making sense once connected out-of-state reservoirs land.
+- All visible text now follows Simplified Technical English, enforced by tests
+  (ADR-006).
+- The statewide trend chart is drawn with Observable Plot, with pointer tips
+  and controls for scope and units.
+- The site is built with Vite and published to GitHub Pages by Actions.
+
+### Fixed
+
+- **The twelve-month trend chart now draws twelve months.** Every reservoir
+  carries twelve months of history, but a reservoir with late data carries an
+  *older* twelve, so the months across the whole set span further back than
+  any single reservoir's window -- the chart drew fourteen or fifteen bars
+  under a title that said twelve. The trend now keeps the newest twelve
+  months it can see. The map's month slider is unchanged on purpose: a
+  slider position claims only that some reservoir reported that month, not
+  that the last year contains it.
+
+- **The scatter chart's pointer summary names the dot's drainage area
+  again.** The charts SDK asks the layer only for numeric fields and for the
+  field its renderer colours by, so the drainage-area name -- a text field
+  that is neither -- never arrived, and every dot read "Drainage area: Not
+  reported". The summary now looks the reservoir up by the stable object id
+  the SDK does deliver, which also stops the reservoir's own name depending
+  on how the SDK treats the renderer's field.
+
+- **The overview charts no longer reserve a white rail for an empty menu.**
+  The charts action bar had no actions to show, so its expand control only
+  opened and closed blank space while taking width away from every chart. The
+  rail and its inactive collapse state are removed, and each chart now uses
+  the full card width.
+- **Chart pointer summaries now have a consistent reading order.** Reservoir
+  or month names lead, followed by one fact per line with the correct unit.
+  The storage-against-normal chart no longer puts text fields into an SDK
+  option that supports numbers only, and the trend no longer repeats the same
+  value for its matching bar and line. Runtime names are escaped before the
+  charts SDK interprets the summary as markup.
+- **The reservoir bar chart now keeps the selected ranking.** The data was
+  prepared in Capacity, Storage, Percent full or Name order, then the chart
+  model sorted it by bar length again. It now preserves the order the reader
+  chose, including when acre-feet stored is the selected measure.
+- **Primary-map pointer input is limited to the current reservoir layer.** A
+  click now uses the SDK's immediate feedback event, and click and hover tests
+  exclude drainage areas, labels and old layers from their results. Late
+  answers from a layer that has since been replaced are ignored, and the
+  pointer changes shape when it is over a reservoir.
+
+- **Clicking a reservoir on the primary map now selects it straight away.**
+  The map answered a click with a reservoir that carried no name, so the click
+  cleared the details panel instead of opening it. It only affected the map as
+  first drawn: changing which reservoirs are shown built the layer again, and
+  from then on every click worked, which is why the fault looked intermittent.
+  The map now asks for every field it reads and falls back to the stable
+  reservoir object ID when the SDK still omits the name. The ring around the
+  selected reservoir also stayed above the circles only until the reservoirs
+  were redrawn, and now stays above them.
+
+- **Clicking or hovering a reservoir on the primary map worked again.** The
+  object-ID fallback above read the hit's layer off `graphic.layer`, which
+  the 2D feature layer view leaves `undefined` for an ordinary feature hit --
+  it only sets that property for track and aggregate hits. The SDK's own
+  `GraphicHit` type carries the layer on the hit result itself, not the
+  graphic, so the fallback silently never matched and every click and hover
+  on a reservoir point fell through to "nothing here," while the reservoir
+  list kept working because it never goes through `hitTest`. Reading
+  `result.layer` instead resolves both.
+
+- **The overview's six charts now match the page's own light or dark theme.**
+  `createModel` builds every chart against its own defaults -- a white
+  background, near-black axis text and lines -- and nothing here ever told
+  it otherwise, so a chart sat inside a card looking like neither theme. The
+  first attempt at this read Calcite's own stock colour ramp, which is nearer
+  to plain grey and white than this app's own warm, muted cream-and-charcoal
+  tokens (`app.css`) -- so the fix "worked" and still looked wrong. Reading
+  the app's own `--app-surface-raised`, `--app-text` and `--app-border`
+  instead is what actually matches the card each chart already sits inside.
+  Colours are re-read and reapplied if the reader flips the theme toggle
+  after the charts have drawn, since a chart bakes the colours it read at
+  mount time into its own config rather than tracking the CSS variables live.
+- **Chart tooltips now name the reservoir or drainage area they are over.**
+  Four of the five chart layers had no `displayField`, so their tooltips
+  listed every field with its raw alias rather than opening with the one
+  that says what the mark *is*. The fifth -- the box plot behind "spread
+  within each drainage area" -- did have a name for its category, but never
+  named its own series, so its tooltip opened with `Field: series_1786…`, a
+  generated id, sitting right above the `Drainage area` row that already
+  answered the same question. And the scatter chart ("stored now against
+  normal") plots two numbers with no category field between them, so neither
+  fix touched it: nothing in its axes or `displayField` carries the
+  reservoir's name into a tooltip built only from what a point is plotted
+  against, and the tooltip read three numbers with no way to say whose they
+  were. Its name and drainage area are now listed explicitly instead, the
+  one lever a scatterplot tooltip actually exposes -- the two plotted values
+  still list first, which this chart type does not allow changing, so the
+  name is the first line after them rather than the very first line.
+
+- **The overview's charts say what kind of chart they are.** Every chart
+  card carried the same "ArcGIS Chart" badge, which named the SDK rather
+  than the chart -- a bar chart, a histogram and a box plot all wear the
+  same label. Each now says which one it is.
+
+- **The twelve-month trend is a bar chart with a line over it, not a bare
+  line.** Twelve points and nothing else read as mostly empty space, and a
+  bar gives every month the same visual weight the rest of the page's bars
+  do. The line stays, drawn over the bars, for the one thing a bar chart
+  alone cannot show: which way the last twelve months are going.
+
+- **The distribution histogram's axis reads whole numbers.** Its bins are
+  computed from the data's own range rather than fixed ten-point bands (see
+  the note in the source on why), so the bin edges -- and the axis labels at
+  them -- used to carry the data's own fractional digits, printing edges
+  like 40.74 instead of 41. The axis now rounds its own display.
+
+- **The primary map now draws the symbol sizes its code specifies.** CIM
+  marker dimensions are points, but the renderer passed CSS-pixel diameters
+  into them unchanged, making every reservoir circle one third wider than
+  intended. The renderer now converts units at its boundary. Drainage-area
+  names are eligible at the opening scale and use a stronger white halo, so
+  they remain readable over boundaries, circles and varied map backgrounds.
+
+- **The weekly storage comparison now states its basis.** Reservoir details say how many
+  earlier years support the value. The methods page explains that the comparison uses
+  readings from 2015 through the preceding year within a seven-day window, and warns that
+  this predominantly dry record is not a long-term climate average.
+
+- **Reservoir symbols now separate when the map zooms in.** The ArcGIS 5.1
+  map no longer enlarges circles with every zoom step, and its largest ring
+  is narrower at the opening view. The initial regional extent now accounts
+  for the storage panel before the view resolves. Each six-digit drainage
+  area also has one name label source, including areas made from more than
+  one polygon.
+
+- **Browsers without WebGL 2 no longer get stuck on a loading map.** ArcGIS
+  Maps SDK 5.1 requires WebGL 2, but the shell previously accepted a WebGL 1
+  context and started a renderer that could never succeed. The capability
+  check now requires WebGL 2 and directs unsupported Safari configurations to
+  the accessible reservoir overview instead.
+- **Four loading states could never end.** No data fetch had a deadline, so a
+  request that hung left the storage summary on "Loading reservoir data"
+  indefinitely and the overview holding a bare spinner with no error path ever
+  reached. The map kept announcing itself as loading if its view neither
+  started nor failed. The overview left both chart hosts announcing the same
+  after a chart threw, and awaited a rendering event from the charts SDK that
+  has been observed never to arrive even with the bars fully drawn. Every one
+  of these now has a deadline and a terminal state — a spinner that cannot
+  resolve is not a loading state, it is an error nobody is being told about.
+- **The MapLibre title card covered its own zoom control on a phone.** The
+  card ran the full width and pushed the control down by an offset measured
+  after the reservoir data arrived, so until then — and whenever the data
+  never arrived — the control sat underneath it. The card now keeps a right
+  gutter below 640px, the same solution the ArcGIS page has used since the
+  overlap was first found there, and the control stays in its corner. The
+  browser test measured this on the ArcGIS page only, which is why it went
+  unnoticed; it now checks both engines.
+- **All three maps opened on a hand-drawn box.** The map's geography now
+  comes from the drainage-area polygons it draws (ADR-017): every map opens
+  one zoom level out from them, which is also the furthest out any of them
+  goes, so the watersheds get the middle of the canvas instead of a third of
+  it. Nothing caps the way in any more — the maps zoom to level 23, deep
+  enough to read an individual dam.
+- **The modern map could be panned out of the region entirely.** Both
+  production maps have constrained navigation to the drainage areas around
+  Utah since that fix landed; the modern shell had no constraints at all, so
+  a reader could pan a Utah dashboard into open ocean and find an empty
+  background with no way back except reloading.
+- **The modern map's header cut off two controls on a phone.** At 375px the
+  title, its second line and the "Table and charts" label came to 446px of
+  content in a 375px bar. The header lays out in one row and clips what does
+  not fit, so the page never scrolled sideways and the existing width test saw
+  nothing wrong — while the reservoir details and theme controls sat entirely
+  off screen with nothing to reveal them. The controls are now measured
+  against the viewport by the browser test.
+- **The analysis controls sat behind a nested scroller.** They followed the
+  reservoir list, which scrolls inside its own box, leaving them 238px below
+  the fold in the desktop panel and 815px down the phone sheet. Controls now
+  come before the list they control, and the phone sheet is sized by
+  `--calcite-sheet-height` — the property that sets the height, where the
+  previous `--calcite-sheet-max-height` only capped it and left the sheet at
+  365px of an 812px phone.
+- The modern map keeps locally committed reservoirs and drainage areas visible
+  when every anonymous ArcGIS basemap candidate is unavailable, with a clear
+  degraded-background notice instead of an empty map.
+- Both legacy map engines now enforce a Utah-region pan extent and minimum
+  zoom, preventing accidental navigation to a world view.
+- All map masks and `in_utah` classification now use the committed,
+  authoritative UGRC Utah State Boundary instead of a six-corner approximation.
+
+- Lake Powell is excluded from the default modern map, metrics, charts, and
+  table by its stable RISE item identifier (509), with a normalized-name
+  fallback for older payloads.
+
+- **The basemap fallback now notices a refused background.** A basemap whose
+  style answers 401 still resolved its own `load()`, so the preferred
+  background "succeeded" onto a frame that could not draw and no fallback was
+  ever taken. Candidates carry a verification step now, and a refused style is
+  an ordinary candidate failure. Found by running the new smoke test with the
+  first basemap refused; with the anonymous-auth policy removed, that same run
+  puts a password field on the page.
+- **MapLibre hover no longer throws.** Its pointer handler referenced a
+  reservoir lookup that the page never constructed; a regression test now
+  keeps the lookup and handler together.
+- **Cross-border reservoirs now count as Utah waterbodies.** Bear Lake and
+  Meeks Cabin Reservoir extend into Utah even though their published points
+  are in Idaho and Wyoming. The Utah total now uses reviewed USGS waterbody
+  footprints instead of point location alone.
+- **Upper Snake is removed from the live map query.** The committed boundary
+  file already excluded region 17, but the two legacy maps still asked the
+  live service for every area that touched Utah and could draw Upper Snake.
+- **`Ken's Lake` was unclickable.** The shared HTML escaper never escaped
+  apostrophes, so the name broke out of its own `data-name='…'` attribute and
+  shattered into junk attributes. Its ranking row, table row and sparkline card
+  all rendered, counted toward the tests' expected total, and did nothing when
+  activated.
+- **The ArcGIS colour ramp was silently truncated.** A `MapView` supports at
+  most 8 stops on a colour visual variable and the ramp needed 10; the map drew
+  an SDK-simplified approximation of the class table rather than the table.
+  Now a `UniqueValueRenderer` with no such limit.
+- **The Utah mask had been deleted** several commits earlier while the README
+  still described it. Restored, under the drainage-area outlines.
+- **Focus never returned from an ArcGIS popup.** Opening one fires a spurious
+  "not visible" first, which was read as a close and consumed the stored
+  opener, so Escape dropped focus on the document body.
+- **The reservoir list ran underneath the legend** at common window sizes.
+  Both were capped by a guessed constant that had gone stale as each grew.
+- **The overview scrolled sideways on a phone.** A `<select>` sized itself to
+  its longest option inside a grid item that would not shrink.
+- **The ArcGIS zoom control overlapped the title card** on a phone, and was
+  missing entirely at phone widths in CI after a first attempt to move it.
+- Contrast failures on link, caption and axis text across all three pages.

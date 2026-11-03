@@ -70,6 +70,7 @@ export function methodsMarkup(search: string): string {
         aria-busy="true">Reading the published data&hellip;</p>
       <p><a href="./data.html">Use the public data API</a> to download the published
         reservoir, snow and reference files directly.</p>
+      <p><a href="./reporters.html">For reporters</a>: help with quoting figures, sources and publishing charts.</p>
     </header>
 
     <nav class="methods-toc" aria-label="On this page">

@@ -578,3 +578,14 @@ their SDKs, chart libraries or copies of application logic.
 - `requestAnimationFrame` never fires in a hidden browser pane, and
   `view.hitTest()` never settles there — it is resolved by the same render
   loop. Hover cannot be exercised in that environment.
+
+### Reader context after a place change (ADR-151)
+
+Snow's `snowScopeSummary` is rebuilt on every figure update from the current
+area and the selected state. Clearing the area removes its old opening label;
+a coarser opening place is retained while it still bounds the loaded payload.
+Clearing a coarser opening area navigates to load the wider station set.
+Weekly snow and drought headings explicitly say whole region beside filtered
+storage. The Data page documents daily precipitation and its encoded history
+at their existing `data/` paths, with schema coverage tests. The static
+`reporters.html` guide is linked from Methods, Data and reading-page footers.

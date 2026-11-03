@@ -190,7 +190,8 @@ ADR-008, then ADR-032 and ADR-061.**
   [ADR-131](ADR-131-map-recent-precipitation-by-drainage-area-in-the-snow-colours.md),
   [ADR-132](ADR-132-draw-storage-charts-when-they-near-the-screen.md),
   [ADR-133](ADR-133-serve-atkinson-hyperlegible-next-from-this-site.md),
-  [ADR-142](ADR-142-show-the-weeks-change-in-mountain-soil-moisture.md)
+  [ADR-142](ADR-142-show-the-weeks-change-in-mountain-soil-moisture.md),
+  [ADR-151](ADR-151-keep-reader-context-with-the-current-figures.md)
 - Superseded, read only for history: ADR-007, ADR-016, ADR-022, ADR-025,
   ADR-027, ADR-030, ADR-043, ADR-054
 - Current architecture: [`docs/architecture/frontend.md`](../architecture/frontend.md)
@@ -354,3 +355,15 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-147](ADR-147-hold-every-published-reservoir-name-to-the-waters-own-name.md) | Hold every published reservoir name to the water's own name | Accepted; extends ADR-079; eighteen more roster names renamed with fifteen former names added; a test refuses provider text in any roster name, with an allow list and a held list |
 | [ADR-148](ADR-148-put-river-flow-in-the-page-menu-and-the-bar.md) | Put river flow in the page menu and the bar | Accepted; supersedes ADR-136's reader-surface clause; a seventh `PAGES` entry between Drought and Methods, not in the first-visit chooser; page-link buttons show icons alone from 64rem to 72rem, the river flow button to 75rem |
 | [ADR-149](ADR-149-let-the-weekly-storage-figures-follow-every-filter.md) | Let the weekly storage figures follow every filter | Accepted; supersedes the ADR-011 scope-versus-filter line for the storage charts' weekly card; its storage figures follow the state, county, search, reporting and storage-class filters as well as both switches and the drainage area; snow and drought stay whole-region; the scope line says "N of M" |
+
+| [ADR-150](ADR-150-read-the-daily-series-before-calling-a-station-quiet-or-a-high-a-spike.md) | Read the daily series before calling a station quiet or a high a spike | Accepted; extends ADR-116; the California audit screens the daily series where the monthly one is silent, a monthly high the daily reading confirms is not a spike, and the refresh reports a record high above the full level or a record low far below its neighbours, removing nothing; ADR-148 and ADR-149 are other records |
+| [ADR-151](ADR-151-keep-reader-context-with-the-current-figures.md) | Keep reader context with the current figures | Accepted; current snow place sentence, regional weekly headings, reviewed reservoir lead and share context, split soil lists, precipitation reference and reporter guide; amends ADR-135 and ADR-142 presentation only |
+
+## Relationship to the historical journal
+
+[`docs/history/modernization-2026.md`](../history/modernization-2026.md) is a
+journal: it changed as phases landed, and it records measurements, spikes and
+things noticed while testing. These records are the opposite — each one is
+fixed at the moment of decision. Where the two overlap, the journal is the
+narrative and the record is the decision. Neither is current architecture;
+that is [`docs/architecture/`](../architecture/README.md).

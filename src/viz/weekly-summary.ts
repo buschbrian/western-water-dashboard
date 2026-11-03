@@ -239,10 +239,10 @@ export function describeWeek(summary: WeeklySummary): WeeklySection[] {
       lines: describeStorage(summary.storage) },
     { heading: "The week's movers, same reservoirs",
       lines: describeMovers(summary.storage) },
-    { heading: headingWith("Mountain snow",
+    { heading: headingWith("Mountain snow, whole region",
         countOf(summary.snow?.reporting, "reporting site")),
       lines: describeSnow(summary.snow) },
-    { heading: headingWith("Drought",
+    { heading: headingWith("Drought, whole region",
         countOf(summary.drought?.units, "drainage area")),
       lines: describeDrought(summary.drought) }
   ].filter((section) => section.lines.length > 0);

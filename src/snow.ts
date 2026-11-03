@@ -34,7 +34,6 @@ import {
   EMPTY_OPENING_ROSTERS
 } from "./data/opening-scope";
 import { readStoredPlace, resolveOpeningPlace, searchWithPlace } from "./state/opening-preference";
-import { stateName } from "./data/state-vocabulary";
 import { loadArchivedSeason, loadSnowpack } from "./data/snow-load";
 import { hydrologicPath } from "./data/hydrologic-path";
 import { loadUpstreamIndex } from "./data/load";
@@ -83,7 +82,7 @@ import {
   type SiteRow,
   type SiteStatus
 } from "./snow-model";
-import { openingAreaName, payloadForOpeningScope } from "./snow-place";
+import { openingAreaName, payloadForOpeningScope, snowScopeSummary } from "./snow-place";
 import { levelFromSearch, writeLevel } from "./state/level";
 import { searchForSeason, snowStateFromSearch, writeSnowUrl } from "./state/snow-url";
 import type { SnowpackPayload, SnowSite } from "./types";
@@ -139,34 +138,7 @@ import "./styles/snow.css";
  * break it.
  */
 
-/**
- * The summary sentence a reader sees once `?state=` or `?area=` has
- * narrowed the page -- Simplified Technical English (ADR-006): a place name
- * and nothing else, never the codes or the hydrologic vocabulary they come
- * from. `null` for the whole region, which already has its own wording on
- * the KPIs below ("the whole region") and does not need a second sentence
- * saying the same thing.
- *
- * `widenedForSite` overrides everything else: it carries a linked
- * measurement site's own name when that site would otherwise have been
- * dropped by the scope a `?state=`/`?area=` link asked for, which is
- * exactly the case the bootstrap below widens the whole scope back to "all"
- * for. A reader following a link to one site must not find it missing, and
- * a page that silently widened out from under a stated filter without
- * saying so would read as a bug even though it is the correct repair.
- */
-function openingScopeSummary(scope: OpeningScope, widenedForSite: string | null): string | null {
-  if (widenedForSite !== null) {
-    return `Showing the whole region so the linked measurement site, ` +
-      `${widenedForSite}, is included.`;
-  }
-  const state = scope.selection.state !== "all" ? stateName(scope.selection.state) : null;
-  const area = openingAreaName(scope);
-  if (state && area) return `Showing snow measurements for ${state}, in ${area}.`;
-  if (state) return `Showing snow measurements for ${state}.`;
-  if (area) return `Showing snow measurements for ${area}.`;
-  return null;
-}
+
 
 setCalciteAssetPath(new URL(/* @vite-ignore */ "../", import.meta.url).href);
 const root = document.querySelector<HTMLElement>("#snow-app");
@@ -349,17 +321,6 @@ function renderSnow(
   }
 
   const scopeSummaryEl = document.querySelector<HTMLElement>("#snow-scope-summary");
-  if (scopeSummaryEl) {
-    /* Real text, not markup: `openingScopeSummary` builds its sentence out
-     * of a hardcoded state-name table and the reference export's own `name`
-     * field, and this file's own discipline (see the site-detail comment
-     * below) is that runtime-sourced words never pass through `innerHTML`.
-     * Hidden rather than absent from the template when there is nothing to
-     * say, so nothing else on the page has to shift to fill the gap. */
-    const summary = openingScopeSummary(openingScope, widenedForSite);
-    scopeSummaryEl.textContent = summary ?? "";
-    scopeSummaryEl.hidden = summary === null;
-  }
 
   const upstreamSummary = document.querySelector<HTMLElement>("#snow-upstream-summary");
   if (upstreamSummary && upstreamView) {
@@ -921,6 +882,14 @@ function renderSnow(
 
   const update = (): void => {
     const chosen = currentArea;
+    if (scopeSummaryEl) {
+      const area = chosen !== null
+        ? choices.find((choice) => choice.code === chosen)?.label ?? null
+        : openingAreaCleared ? null : openingAreaName(openingScope);
+      const summary = snowScopeSummary(openingScope.selection.state, area, widenedForSite);
+      scopeSummaryEl.textContent = summary ?? "";
+      scopeSummaryEl.hidden = summary === null;
+    }
     const chosenLabel = chosen === null
       ? "the whole region"
       : choices.find((choice) => choice.code === chosen)?.label ?? "the whole region";
@@ -1256,7 +1225,13 @@ function renderSnow(
         /* Only a real reader pick reaches this callback. That is what keeps
          * a shared `?area=14` link from being treated as cleared before the
          * reader has touched anything. */
-        if (code === null) openingAreaCleared = true;
+        if (code === null) {
+          if (openingScope.selection.area !== null && openingScope.selection.area.length < level) {
+            navigateWithPlace(selection);
+            return;
+          }
+          openingAreaCleared = true;
+        }
         currentArea = code;
         update();
       }, { scale: "l" });

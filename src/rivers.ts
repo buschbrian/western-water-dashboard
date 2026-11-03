@@ -12,6 +12,7 @@
 import "@esri/calcite-components/main.css";
 import { setAssetPath as setCalciteAssetPath } from "@esri/calcite-components";
 
+import { stateName } from "./data/state-vocabulary";
 import { downloadCsv } from "./data/download";
 import { loadRivers } from "./data/load";
 import {
@@ -190,7 +191,11 @@ function render(payload: RiverPayload): void {
   const compared = payload.gauges.filter((gauge) => gauge.compared_with_normal).length;
   const groups = groupGauges(payload.gauges);
   const ordered = [...groups.natural, ...groups.shaped];
-  if (ordered.length > 0) children.push(summaryTable(ordered));
+  if (ordered.length > 0) {
+    const states = [...new Set(ordered.map((gauge) => stateName(gauge.state)))].sort();
+    children.push(note(`This page covers ${ordered.length} reviewed gauges in ${states.join(", ")}.`),
+      summaryTable(ordered));
+  }
   for (const [title, gauges] of [[NATURAL_GROUP_HEADING, groups.natural],
     [SHAPED_GROUP_HEADING, groups.shaped]] as const) {
     if (gauges.length === 0) continue;

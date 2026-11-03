@@ -3243,7 +3243,7 @@ for (const viewport of VIEWPORTS) {
       scroll: document.documentElement.scrollWidth
     }));
     console.log("  ready:", JSON.stringify(state.ready));
-    check(state.ready?.files === 11 && state.files === 11,
+    check(state.ready?.files === 13 && state.files === 13,
       `${label}: rendered ${state.files} file cards, readiness reported ${state.ready?.files}`);
     check(state.ready?.groups === state.groups && state.groups >= 20,
       `${label}: rendered ${state.groups} field groups, readiness reported ${state.ready?.groups}`);
@@ -3261,6 +3261,8 @@ for (const viewport of VIEWPORTS) {
       "./api/snowpack.json", "./snow.html",
       // Each finished snow season, frozen (ADR-121).
       "./data/snow/snowpack-wy2026.json",
+      "./data/precipitation.json", "./precipitation.html",
+      "./data/precipitation_history.json",
       // The week's change in soil moisture (ADR-142).
       "./data/soil_moisture.json", "./precipitation.html",
       "./api/soil_moisture_history.json",
@@ -3612,6 +3614,8 @@ for (const viewport of VIEWPORTS) {
     });
     await tab.waitForFunction(
       () => window.__snowReady && window.__snowReady.area === null, { timeout: 10000 });
+    check(await tab.locator("#snow-scope-summary").isHidden(),
+      `${label}: the opening place sentence survived clearing the drainage area`);
     const state = await tab.evaluate(() => ({
       ready: window.__snowReady,
       tableRows: document.querySelectorAll("#snow-site-rows tr").length,
@@ -3812,6 +3816,21 @@ for (const viewport of VIEWPORTS) {
     checkLabelFonts(check, label, labelFonts);
     await checkAccessibility(tab, check, label);
     await tab.screenshot({ path: `screenshots/snow-${viewport.name}.png`, fullPage: false });
+    if (viewport.name === "desktop") {
+      await tab.goto(`${URL}snow.html?state=all&area=14`, { waitUntil: "domcontentloaded", timeout: 60000 });
+      await tab.waitForFunction(() => window.__snowReady !== undefined, null, { timeout: 60000 });
+      await tab.waitForSelector(".drainage-menu calcite-select");
+      await tab.evaluate(() => {
+        const select = document.querySelector(".drainage-menu calcite-select");
+        select.value = "all";
+        select.dispatchEvent(new CustomEvent("calciteSelectChange", { bubbles: true }));
+      });
+      await tab.waitForURL((url) => !url.searchParams.has("area"), { timeout: 10000 });
+      await tab.waitForFunction((sites) => window.__snowReady?.sites === sites,
+        snowPayload.site_count, { timeout: 60000 });
+      check(await tab.locator("#snow-scope-summary").isHidden(),
+        `${label}: clearing a coarser place did not restore the whole station set`);
+    }
   } catch (err) {
     failures.push(`${label}: ${err.message}`);
   }
