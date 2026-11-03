@@ -71,9 +71,14 @@ sensor, day **and** raw value, so a corrected reading returns by itself.
 
 Reclamation's RISE API uses the same mechanism with the item as both station
 key and sensor (`load_excluded_readings(path, None)`), applied in
-`fetch_rise_series`. Three Rifle Gap Reservoir results (item 134092, 28 to 30
-October 2026) are excluded against USGS 09091900; RISE corrected its 24 to
-27 October results itself. Each day's value is its own
+`fetch_rise_series`. Five Rifle Gap Reservoir results (item 134092) are
+excluded against USGS 09091900: 263.24 acre-feet stamped 28, 29 and 30 October,
+278.55 on 31 October and 400.65 on 1 November 2026. RISE corrected its 24 to
+27 October results, then its 28 and 29 October results; the corrected raw
+values pass through. The November 2 release publishes the accepted 29 October
+reading marked late and infers no replacement storage. The provider
+discrepancy remains open in [issue #91](https://github.com/buschbrian/western-water-dashboard/issues/91).
+Each day's value is its own
 exclusion, so a further false day needs its own reviewed record; the series
 then ends at the last good reading and the ordinary stale and withdrawal rules
 (`STALE_AFTER_DAYS`, `WITHDRAW_AFTER_DAYS`) apply.
@@ -96,6 +101,8 @@ A sixth was excluded on 2026-10-31: Buchanan Dam's 172,105 acre-feet at its
 December 2022 monthly stamp. The station's own daily series reports 22,809
 on 31 December 2022, and has not exceeded 139,059 since 2015. The provider
 question is tracked in [issue #100](https://github.com/buschbrian/western-water-dashboard/issues/100).
+Eastman Lake, behind Buchanan Dam, passes the admission screens with that
+reading excluded and is published.
 
 **A monthly reading can be checked against the station's own daily series.**
 A CDEC monthly value is the daily value on the month's last day, rounded to
@@ -327,6 +334,9 @@ suggestion nobody has ruled on.
    independent figure, exclude that one reading with its evidence (ADR-116)
    and re-run the screens; never repair it.
 6. Add the roster entries **and** run the refresh in the same change.
-7. Build the missing normals: `tools/build_normal_baselines.py --missing`.
+7. Build missing normals with `tools/build_normal_baselines.py --missing`.
+   If an exclusion or provider correction changes inputs to an existing
+   normal, rebuild the affected reservoirs with `--only "Name"`, then refresh
+   their published records. See [Data refresh](data-refresh.md).
 8. Re-run the dam-versus-waterbody check; it is what found Lake Powell.
 9. `npm run verify:pipeline`.

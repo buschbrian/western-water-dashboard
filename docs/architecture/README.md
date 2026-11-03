@@ -32,18 +32,23 @@ test is right and the prose is a bug.
 
 ## Product shape
 
-One typed ArcGIS 5.1 + Calcite 5 application with four analytical surfaces,
-three documentation pages, three compatibility redirects, one frozen source
-oracle, and two Python pipelines.
+One typed ArcGIS 5.1 + Calcite 5 application with analytical, reading and
+documentation pages, three compatibility redirects, one frozen source oracle,
+and the Python pipelines.
 
 | Path | Role |
 |---|---|
 | `index.html`, `modern.html`, `src/main.ts` | Primary reservoir storage map, and its stable alias. |
 | `overview.html`, `src/overview*` | ArcGIS Charts storage workspace. |
+| `reservoir.html`, `src/reservoir*` | One reservoir's readings, comparisons, reviewed level and share frame (ADR-135, ADR-141). |
 | `precipitation.html`, `src/precipitation.ts` | Recent and season precipitation at the snow sites (ADR-130). |
 | `snow.html`, `src/snow*` | Snow curves, drainage-area map, site map, detail views. |
 | `drought.html`, `src/drought*` | Weekly drought map and comparison charts. |
-| `methods.html`, `data.html`, `terms.html` | Methods, public data API, terms. |
+| `lakes.html`, `src/lakes*` | Natural terminal-lake surface level and volume (ADR-119). |
+| `rivers.html`, `src/rivers*` | Daily mean river flow, comparisons and grouped readings (ADR-136, ADR-148). |
+| `story.html`, `src/story.ts` | Embeddable figures (ADR-128). |
+| `landscape.html` | Drought photographs and the gallery notice. |
+| `methods.html`, `data.html`, `terms.html`, `reporters.html` | Methods, public data API, terms and publication guidance. |
 | `legacy/`, `maplibre/`, `explore.html` | Compatibility redirects only (ADR-031). |
 | `public/retired-route.js` | Allowlisted URL-state translation for those redirects. |
 | `public/share/` | Hand-kept share pages and fallback pictures for a shared reservoir link (ADR-141). |
@@ -72,18 +77,18 @@ data commit is the deploy.
 renamed to the version, an empty `[Unreleased]` heading is left above it,
 `package.json` and the lockfile are bumped together, and the tag is cut by
 hand. No job tags a release: the one release gate nothing can automate is the
-human visual review, because the ArcGIS canvas is blank in headless Chromium.
+human visual review. Automated readiness, layout and accessibility checks do
+not establish map colour balance, terrain, density or visual hierarchy; see
+the [verification limits](../operations/verification.md#two-things-automated-tests-cannot-do).
 The version heading carries the date the tag is cut: whoever cuts it sets
 that date in the changelog first, then tags that commit.
 
-**Release order confirmed by the owner on 2026-09-18:** release 1.0.0 first.
-The existing Topaz Lake PR [#56](https://github.com/buschbrian/western-water-dashboard/pull/56)
+**Release order confirmed by the owner on 2026-09-18:** release 1.0.0 was to
+precede the Topaz Lake PR [#56](https://github.com/buschbrian/western-water-dashboard/pull/56)
 and terminal-lake PRs [#61](https://github.com/buschbrian/western-water-dashboard/pull/61)
-and [#62](https://github.com/buschbrian/western-water-dashboard/pull/62)
-follow afterward; they are not prerequisites for 1.0.0. Keep them out of the
-release commit and tag. Their review, conflict resolution, dependency order
-(#61 before #62), and version/changelog updates belong to the next release.
-This sequencing decision does not record completion of the human visual review.
+and [#62](https://github.com/buschbrian/western-water-dashboard/pull/62).
+Those surfaces are now published; this dated sequencing decision is no longer
+a pending release gate. It does not record completion of the human visual review.
 
 The scope closed at 1.0.0
 ([ADR-117](../decisions/ADR-117-close-the-scope-at-version-1-0-0.md)). Work
@@ -99,17 +104,27 @@ edit that survives review is an unreproducible number on a public page.
 | File | Owner | Written by |
 |---|---|---|
 | `reservoirs.json` | generated daily | `refresh_reservoirs.py` |
-| `snowpack.json`, `snow_sites.json` | generated daily | `refresh_snowpack.py` |
+| `snowpack.json` | generated daily | `refresh_snowpack.py` |
 | `data/drought/usdm-current.geojson` | generated weekly | `tools/fetch_drought_monitor.py` |
-| `data/drought/usdm-huc{4,6}.json` | generated daily | `tools/compute_drought_coverage.py` |
-| `data/drought/usdm-huc6-history.json` | generated archive | `tools/compute_drought_coverage.py` |
+| `data/drought/usdm-huc{2,4,6,8}.json` | generated daily from the monitor's weekly map | `tools/compute_drought_coverage.py` |
+| `data/drought/usdm-huc{2,4,6}-history.json` | generated archive | `tools/compute_drought_coverage.py` |
+| `precipitation.json` | generated daily | `refresh_station_readings.py` |
+| `soil_moisture.json`, `soil_moisture_history.json` | generated daily | `refresh_soil_moisture.py` |
+| `rivers.json`, `river_history.json` | generated daily | `refresh_rivers.py` |
+| `lakes.json` | generated daily | `refresh_lakes.py` |
+| `elevation_history.json` | generated daily | `refresh_reservoirs.py` |
+| `data/snow/snowpack-wy*.json` | generated archive | `refresh_snowpack.py` |
 | `reference.json` | long-lived derived | `tools/build_reference_export.py` (`--check` guards drift) |
 | `normals.json` | long-lived derived | `tools/build_normal_baselines.py`, on demand only |
+| `river_normals.json` | long-lived derived | `tools/build_river_normals.py` |
+| `precipitation_history.json` | long-lived derived | `tools/build_precipitation_history.py` |
+| `upstream_index.json` | long-lived derived | `tools/build_upstream_index.py` |
 | `counties.json` | long-lived derived | `tools/build_county_assignments.py` |
 | `capacities.json` | long-lived derived | `tools/build_capacity_table.py` |
 | `data/watersheds/*.geojson`, `data/us-land.geojson` | long-lived derived | `tools/fetch_watershed_scope.py`, `tools/fetch_us_land_mask.py` |
 | `admitted_*.json` | **hand-maintained, reviewed** | a person, with evidence |
 | `huc6.geojson`, `utah-boundary.geojson` | frozen historical | nothing; kept for parity |
 
-`data/generated-files.json` is the machine-readable copy of this table, and
-`tests/test_generated_files.py` holds it to the repository.
+`data/generated-files.json` is the complete machine-readable ownership
+registry; this table summarizes the main outputs.
+`tests/test_generated_files.py` holds the registry to the repository.

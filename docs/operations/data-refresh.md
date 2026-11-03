@@ -150,8 +150,13 @@ reservoir in `reservoirs.json`. It is network-bound, not slow: one reservoir is
 12.2 seconds of wall clock for 0.8 seconds of processor, so it fetches
 `--workers` at a time (six by default, kept small because both providers are
 public services this project does not pay for). Run it when the standard
-climate period moves (2021-2050 becomes standard in 2031) or when a reservoir
-joins the roster.
+climate period changes, when a reservoir joins the roster, or when a provider
+correction or reviewed exclusion changes
+the inputs to an existing normal. For a corrected input, use `--only "Name"`
+for each affected reservoir; `--missing` leaves existing records alone. Then
+run that provider's reservoir refresh and rebuild the assistant indexes so
+the public records use the corrected reference. Keep the estimator and schema
+versions unchanged when only the reviewed input readings change.
 
 `build_precipitation_history.py` (ADR-125) fetches every water year from
 1991 for the snow stations, ten at a time, two requests at once: about an

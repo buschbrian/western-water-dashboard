@@ -1,6 +1,7 @@
 # Documentation guide
 
-Checked 2026-09-04 against `main`.
+Checked 2026-11-02 against the release at `0b55f91`
+([PR #112](https://github.com/buschbrian/western-water-dashboard/pull/112)).
 
 ## Which file is the current truth?
 
@@ -71,19 +72,30 @@ evidence about a date, never a description of the present.
 The typed ArcGIS application, western geography, the opening choice and its
 reopen control, the nine reservoir providers, the mountain snow network, the
 upstream sets, four area sizes on every map, accessibility gates and
-compatibility redirects are in production. What remains, in the order it
+compatibility redirects are in production. So are precipitation and soil
+moisture, river flow, the terminal-lake page, reviewed Powell/Mead levels,
+share pictures and the reporter guide. What remains, in the order it
 should be worked:
 
 1. **The human visual review** of every page and viewport. The ArcGIS canvas
-   is blank in headless Chromium, so colour balance, terrain, density and
-   visual hierarchy have no automated evidence at all.
-2. **Implement the reviewed full-level decisions.** ADR-110 permits government
+   can be blank in headless Chromium. Browser suites check readiness, layer
+   counts, accessibility, layout and console errors; they cannot establish
+   map colour balance, terrain, density or visual hierarchy. The November 2
+   release did not complete a manual walkthrough of every map, keyboard path
+   and theme.
+2. **Resolve the remaining full-level evidence.** ADR-110 permits government
    water reports and owner records where NID has no corresponding dam; ADR-111
    uses a dated operating restriction as full while retaining physical
-   capacity. Topaz, Vail and Success are the first candidates. The current
+   capacity. Topaz Lake and Vail Lake are implemented. Success Lake remains
+   held for a full level that contains its 2019 water; Guadalupe still needs
+   one restricted volume from the operator or state. The current
    restriction impact and remaining source work are measured in
    [`OPERATING-RESTRICTION-REVIEW.md`](OPERATING-RESTRICTION-REVIEW.md).
-3. **Keep the automatic late and withdrawn feed reports under review.**
+3. **Keep feed reports and provider discrepancies under review.** The late
+   and withdrawn reports, Rifle Gap issue #91 and the California source
+   issues remain open work. Read the refresh log's record-figure warnings as
+   referrals, not exclusions; the full log can contain more than GitHub's
+   warning annotations show.
 4. **The two vendor accessibility items and the content policy**, both due on
    the next SDK upgrade: the `aria-prohibited-attr` entry in `AXE_EXCEPTIONS`,
    the unnamed Calcite slider handle that `src/ui/slider-label.ts` works
@@ -93,8 +105,8 @@ should be worked:
    data pages (ADR-119). What remains is contract work before it is page work:
    Pyramid Lake needs the volume block to become optional by decision, Great
    Salt Lake needs an arm-aware record, and whether a lake earns a place in the
-   navigation bar waits for a second lake. `docs/data-transfer.md` needs the
-   new payload measured on the wire.
+   navigation bar waits for a second lake. The current lake payload is
+   included in [`data-transfer.md`](data-transfer.md).
 6. **The remaining reservoir coverage gaps, now much narrower.** The Corps of
    Engineers' Columbia Basin service (ADR-102) covers Idaho, Oregon and
    Washington, and the Central Arizona Project (ADR-104) closed Arizona's

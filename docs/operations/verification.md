@@ -9,7 +9,7 @@ CI runs, so a green local target means a green job.
 | `npm run verify:frontend` | typecheck + Vitest + SDK budget + `vite build` | before finishing frontend work |
 | `npm run verify:pipeline` | the pytest suite, which includes the committed drought-pair check | any Python or generated-data work |
 | `npm run verify:worker` | the question service's own typecheck and tests | any edit under `worker/` |
-| `npm run verify:browser` | production build, then both smoke suites | anything a browser renders, or any layout change |
+| `npm run verify:browser` | production build, both smoke suites, then the hosted-service-outage suite | anything a browser renders, or any layout change |
 | `npm run verify:all` | frontend, pipeline, worker and browser in order | a cross-cutting change, before merge |
 
 `verify:frontend` *is* `npm run build` — the four steps the Pages workflow
@@ -36,7 +36,7 @@ Run the smallest target that can fail on your change:
 - Touched two of the three areas, or moved a shared contract →
   `verify:all`.
 
-**Both browser suites serve `dist/`, not `src/`.** `verify:browser` rebuilds
+**All three browser suites serve `dist/`, not `src/`.** `verify:browser` rebuilds
 first for that reason: a smoke run after an un-built edit tests the previous
 build and reports failures the working tree has already fixed, or passes work
 that never compiled.
@@ -87,6 +87,11 @@ whether the bars look correct still needs a person.
 `tests/smoke.mjs` is the smaller redirect suite: saved-link translation, and
 proof that no retired runtime is requested.
 
+`tests/hosted-outage.mjs` refuses the hosted data services on purpose and
+checks that pages reach their declared readiness and preserve the promised
+fallbacks. That failure path is tested on every `verify:browser` run, even
+when the services are available.
+
 ## On demand, not part of any target
 
 ```bash
@@ -108,8 +113,9 @@ perfect score from a renderer that never drew. Leave the window in front.
 
 ## Two things automated tests cannot do
 
-- The ArcGIS map canvas renders **blank in headless Chromium**, CI included, so
-  uploaded screenshots prove much less than they look like they do. The
+- The ArcGIS map canvas **can render blank in headless Chromium**, CI included,
+  depending on its graphics renderer. A screenshot or a readiness flag alone
+  cannot establish that every map mark is correct. The
   storage charts are different: their SVG and 2D canvases do paint headless.
   Colour balance, density and visual hierarchy need a human at a real browser.
 - Hover cannot be exercised in a hidden pane: `requestAnimationFrame` never

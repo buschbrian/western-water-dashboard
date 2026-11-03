@@ -247,7 +247,6 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   then uses the shared full-page accessibility checker. No exception is added.
 - The California exclusions also reach the 1991–2020 reference file: nine records
   were rebuilt, correcting 43 day-of-year and seven monthly comparison entries.
-
 - The snow place sentence follows the current drainage selection (ADR-151).
   Clearing that selection no longer leaves the old place above regional figures.
 - The weekly snow and drought headings explicitly name the whole region.
@@ -269,10 +268,6 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 - The history rank reads "Lowest of 12 years", "3rd-lowest of 12 years" or
   "2nd-highest of 12 years", counted from the nearer end. At either end it
   no longer adds "0.0%" or "100.0%", which only repeated the position.
-- The weekly card on the storage charts page no longer says its storage
-  figures follow the reservoir filters. They follow the Lake Powell and Lake
-  Mead switches and the drainage area, as the note now says, and not the
-  state, county, search, reporting or storage class filters.
 - The Methods page names what the site shows, river flow included, and no
   longer counts its storage publishers wrongly. It gains entries for the
   soil moisture change (ADR-142), the gain since the 4-month low (ADR-134)

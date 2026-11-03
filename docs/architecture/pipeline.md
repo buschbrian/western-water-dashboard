@@ -150,9 +150,9 @@ record's `as_of` is the earlier of the two series' last dates. Freshness is
 ADR-056's: carried forward marked late, then withdrawn to a notice with no
 measurement. `pipeline.lakes.validate_payload` refuses a lake record carrying a
 reservoir-only field, a notice carrying a measurement, and a roster lake absent
-from both lists. The file is generated and committed by the refresh; no page
-fetches it yet, and it is not copied into the build until the lake surface
-lands.
+from both lists. The file is generated and committed by the refresh.
+`lakes.html` fetches it (ADR-119); the build publishes it at the site root,
+`/data/lakes.json` and `/api/lakes.json`.
 
 **A reservoir level is published only above a reviewed datum** (ADR-135).
 `admitted_reservoir_elevations.json` is loaded on first use by
