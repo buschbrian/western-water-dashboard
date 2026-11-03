@@ -194,9 +194,9 @@ describe("what each digest section says it is about", () => {
     expect(sections.map((section) => section.heading)).toEqual([
       "Reservoir storage — 196 reservoirs",
       "The week's movers, same reservoirs",
-      "Mountain snow — 83 reporting sites",
+      "Mountain snow, whole region — 83 reporting sites",
       // Nothing to count, so nothing claimed.
-      "Drought"
+      "Drought, whole region"
     ]);
   });
 
@@ -212,8 +212,8 @@ describe("what each digest section says it is about", () => {
     const headings = sections.map((section) => section.heading);
     expect(headings).toContain("Reservoir storage — 1 reservoir");
     // Not "Mountain snow — 0 reporting sites", which reads as a broken feed.
-    expect(headings).toContain("Mountain snow");
-    expect(headings.some((heading) => heading.startsWith("Mountain snow —")))
+    expect(headings).toContain("Mountain snow, whole region");
+    expect(headings.some((heading) => heading.startsWith("Mountain snow, whole region —")))
       .toBe(false);
   });
 });

@@ -4,6 +4,8 @@ import {
   DROUGHT_GROUPS,
   ELEVATION_HISTORY_GROUPS,
   LAKE_GROUPS,
+  PRECIPITATION_GROUPS,
+  PRECIPITATION_HISTORY_GROUPS,
   REFERENCE_GROUPS,
   RESERVOIR_GROUPS,
   RIVER_GROUPS,
@@ -42,6 +44,15 @@ function merged(records: Record<string, unknown>[]): Record<string, unknown> {
 }
 
 describe("public API field documentation", () => {
+  it("covers the daily precipitation and encoded historical fields", () => {
+    const daily = read("precipitation.json");
+    expectFields(PRECIPITATION_GROUPS, "precipitation-header", daily);
+    expectFields(PRECIPITATION_GROUPS, "precipitation-site", merged(daily.sites));
+    const history = read("precipitation_history.json");
+    expectFields(PRECIPITATION_HISTORY_GROUPS, "precipitation-history-header", history);
+    expectFields(PRECIPITATION_HISTORY_GROUPS, "precipitation-history-site", merged(history.sites));
+  });
+
   it("covers every current reservoir field", () => {
     const data = read("reservoirs.json");
     expectFields(RESERVOIR_GROUPS, "reservoir-header", data);

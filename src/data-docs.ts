@@ -7,6 +7,8 @@ import {
   DROUGHT_GROUPS,
   ELEVATION_HISTORY_GROUPS,
   LAKE_GROUPS,
+  PRECIPITATION_GROUPS,
+  PRECIPITATION_HISTORY_GROUPS,
   REFERENCE_GROUPS,
   RESERVOIR_GROUPS,
   RIVER_GROUPS,
@@ -42,6 +44,7 @@ root.innerHTML = `
       <p class="methods-lede">These JSON files are the same checked files the dashboard
         reads. The stable API paths are copies made during the site build, not separate
         datasets.</p>
+      <p><a href="./reporters.html">For reporters</a>: help with quoting figures and publishing charts.</p>
     </header>
 
     <nav class="methods-toc" aria-label="On this page">
@@ -53,6 +56,8 @@ root.innerHTML = `
         <li><a href="#river-fields">River flow fields</a></li>
         <li><a href="#river-history-fields">River flow history fields</a></li>
         <li><a href="#snow-fields">Snow fields</a></li>
+        <li><a href="#precipitation-fields">Precipitation fields</a></li>
+        <li><a href="#precipitation-history-fields">Precipitation history fields</a></li>
         <li><a href="#soil-fields">Soil moisture fields</a></li>
         <li><a href="#soil-history-fields">Soil moisture history fields</a></li>
         <li><a href="#drought-fields">Drought fields</a></li>
@@ -157,6 +162,32 @@ root.innerHTML = `
           of each October adds the season that ended, and no file is changed after that.</p>
       </article>
       <article class="api-file">
+        <h3>Precipitation at mountain stations</h3>
+        <p><a href="./data/precipitation.json"><code>/data/precipitation.json</code></a></p>
+        <p>Rain and snow caught at the mountain stations, in inches accumulated since 1 October.
+          Refreshed each morning. Structure version 1. The station codes match the snow file.
+          Each station's quoted <code>series_days</code> indexes the file's dates.
+          Its quoted <code>series_values</code> gives accumulated inches at those dates.
+          Missing days have no entry. These are station measurements, not averages over all land in a drainage area.</p>
+        <p>For a recent total, subtract a station's earlier accumulation from its later accumulation.
+          The page uses stations with both readings and leaves falling totals out.
+          The <a href="./precipitation.html">precipitation page</a> shows these recent totals and the season.</p>
+      </article>
+      <article class="api-file">
+        <h3>Precipitation history</h3>
+        <p><a href="./data/precipitation_history.json"><code>/data/precipitation_history.json</code></a></p>
+        <p>Accumulated precipitation from 1991 through the last finished water year, at 53 calendar steps per year.
+          Rebuilt each October, with the date checked in the file. Structure version 1.
+          A station must cover every year and step to enter the page's fixed comparison set.</p>
+        <p>The stored values are integers in tenths of an inch. In each year, the first is the accumulated reading.
+          Each later integer is the change from the preceding step. Add them in order, then divide by ten for inches.
+          For example, <code>[0, 3, 2]</code> decodes to <code>[0, 0.3, 0.5]</code> inches.
+          A negative change stays as reported.</p>
+        <p>A historical step may use a reading up to three days earlier, within the same water year.
+          The file counts these steps. The chart reads straight lines between steps and compares the same station set in every year.
+          The snow comparison uses 1991 through 2020; this precipitation history includes every finished year since 1991.</p>
+      </article>
+      <article class="api-file">
         <h3>Soil moisture</h3>
         <p><a href="./data/soil_moisture.json"><code>/data/soil_moisture.json</code></a></p>
         <p>Soil moisture at the snow monitoring sites for the last fifteen days, in percent
@@ -258,6 +289,12 @@ root.innerHTML = `
     <section class="methods-section api-fields" id="snow-fields"
       aria-labelledby="snow-fields-heading">
       <h2 id="snow-fields-heading">Snow fields</h2>
+    </section>
+    <section class="methods-section api-fields" id="precipitation-fields" aria-labelledby="precipitation-fields-heading">
+      <h2 id="precipitation-fields-heading">Precipitation fields</h2>
+    </section>
+    <section class="methods-section api-fields" id="precipitation-history-fields" aria-labelledby="precipitation-history-fields-heading">
+      <h2 id="precipitation-history-fields-heading">Precipitation history fields</h2>
     </section>
     <section class="methods-section api-fields" id="soil-fields"
       aria-labelledby="soil-fields-heading">
@@ -368,6 +405,8 @@ renderGroups("lake-fields", LAKE_GROUPS);
 renderGroups("river-fields", RIVER_GROUPS);
 renderGroups("river-history-fields", RIVER_HISTORY_GROUPS);
 renderGroups("snow-fields", SNOW_GROUPS);
+renderGroups("precipitation-fields", PRECIPITATION_GROUPS);
+renderGroups("precipitation-history-fields", PRECIPITATION_HISTORY_GROUPS);
 renderGroups("soil-fields", SOIL_GROUPS);
 renderGroups("soil-history-fields", SOIL_HISTORY_GROUPS);
 renderGroups("drought-fields", DROUGHT_GROUPS);
@@ -381,5 +420,6 @@ window.__dataDocsReady = {
   groups: RESERVOIR_GROUPS.length + ELEVATION_HISTORY_GROUPS.length
     + LAKE_GROUPS.length + RIVER_GROUPS.length + SNOW_GROUPS.length + SOIL_GROUPS.length
     + RIVER_HISTORY_GROUPS.length + SOIL_HISTORY_GROUPS.length
+    + PRECIPITATION_GROUPS.length + PRECIPITATION_HISTORY_GROUPS.length
     + DROUGHT_GROUPS.length + REFERENCE_GROUPS.length
 };

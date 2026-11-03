@@ -16,13 +16,13 @@ module that owns the behaviour and read the entry point only for the sequence.
 |---|---|---|
 | Storage map | `src/main.ts` | `src/ui/map.ts`, `src/ui/layers.ts`, `src/ui/shell.ts`, `src/state/filters.ts`, `src/state/url.ts`, `src/state/detail.ts`, `src/data/rollup.ts` |
 | Storage charts | `src/overview.ts` | `src/overview-model.ts` (all filtering and grouping), `src/overview-charts.ts`, `src/state/overview-url.ts`, `src/weekly-model.ts` |
-| Precipitation | `src/precipitation.ts` | `src/ui/precipitation-card.ts`, `src/precip-model.ts`, `src/precip-storm-model.ts`, `src/viz/precip-*.ts`; the place from `src/snow-place.ts`, as the snow page and story views narrow it (ADR-130); the map is `src/ui/precip-map-section.ts` (lazy, no static SDK import), `src/ui/precip-map.ts` and `src/precip-map-model.ts` (ADR-131); its "Rain \| Soil moisture" switch is `src/ui/precip-map-mode-model.ts`, `src/soil-map-model.ts`, `src/viz/soil-classes.ts` and `src/data/soil-load.ts`, the soil file fetched on first use (ADR-142) |
+| Precipitation | `src/precipitation.ts` | `src/ui/precipitation-card.ts`, `src/precip-model.ts`, `src/precip-storm-model.ts`, `src/viz/precip-*.ts`; the place from `src/snow-place.ts`, as the snow page and story views narrow it (ADR-130); the map is `src/ui/precip-map-section.ts` (lazy, no static SDK import), `src/ui/precip-map.ts` and `src/precip-map-model.ts` (ADR-131); its "Rain \| Soil moisture" switch is `src/ui/precip-map-mode-model.ts`, `src/soil-map-model.ts`, `src/viz/soil-classes.ts` and `src/data/soil-load.ts`, the soil file fetched on first use (ADR-142); soil mode lists the four largest changes wetter and the four largest drier apart (`soilMostChange`, "Largest increase" and "Largest decrease"); once the soil file is in, its switch button names the end date ("Soil moisture to Oct 26") and the date line gives the ADR-129 set-day share as the reason it can end before the rain totals |
 | Snowpack | `src/snow.ts` | `src/snow-model.ts`, `src/ui/snow-map.ts`, `src/viz/snow-curve.ts`, `src/state/snow-url.ts` |
 | Drought | `src/drought.ts` | `src/drought-model.ts`, `src/ui/drought-map.ts`, `src/viz/drought-*.ts`, `src/state/drought-url.ts` |
 | One reservoir | `src/reservoir.ts` | `src/reservoir-model.ts` (link resolution, both baselines, provenance), `src/reservoir-elevation-model.ts` (the surface level, ADR-135), `src/viz/elevation-years.ts`, `src/ui/reservoir-template.ts`; the reading itself is `describeReservoir`, shared with the map's details panel so the two cannot drift |
 | Methods, data, terms | `src/methods.ts`, `src/data-docs.ts` | `src/data-docs-schema.ts` is the field-by-field contract |
 | Terminal lakes | `src/lakes.ts` | `src/lakes-model.ts` (every sentence and row), `src/data/lakes-validate.ts`, `src/ui/lakes-template.ts`; reached from the methods and data pages, not the bar (ADR-119) |
-| River flow | `src/rivers.ts` | `src/rivers-model.ts` (every sentence, row and the CSV), `src/data/rivers-validate.ts`, `src/ui/rivers-template.ts`, `src/viz/flow-chart.ts`; reached from the methods and data pages, not the bar (ADR-136) |
+| River flow | `src/rivers.ts` | `src/rivers-model.ts` (every sentence, row and the CSV), `src/data/rivers-validate.ts`, `src/ui/rivers-template.ts`, `src/viz/flow-chart.ts`; in the page menu and the bar since ADR-148, not in the first-visit chooser |
 | Story views | `src/story.ts` | `src/state/story-url.ts` (the link), `src/snow-place.ts` (the snow page's place narrowing), `src/ui/precipitation-card.ts`, `src/ui/upstream-section.ts`, `src/ui/story-fit.ts`; for embedding, not in the bar (ADR-128) |
 
 Shared by all of them: `src/data/` (fetch, validate, scope, rollup),
@@ -48,14 +48,24 @@ the source -- again with nothing a rollup could add up. Readiness is
 `window.__reservoirReady.status`, one of found, withdrawn, held, unknown and
 none, and the browser suite visits every one.
 
-A reservoir on the reviewed elevation roster also shows its surface level
+A reservoir on the reviewed elevation roster leads with two tiles under the
+stored volume (owner's display ruling U7, 2026-10-31): the level above a short
+datum name ("3,531.69 feet above NGVD 1929", a project datum by its own name)
+with its date when late or different from the storage date, beside percent full with its basis ("23.7% full (maximum level)", from
+`capacityBasisShortName`, keyed like the full names in `state/detail.ts`). A
+reservoir with no reviewed level keeps the one percent-full sentence. Such a
+reservoir also shows its surface level
 (ADR-135): the lakes page's level card, shared through
 `src/measurement-model.ts` and `src/ui/measurement-card.ts`, with the datum
 spelled out and changes in feet, never a percentage; then a water-year chart
 from `elevation_history.json`, fetched only for such a reservoir -- the current
 year strong, the year before lighter, four earlier years muted, reference
 levels dashed and named at the right end, and a level far from the readings
-named under the chart instead of drawn; then the note on why the Geological
+named under the chart instead of drawn. Levels that share a roster label
+(Mead's 1,075, 1,050 and 1,025 ft, "Levels Reclamation's 24-Month Study
+reports against") are one key entry and one line in the list under the chart,
+and each line is marked by its height alone ("1,075 feet"); the loader holds a
+shared label to one authority and source; then the note on why the Geological
 Survey (Powell) or other sources (Mead, on Reclamation's own project datum)
 can show a different level. A project datum is named, never called NGVD 1929,
 and a calculated datum difference says it is calculated. The card says where
@@ -68,8 +78,13 @@ be read) or `none`; the chart's host is `#reservoir-elevation-chart`.
 
 `reservoir.html?name=...&view=share` (ADR-141) is the same page in a picture
 mode: one 1200 by 630 frame of the name, the surface level with its datum, the
-reading date and the water-year chart, drawn twice its size so its type reads
-on a link card. No navigation, no place chooser, no map, always the light
+reading date and the water-year chart, drawn twice its size (300 px high) so
+its type reads on a link card. Under the chart are the page's own chart key
+(`yearKeyEntries`: this water year, the year before, the earlier years, the
+dashed lines) and a source line, "Readings: Bureau of Reclamation ·
+buschbrian.github.io/western-water-dashboard" (owner's display ruling U9,
+2026-10-31): a picture travels without its page. The committed fallback
+pictures carry the same source line. No navigation, no place chooser, no map, always the light
 theme, nothing stored. Its words come from the page's own level card
 (`reservoir-share-model.ts`). A reservoir with no reviewed level, or an
 unreadable history, signals `elevation` as `none` or `card`, never `drawn`.
@@ -108,7 +123,14 @@ fetches `rivers.json` through `loadRivers`, whose validator refuses a rank,
 an inflow or a total on a gauge or the envelope, a band or class on a shaped
 gauge, a natural gauge's class that does not follow from its flow and band, a
 window that is not 30 consecutive days ending on the current value,
-and a notice carrying a measurement. Each gauge is one article: its plain
+and a notice carrying a measurement. The page opens on a summary table,
+"Flow at each gauge": one row per gauge with its flow on the newest reading
+date at three significant figures (the unit in the column heading, a late
+row with its own date) and its class in words, or "Not compared: dams
+upstream" for a shaped gauge; each row links to its card. The cards follow in
+two groups, "Compared with normal" (natural gauges) and then "Flow only: dams
+upstream" (shaped gauges), each in the payload's order. The table fits 360 px
+without scrolling; its scroller is a guard only. Each gauge is one article: its plain
 name, where it is and that the river flows on toward the reviewed water
 downstream, the shaped sentence ("Dams upstream store and release water, so
 this flow is not compared with normal.") or, for a natural gauge, "Little or
@@ -123,7 +145,8 @@ in a collapsed table, the survey's station name and its monitoring-location
 page. One CSV button downloads every gauge's days. Readiness is
 `window.__riversReady`: `gauges` published, `rendered` drawn, `charts` drawn,
 `withdrawn` notices, `compared` natural gauges with a class, `failed` a fetch
-that did not answer. Each article carries `data-tier`.
+that did not answer. Each article carries `data-tier` and the id
+`gauge-<station>` the summary row links to.
 
 ### The story views
 
@@ -373,7 +396,10 @@ Each was found by a failing test or a screenshot. Do not regress them.
 - **`calcite-navigation` clips, it does not scroll.** An overflowing header
   never widens the page, so a `scrollWidth` check cannot see it — it amputates
   the controls on the end of the bar. The smoke test measures each control's
-  box against the viewport.
+  box against the viewport. With seven page links (ADR-148) the storage map's
+  bar measured 1,108 px at 1,024 px, so every page-link button shows its icon
+  alone from 64rem to 72rem, and the river flow button (`.page-link-compact`)
+  to 75rem.
 - **The place chooser is site navigation.** Every shared header exposes
   **Choose another place** directly at wide widths and inside the existing
   page menu on phones. The storage analysis panel has no duplicate control.
@@ -445,6 +471,14 @@ published roster with both dominant reservoirs available, so the Lake Powell
 and Lake Mead switches never remove a county or area from its control. A
 coarser saved area may continue to prefix-filter a finer page; the exact-tier
 control shows every area until the reader chooses a row at that tier.
+
+**The storage charts' weekly card follows every filter** (ADR-149). Its
+storage figures are made from the rows the table shows: both dominant switches
+and the drainage area, narrowed by the state, county, search, reporting and
+storage-class filters. Its scope line counts those rows ("Storage covers 40 of
+404 reservoirs") and names Lake Powell and Lake Mead either way: "excluded"
+by a switch, "not in this view" when a filter left one out. The snow and
+drought sections describe the whole region.
 
 **Snowpack orders its place controls sequentially** (ADR-094): State, Area
 size, then exactly one hydrologic tier. The last label follows the chosen
@@ -544,3 +578,15 @@ their SDKs, chart libraries or copies of application logic.
 - `requestAnimationFrame` never fires in a hidden browser pane, and
   `view.hitTest()` never settles there — it is resolved by the same render
   loop. Hover cannot be exercised in that environment.
+
+### Reader context after a place change (ADR-151)
+
+Snow's `snowScopeSummary` is rebuilt on every figure update from the current
+area and the selected state. Clearing the area removes its old opening label;
+a coarser opening place is retained while it still bounds the loaded payload.
+Clearing a coarser opening area navigates to load the wider station set.
+Storage charts also rebuild their place sentence from the current state and
+drainage selection. Weekly snow and drought headings explicitly say whole region beside filtered
+storage. The Data page documents daily precipitation and its encoded history
+at their existing `data/` paths, with schema coverage tests. The static
+`reporters.html` guide is linked from Methods, Data and reading-page footers.

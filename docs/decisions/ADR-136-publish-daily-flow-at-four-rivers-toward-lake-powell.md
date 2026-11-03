@@ -1,6 +1,8 @@
 # ADR-136: Publish daily flow at four rivers toward Lake Powell
 
-- Status: Accepted
+- Status: Accepted; the reader-surface clause (methods and data only, not the
+  bar) is superseded by
+  [ADR-148](ADR-148-put-river-flow-in-the-page-menu-and-the-bar.md)
 - Date: 2026-10-27
 - Extends: ADR-124 (the bounded recent-conditions pilot), ADR-056 (late and
   withdrawn), ADR-126 (a notice keyed by its station)

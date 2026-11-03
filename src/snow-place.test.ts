@@ -3,7 +3,25 @@ import type { DrainageArea } from "./data/boundaries";
 import { EMPTY_OPENING_ROSTERS, type OpeningRosters } from "./data/opening-scope";
 import { readSnowpackSeasonFixture } from "./data/payload-fixture";
 import { siteRows } from "./snow-model";
-import { snowPlace } from "./snow-place";
+import { snowPlace, snowScopeSummary } from "./snow-place";
+
+describe("the snow place sentence follows the current selection", () => {
+  it("updates the place and clears a removed area without losing the state", () => {
+    expect(snowScopeSummary("all", "Colorado Headwaters", null))
+      .toBe("Showing snow measurements for Colorado Headwaters.");
+    expect(snowScopeSummary("all", "Gunnison", null))
+      .toBe("Showing snow measurements for Gunnison.");
+    expect(snowScopeSummary("all", null, null)).toBeNull();
+    expect(snowScopeSummary("UT", null, null)).toBe("Showing snow measurements for Utah.");
+  });
+
+  it("explains when a linked site requires the whole region", () => {
+    expect(snowScopeSummary("all", null, "Linked site"))
+      .toBe("Showing the whole region so the linked measurement site, Linked site, is included.");
+    expect(snowScopeSummary("all", "Gunnison", "Linked site"))
+      .toBe("Showing snow measurements for Gunnison.");
+  });
+});
 
 /* Rosters built from the frozen season's own areas, so the test does not
  * depend on today's reference export. */

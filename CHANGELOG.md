@@ -13,6 +13,14 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
+- **A page for reporters.** `reporters.html` says how to cite a figure (the
+  provider first, then this site, with the reading date and a link to the page
+  that shows it), what the main figures mean, and what they cannot support: no
+  forecasts, operated reservoirs, a history rank that starts in 2015, and
+  provisional readings. It is words only, like the terms page: no script and no
+  new computation. The reservoir, terminal lakes, terms and landscape pages
+  link to it from their footers.
+
 - **River flow and the soil-moisture change kept day by day** (ADR-146).
   `river_history.json` keeps every day of mean flow at each gauge, with its
   review status, qualifiers and, at a natural gauge, its flow class.
@@ -112,6 +120,54 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Changed
 
+- **The weekly card's storage figures follow every filter** (ADR-149) on the
+  storage charts page: state, county, search, reporting and storage class, as
+  well as the Lake Powell and Lake Mead switches and the drainage area. The
+  scope line says how many reservoirs of how many the figures cover. The snow
+  and drought figures still describe the whole region.
+- **The soil map says how old it is.** Once the soil readings load, the
+  switch reads "Soil moisture to Oct 26" (the week's end date), and the date
+  line says why it can end before the rain totals: it is the newest day on
+  which 9 in 10 on-time stations sent readings at all three depths. The grey
+  key entry now reads "No value: too few stations, or no reading on both
+  days".
+- **Soil moisture lists wetter and drier stations apart.** The soil map's
+  list of eight is now "Largest increase" (four) and "Largest decrease" (four),
+  each by 2 points or more; an empty side says no station moved that way (ADR-142,
+  presentation amended by ADR-151).
+- **The share picture names its source and its lines.** The Lake Powell and
+  Lake Mead pictures end with a key (this water year, the year before, the
+  earlier years and the dashed lines) and "Readings: Bureau of Reclamation ·
+  buschbrian.github.io/western-water-dashboard". The committed fallback
+  pictures carry the same source line. The frame stays 1200 by 630.
+- **Lake Powell and Lake Mead lead with their level.** The top of each page
+  shows two tiles: the surface level above its named datum, beside percent
+  full and the level it is measured against ("23.7% full (maximum level)").
+  Reservoirs without a reviewed level are unchanged.
+- **Lake Mead's three 24-Month Study levels are named once.** The chart key
+  and the list under the chart say "Levels Reclamation's 24-Month Study
+  reports against" one time, and each line is marked by its height alone
+  ("1,075 feet"), on the reservoir page and the share picture. Levels that
+  share a roster label must share one source, or the roster loader refuses
+  the file.
+- **River flow is in the page menu and the bar** (ADR-148), between Drought
+  and Methods, on every page. It is not in the first-visit chooser. From 1,024
+  to 1,151 px wide the page-link buttons show their icons alone, and the river
+  flow button does so up to 1,199 px, so the bar no longer clips the storage
+  map's panel buttons.
+- **The river flow page opens on a summary table.** "Flow at each gauge" gives
+  each gauge's flow on the newest reading date and how it compares with
+  normal, or "Not compared: dams upstream"; each row links to its card. The
+  cards follow in two groups: "Compared with normal", then "Flow only: dams
+  upstream".
+- **The California audit reads the daily series where the monthly series
+  is silent** (ADR-150). A station is quiet only when neither series
+  reported within the year. A monthly high is not a spike when the daily
+  reading for the same day agrees. The audit admits no station.
+- **The refresh reports record figures for review** (ADR-150). It warns
+  when a record high is above the full level, or when a record low is far
+  below the readings near it. It removes no reading; a person decides.
+
 - **Eighteen more reservoir names are the water's own name** (ADR-147).
   Gauge and county text is gone from `Rye Patch Reservoir`, `Stagecoach
   Reservoir`, `Lake San Antonio`, `San Antonio Reservoir`, `Jackson Meadows`,
@@ -185,6 +241,27 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   `lakes.json` names the new address from the next morning's refresh.
 
 ### Fixed
+
+- The map scale has an opaque background so its labels stay readable in both themes.
+- The dark-phone place-search audit waits for the map's loading state to finish,
+  then uses the shared full-page accessibility checker. No exception is added.
+- The California exclusions also reach the 1991–2020 reference file: nine records
+  were rebuilt, correcting 43 day-of-year and seven monthly comparison entries.
+
+- The snow place sentence follows the current drainage selection (ADR-151).
+  Clearing that selection no longer leaves the old place above regional figures.
+- The weekly snow and drought headings explicitly name the whole region.
+- The public data reference documents daily precipitation and its historical
+  encoding, with all emitted fields checked against the files.
+- Two further Rifle Gap readings, 31 October and 1 November 2026, are excluded
+  under ADR-116 while the source disagreement in issue #91 continues. No
+  replacement values are inferred.
+- **Nine California reservoirs no longer show an impossible record figure**
+  (ADR-116). We exclude 116 daily readings that cannot be true, for example
+  Lake Almanor's 8,918,440 acre-feet and its zeros. Each raw value and its
+  reason stay in `admitted_cdec_reservoirs.json`. The reservoirs are Lake
+  Almanor, Bucks Lake, Butt Valley, Cherry Lake, Lake Mathews, Sly Creek,
+  Cogswell Reservoir, Courtright Reservoir and Lake Valley Reservoir.
 
 - On a reservoir page, "Since the 4-month low" (ADR-134) sits with the other
   answers under the headline, after the changes. It had fallen into the

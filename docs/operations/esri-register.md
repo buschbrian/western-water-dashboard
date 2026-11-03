@@ -36,6 +36,7 @@ Observed on: @arcgis/core, map-components, charts-components, common-components 
 | E17 | map-components | `arcgis-basemap-gallery` fetches portal group on connect | Add on first expand | docs/architecture/frontend.md:100-104; src/ui/basemap-gallery.ts:28 | no |
 | E18 | Headless Chromium + ArcGIS canvas | Blank canvas | Real browser for visual checks | CLAUDE.md:34-36 | unclear |
 | E19 | charts-components peer range | `^5.1.1` admits Calcite 5.2 which it cannot draw under | Pin (E1) | package.json | yes (with E1) |
+| E20 | map-components 5.1.27 scale bar | Label contrast depends on tiles through a transparent background | Opaque `--app-surface-raised` background | src/styles/app.css (`arcgis-scale-bar`) | yes |
 
 Not defects (do not file): see the last section.
 
@@ -201,6 +202,17 @@ Not defects (do not file): see the last section.
 ## E19. Charts peer range admits an unsupported Calcite
 
 - charts-components 5.1.27 peer `^5.1.1` for Calcite admits 5.2, so npm raised no objection (0c83ae3). File with E1.
+
+## E20. Scale bar labels take their contrast from the map
+
+- Product: map-components 5.1.27 `arcgis-scale-bar`, `style="line"` default, `unit="dual"`.
+- Symptom: the labels are `--calcite-color-text-1` (white in the dark theme) over `.line`, whose background is `color-mix(in srgb, var(--calcite-color-foreground-1) 50%, transparent)`. The scrim is never more than half opaque, so the label's contrast depends on the tiles. Measured 2026-10-31 in a real Chrome (chrome-devtools MCP), labels hidden, pixels sampled behind them (median ratio against white): Oceans in the dark theme, index 3.32 (1280px) and 3.37-3.79 (360px), snow 3.29 (1280px and 360px), precipitation 3.32-3.37 (1280px) and 3.45-3.61 (360px). The drought map's dark gray canvas measured 7.36 (360px). The light theme measured 17.3 (snow, 360px). axe reported 2.99:1, against a white backdrop it assumed because it cannot read the canvas.
+- Workaround: `arcgis-scale-bar { background: var(--app-surface-raised); padding: 2px 4px; border-radius: 2px; }` in src/styles/app.css. After it: 13.46:1 measured in Chrome (precipitation, dark, 360px); axe passes on every map page at 360 and 1280px in both themes (13.5:1 dark, 18.13:1 light). No axe exception.
+- Cost: low. A small opaque card behind the bar.
+- Whose bug: Esri's styling choice; the component does not offer a token for the scrim opacity.
+- Repro: any `arcgis-map` on a light basemap with `calcite-mode-dark` on the root and an `arcgis-scale-bar` slotted; sample the pixels under `.label`.
+- Ask: an opaque or tokenised label backdrop, or a text halo in the line style as the ruler style already has.
+- Remove when: the component gives its labels a backdrop of their own.
 
 ## Not defects (project choices, do not file)
 

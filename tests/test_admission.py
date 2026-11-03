@@ -23,8 +23,9 @@ from admission import (  # noqa: E402
     NAMED_RADIUS_KM, NEAR_RADIUS_KM, SURCHARGE_ALLOWANCE, Decision, admit,
     admit_all, capacity_of, could_hold, discrepancies, distance_km, find_dam,
     denominator_for, holds_more_than_the_dam, largest_published_pool,
-    normalize_name, preferred_capacity,
+    normalize_name, preferred_capacity, record_figure_findings,
 )
+from datetime import date, timedelta  # noqa: E402
 
 
 def dam(name, lon, lat, normal=None, maximum=None, headline=None, nid_id=None):
@@ -429,6 +430,23 @@ class TestTheDisagreementScreens:
         found = dict(discrepancies(decision, highest_readings=[0, 0, 0]))
         assert "unstable maximum" not in found
 
+    def test_a_high_the_daily_series_confirms_is_not_a_spike(self):
+        # ADR-150. Guadalupe's monthly series held three months: 1,762 in
+        # December 2021 over a third highest of 402. The daily series reads
+        # 1,762 on 31 December, after a storm fill, so the high is real.
+        decision = self.clean(3415.0)
+        held = dict(discrepancies(decision, highest_readings=[1762, 900, 402]))
+        assert "unstable maximum" in held
+        cleared = dict(discrepancies(decision, highest_readings=[1762, 900, 402],
+                                     highest_confirmed=True))
+        assert "unstable maximum" not in cleared
+
+    def test_a_confirmed_high_still_answers_the_capacity_screens(self):
+        decision = self.clean(1000.0)
+        found = dict(discrepancies(decision, highest_readings=[1762, 900, 402],
+                                   highest_confirmed=True))
+        assert "seen above the capacity it would be divided by" in found
+
     def test_the_two_capacity_sources_are_compared(self):
         # Keswick: 7,470 against 23,772, the widest disagreement measured.
         decision = self.clean(7470.0)
@@ -570,6 +588,88 @@ class TestTheDenominatorTheRecordCanAnswerFor:
         # for only when the two better figures are absent or too small.
         powell = dam("Glen Canyon", -111.48, 36.93, None, None, 29875000)
         assert denominator_for(powell, 25000000)[1] == "nid_storage"
+
+
+def daily(start, values):
+    """One synthetic daily series as (day, acre-feet) pairs."""
+    first = date.fromisoformat(start)
+    return [(first + timedelta(days=offset), value)
+            for offset, value in enumerate(values)]
+
+
+class TestRecordFigures:
+    """The screen on published record figures. It reports; it removes nothing."""
+
+    def test_a_clean_series_reports_nothing(self):
+        assert record_figure_findings(
+            daily("2020-01-01", [900, 910, 905, 890, 880]), 1000) == []
+
+    def test_a_record_high_above_the_full_level_is_reported(self):
+        # Lake Almanor's shape: one reading with a digit too many.
+        found = dict(record_figure_findings(
+            daily("2020-04-01", [887401, 888141, 8918440, 894069]), 1140000))
+        assert "record high above the full level" in found
+        assert "8,918,440 acre-feet on 2020-04-03" in found["record high above the full level"]
+
+    def test_water_held_inside_the_allowance_is_not_reported(self):
+        inside = 1000 * (1 + SURCHARGE_ALLOWANCE)
+        assert record_figure_findings(
+            daily("2020-01-01", [900, inside, 950]), 1000) == []
+
+    def test_a_zero_between_full_readings_is_reported(self):
+        found = dict(record_figure_findings(
+            daily("2017-06-20", [1102557, 1102825, 0, 1102289]), 1140000))
+        detail = found["record low far below its neighbours"]
+        assert detail.startswith("0 acre-feet on 2017-06-22")
+        assert "1,102,825" in detail and "1,102,289" in detail
+
+    def test_every_zero_of_the_same_shape_is_counted(self):
+        series = daily("2021-01-01", [2567, 0, 2571, 0, 0, 2567, 2567])
+        detail = dict(record_figure_findings(series, 7700))[
+            "record low far below its neighbours"]
+        assert "3 readings at this low look the same" in detail
+
+    def test_a_reservoir_drained_to_zero_is_not_reported(self):
+        # A real low is reached gradually and the water stays down.
+        series = daily("2021-08-01", [900, 400, 120, 30, 0, 0, 0, 10, 60])
+        assert record_figure_findings(series, 8969) == []
+
+    def test_a_low_of_a_few_acre_feet_among_its_neighbours_is_not_reported(self):
+        # Cogswell's real low of 15 acre-feet in September 2021.
+        assert record_figure_findings(
+            daily("2021-09-04", [17, 16, 15, 16, 17]), 8969) == []
+
+    def test_a_dropped_digit_low_is_reported(self):
+        found = dict(record_figure_findings(
+            daily("2019-11-27", [906967, 906718, 41055, 906221]), 1140000))
+        assert "record low far below its neighbours" in found
+
+    def test_a_low_after_a_gap_is_judged_by_the_reading_after_it(self):
+        # Cogswell: no reading for five months, then 0, then 878, 876, 877.
+        series = [(date(2023, 5, 7), 154), (date(2023, 10, 17), 0),
+                  (date(2023, 10, 18), 878), (date(2023, 10, 19), 876)]
+        detail = dict(record_figure_findings(series, 8969))[
+            "record low far below its neighbours"]
+        assert detail == "0 acre-feet on 2023-10-17, beside 878 on 2023-10-18"
+
+    def test_a_low_with_no_neighbour_inside_the_window_is_not_judged(self):
+        series = [(date(2020, 1, 1), 5000), (date(2020, 6, 1), 0),
+                  (date(2020, 12, 1), 5000)]
+        assert record_figure_findings(series, 8000) == []
+
+    def test_a_monthly_series_has_neighbours_too(self):
+        series = [(date(2020, 1, 31), 5000), (date(2020, 2, 29), 0),
+                  (date(2020, 3, 31), 5100)]
+        assert "record low far below its neighbours" in dict(
+            record_figure_findings(series, 8000))
+
+    def test_without_a_full_level_the_record_high_sets_the_scale(self):
+        assert "record low far below its neighbours" in dict(
+            record_figure_findings(daily("2020-01-01", [5000, 0, 5000]), None))
+        assert record_figure_findings(daily("2020-01-01", [5000, 9000]), None) == []
+
+    def test_an_empty_series_reports_nothing(self):
+        assert record_figure_findings([], 1000) == []
 
 
 if __name__ == "__main__":

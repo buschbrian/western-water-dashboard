@@ -2,10 +2,11 @@ import { describe, expect, it } from "vitest";
 import { syntheticElevation, syntheticProjectElevation } from "./data/elevation-fixture";
 import { readPayload } from "./data/payload-fixture";
 import {
-  datumNote, describeElevation, elevationChart, elevationLate, notDrawnSentence,
-  waterYearLabel, waterYearLines, waterYearOf
+  chartLevelLabel, datumNote, levelHeadline, shortDatumName, describeElevation, elevationChart, elevationLate, groupFeet,
+  notDrawnSentence, referenceKeyEntries, referenceLevelGroups, referenceLevelText,
+  sharedLevelLabels, waterYearLabel, waterYearLines, waterYearOf
 } from "./reservoir-elevation-model";
-import type { ElevationHistoryEntry, Reservoir } from "./types";
+import type { ElevationHistoryEntry, ReferenceLevel, Reservoir } from "./types";
 
 function reservoir(overrides: Partial<Reservoir> = {}): Reservoir {
   return { ...readPayload().reservoirs[0]!, name: "Testwater", elevation: syntheticElevation(),
@@ -152,5 +153,49 @@ describe("the water-year chart", () => {
     expect(chart.high).toBeLessThan(3700);
     expect(notDrawnSentence(chart.notDrawn)).toContain("3,370 feet (Water below this level");
     expect(chart.ariaLabel).toContain("National Geodetic Vertical Datum of 1929");
+  });
+
+  it("names a label that several levels share once, and marks those lines by height", () => {
+    const study = "Levels Reclamation's 24-Month Study reports against";
+    const level = (elevation_ft: number, label: string): ReferenceLevel => ({
+      elevation_ft, label, authority: "Bureau of Reclamation", url: "https://example.gov/24mo" });
+    const levels = [level(1229, "Top of the space kept empty for floods"),
+      level(1075, study), level(1050, study), level(1025, study)];
+    const shared = sharedLevelLabels(levels);
+    expect(shared).toEqual([study]);
+    expect(chartLevelLabel(levels[1]!, shared)).toBe("1,075 feet");
+    expect(chartLevelLabel(levels[0]!, shared))
+      .toBe("Top of the space kept empty for floods, 1,229 feet");
+    const groups = referenceLevelGroups(levels);
+    expect(groups.map((group) => group.levels.length)).toEqual([1, 3]);
+    expect(referenceLevelText(groups[1]!))
+      .toBe(`1,075, 1,050 and 1,025 feet: ${study}. Published by the Bureau of Reclamation.`);
+    expect(groupFeet([levels[0]!])).toBe("1,229");
+    expect(referenceKeyEntries(levels.slice(1), shared)).toEqual([study]);
+    expect(referenceKeyEntries(levels, shared)).toEqual(["Reference level", study]);
+    expect(referenceKeyEntries(levels.slice(0, 1), shared)).toEqual(["Reference level"]);
+    expect(notDrawnSentence(levels.slice(1))).toBe("Not drawn on this chart, because they are far "
+      + `from these readings: 1,075, 1,050 and 1,025 feet (${study}).`);
+  });
+
+  it("heads a reviewed reservoir's page with its level above a short datum name", () => {
+    const national = reservoir({ as_of: "2026-10-20" });
+    expect(shortDatumName(national.elevation!)).toBe("NGVD 1929");
+    expect(levelHeadline(national, "2026-10-21")).toEqual({
+      figure: `${national.elevation!.current.toLocaleString("en-US",
+        { minimumFractionDigits: 2, maximumFractionDigits: 2 })} feet`,
+      basis: "above NGVD 1929" });
+    const project = reservoir({ as_of: "2026-10-20", elevation: syntheticProjectElevation() });
+    expect(levelHeadline(project, "2026-10-21")?.basis).toBe("above the Hoover Dam powerhouse datum");
+    const { elevation: _drop, ...plain } = reservoir();
+    expect(levelHeadline(plain as Reservoir, "2026-10-21")).toBeNull();
+  });
+
+  it("dates a level that is late or measured on a different day from storage", () => {
+    const same = reservoir({ as_of: "2026-10-20", stale_after_days: 2 });
+    expect(levelHeadline(same, "2026-10-21")?.basis).toBe("above NGVD 1929");
+    expect(levelHeadline(same, "2026-10-23")?.basis).toContain("Oct 20, 2026");
+    expect(levelHeadline({ ...same, as_of: "2026-10-21" }, "2026-10-21")?.basis)
+      .toContain("Oct 20, 2026");
   });
 });

@@ -618,6 +618,24 @@
         "source_url": "https://waterdata.usgs.gov/monitoring-location/09091900/",
         "reviewed_on": "2026-10-31",
         "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/91"
+      },
+      {
+        "sensor": 134092,
+        "stamp": "2026-10-31T07:00:00+00:00",
+        "value": 278.55,
+        "reason": "Reclamation reports 278.55 acre-feet and a level of 5,905.76 feet on 2026-10-31, while the co-located U.S. Geological Survey gauge 09091900 reports 5,915.68 feet and a rising lake. This continues the source disagreement in issue #91: Reclamation has revised 28 and 29 October to agree with the Survey, but its later values still fall roughly nine feet below it. The two series agreed within 0.12 feet for the 88 days before 24 October. No replacement storage is inferred.",
+        "source_url": "https://waterservices.usgs.gov/nwis/dv/?format=json&sites=09091900&startDT=2026-10-31&endDT=2026-10-31&parameterCd=62614&siteStatus=all",
+        "reviewed_on": "2026-11-02",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/91"
+      },
+      {
+        "sensor": 134092,
+        "stamp": "2026-11-01T07:00:00+00:00",
+        "value": 400.65,
+        "reason": "Reclamation reports 400.65 acre-feet and a level of 5,906.84 feet on 2026-11-01, while the co-located U.S. Geological Survey gauge 09091900 reports 5,916.06 feet and a rising lake. This continues the source disagreement in issue #91: Reclamation has revised 28 and 29 October to agree with the Survey, but its later values still fall roughly nine feet below it. The two series agreed within 0.12 feet for the 88 days before 24 October. No replacement storage is inferred.",
+        "source_url": "https://waterservices.usgs.gov/nwis/dv/?format=json&sites=09091900&startDT=2026-11-01&endDT=2026-11-01&parameterCd=62614&siteStatus=all",
+        "reviewed_on": "2026-11-02",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/91"
       }
     ]
   }

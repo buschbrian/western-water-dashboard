@@ -1,6 +1,6 @@
 # ADR-142: Show the week's change in mountain soil moisture
 
-- Status: Accepted
+- Status: Accepted; list presentation amended by [ADR-151](ADR-151-keep-reader-context-with-the-current-figures.md)
 - Date: 2026-10-27
 - Relates to: ADR-117 and ADR-125 (a new measured element needs its own
   record), ADR-008 (one colour table per measure), ADR-064 (an area's figure

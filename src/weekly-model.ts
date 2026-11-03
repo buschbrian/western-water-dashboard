@@ -27,6 +27,7 @@
  *     no week-over-week comparison to make and the section says so instead of
  *     comparing a week with itself.
  */
+import { isLakeMead, isLakePowell } from "./data/rollup";
 import type { DroughtCoveragePayload, Reservoir, SnowpackPayload } from "./types";
 import { isMeasured, shareAtOrWorse, worstClass, type StorageSource } from "./drought-model";
 import { MEANINGFUL_NORMAL_INCHES, percentOfNormal } from "./snow-model";
@@ -371,4 +372,25 @@ export function weeklySummary(
         percentNow: null, percentBefore: null, reporting: 0 },
     drought: drought ? weeklyDrought(drought) : null
   };
+}
+
+/**
+ * Which reservoirs the weekly storage figures are about, in the card.
+ *
+ * The figures follow every filter since ADR-149, so the count is the rows
+ * the figures were made from, and "of M" says how many the switches and the
+ * drainage area left before the filters narrowed them. Both dominant
+ * reservoirs are named either way (ADR-011, ADR-062), and the words say what
+ * took one out: a switch excludes it, a filter leaves it out of this view.
+ * The page's own status line reports the switches, so the two never
+ * disagree.
+ */
+export function weeklyScopeText(reservoirs: readonly Reservoir[],
+  scoped: readonly Reservoir[]): string {
+  const count = reservoirs.length === scoped.length
+    ? `${reservoirs.length}` : `${reservoirs.length} of ${scoped.length}`;
+  const state = (test: (reservoir: Reservoir) => boolean): string =>
+    reservoirs.some(test) ? "included" : scoped.some(test) ? "not in this view" : "excluded";
+  return `Storage covers ${count} reservoirs, Lake Powell ${state(isLakePowell)}, `
+    + `Lake Mead ${state(isLakeMead)}.`;
 }

@@ -130,6 +130,12 @@ arcgis-map > [slot="bottom-right"] {
   translate: calc(-1 * var(--map-right-inset)) 0;
 }
 
+arcgis-scale-bar {
+  padding: 2px 4px;
+  background: var(--app-surface-raised);
+  border-radius: 2px;
+}
+
 .map-state {
   position: absolute;
   z-index: 2;
@@ -927,6 +933,18 @@ arcgis-map > [slot="bottom-right"] {
  * class, not an id list: the id list missed the snowpack link the day it
  * was added, and the bar clipped three controls before a test caught it. */
 #page-menu { display: none; }
+/* Between 64rem and 72rem the storage map's bar (six page links, three
+ * panel actions, search, chooser and theme) measured 1,108px at 1,024px and
+ * clipped the panel actions, so every link shows its icon alone there. The
+ * river flow link (ADR-148) keeps its icon alone up to 75rem, where the
+ * seventh label first fits. A button's `label` is what a screen reader
+ * hears either way. */
+@media (max-width: 74.99rem) {
+  .page-link-compact .page-link-text { display: none; }
+}
+@media (max-width: 71.99rem) {
+  .page-link .page-link-text { display: none; }
+}
 @media (max-width: 63.99rem) {
   #page-menu { display: block; }
   .page-link,

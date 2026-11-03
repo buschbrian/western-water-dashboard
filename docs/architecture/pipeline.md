@@ -331,3 +331,9 @@ self-healing issues — late feeds, withdrawn feeds. The issue bodies are built
 by `tools/feed_issue_report.py`, which is deterministic and tested; the
 workflow only calls `gh`. See
 [`docs/operations/data-refresh.md`](../operations/data-refresh.md).
+
+`summarize` also prints a `::warning` titled "Record figure for review" for a
+record high above the full level or a record low far below its neighbours
+(ADR-150). The refresh step's raw log is the complete referral list; the
+run page's annotation list is a convenience view. Review the full log.
+The warning opens no issue and removes nothing.

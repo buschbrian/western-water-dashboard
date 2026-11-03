@@ -1527,22 +1527,33 @@ def test_the_reviewed_readings_are_committed_with_their_evidence():
 
     Grant Lake was admitted on its own review once the exclusion answered its
     only screen. Buchanan's December 2022 month was added on 2026-10-31,
-    against the station's own daily series. These six readings are the whole
-    of what the exclusion removes, and each names the issue the provider is
-    still being asked on.
+    against the station's own daily series. The same day added the daily
+    readings that had set nine published reservoirs' record high or low:
+    the counts below are the whole of them. Each names the issue the
+    provider is being asked on.
     """
     named = {
         station: sorted((record["stamp"], record["value"])
                         for record in records)
         for station, records in R.CDEC_EXCLUDED_READINGS.items()
     }
-    assert named == {
+    monthly = {station: named.pop(station)
+               for station in ("BUC", "GNT", "HVS", "ONF", "RLC")}
+    assert monthly == {
         "BUC": [("2022-12-1 00:00", 172105)],
         "GNT": [("2023-3-1 00:00", 82410)],
         "HVS": [("2024-11-1 00:00", 5775421), ("2025-5-1 00:00", 5913000)],
         "ONF": [("2017-5-1 00:00", 443348)],
         "RLC": [("2026-2-1 00:00", 58508)],
     }
+    assert {station: len(records) for station, records in named.items()} == {
+        "ALM": 21, "BCL": 34, "BTV": 24, "CGS": 4, "CHV": 3, "CTG": 9,
+        "LVY": 16, "MHW": 2, "SLC": 3,
+    }
+    assert ("2020-4-4 00:00", 8918440) in named["ALM"]
+    assert ("2016-7-30 00:00", 955539) in named["BCL"]
+    assert ("2017-12-26 00:00", 935746) in named["BTV"]
+    assert ("2021-5-27 00:00", 364768) in named["CHV"]
     document = json.loads(R.ADMITTED_CDEC_RESERVOIRS_PATH.read_text(encoding="utf-8"))
     for station, records in R.CDEC_EXCLUDED_READINGS.items():
         withheld = station in document["withheld"]
@@ -1665,6 +1676,60 @@ def test_a_station_with_no_exclusion_is_untouched(monkeypatch, capsys):
     frame = R.fetch_cdec_series("SHA", "monthly", "20250101", "20250801")
     assert frame["storage_af"].tolist() == [5913000.0]
     assert "ADR-116" not in capsys.readouterr().out
+
+
+#: Lake Almanor's daily series around two of its excluded readings, as the
+#: service wrote them: a zero on 22 June 2017 and 8,918,440 on 4 April 2020.
+ALMANOR_DAYS = [
+    ("2017-6-21 00:00", 1102825), ("2017-6-22 00:00", 0),
+    ("2017-6-23 00:00", 1102289), ("2020-4-3 00:00", 888881),
+    ("2020-4-4 00:00", 8918440), ("2020-4-5 00:00", 894069),
+]
+
+
+def test_the_record_figures_are_computed_without_the_excluded_readings(monkeypatch):
+    """The published record high and low read the series the adapter returns.
+
+    The exclusion is applied in `fetch_cdec_series`, so `summarize` never
+    sees the two readings and the record figures are the water's own.
+    """
+    monkeypatch.setattr(R.providers, "_get_cdec_json",
+                        lambda params: [cdec_row(day, value) for day, value in ALMANOR_DAYS])
+    frame = R.fetch_cdec_series("ALM", "daily", "20150101", "20201231")
+    record = R.summarize("Lake Almanor", None, 40.2, -121.2, frame, TODAY,
+                         {"capacity_af": 1140000.0, "capacity_basis": "normal_storage"},
+                         source_key="cdec", source_station_id="ALM")
+    assert record["record_max_af"] == 1102825
+    assert record["record_min_af"] == 888881
+
+
+def test_without_the_exclusions_the_same_series_is_reported_for_review(monkeypatch, capsys):
+    """The screen reports both figures, and it removes nothing."""
+    monkeypatch.setattr(R.providers, "_get_cdec_json",
+                        lambda params: [cdec_row(day, value) for day, value in ALMANOR_DAYS])
+    frame = R.fetch_cdec_series("SHA", "daily", "20150101", "20201231")
+    record = R.summarize("Testwater", None, 40.2, -121.2, frame, TODAY,
+                         {"capacity_af": 1140000.0, "capacity_basis": "normal_storage"},
+                         source_key="cdec", source_station_id="SHA")
+    assert record["record_max_af"] == 8918440
+    assert record["record_min_af"] == 0
+    printed = capsys.readouterr().out
+    assert "::warning title=Record figure for review::Testwater (SHA) -- " \
+        "record high above the full level: 8,918,440" in printed
+    assert "record low far below its neighbours: 0 acre-feet on 2017-06-22" in printed
+
+
+def test_the_record_high_is_compared_with_the_largest_full_level_it_had():
+    """A reservoir held below its full level today held more before (ADR-111)."""
+    series = pd.Series([900.0, 1000.0, 950.0],
+                       index=pd.date_range("2020-01-01", periods=3, freq="D"))
+    held = {"capacity_af": 500.0, "capacity_basis": "operating_restriction",
+            "physical_capacity_af": 1000.0}
+    assert R.report_record_figures("Held", "X", series, held) == []
+    versions = {"capacity_af": 500.0, "capacity_versions": [
+        {"capacity_af": 1000.0}, {"capacity_af": 500.0}]}
+    assert R.report_record_figures("Held", "X", series, versions) == []
+    assert R.report_record_figures("Held", "X", series, {"capacity_af": 500.0})
 
 
 def test_a_cdec_month_still_in_progress_is_not_dated_in_the_future(monkeypatch):
@@ -2991,4 +3056,5 @@ def test_the_committed_rise_exclusions_are_the_reviewed_rifle_gap_readings():
     named = {item: sorted((record["stamp"][:10], record["value"]) for record in records)
              for item, records in R.RISE_EXCLUDED_READINGS.items()}
     assert named == {"134092": [("2026-10-28", 263.24), ("2026-10-29", 263.24),
-                                ("2026-10-30", 263.24)]}
+                                ("2026-10-30", 263.24), ("2026-10-31", 278.55),
+                                ("2026-11-01", 400.65)]}

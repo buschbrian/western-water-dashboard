@@ -2,16 +2,23 @@
  * The river-flow page (ADR-136, ADR-144, ADR-145): a static shell, the runtime
  * `rivers.json`, nothing generated (ADR-002).
  *
- * One article per published gauge, each standing alone: no figure on this
- * page adds two gauges together. A withdrawn gauge is stated, not measured
- * (ADR-056). The words are the model's; this file is the sequence.
+ * A summary table first, one row per gauge linking to its card, then one
+ * article per published gauge in two groups: natural gauges compared with
+ * normal, then shaped gauges shown as flow alone. Each card stands alone: no
+ * figure on this page adds two gauges together. A withdrawn gauge is stated,
+ * not measured (ADR-056). The words are the model's; this file is the
+ * sequence.
  */
 import "@esri/calcite-components/main.css";
 import { setAssetPath as setCalciteAssetPath } from "@esri/calcite-components";
 
+import { stateName } from "./data/state-vocabulary";
 import { downloadCsv } from "./data/download";
 import { loadRivers } from "./data/load";
-import { describeGauge, riversCsv, riversCsvFilename, withdrawnSentence } from "./rivers-model";
+import {
+  FLOW_UNIT, NATURAL_GROUP_HEADING, SHAPED_GROUP_HEADING, describeGauge, gaugeAnchor, groupGauges,
+  riversCsv, riversCsvFilename, summaryDate, summaryFlowHeading, summaryRow, withdrawnSentence
+} from "./rivers-model";
 import type { RiverRow } from "./rivers-model";
 import type { RiverGauge, RiverPayload } from "./types";
 import { setupPlaceChooser } from "./ui/opening-splash";
@@ -47,7 +54,7 @@ function note(text: string, className = "reservoir-note"): HTMLParagraphElement 
   return p;
 }
 
-function heading(level: "h2" | "h3", text: string, className: string): HTMLHeadingElement {
+function heading(level: "h2" | "h3" | "h4", text: string, className: string): HTMLHeadingElement {
   const element = document.createElement(level);
   element.className = className;
   element.textContent = text;
@@ -71,10 +78,11 @@ function renderGauge(gauge: RiverGauge): { article: HTMLElement; chart: boolean 
   const view = describeGauge(gauge);
   const article = document.createElement("article");
   article.className = "river";
+  article.id = gaugeAnchor(gauge);
   article.dataset.station = gauge.source_station_id;
   article.dataset.tier = view.tier;
   if (view.comparison?.shortRecord) article.dataset.shortRecord = "true";
-  article.append(heading("h2", view.name, "river-name"));
+  article.append(heading("h3", view.name, "river-name"));
   if (view.where) article.append(note(view.where));
   article.append(note(view.tierNote, `reservoir-note river-${view.tier}`));
   if (view.late) article.append(note(view.late, "detail-late"));
@@ -104,14 +112,14 @@ function renderGauge(gauge: RiverGauge): { article: HTMLElement; chart: boolean 
   reading.append(note(view.status, "reservoir-note river-status"), definitionList(view.rows));
   article.append(reading);
 
-  article.append(heading("h3", "Flow in the last 30 days", "reservoir-subhead"));
+  article.append(heading("h4", "Flow in the last 30 days", "reservoir-subhead"));
   const chartHost = document.createElement("div");
   chartHost.className = "trend-chart-host";
   const chart = renderFlowChart(chartHost, view.days, view.name);
   if (chart) article.append(chartHost);
   article.append(renderFlowTable(view.days));
 
-  article.append(heading("h3", "Source", "reservoir-subhead"), definitionList(view.source));
+  article.append(heading("h4", "Source", "reservoir-subhead"), definitionList(view.source));
   const links = document.createElement("p");
   links.className = "reservoir-links";
   const link = document.createElement("a");
@@ -123,22 +131,97 @@ function renderGauge(gauge: RiverGauge): { article: HTMLElement; chart: boolean 
   return { article, chart };
 }
 
+/** One row per gauge, in the cards' order, each linking to its card. */
+function summaryTable(gauges: readonly RiverGauge[]): HTMLElement {
+  const date = summaryDate(gauges);
+  const section = document.createElement("section");
+  section.className = "rivers-summary";
+  section.setAttribute("aria-labelledby", "rivers-summary-heading");
+  const title = heading("h2", "Flow at each gauge", "rivers-group-heading");
+  title.id = "rivers-summary-heading";
+  const scroller = document.createElement("div");
+  scroller.className = "rivers-summary-scroll";
+  const table = document.createElement("table");
+  table.className = "rivers-summary-table";
+  table.setAttribute("aria-labelledby", "rivers-summary-heading");
+  const head = document.createElement("thead");
+  const headRow = document.createElement("tr");
+  for (const [text, unit] of [["Gauge", null], [summaryFlowHeading(date), FLOW_UNIT],
+    ["Compared with normal", null]] as const) {
+    const cell = document.createElement("th");
+    cell.scope = "col";
+    cell.textContent = text;
+    if (unit) {
+      const small = document.createElement("span");
+      small.className = "rivers-summary-unit";
+      small.textContent = unit;
+      cell.append(small);
+    }
+    headRow.append(cell);
+  }
+  head.append(headRow);
+  const body = document.createElement("tbody");
+  for (const gauge of gauges) {
+    const row = summaryRow(gauge, date);
+    const tr = document.createElement("tr");
+    tr.dataset.tier = row.tier;
+    const name = document.createElement("th");
+    name.scope = "row";
+    const link = document.createElement("a");
+    link.href = `#${row.anchor}`;
+    link.textContent = row.name;
+    name.append(link);
+    const flow = document.createElement("td");
+    flow.className = "rivers-summary-flow";
+    flow.textContent = row.flow;
+    const comparison = document.createElement("td");
+    comparison.textContent = row.comparison;
+    tr.append(name, flow, comparison);
+    body.append(tr);
+  }
+  table.append(head, body);
+  scroller.append(table);
+  section.append(title, scroller);
+  return section;
+}
+
 function render(payload: RiverPayload): void {
   const children: HTMLElement[] = [];
   let charts = 0;
   const compared = payload.gauges.filter((gauge) => gauge.compared_with_normal).length;
-  for (const gauge of payload.gauges) {
-    const { article, chart } = renderGauge(gauge);
-    if (chart) charts += 1;
-    children.push(article);
+  const groups = groupGauges(payload.gauges);
+  const ordered = [...groups.natural, ...groups.shaped];
+  if (ordered.length > 0) {
+    const states = [...new Set(ordered.map((gauge) => stateName(gauge.state)))].sort();
+    children.push(note(`This page covers ${ordered.length} reviewed gauges in ${states.join(", ")}.`),
+      summaryTable(ordered));
   }
-  for (const notice of payload.withdrawn) {
-    const article = document.createElement("article");
-    article.className = "river";
-    article.append(heading("h2", notice.name, "river-name"),
-      note(withdrawnSentence(notice), "reservoir-withdrawn"));
-    article.append(note("If readings start again, the gauge comes back."));
-    children.push(article);
+  for (const [title, gauges] of [[NATURAL_GROUP_HEADING, groups.natural],
+    [SHAPED_GROUP_HEADING, groups.shaped]] as const) {
+    if (gauges.length === 0) continue;
+    const group = document.createElement("section");
+    group.className = "rivers-group";
+    group.append(heading("h2", title, "rivers-group-heading"));
+    for (const gauge of gauges) {
+      const { article, chart } = renderGauge(gauge);
+      if (chart) charts += 1;
+      group.append(article);
+    }
+    children.push(group);
+  }
+  if (payload.withdrawn.length > 0) {
+    const group = document.createElement("section");
+    group.className = "rivers-group";
+    group.append(heading("h2", "Not in the current published data", "rivers-group-heading"));
+    for (const notice of payload.withdrawn) {
+      const article = document.createElement("article");
+      article.className = "river";
+      article.append(heading("h3", notice.name, "river-name"),
+        note(withdrawnSentence(notice), "reservoir-withdrawn"));
+      article.append(note("If readings start again, the gauge comes back."));
+      group.append(article);
+    }
+    children.push(group);
   }
   if (children.length === 0) children.push(note("No river gauge is published yet."));
   if (payload.gauges.length > 0) {

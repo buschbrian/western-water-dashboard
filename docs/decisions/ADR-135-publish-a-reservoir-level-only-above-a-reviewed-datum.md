@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Accepted; reference-level presentation amended by [ADR-151](ADR-151-keep-reader-context-with-the-current-figures.md).
 
 ## Date
 

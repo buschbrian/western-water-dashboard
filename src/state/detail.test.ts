@@ -3,8 +3,9 @@ import { readPayload } from "../data/payload-fixture";
 import { storageColor } from "../viz/classes";
 import { headlinePercent } from "../viz/symbols";
 import {
-  capacityBasisName, changeLabel, describeReservoir, describeSinceLow, lateMessage,
-  monthlyDetail, providerName, rankPosition, rankWithYears
+  CAPACITY_BASIS_KEYS, capacityBasisName, capacityBasisShortName, changeLabel, describeReservoir,
+  describeSinceLow, lateMessage, monthlyDetail, percentFullBasis, providerName, rankPosition,
+  rankWithYears
 } from "./detail";
 import { createSelectionStore, findReservoir, normalizeSelectionValue } from "./selection";
 import { loadLegacyApi } from "../data/legacy-harness";
@@ -325,6 +326,22 @@ describe("the words for each kind of full level", () => {
      * what its percentage divides by. */
     expect(capacityBasisName("authoritative_water_report")).toBe(
       "the full level in a reviewed water report");
+  });
+
+  it("has short words for every basis the full words know", () => {
+    for (const basis of CAPACITY_BASIS_KEYS) expect(capacityBasisShortName(basis)).toBeTruthy();
+    expect(capacityBasisShortName("max_storage")).toBe("maximum level");
+    expect(capacityBasisShortName(null)).toBeNull();
+  });
+
+  it("puts the basis after percent full, from the record's own field", () => {
+    const base = reservoirs[0]!;
+    expect(percentFullBasis({ ...base, pct_of_capacity: 23.7, capacity_basis: "max_storage" }))
+      .toBe("full (maximum level)");
+    expect(percentFullBasis({ ...base, pct_of_capacity: 40, capacity_basis: "normal_storage" }))
+      .toBe("full (normal full level)");
+    expect(percentFullBasis({ ...base, pct_of_capacity: null, pct_of_record_max: 40 }))
+      .toBe("full (highest recorded storage)");
   });
 });
 

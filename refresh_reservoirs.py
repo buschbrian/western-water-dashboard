@@ -58,6 +58,7 @@ import pandas as pd
 
 import huc
 import watershed_scopes
+from admission import record_figure_findings
 
 # Every module in `pipeline/` is re-exported here, so `import
 # refresh_reservoirs as R` still reaches the whole pipeline and a test that
@@ -137,6 +138,30 @@ from pipeline.freshness import (  # noqa: F401
 from pipeline.geography import (  # noqa: F401
     attach_counties, attach_watersheds, dam_points
 )
+
+
+def report_record_figures(name: str, station: str | None,
+                          series: pd.Series, capacity: dict) -> list:
+    """Print each record figure a person should review, and return them.
+
+    The published record high and low come straight from the series, so one
+    bad reading becomes a published figure. This reports and never removes:
+    a confirmed fault becomes a reviewed exclusion (ADR-116). The full level
+    is the largest the record has had, so a reservoir held below its full
+    level today is not reported for water it held before the limit
+    (ADR-111).
+    """
+    levels = [capacity.get("capacity_af"), capacity.get("physical_capacity_af")]
+    levels += [version.get("capacity_af")
+               for version in capacity.get("capacity_versions") or ()]
+    levels = [float(level) for level in levels if level]
+    findings = record_figure_findings(
+        [(day.date(), value) for day, value in series.items()],
+        max(levels) if levels else None)
+    for screen, detail in findings:
+        print(f"::warning title=Record figure for review::{name} "
+              f"({station}) -- {screen}: {detail}")
+    return findings
 
 
 def summarize(name: str, item_id: int | None, lat: float, lon: float,
@@ -252,6 +277,7 @@ def summarize(name: str, item_id: int | None, lat: float, lon: float,
     in_force = effective_capacity(capacity, as_of)
     capacity_af = in_force["capacity_af"]
     capacity_history = published_capacity_history(capacity)
+    report_record_figures(name, station, series, capacity)
 
     return {
         "name": name,

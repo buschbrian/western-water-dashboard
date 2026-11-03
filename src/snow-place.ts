@@ -20,6 +20,19 @@ import {
   siteRows
 } from "./snow-model";
 import type { SnowpackPayload } from "./types";
+import { stateName } from "./data/state-vocabulary";
+
+export function snowScopeSummary(stateCode: string, area: string | null,
+  widenedForSite: string | null): string | null {
+  if (widenedForSite !== null && area === null) {
+    return `Showing the whole region so the linked measurement site, ${widenedForSite}, is included.`;
+  }
+  const state = stateCode !== "all" ? stateName(stateCode) : null;
+  if (state && area) return `Showing snow measurements for ${state}, in ${area}.`;
+  if (state) return `Showing snow measurements for ${state}.`;
+  if (area) return `Showing snow measurements for ${area}.`;
+  return null;
+}
 
 /**
  * The payload narrowed by the reader's opening scope -- `?state=` and

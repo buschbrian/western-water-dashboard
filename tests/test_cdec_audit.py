@@ -504,3 +504,137 @@ def test_the_screen_reads_both_durations_for_one_station(monkeypatch):
     result = month_end_screen(["BUC"])["BUC"]
     assert asked == ["M", "D"]
     assert len(result["disagreements"]) == 1
+
+
+# --- the daily series where the monthly one is silent (ADR-150) -----------
+
+from tools.audit_cdec_stations import (  # noqa: E402
+    highest_daily_check, highest_day, month_end_agrees, screening_series,
+)
+
+CUTOFF = "2025-10-31"
+
+
+def history(values, last, days=None):
+    return {"values": values, "last": last, "excluded": [], "days": days or {}}
+
+
+def test_a_reporting_monthly_series_is_screened_as_before():
+    monthly = history([900.0], "2026-09-01")
+    assert screening_series(monthly, None, CUTOFF) == ("monthly", monthly)
+    assert screening_series(monthly, history([950.0], "2026-10-30"),
+                            CUTOFF)[0] == "monthly"
+
+
+def test_a_station_is_not_quiet_while_its_daily_series_reports():
+    # Guadalupe: three monthly readings in 2021, daily readings to 2026.
+    monthly = history([1762.0, 900.0, 402.0], "2021-12-01")
+    daily = history([2175.0, 903.0], "2026-10-30")
+    assert screening_series(monthly, daily, CUTOFF) == ("daily", daily)
+
+
+def test_a_station_with_no_monthly_readings_is_screened_on_its_daily_ones():
+    daily = history([30119.0], "2026-10-30")
+    assert screening_series(None, daily, CUTOFF) == ("daily", daily)
+    assert screening_series(history([], ""), daily, CUTOFF) == ("daily", daily)
+
+
+def test_quiet_means_neither_series_has_reported_within_the_year():
+    # Bon Tempe: the last reading in March 2023, on either series.
+    monthly = history([3000.0], "2023-03-01")
+    assert screening_series(monthly, history([3100.0], "2023-03-02"),
+                            CUTOFF) == ("quiet", None)
+    assert screening_series(monthly, None, CUTOFF) == ("quiet", None)
+
+
+def test_a_station_that_never_answered_is_dormant():
+    assert screening_series(None, None, CUTOFF) == ("dormant", None)
+    assert screening_series(history([], ""), history([], ""), CUTOFF) == \
+        ("dormant", None)
+
+
+def test_rounding_agrees_and_a_fault_does_not():
+    assert month_end_agrees(3624000, 3623764)
+    assert month_end_agrees(349, 300), "the acre-feet floor keeps small ones quiet"
+    assert not month_end_agrees(172105, 22809)
+
+
+def test_the_highest_day_is_the_day_the_highest_reading_measures():
+    found = history([402.0, 1762.0, 900.0], "2021-12-01",
+                    {"2021-10-31": 402.0, "2021-12-31": 1762.0, "2021-11-30": 900.0})
+    assert highest_day(found) == "2021-12-31"
+    assert highest_day(history([], "")) == ""
+
+
+def daily_answer(monkeypatch, value):
+    asked = []
+
+    def answer(url, params=None):
+        asked.append(params)
+        if value is None:
+            return b"[]"
+        return json.dumps(rows([(f"{params['Start']} 00:00", value)])).encode()
+
+    monkeypatch.setattr(audit_cdec_stations, "get", answer)
+    monkeypatch.setattr(audit_cdec_stations.time, "sleep", lambda seconds: None)
+    return asked
+
+
+GUADALUPE = history([1762.0, 900.0, 402.0], "2026-09-01",
+                    {"2021-12-31": 1762.0, "2021-11-30": 900.0, "2021-10-31": 402.0})
+
+
+def test_a_daily_reading_that_agrees_confirms_the_monthly_high(monkeypatch):
+    asked = daily_answer(monkeypatch, 1762)
+    check = highest_daily_check("GDR", GUADALUPE)
+    assert check == {"day": "2021-12-31", "monthly_af": 1762.0,
+                     "daily_af": 1762.0, "confirmed": True}
+    assert asked[0]["dur_code"] == "D"
+    assert asked[0]["Start"] == asked[0]["End"] == "2021-12-31"
+
+
+def test_a_daily_reading_that_disagrees_leaves_the_spike(monkeypatch):
+    daily_answer(monkeypatch, 22809)
+    assert highest_daily_check("GDR", GUADALUPE)["confirmed"] is False
+
+
+def test_a_missing_daily_reading_confirms_nothing(monkeypatch):
+    daily_answer(monkeypatch, None)
+    check = highest_daily_check("GDR", GUADALUPE)
+    assert check["daily_af"] is None and check["confirmed"] is False
+
+
+def test_a_series_with_no_spike_asks_nothing(monkeypatch):
+    asked = daily_answer(monkeypatch, 1762)
+    steady = history([1000.0, 990.0, 980.0], "2026-09-01", {"2026-08-31": 1000.0})
+    assert highest_daily_check("SHA", steady) is None
+    assert asked == []
+
+
+def test_the_evidence_row_clears_a_confirmed_spike_and_says_why(monkeypatch):
+    decision = Decision("Guadalupe", True, "confirmed by name and position",
+                        None, 3415.0, "max_storage")
+    check = {"day": "2021-12-31", "monthly_af": 1762.0, "daily_af": 1762.0,
+             "confirmed": True}
+    row = review(dict(candidate("GDR", "Guadalupe", [1762, 900, 402]),
+                      highest_daily_check=check), decision, None)
+    assert "unstable maximum" not in [d["screen"] for d in row["discrepancies"]]
+    assert row["highest_daily_check"] == check
+    held = review(candidate("GDR", "Guadalupe", [1762, 900, 402]), decision, None)
+    assert "unstable maximum" in [d["screen"] for d in held["discrepancies"]]
+
+
+def test_the_daily_history_keys_each_reading_by_its_own_day(monkeypatch):
+    monkeypatch.setattr(audit_cdec_stations, "get", lambda url, params=None: json.dumps([
+        {"stationId": "GDR", "date": "2026-10-30 00:00", "value": 903},
+        {"stationId": "GDR", "date": "2026-10-29 00:00", "value": -9999},
+    ]).encode())
+    monkeypatch.setattr(audit_cdec_stations.time, "sleep", lambda seconds: None)
+    found = storage_history([{"station": "GDR"}], "D", 10)["GDR"]
+    assert found["days"] == {"2026-10-30": 903.0}
+    assert found["last"] == "2026-10-30"
+
+
+def test_the_monthly_history_keys_each_reading_by_its_month_end(monkeypatch):
+    found = screened(monkeypatch, "SHA", [("2024-1-1 00:00", 3624000)])
+    assert found["days"] == {"2024-01-31": 3624000.0}

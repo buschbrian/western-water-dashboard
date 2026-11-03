@@ -1,7 +1,11 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { validateSoilMoisturePayload } from "./data/soil-validate";
-import { soilCountsText, soilLeftOutText, soilMapValues, soilNoChangeText, soilWeekText } from "./soil-map-model";
+import { SET_SHARE } from "./precip-model";
+import {
+  soilCountsText, soilLeftOutText, soilMapValues, soilMostChange, soilNoChangeText, soilNoSideText,
+  setShareWords, soilWeekText
+} from "./soil-map-model";
 import type { SoilMoisturePayload, SoilMoistureSite } from "./types";
 
 function site(station: string, change: number | null, reason: SoilMoistureSite["no_change_reason"] = null): SoilMoistureSite {
@@ -37,6 +41,22 @@ describe("the soil map values", () => {
     const values = soilMapValues(payload(sites), areas, floors);
     expect(values.counts).toEqual({ stations: 5, measured: 4, wetter: 2, steady: 1, drier: 1, frozen: 1 });
     expect(values.ranked.map((entry) => entry.station)).toEqual(["d", "e", "a", "b"]);
+  });
+
+  it("lists the largest wetter and the largest drier changes apart, four a side", () => {
+    const many = [...sites, site("g", 2), site("h", 4), site("i", 7), site("j", 1.9), site("k", -2)];
+    const manyAreas = new Map([...areas, ...["g", "h", "i", "j", "k"].map((key) => [key, "1"] as const)]);
+    const most = soilMostChange(soilMapValues(payload(many), manyAreas, floors));
+    expect(most.wetter.map((entry) => entry.station)).toEqual(["d", "i", "h", "a"]);
+    expect(most.drier.map((entry) => entry.station)).toEqual(["e", "k"]);
+  });
+
+  it("leaves a side empty when no station moved that way by the steady band", () => {
+    const wet = [site("a", 3), site("b", -1.5)];
+    const most = soilMostChange(soilMapValues(payload(wet), areas, floors));
+    expect(most.drier).toEqual([]);
+    expect(soilNoSideText("drier")).toBe("No station got drier by 2 points or more.");
+    expect(soilNoSideText("wetter")).toBe("No station got wetter by 2 points or more.");
   });
 
   it("uses only the stations in the place", () => {
@@ -90,8 +110,16 @@ describe("the soil sentences", () => {
 
   it("names the week, or says there is none", () => {
     const values = soilMapValues(payload([]), new Map(), new Map());
-    expect(soilWeekText(values)).toMatch(/^The change is from .+ to .+\.$/);
+    expect(soilWeekText(values)).toBe("The change is from Oct 19, 2026 to Oct 26, 2026. It ends on "
+      + "Oct 26, the newest day on which 9 in 10 on-time stations sent readings at all three depths.");
     expect(soilWeekText({ ...values, endDate: null, startDate: null }))
       .toBe("Too few stations sent soil moisture to measure a week.");
+  });
+
+  it("states the same set-day share the soil refresh uses", () => {
+    const source = readFileSync(new URL("../refresh_soil_moisture.py", import.meta.url), "utf8");
+    const share = Number(/^END_DAY_SHARE = ([\d.]+)$/m.exec(source)?.[1]);
+    expect(share).toBe(SET_SHARE);
+    expect(setShareWords(share)).toBe(setShareWords());
   });
 });

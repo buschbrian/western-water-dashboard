@@ -42,6 +42,12 @@ exclusion is that a reviewer can still see what was left out.
 The observed maximum used by the admission screen is read at monthly
 resolution. Thirty times fewer rows than daily, and the screen only asks how
 much water has ever been seen -- a monthly maximum answers that.
+
+**The daily series answers where the monthly one is silent** (ADR-150). A
+station is quiet only when neither series has reported within the year; one
+whose monthly series is silent and whose daily series reports is screened on
+the daily series. A monthly high is not a spike when the daily reading on the
+day it describes confirms it.
 """
 
 import argparse
@@ -58,7 +64,7 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from admission import (  # noqa: E402
     admit_all, denominator_for, discrepancies, distance_km,
-    preferred_capacity,
+    preferred_capacity, unstable_maximum,
 )
 from huc import assign_huc, load_units  # noqa: E402
 from pipeline.providers import excluded_reading  # noqa: E402
@@ -128,6 +134,9 @@ AGGREGATE_NAME = re.compile(
 #: comma-separated list; this keeps any one response reviewable and any one
 #: failure small.
 CHUNK = 40
+
+#: The same for a daily series, which carries thirty times the rows.
+DAILY_CHUNK = 10
 
 
 def get(url: str, params: dict | None = None) -> bytes:
@@ -224,8 +233,13 @@ def fetch_stations() -> list[dict]:
     return parse_station_table(html)
 
 
-def storage_history(stations: list[dict]) -> dict[str, dict]:
-    """Every usable monthly storage reading since `START_DATE`, by station.
+def storage_history(stations: list[dict], code: str = "M",
+                    chunk_size: int = CHUNK) -> dict[str, dict]:
+    """Every usable storage reading since `START_DATE`, by station.
+
+    `code` is the servlet's duration, `M` or `D`. Each station's `days` maps
+    the day a reading measures to its value: a monthly reading measures its
+    month's last day (`month_end_day`).
 
     Monthly rather than daily: the admission screen asks how much water has
     ever been seen, and a monthly series answers that in a thirtieth of the
@@ -241,13 +255,13 @@ def storage_history(stations: list[dict]) -> dict[str, dict]:
     that publishes nothing and reads exactly like a failed fetch.
     """
     end = time.strftime("%Y-%m-%d")
-    readings: dict[str, list[float]] = {}
+    readings: dict[str, dict] = {}
     ids = [station["station"] for station in stations]
-    for start in range(0, len(ids), CHUNK):
-        chunk = ids[start:start + CHUNK]
+    for start in range(0, len(ids), chunk_size):
+        chunk = ids[start:start + chunk_size]
         body = get(CDEC_DATA, {
             "Stations": ",".join(chunk), "SensorNums": "15",
-            "dur_code": "M", "Start": START_DATE, "End": end})
+            "dur_code": code, "Start": START_DATE, "End": end})
         # The same guard `fetch_cdec_series` holds in the daily pipeline: the
         # servlet answers an error with an object, and iterating that yields
         # its keys, so `row.get` raises and takes the whole audit down --
@@ -271,7 +285,7 @@ def storage_history(stations: list[dict]) -> dict[str, dict]:
                 continue
             found = readings.setdefault(row["stationId"],
                                         {"values": [], "last": "",
-                                         "excluded": []})
+                                         "excluded": [], "days": {}})
             # The same reviewed exclusions the refresh applies, out of the
             # same committed file (ADR-116). A screen run against a series
             # the pipeline would not publish answers a question nobody asked.
@@ -287,6 +301,9 @@ def storage_history(stations: list[dict]) -> dict[str, dict]:
             day = reading_day(row.get("date"))
             if day and day > found["last"]:
                 found["last"] = day
+            measured = month_end_day(row.get("date")) if code == "M" else day
+            if measured:
+                found["days"][measured] = value
         # A public service this project does not pay for.
         time.sleep(1)
     return readings
@@ -346,6 +363,18 @@ def month_end_day(stamp) -> str:
     return (following - timedelta(days=1)).isoformat()
 
 
+def month_end_agrees(monthly: float, daily: float) -> bool:
+    """True when a monthly reading and the daily one at its month end agree.
+
+    Inside either floor of `MONTH_END_TOLERANCE_AF` and
+    `MONTH_END_TOLERANCE_SHARE`, which sit well above the monthly series'
+    rounding to about four significant figures.
+    """
+    difference = abs(monthly - daily)
+    return (difference <= MONTH_END_TOLERANCE_AF
+            or difference <= MONTH_END_TOLERANCE_SHARE * max(monthly, daily))
+
+
 def month_end_disagreements(station: str, monthly: list, daily: list) -> dict:
     """Each month whose reading the daily series contradicts at month end.
 
@@ -382,8 +411,7 @@ def month_end_disagreements(station: str, monthly: list, daily: list) -> dict:
             continue
         compared += 1
         difference = value - other
-        if abs(difference) <= MONTH_END_TOLERANCE_AF \
-                or abs(difference) <= MONTH_END_TOLERANCE_SHARE * max(value, other):
+        if month_end_agrees(value, other):
             continue
         excluded = excluded_reading(station, row.get("date"), value)
         found.append({
@@ -532,6 +560,74 @@ def quiet_cutoff(today=None) -> str:
     return f"{day.tm_year - 1:04d}-{day.tm_mon:02d}-{day.tm_mday:02d}"
 
 
+def screening_series(monthly: dict | None, daily: dict | None,
+                     cutoff: str) -> tuple[str, dict | None]:
+    """Which series a station is screened on, or why it is not screened.
+
+    Returns `("monthly", found)`, `("daily", found)`, `("quiet", None)` or
+    `("dormant", None)`. The monthly series is preferred while it reports,
+    because the screens were measured on it. A station whose monthly series
+    is silent or stopped and whose daily series reports within the year is
+    screened on the daily series (ADR-150): Guadalupe's monthly series
+    stopped after three months in 2021, and its daily series reports to
+    October 2026. Quiet means neither series has reported within the year.
+    Dormant means neither has ever answered with a reading.
+    """
+    def reports(found):
+        return bool(found and found["values"] and found["last"] >= cutoff)
+
+    if reports(monthly):
+        return "monthly", monthly
+    if reports(daily):
+        return "daily", daily
+    if (monthly and monthly["values"]) or (daily and daily["values"]):
+        return "quiet", None
+    return "dormant", None
+
+
+def highest_day(found: dict) -> str:
+    """The day the highest reading of a series measures, or "" if none."""
+    days = found.get("days") or {}
+    if not days:
+        return ""
+    return max(sorted(days), key=lambda day: days[day])
+
+
+def daily_reading_on(station: str, day: str) -> float | None:
+    """The station's daily reading for one day, or None where it has none."""
+    try:
+        rows = json.loads(get(CDEC_DATA, {
+            "Stations": station, "SensorNums": "15", "dur_code": "D",
+            "Start": day, "End": day}))
+    except (OSError, ValueError):
+        return None
+    for row in rows if isinstance(rows, list) else ():
+        if isinstance(row, dict) and reading_day(row.get("date")) == day:
+            value = usable(row.get("value"))
+            if value is not None and excluded_reading(
+                    station, row.get("date"), value) is None:
+                return value
+    return None
+
+
+def highest_daily_check(station: str, found: dict) -> dict | None:
+    """The daily reading on the day the monthly high describes (ADR-150).
+
+    Asked only where the spike screen would fire, because a station with no
+    spike has nothing to confirm. `confirmed` is True when the two agree
+    inside the month-end tolerance. A missing daily reading confirms
+    nothing, and the spike screen stands.
+    """
+    top = sorted(found["values"], reverse=True)[:3]
+    day = highest_day(found)
+    if not unstable_maximum(top) or not day:
+        return None
+    daily = daily_reading_on(station, day)
+    time.sleep(1)
+    return {"day": day, "monthly_af": top[0], "daily_af": daily,
+            "confirmed": daily is not None and month_end_agrees(top[0], daily)}
+
+
 def find_candidates(units=None) -> tuple[list[dict], dict]:
     """Reporting storage stations in our drainage areas that we do not track.
 
@@ -553,18 +649,32 @@ def find_candidates(units=None) -> tuple[list[dict], dict]:
     stations = fetch_stations()
     readings = storage_history(stations)
     quiet_before = quiet_cutoff()
+    # The daily series is read only for stations the monthly one leaves
+    # silent (ADR-150): thirty times the rows, so not for every station.
+    silent = [station for station in stations
+              if screening_series(readings.get(station["station"]), None,
+                                  quiet_before)[0] != "monthly"]
+    daily = storage_history(silent, "D", DAILY_CHUNK) if silent else {}
 
     candidates, dormant, quiet, already, aggregates, outside = [], [], [], [], [], []
+    on_daily = []
     for station in stations:
-        found = readings.get(station["station"])
-        if not found or not found["values"]:
+        monthly_found = readings.get(station["station"])
+        daily_found = daily.get(station["station"])
+        series, found = screening_series(monthly_found, daily_found, quiet_before)
+        if series == "dormant":
             # Listed against the sensor and never answering with a reading.
             dormant.append(station)
             continue
-        if found["last"] < quiet_before:
-            # Answering, but not this year. See `storage_history`.
-            quiet.append({**station, "last_reading": found["last"]})
+        if series == "quiet":
+            # Answering, but not this year, on either series. See
+            # `storage_history` and `screening_series`.
+            last = max((found_["last"] for found_ in (monthly_found, daily_found)
+                        if found_), default="")
+            quiet.append({**station, "last_reading": last})
             continue
+        if series == "daily":
+            on_daily.append(station)
         seen = found["values"]
         if AGGREGATE_NAME.search(station["name"]):
             aggregates.append(station)
@@ -604,6 +714,9 @@ def find_candidates(units=None) -> tuple[list[dict], dict]:
             # a hundred and thirty numbers per station saying nothing.
             "highest_readings": sorted(seen, reverse=True)[:3],
             "readings": len(seen),
+            "screened_series": series,
+            "highest_daily_check": (highest_daily_check(station["station"], found)
+                                    if series == "monthly" else None),
             # Named on every candidate that has one, so the reviewer reading
             # a verdict can see what the verdict was reached without.
             "excluded_readings": found["excluded"],
@@ -619,6 +732,7 @@ def find_candidates(units=None) -> tuple[list[dict], dict]:
         "reviewed_readings_excluded": len(excluded),
         "dormant": len(dormant),
         "quiet_for_over_a_year": len(quiet),
+        "screened_on_the_daily_series": len(on_daily),
         "looks_like_an_aggregate": len(aggregates),
         "already_tracked": len(already),
         "outside_the_drawn_areas": len(outside),
@@ -626,6 +740,7 @@ def find_candidates(units=None) -> tuple[list[dict], dict]:
         "_excluded": excluded,
         "_aggregates": aggregates,
         "_quiet": quiet,
+        "_daily": on_daily,
     }
 
 
@@ -691,13 +806,17 @@ def review(candidate: dict, decision, service_capacity_af: float | None) -> dict
     # Kept beside the verdict rather than only in the log: an exclusion that
     # is invisible in the evidence file is a silent edit of the series.
     evidence["excluded_readings"] = candidate.get("excluded_readings") or []
+    evidence["screened_series"] = candidate.get("screened_series", "monthly")
+    check = candidate.get("highest_daily_check")
+    evidence["highest_daily_check"] = check
     evidence["discrepancies"] = [
         {"screen": screen, "detail": detail}
         for screen, detail in discrepancies(
             chosen,
             highest_readings=candidate.get("highest_readings"),
             service_capacity_af=service_capacity_af,
-            provider_basis=CDEC_CAPACITY_BASIS)]
+            provider_basis=CDEC_CAPACITY_BASIS,
+            highest_confirmed=bool(check and check["confirmed"]))]
     evidence["publishable"] = evidence["admitted"] and not evidence["discrepancies"]
     return evidence
 
@@ -742,6 +861,9 @@ def main() -> int:
     for station in info["_quiet"]:
         print(f"    quiet       {station['station']:<4} {station['name']}"
               f"  (last reading {station['last_reading']})", file=sys.stderr)
+    for station in info["_daily"]:
+        print(f"    daily       {station['station']:<4} {station['name']}",
+              file=sys.stderr)
     for station in info["_already"]:
         print(f"    tracked     {station['station']:<4} {station['name']}"
               f"  (by {station['matched_by']})", file=sys.stderr)

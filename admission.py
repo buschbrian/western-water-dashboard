@@ -437,8 +437,21 @@ def preferred_capacity(decision, provider_capacity_af=None, provider_basis=None)
     return decision.capacity_af, decision.capacity_basis
 
 
+def unstable_maximum(highest_readings):
+    """True when the highest reading sits far above the third highest.
+
+    A third-highest of exactly zero is an empty reservoir, not a missing
+    reading: a series whose top three are [58,000, 0, 0] is one anomalous
+    spike over a pond that has stood empty, which is precisely the shape
+    this screen exists to catch. Truthiness here silently waved it through.
+    See `SPIKE_RATIO` for why the third and not the second.
+    """
+    readings = sorted(highest_readings or (), reverse=True)
+    return len(readings) >= 3 and readings[0] > readings[2] * SPIKE_RATIO
+
+
 def discrepancies(decision, highest_readings=None, service_capacity_af=None,
-                  provider_basis=None):
+                  provider_basis=None, highest_confirmed=False):
     """Everything about this candidate that two sources do not agree about.
 
     `admit` answers one question -- is this the right dam -- and answers it
@@ -470,18 +483,19 @@ def discrepancies(decision, highest_readings=None, service_capacity_af=None,
     `service_capacity_af` is the provider's own published full level where it
     has one. Both are optional: a screen with nothing to read stays quiet
     rather than guessing, so a provider that publishes no full level is not
-    reported as disagreeing with itself.
+    reported as disagreeing with itself. `highest_confirmed` is True when a
+    second series from the same station confirms the highest reading on the
+    day it describes; the spike screen then stays quiet (ADR-150).
     """
     found = []
     if not decision.admitted:
         found.append(("no confirmed dam", decision.reason))
 
     readings = sorted(highest_readings or (), reverse=True)
-    # A third-highest of exactly zero is an empty reservoir, not a missing
-    # reading: a series whose top three are [58,000, 0, 0] is one anomalous
-    # spike over a pond that has stood empty, which is precisely the shape
-    # this screen exists to catch. Truthiness here silently waved it through.
-    if len(readings) >= 3 and readings[0] > readings[2] * SPIKE_RATIO:
+    # A monthly high the station's own daily series confirms on the day it
+    # describes is a measurement, not a spike (ADR-150). The caller makes
+    # that comparison, because only the caller has the daily series.
+    if unstable_maximum(readings) and not highest_confirmed:
         found.append((
             "unstable maximum",
             f"highest reading {readings[0]:,.0f} acre-feet against a third "
@@ -515,6 +529,93 @@ def discrepancies(decision, highest_readings=None, service_capacity_af=None,
                 f"{observed:,.0f} acre-feet observed against {capacity:,.0f}, "
                 f"{observed / capacity:.0%}"))
     return found
+
+
+#: How far apart two readings may be and still be read as neighbours of a
+#: record low. Forty-five days, the tolerance a month-end feed's thirty-day
+#: change already uses, so a monthly series has neighbours too.
+RECORD_LOW_NEIGHBOUR_DAYS = 45
+
+#: How far above a record low both its neighbours must sit, as a share of the
+#: full level, before the low is reported. Five percent keeps a reservoir
+#: drained to a few acre-feet quiet: Cogswell's real low of 15 acre-feet in
+#: September 2021 sits between readings of 16. A zero between readings near
+#: 900 is reported, and that zero was a fault.
+RECORD_LOW_GAP_SHARE = 0.05
+
+
+def record_figure_findings(readings, full_level_af=None):
+    """What about a published record high or low a person should review.
+
+    `readings` is one series as `(day, acre_feet)` pairs, oldest first: the
+    series the record figures are computed from, after reviewed exclusions.
+    `full_level_af` is the largest full level the record has had. Returns a
+    list of `(screen, detail)` pairs, empty when nothing is out of shape.
+
+    Two screens, and neither removes anything (ADR-116):
+
+    **A record high above the full level and its surcharge allowance.** The
+    same `SURCHARGE_ALLOWANCE` the dam match uses. On 2026-10-31 Lake Almanor
+    published a record high of 8,918,440 acre-feet against 1,140,000: one
+    daily reading with one digit too many.
+
+    **A record low far below the readings either side of it.** A reservoir
+    reaches its low gradually, so a real low sits among readings close to it.
+    The same day published Lake Almanor's record low as zero, between
+    readings near 1,100,000. Each neighbour within `RECORD_LOW_NEIGHBOUR_DAYS`
+    must be at least twice the low and above it by `RECORD_LOW_GAP_SHARE` of
+    the full level, and there must be at least one. A low after a gap is
+    judged by the reading after it: Cogswell's zero on 17 October 2023 came
+    after five months with no reading and before 878, 876 and 877. A
+    reservoir drained to zero for months has no such neighbours, so a real
+    empty reservoir stays quiet.
+    """
+    readings = [(day, float(value)) for day, value in readings]
+    if not readings:
+        return []
+    found = []
+    scale = full_level_af if positive(full_level_af) else None
+    high_day, high = max(readings, key=lambda pair: pair[1])
+    if scale and high > scale * (1 + SURCHARGE_ALLOWANCE):
+        found.append((
+            "record high above the full level",
+            f"{high:,.0f} acre-feet on {high_day} against a full level of "
+            f"{scale:,.0f}, {high / scale - 1:+.0%}"))
+
+    low = min(value for _, value in readings)
+    floor = (scale or high) * RECORD_LOW_GAP_SHARE
+    isolated = []
+    index = 0
+    while index < len(readings):
+        if readings[index][1] != low:
+            index += 1
+            continue
+        end = index
+        while end + 1 < len(readings) and readings[end + 1][1] == low:
+            end += 1
+        sides = [(readings[index][0], readings[index - 1]) if index > 0 else None,
+                 (readings[end][0], readings[end + 1])
+                 if end + 1 < len(readings) else None]
+        near = [neighbour for edge, neighbour in filter(None, sides)
+                if _days_between(edge, neighbour[0]) <= RECORD_LOW_NEIGHBOUR_DAYS]
+        if near and all(neighbour[1] >= 2 * low and neighbour[1] - low > floor
+                        for neighbour in near):
+            isolated.append((readings[index][0], near, end - index + 1))
+        index = end + 1
+    if isolated:
+        day, near, _ = isolated[0]
+        days = sum(run for *_, run in isolated)
+        found.append((
+            "record low far below its neighbours",
+            f"{low:,.0f} acre-feet on {day}, beside "
+            + " and ".join(f"{value:,.0f} on {when}" for when, value in near)
+            + (f"; {days} readings at this low look the same" if days > 1 else "")))
+    return found
+
+
+def _days_between(first, second):
+    """Whole days between two dates, whichever comes first."""
+    return abs((second - first).days)
 
 
 def admit(candidate, dams):

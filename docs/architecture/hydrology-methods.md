@@ -90,9 +90,19 @@ adapter drops exactly that reading where readings are read. The raw value is
 part of the identity, so a corrected figure at the same stamp flows through
 untouched. Nothing is substituted: no interpolation, no scaled value, no
 automatic spike removal, and the loader refuses an exclusion carrying a
-replacement. Five readings across four withheld California stations are
-excluded today and none of them has ever been published; the seasonal
-estimator is unchanged, so no method version moves.
+replacement. Six monthly readings at five California stations are excluded,
+and 116 daily readings that had set the published record high or record low of
+nine California reservoirs, from Lake Almanor's 8,918,440 acre-feet to its
+zeros between readings near 1,100,000. The seasonal estimator is unchanged, so
+no method version moves.
+
+**The record high and low are the series' own maximum and minimum** since
+2015, after exclusions, so one bad reading becomes a published figure. The
+refresh reports, and never removes, a record high above the largest full
+level the record has had plus `SURCHARGE_ALLOWANCE`, and a record low far
+below the readings either side of it (`admission.record_figure_findings`,
+ADR-150). A reported figure that a person confirms as a fault becomes an
+exclusion.
 
 Where no figure survives those rules, the reservoir is withheld and the
 disagreement is stated rather than settled (ADR-113). Leroy Anderson is the

@@ -95,8 +95,7 @@ Havasu, O'Neill Forebay and Railroad Canyon remain withheld.
 A sixth was excluded on 2026-10-31: Buchanan Dam's 172,105 acre-feet at its
 December 2022 monthly stamp. The station's own daily series reports 22,809
 on 31 December 2022, and has not exceeded 139,059 since 2015. The provider
-issue is drafted and not yet open, so the record's `issue_url` ends in
-`PENDING` until it is.
+question is tracked in [issue #100](https://github.com/buschbrian/western-water-dashboard/issues/100).
 
 **A monthly reading can be checked against the station's own daily series.**
 A CDEC monthly value is the daily value on the month's last day, rounded to
@@ -109,11 +108,36 @@ side is wrong is a reviewer's decision: Grant Lake's and Buchanan's monthly
 values were wrong, and Lake Almanor's daily value is the likelier fault. A
 confirmed fault becomes an exclusion as above.
 
+**A published record figure is screened too** (ADR-150). The record high and
+low are the series' own maximum and minimum, so one bad daily reading becomes
+a published figure. On 2026-10-31 nine California reservoirs published one no
+reservoir could have set, and 116 daily readings were excluded under ADR-116:
+each one would otherwise set its reservoir's record high or low. They are
+Lake Almanor (21), Bucks Lake (34), Butt Valley (24), Cherry Lake (3), Lake
+Mathews (2), Sly Creek (3), Cogswell (4), Courtright (9) and Lake Valley (16),
+each with the readings either side or the full level as the evidence. Many
+zeros fall on the same days at Lake Almanor, Bucks Lake and Butt Valley. The
+provider questions are tracked in issues #103–#111, one per station; each
+record's `issue_url` names that station's issue. The refresh now prints a "Record figure for review" warning for a
+record high above the full level or a record low far below its neighbours
+(`admission.record_figure_findings`). It removes nothing; a person decides.
+The refresh step's full log is the complete referral list. Review it even
+when the run page shows fewer warning annotations.
+
+**The audit reads the daily series where the monthly one is silent**
+(ADR-150). A station is quiet only when neither series has reported within
+the year; a station whose monthly series is silent or stopped and whose daily
+series reports is screened on the daily series. A monthly high is not a spike
+when the daily reading on the day it describes agrees inside the month-end
+tolerance; each evidence row carries `screened_series` and
+`highest_daily_check`.
+
 **Being listed is not reporting.** The candidate screen asks whether a station
-has answered **within the year**. Bon Tempe is why — five usable readings ever,
-the last in March 2023 — and admitting it would have put a name on the roster
-that is withdrawn for a quiet feed the same morning, which is what a silently
-failed fetch looks like.
+has answered **within the year**, on either series (ADR-150). Bon Tempe is
+why — five usable monthly readings ever, the last in March 2023, and daily
+readings to November 2023 — and admitting it would have put a name on the
+roster that is withdrawn for a quiet feed the same morning, which is what a
+silently failed fetch looks like.
 
 ## The denominator
 

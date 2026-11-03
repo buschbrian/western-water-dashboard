@@ -9,7 +9,7 @@
 import { describe, expect, it } from "vitest";
 import { readDroughtCoverage, readPayload, readSnowpack } from "./data/payload-fixture";
 import type { Reservoir, SnowpackPayload } from "./types";
-import { weeklyDrought, weeklySnow, weeklyStorage, weeklySummary } from "./weekly-model";
+import { weeklyDrought, weeklyScopeText, weeklySnow, weeklyStorage, weeklySummary } from "./weekly-model";
 
 const reservoir = (over: Partial<Reservoir>): Reservoir => ({
   name: "Test",
@@ -254,5 +254,24 @@ describe("the digest as a whole", () => {
     expect(summary.storage.measured).toBeGreaterThan(0);
     expect(summary.snow.comparable).toBe(false);
     expect(summary.drought).toBeNull();
+  });
+});
+
+describe("the storage scope line (ADR-149)", () => {
+  const all = readPayload().reservoirs;
+  const powell = all.find((row) => row.name === "Lake Powell")!;
+  const mead = all.find((row) => row.name === "Lake Mead")!;
+
+  it("counts the rows the figures came from and names both dominant reservoirs", () => {
+    expect(weeklyScopeText(all, all))
+      .toBe(`Storage covers ${all.length} reservoirs, Lake Powell included, Lake Mead included.`);
+  });
+
+  it("says how many of the scope a filter left, and what took each dominant reservoir out", () => {
+    const scoped = all.filter((row) => row !== mead);
+    const filtered = scoped.filter((row) => row !== powell).slice(0, 5);
+    expect(weeklyScopeText(filtered, scoped)).toBe(
+      `Storage covers ${filtered.length} of ${scoped.length} reservoirs, `
+      + "Lake Powell not in this view, Lake Mead excluded.");
   });
 });
