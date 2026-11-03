@@ -36,6 +36,7 @@ Observed on: @arcgis/core, map-components, charts-components, common-components 
 | E17 | map-components | `arcgis-basemap-gallery` fetches portal group on connect | Add on first expand | docs/architecture/frontend.md:100-104; src/ui/basemap-gallery.ts:28 | no |
 | E18 | Headless Chromium + ArcGIS canvas | Blank canvas | Real browser for visual checks | CLAUDE.md:34-36 | unclear |
 | E19 | charts-components peer range | `^5.1.1` admits Calcite 5.2 which it cannot draw under | Pin (E1) | package.json | yes (with E1) |
+| E20 | map-components 5.1.27 scale bar | Label contrast depends on tiles through a transparent background | Opaque `--app-surface-raised` background | src/styles/app.css (`arcgis-scale-bar`) | yes |
 
 Not defects (do not file): see the last section.
 
@@ -212,7 +213,6 @@ Not defects (do not file): see the last section.
 - Repro: any `arcgis-map` on a light basemap with `calcite-mode-dark` on the root and an `arcgis-scale-bar` slotted; sample the pixels under `.label`.
 - Ask: an opaque or tokenised label backdrop, or a text halo in the line style as the ruler style already has.
 - Remove when: the component gives its labels a backdrop of their own.
-
 
 ## Not defects (project choices, do not file)
 

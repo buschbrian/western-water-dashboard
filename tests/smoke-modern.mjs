@@ -1183,6 +1183,15 @@ function reportHostedOutage(label, hosted) {
       `${label}: ArrowDown did not make the reservoir the active result (${JSON.stringify(active)})`);
     await tab.waitForFunction(() => document.querySelector("#drought-map-host")
       ?.getAttribute("aria-busy") === "false", null, { timeout: 90000 });
+    const resultsStillOpen = await tab.evaluate((name) => {
+      const input = document.getElementById("place-search-input");
+      const active = document.getElementById(input?.getAttribute("aria-activedescendant") ?? "");
+      return input?.getAttribute("aria-expanded") === "true"
+        && document.getElementById("place-search-list")?.hidden === false
+        && active?.getAttribute("aria-selected") === "true"
+        && active?.textContent?.startsWith(`${name} · Reservoir`);
+    }, reservoir.name);
+    check(resultsStillOpen, `${label}: the results or active reservoir changed while the map loaded`);
     // Use the same full-page, settled accessibility check as every other view.
     await checkAccessibility(tab, check, `${label}, results open`);
     await input.press("Enter");
