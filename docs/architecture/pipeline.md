@@ -334,5 +334,6 @@ workflow only calls `gh`. See
 
 `summarize` also prints a `::warning` titled "Record figure for review" for a
 record high above the full level or a record low far below its neighbours
-(ADR-150). It is an annotation on the run page only; it opens no issue and
-removes nothing.
+(ADR-150). The refresh step's raw log is the complete referral list; the
+run page's annotation list is a convenience view. Review the full log.
+The warning opens no issue and removes nothing.

@@ -18,6 +18,8 @@ describe("the snow place sentence follows the current selection", () => {
   it("explains when a linked site requires the whole region", () => {
     expect(snowScopeSummary("all", null, "Linked site"))
       .toBe("Showing the whole region so the linked measurement site, Linked site, is included.");
+    expect(snowScopeSummary("all", "Gunnison", "Linked site"))
+      .toBe("Showing snow measurements for Gunnison.");
   });
 });
 

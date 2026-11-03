@@ -309,13 +309,7 @@ async function renderOverview(
       <div id="weekly-sections" class="weekly-sections"></div>
       <p class="card-note weekly-note">The storage figures follow the state, county, search, reporting and storage class filters. They also follow the Lake Powell and Lake Mead switches and the drainage area. The snow and drought figures always describe the whole region.</p>
     </section>
-    <!-- What a shared link's ?state= and ?area= narrowed this page to when
-         it opened (slice S3d, docs/OPENING-SCOPE-AND-THE-WESTERN-ROSTER.md).
-         Read once from the address bar the page loaded with -- the filter
-         bar's own controls are what the reader adjusts from there, and
-         #filter-status already reports what they currently hold. Hidden
-         rather than empty when the reader asked for nothing, so this never
-         announces a blank status line. -->
+    <!-- The place sentence follows the same current selection as the figures. -->
     <p id="opening-scope-summary" class="opening-scope-summary" role="status" hidden></p>
     <section class="dashboard-filterbar mobile-filterbar" aria-labelledby="filter-heading">
       <!-- Lake Powell rides with the heading rather than in the row of
@@ -520,11 +514,7 @@ async function renderOverview(
   let storageClassFilter: number | null = null;
 
   const openingSummary = document.querySelector<HTMLElement>("#opening-scope-summary");
-  if (openingSummary) {
-    const summary = openingScopeSummary(openingScope.selection, openingRosters);
-    openingSummary.textContent = summary;
-    openingSummary.hidden = summary === "";
-  }
+
 
   /* The subregion names travel in the payload's own envelope (ADR-048), so a
    * code the roster does not carry is labelled by its code rather than lost.
@@ -873,6 +863,11 @@ async function renderOverview(
   let revision = 0;
   const update = async (): Promise<void> => {
     const currentRevision = ++revision;
+    if (openingSummary) {
+      const summary = openingScopeSummary({ state: placeState(), area: chosenDrainage }, openingRosters);
+      openingSummary.textContent = summary;
+      openingSummary.hidden = summary === "";
+    }
     /* One drainage axis at any of its three widths. Prefix matching is the
      * level contract: region, subregion and basin codes nest exactly. */
     const inChosenDrainage = (reservoir: Reservoir): boolean =>

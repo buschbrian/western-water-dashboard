@@ -314,7 +314,10 @@ export function summaryFlowHeading(date: string | null): string {
 
 function summaryComparison(gauge: RiverGauge): string {
   if (gauge.tier !== "natural") return SHAPED_SUMMARY;
-  if (gauge.compared_with_normal) return FLOW_CLASS_WORDS[gauge.flow_class];
+  if (gauge.compared_with_normal) {
+    const qualifier = gauge.short_record ? ` (${gauge.normal_band.years} years of record)` : "";
+    return FLOW_CLASS_WORDS[gauge.flow_class] + qualifier;
+  }
   return gauge.normal_withheld === "ten_years_or_fewer"
     ? "Not compared: 10 years of record or fewer"
     : "Not compared: no normal for this date";

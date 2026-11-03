@@ -311,7 +311,7 @@ async function renderFound(payload: ReservoirPayload,
   /* A reservoir with a reviewed level (ADR-135) leads with two tiles: the
    * level above its named datum, and percent full with the level it is
    * measured against. Every other reservoir keeps the sentence. */
-  const level = levelHeadline(reservoir);
+  const level = levelHeadline(reservoir, payload.generated_at);
   basis.textContent = level && headlinePercent(reservoir) !== null
     ? percentFullBasis(reservoir) : view.basis;
   headline.append(value, basis);

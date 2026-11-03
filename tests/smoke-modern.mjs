@@ -2877,6 +2877,8 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
       await tab.waitForFunction((expected) => window.__overviewReady?.visible === expected,
         expectedReservoirs, { timeout: 60000 });
 
+      check(await tab.locator("#opening-scope-summary").isHidden(),
+        `${label}: resetting the place left an old opening sentence`);
       // Picking a state narrows the table and writes the address, on its own.
   /* The merged Where menu is a Calcite component now, so driving it is
    * set-value-plus-event rather than Playwright's native-select helper. */
@@ -2893,6 +2895,9 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
       check((await tab.evaluate(() => window.location.search))
         .includes(`state=${filterState.code}`),
       `${label}: the state choice is not in the address`);
+
+      check(await tab.locator("#opening-scope-summary").isVisible(),
+        `${label}: selecting a state did not update the place sentence`);
 
       /* The shared Drainage area menu spans all three tiers. A held state
        * narrows the occupied subregion rows rather than leaving a separate

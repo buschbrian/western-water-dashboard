@@ -24,7 +24,7 @@ import { stateName } from "./data/state-vocabulary";
 
 export function snowScopeSummary(stateCode: string, area: string | null,
   widenedForSite: string | null): string | null {
-  if (widenedForSite !== null) {
+  if (widenedForSite !== null && area === null) {
     return `Showing the whole region so the linked measurement site, ${widenedForSite}, is included.`;
   }
   const state = stateCode !== "all" ? stateName(stateCode) : null;

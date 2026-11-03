@@ -12,6 +12,7 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 ## [Unreleased]
 
 ### Added
+
 - **A page for reporters.** `reporters.html` says how to cite a figure (the
   provider first, then this site, with the reading date and a link to the page
   that shows it), what the main figures mean, and what they cannot support: no
@@ -118,6 +119,7 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   `precipitation.html?layer=soil` opens on soil moisture.
 
 ### Changed
+
 - **The weekly card's storage figures follow every filter** (ADR-149) on the
   storage charts page: state, county, search, reporting and storage class, as
   well as the Lake Powell and Lake Mead switches and the drainage area. The

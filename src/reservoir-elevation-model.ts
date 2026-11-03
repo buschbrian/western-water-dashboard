@@ -123,12 +123,15 @@ export function shortDatumName(elevation: ReservoirElevation): string {
 }
 
 /** The level tile at the top of a reviewed reservoir's page, or null. */
-export function levelHeadline(reservoir: Reservoir): { figure: string; basis: string } | null {
+export function levelHeadline(reservoir: Reservoir, runDate: string): { figure: string; basis: string } | null {
   const elevation = reservoir.elevation;
   if (!elevation) return null;
+  const dated = elevation.as_of !== reservoir.as_of
+    || elevationLate(elevation, runDate, reservoir.stale_after_days) !== null;
   return {
     figure: `${formatFeet(elevation.current)} feet`,
     basis: `above ${shortDatumName(elevation)}`
+      + (dated ? ` · ${formatDate(elevation.as_of)}` : "")
   };
 }
 

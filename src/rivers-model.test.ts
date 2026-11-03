@@ -161,6 +161,9 @@ describe("river model", () => {
     expect(summaryRow(shaped, date)).toMatchObject({
       anchor: gaugeAnchor(shaped), flow: "3,921", comparison: SHAPED_SUMMARY });
     expect(summaryRow(natural, date)).toMatchObject({ flow: "15.4", comparison: "Normal" });
+    const short = { ...natural, short_record: true,
+      normal_band: riverBand(natural.as_of, { years: 22 }) } as typeof natural;
+    expect(summaryRow(short, date).comparison).toBe("Normal (22 years of record)");
     expect(summaryRow(naturalRiverGauge({}, "ten_years_or_fewer"), date).comparison)
       .toBe("Not compared: 10 years of record or fewer");
   });

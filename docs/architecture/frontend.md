@@ -51,7 +51,7 @@ none, and the browser suite visits every one.
 A reservoir on the reviewed elevation roster leads with two tiles under the
 stored volume (owner's display ruling U7, 2026-10-31): the level above a short
 datum name ("3,531.69 feet above NGVD 1929", a project datum by its own name)
-beside percent full with its basis ("23.7% full (maximum level)", from
+with its date when late or different from the storage date, beside percent full with its basis ("23.7% full (maximum level)", from
 `capacityBasisShortName`, keyed like the full names in `state/detail.ts`). A
 reservoir with no reviewed level keeps the one percent-full sentence. Such a
 reservoir also shows its surface level
@@ -585,7 +585,8 @@ Snow's `snowScopeSummary` is rebuilt on every figure update from the current
 area and the selected state. Clearing the area removes its old opening label;
 a coarser opening place is retained while it still bounds the loaded payload.
 Clearing a coarser opening area navigates to load the wider station set.
-Weekly snow and drought headings explicitly say whole region beside filtered
+Storage charts also rebuild their place sentence from the current state and
+drainage selection. Weekly snow and drought headings explicitly say whole region beside filtered
 storage. The Data page documents daily precipitation and its encoded history
 at their existing `data/` paths, with schema coverage tests. The static
 `reporters.html` guide is linked from Methods, Data and reading-page footers.

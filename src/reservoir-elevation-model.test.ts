@@ -179,15 +179,23 @@ describe("the water-year chart", () => {
   });
 
   it("heads a reviewed reservoir's page with its level above a short datum name", () => {
-    const national = reservoir();
+    const national = reservoir({ as_of: "2026-10-20" });
     expect(shortDatumName(national.elevation!)).toBe("NGVD 1929");
-    expect(levelHeadline(national)).toEqual({
+    expect(levelHeadline(national, "2026-10-21")).toEqual({
       figure: `${national.elevation!.current.toLocaleString("en-US",
         { minimumFractionDigits: 2, maximumFractionDigits: 2 })} feet`,
       basis: "above NGVD 1929" });
-    const project = reservoir({ elevation: syntheticProjectElevation() });
-    expect(levelHeadline(project)?.basis).toBe("above the Hoover Dam powerhouse datum");
+    const project = reservoir({ as_of: "2026-10-20", elevation: syntheticProjectElevation() });
+    expect(levelHeadline(project, "2026-10-21")?.basis).toBe("above the Hoover Dam powerhouse datum");
     const { elevation: _drop, ...plain } = reservoir();
-    expect(levelHeadline(plain as Reservoir)).toBeNull();
+    expect(levelHeadline(plain as Reservoir, "2026-10-21")).toBeNull();
+  });
+
+  it("dates a level that is late or measured on a different day from storage", () => {
+    const same = reservoir({ as_of: "2026-10-20", stale_after_days: 2 });
+    expect(levelHeadline(same, "2026-10-21")?.basis).toBe("above NGVD 1929");
+    expect(levelHeadline(same, "2026-10-23")?.basis).toContain("Oct 20, 2026");
+    expect(levelHeadline({ ...same, as_of: "2026-10-21" }, "2026-10-21")?.basis)
+      .toContain("Oct 20, 2026");
   });
 });

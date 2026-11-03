@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import { describe, expect, it } from "vitest";
 import { validateSoilMoisturePayload } from "./data/soil-validate";
+import { SET_SHARE } from "./precip-model";
 import {
   soilCountsText, soilLeftOutText, soilMapValues, soilMostChange, soilNoChangeText, soilNoSideText,
   setShareWords, soilWeekText
@@ -118,6 +119,7 @@ describe("the soil sentences", () => {
   it("states the same set-day share the soil refresh uses", () => {
     const source = readFileSync(new URL("../refresh_soil_moisture.py", import.meta.url), "utf8");
     const share = Number(/^END_DAY_SHARE = ([\d.]+)$/m.exec(source)?.[1]);
+    expect(share).toBe(SET_SHARE);
     expect(setShareWords(share)).toBe(setShareWords());
   });
 });

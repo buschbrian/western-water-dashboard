@@ -95,8 +95,7 @@ Havasu, O'Neill Forebay and Railroad Canyon remain withheld.
 A sixth was excluded on 2026-10-31: Buchanan Dam's 172,105 acre-feet at its
 December 2022 monthly stamp. The station's own daily series reports 22,809
 on 31 December 2022, and has not exceeded 139,059 since 2015. The provider
-issue is drafted and not yet open, so the record's `issue_url` ends in
-`PENDING` until it is.
+question is tracked in [issue #100](https://github.com/buschbrian/western-water-dashboard/issues/100).
 
 **A monthly reading can be checked against the station's own daily series.**
 A CDEC monthly value is the daily value on the month's last day, rounded to
@@ -118,10 +117,12 @@ Lake Almanor (21), Bucks Lake (34), Butt Valley (24), Cherry Lake (3), Lake
 Mathews (2), Sly Creek (3), Cogswell (4), Courtright (9) and Lake Valley (16),
 each with the readings either side or the full level as the evidence. Many
 zeros fall on the same days at Lake Almanor, Bucks Lake and Butt Valley. The
-provider issues are drafted and not yet open, so each `issue_url` ends in
-`PENDING`. The refresh now prints a "Record figure for review" warning for a
+provider questions are tracked in issues #103–#111, one per station; each
+record's `issue_url` names that station's issue. The refresh now prints a "Record figure for review" warning for a
 record high above the full level or a record low far below its neighbours
 (`admission.record_figure_findings`). It removes nothing; a person decides.
+The refresh step's full log is the complete referral list. Review it even
+when the run page shows fewer warning annotations.
 
 **The audit reads the daily series where the monthly one is silent**
 (ADR-150). A station is quiet only when neither series has reported within
