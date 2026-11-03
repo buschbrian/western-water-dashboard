@@ -2,15 +2,16 @@
 
 **Live site:** <https://buschbrian.github.io/western-water-dashboard/>
 
-A public dashboard for reservoir storage, mountain snow, and drought across
-the western United States. It combines official observations, reviewed full
+A public dashboard for reservoir storage, mountain snow, precipitation, river
+flow, terminal lakes and drought across the western United States. It combines
+official observations, reviewed full
 levels, climate comparisons, weekly drought measurements, and drainage-area
 context in one typed ArcGIS 5.1 and Calcite 5 application.
 
 The project began as a Utah reservoir map. Its current scope follows five
 western hydrologic regions across eleven states. The application can draw five
 regions, 44 subregions, 75 basins, or 571 drought subbasins. It reads a reviewed
-western reservoir roster fed by five observation providers and a western
+western reservoir roster fed by nine observation providers and a western
 network of automated mountain snow sites. Counts that can change with provider
 reporting are read from the runtime payloads rather than written into
 application code.
@@ -23,10 +24,16 @@ application code.
 | [Western Storage Charts](overview.html) | What moved this week and how the current reservoir set compares across charts and an exact-value table. |
 | [Reservoir Details](reservoir.html?name=Lake%20Powell) | One reservoir at a time: its reading, both comparisons, its twelve-month history, and its sources. Every published reservoir has one. |
 | [Western Snowpack](snow.html) | How much water is held in mountain snow, by site and drainage area, against the 1991–2020 comparison period. |
+| [Western Precipitation](precipitation.html) | Recent and season precipitation at mountain stations, with the week's change in soil moisture. |
 | [Western Drought](drought.html) | How much land is in each U.S. Drought Monitor class and how that relates to stored water. |
+| [River Flow](rivers.html) | Daily mean flow at reviewed gauges, grouped by review tier, with comparisons for natural gauges. |
+| [Terminal Lakes](lakes.html) | Surface level and volume of natural terminal lakes, reached from Methods and Data. |
+| [Story Views](story.html) | One figure sized for embedding: precipitation or water stored above a reservoir. |
+| [Drought on the Ground](landscape.html) | Photographs beside the measurements, with an explicit notice while the gallery is empty. |
 | [Methods and Sources](methods.html) | Where each number comes from, how it is worked out, and what it does not claim. |
 | [Public Data API](data.html) | Stable JSON paths, field definitions, update behavior, and code examples. |
 | [Terms and License](terms.html) | Project terms, source-data terms, and the noncommercial code license. |
+| [For Reporters](reporters.html) | Citation, comparison limits, and guidance for publishing charts or screenshots. |
 
 `modern.html` is a stable alias for the storage map. The former ArcGIS 4.34,
 MapLibre, and overview paths are accessible compatibility redirects. They
@@ -63,7 +70,9 @@ is the same `?state=` and `?area=` a reader can set from the controls. The
 place is remembered between visits; a link always outranks it.
 
 The storage charts use the same geographic and reservoir scope. Their search,
-filters, summary strip, six ArcGIS charts, and semantic table update together.
+filters, summary strip, weekly storage figures, six ArcGIS charts, and semantic
+table update together. The weekly snow and drought figures describe the whole
+region, as their headings state.
 Every published reservoir also has a page of its own —
 `reservoir.html?name=...` — linked from the map's details panel and from each
 other surface that names one; a reservoir whose feed goes quiet keeps its page
@@ -101,8 +110,9 @@ service does not answer.
 | `npm run verify:fast` | Typecheck and run the Vitest unit suite. |
 | `npm run verify:frontend` | Typecheck, unit tests, SDK bundle budget, and build `dist/`. |
 | `npm run verify:pipeline` | Run pipeline, source, geography, and measurement tests. |
-| `npm run verify:browser` | Build, then check every page in Chromium, including axe-core. |
-| `npm run verify:all` | Everything above, in order. |
+| `npm run verify:worker` | Typecheck and test the question service under `worker/`. |
+| `npm run verify:browser` | Build, run both smoke suites with axe-core, then check the hosted-service outage fallback. |
+| `npm run verify:all` | Frontend, pipeline, worker and browser targets, in order. |
 | `scripts/refresh-daily.sh --dry-run` | Print the daily refresh plan and its published file list. |
 | `python refresh_reservoirs.py --dry-run` | Fetch and validate reservoir data without writing. |
 | `python tools/build_normal_baselines.py --missing` | Build only missing 1991–2020 reservoir comparisons. |
@@ -114,10 +124,10 @@ still exist; the `verify:*` targets are what CI runs and what
 [`docs/operations/verification.md`](docs/operations/verification.md) explains.
 
 Playwright is intentionally not a package dependency. Restore it after an
-ordinary `npm install` with:
+ordinary `npm install` with the repository's isolated installer:
 
 ```bash
-npm install --no-save --no-package-lock playwright
+bash scripts/install-playwright.sh
 ```
 
 To use an installed Chrome instead of downloading Chromium:
@@ -138,6 +148,11 @@ Stable public paths are documented on the [data page](data.html):
 |---|---|
 | `/api/reservoirs.json` | Current storage, comparisons, changes, twelve-month history, reporting status, source identity, and geography. |
 | `/api/snowpack.json` | Water-year site series and drainage-area summaries against 1991–2020. |
+| `/data/precipitation.json`, `/data/precipitation_history.json` | Accumulated precipitation at mountain stations and its encoded historical comparison. |
+| `/data/soil_moisture.json`, `/api/soil_moisture_history.json` | Soil readings, seven-day changes and the published history of drainage-area changes. |
+| `/api/rivers.json`, `/api/river_history.json` | Daily mean river flow, review status and day-by-day history. |
+| `/api/lakes.json` | Natural terminal-lake surface level and volume. |
+| `/api/elevation_history.json` | Daily reservoir surface levels above reviewed datums. |
 | `/data/drought/usdm-huc6.json` | Weekly drought shares for 75 basins. |
 | `/data/drought/usdm-huc4.json` | The same week measured over 44 larger subregions. |
 | `/data/drought/usdm-huc8.json` | The same week measured over the finer subbasins (ADR-088). |
@@ -161,12 +176,12 @@ same agency's Network-Linked Data Index (ADR-077). Drought data comes from the
 U.S. Drought Monitor. The complete ownership and failure contract is in
 [`docs/AUTHORITATIVE-SOURCE-INVENTORY.md`](docs/AUTHORITATIVE-SOURCE-INVENTORY.md).
 
-California is a production provider, re-audited 2026-08-28: 147 reservoirs,
+California is a production provider, re-audited 2026-08-28,
 read from the state's own service, with the full level taken from the operator's
-published figure wherever it publishes one (ADR-070). Twelve candidates
-are held rather than published and
-[`admitted_cdec_reservoirs.json`](admitted_cdec_reservoirs.json) names each
-with the finding behind it. Colorado followed on 2026-08-21 with ten
+published figure wherever it publishes one (ADR-070). Candidates still held
+are named with their findings in
+[`admitted_cdec_reservoirs.json`](admitted_cdec_reservoirs.json).
+Colorado followed on 2026-08-21 with ten
 reservoirs inside the drawn drainages — 91 of the state's storage stations sit
 on the eastern slope, outside the drawn western geography — held to the same
 review in
@@ -176,7 +191,7 @@ and [`docs/COLORADO-ADMISSION-REVIEW.md`](docs/COLORADO-ADMISSION-REVIEW.md).
 
 The U.S. Geological Survey became the fifth provider on 2026-08-22 with seven
 reservoirs in Arizona, Nevada and Washington, admitted on confirmed dam
-matches; four more candidates are held with their findings in
+matches; other candidates are held with their findings in
 [`admitted_usgs_reservoirs.json`](admitted_usgs_reservoirs.json). It is the
 only provider that publishes no full level of its own, so every one of its
 denominators comes from the dam inventory. It now reads the agency's modern
@@ -271,8 +286,13 @@ Maps SDK for JavaScript 5.1, ArcGIS Charts 5.1, and Calcite Components 5.1.
 | `overview.html`, `src/overview*` | Storage charts workspace and shared filter model. |
 | `reservoir.html`, `src/reservoir*` | One reservoir at a time: reading, comparisons, history, provenance. |
 | `snow.html`, `src/snow*` | Snow curves, drainage-area map, site map, and detail views. |
+| `precipitation.html`, `src/precip*`, `src/soil-map-model.ts` | Precipitation, soil moisture, historical comparisons and map. |
+| `rivers.html`, `src/rivers*` | Daily mean flow at reviewed river gauges. |
+| `lakes.html`, `src/lakes*` | Natural terminal-lake surface level and volume. |
+| `story.html`, `src/story.ts` | Embeddable figures. |
+| `landscape.html` | Drought photographs and the current gallery notice. |
 | `drought.html`, `src/drought*` | Weekly drought map, comparisons, rankings, and distribution. |
-| `methods.html`, `data.html`, `terms.html` | Methods, public API, and legal documentation. |
+| `methods.html`, `data.html`, `terms.html`, `reporters.html` | Methods, public API, terms and publication guidance. |
 | `legacy/`, `maplibre/`, `explore.html` | Compatibility redirects only. |
 | `public/retired-route.js` | Allowlisted translation for retired URL state. |
 | `shared/reservoir-viz.js` | Frozen source-only storage color-table oracle; never published. |
@@ -327,7 +347,9 @@ paths as redirects. The western geography, reader-chosen opening scope, the
 first-visit place chooser and the remembered place behind it, the mountain
 snow network, the nine-provider western reservoir roster, the upstream sets,
 drought measurements and every other map at four area sizes, accessibility gates, and transfer
-policy have all shipped. The Utah state
+policy have all shipped. The precipitation and river-flow pages, soil moisture,
+terminal-lake page, reviewed Powell/Mead levels, reservoir share pictures and
+reporter guide are also live. The Utah state
 mask is retired and the state boundary is no longer published (ADR-067);
 state outlines a reader can see come from Esri's Living Atlas, built from
 U.S. Census Bureau boundaries, and are drawn only where a continuous surface
@@ -335,12 +357,19 @@ means a line cannot hide the subject (ADR-061).
 
 Current product work is narrower, in the order it should be worked:
 
-- **complete a human visual review of every page and viewport.** Automated
-  tests cannot judge colour balance, terrain, density, or visual hierarchy
-  because the ArcGIS canvas is blank in headless Chromium;
-- settle the 12 California and 4 U.S. Geological Survey candidates still held
+- **complete a human visual review of every page and viewport.** Browser
+  suites check readiness, layout, accessibility and failure paths; map pixels
+  depend on the renderer and cannot establish colour balance, terrain,
+  density or visual hierarchy. The November 2 release passed browser suites,
+  CI and live checks, but did not complete a manual walkthrough of every map,
+  keyboard path and theme;
+- settle the California and U.S. Geological Survey candidates still held
   for source disagreements, each named with its finding in its roster file;
 - keep automatically reported late and withdrawn feeds under review;
+- track the open Rifle Gap provider discrepancy (#91) and California source
+  issues (#44–47, #100, #103–111). Reviewed exclusions do not claim the provider
+  corrected a reading. Record-figure warnings are referrals for review, not
+  permission for automatic exclusion (ADR-150);
 - re-check the two vendor accessibility items and the content policy on the
   next SDK upgrade: the `aria-prohibited-attr` entry in `AXE_EXCEPTIONS`, the
   unnamed Calcite slider handle that `src/ui/slider-label.ts` works around, and

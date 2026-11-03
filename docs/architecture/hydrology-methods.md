@@ -94,7 +94,10 @@ replacement. Six monthly readings at five California stations are excluded,
 and 116 daily readings that had set the published record high or record low of
 nine California reservoirs, from Lake Almanor's 8,918,440 acre-feet to its
 zeros between readings near 1,100,000. The seasonal estimator is unchanged, so
-no method version moves.
+no method version moves. The 1991–2020 reference medians use the same reviewed
+series. When an exclusion changes their inputs, rebuild the affected
+references before publishing the derived comparisons; see
+[Data refresh](../operations/data-refresh.md).
 
 **The record high and low are the series' own maximum and minimum** since
 2015, after exclusions, so one bad reading becomes a published figure. The
@@ -168,8 +171,7 @@ a share of a height above an arbitrary datum has no hydrologic meaning. The
 volume's twelve-month history carries the period-of-record monthly normal
 (`normal_af`, with `normal_years`) that a reservoir's does; no 1991–2020
 climate normal is published for a lake until the normals builder learns the
-type. The payload is `lakes.json`; no page shows it yet, so the glossary's
-statement that every published water is a reservoir still holds for readers.
+type. The payload is `lakes.json`, shown on `lakes.html` (ADR-119).
 Great Salt Lake requires an arm-aware representation; one point and one total
 would collapse separately measured waters.
 
