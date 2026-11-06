@@ -89,10 +89,12 @@ Five California readings are excluded: Lake Havasu's 5,913,000 and
 O'Neill Forebay's 443,348 against a 56,400
 acre-foot facility, Railroad Canyon's 58,508 against nearly 12,000, and Grant
 Lake's 82,410 against 47,575. The issues stay open
-([#44](https://github.com/buschbrian/western-water-dashboard/issues/44)
+([#45](https://github.com/buschbrian/western-water-dashboard/issues/45)
 to [#47](https://github.com/buschbrian/western-water-dashboard/issues/47)):
 an exclusion says what this project did in the meantime, not what the provider
-answered. **An exclusion is not an admission** -- removing the reading answers
+answered. Lake Havasu's [#44](https://github.com/buschbrian/western-water-dashboard/issues/44)
+is closed under ADR-152: both readings are power-of-ten shifts of their
+neighbours. **An exclusion is not an admission** -- removing the reading answers
 the spike screen and nothing else, and the audit is re-run afterwards to see
 what the remaining screens say. Grant Lake subsequently passed its admission;
 Havasu, O'Neill Forebay and Railroad Canyon remain withheld.
@@ -125,7 +127,11 @@ Mathews (2), Sly Creek (3), Cogswell (4), Courtright (9) and Lake Valley (16),
 each with the readings either side or the full level as the evidence. Many
 zeros fall on the same days at Lake Almanor, Bucks Lake and Butt Valley. The
 provider questions are tracked in issues #103–#111, one per station; each
-record's `issue_url` names that station's issue. The refresh now prints a "Record figure for review" warning for a
+record's `issue_url` names that station's issue. On 2026-11-04 every excluded
+reading was still served unchanged; #105, #108, #109, #110 and #111 are closed
+under ADR-152 because every reading in them is a mechanical error (a zero, a
+power-of-ten shift, one digit dropped or added, or a same-day exchange with
+another station), and the exclusions stay. The refresh now prints a "Record figure for review" warning for a
 record high above the full level or a record low far below its neighbours
 (`admission.record_figure_findings`). It removes nothing; a person decides.
 The refresh step's full log is the complete referral list. Review it even

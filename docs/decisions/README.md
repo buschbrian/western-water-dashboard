@@ -65,7 +65,8 @@ denominator. **Start with ADR-070, then ADR-072, then ADR-003.**
   [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md),
   [ADR-135](ADR-135-publish-a-reservoir-level-only-above-a-reviewed-datum.md),
   [ADR-139](ADR-139-review-each-reservoirs-vertical-datum-before-publishing-an-elevation.md),
-  [ADR-150](ADR-150-read-the-daily-series-before-calling-a-station-quiet-or-a-high-a-spike.md)
+  [ADR-150](ADR-150-read-the-daily-series-before-calling-a-station-quiet-or-a-high-a-spike.md),
+  [ADR-152](ADR-152-close-a-provider-issue-whose-every-reading-is-a-mechanical-error.md)
 - Freshness and withdrawal:
   [ADR-056](ADR-056-withdraw-a-reading-that-belongs-to-another-season.md),
   [ADR-115](ADR-115-state-a-reviewed-hold-where-the-reservoir-used-to-be.md),
@@ -322,7 +323,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-113](ADR-113-withhold-a-reservoir-whose-full-levels-cannot-be-reconciled.md) | Withhold a reservoir whose full levels cannot be reconciled | Accepted; qualifies ADR-070, ADR-072 and ADR-111; Leroy Anderson is the first case |
 | [ADR-114](ADR-114-publish-a-water-type-and-an-operating-character.md) | Publish a water type and an operating character | Accepted; extends ADR-112 and qualifies ADR-072 and ADR-111; labels first, each numeric consequence its own decision |
 | [ADR-115](ADR-115-state-a-reviewed-hold-where-the-reservoir-used-to-be.md) | State a reviewed hold where the reservoir used to be | Accepted; extends ADR-056 and qualifies ADR-020; a hold is a four-field notice, never a measurement |
-| [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md) | Exclude a reviewed reading, and never repair one | Accepted; extends ADR-072's no-repair rule; five readings named across four withheld California stations, the issues stay open |
+| [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md) | Exclude a reviewed reading, and never repair one | Accepted; extends ADR-072's no-repair rule; five readings named across four withheld California stations, the issues stay open; issue closure amended by ADR-152 |
 | [ADR-117](ADR-117-close-the-scope-at-version-1-0-0.md) | Close the scope at version 1.0.0 | Superseded by ADR-124 for the bounded pilot; versioning, release approval and other scope limits retained; ADR-123 brings the drought time series and ADR-125 precipitation back into scope |
 | [ADR-118](ADR-118-publish-terminal-lakes-from-their-own-roster-and-payload.md) | Publish terminal lakes from their own roster and payload | Accepted; implements ADR-112 and extends ADR-056 and ADR-098; Walker Lake is the first lake, generated and not yet shown |
 | [ADR-119](ADR-119-show-terminal-lakes-on-their-own-page.md) | Show terminal lakes on their own page | Accepted; extends ADR-118 and ADR-045; reached from the methods and data pages, not the bar |
@@ -357,6 +358,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-149](ADR-149-let-the-weekly-storage-figures-follow-every-filter.md) | Let the weekly storage figures follow every filter | Accepted; supersedes the ADR-011 scope-versus-filter line for the storage charts' weekly card; its storage figures follow the state, county, search, reporting and storage-class filters as well as both switches and the drainage area; snow and drought stay whole-region; the scope line says "N of M" |
 | [ADR-150](ADR-150-read-the-daily-series-before-calling-a-station-quiet-or-a-high-a-spike.md) | Read the daily series before calling a station quiet or a high a spike | Accepted; extends ADR-116; the California audit screens the daily series where the monthly one is silent, a monthly high the daily reading confirms is not a spike, and the refresh reports a record high above the full level or a record low far below its neighbours, removing nothing; ADR-148 and ADR-149 are other records |
 | [ADR-151](ADR-151-keep-reader-context-with-the-current-figures.md) | Keep reader context with the current figures | Accepted; current snow place sentence, regional weekly headings, reviewed reservoir lead and share context, split soil lists, precipitation reference and reporter guide; amends ADR-135 and ADR-142 presentation only |
+| [ADR-152](ADR-152-close-a-provider-issue-whose-every-reading-is-a-mechanical-error.md) | Close a provider issue whose every reading is a mechanical error | Accepted; amends ADR-116's "the issues stay open"; zero, power-of-ten shift, one digit dropped or added, or same-day exchange, re-checked unchanged at the provider; exclusions unchanged; #44, #105, #108, #109, #110 and #111 closed, eight issues stay open |
 
 ## Relationship to the historical journal
 
