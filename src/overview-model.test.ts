@@ -234,6 +234,23 @@ describe("modern overview model", () => {
     expect(trend[trend.length - 1]?.month).toBe("2026-08");
   });
 
+  /* A month with no reports is unknown, not empty. A zero here was drawn as
+   * an empty-reservoir bar. */
+  it("leaves a month with no reports empty instead of zero", () => {
+    const monthly = [
+      { month: "2026-07", mean_af: 100, min_af: 90, max_af: 110, end_af: 100,
+        normal_af: 100, days: 31 },
+      { month: "2026-08", mean_af: null, min_af: null, max_af: null, end_af: null,
+        normal_af: 100, days: 0 }
+    ] as unknown as typeof base.monthly;
+    const trend = monthlyTrend([reservoir({ name: "Gap", monthly })]);
+    const gap = trend.find((point) => point.month === "2026-08");
+    expect(gap?.reporting).toBe(0);
+    expect(gap?.percent).toBeNull();
+    expect(gap?.storageAf).toBeNull();
+    expect(trend.find((point) => point.month === "2026-07")?.percent).not.toBeNull();
+  });
+
   /* Full-width codes because the level decides the width since ADR-103:
    * `drainageCodeAtLevel` refuses a code shorter than the level it is asked
    * for, rather than slicing a one-character code down to itself and

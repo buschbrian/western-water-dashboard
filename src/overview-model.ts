@@ -691,8 +691,12 @@ export interface TrendPoint {
    * arrangement that needs nothing from the axis at all.
    */
   axisLabel: string;
-  percent: number;
-  storageAf: number;
+  /**
+   * Null when no reservoir in the filters reported this month. A month with
+   * no reports is unknown, not empty, and a zero bar would say it was empty.
+   */
+  percent: number | null;
+  storageAf: number | null;
   /** Reservoirs that reported anything for this month. */
   reporting: number;
   /**
@@ -752,8 +756,9 @@ export function monthlyTrend(reservoirs: readonly Reservoir[]): TrendPoint[] {
       month,
       label: monthLabel(month),
       axisLabel: month,
-      percent: Number((rollup.percentFull ?? 0).toFixed(1)),
-      storageAf: rollup.storageAf,
+      percent: rollup.percentFull === null
+        ? null : Number(rollup.percentFull.toFixed(1)),
+      storageAf: rollup.reporting > 0 ? rollup.storageAf : null,
       reporting: rollup.reporting,
       scopeCount: rollup.scopeCount,
       percentCapacityReporting: rollup.percentCapacityReporting,
