@@ -74,6 +74,18 @@ and its labels sit on plates of the page colour so no line crosses text.
 `window.__reservoirReady.elevation` is `drawn`, `card` (the history could not
 be read) or `none`; the chart's host is `#reservoir-elevation-chart`.
 
+"Copy these figures" (`src/ui/copy-figures.ts`, sentences from
+`src/state/figures-text.ts`) follows the answer tiles on a found reservoir page,
+the "What moved this week" card on the storage charts page (the same filtered
+rows as the card) and the precipitation card's headline figures. It is absent
+from the share view and from the withdrawn, held, unknown and landing states,
+and hides itself when the page has no figure it can stand behind. Its buttons
+are always in view and its sentences sit in a closed `<details>`. The text is
+only numbers, dates, periods and providers the page already shows, in the
+page's own formats; the last line is the credit line from `reporters.html`,
+with the provider first and `SITE_ADDRESS` once. A combined figure from more
+than two providers gets a neutral credit line.
+
 #### The share frame and the share pages
 
 `reservoir.html?name=...&view=share` (ADR-141) is the same page in a picture

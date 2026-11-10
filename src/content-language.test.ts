@@ -141,6 +141,9 @@ const userTextFiles = [
   "src/viz/weekly-summary.ts",
   "src/weekly-model.ts",
   "src/state/drought-url.ts",
+  // The sentences a reader can copy (reporters.html), and the control around them.
+  "src/state/figures-text.ts",
+  "src/ui/copy-figures.ts",
   // The page for reporters: static prose about how to cite and read the
   // figures, so it answers to the same word list as the pages it explains.
   "reporters.html"
