@@ -1,8 +1,6 @@
 <!doctype html>
-<!-- The committed fallback share images (ADR-141) are screenshots of this
-     page at 1200 by 630: open it with ?name=Lake%20Powell and with
-     ?name=Lake%20Mead. It names the reservoir and carries no figure, so a
-     fallback kept for months is never a stale level. -->
+<!-- Visual source for public/share/fallback.png (ADR-154). It carries no
+     reservoir name or water figure and is safe for every share address. -->
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
@@ -14,7 +12,7 @@
       display: flex; flex-direction: column; justify-content: space-between; }
     p { margin: 0; }
     .site { font-size: 30px; font-weight: 600; color: #655f55; }
-    h1 { margin: 0; font-size: 120px; line-height: 1.05; }
+    h1 { margin: 0; font-size: 76px; line-height: 1.05; }
     .what { margin-top: 20px; font-size: 44px; color: #1d4e6b; font-weight: 600; }
     .more { font-size: 30px; color: #655f55; }
     .source { margin-top: 10px; font-size: 24px; color: #655f55; }
@@ -25,16 +23,13 @@
   <p class="site">Western Water Dashboard</p>
   <div>
     <div class="rule"></div>
-    <h1 id="name"></h1>
-    <p class="what">Surface level by water year</p>
+    <h1>Water across the West</h1>
+    <p class="what">Reservoir storage, snow and drought</p>
   </div>
   <div>
-    <p class="more">Open the page to see the level now and the chart.</p>
-    <p class="source">Readings: Bureau of Reclamation · buschbrian.github.io/western-water-dashboard</p>
+    <p class="more">Open the dashboard for current readings and sources.</p>
+    <p class="source">buschbrian.github.io/western-water-dashboard</p>
   </div>
-  <script>
-    document.getElementById("name").textContent =
-      new URLSearchParams(location.search).get("name") ?? "";
-  </script>
+
 </body>
 </html>

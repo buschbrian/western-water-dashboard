@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# The share images over a freshly built dist/ (ADR-141): one command for the
+# The share images over a freshly built dist/ (ADR-154): one command for the
 # deploy and for a contributor.
 #
-# dist/share/*.png already holds the committed fallback images, copied by the
+# dist/share/*.png already holds the figure-free fallback images, copied by the
 # build. This step replaces each with a capture of the day's frame, and every
 # way it can fail -- no browser, no Playwright, a frame that did not draw --
 # leaves the fallback in place. Only a missing or malformed image fails it.
@@ -22,7 +22,7 @@ cd "$repo_root"
 warn() { echo "::warning title=Share images::$1"; }
 
 if ! bash scripts/install-playwright.sh; then
-  warn "Playwright could not be installed; the committed fallback images are published"
+  warn "Playwright could not be installed; the figure-free fallback images are published"
 fi
 
 if [ -z "${PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH:-}" ]; then
@@ -34,7 +34,7 @@ if [ -z "${PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH:-}" ]; then
   done
 fi
 if [ -z "${PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH:-}" ]; then
-  warn "No Chromium or Chrome was found; the committed fallback images are published"
+  warn "No Chromium or Chrome was found; the figure-free fallback images are published"
 else
   echo "Capturing with ${PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH}"
 fi

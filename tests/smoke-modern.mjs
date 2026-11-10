@@ -6251,8 +6251,10 @@ for (const failure of [
  * picture a shared link shows, and the deploy photographs it at 1200 by 630.
  * What only a browser can answer: it fits that window without scrolling, it
  * has no navigation, the chart drew, and it says the name, the level with
- * its datum and the date. A reservoir with no reviewed level must not signal
- * a drawn chart, because that signal is what lets the deploy keep a capture.
+ * its datum and the date. A reservoir with no reviewed level gets the storage
+ * frame (ADR-154): its stored water, percent full, comparison, monthly chart
+ * and source, all inside the window. It must not signal a drawn level chart,
+ * because that signal is what lets the deploy keep a capture.
  */
 {
   const context = await newPageContext(browser, { width: 1200, height: 630 });
@@ -6268,6 +6270,16 @@ for (const failure of [
       null, { timeout: 90000 }).catch(() => {});
     const share = await tab.evaluate(() => ({
       elevation: window.__reservoirReady?.elevation ?? null,
+      frame: window.__reservoirReady?.share ?? null,
+      footBottom: document.querySelector(".share-foot")?.getBoundingClientRect().bottom ?? 0,
+      bars: document.querySelectorAll("#reservoir-trend-chart .trend-bar").length,
+      comparison: document.querySelector(".share-comparison")?.textContent ?? "",
+      trendAxis: (() => {
+        const svg = document.querySelector("#reservoir-trend-chart svg");
+        const label = svg?.querySelector(".trend-axis");
+        return svg && label ? Number.parseFloat(getComputedStyle(label).fontSize)
+          * (svg.getBoundingClientRect().width / svg.viewBox.baseVal.width) : 0;
+      })(),
       busy: document.querySelector("#reservoir-main")?.getAttribute("aria-busy"),
       text: document.body.innerText,
       navigation: document.querySelectorAll("calcite-navigation").length,
@@ -6289,7 +6301,7 @@ for (const failure of [
       `Share frame (${name}): busy ${share.busy}, ${share.navigation} navigation bars, `
       + `fits ${share.fitsWidth}x${share.fitsHeight}`);
     if (drawn) {
-      check(share.elevation === "drawn" && share.lines >= 2
+      check(share.elevation === "drawn" && share.frame === "level" && share.lines >= 2
         && share.text.includes(name) && /[\d,.]+ feet/.test(share.level)
         && share.text.includes("Reading date:") && share.text.includes("above the "),
       `Share frame (${name}): the name, level, datum, date and chart are not all there `
@@ -6309,11 +6321,27 @@ for (const failure of [
     } else {
       check(share.elevation === "none" && share.lines === 0,
         `Share frame (${name}): a reservoir with no reviewed level signalled ${share.elevation}`);
+      check(share.frame === "storage" && share.bars >= 1 && share.text.includes(name)
+        && /^[\d.]+%$/.test(share.level) && share.text.includes("Reading date:")
+        && /Stored now: [\d,]+ acre-feet/.test(share.text)
+        && share.comparison.startsWith("Normal for this week, "),
+      `Share frame (${name}): the storage frame is not all there `
+        + JSON.stringify({ frame: share.frame, bars: share.bars, level: share.level,
+          comparison: share.comparison }));
+      check(share.source.startsWith("Readings: ")
+        && share.source.includes("buschbrian.github.io/western-water-dashboard"),
+      `Share frame (${name}): the source line is missing: ${share.source}`);
+      /* The frame clips what does not fit, so the last line is measured. */
+      check(share.footBottom > 0 && share.footBottom <= 630 && share.trendAxis >= 20,
+        `Share frame (${name}): the source line ends at ${share.footBottom}px of 630, `
+        + `and the axis type is ${share.trendAxis}px`);
+      const retired = RETIRED_TERMS.exec(share.text);
+      check(retired === null, `Share frame (${name}): uses a retired term: "${retired?.[0]}"`);
     }
   }
   for (const message of errors) failures.push(`Share frame: ${message}`);
   await context.close();
-  console.log("\n=== Share frame: two reviewed levels and one reservoir without");
+  console.log("\n=== Share frame: two reviewed levels and one storage frame");
 }
 
 /*
@@ -6400,8 +6428,15 @@ for (const failure of [
       await tab.locator('[data-copy-figures="copy-link"]').click();
       await tab.waitForFunction(() => document.querySelector(
         '[data-copy-figures="copy-link"]')?.textContent === "Link copied", null, { timeout: 5000 });
-      check(await tab.evaluate(() => navigator.clipboard.readText()) === tab.url(),
-        `${label} (${name}): "Copy link" did not copy the address`);
+      const ledger = JSON.parse(await readFile(path.join(ROOT, "share/ledger.json"), "utf8"));
+      const address = ledger.find((entry) => entry.source_station_id === row.source_station_id);
+      check(await tab.evaluate(() => navigator.clipboard.readText()) === `${URL}share/${address.slug}.html`,
+        `${label} (${name}): "Copy link" did not copy the permanent preview address`);
+      await tab.goto(`${URL}share/${address.slug}.html`, { waitUntil: "load", timeout: 90000 });
+      await tab.waitForFunction(() => window.__reservoirReady?.status === "found",
+        null, { timeout: 90000 });
+      check((await tab.locator("h1.reservoir-name").textContent()) === name,
+        `${label} (${name}): the permanent preview opened the wrong reservoir`);
     }
 
     /* The picture view is a picture, not a page to copy from. */

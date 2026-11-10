@@ -54,9 +54,12 @@ browser tool back with the same installer CI runs:
 bash scripts/install-playwright.sh
 ```
 
-The share pictures (ADR-141) are the third use of it: after a build,
+The share pictures (ADR-154) are the third use of it: after a build,
 `npm run share:images` captures `dist/share/*.png` the way the deploy does,
-and leaves the committed fallback in place if it cannot.
+and leaves the figure-free fallback in place if it cannot. The build writes
+`dist/share/targets.json` from the permanent ledger; the capture command
+checks every final image and writes `dist/share/capture-report.json`. It uses
+four workers with a five-minute pool budget.
 
 All three browser tools take `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. A machine
 with Google Chrome installed does not need a second Chromium:

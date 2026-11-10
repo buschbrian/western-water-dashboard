@@ -77,6 +77,7 @@ jobs:
                       terms.html reporters.html landscape.html story.html \
                       share/lake-powell.html share/lake-mead.html \
                       share/lake-powell.png share/lake-mead.png \
+                      share/targets.json share/ledger.json share/west.html share/west.png \
                       reservoirs.json capacities.json \
                       snow_sites.json snowpack.json reference.json \
                       data/reservoirs.json data/capacities.json \
@@ -108,16 +109,16 @@ jobs:
           fi
           exit $missing
 
-      # ADR-141: the picture behind a shared Lake Powell or Lake Mead link,
+      # ADR-154: the pictures behind permanent reservoir and scope links,
       # captured from the site just built. dist/share/*.png already holds the
-      # committed fallback images, so this step can only replace a good image
+      # generated figure-free fallback images, so this step can only replace a good image
       # with a fresher one. It downloads no browser: it installs the repo's
       # own Playwright package (scripts/install-playwright.sh, npm only) and
       # drives the Google Chrome the runner image already carries. With no
       # Chrome, a failed install or a frame that does not draw, the fallback
       # stays and a warning is logged; the step fails only when an image is
       # missing or is not a 1200 by 630 PNG.
-      - name: Capture the share images (a failure keeps the committed fallbacks)
+      - name: Capture the share images (a failure keeps the figure-free fallbacks)
         run: bash scripts/share-images.sh
 
       - uses: actions/configure-pages@v5

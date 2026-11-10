@@ -95,22 +95,55 @@ its type reads on a link card. Under the chart are the page's own chart key
 (`yearKeyEntries`: this water year, the year before, the earlier years, the
 dashed lines) and a source line, "Readings: Bureau of Reclamation ·
 buschbrian.github.io/western-water-dashboard" (owner's display ruling U9,
-2026-10-31): a picture travels without its page. The committed fallback
-pictures carry the same source line. No navigation, no place chooser, no map, always the light
-theme, nothing stored. Its words come from the page's own level card
-(`reservoir-share-model.ts`). A reservoir with no reviewed level, or an
-unreadable history, signals `elevation` as `none` or `card`, never `drawn`.
+2026-10-31): a picture travels without its page. The frame has no navigation,
+place chooser or map, always uses the light theme, and stores nothing.
+Its words come from the page's own level card
+(`reservoir-share-model.ts`).
 
-The pictures behind a shared link are made from it. `public/share/` holds, for
-Lake Powell and Lake Mead, a hand-kept page (`lake-powell.html`) with the
-Open Graph and Twitter card tags, a canonical link to the reservoir page and
-a meta refresh on to it, and a committed fallback picture of the same name.
-The pages state no figure, and are not generated, because a generated page
-would go with a withdrawn reservoir (ADR-056). The Pages workflow runs
-`scripts/share-images.sh` after the build: `scripts/capture-share-images.mjs`
-photographs the frame from `dist/` and replaces `dist/share/*.png` only with a
-valid capture, so a failure publishes the fallback. `scripts/share-fallback.html`
-is the fallback's source.
+A reservoir with no reviewed level, or an unreadable level history, gets the
+storage frame instead (ADR-154), built by the pure
+`reservoir-storage-share-model.ts` from the page's own builders: percent full
+with its basis, stored water, the reading date and late-data note, the normal
+comparison with its period and years (and the sentence for a normal that
+covers part of its period), the twelve-month chart with its key, and the
+source line. It asks for no level history. The name may take two lines and
+the chart takes the height the words leave, so any published name fits. It
+signals `elevation` as `none` or `card`, never `drawn`; the readiness field
+`share` says which frame is on the page: `level`, `storage` or `none`. The
+deploy captures both frame types, using `share` rather than assuming
+that a storage chart is an elevation chart.
+
+`src/build/share-pages.ts` generates static preview pages and a capture list
+from the append-only `data/share-ledger.json` at build time (ADR-154). The
+ledger is keyed by station, keeps its first name and address forever, and
+retains the existing `share/lake-powell.html` and `share/lake-mead.html`
+addresses. Current pages redirect to the station identifier on the reservoir
+page, so a rename changes the label but not the link. A station absent from
+the current data retains a static notice page, with no redirect or water
+figure. Static descriptions deliberately carry no measurement.
+
+The generator also makes storage cards for the eleven western states, five
+regions and the West. They use the storage charts page's waterbody-state
+membership and existing combined-storage model, include Powell and Mead
+where they belong, and state reading dates, late counts, the normal period
+and comparison coverage, denominator differences and the source. These small
+frame pages are build output, not a second runtime data payload.
+
+Every page gets a copy of `public/share/fallback.png` before capture. That
+picture carries no reservoir name or measurement. `scripts/share-fallback.html`
+is its visual source. `npm run share:images` reads `dist/share/targets.json`,
+captures up to four frames at once against installed Chrome and replaces a
+fallback only with a valid 1200 by 630 PNG. A five-minute pool budget closes
+the browser and stops new work. Failed captures keep the fallback; only a
+missing or malformed final image fails the command. `capture-report.json`
+records captures, notices, failures, time and missing files. No picture is
+committed each morning.
+
+The reservoir page prepares its preview address from `share/ledger.json`
+while showing its figures, without delaying display. Its Copy link and native
+Share controls use that address when ready and the current page otherwise.
+The native Share call remains synchronous with the click to retain browser
+activation. Other pages keep their view links.
 
 ### The terminal-lakes page
 

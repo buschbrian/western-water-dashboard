@@ -13,6 +13,11 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
+- **Permanent reservoir preview links and daily pictures** (ADR-154).
+  Reservoir Copy link and Share use an address that survives renames and
+  withdrawal. Reservoirs without reviewed levels get a storage chart; state,
+  region and West cards show dated combined storage. Failed captures keep a
+  picture with no water figure, and withdrawn pages remain available.
 - **The storage map compares its storage with normal** (ADR-153). A
   "Compared with normal" tile gives the percent of the usual storage for this
   date and names the period it used, in the same words as the storage charts.

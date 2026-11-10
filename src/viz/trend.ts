@@ -77,7 +77,9 @@ function readingOf(month: DetailMonth): string {
 function buildTrendChart(
   months: readonly DetailMonth[],
   name: string,
-  width: number
+  width: number,
+  height = HEIGHT,
+  table = true
 ): SVGSVGElement | null {
   const values = months
     .map((month) => month.storageAf)
@@ -86,7 +88,7 @@ function buildTrendChart(
 
   const chartWidth = Math.max(PAD_LEFT + PAD_RIGHT + 80, width);
   const plotWidth = chartWidth - PAD_LEFT - PAD_RIGHT;
-  const plotHeight = HEIGHT - PAD_TOP - PAD_BOTTOM;
+  const plotHeight = height - PAD_TOP - PAD_BOTTOM;
   /* The axis starts at zero and is never truncated: ordinary seasonal
    * drawdown on a cut axis looks like a cliff, and this chart sits next to a
    * number that says the reservoir is two thirds full. */
@@ -97,12 +99,12 @@ function buildTrendChart(
 
   const svg = element("svg", {
     class: "trend-chart",
-    viewBox: `0 0 ${chartWidth} ${HEIGHT}`,
+    viewBox: `0 0 ${chartWidth} ${height}`,
     width: "100%",
     role: "img",
     "aria-label": `Storage for ${name} during the last ${months.length} months. ` +
       `The bars show the average storage for each month. ` +
-      `The dashed line shows the normal value. The table below lists every value.`
+      `The dashed line shows the normal value.${table ? " The table below lists every value." : ""}`
   });
 
   for (const fraction of [0, 0.5, 1]) {
@@ -157,7 +159,7 @@ function buildTrendChart(
   months.forEach((month, index) => {
     if ((months.length - 1 - index) % labelStep !== 0) return;
     const label = element("text", {
-      class: "trend-axis", x: x(index).toFixed(1), y: HEIGHT - 7, "text-anchor": "middle"
+      class: "trend-axis", x: x(index).toFixed(1), y: height - 7, "text-anchor": "middle"
     });
     const [year, at] = month.key.split("-");
     label.textContent = `${["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul",
@@ -168,11 +170,21 @@ function buildTrendChart(
   return svg;
 }
 
+export interface TrendChartOptions {
+  /** Drawn at this many times its size, so its type reads on a link card. */
+  scale?: number;
+  /** The chart's own height in viewBox units. */
+  height?: number;
+  /** False where no table follows the chart, so the label does not name one. */
+  table?: boolean;
+}
+
 /** Draw the history at its real host width and keep it fitted after resize. */
 export function renderTrendChart(
   host: HTMLElement,
   months: readonly DetailMonth[],
-  name: string
+  name: string,
+  { scale = 1, height = HEIGHT, table = true }: TrendChartOptions = {}
 ): boolean {
   if (!months.some((month) => month.storageAf !== null)) {
     stopResponsiveChart(host);
@@ -180,7 +192,7 @@ export function renderTrendChart(
     return false;
   }
   renderResponsiveChart(host, (width) => {
-    const chart = buildTrendChart(months, name, width);
+    const chart = buildTrendChart(months, name, width / scale, height, table);
     if (chart) host.replaceChildren(chart);
   }, {
     fallbackWidth: FALLBACK_WIDTH,

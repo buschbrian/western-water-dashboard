@@ -30,6 +30,8 @@ import { describeReservoir, percentFullBasis, providerName } from "./detail";
 /** The provider of precipitation and snow-water measurements on this site. */
 const PRECIPITATION_PROVIDER = "Natural Resources Conservation Service";
 
+export const PARTIAL_PERIOD_NOTE = "This reservoir has readings for part of that period.";
+
 /**
  * "Source: [provider] data, shown on the Western Water Dashboard (address)."
  * The provider comes first, because the measurements are theirs. Two
@@ -94,7 +96,7 @@ export function reservoirFigures(input: ReservoirFiguresInput): string[] | null 
       lines.push(`Storage is ${formatPercent(active.value.pct_of_normal)} of that normal.`);
     }
     if (!active.value.covers_full_period) {
-      lines.push("This reservoir has readings for part of that period.");
+      lines.push(PARTIAL_PERIOD_NOTE);
     }
   }
 

@@ -2,7 +2,7 @@
 
 ## Status
 
-Accepted
+Superseded by ADR-154 (share-page and capture policy; reviewed-level frame retained)
 
 ## Date
 
