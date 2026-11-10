@@ -67,6 +67,8 @@ export interface SnowMapStatus {
    * fixed points, so a name that cannot fit is dropped instead of being
    * drawn over its neighbour (ADR-047). */
   basinLabelsDeconflicted: boolean;
+  /** The station the map is centred on and marks, or null. */
+  site: string | null;
 }
 
 export interface SnowMapController {
@@ -75,6 +77,9 @@ export interface SnowMapController {
   setDay(values: MapDayValues, day: string): void;
   /** Emphasises one drainage area's outline, or none. */
   setArea(huc6: string | null): void;
+  /** Centres the view on one site and marks it, or clears the mark. The move
+   * is best effort: a view that is not ready keeps the mark and stays put. */
+  setSite(station: string | null): void;
 }
 
 export interface SnowMapOptions {
@@ -87,6 +92,9 @@ export interface SnowMapOptions {
 
 const OUTLINE = { color: "#5b6b7a", width: 0.7 };
 const CHOSEN_OUTLINE = { color: "#27363f", width: 2.2 };
+/* The zoom a framed site opens at: a drainage area fills the card near 8, and
+ * a site is a point inside one. Inside the shared zoom limits. */
+const SITE_ZOOM = 10;
 
 /* Symbols are property objects rather than constructed classes, the same
  * convention `ui/layers.ts` records: the SDK autocasts them, and a
@@ -161,7 +169,18 @@ function basinRenderer(
   };
 }
 
-function siteSymbol(percent: number | null, belowFloor = false): MarkerSymbol {
+function siteSymbol(
+  percent: number | null, belowFloor = false, chosen = false
+): MarkerSymbol {
+  const symbol = plainSiteSymbol(percent, belowFloor);
+  /* The chosen site keeps its class colour and gains the dark outline the
+   * chosen area already wears, so it is marked without a new colour. */
+  return chosen
+    ? { ...symbol, size: symbol.size + 5, outline: CHOSEN_OUTLINE }
+    : symbol;
+}
+
+function plainSiteSymbol(percent: number | null, belowFloor: boolean): MarkerSymbol {
   const index = snowClassIndex(percent);
   const entry = index === null ? null : SNOW_CLASSES[index];
   if (!entry && belowFloor) {
@@ -267,7 +286,8 @@ export async function createSnowMap(
     sitesBelowFloor: 0,
     day: null,
     basinLabels: areas.length,
-    basinLabelsDeconflicted: true
+    basinLabelsDeconflicted: true,
+    site: null
   };
 
   /* Order is the reading order: the basin fill is the background and the
@@ -280,6 +300,7 @@ export async function createSnowMap(
   element.map = map;
 
   let chosenArea: string | null = null;
+  let chosenSite: string | null = null;
   let currentValues: MapDayValues | null = null;
 
   const controller: SnowMapController = {
@@ -296,7 +317,8 @@ export async function createSnowMap(
       for (const [station, graphic] of siteGraphics) {
         const percent = values.sites.get(station) ?? null;
         if (percent !== null) sitesWithValues += 1;
-        graphic.symbol = siteSymbol(percent, values.sitesBelowFloor.has(station));
+        graphic.symbol = siteSymbol(
+          percent, values.sitesBelowFloor.has(station), station === chosenSite);
       }
       status.basinsWithValues = basinsWithValues;
       status.sitesWithValues = sitesWithValues;
@@ -308,6 +330,30 @@ export async function createSnowMap(
     setArea(huc6) {
       chosenArea = huc6;
       if (currentValues && status.day) controller.setDay(currentValues, status.day);
+    },
+    setSite(station) {
+      const site = station === null ? null : siteByStation.get(station) ?? null;
+      chosenSite = site ? site.station : null;
+      status.site = chosenSite;
+      const graphic = site ? siteGraphics.get(site.station) : undefined;
+      if (currentValues && status.day) {
+        controller.setDay(currentValues, status.day);
+      } else if (graphic) {
+        graphic.symbol = siteSymbol(null, false, true);
+      }
+      if (!site || !graphic) return;
+      /* Last in the layer, so the mark is not buried under its neighbours. */
+      siteLayer.remove(graphic);
+      siteLayer.add(graphic);
+      const view = element.view;
+      if (!view?.ready || !view.goTo) return;
+      /* Fire and forget: nothing waits on the move, and one interrupted by
+       * the next (a reader clicking down the table) is not an error. Reduced
+       * motion arrives without the animation. */
+      const animate = !window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      void Promise.resolve(view.goTo(
+        { center: [site.lon, site.lat], zoom: SITE_ZOOM }, { animate }))
+        .catch(() => undefined);
     }
   };
 

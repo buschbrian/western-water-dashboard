@@ -207,6 +207,9 @@ interface Window {
     /** The season's peak by ADR-121's rule, or null while it has none. */
     mapPeak?: string | null;
     mapDay?: string | null;
+    /** The station the map is centred on and marks, or null: the site the
+     * site card shows. */
+    mapSite?: string | null;
     mapBasemap?: boolean;
     mapViewReady?: boolean;
     /** Classes in the snow colour table. The legend draws one chip for each,

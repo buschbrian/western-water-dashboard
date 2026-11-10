@@ -13,6 +13,17 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
+- **Snow percents show the inches behind them, and a site link shows the
+  site.** Wherever the snow page prints a percent of normal, it now also says
+  the snow water at the reporting sites and the amount usual for that date, in
+  inches, with one sentence that the percent is not a share of a whole winter.
+  A link to a snow site (`snow.html?state=all&site=...`) now centres the map on
+  that site, marks it, and scrolls to its card; choosing a site in the table
+  or in the card's own list moves the mark with it. The place sentence says
+  which site the map is centred on. The amounts keep two decimals under 10
+  inches, so dividing them gives the percent shown. No published number
+  changes.
+
 - **A page for reporters.** `reporters.html` says how to cite a figure (the
   provider first, then this site, with the reading date and a link to the page
   that shows it), what the main figures mean, and what they cannot support: no
