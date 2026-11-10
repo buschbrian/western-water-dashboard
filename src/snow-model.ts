@@ -782,6 +782,34 @@ export function bestAgainstNormal(
   return best;
 }
 
+/**
+ * The two amounts a shown percent divides, in inches: the snow water at the
+ * reporting sites and the amount usual for that date. Both are means over the
+ * same sites, so their ratio is the percent. Null where the point does not
+ * carry both, which is a curve built before the normal travelled with it.
+ *
+ * Presentation only: it reads the point and never changes which percent is
+ * shown (`percentIsMeaningful` still decides that).
+ */
+export function percentAmounts(point: CurvePoint): string | null {
+  const { meanInches, normalInches } = point;
+  if (meanInches === null || meanInches === undefined) return null;
+  if (normalInches === null || normalInches === undefined) return null;
+  return `Snow water is ${amountInches(meanInches)} in. ` +
+    `The usual amount for this date is ${amountInches(normalInches)} in.`;
+}
+
+/* Two decimals under 10 inches. At one decimal a reader who divides the two
+ * amounts gets a percent several points from the one shown: 1.04 over 1.36 is
+ * 76%, and 1.0 over 1.4 is 71%. */
+function amountInches(value: number): string {
+  return value.toFixed(value < 10 ? 2 : 1);
+}
+
+/** Said once beside a percent, so it is not read as a share of a whole winter. */
+export const PERCENT_BASIS_SENTENCE =
+  "The percent compares with the amount usual for this date, not with a whole winter.";
+
 /** One site's own reading for the chosen day, in the published units. */
 export interface SiteDayDepth {
   inches: NullableNumber;

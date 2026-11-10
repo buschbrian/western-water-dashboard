@@ -3844,6 +3844,60 @@ for (const viewport of VIEWPORTS) {
       check(await tab.locator("#snow-scope-summary").isHidden(),
         `${label}: clearing a coarser place did not restore the whole station set`);
     }
+
+    /* A link to one site shows that site. The station is read from the
+     * payload, never written here. The map's own framing cannot be read from
+     * pixels (the canvas is blank headless), so the readiness field and the
+     * card's place on screen carry the proof. */
+    const linkedStation = snowPayload.sites[0]?.station;
+    check(typeof linkedStation === "string" && linkedStation.length > 0,
+      `${label}: the snow payload lists no site to link to`);
+    await tab.goto(`${URL}snow.html?state=all&site=${encodeURIComponent(linkedStation)}`,
+      { waitUntil: "domcontentloaded", timeout: 60000 });
+    await tab.waitForFunction(
+      (station) => window.__snowReady?.mapSite === station, linkedStation,
+      { timeout: 60000 });
+    const linkedState = await tab.evaluate(() => {
+      const section = document.querySelector("#snow-site-detail")?.closest("section");
+      const box = section?.getBoundingClientRect();
+      return {
+        ready: window.__snowReady,
+        summary: document.querySelector("#snow-scope-summary")?.textContent ?? "",
+        summaryHidden: document.querySelector("#snow-scope-summary")?.hidden ?? true,
+        nowText: document.querySelector('[data-snow-kpi="now"]')?.textContent ?? "",
+        nowNote: document.querySelector('[data-snow-kpi="now-note"]')?.textContent ?? "",
+        peakText: document.querySelector('[data-snow-kpi="peak"]')?.textContent ?? "",
+        peakNote: document.querySelector('[data-snow-kpi="peak-note"]')?.textContent ?? "",
+        cardTop: box ? box.top : null,
+        cardBottom: box ? box.bottom : null,
+        viewport: window.innerHeight
+      };
+    });
+    check(linkedState.ready?.mapSite === linkedStation && linkedState.ready?.site === linkedStation,
+      `${label}: a link to ${linkedStation} framed ${linkedState.ready?.mapSite} and opened ${linkedState.ready?.site}`);
+    /* The scroll runs a frame after the card is drawn, so the position is
+     * polled rather than read once. */
+    const cardShown = await tab.waitForFunction(() => {
+      const box = document.querySelector("#snow-site-detail")?.closest("section")
+        ?.getBoundingClientRect();
+      return Boolean(box) && box.top < window.innerHeight && box.bottom > 0;
+    }, null, { timeout: 5000 }).then(() => true, () => false);
+    check(cardShown,
+      `${label}: the linked site's card is not in the viewport (top ${linkedState.cardTop}, bottom ${linkedState.cardBottom}, viewport ${linkedState.viewport})`);
+    check(!linkedState.summaryHidden && linkedState.summary.includes("The map is centred on "),
+      `${label}: the place sentence does not say which site the map is centred on: "${linkedState.summary}"`);
+    /* Early in the season the percent is refused and inches stand alone, so
+     * this holds only when a percent is shown: then its two amounts are too. */
+    const amounts = /Snow water is \d+\.\d+ in\. The usual amount for this date is \d+\.\d+ in\./;
+    if (linkedState.nowText.trim().endsWith("%")) {
+      check(amounts.test(linkedState.nowNote)
+        && linkedState.nowNote.includes("not with a whole winter"),
+      `${label}: the newest percent "${linkedState.nowText}" has no inches beside it: "${linkedState.nowNote}"`);
+    }
+    if (linkedState.peakText.trim().endsWith("%")) {
+      check(amounts.test(linkedState.peakNote),
+        `${label}: the best percent "${linkedState.peakText}" has no inches beside it: "${linkedState.peakNote}"`);
+    }
   } catch (err) {
     failures.push(`${label}: ${err.message}`);
   }
