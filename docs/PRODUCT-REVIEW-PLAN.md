@@ -1,7 +1,8 @@
 # Product review plan, November 2026
 
-Status: Wave 1 integrated for release on 2026-11-09; deployment pending.
-Wave 2, sharing and place, is next. Brian Busch chose the four scopes below
+Status: The four Wave 1 implementation PRs (#115–#118) were published on
+2026-11-09. Wave 2, sharing and place, has started locally.
+Brian Busch chose the four scopes below
 on 2026-11-09. ADR-153 records the storage-map choice; each later wave writes
 its own record where required.
 
@@ -105,7 +106,7 @@ Also found, outside the review's list:
 
 ## Wave 1: existing numbers, where the eye lands
 
-The four local implementation branches are integrated for release:
+The four implementation PRs are published:
 
 - Quick repairs: the first-visit place question, reporter link, cross-state
   river-gauge names, sitemap and question-service data address.
@@ -114,6 +115,10 @@ The four local implementation branches are integrated for release:
 - Snow-water inches beside the percent and map framing for a linked site.
 - Copyable figures, links and native sharing on reservoir, storage charts
   and precipitation pages.
+
+[Deployment verification](https://github.com/buschbrian/western-water-dashboard/actions/runs/42748675363)
+passed. The public page entry bundles, copy control, sitemap and robots file
+match the reviewed build byte for byte.
 
 Current behaviour is documented in `architecture/frontend.md`. Remaining
 work from this wave is explicit:
@@ -131,6 +136,11 @@ work from this wave is explicit:
 ## Wave 2: sharing and place
 
 ### 5. A share frame for any reservoir
+
+Started locally: the storage-frame model and nine regression tests. It
+reuses the reservoir page's storage, comparison and monthly builders and is
+not yet connected to the rendered frame. Proposed ADR-154 covers this item
+and the permanent addresses in item 6.
 
 `shareFrame` in `src/reservoir-share-model.ts` returns nothing without a
 reviewed level. Add a storage frame at the same 1200 by 630: name, percent
@@ -283,7 +293,8 @@ Waves run in order; items inside a wave are independent except where noted.
 - The size of the town reference file.
 - Reclamation's inflow items and what its inflow figure is.
 - Great Salt Lake's stations and datum.
-- Any layout below 500 CSS pixels.
+- Map rendering and visual hierarchy below 500 CSS pixels in a visible
+  browser. Automated layout checks passed at 390 and 360 pixels.
 
 ## Left out, with reasons
 

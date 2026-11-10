@@ -88,6 +88,12 @@ than two providers gets a neutral credit line.
 
 #### The share frame and the share pages
 
+Wave 2 preparation adds the pure `reservoir-storage-share-model.ts` builder:
+storage with its date, percent full with its basis, the page's normal
+comparison, monthly points, late-data note and source. It has no runtime
+consumer yet; the share view below still follows ADR-141. Proposed ADR-154
+records the intended storage frame and permanent share-address ledger.
+
 `reservoir.html?name=...&view=share` (ADR-141) is the same page in a picture
 mode: one 1200 by 630 frame of the name, the surface level with its datum, the
 reading date and the water-year chart, drawn twice its size (300 px high) so
