@@ -37,6 +37,12 @@ describe("daily picture capture", () => {
     expect(() => validTargets([{ ...target, frame: "https://example.com/" }])).toThrow();
   });
 
+  it("accepts page snapshots only at their generated frame address", () => {
+    const page = { file: "page-snow", name: "Western snowpack", kind: "page", frame: "share/page-snow.frame.html" };
+    expect(validTargets([page])).toEqual([page]);
+    expect(() => validTargets([{ ...page, frame: "https://example.com/frame" }])).toThrow();
+  });
+
   it("publishes a valid fallback when Chrome is unavailable, and reports a missing image", async () => {
     const folder = await mkdtemp(path.join(tmpdir(), "wwd-share-")); folders.push(folder);
     await mkdir(path.join(folder, "share"));

@@ -799,9 +799,20 @@ const FIND_CREDENTIAL_UI = `(() => {
 
 await new Promise((resolve) => server.listen(PORT, resolve));
 URL = `http://127.0.0.1:${server.address().port}/`;
+
+
 const browser = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
   ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH }
   : {});
+
+if (process.argv.includes("--embeds")) {
+  await checkStoryEmbeds();
+  await browser.close();
+  server.close();
+  for (const failure of failures) console.error(failure);
+  process.exit(failures.length ? 1 : 0);
+}
+
 
 /* The first-visit chooser is the only surface the ordinary page contexts
  * deliberately skip. Exercise it in the system state that exposed two
@@ -6692,6 +6703,80 @@ for (const viewport of VIEWPORTS) {
   await context.close();
 }
 console.log(`\n=== Rivers page: ${VIEWPORTS.length} widths`);
+
+/* The embed code must work as an iframe, with the selected place intact. */
+async function checkStoryEmbeds() {
+  const station = payload.reservoirs.find((row) => row.source_station_id
+    && upstreamIndex.traces[row.source_station_id]
+    && upstreamIndex.traces[row.source_station_id].screen == null)?.source_station_id;
+  for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
+    const context = await newPageContext(browser, viewport);
+    await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin: URL });
+    const tab = await context.newPage();
+    await tab.emulateMedia({ colorScheme: viewport.name === "small-phone" ? "dark" : "light" });
+    const errors = [];
+    tab.on("pageerror", (error) => errors.push(String(error)));
+    for (const scenario of [
+      { path: "precipitation.html?state=UT&area=1404&level=4", views: ["precip", "strip"] },
+      { path: `reservoir.html?name=${encodeURIComponent(station)}`, views: ["upstream"] }
+    ]) {
+      const label = `Embed code (${viewport.name}, ${scenario.views[0]})`;
+      try {
+        await tab.goto(`${URL}${scenario.path}`, { waitUntil: "load", timeout: 90000 });
+        await tab.waitForSelector(".embed-view", { timeout: 60000 });
+        const disclosure = tab.locator(".embed-view > summary");
+        await disclosure.focus();
+        await tab.keyboard.press("Enter");
+        check(await tab.locator(".embed-view").getAttribute("open") !== null,
+          `${label}: cannot open the embed control with the keyboard`);
+        for (const [index, view] of scenario.views.entries()) {
+          if (scenario.views.length > 1) await tab.locator(".embed-view select").selectOption(String(index));
+          const state = await tab.locator(".embed-code").evaluate((field) => ({
+            value: field.value, readOnly: field.readOnly, labelled: Boolean(document.querySelector(`label[for="${field.id}"]`))
+          }));
+          check(state.readOnly && state.labelled, `${label}: the code is editable or unlabelled`);
+          await tab.getByRole("button", { name: "Copy embed code", exact: true }).click();
+          await tab.waitForFunction(() => document.querySelector(".embed-view [role=status]")?.textContent === "Embed code copied");
+          await tab.waitForFunction(async (expected) => await navigator.clipboard.readText() === expected,
+            state.value, { timeout: 5000 });
+          const copied = await tab.evaluate(() => navigator.clipboard.readText());
+          check(copied === state.value, `${label}: copied code differs from the shown code`);
+          const attributes = await tab.evaluate((code) => {
+            const frame = new DOMParser().parseFromString(code, "text/html").querySelector("iframe");
+            return { src: frame?.getAttribute("src"), title: frame?.title, loading: frame?.loading, sandbox: frame?.getAttribute("sandbox") };
+          }, copied);
+          const query = new globalThis.URL(attributes.src).searchParams;
+          check(query.get("view") === view && attributes.title && attributes.loading === "lazy",
+            `${label}: iframe attributes are incomplete`);
+          check(view === "upstream" ? query.get("reservoir") === station
+            : query.get("state") === "UT" && query.get("area") === "1404" && query.get("level") === "4",
+          `${label}: the embed lost its place or reservoir`);
+          const host = await context.newPage();
+          const localCode = copied.replace(/src="[^"]+"/, `src="${URL}story.html?${query.toString().replaceAll("&", "&amp;")}"`);
+          await host.setContent(`<main>${localCode}</main>`);
+          const iframe = await host.waitForSelector("iframe");
+          const frame = await iframe.contentFrame();
+          await frame.waitForFunction(() => window.__storyReady?.state === "ready", null, { timeout: 60000 });
+          await frame.waitForFunction(() => document.querySelectorAll('[aria-busy="true"]').length === 0,
+            null, { timeout: 5000 });
+          check(await frame.evaluate(() => document.querySelectorAll('[aria-busy="true"]').length) === 0,
+            `${label}: the embedded view stayed busy`);
+          await host.close();
+        }
+        const fit = await tab.evaluate(() => ({ width: innerWidth, scroll: document.documentElement.scrollWidth,
+          height: document.querySelector(".embed-view > summary").getBoundingClientRect().height }));
+        check(fit.scroll <= fit.width + 1 && fit.height >= 43.5, `${label}: code overflows or the target is under 44px`);
+        await checkAccessibility(tab, check, label);
+        await tab.locator(".embed-view").screenshot({ path: `screenshots/embed-${scenario.views[0]}-${viewport.name}.png` });
+      } catch (error) { failures.push(`${label}: ${error.message}`); }
+    }
+    for (const error of errors) failures.push(`Embed code: ${error}`);
+    await context.close();
+  }
+  console.log("\n=== Story embed controls: copied code rendered in real iframes at two widths");
+}
+
+await checkStoryEmbeds();
 
 /*
  * The story views (ADR-128): one figure, alone, filling the frame a story

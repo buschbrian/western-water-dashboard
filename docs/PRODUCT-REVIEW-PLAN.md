@@ -1,8 +1,8 @@
 # Product review plan, November 2026
 
 Status: The four Wave 1 implementation PRs (#115–#118) were published on
-2026-11-09. Wave 2, sharing and place: items 5 and 6 are implemented locally;
-items 7–9 remain.
+2026-11-09. Wave 2, sharing and place: items 5–7 are implemented locally;
+items 8 and 9 remain.
 Brian Busch chose the four scopes below
 on 2026-11-09. ADR-153 records the storage-map choice; each later wave writes
 its own record where required.
@@ -157,9 +157,15 @@ budget. Full regression verification accompanies the implementation commit.
 
 ### 7. Link previews on the main pages, and an embed snippet
 
-Card tags and a daily picture for the storage map, storage charts, snow,
-precipitation, drought and river pages. An "Embed this view" control that
-gives the frame code for a story view (ADR-128), which today has no way in.
+Implemented locally on `feat/page-previews-and-story-embeds`, awaiting Brian's
+review and publication: static picture tags on all six main pages, four new
+daily pictures (the two storage pages reuse the West card), and **Embed this
+view** controls on precipitation and reservoir upstream sections. They offer
+the existing full precipitation, history-strip and upstream story views,
+carrying the resolved place or station identity. Static previews describe
+the whole coverage; story embeds carry the selected place.
+
+Current behaviour is documented in `architecture/frontend.md`.
 
 Record: none.
 

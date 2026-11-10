@@ -37,6 +37,7 @@ import { createPrecipMapSection, type PrecipMapSection } from "./ui/precip-map-s
 import { createSnowDrainageControl, createSnowStateControl } from "./ui/snow-place-control";
 import { selectionForSnowArea, selectionForSnowState } from "./ui/snow-place-control-model";
 import { wireTheme } from "./ui/theme";
+import { createEmbedView } from "./ui/embed-view";
 import "./styles/overview.css";
 import "./styles/snow.css";
 
@@ -156,6 +157,14 @@ function renderPage(place: SnowPlace, rosters: OpeningRosters, level: number): v
       });
   }
   card.update(place.stations, place.payload.sites);
+  const storyPlace = { state: place.scope.selection.state, area: place.area ?? place.scope.selection.area, level };
+  const embed = createEmbedView("precip-embed", [
+    { label: "Precipitation", title: `Precipitation for ${placeName(place)}`,
+      request: { ok: true, view: "precip", place: storyPlace, theme: null } },
+    { label: "Where this year stands", title: `Where this year stands for ${placeName(place)}`,
+      request: { ok: true, view: "strip", place: storyPlace, theme: null } }
+  ]);
+  if (embed) section.after(embed);
   publishReady();
 }
 

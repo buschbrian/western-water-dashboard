@@ -145,6 +145,19 @@ Share controls use that address when ready and the current page otherwise.
 The native Share call remains synchronous with the click to retain browser
 activation. Other pages keep their view links.
 
+The storage map (and `modern.html` alias), storage charts, snow, precipitation,
+drought and river pages carry static Open Graph and Twitter picture tags.
+The two storage pages use the daily West picture. `build/page-previews.ts`
+builds four other snapshots from the pages' existing models: snow keeps the
+reporting and normal-snow floors, precipitation keeps the fixed site set,
+drought shows the worst-class counts and map date, and river flows stay
+separate with each gauge's reading date and precision. `build/share-frame.ts`
+draws the common frame. Missing domain files produce a notice rather than
+figures, and every picture uses the existing fallback and capture budget.
+These static previews describe the whole published coverage. Query filters
+change the page a reader opens, not the crawler's picture; the image names
+its wider coverage. Story embeds carry the actual selected place instead.
+
 ### The terminal-lakes page
 
 One reading page, `lakes.html`, for every published natural terminal lake
@@ -219,6 +232,15 @@ The theme is `?theme=light|dark`, or the reader's system setting, and never
 storage: `stampTheme` (`ui/theme-stamp.ts`) is the one function that sets
 `data-theme` and the Calcite mode classes, here and on every other page.
 Every link opens in a new tab. Readiness is `window.__storyReady`.
+
+The precipitation page offers **Embed this view** below its card, with a
+choice of the full precipitation view or its history strip. A reservoir's
+upstream section offers its own upstream view once the trace is loaded.
+`state/embed.ts` writes frame code for the existing story URL contract,
+including an explicit state and the resolved area and level, or the station
+identifier for a reservoir. `ui/embed-view.ts` shows read-only, labelled code
+and a copy control, with a selectable fallback when copying is unavailable.
+The frame follows the reader's system theme and reads no stored place.
 
 ### Point location and downloads
 

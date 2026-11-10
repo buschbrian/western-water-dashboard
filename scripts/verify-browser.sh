@@ -19,6 +19,10 @@ fi
 
 npx vite build
 mkdir -p screenshots
+if [ "${1:-}" = "--embeds" ]; then
+  node tests/smoke-modern.mjs --embeds
+  exit 0
+fi
 node tests/smoke.mjs
 node tests/smoke-modern.mjs
 # The two suites above exercise whatever the network gave them that morning.

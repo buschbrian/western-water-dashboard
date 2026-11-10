@@ -49,6 +49,7 @@ import {
 import { reservoirFigures } from "./state/figures-text";
 import { createCopyFigures } from "./ui/copy-figures";
 import { reservoirShareUrl } from "./data/share-link";
+import { createEmbedView } from "./ui/embed-view";
 import { reservoirTemplate } from "./ui/reservoir-template";
 import { upstreamSection } from "./ui/upstream-section";
 import { setupPlaceChooser } from "./ui/opening-splash";
@@ -494,6 +495,11 @@ async function renderFound(payload: ReservoirPayload,
     const trace = station === null ? null : index.traces[station];
     if (trace && station) {
       upstreamHost.append(...upstreamSection(trace, payload.reservoirs, station));
+      const embed = createEmbedView("reservoir-embed", [{
+        label: "Reservoir and water upstream", title: `Water stored at and above ${label}`,
+        request: { ok: true, view: "upstream", reservoir: station, theme: null }
+      }]);
+      if (embed) upstreamHost.append(embed);
     }
   } catch {
     console.error("The upstream index could not be read:");
