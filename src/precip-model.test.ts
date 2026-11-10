@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { validatePrecipitationHistory, validatePrecipitationPayload } from "./data/precip-validate";
-import { ordinal, precipitationView, quantile, stepDate, valueOnDate } from "./precip-model";
+import {
+  formatInches, medianDifference, ordinal, precipitationView, quantile, stepDate, valueOnDate
+} from "./precip-model";
 import type { PrecipitationHistory, PrecipitationPayload, SnowSite } from "./types";
 
 const STEPS = ["10-01", "10-08", "01-07", "04-01", "09-30"];
@@ -209,5 +211,22 @@ describe("precipitation file validation", () => {
       sites: [{ station: "a", latest_date: "2026-10-02", late: false,
         series_days: [1, 0], series_values: [1, 2] }]
     })).toThrow(/unreadable series/);
+  });
+});
+
+describe("the median comparison the card and its copied text share", () => {
+  it("writes inches to the tenth, as the card does", () => {
+    expect(formatInches(4.06)).toBe("4.1 in");
+    expect(formatInches(0)).toBe("0.0 in");
+  });
+
+  it("calls under half a tenth the same, and otherwise gives the size and the side", () => {
+    expect(medianDifference({ inches: 3.04, medianInches: 3 })).toEqual({ inches: 0, direction: "same" });
+    const more = medianDifference({ inches: 4.5, medianInches: 3 });
+    expect(more.direction).toBe("more");
+    expect(more.inches).toBeCloseTo(1.5);
+    const less = medianDifference({ inches: 1, medianInches: 3 });
+    expect(less.direction).toBe("less");
+    expect(less.inches).toBeCloseTo(2);
   });
 });

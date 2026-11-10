@@ -879,6 +879,7 @@ body {
   #overview-filter-actions .reset-button { width: 100%; }
   .weekly-card:not(.weekly-open) .weekly-intro,
   .weekly-card:not(.weekly-open) .weekly-note,
+  .weekly-card:not(.weekly-open) .copy-figures,
   .weekly-card:not(.weekly-open) .weekly-sections {
     display: none;
   }

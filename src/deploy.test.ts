@@ -497,6 +497,7 @@ describe("every published address is the site's own", () => {
     const listed = [...(await read("public/sitemap.xml")).matchAll(/<loc>([^<]+)<\/loc>/g)]
       .map((match) => match[1]!);
     expect([...listed].sort()).toEqual([...pages].sort());
+    expect(await read("public/robots.txt")).toContain(`Sitemap: ${base}/sitemap.xml`);
   });
 
   it("points the question service at the published data", async () => {

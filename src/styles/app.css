@@ -1551,3 +1551,47 @@ arcgis-scale-bar {
   background: color-mix(in srgb, var(--app-accent) 16%, var(--app-surface));
   font-weight: 700;
 }
+
+/* "Copy these figures": the sentences a reader can copy, on the reservoir,
+ * storage charts and precipitation pages. Plain buttons, so no page loads a
+ * component for them; 44px targets; no text-transform (innerText must match
+ * what a screen reader says). */
+.copy-figures {
+  margin-block: 1.25rem 0;
+  padding: .75rem 1rem;
+  border: 1px solid var(--app-border);
+  border-radius: .5rem;
+  background: var(--app-surface-raised);
+}
+.copy-figures[hidden] { display: none; }
+.copy-figures-heading { margin: 0 0 .25rem; font-size: var(--app-section-heading); }
+.copy-figures-intro { margin: 0 0 .5rem; color: var(--app-muted); font-size: .85rem; line-height: 1.45; }
+.copy-figures-text { min-inline-size: 0; }
+.copy-figures-text p {
+  margin: 0 0 .35rem;
+  font-size: .9rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  user-select: text;
+}
+.copy-figures-actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-block: .6rem .25rem; }
+.copy-figures-details > summary {
+  padding-block: .7rem;
+  font-size: .9rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.copy-figures-details > summary:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 2px; }
+.copy-figures-button {
+  min-block-size: 2.75rem;
+  min-inline-size: 2.75rem;
+  padding: .45rem .9rem;
+  font: 700 var(--app-control-text) var(--app-font);
+  color: var(--app-text);
+  background: transparent;
+  border: 1px solid var(--app-accent);
+  border-radius: .3rem;
+  cursor: pointer;
+}
+.copy-figures-button:hover { background: color-mix(in srgb, var(--app-accent) 12%, var(--app-surface-raised)); }
+.copy-figures-button:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 2px; }
