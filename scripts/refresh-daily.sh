@@ -76,6 +76,7 @@ if [ "$dry_run" = 1 ]; then
   note "  5c. soil moisture  $python_bin refresh_soil_moisture.py (keeps the last complete file on failure)"
   note "  5d. river flow     $python_bin refresh_rivers.py (keeps the last complete river payload on failure)"
   note "  6. assistant indexes $python_bin tools/build_assistant_indexes.py (keeps the last accepted set on failure)"
+  note "  6a. share addresses $python_bin tools/build_share_ledger.py (append only)"
   note "  7. commit the published set:"
   published_files plan | sed 's/^/       /'
   exit 0
@@ -216,6 +217,10 @@ fi
 # with its explicit as-of dates and never blocks the core data refresh.
 if ! "$python_bin" tools/build_assistant_indexes.py; then
   warn "Assistant indexes failed" "Keeping the last accepted assistant indexes"
+fi
+
+if ! "$python_bin" tools/build_share_ledger.py; then
+  warn "Share ledger failed" "Keeping the previous permanent share addresses"
 fi
 
 # 7. Commit. Every published file is staged together, which is what keeps the

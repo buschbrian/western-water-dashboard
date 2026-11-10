@@ -62,4 +62,10 @@ The second local slice draws the frame: the share view of a reservoir with
 no level chart shows the storage frame and asks for no level history. The
 readiness field `share` names the frame on the page. The capture script and
 the deploy are unchanged, so the two published pictures and the two share
-addresses are as ADR-141 left them. Decisions 3 to 5 are not started.
+addresses are as ADR-141 left them.
+
+The third local slice appends station-keyed addresses with
+`tools/build_share_ledger.py`. The ledger keeps its first name and address
+unchanged after renames, withdrawals or removal. Initial entries include the
+published withdrawal and hold notices. The daily refresh stages the ledger;
+the generator and capture are the next slice.

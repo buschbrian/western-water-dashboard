@@ -1,0 +1,2057 @@
+[
+  {
+    "source_station_id": "09009010:CO:BOR",
+    "name": "Blue Mesa Reservoir",
+    "slug": "reservoir-blue-mesa-reservoir-ad717603c4f9"
+  },
+  {
+    "source_station_id": "09009020:CO:BOR",
+    "name": "Dillon Reservoir",
+    "slug": "reservoir-dillon-reservoir-17a11b1ca729"
+  },
+  {
+    "source_station_id": "09009030:CO:BOR",
+    "name": "Green Mountain Reservoir",
+    "slug": "reservoir-green-mountain-reservoir-ac25064ca9b6"
+  },
+  {
+    "source_station_id": "09009040:CO:BOR",
+    "name": "Homestake Reservoir",
+    "slug": "reservoir-homestake-reservoir-646291cbbaf0"
+  },
+  {
+    "source_station_id": "09009050:CO:BOR",
+    "name": "Jackson Gulch Reservoir",
+    "slug": "reservoir-jackson-gulch-reservoir-71ec3ba67465"
+  },
+  {
+    "source_station_id": "09009060:CO:BOR",
+    "name": "Lake Granby",
+    "slug": "reservoir-lake-granby-39ead3484b04"
+  },
+  {
+    "source_station_id": "09009080:CO:BOR",
+    "name": "Morrow Point Reservoir",
+    "slug": "reservoir-morrow-point-reservoir-47314e133a8c"
+  },
+  {
+    "source_station_id": "09009100:CO:BOR",
+    "name": "Paonia Reservoir",
+    "slug": "reservoir-paonia-reservoir-de70e0fa069c"
+  },
+  {
+    "source_station_id": "09009110:CO:BOR",
+    "name": "Ruedi Reservoir",
+    "slug": "reservoir-ruedi-reservoir-41f3817ac68a"
+  },
+  {
+    "source_station_id": "09009120:CO:BOR",
+    "name": "Taylor Park Reservoir",
+    "slug": "reservoir-taylor-park-reservoir-03dfd15f893f"
+  },
+  {
+    "source_station_id": "09009130:CO:BOR",
+    "name": "Vallecito Reservoir",
+    "slug": "reservoir-vallecito-reservoir-89d9a770ee7b"
+  },
+  {
+    "source_station_id": "09009140:CO:BOR",
+    "name": "Vega Reservoir",
+    "slug": "reservoir-vega-reservoir-b94922e838c5"
+  },
+  {
+    "source_station_id": "09009150:CO:BOR",
+    "name": "Williams Fork Reservoir",
+    "slug": "reservoir-williams-fork-reservoir-371ce71e2cb9"
+  },
+  {
+    "source_station_id": "09009160:CO:BOR",
+    "name": "Willow Creek Reservoir",
+    "slug": "reservoir-willow-creek-reservoir-097336255378"
+  },
+  {
+    "source_station_id": "09009170:CO:BOR",
+    "name": "Groundhog Reservoir",
+    "slug": "reservoir-groundhog-reservoir-2d361ea1b07f"
+  },
+  {
+    "source_station_id": "09009320:CO:BOR",
+    "name": "Fruitgrowers Reservoir",
+    "slug": "reservoir-fruitgrowers-reservoir-16ee4e0961bd"
+  },
+  {
+    "source_station_id": "09009340:CO:BOR",
+    "name": "Crawford Reservoir",
+    "slug": "reservoir-crawford-reservoir-5b73cb8840ef"
+  },
+  {
+    "source_station_id": "09009350:CO:BOR",
+    "name": "Narraguinnep Reservoir",
+    "slug": "reservoir-narraguinnep-reservoir-ceeb8d52e811"
+  },
+  {
+    "source_station_id": "09014500:CO:BOR",
+    "name": "Shadow Mountain Reservoir",
+    "slug": "reservoir-shadow-mountain-reservoir-64d1fb019ab2"
+  },
+  {
+    "source_station_id": "09041395:CO:BOR",
+    "name": "Wolford Mountain Reservoir",
+    "slug": "reservoir-wolford-mountain-reservoir-71e2040d4fa3"
+  },
+  {
+    "source_station_id": "09109090:NM:BOR",
+    "name": "Navajo Reservoir",
+    "slug": "reservoir-navajo-reservoir-4e173a8bfadc"
+  },
+  {
+    "source_station_id": "09116500:CO:BOR",
+    "name": "Vouga Reservoir",
+    "slug": "reservoir-vouga-reservoir-45690aaa2aac"
+  },
+  {
+    "source_station_id": "09125800:CO:BOR",
+    "name": "Silverjack Reservoir",
+    "slug": "reservoir-silverjack-reservoir-ff43810d7a36"
+  },
+  {
+    "source_station_id": "09126000:CO:BOR",
+    "name": "Crystal Reservoir",
+    "slug": "reservoir-crystal-reservoir-a98b43969e4e"
+  },
+  {
+    "source_station_id": "09147022:CO:BOR",
+    "name": "Ridgway Reservoir",
+    "slug": "reservoir-ridgway-reservoir-68589c1746e2"
+  },
+  {
+    "source_station_id": "09213700:WY:BOR",
+    "name": "Big Sandy",
+    "slug": "reservoir-big-sandy-1464ef799767"
+  },
+  {
+    "source_station_id": "09223100:WY:BOR",
+    "name": "Lake Viva Naughton",
+    "slug": "reservoir-lake-viva-naughton-724690eece79"
+  },
+  {
+    "source_station_id": "09237495:CO:BOR",
+    "name": "Stagecoach Reservoir",
+    "slug": "reservoir-stagecoach-reservoir-b2eff070e348"
+  },
+  {
+    "source_station_id": "09255450:WY:BOR",
+    "name": "High Savery Reservoir",
+    "slug": "reservoir-high-savery-reservoir-f44064dc0cca"
+  },
+  {
+    "source_station_id": "09385500:AZ:BOR",
+    "name": "Lyman Reservoir",
+    "slug": "reservoir-lyman-reservoir-4ab2eed3a98d"
+  },
+  {
+    "source_station_id": "09398300:AZ:BOR",
+    "name": "C.C. Cragin Reservoir",
+    "slug": "reservoir-c-c-cragin-reservoir-4e2160c9a0b8"
+  },
+  {
+    "source_station_id": "09469000:AZ:BOR",
+    "name": "San Carlos Reservoir",
+    "slug": "reservoir-san-carlos-reservoir-f1d6fd27cfb2"
+  },
+  {
+    "source_station_id": "09509501",
+    "name": "Horseshoe Reservoir",
+    "slug": "reservoir-horseshoe-reservoir-36e3c6b91de7"
+  },
+  {
+    "source_station_id": "09509502",
+    "name": "Bartlett Reservoir",
+    "slug": "reservoir-bartlett-reservoir-b0784d76be74"
+  },
+  {
+    "source_station_id": "09UTBRWN:UT:BOR",
+    "name": "Browns Draw",
+    "slug": "reservoir-browns-draw-19e224206afd"
+  },
+  {
+    "source_station_id": "09UTBSWR:UT:BOR",
+    "name": "Big Sand Wash",
+    "slug": "reservoir-big-sand-wash-5cfc676366e0"
+  },
+  {
+    "source_station_id": "09UTCLEV:UT:BOR",
+    "name": "Cleveland",
+    "slug": "reservoir-cleveland-6996e6b1a141"
+  },
+  {
+    "source_station_id": "09UTDMAD:UT:BOR",
+    "name": "DMAD Reservoir",
+    "slug": "reservoir-dmad-reservoir-00c689f07805"
+  },
+  {
+    "source_station_id": "09UTELLK:UT:BOR",
+    "name": "Electric Lake",
+    "slug": "reservoir-electric-lake-9261fcce7c1e"
+  },
+  {
+    "source_station_id": "09UTGNBN:UT:BOR",
+    "name": "Gunnison Bend",
+    "slug": "reservoir-gunnison-bend-de791fc80eb2"
+  },
+  {
+    "source_station_id": "09UTGUNL:UT:BOR",
+    "name": "Gunlock",
+    "slug": "reservoir-gunlock-0900b50951f9"
+  },
+  {
+    "source_station_id": "09UTHNTN:UT:BOR",
+    "name": "Huntington",
+    "slug": "reservoir-huntington-1eafa431ec79"
+  },
+  {
+    "source_station_id": "09UTIVIN:UT:BOR",
+    "name": "Ivins",
+    "slug": "reservoir-ivins-c168fd13fa66"
+  },
+  {
+    "source_station_id": "09UTJACK:UT:BOR",
+    "name": "Jackson Flat",
+    "slug": "reservoir-jackson-flat-b7b240d50b3c"
+  },
+  {
+    "source_station_id": "09UTKENS:UT:BOR",
+    "name": "Ken's Lake",
+    "slug": "reservoir-ken-s-lake-7508f806c5f6"
+  },
+  {
+    "source_station_id": "09UTKOLB:UT:BOR",
+    "name": "Kolob Reservoir",
+    "slug": "reservoir-kolob-reservoir-22e998f0164b"
+  },
+  {
+    "source_station_id": "09UTMILF:UT:BOR",
+    "name": "Miller Flat",
+    "slug": "reservoir-miller-flat-834fcc789a48"
+  },
+  {
+    "source_station_id": "09UTMILL:UT:BOR",
+    "name": "Millsite",
+    "slug": "reservoir-millsite-0f535b85c005"
+  },
+  {
+    "source_station_id": "09UTQUAI:UT:BOR",
+    "name": "Quail Creek",
+    "slug": "reservoir-quail-creek-d9e1516da46a"
+  },
+  {
+    "source_station_id": "09UTRKYF:UT:BOR",
+    "name": "Rocky Ford",
+    "slug": "reservoir-rocky-ford-4ae17284c195"
+  },
+  {
+    "source_station_id": "09UTSAND:UT:BOR",
+    "name": "Sand Hollow",
+    "slug": "reservoir-sand-hollow-7217fe50a4ec"
+  },
+  {
+    "source_station_id": "10020200:WY:BOR",
+    "name": "Woodruff Narrows",
+    "slug": "reservoir-woodruff-narrows-f8b0cf0a3a6a"
+  },
+  {
+    "source_station_id": "10055500:ID:BOR",
+    "name": "Bear Lake",
+    "slug": "reservoir-bear-lake-a286badbae41"
+  },
+  {
+    "source_station_id": "10105200:UT:BOR",
+    "name": "Porcupine",
+    "slug": "reservoir-porcupine-999f0b18e50f"
+  },
+  {
+    "source_station_id": "10128000:UT:BOR",
+    "name": "Smith and Morehouse",
+    "slug": "reservoir-smith-and-morehouse-477fd2dd5a99"
+  },
+  {
+    "source_station_id": "10166500:UT:BOR",
+    "name": "Utah Lake",
+    "slug": "reservoir-utah-lake-a3c6f0c20d6f"
+  },
+  {
+    "source_station_id": "10188000:UT:BOR",
+    "name": "Otter Creek",
+    "slug": "reservoir-otter-creek-054269963b4c"
+  },
+  {
+    "source_station_id": "10191000:UT:BOR",
+    "name": "Piute",
+    "slug": "reservoir-piute-eed2db6ba94f"
+  },
+  {
+    "source_station_id": "10216200:UT:BOR",
+    "name": "Gunnison",
+    "slug": "reservoir-gunnison-c33c95817974"
+  },
+  {
+    "source_station_id": "10218500:UT:BOR",
+    "name": "Yuba",
+    "slug": "reservoir-yuba-97ed122575ee"
+  },
+  {
+    "source_station_id": "10238500:UT:BOR",
+    "name": "Minersville",
+    "slug": "reservoir-minersville-6527c0fc97a8"
+  },
+  {
+    "source_station_id": "10292500:CA:BOR",
+    "name": "Bridgeport Reservoir",
+    "slug": "reservoir-bridgeport-reservoir-c21f3d65d5a3"
+  },
+  {
+    "source_station_id": "10297000",
+    "name": "Topaz Lake",
+    "slug": "reservoir-topaz-lake-90d1dca5b01b"
+  },
+  {
+    "source_station_id": "10301700",
+    "name": "Weber Reservoir",
+    "slug": "reservoir-weber-reservoir-5af588625a51"
+  },
+  {
+    "source_station_id": "10312100:NV:BOR",
+    "name": "Lahontan Reservoir",
+    "slug": "reservoir-lahontan-reservoir-e7ff34708a7b"
+  },
+  {
+    "source_station_id": "10334500:NV:BOR",
+    "name": "Rye Patch Reservoir",
+    "slug": "reservoir-rye-patch-reservoir-ffd529bf1c61"
+  },
+  {
+    "source_station_id": "10336710:NV:BOR",
+    "name": "Marlette Lake",
+    "slug": "reservoir-marlette-lake-154c2e8809a8"
+  },
+  {
+    "source_station_id": "10337000:CA:BOR",
+    "name": "Lake Tahoe",
+    "slug": "reservoir-lake-tahoe-4d7b652fa78b"
+  },
+  {
+    "source_station_id": "10338400:CA:BOR",
+    "name": "Donner Lake",
+    "slug": "reservoir-donner-lake-2ac04da9b17e"
+  },
+  {
+    "source_station_id": "10340300:CA:BOR",
+    "name": "Prosser Reservoir",
+    "slug": "reservoir-prosser-reservoir-59395f15f5cf"
+  },
+  {
+    "source_station_id": "10342900:CA:BOR",
+    "name": "Independence Lake",
+    "slug": "reservoir-independence-lake-7ba07a67f043"
+  },
+  {
+    "source_station_id": "10344300:CA:BOR",
+    "name": "Stampede Reservoir",
+    "slug": "reservoir-stampede-reservoir-0583e7232922"
+  },
+  {
+    "source_station_id": "10344490:CA:BOR",
+    "name": "Boca Reservoir",
+    "slug": "reservoir-boca-reservoir-e01ac84b3bd0"
+  },
+  {
+    "source_station_id": "10774",
+    "name": "Folsom Lake",
+    "slug": "reservoir-folsom-lake-e42ff69d9b81"
+  },
+  {
+    "source_station_id": "10782",
+    "name": "Lake Berryessa",
+    "slug": "reservoir-lake-berryessa-618da674c9d4"
+  },
+  {
+    "source_station_id": "10787",
+    "name": "Lake Cachuma",
+    "slug": "reservoir-lake-cachuma-c0da69455111"
+  },
+  {
+    "source_station_id": "10794",
+    "name": "Keswick Reservoir",
+    "slug": "reservoir-keswick-reservoir-516de7222714"
+  },
+  {
+    "source_station_id": "10798",
+    "name": "Lewiston Lake",
+    "slug": "reservoir-lewiston-lake-4948f8d8f3aa"
+  },
+  {
+    "source_station_id": "10807",
+    "name": "Millerton Lake",
+    "slug": "reservoir-millerton-lake-2759de08412c"
+  },
+  {
+    "source_station_id": "10827",
+    "name": "Whiskeytown Lake",
+    "slug": "reservoir-whiskeytown-lake-5eacd59de90d"
+  },
+  {
+    "source_station_id": "10837",
+    "name": "Spring Creek Reservoir",
+    "slug": "reservoir-spring-creek-reservoir-a539d11002f4"
+  },
+  {
+    "source_station_id": "10843",
+    "name": "New Melones Lake",
+    "slug": "reservoir-new-melones-lake-57a70e9dea60"
+  },
+  {
+    "source_station_id": "10854",
+    "name": "Trinity Lake",
+    "slug": "reservoir-trinity-lake-9087412ddad3"
+  },
+  {
+    "source_station_id": "10864",
+    "name": "Shasta Lake",
+    "slug": "reservoir-shasta-lake-5a59ee6d54fe"
+  },
+  {
+    "source_station_id": "10UT03JJ:UT:BOR",
+    "name": "Settlement Canyon",
+    "slug": "reservoir-settlement-canyon-a65639bc9c6f"
+  },
+  {
+    "source_station_id": "10UTENTL:UT:BOR",
+    "name": "Lower Enterprise",
+    "slug": "reservoir-lower-enterprise-56a46009740b"
+  },
+  {
+    "source_station_id": "10UTENTU:UT:BOR",
+    "name": "Upper Enterprise",
+    "slug": "reservoir-upper-enterprise-f01e3ad92151"
+  },
+  {
+    "source_station_id": "10UTGTVL:UT:BOR",
+    "name": "Grantsville",
+    "slug": "reservoir-grantsville-84183a2fd49a"
+  },
+  {
+    "source_station_id": "10UTPANG:UT:BOR",
+    "name": "Panguitch",
+    "slug": "reservoir-panguitch-5ee442d1e87e"
+  },
+  {
+    "source_station_id": "10UTWOOD:UT:BOR",
+    "name": "Woodruff Creek",
+    "slug": "reservoir-woodruff-creek-239511bfb368"
+  },
+  {
+    "source_station_id": "11338500:OR:BOR",
+    "name": "Drews",
+    "slug": "reservoir-drews-e7a1f157be84"
+  },
+  {
+    "source_station_id": "11340000:OR:BOR",
+    "name": "Cottonwood",
+    "slug": "reservoir-cottonwood-5cb5aeb3b20b"
+  },
+  {
+    "source_station_id": "11470001:CA:BOR",
+    "name": "Clear Lake",
+    "slug": "reservoir-clear-lake-9a595b839793"
+  },
+  {
+    "source_station_id": "11483400:OR:BOR",
+    "name": "Gerber",
+    "slug": "reservoir-gerber-64f4a98ad00a"
+  },
+  {
+    "source_station_id": "11504500:OR:BOR",
+    "name": "Fourmile Lake",
+    "slug": "reservoir-fourmile-lake-5e5795e4f46f"
+  },
+  {
+    "source_station_id": "11507001:OR:BOR",
+    "name": "Upper Klamath Lake",
+    "slug": "reservoir-upper-klamath-lake-7b4149b56f0a"
+  },
+  {
+    "source_station_id": "11512900:OR:BOR",
+    "name": "Howard Prairie",
+    "slug": "reservoir-howard-prairie-cb74db92c97d"
+  },
+  {
+    "source_station_id": "11514000:OR:BOR",
+    "name": "Hyatt Prairie",
+    "slug": "reservoir-hyatt-prairie-1c0accc1e70c"
+  },
+  {
+    "source_station_id": "12035380",
+    "name": "Wynoochee Lake",
+    "slug": "reservoir-wynoochee-lake-3569921e7826"
+  },
+  {
+    "source_station_id": "12085000",
+    "name": "Alder Reservoir",
+    "slug": "reservoir-alder-reservoir-5fbfd4c6b6ea"
+  },
+  {
+    "source_station_id": "12098000",
+    "name": "Mud Mountain Lake",
+    "slug": "reservoir-mud-mountain-lake-e08eb53b53ce"
+  },
+  {
+    "source_station_id": "12101000",
+    "name": "Lake Tapps",
+    "slug": "reservoir-lake-tapps-b0e9f0569f7d"
+  },
+  {
+    "source_station_id": "12105800:WA:BOR",
+    "name": "Howard A. Hanson",
+    "slug": "reservoir-howard-a-hanson-d51472165fc3"
+  },
+  {
+    "source_station_id": "12175000:WA:BOR",
+    "name": "Ross",
+    "slug": "reservoir-ross-083fd5e9dc5a"
+  },
+  {
+    "source_station_id": "12191600:WA:BOR",
+    "name": "Upper Baker",
+    "slug": "reservoir-upper-baker-d95fd903c0f0"
+  },
+  {
+    "source_station_id": "12193000:WA:BOR",
+    "name": "Lake Shannon",
+    "slug": "reservoir-lake-shannon-2ffd765d1692"
+  },
+  {
+    "source_station_id": "12301920:MT:BOR",
+    "name": "Lake Koocanusa",
+    "slug": "reservoir-lake-koocanusa-8aac66966a52"
+  },
+  {
+    "source_station_id": "12325000:MT:BOR",
+    "name": "Georgetown Lake",
+    "slug": "reservoir-georgetown-lake-7eaadbc71bca"
+  },
+  {
+    "source_station_id": "12336500:MT:BOR",
+    "name": "Nevada Lake",
+    "slug": "reservoir-nevada-lake-b2397a1c6416"
+  },
+  {
+    "source_station_id": "12342000:MT:BOR",
+    "name": "Painted Rocks Lake",
+    "slug": "reservoir-painted-rocks-lake-85dafc102d57"
+  },
+  {
+    "source_station_id": "12344500:MT:BOR",
+    "name": "Lake Como",
+    "slug": "reservoir-lake-como-1bc374339a7b"
+  },
+  {
+    "source_station_id": "12362000:MT:BOR",
+    "name": "Hungry Horse Lake",
+    "slug": "reservoir-hungry-horse-lake-3102269db6ed"
+  },
+  {
+    "source_station_id": "12371550:MT:BOR",
+    "name": "Flathead Lake",
+    "slug": "reservoir-flathead-lake-d55e3b5d06a7"
+  },
+  {
+    "source_station_id": "12390000:MT:BOR",
+    "name": "Thompson Falls Reservoir",
+    "slug": "reservoir-thompson-falls-reservoir-bd2eae4110fd"
+  },
+  {
+    "source_station_id": "12391300:MT:BOR",
+    "name": "Noxon Rapids Reservoir",
+    "slug": "reservoir-noxon-rapids-reservoir-d5efd273466e"
+  },
+  {
+    "source_station_id": "12446453:WA:BOR",
+    "name": "Conconully Lake",
+    "slug": "reservoir-conconully-lake-8838d495fa04"
+  },
+  {
+    "source_station_id": "12446480:WA:BOR",
+    "name": "Conconully Reservoir",
+    "slug": "reservoir-conconully-reservoir-0a04d29629c5"
+  },
+  {
+    "source_station_id": "12452000:WA:BOR",
+    "name": "Lake Chelan",
+    "slug": "reservoir-lake-chelan-53ceaf22e655"
+  },
+  {
+    "source_station_id": "12474000:WA:BOR",
+    "name": "Keechelus",
+    "slug": "reservoir-keechelus-90f3abe6ccd3"
+  },
+  {
+    "source_station_id": "12475500:WA:BOR",
+    "name": "Kachess",
+    "slug": "reservoir-kachess-c3b275ffb860"
+  },
+  {
+    "source_station_id": "12478500:WA:BOR",
+    "name": "Cle Elum",
+    "slug": "reservoir-cle-elum-16d9f9c458db"
+  },
+  {
+    "source_station_id": "12487500:WA:BOR",
+    "name": "Bumping Lake",
+    "slug": "reservoir-bumping-lake-724ee18fbfc0"
+  },
+  {
+    "source_station_id": "12491000:WA:BOR",
+    "name": "Rimrock",
+    "slug": "reservoir-rimrock-cd1e3dea2b6c"
+  },
+  {
+    "source_station_id": "129059",
+    "name": "Agate Reservoir",
+    "slug": "reservoir-agate-reservoir-4eaaeb8d0aee"
+  },
+  {
+    "source_station_id": "129300",
+    "name": "Billy Clapp Lake",
+    "slug": "reservoir-billy-clapp-lake-fb51faf00de0"
+  },
+  {
+    "source_station_id": "129465",
+    "name": "Banks Lake",
+    "slug": "reservoir-banks-lake-0a51d590af70"
+  },
+  {
+    "source_station_id": "13010500:WY:BOR",
+    "name": "Jackson Lake",
+    "slug": "reservoir-jackson-lake-03bc220e1737"
+  },
+  {
+    "source_station_id": "13032450:ID:BOR",
+    "name": "Palisades Reservoir",
+    "slug": "reservoir-palisades-reservoir-c7c5891d09ef"
+  },
+  {
+    "source_station_id": "130357",
+    "name": "Black Canyon Reservoir",
+    "slug": "reservoir-black-canyon-reservoir-0c1c64382506"
+  },
+  {
+    "source_station_id": "13042000:ID:BOR",
+    "name": "Island Park Reservoir",
+    "slug": "reservoir-island-park-reservoir-a21450c11018"
+  },
+  {
+    "source_station_id": "13046500:WY:BOR",
+    "name": "Grassy Lake",
+    "slug": "reservoir-grassy-lake-01c37c4ca8fd"
+  },
+  {
+    "source_station_id": "13057950:ID:BOR",
+    "name": "Ririe Reservoir",
+    "slug": "reservoir-ririe-reservoir-72cc18e6c44e"
+  },
+  {
+    "source_station_id": "13065000:ID:BOR",
+    "name": "Blackfoot Reservoir",
+    "slug": "reservoir-blackfoot-reservoir-2849045ddad1"
+  },
+  {
+    "source_station_id": "13076500:ID:BOR",
+    "name": "American Falls Reservoir",
+    "slug": "reservoir-american-falls-reservoir-e745d3f84615"
+  },
+  {
+    "source_station_id": "130821",
+    "name": "Haystack Reservoir",
+    "slug": "reservoir-haystack-reservoir-39fb3b9df099"
+  },
+  {
+    "source_station_id": "13083500:ID:BOR",
+    "name": "Oakley Reservoir",
+    "slug": "reservoir-oakley-reservoir-4614d67c06a6"
+  },
+  {
+    "source_station_id": "13106500:ID:BOR",
+    "name": "Salmon Falls Reservoir",
+    "slug": "reservoir-salmon-falls-reservoir-9f1e2860e76f"
+  },
+  {
+    "source_station_id": "13126000:ID:BOR",
+    "name": "Mackay Reservoir",
+    "slug": "reservoir-mackay-reservoir-616803b4d095"
+  },
+  {
+    "source_station_id": "13142000:ID:BOR",
+    "name": "Magic Reservoir",
+    "slug": "reservoir-magic-reservoir-49606bdd256b"
+  },
+  {
+    "source_station_id": "13148200:ID:BOR",
+    "name": "Little Wood Reservoir",
+    "slug": "reservoir-little-wood-reservoir-b2230e863e47"
+  },
+  {
+    "source_station_id": "13174000:NV:BOR",
+    "name": "Wild Horse Reservoir",
+    "slug": "reservoir-wild-horse-reservoir-c2c982ed656d"
+  },
+  {
+    "source_station_id": "131804",
+    "name": "Lake Walcott",
+    "slug": "reservoir-lake-walcott-1829de61f437"
+  },
+  {
+    "source_station_id": "13182500:OR:BOR",
+    "name": "Lake Owyhee",
+    "slug": "reservoir-lake-owyhee-78bb12480d1d"
+  },
+  {
+    "source_station_id": "13190000:ID:BOR",
+    "name": "Anderson Ranch Reservoir",
+    "slug": "reservoir-anderson-ranch-reservoir-086f2b58808d"
+  },
+  {
+    "source_station_id": "13194000:ID:BOR",
+    "name": "Arrowrock Reservoir",
+    "slug": "reservoir-arrowrock-reservoir-d4a6a95b6d35"
+  },
+  {
+    "source_station_id": "13201500:ID:BOR",
+    "name": "Lucky Peak Reservoir",
+    "slug": "reservoir-lucky-peak-reservoir-6f4ca0d1df25"
+  },
+  {
+    "source_station_id": "13203500:ID:BOR",
+    "name": "Lake Lowell",
+    "slug": "reservoir-lake-lowell-8af23d407599"
+  },
+  {
+    "source_station_id": "13214500:OR:BOR",
+    "name": "Warm Springs",
+    "slug": "reservoir-warm-springs-e312ee60eca8"
+  },
+  {
+    "source_station_id": "13217000:OR:BOR",
+    "name": "Beulah",
+    "slug": "reservoir-beulah-3af0059f9105"
+  },
+  {
+    "source_station_id": "13226800:OR:BOR",
+    "name": "Bully Creek",
+    "slug": "reservoir-bully-creek-835283333bca"
+  },
+  {
+    "source_station_id": "13236000:ID:BOR",
+    "name": "Deadwood Reservoir",
+    "slug": "reservoir-deadwood-reservoir-0b55dc8faf75"
+  },
+  {
+    "source_station_id": "13238500:ID:BOR",
+    "name": "Payette Lake",
+    "slug": "reservoir-payette-lake-64d4ffb500ae"
+  },
+  {
+    "source_station_id": "13244500:ID:BOR",
+    "name": "Cascade Reservoir",
+    "slug": "reservoir-cascade-reservoir-8090721ceffd"
+  },
+  {
+    "source_station_id": "132563",
+    "name": "Potholes Reservoir",
+    "slug": "reservoir-potholes-reservoir-4ef9b6319b37"
+  },
+  {
+    "source_station_id": "13266900:ID:BOR",
+    "name": "Mann Creek Reservoir",
+    "slug": "reservoir-mann-creek-reservoir-d2e871853e13"
+  },
+  {
+    "source_station_id": "13272500:OR:BOR",
+    "name": "Unity",
+    "slug": "reservoir-unity-52276b8f92b3"
+  },
+  {
+    "source_station_id": "13275292:OR:BOR",
+    "name": "Phillips Lake",
+    "slug": "reservoir-phillips-lake-56df79e76479"
+  },
+  {
+    "source_station_id": "13283600:OR:BOR",
+    "name": "Wolf Creek",
+    "slug": "reservoir-wolf-creek-3ac3fdc2eee9"
+  },
+  {
+    "source_station_id": "13285000:OR:BOR",
+    "name": "Thief Valley",
+    "slug": "reservoir-thief-valley-10693eeba493"
+  },
+  {
+    "source_station_id": "132896",
+    "name": "Mann Lake",
+    "slug": "reservoir-mann-lake-892df5708510"
+  },
+  {
+    "source_station_id": "13289700:ID:BOR",
+    "name": "Brownlee Reservoir",
+    "slug": "reservoir-brownlee-reservoir-fc84d91c6b99"
+  },
+  {
+    "source_station_id": "133021",
+    "name": "Scooteney Reservoir",
+    "slug": "reservoir-scooteney-reservoir-4be7e04cd583"
+  },
+  {
+    "source_station_id": "133227",
+    "name": "Soldiers Meadow Reservoir",
+    "slug": "reservoir-soldiers-meadow-reservoir-f62466aca1e8"
+  },
+  {
+    "source_station_id": "13326000:OR:BOR",
+    "name": "Wallowa Lake",
+    "slug": "reservoir-wallowa-lake-285cafa5469e"
+  },
+  {
+    "source_station_id": "13340950:ID:BOR",
+    "name": "Dworshak Reservoir",
+    "slug": "reservoir-dworshak-reservoir-d5293b940f20"
+  },
+  {
+    "source_station_id": "134092",
+    "name": "Rifle Gap Reservoir",
+    "slug": "reservoir-rifle-gap-reservoir-5b9d13507179"
+  },
+  {
+    "source_station_id": "14019151:OR:BOR",
+    "name": "Cold Springs",
+    "slug": "reservoir-cold-springs-9e7354133312"
+  },
+  {
+    "source_station_id": "14023000:OR:BOR",
+    "name": "McKay",
+    "slug": "reservoir-mckay-66f7a98b9e8c"
+  },
+  {
+    "source_station_id": "14034490:OR:BOR",
+    "name": "Willow Creek",
+    "slug": "reservoir-willow-creek-a32283c0cf91"
+  },
+  {
+    "source_station_id": "14053500:OR:BOR",
+    "name": "Crane Prairie",
+    "slug": "reservoir-crane-prairie-5be67b4e1369"
+  },
+  {
+    "source_station_id": "14056000:OR:BOR",
+    "name": "Wickiup",
+    "slug": "reservoir-wickiup-f93b396c5659"
+  },
+  {
+    "source_station_id": "14059500:OR:BOR",
+    "name": "Crescent Lake",
+    "slug": "reservoir-crescent-lake-964b85c7c411"
+  },
+  {
+    "source_station_id": "14080400:OR:BOR",
+    "name": "Prineville",
+    "slug": "reservoir-prineville-711e7c4f087c"
+  },
+  {
+    "source_station_id": "14085100:OR:BOR",
+    "name": "Ochoco",
+    "slug": "reservoir-ochoco-d0757fac4170"
+  },
+  {
+    "source_station_id": "14097310:OR:BOR",
+    "name": "Clear Lake",
+    "slug": "reservoir-clear-lake-4d578b941c8a"
+  },
+  {
+    "source_station_id": "14145100:OR:BOR",
+    "name": "Hills Creek",
+    "slug": "reservoir-hills-creek-18e99dfee809"
+  },
+  {
+    "source_station_id": "14149000:OR:BOR",
+    "name": "Lookout Point",
+    "slug": "reservoir-lookout-point-a8df6ef47be6"
+  },
+  {
+    "source_station_id": "14149150:OR:BOR",
+    "name": "Dexter",
+    "slug": "reservoir-dexter-950831eb9e05"
+  },
+  {
+    "source_station_id": "14150900:OR:BOR",
+    "name": "Fall Creek",
+    "slug": "reservoir-fall-creek-dcce884e1690"
+  },
+  {
+    "source_station_id": "14153000:OR:BOR",
+    "name": "Cottage Grove",
+    "slug": "reservoir-cottage-grove-d7b834114b33"
+  },
+  {
+    "source_station_id": "14155000:OR:BOR",
+    "name": "Dorena",
+    "slug": "reservoir-dorena-06083d677ca3"
+  },
+  {
+    "source_station_id": "14159400:OR:BOR",
+    "name": "Cougar",
+    "slug": "reservoir-cougar-2d075324428b"
+  },
+  {
+    "source_station_id": "14162100:OR:BOR",
+    "name": "Blue River",
+    "slug": "reservoir-blue-river-02e91a131d89"
+  },
+  {
+    "source_station_id": "14168000:OR:BOR",
+    "name": "Fern Ridge",
+    "slug": "reservoir-fern-ridge-d786bd2ff252"
+  },
+  {
+    "source_station_id": "14180500:OR:BOR",
+    "name": "Detroit",
+    "slug": "reservoir-detroit-d95911b4dbd8"
+  },
+  {
+    "source_station_id": "14186100:OR:BOR",
+    "name": "Green Peter",
+    "slug": "reservoir-green-peter-90a37f7d83ac"
+  },
+  {
+    "source_station_id": "14186600:OR:BOR",
+    "name": "Foster",
+    "slug": "reservoir-foster-cd701a9176be"
+  },
+  {
+    "source_station_id": "14202965:OR:BOR",
+    "name": "Henry Hagg Lake",
+    "slug": "reservoir-henry-hagg-lake-cd13809b3f62"
+  },
+  {
+    "source_station_id": "14208600:OR:BOR",
+    "name": "Timothy Lake",
+    "slug": "reservoir-timothy-lake-cec83d984840"
+  },
+  {
+    "source_station_id": "14234800:WA:BOR",
+    "name": "Riffe Lake",
+    "slug": "reservoir-riffe-lake-bfa7c9c3b2c8"
+  },
+  {
+    "source_station_id": "14237800:WA:BOR",
+    "name": "Mayfield",
+    "slug": "reservoir-mayfield-b458abe64256"
+  },
+  {
+    "source_station_id": "14335040:OR:BOR",
+    "name": "Lost Creek",
+    "slug": "reservoir-lost-creek-eb357d890e11"
+  },
+  {
+    "source_station_id": "14342000:OR:BOR",
+    "name": "Fish Lake",
+    "slug": "reservoir-fish-lake-d9812f00dc0d"
+  },
+  {
+    "source_station_id": "14349000:OR:BOR",
+    "name": "Emigrant Lake",
+    "slug": "reservoir-emigrant-lake-8c1bf395901d"
+  },
+  {
+    "source_station_id": "14361900:OR:BOR",
+    "name": "Applegate",
+    "slug": "reservoir-applegate-1cd19756295c"
+  },
+  {
+    "source_station_id": "219",
+    "name": "Causey",
+    "slug": "reservoir-causey-314f04b30f62"
+  },
+  {
+    "source_station_id": "278",
+    "name": "Currant Creek",
+    "slug": "reservoir-currant-creek-ee62de25ccc2"
+  },
+  {
+    "source_station_id": "290",
+    "name": "Deer Creek",
+    "slug": "reservoir-deer-creek-09895de0407b"
+  },
+  {
+    "source_station_id": "310",
+    "name": "East Canyon",
+    "slug": "reservoir-east-canyon-226f76b55acb"
+  },
+  {
+    "source_station_id": "314",
+    "name": "Echo",
+    "slug": "reservoir-echo-748064be03a0"
+  },
+  {
+    "source_station_id": "319",
+    "name": "Eden Reservoir",
+    "slug": "reservoir-eden-reservoir-156091ee0884"
+  },
+  {
+    "source_station_id": "337",
+    "name": "Flaming Gorge",
+    "slug": "reservoir-flaming-gorge-8ede6b263433"
+  },
+  {
+    "source_station_id": "347",
+    "name": "Fontenelle",
+    "slug": "reservoir-fontenelle-2289b221b396"
+  },
+  {
+    "source_station_id": "355",
+    "name": "Roosevelt Lake",
+    "slug": "reservoir-roosevelt-lake-355d8c0ee4e5"
+  },
+  {
+    "source_station_id": "396",
+    "name": "Apache Lake",
+    "slug": "reservoir-apache-lake-3c1b7053f0ed"
+  },
+  {
+    "source_station_id": "400",
+    "name": "Canyon Lake",
+    "slug": "reservoir-canyon-lake-26d228663f13"
+  },
+  {
+    "source_station_id": "4003399B",
+    "name": "Overland Reservoir",
+    "slug": "reservoir-overland-reservoir-9c8165ede50b"
+  },
+  {
+    "source_station_id": "406",
+    "name": "Saguaro Lake",
+    "slug": "reservoir-saguaro-lake-f64f410744d9"
+  },
+  {
+    "source_station_id": "432",
+    "name": "Huntington North",
+    "slug": "reservoir-huntington-north-98f1f17f9a73"
+  },
+  {
+    "source_station_id": "439",
+    "name": "Hyrum",
+    "slug": "reservoir-hyrum-050a010ce24d"
+  },
+  {
+    "source_station_id": "4516",
+    "name": "Trial Lake",
+    "slug": "reservoir-trial-lake-961290276708"
+  },
+  {
+    "source_station_id": "4523",
+    "name": "Lost Lake",
+    "slug": "reservoir-lost-lake-9e2f46c99a21"
+  },
+  {
+    "source_station_id": "4530",
+    "name": "Washington Lake",
+    "slug": "reservoir-washington-lake-b7d8243a7ffe"
+  },
+  {
+    "source_station_id": "463",
+    "name": "Joes Valley",
+    "slug": "reservoir-joes-valley-06de973bb455"
+  },
+  {
+    "source_station_id": "468",
+    "name": "Jordanelle",
+    "slug": "reservoir-jordanelle-1e5ee5e58c8f"
+  },
+  {
+    "source_station_id": "504",
+    "name": "Lake Nighthorse",
+    "slug": "reservoir-lake-nighthorse-ba689abd93c9"
+  },
+  {
+    "source_station_id": "509",
+    "name": "Lake Powell",
+    "slug": "lake-powell"
+  },
+  {
+    "source_station_id": "520",
+    "name": "Lemon Reservoir",
+    "slug": "reservoir-lemon-reservoir-0b35b06a2277"
+  },
+  {
+    "source_station_id": "544",
+    "name": "Lost Creek",
+    "slug": "reservoir-lost-creek-d359f8b537f1"
+  },
+  {
+    "source_station_id": "574",
+    "name": "Meeks Cabin",
+    "slug": "reservoir-meeks-cabin-8e28c5eb829e"
+  },
+  {
+    "source_station_id": "587",
+    "name": "Moon Lake",
+    "slug": "reservoir-moon-lake-82a93b152b27"
+  },
+  {
+    "source_station_id": "6124",
+    "name": "Lake Mead",
+    "slug": "lake-mead"
+  },
+  {
+    "source_station_id": "623",
+    "name": "Newton",
+    "slug": "reservoir-newton-fc71f2d6d38d"
+  },
+  {
+    "source_station_id": "652",
+    "name": "Pineview",
+    "slug": "reservoir-pineview-83eaf4dc5e19"
+  },
+  {
+    "source_station_id": "685",
+    "name": "Red Fleet",
+    "slug": "reservoir-red-fleet-bb9b8ef81347"
+  },
+  {
+    "source_station_id": "706",
+    "name": "Rockport",
+    "slug": "reservoir-rockport-35254aa9a214"
+  },
+  {
+    "source_station_id": "727",
+    "name": "Scofield",
+    "slug": "reservoir-scofield-30e4c02268d4"
+  },
+  {
+    "source_station_id": "764",
+    "name": "Starvation",
+    "slug": "reservoir-starvation-aaee0ce51abf"
+  },
+  {
+    "source_station_id": "769",
+    "name": "Stateline",
+    "slug": "reservoir-stateline-afa472a961fb"
+  },
+  {
+    "source_station_id": "774",
+    "name": "Steinaker",
+    "slug": "reservoir-steinaker-089ee14b926f"
+  },
+  {
+    "source_station_id": "779",
+    "name": "Strawberry",
+    "slug": "reservoir-strawberry-87a4a78ecb6d"
+  },
+  {
+    "source_station_id": "826",
+    "name": "Upper Stillwater",
+    "slug": "reservoir-upper-stillwater-f6543e952ecb"
+  },
+  {
+    "source_station_id": "866",
+    "name": "Willard Bay",
+    "slug": "reservoir-willard-bay-80c39b8ca01c"
+  },
+  {
+    "source_station_id": "ALM",
+    "name": "Lake Almanor",
+    "slug": "reservoir-lake-almanor-22ff86dbbe42"
+  },
+  {
+    "source_station_id": "ALSRESCO",
+    "name": "Alsbury Reservoir",
+    "slug": "reservoir-alsbury-reservoir-530ac736d400"
+  },
+  {
+    "source_station_id": "ANT",
+    "name": "Antelope Lake",
+    "slug": "reservoir-antelope-lake-888860333847"
+  },
+  {
+    "source_station_id": "APN",
+    "name": "Alpine Lake",
+    "slug": "reservoir-alpine-lake-e7f18ebd960d"
+  },
+  {
+    "source_station_id": "ATN",
+    "name": "Lake San Antonio",
+    "slug": "reservoir-lake-san-antonio-6fdd30a1e820"
+  },
+  {
+    "source_station_id": "BCL",
+    "name": "Bucks Lake",
+    "slug": "reservoir-bucks-lake-0b2d992bbedc"
+  },
+  {
+    "source_station_id": "BIO",
+    "name": "Briones Reservoir",
+    "slug": "reservoir-briones-reservoir-13a4f1d1012b"
+  },
+  {
+    "source_station_id": "BIT",
+    "name": "Lake Britton",
+    "slug": "reservoir-lake-britton-323c9bea5814"
+  },
+  {
+    "source_station_id": "BKIRESCO",
+    "name": "Buckeye Reservoir",
+    "slug": "reservoir-buckeye-reservoir-06f487422b36"
+  },
+  {
+    "source_station_id": "BLB",
+    "name": "Black Butte",
+    "slug": "reservoir-black-butte-f09b85bbcc27"
+  },
+  {
+    "source_station_id": "BLURESCO",
+    "name": "Upper Blue Reservoir",
+    "slug": "reservoir-upper-blue-reservoir-78c1732a5d87"
+  },
+  {
+    "source_station_id": "BOX",
+    "name": "Box Canyon Reservoir",
+    "slug": "reservoir-box-canyon-reservoir-dfcae7d467db"
+  },
+  {
+    "source_station_id": "BQC",
+    "name": "Bouquet Canyon",
+    "slug": "reservoir-bouquet-canyon-789d3257a28c"
+  },
+  {
+    "source_station_id": "BRD",
+    "name": "Beardsley Lake",
+    "slug": "reservoir-beardsley-lake-1eb6798cd8a8"
+  },
+  {
+    "source_station_id": "BRT",
+    "name": "Barrett",
+    "slug": "reservoir-barrett-a35a878326c5"
+  },
+  {
+    "source_station_id": "BRV",
+    "name": "Big Bear Lake",
+    "slug": "reservoir-big-bear-lake-18fd7174ad98"
+  },
+  {
+    "source_station_id": "BTV",
+    "name": "Butt Valley",
+    "slug": "reservoir-butt-valley-b9c29328d87b"
+  },
+  {
+    "source_station_id": "BUC",
+    "name": "Eastman Lake",
+    "slug": "reservoir-eastman-lake-5d3912b050fe"
+  },
+  {
+    "source_station_id": "BUL",
+    "name": "New Bullards Bar",
+    "slug": "reservoir-new-bullards-bar-6d308b347ae2"
+  },
+  {
+    "source_station_id": "BWN",
+    "name": "Bowman Lake",
+    "slug": "reservoir-bowman-lake-3831039283d2"
+  },
+  {
+    "source_station_id": "CAB",
+    "name": "Cabinet Gorge Reservoir",
+    "slug": "reservoir-cabinet-gorge-reservoir-362d88818ef2"
+  },
+  {
+    "source_station_id": "CAS",
+    "name": "Castaic",
+    "slug": "reservoir-castaic-57f90a2f0d6f"
+  },
+  {
+    "source_station_id": "CFW",
+    "name": "Camp Far West",
+    "slug": "reservoir-camp-far-west-50fbd4547e02"
+  },
+  {
+    "source_station_id": "CGS",
+    "name": "Cogswell Reservoir",
+    "slug": "reservoir-cogswell-reservoir-5f9226708af3"
+  },
+  {
+    "source_station_id": "CHB",
+    "name": "Chabot",
+    "slug": "reservoir-chabot-66fe74b7bc92"
+  },
+  {
+    "source_station_id": "CHIMNEYC:NV:BOR",
+    "name": "Chimney Creek Reservoir",
+    "slug": "reservoir-chimney-creek-reservoir-47821d9220d9"
+  },
+  {
+    "source_station_id": "CHJ",
+    "name": "Rufus Woods Lake",
+    "slug": "reservoir-rufus-woods-lake-3089b7ec5b53"
+  },
+  {
+    "source_station_id": "CHV",
+    "name": "Cherry Lake",
+    "slug": "reservoir-cherry-lake-ab48265bd5a8"
+  },
+  {
+    "source_station_id": "CMN",
+    "name": "Camanche Reservoir",
+    "slug": "reservoir-camanche-reservoir-ad2b5efedad3"
+  },
+  {
+    "source_station_id": "CNV",
+    "name": "Bass Lake",
+    "slug": "reservoir-bass-lake-e0c3121e7248"
+  },
+  {
+    "source_station_id": "COY",
+    "name": "Lake Mendocino",
+    "slug": "reservoir-lake-mendocino-401ca071d617"
+  },
+  {
+    "source_station_id": "CPL",
+    "name": "Caples Lake",
+    "slug": "reservoir-caples-lake-00acc6bd4256"
+  },
+  {
+    "source_station_id": "CRO",
+    "name": "Calero Reservoir",
+    "slug": "reservoir-calero-reservoir-2531318eff44"
+  },
+  {
+    "source_station_id": "CRW",
+    "name": "Lake Crowley",
+    "slug": "reservoir-lake-crowley-02128cbdab92"
+  },
+  {
+    "source_station_id": "CRY",
+    "name": "Lower Crystal Springs Reservoir",
+    "slug": "reservoir-lower-crystal-springs-reservoir-c9180d0339e7"
+  },
+  {
+    "source_station_id": "CSI",
+    "name": "Casitas",
+    "slug": "reservoir-casitas-8c57fdafeb23"
+  },
+  {
+    "source_station_id": "CTG",
+    "name": "Courtright Reservoir",
+    "slug": "reservoir-courtright-reservoir-a17e5d409065"
+  },
+  {
+    "source_station_id": "CUY",
+    "name": "Lake Cuyamaca",
+    "slug": "reservoir-lake-cuyamaca-3e1bde43ca24"
+  },
+  {
+    "source_station_id": "CVE",
+    "name": "Calaveras",
+    "slug": "reservoir-calaveras-ef66b7e21cfd"
+  },
+  {
+    "source_station_id": "CYC",
+    "name": "Coyote Lake",
+    "slug": "reservoir-coyote-lake-8ee6f8553202"
+  },
+  {
+    "source_station_id": "DAV",
+    "name": "Lake Davis",
+    "slug": "reservoir-lake-davis-86e34fa31e81"
+  },
+  {
+    "source_station_id": "DLV",
+    "name": "Del Valle",
+    "slug": "reservoir-del-valle-28880daddd2a"
+  },
+  {
+    "source_station_id": "DMV",
+    "name": "Diamond Valley",
+    "slug": "reservoir-diamond-valley-d4fee25a1ace"
+  },
+  {
+    "source_station_id": "DNP",
+    "name": "Don Pedro Reservoir",
+    "slug": "reservoir-don-pedro-reservoir-8fcff3d70d11"
+  },
+  {
+    "source_station_id": "DON",
+    "name": "Donnells",
+    "slug": "reservoir-donnells-8029a6493b9c"
+  },
+  {
+    "source_station_id": "DRE",
+    "name": "Dwinnell Reservoir",
+    "slug": "reservoir-dwinnell-reservoir-a7a05ffd197d"
+  },
+  {
+    "source_station_id": "EDN",
+    "name": "Stumpy Meadows Reservoir",
+    "slug": "reservoir-stumpy-meadows-reservoir-fed3347f6e33"
+  },
+  {
+    "source_station_id": "ELC",
+    "name": "El Capitan Lake",
+    "slug": "reservoir-el-capitan-lake-60ff356d23a1"
+  },
+  {
+    "source_station_id": "ENG",
+    "name": "Harry L. Englebright Lake",
+    "slug": "reservoir-harry-l-englebright-lake-af06898f71f6"
+  },
+  {
+    "source_station_id": "ENR",
+    "name": "Lake Eleanor",
+    "slug": "reservoir-lake-eleanor-43475edae961"
+  },
+  {
+    "source_station_id": "EPK",
+    "name": "East Park Reservoir",
+    "slug": "reservoir-east-park-reservoir-9d7853f6347c"
+  },
+  {
+    "source_station_id": "EXC",
+    "name": "Lake McClure",
+    "slug": "reservoir-lake-mcclure-fafd789f4bfb"
+  },
+  {
+    "source_station_id": "FLR",
+    "name": "Florence Lake",
+    "slug": "reservoir-florence-lake-d55eb644ebe7"
+  },
+  {
+    "source_station_id": "FMD",
+    "name": "French Meadows",
+    "slug": "reservoir-french-meadows-b1277434dfe4"
+  },
+  {
+    "source_station_id": "FRD",
+    "name": "Frenchman Lake",
+    "slug": "reservoir-frenchman-lake-5b5d1f17e99c"
+  },
+  {
+    "source_station_id": "FRL",
+    "name": "French Lake",
+    "slug": "reservoir-french-lake-1717240cfd37"
+  },
+  {
+    "source_station_id": "GBL",
+    "name": "Gibraltar Reservoir",
+    "slug": "reservoir-gibraltar-reservoir-b734f31b249e"
+  },
+  {
+    "source_station_id": "GCL",
+    "name": "Franklin D. Roosevelt Lake",
+    "slug": "reservoir-franklin-d-roosevelt-lake-6f48dd661dd9"
+  },
+  {
+    "source_station_id": "GLK",
+    "name": "Gem Lake",
+    "slug": "reservoir-gem-lake-15157d493f11"
+  },
+  {
+    "source_station_id": "GNT",
+    "name": "Grant Lake",
+    "slug": "reservoir-grant-lake-71e8f4e4ffe6"
+  },
+  {
+    "source_station_id": "GSV",
+    "name": "Galesville Reservoir",
+    "slug": "reservoir-galesville-reservoir-5b5515eebc6b"
+  },
+  {
+    "source_station_id": "HARTLKCO",
+    "name": "Heart Lake Reservoir",
+    "slug": "reservoir-heart-lake-reservoir-2ca392db2930"
+  },
+  {
+    "source_station_id": "HAVRESCO",
+    "name": "Haviland Lake Reservoir",
+    "slug": "reservoir-haviland-lake-reservoir-5ef68e90cbec"
+  },
+  {
+    "source_station_id": "HCD",
+    "name": "Hells Canyon Reservoir",
+    "slug": "reservoir-hells-canyon-reservoir-bf9b0c06644e"
+  },
+  {
+    "source_station_id": "HDG",
+    "name": "Lake Hodges",
+    "slug": "reservoir-lake-hodges-e531d5accbcc"
+  },
+  {
+    "source_station_id": "HHL",
+    "name": "Hell Hole Reservoir",
+    "slug": "reservoir-hell-hole-reservoir-5d33f5e5f564"
+  },
+  {
+    "source_station_id": "HID",
+    "name": "Hensley Lake",
+    "slug": "reservoir-hensley-lake-1b226fde02fe"
+  },
+  {
+    "source_station_id": "HMT",
+    "name": "Lake Hemet",
+    "slug": "reservoir-lake-hemet-84eb7a1b849e"
+  },
+  {
+    "source_station_id": "HNN",
+    "name": "Lake Hennessey",
+    "slug": "reservoir-lake-hennessey-df74ba351c76"
+  },
+  {
+    "source_station_id": "HNS",
+    "name": "Henshaw",
+    "slug": "reservoir-henshaw-7c24598c38b3"
+  },
+  {
+    "source_station_id": "HNT",
+    "name": "Huntington Lake",
+    "slug": "reservoir-huntington-lake-5018b9ea8915"
+  },
+  {
+    "source_station_id": "HTH",
+    "name": "Hetch Hetchy",
+    "slug": "reservoir-hetch-hetchy-a44f7a4c375b"
+  },
+  {
+    "source_station_id": "HWE",
+    "name": "Haiwee",
+    "slug": "reservoir-haiwee-e9e419951c6d"
+  },
+  {
+    "source_station_id": "ICH",
+    "name": "Ice House Reservoir",
+    "slug": "reservoir-ice-house-reservoir-f1399b63ab3b"
+  },
+  {
+    "source_station_id": "IHR",
+    "name": "Lake Sacajawea",
+    "slug": "reservoir-lake-sacajawea-e1fcd8de054c"
+  },
+  {
+    "source_station_id": "INV",
+    "name": "Indian Valley",
+    "slug": "reservoir-indian-valley-fb91362c2efb"
+  },
+  {
+    "source_station_id": "IRC",
+    "name": "Iron Canyon",
+    "slug": "reservoir-iron-canyon-3c0295f14060"
+  },
+  {
+    "source_station_id": "ISB",
+    "name": "Isabella Lake",
+    "slug": "reservoir-isabella-lake-926c55059c89"
+  },
+  {
+    "source_station_id": "JCK",
+    "name": "Jackson Meadows",
+    "slug": "reservoir-jackson-meadows-5c7c1ac763de"
+  },
+  {
+    "source_station_id": "JDA",
+    "name": "Lake Umatilla",
+    "slug": "reservoir-lake-umatilla-cd5bb7a0a028"
+  },
+  {
+    "source_station_id": "JNK",
+    "name": "Jenkinson Lake",
+    "slug": "reservoir-jenkinson-lake-5f6a19052015"
+  },
+  {
+    "source_station_id": "JNN",
+    "name": "Lake Jennings",
+    "slug": "reservoir-lake-jennings-d244dae3b38f"
+  },
+  {
+    "source_station_id": "KNT",
+    "name": "Kent",
+    "slug": "reservoir-kent-1ac236fbcd0e"
+  },
+  {
+    "source_station_id": "LBS",
+    "name": "Los Banos Reservoir",
+    "slug": "reservoir-los-banos-reservoir-4bebe5325c55"
+  },
+  {
+    "source_station_id": "LGS",
+    "name": "Lake Bryan",
+    "slug": "reservoir-lake-bryan-f4971c9d871b"
+  },
+  {
+    "source_station_id": "LGV",
+    "name": "Little Grass Valley",
+    "slug": "reservoir-little-grass-valley-03f9bc5be9af"
+  },
+  {
+    "source_station_id": "LMN",
+    "name": "Lake Herbert G. West",
+    "slug": "reservoir-lake-herbert-g-west-84157302f747"
+  },
+  {
+    "source_station_id": "LNG",
+    "name": "Lexington Reservoir",
+    "slug": "reservoir-lexington-reservoir-ea4d2edbcb3b"
+  },
+  {
+    "source_station_id": "LON",
+    "name": "Loon Lake",
+    "slug": "reservoir-loon-lake-3e6f30b98d23"
+  },
+  {
+    "source_station_id": "LONRESCO",
+    "name": "Long Hollow Reservoir",
+    "slug": "reservoir-long-hollow-reservoir-8243fbe88186"
+  },
+  {
+    "source_station_id": "LOP",
+    "name": "Lopez Lake",
+    "slug": "reservoir-lopez-lake-3412b88ffdf6"
+  },
+  {
+    "source_station_id": "LOT",
+    "name": "Lower Otay",
+    "slug": "reservoir-lower-otay-c8afa1066132"
+  },
+  {
+    "source_station_id": "LPY",
+    "name": "Lake Pillsbury",
+    "slug": "reservoir-lake-pillsbury-0b7abd718832"
+  },
+  {
+    "source_station_id": "LRA",
+    "name": "Leroy Anderson",
+    "slug": "reservoir-leroy-anderson-8671183c76cf"
+  },
+  {
+    "source_station_id": "LVD",
+    "name": "Loveland Reservoir",
+    "slug": "reservoir-loveland-reservoir-d373e559b7a9"
+  },
+  {
+    "source_station_id": "LVQ",
+    "name": "Los Vaqueros Reservoir",
+    "slug": "reservoir-los-vaqueros-reservoir-eaea625a574f"
+  },
+  {
+    "source_station_id": "LVY",
+    "name": "Lake Valley Reservoir",
+    "slug": "reservoir-lake-valley-reservoir-5dbec731501e"
+  },
+  {
+    "source_station_id": "LWB",
+    "name": "Lower Bear",
+    "slug": "reservoir-lower-bear-0e6f3a820021"
+  },
+  {
+    "source_station_id": "LWG",
+    "name": "Lower Granite Lake",
+    "slug": "reservoir-lower-granite-lake-095e9b290bf6"
+  },
+  {
+    "source_station_id": "LYS",
+    "name": "Lyons Reservoir",
+    "slug": "reservoir-lyons-reservoir-4bb5e1080423"
+  },
+  {
+    "source_station_id": "MCN",
+    "name": "Lake Wallula",
+    "slug": "reservoir-lake-wallula-a7d7c808eff0"
+  },
+  {
+    "source_station_id": "MCO",
+    "name": "Lake McCloud",
+    "slug": "reservoir-lake-mccloud-1d2fb63ed3d2"
+  },
+  {
+    "source_station_id": "MCS",
+    "name": "Lake McSwain",
+    "slug": "reservoir-lake-mcswain-ec583518660c"
+  },
+  {
+    "source_station_id": "MDO",
+    "name": "Modesto Reservoir",
+    "slug": "reservoir-modesto-reservoir-722f18976004"
+  },
+  {
+    "source_station_id": "MHV",
+    "name": "Lake Mohave",
+    "slug": "reservoir-lake-mohave-852467dcf7ce"
+  },
+  {
+    "source_station_id": "MHW",
+    "name": "Lake Mathews",
+    "slug": "reservoir-lake-mathews-6230cd5e6466"
+  },
+  {
+    "source_station_id": "MLL",
+    "name": "Bennington Lake",
+    "slug": "reservoir-bennington-lake-a65b5feae5c1"
+  },
+  {
+    "source_station_id": "MMR",
+    "name": "Miramar",
+    "slug": "reservoir-miramar-5a89f81fca23"
+  },
+  {
+    "source_station_id": "MMW",
+    "name": "Mountain Meadows",
+    "slug": "reservoir-mountain-meadows-14bd5ddbf8d0"
+  },
+  {
+    "source_station_id": "MOR",
+    "name": "Morena Reservoir",
+    "slug": "reservoir-morena-reservoir-49bcc8b9b86b"
+  },
+  {
+    "source_station_id": "MPHC2000:CO:BOR",
+    "name": "McPhee Reservoir",
+    "slug": "reservoir-mcphee-reservoir-4e739dc94b4e"
+  },
+  {
+    "source_station_id": "MPL",
+    "name": "Mammoth Pool",
+    "slug": "reservoir-mammoth-pool-3bb068566be6"
+  },
+  {
+    "source_station_id": "MRR",
+    "name": "Murray Reservoir",
+    "slug": "reservoir-murray-reservoir-2e6aa59de580"
+  },
+  {
+    "source_station_id": "MRT",
+    "name": "Martis Creek Reservoir",
+    "slug": "reservoir-martis-creek-reservoir-33e68c4d3af3"
+  },
+  {
+    "source_station_id": "NAT",
+    "name": "Lake Natoma",
+    "slug": "reservoir-lake-natoma-4f55a0016632"
+  },
+  {
+    "source_station_id": "NCA",
+    "name": "Nicasio",
+    "slug": "reservoir-nicasio-53c77ea37780"
+  },
+  {
+    "source_station_id": "NCM",
+    "name": "Nacimiento",
+    "slug": "reservoir-nacimiento-1f1142897c92"
+  },
+  {
+    "source_station_id": "NHG",
+    "name": "New Hogan Lake",
+    "slug": "reservoir-new-hogan-lake-267932172f8b"
+  },
+  {
+    "source_station_id": "ORO",
+    "name": "Lake Oroville",
+    "slug": "reservoir-lake-oroville-a5de5695ef19"
+  },
+  {
+    "source_station_id": "PAR",
+    "name": "Pardee",
+    "slug": "reservoir-pardee-59510a4c53dd"
+  },
+  {
+    "source_station_id": "PEARLACO",
+    "name": "Pearl Lake",
+    "slug": "reservoir-pearl-lake-8371161102a2"
+  },
+  {
+    "source_station_id": "PNF",
+    "name": "Pine Flat Lake",
+    "slug": "reservoir-pine-flat-lake-79ffda65a5a1"
+  },
+  {
+    "source_station_id": "PRR",
+    "name": "Perris",
+    "slug": "reservoir-perris-7969c4131bbd"
+  },
+  {
+    "source_station_id": "PRU",
+    "name": "Lake Piru",
+    "slug": "reservoir-lake-piru-b38489502bd7"
+  },
+  {
+    "source_station_id": "PT6",
+    "name": "Pit Six Reservoir",
+    "slug": "reservoir-pit-six-reservoir-2e10d85e6fc8"
+  },
+  {
+    "source_station_id": "PT7",
+    "name": "Pit 7 Reservoir",
+    "slug": "reservoir-pit-7-reservoir-8bc0b507375b"
+  },
+  {
+    "source_station_id": "PVR",
+    "name": "Pleasant Valley Reservoir",
+    "slug": "reservoir-pleasant-valley-reservoir-f88c8d14e51d"
+  },
+  {
+    "source_station_id": "PYM",
+    "name": "Pyramid",
+    "slug": "reservoir-pyramid-c3a72c528975"
+  },
+  {
+    "source_station_id": "RDN",
+    "name": "Redinger Lake",
+    "slug": "reservoir-redinger-lake-27bb5acbec69"
+  },
+  {
+    "source_station_id": "REDRESCO",
+    "name": "Red Mesa Reservoir",
+    "slug": "reservoir-red-mesa-reservoir-6aca0392c314"
+  },
+  {
+    "source_station_id": "RLF",
+    "name": "Relief",
+    "slug": "reservoir-relief-3b881d884729"
+  },
+  {
+    "source_station_id": "RLL",
+    "name": "Rollins",
+    "slug": "reservoir-rollins-868370dc35d6"
+  },
+  {
+    "source_station_id": "RTD",
+    "name": "Ruth Lake",
+    "slug": "reservoir-ruth-lake-70228a97352f"
+  },
+  {
+    "source_station_id": "SAT",
+    "name": "San Antonio Reservoir",
+    "slug": "reservoir-san-antonio-reservoir-f541ab1317c9"
+  },
+  {
+    "source_station_id": "SDB",
+    "name": "Saddlebag Lake Reservoir",
+    "slug": "reservoir-saddlebag-lake-reservoir-47154c394813"
+  },
+  {
+    "source_station_id": "SEC",
+    "name": "Stevens Creek Reservoir",
+    "slug": "reservoir-stevens-creek-reservoir-945f2ee1303e"
+  },
+  {
+    "source_station_id": "SFL",
+    "name": "Scotts Flat",
+    "slug": "reservoir-scotts-flat-b728d83d834c"
+  },
+  {
+    "source_station_id": "SGB",
+    "name": "San Gabriel",
+    "slug": "reservoir-san-gabriel-22375450678f"
+  },
+  {
+    "source_station_id": "SGC",
+    "name": "Irvine Lake",
+    "slug": "reservoir-irvine-lake-d1cfcdacbd31"
+  },
+  {
+    "source_station_id": "SHV",
+    "name": "Shaver Lake",
+    "slug": "reservoir-shaver-lake-b6eb5290c325"
+  },
+  {
+    "source_station_id": "SIV",
+    "name": "Silver Lake Reservoir",
+    "slug": "reservoir-silver-lake-reservoir-7381eaaff74b"
+  },
+  {
+    "source_station_id": "SKN",
+    "name": "Skinner",
+    "slug": "reservoir-skinner-c6c86f8e26d8"
+  },
+  {
+    "source_station_id": "SKR",
+    "name": "South Lake Reservoir",
+    "slug": "reservoir-south-lake-reservoir-2834e1601c85"
+  },
+  {
+    "source_station_id": "SLB",
+    "name": "Slab Creek",
+    "slug": "reservoir-slab-creek-59bde72b615b"
+  },
+  {
+    "source_station_id": "SLC",
+    "name": "Sly Creek",
+    "slug": "reservoir-sly-creek-e0053ffe23c3"
+  },
+  {
+    "source_station_id": "SLJ",
+    "name": "Soulajule Reservoir",
+    "slug": "reservoir-soulajule-reservoir-5714afc57e40"
+  },
+  {
+    "source_station_id": "SLN",
+    "name": "Santa Margarita Lake",
+    "slug": "reservoir-santa-margarita-lake-b954f545414a"
+  },
+  {
+    "source_station_id": "SLS",
+    "name": "Salt Springs",
+    "slug": "reservoir-salt-springs-07957569728f"
+  },
+  {
+    "source_station_id": "SLW",
+    "name": "Lake Silverwood",
+    "slug": "reservoir-lake-silverwood-a117c1d8ab15"
+  },
+  {
+    "source_station_id": "SNL",
+    "name": "San Luis Reservoir",
+    "slug": "reservoir-san-luis-reservoir-bf6b96249286"
+  },
+  {
+    "source_station_id": "SNN",
+    "name": "San Andreas",
+    "slug": "reservoir-san-andreas-643272d30504"
+  },
+  {
+    "source_station_id": "SPB",
+    "name": "San Pablo",
+    "slug": "reservoir-san-pablo-1326a396109d"
+  },
+  {
+    "source_station_id": "SPM",
+    "name": "New Spicer Meadow",
+    "slug": "reservoir-new-spicer-meadow-82109517f7ca"
+  },
+  {
+    "source_station_id": "STD",
+    "name": "Sutherland Reservoir",
+    "slug": "reservoir-sutherland-reservoir-a4281a7f5aa6"
+  },
+  {
+    "source_station_id": "STG",
+    "name": "Stony Gorge Reservoir",
+    "slug": "reservoir-stony-gorge-reservoir-8e8ee7ca18c2"
+  },
+  {
+    "source_station_id": "SVO",
+    "name": "Seven Oaks Dam",
+    "slug": "reservoir-seven-oaks-dam-df98806ab8e1"
+  },
+  {
+    "source_station_id": "SVT",
+    "name": "San Vicente",
+    "slug": "reservoir-san-vicente-37bbd2c4f750"
+  },
+  {
+    "source_station_id": "SW3",
+    "name": "Sweetwater Reservoir",
+    "slug": "reservoir-sweetwater-reservoir-8a60a1414e26"
+  },
+  {
+    "source_station_id": "SWARESCO",
+    "name": "Stillwater Reservoir",
+    "slug": "reservoir-stillwater-reservoir-2d6d3ed0e40d"
+  },
+  {
+    "source_station_id": "TAB",
+    "name": "Thermalito Afterbay",
+    "slug": "reservoir-thermalito-afterbay-125fd55e6b39"
+  },
+  {
+    "source_station_id": "TAE",
+    "name": "Thomas A Edison",
+    "slug": "reservoir-thomas-a-edison-6a4c0c1bd9fb"
+  },
+  {
+    "source_station_id": "TDA",
+    "name": "Lake Celilo",
+    "slug": "reservoir-lake-celilo-6222f6435730"
+  },
+  {
+    "source_station_id": "TFR",
+    "name": "Thermalito Forebay",
+    "slug": "reservoir-thermalito-forebay-141cf8ce8a76"
+  },
+  {
+    "source_station_id": "THD",
+    "name": "Thermalito Diversion Pool",
+    "slug": "reservoir-thermalito-diversion-pool-c9cf49319672"
+  },
+  {
+    "source_station_id": "TLC",
+    "name": "Turlock Lake",
+    "slug": "reservoir-turlock-lake-4564c56eb438"
+  },
+  {
+    "source_station_id": "TNM",
+    "name": "Tinemaha Reservoir",
+    "slug": "reservoir-tinemaha-reservoir-b7cc1a14b20a"
+  },
+  {
+    "source_station_id": "TRM",
+    "name": "Lake Kaweah",
+    "slug": "reservoir-lake-kaweah-b7d7c9832acd"
+  },
+  {
+    "source_station_id": "TUL",
+    "name": "Tulloch",
+    "slug": "reservoir-tulloch-91b9f37aef52"
+  },
+  {
+    "source_station_id": "UNV",
+    "name": "Union Valley",
+    "slug": "reservoir-union-valley-417224255747"
+  },
+  {
+    "source_station_id": "USL",
+    "name": "Upper San Leandro",
+    "slug": "reservoir-upper-san-leandro-19e504e520a8"
+  },
+  {
+    "source_station_id": "UVA",
+    "name": "Uvas Reservoir",
+    "slug": "reservoir-uvas-reservoir-8109e94fb51c"
+  },
+  {
+    "source_station_id": "VIL",
+    "name": "Vail Lake",
+    "slug": "reservoir-vail-lake-e4d507aad00b"
+  },
+  {
+    "source_station_id": "WHR",
+    "name": "Whale Rock",
+    "slug": "reservoir-whale-rock-6b21985ef337"
+  },
+  {
+    "source_station_id": "WRS",
+    "name": "Lake Sonoma",
+    "slug": "reservoir-lake-sonoma-abaa052ad3c3"
+  },
+  {
+    "source_station_id": "WSN",
+    "name": "Wishon",
+    "slug": "reservoir-wishon-b5a372fc45f4"
+  },
+  {
+    "source_station_id": "YAMRESCO:CO:BOR",
+    "name": "Yamcolo Reservoir",
+    "slug": "reservoir-yamcolo-reservoir-0fd6eecd0abf"
+  },
+  {
+    "source_station_id": "cdf80586ea15410ebee861ac51f924d3",
+    "name": "East Fork Rock Creek Reservoir",
+    "slug": "reservoir-east-fork-rock-creek-reservoir-ce513450a2bd"
+  },
+  {
+    "source_station_id": "opslakepleasant",
+    "name": "Lake Pleasant",
+    "slug": "reservoir-lake-pleasant-7887f015041c"
+  }
+]
