@@ -472,6 +472,23 @@ and Lake Mead switches never remove a county or area from its control. A
 coarser saved area may continue to prefix-filter a finer page; the exact-tier
 control shows every area until the reader chooses a row at that tier.
 
+**The storage map's summary compares with normal and subtotals the filtered
+rows** (ADR-153). Under the Storage and Reservoirs tiles, a "Compared with
+normal" tile gives the headline rollup's percent of the usual storage for
+this date; its note comes from `describeUsualStorage` in
+`src/state/storage-summary.ts`, which the storage charts' tile also uses, and
+names the period the figure used (`normalBaseline`). Compare against rewrites
+the summary, the list, the table and the details panel. On a past month the
+tile has no figure and says why. The headline stays the wider total; when the
+analysis controls leave fewer rows than the scope holds, a labelled subtotal
+(`filteredSubtotal`, `describeSubtotal`) is made from exactly the rows the
+table lists. Below 48rem one button over the map, `#map-summary`, carries the
+place, count and both percentages and opens the summary sheet; it sits top
+centre between the 56px control lanes and steps aside for a tap card docked
+to the top or a map notice. Each list row and the table carry the chosen
+period's percent of normal (`percentOfNormalFor`), empty where a reservoir has
+none for that period.
+
 **The storage charts' weekly card follows every filter** (ADR-149). Its
 storage figures are made from the rows the table shows: both dominant switches
 and the drainage area, narrowed by the state, county, search, reporting and

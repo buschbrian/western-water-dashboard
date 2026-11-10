@@ -166,6 +166,39 @@ describe("CSV serialization", () => {
   });
 });
 
+describe("the compared-with-normal download column (ADR-153)", () => {
+  const reservoirs = readPayload().reservoirs;
+  const rows = tableRows({
+    reservoirs, filter: ALL_RESERVOIRS, month: null, percentOf: headlinePercent,
+    sort: { key: "name", direction: "asc" },
+    normal: { baseline: "climate", periodLabel: "1991 through 2020", minimumYears: 10 }
+  });
+
+  it("appends the percentage and its period after the earlier columns", () => {
+    const headers = TABLE_COLUMNS.map((column) => column.header);
+    expect(headers.slice(-2)).toEqual(["Compared with normal (percent)", "Normal period"]);
+    expect(headers.indexOf("Late data")).toBe(headers.length - 3);
+  });
+
+  it("writes each row's raw value and leaves a missing one empty", () => {
+    const lines = tableCsv(rows).trim().split("\r\n").slice(1);
+    rows.forEach((row, index) => {
+      const line = lines[index] ?? "";
+      expect(line.endsWith(`,${row.percentOfNormal ?? ""},1991 through 2020`)).toBe(true);
+    });
+  });
+
+  it("puts the same two facts in each GeoJSON point", () => {
+    const collection = JSON.parse(tableGeoJson(rows.slice(0, 3))) as {
+      features: { properties: Record<string, unknown> }[];
+    };
+    collection.features.forEach((feature, index) => {
+      expect(feature.properties.percent_of_normal).toBe(rows[index]?.percentOfNormal);
+      expect(feature.properties.normal_period).toBe("1991 through 2020");
+    });
+  });
+});
+
 describe("GeoJSON point exports", () => {
   it("writes the reservoir rows in their visible order with longitude first", () => {
     const reservoirs = readPayload().reservoirs;

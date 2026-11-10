@@ -42,6 +42,9 @@ const userTextFiles = [
   // Which period "normal" means, and the sentence that says so. Every
   // comparison the details panel makes is worded here.
   "src/state/baseline.ts",
+  // The storage summary's comparison with normal, its filtered subtotal and
+  // the phone's figures over the map, shared by the map and the charts.
+  "src/state/storage-summary.ts",
   "src/ui/shell.ts",
   "src/ui/shell-template.ts",
   // The map key and the twelve-month history: both were written against the

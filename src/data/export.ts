@@ -121,7 +121,13 @@ export const TABLE_COLUMNS: readonly CsvColumn<TableRow>[] = [
   { header: "Storage (acre-feet)", value: (row) => row.storageAf },
   { header: "Full level (acre-feet)", value: (row) => row.capacityAf },
   { header: "Reading", value: (row) => row.reading },
-  { header: "Late data", value: (row) => (row.late ? "yes" : "no") }
+  { header: "Late data", value: (row) => (row.late ? "yes" : "no") },
+  /* Appended rather than inserted, so a reader's spreadsheet built on the
+   * earlier columns keeps its places (ADR-153). The period travels with the
+   * number: empty on a past month, when no comparison is made, and the
+   * percentage alone is empty where the reservoir has no normal for it. */
+  { header: "Compared with normal (percent)", value: (row) => row.percentOfNormal },
+  { header: "Normal period", value: (row) => row.normalPeriod }
 ];
 
 export function tableCsv(rows: readonly TableRow[]): string {
@@ -175,7 +181,9 @@ export function tableGeoJson(rows: readonly TableRow[]): string {
       storage_acre_feet: row.storageAf,
       full_level_acre_feet: row.capacityAf,
       reading: row.reading,
-      late_data: row.late
+      late_data: row.late,
+      percent_of_normal: row.percentOfNormal,
+      normal_period: row.normalPeriod
     }
   )));
 }
