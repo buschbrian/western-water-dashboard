@@ -998,6 +998,12 @@ const browser = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
     `${label}: the direct header action is not visible`);
   await tab.locator("#place-chooser-trigger").click();
   await tab.waitForSelector("dialog.opening-splash[open]", { timeout: 5000 });
+  /* A wide screen has room for every state and region. A height cap below the
+   * list's own height once hid the last row of regions under the scroll. */
+  const hiddenPlaces = await tab.locator("dialog.opening-splash .splash-places")
+    .evaluate((places) => places.scrollHeight - places.clientHeight);
+  check(hiddenPlaces <= 0,
+    `${label}: ${hiddenPlaces}px of the place choices are under the scroll on a wide screen`);
   await tab.getByRole("radio", { name: "Drought" }).check();
   await tab.getByRole("button", { name: "Show the whole west" }).click();
   await tab.waitForURL(/drought\.html\?state=all$/, { timeout: 60000 });

@@ -481,6 +481,30 @@ function meta(html: string, attribute: "property" | "name", key: string): string
   return match?.[1] ?? "";
 }
 
+describe("every published address is the site's own", () => {
+  /* Entries that are not a reader's page: the root's alias, the embed frame
+   * and the retired-route redirect. */
+  const NOT_LISTED = new Set(["modern", "story", "explore"]);
+
+  it("lists every reader page in the sitemap, and nothing else", async () => {
+    const base = await siteBase();
+    const config = await read("vite.config.ts");
+    const pages = [...config.matchAll(/resolve\(root, "([a-z-]+)\.html"\)/g)]
+      .map((match) => match[1]!)
+      .filter((name) => !NOT_LISTED.has(name))
+      .map((name) => name === "index" ? `${base}/` : `${base}/${name}.html`);
+    expect(pages.length).toBeGreaterThan(10);
+    const listed = [...(await read("public/sitemap.xml")).matchAll(/<loc>([^<]+)<\/loc>/g)]
+      .map((match) => match[1]!);
+    expect([...listed].sort()).toEqual([...pages].sort());
+  });
+
+  it("points the question service at the published data", async () => {
+    const wrangler = await read("worker/wrangler.toml");
+    expect(/^PUBLIC_DATA_BASE = "([^"]+)"$/m.exec(wrangler)?.[1]).toBe(await siteBase());
+  });
+});
+
 describe("a shared link shows a picture", () => {
   it("holds the site's address the data reference holds", async () => {
     expect(await siteBase()).toMatch(/^https:\/\/[a-z0-9.-]+\/[a-z-]+$/);

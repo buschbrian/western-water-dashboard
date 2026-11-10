@@ -242,6 +242,17 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Fixed
 
+- The first-visit place question shows every state and region on a wide
+  screen. Its height limit hid the last row of regions, Pacific Northwest and
+  California, under a scroll.
+- The river flow page says when the U.S. Geological Survey names a gauge for a
+  place in another state. Blacks Fork near Robertson and Middle Fork Beaver
+  Creek near Lonetree are in Utah and are named for Wyoming towns.
+- The storage map's footer links to the page for reporters.
+- The question service reads its indexes from this site's current address. The
+  old address stopped answering when the repository was renamed.
+- A `sitemap.xml` lists the reader pages. A test holds it to the build's page
+  list.
 - The map scale has an opaque background so its labels stay readable in both themes.
 - The dark-phone place-search audit waits for the map's loading state to finish,
   then uses the shared full-page accessibility checker. No exception is added.

@@ -134,6 +134,7 @@ function panelContents(suffix: string): string {
           aria-labelledby="list-${suffix}"></div>
       </section>
       <footer class="app-footer"><a href="./data.html">Use the public data API</a> ·
+        <a href="./reporters.html">For reporters</a> ·
         <a href="./terms.html">Terms and license</a></footer>
     </div>`;
 }

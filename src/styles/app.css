@@ -1319,7 +1319,10 @@ arcgis-scale-bar {
  */
 .opening-splash {
   width: min(38rem, calc(100vw - 1.5rem));
-  max-height: min(44rem, calc(100dvh - 1.5rem));
+  /* 48rem holds all eleven states and five regions without a scroll at the
+   * dialog's full width. At 44rem the last row of regions sat under the fold
+   * on every desktop first visit. */
+  max-height: min(48rem, calc(100dvh - 1.5rem));
   /* `dvh` so a phone's collapsing address bar cannot leave the skip under
    * it; `vh` is the tallest the viewport ever gets, not the tallest it is. */
   /* A class selector beats the browser's `dialog:not([open])` rule. Keep the
