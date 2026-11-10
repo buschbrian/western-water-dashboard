@@ -46,6 +46,16 @@ describe("river model", () => {
     expect(whereSentence(riverGauge({ flows_toward: null }))).toBe("This gauge is in Utah.");
   });
 
+  it("says so when the survey names a gauge for a place in another state", () => {
+    const gauge = riverGauge({ flows_toward: null, usgs_name: "EXAMPLE R NR SOMEWHERE, WY" });
+    expect(whereSentence(gauge)).toBe(
+      "This gauge is in Utah. The U.S. Geological Survey names it for a place in Wyoming.");
+    expect(whereSentence(riverGauge({ flows_toward: null, usgs_name: "Example River, UT" })))
+      .toBe("This gauge is in Utah.");
+    expect(whereSentence(riverGauge({ flows_toward: null, usgs_name: "Example River" })))
+      .toBe("This gauge is in Utah.");
+  });
+
   it("never words a gauge as an inflow, a total or a comparison with normal", () => {
     const view = describeGauge(riverGauge());
     const text = JSON.stringify(view).toLowerCase();
