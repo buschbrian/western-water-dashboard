@@ -10,7 +10,7 @@
  * and bundles cleanly, a build step that stops copying the payload. None of
  * them fail a browser test; all of them freeze the published numbers.
  */
-import { readdir, readFile } from "node:fs/promises";
+import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
 
@@ -131,8 +131,7 @@ describe("a data-only commit deploys on its own", () => {
   it("gives every published page the same content policy", async () => {
     const pages = ["index.html", "modern.html", "overview.html", "precipitation.html", "snow.html",
       "drought.html", "methods.html", "data.html", "explore.html", "lakes.html",
-      "rivers.html", "reservoir.html", "story.html", "legacy/index.html", "maplibre/index.html",
-      "public/share/lake-powell.html", "public/share/lake-mead.html"];
+      "rivers.html", "reservoir.html", "story.html", "legacy/index.html", "maplibre/index.html"];
     const policies = new Set<string>();
 
     for (const page of pages) {
@@ -459,7 +458,7 @@ describe("a data-only commit deploys on its own", () => {
  * delete a URL someone has posted (ADR-056); the picture is captured at the
  * deploy and falls back to a committed one.
  */
-const SHARE_PAGES = ["lake-powell", "lake-mead"] as const;
+
 
 /* The share pages carry the site's address literally, as a crawler needs it.
  * The one place the code states it is the data reference's `base`, and the
@@ -476,10 +475,6 @@ function pngSize(bytes: Buffer): { width: number; height: number } | null {
   return { width: bytes.readUInt32BE(16), height: bytes.readUInt32BE(20) };
 }
 
-function meta(html: string, attribute: "property" | "name", key: string): string {
-  const match = new RegExp(`<meta ${attribute}="${key}" content="([^"]*)"`).exec(html);
-  return match?.[1] ?? "";
-}
 
 describe("every published address is the site's own", () => {
   /* Entries that are not a reader's page: the root's alias, the embed frame
@@ -512,50 +507,15 @@ describe("a shared link shows a picture", () => {
     expect(await read("README.md")).toContain(`<${await siteBase()}/>`);
   });
 
-  for (const file of SHARE_PAGES) {
-    it(`carries absolute card tags and a way on for share/${file}.html`, async () => {
-      const html = await read(`public/share/${file}.html`);
-      const base = await siteBase();
-      expect(meta(html, "property", "og:image")).toBe(`${base}/share/${file}.png`);
-      expect(meta(html, "name", "twitter:image")).toBe(`${base}/share/${file}.png`);
-      expect(meta(html, "property", "og:url")).toBe(`${base}/share/${file}.html`);
-      expect(meta(html, "name", "twitter:card")).toBe("summary_large_image");
-      expect(meta(html, "property", "og:image:width")).toBe("1200");
-      expect(meta(html, "property", "og:image:height")).toBe("630");
-      for (const key of ["og:title", "og:description", "og:image:alt"]) {
-        expect(meta(html, "property", key), `${file} has no ${key}`).not.toBe("");
-      }
-      for (const key of ["twitter:image:alt", "twitter:title", "twitter:description"]) {
-        expect(meta(html, "name", key), `${file} has no ${key}`).not.toBe("");
-      }
-      const name = meta(html, "property", "og:title").replace(" surface level", "");
-      const target = `reservoir.html?name=${encodeURIComponent(name)}`;
-      expect(html).toContain(`<link rel="canonical" href="${base}/${target}" />`);
-      expect(html).toContain(`<meta http-equiv="refresh" content="0; url=../${target}" />`);
-      expect(html, "a visible link is the way on when a refresh is blocked")
-        .toContain(`<a href="../${target}">`);
-      /* A hand-kept page cannot know today's level: a figure here would be
-       * a stale claim on every card shared after the day it was written. */
-      expect(html).not.toMatch(/\d[\d,.]* feet/);
-      expect(html).not.toContain("<script");
-      expect(html, "no tracking and no third-party address in the page")
-        .not.toMatch(/(src|href)="https?:\/\/(?!buschbrian\.github\.io)/);
-    });
-
-    it(`commits a fallback image for share/${file}.png that is a 1200 by 630 PNG`, async () => {
-      const bytes = await readFile(resolve(root, `public/share/${file}.png`));
-      expect(pngSize(bytes)).toEqual({ width: 1200, height: 630 });
-      /* A blank frame compresses to a few kilobytes. */
-      expect(bytes.length).toBeGreaterThan(15_000);
-    });
-  }
-
-  it("keeps the committed pages, the fallbacks and the capture list in step", async () => {
-    const files = (await readdir(resolve(root, "public/share"))).sort();
-    expect(files).toEqual(SHARE_PAGES.flatMap((file) => [`${file}.html`, `${file}.png`]).sort());
-    const capture = await read("scripts/capture-share-images.mjs");
-    const captured = [...capture.matchAll(/file: "([a-z-]+)"/g)].map((match) => match[1]);
-    expect(captured).toEqual([...SHARE_PAGES]);
+  it("commits a valid figure-free fallback and generates the capture list at build time", async () => {
+    const bytes = await readFile(resolve(root, "public/share/fallback.png"));
+    expect(pngSize(bytes)).toEqual({ width: 1200, height: 630 });
+    expect(bytes.length).toBeGreaterThan(15_000);
+    expect(await read("vite.config.ts")).toContain("writeSharePages(root, outDir)");
+    const generator = await read("src/build/share-pages.ts");
+    expect(generator).toContain('"targets.json"');
+    expect(generator).toContain('"data/share-ledger.json"');
+    expect(await read("scripts/capture-share-images.mjs")).toContain('"share/targets.json"');
   });
 
   it("captures after the build is checked and before it is uploaded, through one script", async () => {
@@ -579,11 +539,11 @@ describe("a shared link shows a picture", () => {
 
   it("replaces a fallback only with a capture that drew, and fails only on a missing image", async () => {
     const capture = await read("scripts/capture-share-images.mjs");
-    expect(capture).toContain('window.__reservoirReady?.elevation === "drawn"');
-    expect(capture).toContain("view=share");
+    expect(capture).toContain('window.__reservoirReady?.share');
+    expect(await read("src/build/share-pages.ts")).toContain("view=share");
     expect(capture).toContain("PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH");
     /* Written beside the fallback and renamed over it, never written in place. */
     expect(capture).toContain("rename(temporary");
-    expect(capture).toContain("process.exit(missing ? 1 : 0)");
+    expect(capture).toContain("return missing.length ? 1 : 0");
   });
 });

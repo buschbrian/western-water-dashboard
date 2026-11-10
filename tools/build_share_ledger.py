@@ -16,6 +16,7 @@ def extend_ledger(entries, payload):
         if (not isinstance(station, str) or not station.strip()
                 or not isinstance(entry["name"], str) or not entry["name"].strip()
                 or not re.fullmatch(r"[a-z0-9]+(?:-[a-z0-9]+)*", slug)
+                or re.match(r"^(?:state-|region-|west$)", slug)
                 or station in stations or slug in slugs):
             raise ValueError("Invalid or duplicate share-ledger entry")
         stations.add(station)

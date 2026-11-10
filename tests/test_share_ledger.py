@@ -41,6 +41,7 @@ def test_identical_names_and_different_input_order_keep_distinct_addresses():
 
 @pytest.mark.parametrize("ledger", [
     [dict(source_station_id="A", name="A", slug="../escape")],
+    [dict(source_station_id="A", name="A", slug="state-ut")],
     [dict(source_station_id="A", name="A", slug="same"),
      dict(source_station_id="B", name="B", slug="same")],
     [dict(source_station_id="A", name="A", slug="first"),

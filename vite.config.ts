@@ -4,6 +4,7 @@ import { resolve } from "node:path";
 // `test` block added to the type. Vite's own does not know that key exists.
 import type { Plugin } from "vite";
 import { defineConfig } from "vitest/config";
+import { writeSharePages } from "./src/build/share-pages";
 
 const root = process.cwd();
 const outDir = resolve(root, "dist");
@@ -94,6 +95,7 @@ function preserveRuntimeDataAndRedirects(): Plugin {
       for (const name of await readdir(photos).catch(() => [])) {
         if (!name.endsWith(".jpg")) await rm(resolve(photos, name), { recursive: true });
       }
+      await writeSharePages(root, outDir);
     }
   };
 }

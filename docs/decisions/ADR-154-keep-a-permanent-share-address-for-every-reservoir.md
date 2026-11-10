@@ -1,23 +1,26 @@
 # ADR-154: Keep a permanent share address for every reservoir
 
-- Status: Proposed; the storage frame (decisions 1 and 2) is implemented locally
-- Date: 2026-11-09
-- Would amend: ADR-141 (two share pages and a reviewed-level-only frame)
+- Status: Accepted
+- Date: 2026-11-10
+- Supersedes: ADR-141's two-page limit and capture policy; retains its reviewed-level frame
 - Relates to: ADR-002 (runtime data), ADR-056 (withdrawal), ADR-066 (station
   identity), ADR-083 (monthly comparison window), ADR-135 (reviewed datum)
 
 ## Context
 
-The November product review plan authorizes a share frame and a permanent
-share page for every published reservoir. ADR-141 currently limits frames to
-reviewed levels and keeps only two static share pages. Its objection to
-generated pages remains valid: removing a reservoir must not delete its URL.
+The November product review plan authorizes a share frame and permanent
+share page for every published reservoir, plus state, region and West cards.
+ADR-141 limited frames to reviewed levels and kept two static share pages.
+Its objection to generating pages from the current roster remains valid:
+removing a reservoir must not delete its shared URL.
 
 Most reservoirs already have the storage figures and twelve monthly points
-needed for a useful frame. A new estimator or a new source is unnecessary.
-The deploy cost of capturing every reservoir has not been measured.
+needed for a useful frame. No new estimator or source is needed. On system
+Chrome on 2026-11-10, four capture workers saved all 425 active frames from
+428 addresses in 136.8 seconds, without a failed capture. Three addresses
+represented withdrawal or hold notices and needed no measured picture.
 
-## Proposed decision
+## Decision
 
 1. A reservoir without a usable reviewed-level chart gets a storage frame at
    1200 by 630. It carries the name, dated storage, percent full with its
@@ -25,47 +28,59 @@ The deploy cost of capturing every reservoir has not been measured.
    monthly trend, late-data note and provider. Missing months remain gaps.
    A missing normal is stated; an existing period substitution is named;
    a normal that draws on part of its period says so, as the page does.
-2. Keep the reviewed-level frame for reservoirs that have it. A storage frame
-   makes no claim about a surface level and requires no elevation-history
-   request. The existing two share addresses continue to work.
-3. A ledger keyed by `source_station_id` assigns a permanent share address
-   once. The daily pipeline appends entries, and the generated-files registry
-   names its writer. A rename changes the label, not the address.
-4. The deploy generates a page for every ledger entry, including withdrawn
-   reservoirs. A withdrawn page carries its withdrawal notice and no current
-   figure. Its address is never silently reassigned to another station.
-5. Capture failures keep valid fallbacks and never prevent daily data from
-   being published. Measure the full roster's capture time before choosing
-   concurrency and a run budget. Deterministic build-time drawing remains an
-   alternative if a browser cannot meet that budget.
-
-Whether static descriptions carry a dated figure, the ledger's file shape,
-fallback generation and capture budget remain open before acceptance.
+2. Keep the reviewed-level frame for reservoirs that have it. Storage makes
+   no claim about a surface level. The readiness field `share` identifies
+   `level`, `storage` or `none`; storage never reports elevation as drawn.
+3. `data/share-ledger.json` is an append-only list of station identifier,
+   first name and permanent slug. `tools/build_share_ledger.py` appends after
+   each daily refresh; the generated-files registry stages it with the data.
+   Entries are never renamed or removed. New slugs combine the first name
+   with a station hash; Powell and Mead retain their existing slugs. Names
+   are labels, never identity. Invalid or duplicate entries are refused.
+4. The build generates a static preview page and fallback picture for every
+   ledger entry. Current pages use today's label and redirect to
+   `reservoir.html?name=STATION`. An absent station keeps its static notice,
+   without a redirect or current figure. Static descriptions carry no water
+   measurement. Its picture is a generic, figure-free fallback, never an old
+   captured measurement. No address is reassigned.
+5. The same generator creates eleven state, five region and West storage
+   cards using the charts page's membership and combined-storage model.
+   They include Powell and Mead where they belong, and state reading dates,
+   late counts, the normal period and comparison coverage, differing full
+   levels and the source. Scope cards link to that view on the charts page.
+6. The build writes a capture list and a compact public address ledger beside
+   the pages. Reservoir Copy link and native Share prepare their preview URL
+   without delaying figures. They use the current page if it is unavailable;
+   native Share keeps the browser's click activation.
+7. Capture uses four workers against installed Chrome, with a five-minute
+   pool budget that closes the browser and stops scheduling. No browser is
+   downloaded. A capture replaces a fallback only after the frame fits and
+   the result is a valid 1200 by 630 PNG. Failed captures keep the generic
+   fallback and never block the daily data deploy. A missing or malformed
+   final image still fails. The report separates notice pages from failed
+   captures. Pictures are build output, never daily binary commits.
 
 ## Alternatives
 
-- **Generate pages from only the current roster.** Rejected: a withdrawal
-  deletes a shared address, the failure ADR-141 already identified.
-- **Use reservoir names as identity.** Rejected: names change and can repeat
-  across states; ADR-066 supplies the existing station identity.
-- **Publish a surface level without a reviewed datum.** Rejected: storage
-  already supports the frame, and ADR-135's datum gate still applies.
-- **Change the daily storage payload for the card.** Rejected: the page's
-  existing figures and monthly points are sufficient.
+- **Generate from only the current roster.** Rejected: withdrawal deletes a
+  shared address, the failure ADR-141 already identified.
+- **Use a reservoir name as identity.** Rejected: names change and repeat.
+- **Commit hundreds of named fallback pictures.** Rejected: one generic,
+  figure-free picture works for every address without binary history growth.
+- **Draw all measured cards separately at build time.** Not needed: measured
+  browser capture fits the budget and reuses the reservoir page's own chart.
+- **Publish a surface level without a reviewed datum, or change the storage
+  payload for a card.** Rejected: existing figures suffice and ADR-135 holds.
 
-## Implementation status
+## Consequences
 
-The first local slice is `src/reservoir-storage-share-model.ts` and its
-tests. It reuses the reservoir page's pure builders.
+Every ledger address survives a rename, withdrawal or removal. A failed
+ledger update preserves the previous ledger; a newly added station waits for
+its permanent entry before receiving a preview. Static descriptions stay
+correct when capture fails. Social platforms may retain an older cached
+picture; its reading date remains visible. The daily capture adds roughly
+2.3 minutes on the measured Mac; CI timing is not yet measured.
 
-The second local slice draws the frame: the share view of a reservoir with
-no level chart shows the storage frame and asks for no level history. The
-readiness field `share` names the frame on the page. The capture script and
-the deploy are unchanged, so the two published pictures and the two share
-addresses are as ADR-141 left them.
-
-The third local slice appends station-keyed addresses with
-`tools/build_share_ledger.py`. The ledger keeps its first name and address
-unchanged after renames, withdrawals or removal. Initial entries include the
-published withdrawal and hold notices. The daily refresh stages the ledger;
-the generator and capture are the next slice.
+The implementation is local pending Brian's code review and publication.
+The full-roster capture is evidence about the measured build, not a promise
+that every future capture succeeds.

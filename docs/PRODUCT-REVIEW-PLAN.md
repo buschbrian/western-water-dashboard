@@ -1,7 +1,8 @@
 # Product review plan, November 2026
 
 Status: The four Wave 1 implementation PRs (#115–#118) were published on
-2026-11-09. Wave 2, sharing and place, has started locally.
+2026-11-09. Wave 2, sharing and place: items 5 and 6 are implemented locally;
+items 7–9 remain.
 Brian Busch chose the four scopes below
 on 2026-11-09. ADR-153 records the storage-map choice; each later wave writes
 its own record where required.
@@ -137,39 +138,22 @@ work from this wave is explicit:
 
 ### 5. A share frame for any reservoir
 
-Implemented locally: the storage-frame model, its regression tests, and the
-rendered frame. `reservoir.html?name=...&view=share` draws the storage frame
-for a reservoir with no level chart. No picture is captured from it yet;
-that is item 6. Proposed ADR-154 covers this item and the permanent
-addresses in item 6.
-
-`shareFrame` in `src/reservoir-share-model.ts` returns nothing without a
-reviewed level. Add a storage frame at the same 1200 by 630: name, percent
-full with its basis, compared with normal with its period, the twelve-month
-trend, the reading date and the source.
+Implemented locally with item 6: storage and reviewed-level frames share the
+same 1200 by 630 contract. Current behaviour is in `architecture/frontend.md`.
 
 ### 6. A share page and a daily picture for every reservoir
 
-- A committed, append-only ledger keyed by station (ADR-066) fixes each
-  reservoir's share address the first time it is published. A pipeline step
-  appends to it so it rides the morning commit; it is registered in
-  `data/generated-files.json`.
-- The deploy generates one static page per ledger entry. A withdrawn reservoir
-  keeps its page, which says it was withdrawn. This answers the objection
-  [ADR-141](decisions/ADR-141-publish-a-share-page-and-a-daily-picture-for-a-reservoir-link.md)
-  refused generated pages for.
-- Because the page is rebuilt each morning, its description can carry a dated
-  figure. The record decides whether it does.
-- The capture reads its list from the ledger, runs several frames at once
-  against a stated time budget, and still never fails the deploy.
-- The same generator makes cards for the eleven states, the five regions and
-  the whole West.
-- The "a shared link shows a picture" block in `src/deploy.test.ts` pins the
-  folder to two pages and is rewritten with this.
+Implemented locally on `feat/permanent-reservoir-shares`, awaiting Brian's
+review and publication (ADR-154): the append-only station ledger, generated
+pages retained after withdrawal, daily captures, and eleven state, five
+region and West cards. Copy link and native Share on a reservoir page use
+its permanent preview address when available. Static descriptions carry no
+water figure; a failed capture keeps a figure-free fallback.
 
-Verify with `npm run verify:frontend` and `npm run verify:browser`.
-
-Record: a successor to ADR-141, covering items 5 and 6.
+Measured on system Chrome on 2026-11-10: 425 active frames from 428 addresses
+captured in 136.8 seconds with four workers, with no failed capture. The three
+withdrawal/hold pages retain fallbacks. The capture pool has a five-minute
+budget. Full regression verification accompanies the implementation commit.
 
 ### 7. Link previews on the main pages, and an embed snippet
 
@@ -289,8 +273,6 @@ Waves run in order; items inside a wave are independent except where noted.
 ## Not measured yet
 
 - The repository growth and transfer cost of daily history.
-- The deploy time 400 captures add. If a browser is too slow, the fallback is
-  to draw the cards at build time without one.
 - The size of the town reference file.
 - Reclamation's inflow items and what its inflow figure is.
 - Great Salt Lake's stations and datum.

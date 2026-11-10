@@ -22,6 +22,8 @@ export interface CopyFiguresOptions {
   level: 2 | 3;
   /** A class from the page, so the heading looks like its neighbours. */
   headingClass?: string;
+  /** A permanent preview address supplied by the page. */
+  url?: () => string;
 }
 
 export interface CopyFigures {
@@ -97,7 +99,7 @@ export function createCopyFigures(options: CopyFiguresOptions): CopyFigures {
 
   const link = button("copy-link", "Copy link");
   link.addEventListener("click", async () => {
-    const copied = await copyViewUrl(window.location.href, navigator.clipboard);
+    const copied = await copyViewUrl(options.url?.() ?? window.location.href, navigator.clipboard);
     confirm(link, "Copy link", copied ? "Link copied" : "Link could not be copied");
   });
 
@@ -108,7 +110,7 @@ export function createCopyFigures(options: CopyFiguresOptions): CopyFigures {
     share.addEventListener("click", async () => {
       try {
         await navigator.share({
-          title: document.title, text: current.join("\n"), url: window.location.href
+          title: document.title, text: current.join("\n"), url: options.url?.() ?? window.location.href
         });
       } catch (error) {
         /* Closing the share sheet is an answer, not a failure. */

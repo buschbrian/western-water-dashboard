@@ -64,7 +64,7 @@ separately and do not add ArcGIS for Python to the daily job.
 ## Runtime data contract
 
 `tools/build_share_ledger.py` appends permanent reservoir share addresses to
-`data/share-ledger.json` after each daily refresh (proposed ADR-154). Station
+`data/share-ledger.json` after each daily refresh (ADR-154). Station
 identifiers are the keys. Existing entries are never renamed or removed,
 including when a feed is withdrawn. The generated-files registry stages the
 ledger with the morning's payload; a failed ledger update keeps the last file.

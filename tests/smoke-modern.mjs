@@ -6428,8 +6428,15 @@ for (const failure of [
       await tab.locator('[data-copy-figures="copy-link"]').click();
       await tab.waitForFunction(() => document.querySelector(
         '[data-copy-figures="copy-link"]')?.textContent === "Link copied", null, { timeout: 5000 });
-      check(await tab.evaluate(() => navigator.clipboard.readText()) === tab.url(),
-        `${label} (${name}): "Copy link" did not copy the address`);
+      const ledger = JSON.parse(await readFile(path.join(ROOT, "share/ledger.json"), "utf8"));
+      const address = ledger.find((entry) => entry.source_station_id === row.source_station_id);
+      check(await tab.evaluate(() => navigator.clipboard.readText()) === `${URL}share/${address.slug}.html`,
+        `${label} (${name}): "Copy link" did not copy the permanent preview address`);
+      await tab.goto(`${URL}share/${address.slug}.html`, { waitUntil: "load", timeout: 90000 });
+      await tab.waitForFunction(() => window.__reservoirReady?.status === "found",
+        null, { timeout: 90000 });
+      check((await tab.locator("h1.reservoir-name").textContent()) === name,
+        `${label} (${name}): the permanent preview opened the wrong reservoir`);
     }
 
     /* The picture view is a picture, not a page to copy from. */

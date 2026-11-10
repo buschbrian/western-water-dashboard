@@ -48,6 +48,7 @@ import {
 } from "./state/baseline";
 import { reservoirFigures } from "./state/figures-text";
 import { createCopyFigures } from "./ui/copy-figures";
+import { reservoirShareUrl } from "./data/share-link";
 import { reservoirTemplate } from "./ui/reservoir-template";
 import { upstreamSection } from "./ui/upstream-section";
 import { setupPlaceChooser } from "./ui/opening-splash";
@@ -366,8 +367,11 @@ async function renderFound(payload: ReservoirPayload,
     minimumYears: payload.climate_normals?.minimum_years ?? 0
   });
   if (figures) {
+    let previewUrl = window.location.href;
+    void reservoirShareUrl(reservoir.source_station_id, previewUrl).then((url) => { previewUrl = url; });
     const copy = createCopyFigures({
-      id: "reservoir-figures", level: 2, headingClass: "reservoir-subhead"
+      id: "reservoir-figures", level: 2, headingClass: "reservoir-subhead",
+      url: () => previewUrl
     });
     copy.update(figures);
     children.push(copy.element);
