@@ -48,6 +48,10 @@ the test is right and the prose is the bug.
 [Recent conditions pilot](RECENT-CONDITIONS-PILOT.md) records the authorized
 Utah pilot, measured API sample, implementation sequence and environment setup.
 
+[Product review plan, November 2026](PRODUCT-REVIEW-PLAN.md) is the planned
+work from the 2026-11-09 outside review: four waves, the scope choices behind
+them, and what is not yet measured. Nothing in it is built.
+
 | Document | Role |
 |---|---|
 | [Source inventory](AUTHORITATIVE-SOURCE-INVENTORY.md) | Source ownership, endpoints, copy rules, failure behaviour. Read by `src/source-inventory.test.ts`. |
