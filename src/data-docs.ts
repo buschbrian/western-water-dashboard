@@ -77,6 +77,12 @@ root.innerHTML = `
           morning. If one provider request fails, the last good reservoir record stays in
           the file and is marked as late data. A broadly failed run does not replace the
           last published file. Shown on the <a href="./">storage map</a>.</p>
+        <p>The storage map's table downloads also include each reservoir's comparison
+          with normal for the period you choose. The CSV adds
+          <code>Compared with normal (percent)</code> and <code>Normal period</code>.
+          The GeoJSON names them <code>percent_of_normal</code> and
+          <code>normal_period</code>. A missing comparison is empty in the CSV and
+          <code>null</code> in the GeoJSON. A past month's row has neither value.</p>
       </article>
       <article class="api-file">
         <h3>Reservoir level history</h3>

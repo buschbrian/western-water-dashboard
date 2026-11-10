@@ -1,8 +1,9 @@
 # Product review plan, November 2026
 
-Status: planned 2026-11-09. Nothing here is built. The four scope choices
-below were made by Brian Busch on 2026-11-09 and are not yet in a decision
-record; each wave writes its own.
+Status: Wave 1 integrated for release on 2026-11-09; deployment pending.
+Wave 2, sharing and place, is next. Brian Busch chose the four scopes below
+on 2026-11-09. ADR-153 records the storage-map choice; each later wave writes
+its own record where required.
 
 This is a plan, not a description of the site. Current behaviour is in
 [`architecture/`](architecture/README.md). When a piece lands, its record and
@@ -36,7 +37,7 @@ not as demand.
 a new measured element, a new rollup axis or a page that computes something
 needs its own record. Choosing them here does not write those records.
 
-## What the code says about the review
+## What the repository survey found before Wave 1
 
 - **The map already computes percent of usual and discards it.**
   `rollupOfScoped` in `src/data/rollup.ts` returns `percentOfNormal`,
@@ -104,77 +105,28 @@ Also found, outside the review's list:
 
 ## Wave 1: existing numbers, where the eye lands
 
-No new data. Verify each with `npm run verify:browser`.
+The four local implementation branches are integrated for release:
 
-### 1. Quick repairs
+- Quick repairs: the first-visit place question, reporter link, cross-state
+  river-gauge names, sitemap and question-service data address.
+- Storage compared with normal, filtered subtotals, the phone summary and
+  per-reservoir comparisons in the list, table and downloads (ADR-153).
+- Snow-water inches beside the percent and map framing for a linked site.
+- Copyable figures, links and native sharing on reservoir, storage charts
+  and precipitation pages.
 
-- Reproduce the first-visit chooser overlap reported at about 831 by 899 CSS
-  pixels (`src/ui/opening-splash.ts`, `.splash-places` and `.splash-skip` in
-  `src/styles/app.css`), then repair it. The source reads as if it cannot
-  overlap, so reproduce before changing anything.
-- Link the reporter guide from the storage panel's footer beside the data
-  reference.
-- Add a sentence to `whereSentence` in `src/rivers-model.ts` for a gauge whose
-  survey name carries another state.
-- Add `sitemap.xml` and `robots.txt` under `public/`, held to the page list by
-  a deploy test.
-- Raise a self-healing issue when a share capture falls back, the way a late
-  feed does. This touches the Pages workflow's permissions; read
-  `.github/workflows/AGENTS.md` first.
-- Confirm the worker's data address against the live site, then correct it.
-- Open every page at 390 CSS pixels in a real browser and record what breaks.
-  Nobody has looked below 500.
+Current behaviour is documented in `architecture/frontend.md`. Remaining
+work from this wave is explicit:
 
-Record: none.
-
-### 2. The storage map states normal, and a filtered area gets its own line
-
-- A "Compared with normal" tile beside the storage tile, from the rollup the
-  map already makes, with the period and "N of M reservoirs" beside it. Move
-  the sentence out of `src/overview.ts` into a shared pure helper so the two
-  pages cannot drift.
-- `applyBaseline` calls `updateSummary`, so "Compare against" changes the tile.
-- In month mode the rollup has no normal. The tile says so and does not keep
-  the last value.
-- When a county, drainage area or search narrows the rows, a second
-  `rollupOfScoped` over those rows gives a labelled subtotal: the area's name,
-  its count, percent full and percent of usual. The headline is unchanged.
-- The storage tile's note names Lake Powell and Lake Mead when either is in
-  the total.
-- At phone width, a chip over the map carries the place, the count and both
-  percents, and opens the sheet.
-- A "Compared with normal" column in the list, the table, the CSV file and the
-  GeoJSON file, with a sort value. The data reference documents the column.
-
-Done when the Utah summary shows both figures, turning Lake Powell off moves
-both together, and the Jordan filter shows a subtotal while the Utah headline
-stays. Watch the smoke suite's 25-word sentence limit and its exact strings.
-
-Record: one, amending ADR-095 for the subtotal and stating ADR-041's rule that
-a normal travels with its period.
-
-### 3. Snow: inches beside the percent, and a site link that shows its site
-
-- Where the summary prints a percent, print the inches behind it: the snow
-  water at the reporting sites and the amount usual for the date.
-- One sentence under it: this is the share usual for this date, not for a
-  whole winter.
-- With `site=`, frame the map on the site, mark it, and lead with its card at
-  phone width. The link's format does not change.
-
-Record: none. A "share of the usual peak" figure would be a new published
-number and is left for the snow history wave.
-
-### 4. Copy these figures
-
-- A pure builder turns the page's own card rows into two or three sentences:
-  the provider first, the reading date always, then the credit line the
-  reporter guide already gives.
-- On the reservoir page, the weekly card, and the snow and precipitation
-  summaries: copy the text, copy the link, save the picture where one exists,
-  and the phone's share sheet where the browser has one.
-
-Record: none. It states no figure the page does not already show.
+- Offer copyable snow-summary figures; the existing control covers three
+  pages only.
+- Offer a picture download where a published picture exists. General
+  reservoir pictures depend on items 5 and 6.
+- Raise a self-healing issue when a share capture uses a fallback.
+- Confirm or deploy the question service separately if it is in use; the
+  Pages workflow does not deploy a Cloudflare worker.
+- Inspect the map canvas and visual hierarchy in a visible browser below
+  500 CSS pixels. The automated browser suite cannot establish map rendering.
 
 ## Wave 2: sharing and place
 

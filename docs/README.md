@@ -48,9 +48,9 @@ the test is right and the prose is the bug.
 [Recent conditions pilot](RECENT-CONDITIONS-PILOT.md) records the authorized
 Utah pilot, measured API sample, implementation sequence and environment setup.
 
-[Product review plan, November 2026](PRODUCT-REVIEW-PLAN.md) is the planned
-work from the 2026-11-09 outside review: four waves, the scope choices behind
-them, and what is not yet measured. Nothing in it is built.
+[Product review plan, November 2026](PRODUCT-REVIEW-PLAN.md) tracks the
+2026-11-09 review work: Wave 1 release status, remaining follow-ups, the next
+three waves and what is not yet measured.
 
 | Document | Role |
 |---|---|
