@@ -12,11 +12,15 @@ import { reservoirLabel } from "../state/selection";
 import { validateShareLedger } from "../share-ledger";
 import type { Region, Reservoir, ReservoirPayload } from "../types";
 import { formatAcreFeet, formatDate, formatPercent } from "../viz/format";
+import { escapeHtml as escape, shareFrameDocument } from "./share-frame";
+import { pageSnapshots } from "./page-previews";
+import { validateSnowpackPayload } from "../data/snow-validate";
+import { validatePrecipitationHistory, validatePrecipitationPayload } from "../data/precip-validate";
+import { validateDroughtCoverage } from "../data/drought-validate";
+import { validateRiverPayload } from "../data/rivers-validate";
 
 const BASE = `https://${SITE_ADDRESS}`;
 const STATES = ["AZ", "CA", "CO", "ID", "MT", "NV", "NM", "OR", "UT", "WA", "WY"];
-const escape = (value: string): string => value.replace(/[&<>"']/g,
-  (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]!);
 
 export interface SharePage {
   slug: string;
@@ -82,15 +86,9 @@ function scopeFrame(name: string, rows: Reservoir[], payload: ReservoirPayload, 
     "Percent full uses the combined full levels; these have different definitions.",
     "Lake Powell and Lake Mead are included where they are in this view."
   ];
-  return `<!doctype html><html lang="en"><head><meta charset="UTF-8" />
-<meta http-equiv="Content-Security-Policy" content="${escape(policy)}" />
-<title>${escape(name)} storage</title><style>
-html,body{margin:0;width:1200px;height:630px}body{box-sizing:border-box;padding:40px 56px;background:#f3eee6;color:#2f342f;font-family:Arial,sans-serif;display:flex;flex-direction:column;justify-content:space-between;gap:12px}h1{font-size:48px;line-height:1.1;margin:0}p{margin:0;font-size:23px;line-height:1.35}.site{font-size:24px;color:#655f55}.figure{font-size:78px;font-weight:bold;color:#1d4e6b}.stored{font-size:32px}.notes{display:grid;gap:7px}footer{font-size:19px;line-height:1.4}
-</style></head><body data-share-frame="scope"><p class="site">Western Water Dashboard</p>
-<h1>${escape(name)}</h1><div><p class="figure">${escape(formatPercent(total.percentFull))} full</p>
-<p class="stored">${escape(formatAcreFeet(total.storageAf))} acre-feet stored</p></div>
-<div class="notes">${lines.map((line) => `<p>${escape(line)}</p>`).join("")}</div>
-<footer>${escape(creditLine(rows.map(providerName)))}</footer></body></html>\n`;
+  return shareFrameDocument({ name, figure: `${formatPercent(total.percentFull)} full`,
+    stored: `${formatAcreFeet(total.storageAf)} acre-feet stored`, lines,
+    source: creditLine(rows.map(providerName)) }, policy, "scope");
 }
 
 export function sharePages(payload: ReservoirPayload, ledger: unknown, regions: readonly Region[], policy = "default-src 'self'; style-src 'unsafe-inline'"): SharePage[] {
@@ -142,7 +140,28 @@ export async function writeSharePages(root: string, outDir: string): Promise<voi
     await copyFile(resolve(root, "public/share/fallback.png"), resolve(folder, `${page.slug}.png`));
     if (page.frameHtml) await writeFile(resolve(folder, `${page.slug}.frame.html`), page.frameHtml);
   }
-  await writeFile(resolve(folder, "targets.json"), JSON.stringify(pages.map(({ slug, name, frame, kind }) => ({ file: slug, name, frame, kind }))) + "\n");
+  async function optional<T>(file: string, validate: (value: unknown) => T): Promise<T | null> {
+    try { return validate(await json(file)); }
+    catch (error) { console.warn(`Preview for ${file} has no figures:`, String(error)); return null; }
+  }
+  const snapshots = pageSnapshots({
+    snow: await optional("snowpack.json", validateSnowpackPayload),
+    precipitation: await optional("precipitation.json", validatePrecipitationPayload),
+    precipitationHistory: await optional("precipitation_history.json", validatePrecipitationHistory),
+    drought: await optional("data/drought/usdm-huc6.json", validateDroughtCoverage),
+    rivers: await optional("rivers.json", validateRiverPayload)
+  });
+  for (const snapshot of snapshots) {
+    await copyFile(resolve(root, "public/share/fallback.png"), resolve(folder, `${snapshot.file}.png`));
+    await writeFile(resolve(folder, `${snapshot.file}.frame.html`), shareFrameDocument({
+      ...snapshot, source: `${snapshot.source} · ${SITE_ADDRESS}`
+    }, policy, "page"));
+  }
+  const targets = [
+    ...pages.map(({ slug, name, frame, kind }) => ({ file: slug, name, frame, kind })),
+    ...snapshots.map(({ file, name }) => ({ file, name, frame: `share/${file}.frame.html`, kind: "page" }))
+  ];
+  await writeFile(resolve(folder, "targets.json"), JSON.stringify(targets) + "\n");
   await writeFile(resolve(folder, "ledger.json"), JSON.stringify(ledger) + "\n");
   console.log(`Generated ${pages.length} permanent share pages and fallback pictures`);
 }

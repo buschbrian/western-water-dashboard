@@ -68,6 +68,13 @@ with Google Chrome installed does not need a second Chromium:
 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" npm run verify:browser
 ```
 
+For a focused story-embed check, use `npm run verify:browser -- --embeds`
+with the same browser setting. It rebuilds and runs the existing iframe cases
+without the other page checks. The normal target still runs the full suite.
+The iframe checks wait at most five seconds for busy flags to clear after
+story readiness; responsive charts can still be finishing their bounded
+resize redraw at that point. The final zero-busy assertion is unchanged.
+
 ## What each suite is for
 
 `tests/smoke-modern.mjs` is the one that catches what the others cannot: a page

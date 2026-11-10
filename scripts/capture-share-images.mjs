@@ -20,7 +20,7 @@ export function validTargets(value) {
   for (const target of value) {
     if (!target || typeof target.file !== "string" || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(target.file)
       || files.has(target.file) || typeof target.name !== "string" || !target.name
-      || !["reservoir", "scope"].includes(target.kind)
+      || !["reservoir", "scope", "page"].includes(target.kind)
       || (target.frame !== null && (typeof target.frame !== "string"
         || !(target.kind === "reservoir"
           ? /^reservoir\.html\?name=[^&]+&view=share$/.test(target.frame)
@@ -92,7 +92,7 @@ async function capture(browser, origin, target, dist) {
         && document.documentElement.scrollWidth <= window.innerWidth
     }));
     if (frame.name !== target.name || !frame.figure || !frame.fits || errors.length
-      || (target.kind === "scope" && frame.kind !== "scope")
+      || (target.kind !== "reservoir" && frame.kind !== target.kind)
       || (target.kind === "reservoir" && (!frame.chart || !/^Reading date: /.test(frame.date)))) {
       throw new Error(`Frame did not draw: ${JSON.stringify({ ...frame, errors })}`);
     }
