@@ -125,6 +125,26 @@ interface DashboardReady {
    * opposed to the empty fallback a failed fetch leaves `stateFilter`
    * narrowing to run against with no boxes or place names behind it. */
   openingScopeResolved?: boolean;
+  /** The headline's percent full: the wider total, of today or of the
+   * month on the slider. Unmoved by the analysis controls (ADR-095). */
+  summaryPercent?: number | null;
+  /** The headline's percent of the usual storage for this date, or null on
+   * a past month and when no reservoir has the chosen period (ADR-153). */
+  summaryNormal?: number | null;
+  /** The period `summaryNormal` was measured against, or null when there is
+   * no comparison. Not `baseline`: that is what the reader chose. */
+  summaryNormalBaseline?: string | null;
+  /** True while the filtered rows' subtotal is on screen beside the
+   * headline: only when the analysis controls leave fewer rows than the
+   * scope holds. */
+  subtotalShown?: boolean;
+  /** Reservoirs the subtotal was made from, 0 when none is shown. */
+  subtotalReservoirs?: number;
+  /** The subtotal's percent full, or null when none is shown. */
+  subtotalPercent?: number | null;
+  /** The subtotal's percent of normal: null with no subtotal, on a past
+   * month, and when none of its reservoirs has the chosen period. */
+  subtotalNormal?: number | null;
 }
 
 interface Window {

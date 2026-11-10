@@ -72,7 +72,12 @@ import {
   connectSelectionToUrl, DEFAULT_URL_STATE, stateFromSearch, writeUrlState,
   type DashboardUrlState
 } from "./state/url";
-import { baselineChoices, baselineCoverage, FALLBACK_CHOICES } from "./state/baseline";
+import {
+  baselineChoices, baselineCoverage, FALLBACK_CHOICES, percentOfNormalFor, periodLabel
+} from "./state/baseline";
+import {
+  describeSubtotal, describeUsualStorage, filteredSubtotal, mapSummaryText, PAST_MONTH_NORMAL
+} from "./state/storage-summary";
 import { levelFromSearch, writeLevel } from "./state/level";
 import { supportsDashboard } from "./state/shell";
 import { placeInSlot } from "./ui/dom";
@@ -110,8 +115,10 @@ import {
   setRankingCaption,
   setReservoirList,
   setLargeReservoirAvailability,
+  setMapSummary,
   setScopeControl,
   setScopeValue,
+  setSubtotal,
   setSummary,
   setTableCaption,
   setTableRowOpen,
@@ -279,6 +286,47 @@ function monthlyCoverage(rollup: MonthlyRollup): string {
     + `${formatPercent(share)} of the combined full level`;
 }
 
+/**
+ * Which very large reservoirs are in the total, said for each one this place
+ * can hold. Every dominant reservoir available here is named whatever its
+ * switch state, because a total that silently holds 28 million acre-feet is
+ * what ADR-011 and ADR-062 exist to prevent. A lake outside the selected
+ * place is omitted; asking a California reader about Lake Mead is not
+ * context. The scope sentence and the Storage tile both read this.
+ */
+function dominantPhrases(): string[] {
+  return [
+    ...(largeReservoirAvailability.lakePowell
+      ? [`${scope.lakePowell === "include" ? "including" : "excluding"} Lake Powell`]
+      : []),
+    ...(largeReservoirAvailability.lakeMead
+      ? [`${scope.lakeMead === "include" ? "including" : "excluding"} Lake Mead`]
+      : [])
+  ];
+}
+
+/** The place the headline totals, in the words of the State control. */
+function placeName(): string {
+  const state = openingScope.selection.state;
+  return state === "all" ? "All states" : stateName(state);
+}
+
+/* What the summary currently says, for the readiness signal. Written by
+ * `updateSummary` and read again when the signal is first built, like
+ * `filterStatus` above. */
+const summaryStatus: {
+  percent: number | null;
+  normal: number | null;
+  normalBaseline: BaselineId | null;
+  subtotal: boolean;
+  subtotalReservoirs: number;
+  subtotalPercent: number | null;
+  subtotalNormal: number | null;
+} = {
+  percent: null, normal: null, normalBaseline: null,
+  subtotal: false, subtotalReservoirs: 0, subtotalPercent: null, subtotalNormal: null
+};
+
 /** The headline, recomputed for whatever the scope control now includes. */
 function updateSummary(): void {
   const month = selectedMonth();
@@ -307,28 +355,27 @@ function updateSummary(): void {
       storageAf: monthly?.storageAf ?? 0,
       count: monthly?.reporting ?? 0
     };
+  const dominant = dominantPhrases();
+  /* Compared with normal (ADR-153). The figure is the one the headline's own
+   * rollup already made, measured against the reader's period; the note names
+   * that period. On a past month there is no comparison, and the tile says so
+   * rather than keeping the newest reading's figure under a month's total. */
+  const normal = current?.percentOfNormal ?? null;
   setSummary({
     percent: formatPercent(rollup.percentFull),
-    storage: `${formatAcreFeet(rollup.storageAf)} acre-feet stored`,
+    storage: `${formatAcreFeet(rollup.storageAf)} acre-feet stored`
+      + (dominant.length ? `, ${dominant.join(", ")}` : ""),
     count: String(rollup.count),
     updated: month === null
       ? `Published ${formatDate(publishedAt)}`
       : `Average through ${monthLabel(month)}`,
+    normal: formatPercent(normal),
+    "normal-note": current
+      ? describeUsualStorage(current, baselineOptions)
+      : PAST_MONTH_NORMAL,
     // Written from the controls rather than fixed in the markup: it read
-    // "excluding Lake Powell" whatever the reader had chosen. Every dominant
-    // reservoir available in this place is named whatever its switch state,
-    // because a total that silently holds 28 million acre-feet is what
-    // ADR-011 and ADR-062 exist to prevent. A lake outside the selected place
-    // is omitted; asking a California reader about Lake Mead is not context.
-    scope: [
-      "Every reservoir",
-      ...(largeReservoirAvailability.lakePowell
-        ? [`${scope.lakePowell === "include" ? "including" : "excluding"} Lake Powell`]
-        : []),
-      ...(largeReservoirAvailability.lakeMead
-        ? [`${scope.lakeMead === "include" ? "including" : "excluding"} Lake Mead`]
-        : [])
-    ].join(", ") +
+    // "excluding Lake Powell" whatever the reader had chosen.
+    scope: ["Every reservoir", ...dominant].join(", ") +
       /* What the total was added up from, in time. A combined percentage
        * looks like one moment's measurement and is not: the newest readings
        * span weeks, because some providers publish daily and some monthly.
@@ -338,6 +385,49 @@ function updateSummary(): void {
       (current ? summaryCoverage(current.coverage)
         : monthly ? monthlyCoverage(monthly) : "")
   });
+  /* The headline stays the wider total under a county, area or class
+   * filter (ADR-029, ADR-095). The filtered rows get their own labelled
+   * figure beside it, made from the same rows the table lists. */
+  const subtotal = filteredSubtotal(inScope, filterState, {
+    baseline: activeBaselineId,
+    minimumBaselineYears: baselineMinimumYears,
+    month
+  });
+  setSubtotal(subtotal === null ? null
+    : describeSubtotal(subtotal, baselineOptions, month === null ? null : monthLabel(month)));
+  setMapSummary(mapSummaryText({
+    place: placeName(),
+    count: rollup.count,
+    percentFull: rollup.percentFull,
+    percentOfNormal: normal,
+    monthName: month === null ? null : monthLabel(month),
+    subtotal: subtotal === null ? null
+      : { count: subtotal.count, percentFull: subtotal.percentFull }
+  }));
+
+  summaryStatus.percent = rollup.percentFull;
+  summaryStatus.normal = normal;
+  summaryStatus.normalBaseline = current ? current.normalBaseline : null;
+  summaryStatus.subtotal = subtotal !== null;
+  summaryStatus.subtotalReservoirs = subtotal?.count ?? 0;
+  summaryStatus.subtotalPercent = subtotal?.percentFull ?? null;
+  summaryStatus.subtotalNormal = subtotal?.normal?.percentOfNormal ?? null;
+  if (window.__dashboardReady) Object.assign(window.__dashboardReady, summaryReadiness());
+}
+
+/* The summary's facts in the readiness signal, one field each. */
+function summaryReadiness(): Pick<DashboardReady,
+  "summaryPercent" | "summaryNormal" | "summaryNormalBaseline" | "subtotalShown"
+  | "subtotalReservoirs" | "subtotalPercent" | "subtotalNormal"> {
+  return {
+    summaryPercent: summaryStatus.percent,
+    summaryNormal: summaryStatus.normal,
+    summaryNormalBaseline: summaryStatus.normalBaseline,
+    subtotalShown: summaryStatus.subtotal,
+    subtotalReservoirs: summaryStatus.subtotalReservoirs,
+    subtotalPercent: summaryStatus.subtotalPercent,
+    subtotalNormal: summaryStatus.subtotalNormal
+  };
 }
 
 /* The boundaries are context and are loaded on their own path: a missing or
@@ -579,7 +669,13 @@ function renderReservoirTable(): void {
     filter: filterState,
     sort: tableSort,
     month,
-    percentOf: percentShown
+    percentOf: percentShown,
+    /* The reader's period, never the other one (ADR-041, ADR-153). */
+    normal: {
+      baseline: activeBaselineId,
+      periodLabel: periodLabel(baselineOptions, activeBaselineId),
+      minimumYears: baselineMinimumYears
+    }
   });
   const host = document.querySelector<HTMLElement>('[data-table="rows"]');
   if (host) {
@@ -795,6 +891,9 @@ function wireFilters(map: MapController): void {
     // Reads the current scope rather than the one that existed when the
     // controls were built: changing the scope has to re-answer the filter.
     const shown = inScope.filter((reservoir) => matchesFilter(reservoir, filterState));
+    /* The subtotal beside the headline is made from these same rows, so a
+     * filter change rewrites the summary as well (ADR-153). */
+    updateSummary();
     map.setFilter(filterWhere(filterState));
     markFilteredInList((label) =>
       !shown.some((reservoir) => reservoirLabel(reservoir, inScope) === label));
@@ -881,10 +980,23 @@ function baselineControlOptions(): { value: string; label: string }[] {
   }));
 }
 
-/** Puts the control, its sentence and the open details panel at one period. */
+/**
+ * Puts the control, its sentence, the open details panel, the summary, the
+ * list and the table at one period.
+ *
+ * The summary used to stay on the period the page opened on while the panel
+ * below it moved (ADR-153). `applyFilter` rewrites the summary and the table;
+ * the list is rebuilt first because its rows carry the comparison too, and
+ * `applyFilter` is what dims them again. Nothing to rebuild before the data
+ * has loaded, and a failed load must not show an empty summary.
+ */
 function applyBaseline(): void {
   setBaselineControl(baselineControlOptions(), activeBaselineId, baselineNote());
   renderDetail();
+  if (published.length > 0) {
+    renderReservoirList();
+    applyFilter();
+  }
   if (window.__dashboardReady) window.__dashboardReady.baseline = activeBaselineId;
 }
 
@@ -910,6 +1022,17 @@ function wireBaseline(): void {
   );
 }
 
+/**
+ * A row's comparison with normal: the reader's period only, and nothing on a
+ * past month or where the reservoir has no normal for that period. The period
+ * is named under the "Compare against" control and in the summary tile.
+ */
+function listNormal(reservoir: Reservoir): string {
+  if (selectedMonth() !== null) return "";
+  const share = percentOfNormalFor(reservoir, activeBaselineId, baselineMinimumYears);
+  return share === null ? "" : `${formatPercent(share)} of normal`;
+}
+
 /** The list is rebuilt whenever the scope changes; its buttons are new. */
 function renderReservoirList(): void {
   setReservoirList(
@@ -920,6 +1043,7 @@ function renderReservoirList(): void {
        * only where it has to be. */
       name: reservoirLabel(reservoir, inScope),
       percent: formatPercent(percentShown(reservoir)),
+      normal: listNormal(reservoir),
       color: storageColor(percentShown(reservoir)),
       late: isLate(reservoir)
     })),
@@ -1563,7 +1687,10 @@ if (!supportsDashboard(browserCapabilities())) {
     /* Whether the opening-scope roster actually loaded roster data, as
      * opposed to the empty fallback a failed fetch leaves `state` narrowing
      * to run against with no boxes or place names behind it. */
-    openingScopeResolved: openingRosters.areas.length > 0
+    openingScopeResolved: openingRosters.areas.length > 0,
+    /* The summary's own facts (ADR-153): the headline and its comparison
+     * with normal, and the filtered subtotal beside it. */
+    ...summaryReadiness()
   };
 
   /* The boot reached its end, so a later rejection is somebody else's. */

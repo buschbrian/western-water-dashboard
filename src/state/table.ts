@@ -20,14 +20,15 @@
  */
 
 import { capacityOn, monthObservationDate } from "../data/capacity";
+import { percentOfNormalFor } from "./baseline";
 import { isLate } from "../data/rollup";
 import { reservoirLabel } from "./selection";
 import { matchesFilter, type FilterState } from "./filters";
 import type { MonthKey } from "../data/months";
-import type { NullableNumber, Reservoir } from "../types";
+import type { BaselineId, NullableNumber, Reservoir } from "../types";
 
 /** What a column can be ordered by. The reader's choice, not the data's. */
-export type SortKey = "name" | "percent" | "storage" | "capacity" | "area";
+export type SortKey = "name" | "percent" | "normal" | "storage" | "capacity" | "area";
 export type SortDirection = "asc" | "desc";
 
 export interface TableSort {
@@ -40,12 +41,17 @@ export interface TableSort {
  * refresh is a poor place to look a reservoir up. */
 export const DEFAULT_SORT: TableSort = { key: "name", direction: "asc" };
 
-export const SORT_KEYS: readonly SortKey[] = ["name", "percent", "storage", "capacity", "area"];
+/* "normal" was added after the other five (ADR-153). A key is a whole word
+ * with no hyphen, because the URL token is the key and the direction joined
+ * by one; every link written before it still reads the same. */
+export const SORT_KEYS: readonly SortKey[] =
+  ["name", "percent", "normal", "storage", "capacity", "area"];
 
 /** The column headings, in the order the table renders them. */
 export const COLUMN_LABELS: Record<SortKey, string> = {
   name: "Reservoir",
   percent: "Full",
+  normal: "Compared with normal",
   storage: "Storage",
   capacity: "Full level",
   area: "Drainage area"
@@ -74,6 +80,15 @@ export interface TableRow {
   lat: number;
   lon: number;
   percent: NullableNumber;
+  /**
+   * Percent of normal for exactly the period the reader chose, or null where
+   * the reservoir has no normal for it. Never the other period (ADR-041).
+   * Null on a past month: the comparison is about the newest reading.
+   */
+  percentOfNormal: NullableNumber;
+  /** The years `percentOfNormal` was measured against, in words, or null on a
+   * past month, when no comparison is made. */
+  normalPeriod: string | null;
   storageAf: NullableNumber;
   capacityAf: NullableNumber;
   areaName: string;
@@ -91,6 +106,16 @@ export interface TableInput {
   /** What a reservoir's percentage is right now -- the same function the map
    * and the list draw from, passed in rather than re-derived here. */
   percentOf: (reservoir: Reservoir) => NullableNumber;
+  /** The comparison period the reader chose. Absent means no comparison. */
+  normal?: TableNormal;
+}
+
+export interface TableNormal {
+  baseline: BaselineId;
+  /** The period's own words, such as "1991 through 2020". */
+  periodLabel: string;
+  /** Fewest years a normal needs, as the payload declares it. */
+  minimumYears: number;
 }
 
 function monthlyMean(reservoir: Reservoir, month: MonthKey): NullableNumber {
@@ -121,6 +146,9 @@ export function compareRows(a: TableRow, b: TableRow, sort: TableSort): number {
   switch (sort.key) {
     case "percent":
       return compareNumbers(a.percent, b.percent, sort.direction) || compareText(a.name, b.name, "asc");
+    case "normal":
+      return compareNumbers(a.percentOfNormal, b.percentOfNormal, sort.direction)
+        || compareText(a.name, b.name, "asc");
     case "storage":
       return compareNumbers(a.storageAf, b.storageAf, sort.direction) || compareText(a.name, b.name, "asc");
     case "capacity":
@@ -138,7 +166,9 @@ export function compareRows(a: TableRow, b: TableRow, sort: TableSort): number {
 
 /** The rows the filter matches, in the reader's order. */
 export function tableRows(input: TableInput): TableRow[] {
-  const { reservoirs, filter, sort, month, percentOf } = input;
+  const { reservoirs, filter, sort, month, percentOf, normal } = input;
+  /* The comparison is about the newest reading, like the headline's. */
+  const compared = month === null && normal !== undefined ? normal : null;
   return reservoirs
     .filter((reservoir) => matchesFilter(reservoir, filter))
     .map((reservoir) => ({
@@ -153,6 +183,9 @@ export function tableRows(input: TableInput): TableRow[] {
       lat: reservoir.lat,
       lon: reservoir.lon,
       percent: percentOf(reservoir),
+      percentOfNormal: compared === null ? null
+        : percentOfNormalFor(reservoir, compared.baseline, compared.minimumYears),
+      normalPeriod: compared === null ? null : compared.periodLabel,
       storageAf: month === null ? reservoir.current_storage_af : monthlyMean(reservoir, month),
       /* The full level in force on the row's own date, so a month's storage
        * and the figure beside it describe the same month (ADR-111). */

@@ -15,6 +15,8 @@ function row(name: string, percent: number | null, overrides: Partial<TableRow> 
     lat: 40,
     lon: -110,
     percent,
+    percentOfNormal: null,
+    normalPeriod: null,
     storageAf: 1000,
     capacityAf: 2000,
     areaName: "Great Salt Lake",

@@ -7502,6 +7502,289 @@ console.log(`\n=== Rivers page: ${VIEWPORTS.length} widths`);
   }
 }
 
+/*
+ * The storage map's comparison with normal and its filtered subtotal
+ * (ADR-153). Every expected value is read from the page's own readiness
+ * signal or derived from the payload, never written down, so the morning
+ * refresh cannot turn this red. The arithmetic is held by the unit tests in
+ * src/state/storage-summary.test.ts; this checks what only a browser can see:
+ * that the tile, the subtotal and the phone control are drawn, follow the
+ * controls, and say the period they used.
+ */
+{
+  const label = "Storage map summary against normal";
+  console.log(`\n=== ${label}`);
+  const powell = payload.reservoirs.find((reservoir) =>
+    reservoir.rise_item_id === 509 || reservoir.name.trim().toLowerCase() === "lake powell");
+  const mead = payload.reservoirs.find((reservoir) =>
+    reservoir.rise_item_id === 6124 || reservoir.name.trim().toLowerCase() === "lake mead");
+  const summaryState = "UT";
+  const inSummaryState = payload.reservoirs.filter((reservoir) =>
+    statesOf(reservoir).includes(summaryState));
+  const powellHere = Boolean(powell && statesOf(powell).includes(summaryState));
+  const meadHere = Boolean(mead && statesOf(mead).includes(summaryState));
+  /* A drainage area inside the state that narrows it without emptying it. */
+  const summaryArea = [...new Set(inSummaryState.map((reservoir) => reservoir.huc6))]
+    .filter((code) => typeof code === "string").sort()
+    .map((code) => ({
+      code,
+      count: inSummaryState.filter((reservoir) => reservoir.huc6?.startsWith(code)).length
+    }))
+    .find((candidate) => candidate.count > 0 && candidate.count < inSummaryState.length);
+  const periodOf = (id) => payload.baselines?.find((choice) => choice.id === id)?.period_label;
+  const readSummary = (selector) => ({
+    ready: window.__dashboardReady,
+    percent: document.querySelector(`${selector} [data-value="percent"]`)?.textContent ?? "",
+    storage: document.querySelector(`${selector} [data-value="storage"]`)?.textContent ?? "",
+    normal: document.querySelector(`${selector} [data-value="normal"]`)?.textContent ?? "",
+    note: document.querySelector(`${selector} [data-value="normal-note"]`)?.textContent ?? "",
+    subtotalHidden: document.querySelector(`${selector} [data-summary="subtotal"]`)?.hidden ?? null,
+    subtotal: document.querySelector(`${selector} [data-value="subtotal"]`)?.textContent ?? "",
+    filter: document.querySelector(`${selector} [data-filter="summary"]`)?.textContent ?? "",
+    chipDisplay: (() => {
+      const chip = document.querySelector("#map-summary");
+      return chip ? getComputedStyle(chip).display : null;
+    })()
+  });
+
+  const context = await newPageContext(browser, VIEWPORTS[0]);
+  const tab = await context.newPage();
+  const errors = [];
+  tab.on("pageerror", (err) => errors.push(`uncaught: ${err.message}`));
+  watchConsoleErrors(tab, errors);
+  try {
+    check(inSummaryState.length > 0, `${label}: no reservoir is in ${summaryState}`);
+
+    // (a) A state shows both figures, and the note names the period used.
+    await tab.goto(`${URL}?state=${summaryState}`, { waitUntil: "domcontentloaded", timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    const byState = await tab.evaluate(readSummary, "#start-panel");
+    check(/^\d+\.\d%$/.test(byState.percent),
+      `${label}: the headline percent reads "${byState.percent}"`);
+    check(typeof byState.ready.summaryNormal === "number",
+      `${label}: ?state=${summaryState} reports no percent of normal ` +
+      `(${byState.ready.summaryNormal})`);
+    check(byState.normal === `${Number(byState.ready.summaryNormal).toFixed(1)}%`,
+      `${label}: the tile reads "${byState.normal}" while the page reports ` +
+      `${byState.ready.summaryNormal}`);
+    check(byState.ready.summaryNormalBaseline === byState.ready.baseline,
+      `${label}: the tile used ${byState.ready.summaryNormalBaseline} while the ` +
+      `page compares against ${byState.ready.baseline}`);
+    const usedPeriod = periodOf(byState.ready.summaryNormalBaseline);
+    check(Boolean(usedPeriod) && byState.note.includes(usedPeriod ?? "\u0000")
+      && byState.note.startsWith("Of the usual storage for this date"),
+    `${label}: the tile's note "${byState.note}" does not name ${usedPeriod}`);
+    check(byState.ready.subtotalShown === false && byState.subtotalHidden === true,
+      `${label}: a subtotal shows with nothing narrowing the rows`);
+    check(byState.storage.includes("Lake Powell") === powellHere,
+      `${label}: the Storage tile reads "${byState.storage}" for ${summaryState}`);
+    check(byState.storage.includes("Lake Mead") === meadHere,
+      `${label}: the Storage tile reads "${byState.storage}" for ${summaryState}`);
+    check(byState.chipDisplay === "none",
+      `${label}: the phone summary control shows on a wide screen (${byState.chipDisplay})`);
+
+    // (d) Compare against changes the tile, not only the details panel.
+    const other = byState.ready.baseline === "climate" ? "recent" : "climate";
+    if (byState.ready.baselineChoices >= 2) {
+      await tab.evaluate((value) => {
+        const select = document.querySelector('#start-panel [data-baseline="period"]');
+        select.value = value;
+        select.dispatchEvent(new CustomEvent("calciteSelectChange", { bubbles: true }));
+      }, other);
+      await tab.waitForFunction((value) => window.__dashboardReady.baseline === value,
+        other, { timeout: 5000 });
+      const switched = await tab.evaluate(readSummary, "#start-panel");
+      check(switched.ready.summaryNormalBaseline === other,
+        `${label}: the tile stayed on ${switched.ready.summaryNormalBaseline} ` +
+        `after choosing ${other}`);
+      check(switched.note !== byState.note && switched.note.includes(periodOf(other) ?? "\u0000"),
+        `${label}: choosing ${other} left the note at "${switched.note}"`);
+    }
+
+    // (b) Lake Powell off changes both the headline and the comparison.
+    if (powellHere) {
+      await tab.goto(`${URL}?state=${summaryState}`, { waitUntil: "domcontentloaded", timeout: 60000 });
+      await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+      const withPowell = await tab.evaluate(readSummary, "#start-panel");
+      await tab.evaluate(() => {
+        const toggle = document.querySelector('#start-panel [data-scope="powell"]');
+        toggle.checked = false;
+        toggle.dispatchEvent(new CustomEvent("calciteSwitchChange", { bubbles: true }));
+      });
+      await tab.waitForFunction(() => window.__dashboardReady.lakePowell === "exclude",
+        null, { timeout: 5000 });
+      const withoutPowell = await tab.evaluate(readSummary, "#start-panel");
+      check(withoutPowell.ready.summaryPercent !== withPowell.ready.summaryPercent
+        && withoutPowell.percent !== withPowell.percent,
+      `${label}: excluding Lake Powell left the headline at ${withoutPowell.percent}`);
+      check(withoutPowell.ready.summaryNormal !== withPowell.ready.summaryNormal
+        && withoutPowell.normal !== withPowell.normal,
+      `${label}: excluding Lake Powell left the comparison at ${withoutPowell.normal}`);
+      check(withoutPowell.storage.includes("excluding Lake Powell"),
+        `${label}: the Storage tile reads "${withoutPowell.storage}" after excluding Lake Powell`);
+    }
+
+    // (c) A drainage filter adds a subtotal and leaves the headline alone.
+    check(Boolean(summaryArea),
+      `${label}: no drainage area narrows ${summaryState} without emptying it`);
+    if (summaryArea) {
+      await tab.goto(`${URL}?state=${summaryState}&drainage=${summaryArea.code}`,
+        { waitUntil: "domcontentloaded", timeout: 60000 });
+      await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+      const narrowed = await tab.evaluate(readSummary, "#start-panel");
+      check(narrowed.ready.areaFilter === summaryArea.code,
+        `${label}: the drainage link was not applied (${narrowed.ready.areaFilter})`);
+      check(narrowed.ready.summaryPercent === byState.ready.summaryPercent
+        && narrowed.percent === byState.percent,
+      `${label}: a drainage filter moved the headline from ${byState.percent} ` +
+        `to ${narrowed.percent}`);
+      check(narrowed.ready.subtotalShown === true && narrowed.subtotalHidden === false,
+        `${label}: a drainage filter shows no subtotal`);
+      check(narrowed.ready.subtotalReservoirs === summaryArea.count
+        && narrowed.ready.subtotalReservoirs === narrowed.ready.shown,
+      `${label}: the subtotal holds ${narrowed.ready.subtotalReservoirs} reservoirs, ` +
+        `the filter shows ${narrowed.ready.shown}, expected ${summaryArea.count}`);
+      check(narrowed.subtotal.includes(summaryArea.count === 1
+        ? "This reservoir" : `These ${summaryArea.count} reservoirs`),
+      `${label}: the subtotal reads "${narrowed.subtotal}"`);
+      check(narrowed.filter.includes("grey"),
+        `${label}: the filter sentence changed beside the subtotal ("${narrowed.filter}")`);
+
+      // (e) A past month clears every comparison with normal.
+      await tab.evaluate(() => {
+        const slider = document.querySelector('#start-panel [data-month="slider"]');
+        slider.value = 0;
+        slider.dispatchEvent(new CustomEvent("calciteSliderChange", { bubbles: true }));
+      });
+      await tab.waitForFunction(() => window.__dashboardReady.month !== null,
+        null, { timeout: 5000 });
+      const pastMonth = await tab.evaluate(readSummary, "#start-panel");
+      check(pastMonth.ready.summaryNormal === null && pastMonth.normal === "—",
+        `${label}: a past month kept a comparison with normal ("${pastMonth.normal}")`);
+      check(pastMonth.ready.summaryNormalBaseline === null,
+        `${label}: a past month reports a normal period (${pastMonth.ready.summaryNormalBaseline})`);
+      check(pastMonth.note.includes("newest reading"),
+        `${label}: a past month's tile note reads "${pastMonth.note}"`);
+      check(pastMonth.ready.subtotalShown === true && pastMonth.ready.subtotalNormal === null
+        && !pastMonth.subtotal.includes("usual storage"),
+      `${label}: a past month's subtotal reads "${pastMonth.subtotal}"`);
+    }
+  } catch (error) {
+    failures.push(`${label}: ${error.message}`);
+  } finally {
+    for (const message of errors) failures.push(`${label}: ${message}`);
+    await context.close();
+  }
+
+  // (f) On a phone, one control over the map carries the figures and opens the sheet.
+  const phoneLabel = `${label} (${VIEWPORTS[1].name})`;
+  const phone = await newPageContext(browser, VIEWPORTS[1]);
+  const phoneTab = await phone.newPage();
+  const phoneErrors = [];
+  phoneTab.on("pageerror", (err) => phoneErrors.push(`uncaught: ${err.message}`));
+  watchConsoleErrors(phoneTab, phoneErrors);
+  try {
+    await phoneTab.goto(`${URL}?state=${summaryState}`,
+      { waitUntil: "domcontentloaded", timeout: 60000 });
+    await phoneTab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    const chip = await phoneTab.evaluate(() => {
+      const button = document.querySelector("#map-summary");
+      const rect = (element) => {
+        const box = element.getBoundingClientRect();
+        return { left: box.left, top: box.top, right: box.right, bottom: box.bottom,
+          width: box.width, height: box.height };
+      };
+      const overlaps = (a, b) => a.width > 0 && b.width > 0 && a.left < b.right
+        && b.left < a.right && a.top < b.bottom && b.top < a.bottom;
+      const self = button ? rect(button) : null;
+      const sdk = [...document.querySelectorAll(
+        'arcgis-map > [slot="top-left"], arcgis-map > [slot="top-right"]')].map(rect);
+      const legend = document.querySelector("#storage-map-legend");
+      return {
+        present: Boolean(button),
+        notice: Boolean(document.querySelector("#map-host > calcite-notice")),
+        display: button ? getComputedStyle(button).display : null,
+        text: button?.innerText ?? "",
+        /* The name is the control's own text, lines then action. */
+        label: (button?.textContent ?? "").trim(),
+        ariaLabel: button?.getAttribute("aria-label") ?? null,
+        height: self?.height ?? 0,
+        overSdk: self ? sdk.some((box) => overlaps(self, box)) : false,
+        legendOpen: legend?.open ?? null,
+        overLegend: self && legend ? overlaps(self, rect(legend)) : false,
+        normal: window.__dashboardReady.summaryNormal
+      };
+    });
+    check(chip.present, `${phoneLabel}: the phone summary control is missing`);
+    if (chip.notice) {
+      /* A map notice takes the same top band and hides the control by
+       * design; the run cannot judge its position then. */
+      console.log("  a map notice is showing; the control's position is not judged");
+      check(chip.display === "none",
+        `${phoneLabel}: the summary control shows over a map notice`);
+    } else {
+      check(chip.display !== "none", `${phoneLabel}: the phone summary control is hidden`);
+      check(chip.text.includes("Utah") && /\d+ reservoirs?/.test(chip.text)
+        && /full/.test(chip.text),
+      `${phoneLabel}: the control reads "${chip.text}"`);
+      check(typeof chip.normal !== "number" || chip.text.includes("of normal"),
+        `${phoneLabel}: the control has no comparison with normal ("${chip.text}")`);
+      check(chip.label.endsWith("Open the storage summary.") && chip.ariaLabel === null,
+        `${phoneLabel}: the control's name is "${chip.label}" (aria-label ${chip.ariaLabel})`);
+      check(chip.height >= 44, `${phoneLabel}: the control is ${chip.height}px tall`);
+      check(!chip.overSdk, `${phoneLabel}: the control covers a map control`);
+      check(chip.legendOpen === false && !chip.overLegend,
+        `${phoneLabel}: the control covers the collapsed legend`);
+
+      /* A tap card docked to the top takes the same band: the control steps
+       * aside. Docked to the bottom, the two must not touch. Driven by the
+       * card's own classes, because a tap cannot be made in headless
+       * Chromium (hitTest never settles there). */
+      const docked = await phoneTab.evaluate(() => {
+        const card = document.querySelector("#map-hover");
+        const button = document.querySelector("#map-summary");
+        card.textContent = "Test";
+        card.hidden = false;
+        card.classList.add("is-docked");
+        const top = getComputedStyle(button).display;
+        card.classList.add("is-docked-end");
+        const a = button.getBoundingClientRect();
+        const b = card.getBoundingClientRect();
+        const end = {
+          display: getComputedStyle(button).display,
+          overlap: a.left < b.right && b.left < a.right && a.top < b.bottom && b.top < a.bottom
+        };
+        card.classList.remove("is-docked", "is-docked-end");
+        card.hidden = true;
+        card.replaceChildren();
+        return { top, end };
+      });
+      check(docked.top === "none",
+        `${phoneLabel}: the control stays under a card docked to the top`);
+      check(docked.end.display !== "none" && !docked.end.overlap,
+        `${phoneLabel}: the control and a card docked to the bottom overlap`);
+
+      await phoneTab.locator("#map-summary").click();
+      await phoneTab.waitForFunction(
+        "document.querySelector('#start-sheet')?.hasAttribute('opened')",
+        { timeout: 5000 });
+      const opened = await phoneTab.evaluate(() => ({
+        pressed: document.querySelector("#controls-toggle")?.getAttribute("aria-pressed"),
+        percent: document.querySelector('#start-sheet [data-value="percent"]')?.textContent ?? ""
+      }));
+      check(opened.pressed === "true",
+        `${phoneLabel}: the header action reports ${opened.pressed} after the control opened the summary`);
+      check(chip.text.includes(opened.percent),
+        `${phoneLabel}: the control reads "${chip.text}" and the summary ${opened.percent}`);
+    }
+  } catch (error) {
+    failures.push(`${phoneLabel}: ${error.message}`);
+  } finally {
+    for (const message of phoneErrors) failures.push(`${phoneLabel}: ${message}`);
+    await phone.close();
+  }
+}
+
 await browser.close();
 server.close();
 
