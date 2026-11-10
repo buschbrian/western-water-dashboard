@@ -13,6 +13,10 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
+- **Copyable story embed code.** The precipitation page offers its full card
+  or history strip for the selected place. A reservoir's upstream section
+  offers its stored water and the reservoirs above it. Each control gives a
+  labelled frame with the existing story view and a copy button.
 - **Permanent reservoir preview links and daily pictures** (ADR-154).
   Reservoir Copy link and Share use an address that survives renames and
   withdrawal. Reservoirs without reviewed levels get a storage chart; state,

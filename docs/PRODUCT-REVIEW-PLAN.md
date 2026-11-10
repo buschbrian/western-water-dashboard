@@ -157,6 +157,9 @@ budget. Full regression verification accompanies the implementation commit.
 
 ### 7. Link previews on the main pages, and an embed snippet
 
+Implemented locally: the precipitation and upstream story embed controls.
+Main-page previews are the next slice.
+
 Card tags and a daily picture for the storage map, storage charts, snow,
 precipitation, drought and river pages. An "Embed this view" control that
 gives the frame code for a story view (ADR-128), which today has no way in.

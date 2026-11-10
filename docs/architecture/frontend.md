@@ -220,6 +220,15 @@ storage: `stampTheme` (`ui/theme-stamp.ts`) is the one function that sets
 `data-theme` and the Calcite mode classes, here and on every other page.
 Every link opens in a new tab. Readiness is `window.__storyReady`.
 
+The precipitation page offers **Embed this view** below its card, with a
+choice of the full precipitation view or its history strip. A reservoir's
+upstream section offers its own upstream view once the trace is loaded.
+`state/embed.ts` writes frame code for the existing story URL contract,
+including an explicit state and the resolved area and level, or the station
+identifier for a reservoir. `ui/embed-view.ts` shows read-only, labelled code
+and a copy control, with a selectable fallback when copying is unavailable.
+The frame follows the reader's system theme and reads no stored place.
+
 ### Point location and downloads
 
 Reservoir and snow details use `data/hydrologic-path.ts` for one containment
