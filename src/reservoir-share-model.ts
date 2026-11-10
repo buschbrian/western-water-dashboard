@@ -28,6 +28,8 @@ export const SHARE_CHART_SCALE = 2;
 /** The chart's own height in viewBox units; it is drawn 300 pixels high,
  * which leaves room under it for the key and the source line. */
 export const SHARE_CHART_HEIGHT = 150;
+/** The storage frame's monthly chart: its type is 9 units, so 20 pixels here. */
+export const SHARE_TREND_SCALE = 2.3;
 
 /** True when the link asks for the share frame. */
 export function isShareView(search: string): boolean {

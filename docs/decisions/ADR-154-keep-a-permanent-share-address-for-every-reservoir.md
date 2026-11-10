@@ -1,6 +1,6 @@
 # ADR-154: Keep a permanent share address for every reservoir
 
-- Status: Proposed; model preparation only
+- Status: Proposed; the storage frame (decisions 1 and 2) is implemented locally
 - Date: 2026-11-09
 - Would amend: ADR-141 (two share pages and a reviewed-level-only frame)
 - Relates to: ADR-002 (runtime data), ADR-056 (withdrawal), ADR-066 (station
@@ -23,7 +23,8 @@ The deploy cost of capturing every reservoir has not been measured.
    1200 by 630. It carries the name, dated storage, percent full with its
    basis, comparison with normal with its actual period and sample years,
    monthly trend, late-data note and provider. Missing months remain gaps.
-   A missing normal is stated; an existing period substitution is named.
+   A missing normal is stated; an existing period substitution is named;
+   a normal that draws on part of its period says so, as the page does.
 2. Keep the reviewed-level frame for reservoirs that have it. A storage frame
    makes no claim about a surface level and requires no elevation-history
    request. The existing two share addresses continue to work.
@@ -55,6 +56,10 @@ fallback generation and capture budget remain open before acceptance.
 ## Implementation status
 
 The first local slice is `src/reservoir-storage-share-model.ts` and its
-tests. It reuses the reservoir page's pure builders. It is not connected to
-the rendered page, capture script or deploy. ADR-141 remains accepted and
-the published share behavior is unchanged until a later verified slice.
+tests. It reuses the reservoir page's pure builders.
+
+The second local slice draws the frame: the share view of a reservoir with
+no level chart shows the storage frame and asks for no level history. The
+readiness field `share` names the frame on the page. The capture script and
+the deploy are unchanged, so the two published pictures and the two share
+addresses are as ADR-141 left them. Decisions 3 to 5 are not started.

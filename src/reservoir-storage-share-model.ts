@@ -1,8 +1,10 @@
 import { SITE_ADDRESS } from "./reservoir-share-model";
+import { activeBaseline } from "./state/baseline";
 import {
   describeReservoir, percentFullBasis, providerName,
   type DetailBaseline, type DetailMonth
 } from "./state/detail";
+import { PARTIAL_PERIOD_NOTE } from "./state/figures-text";
 import type { BaselineChoice, BaselineId, Reservoir } from "./types";
 import { formatAcreFeet, formatDate } from "./viz/format";
 import { headlinePercent } from "./viz/symbols";
@@ -12,6 +14,8 @@ export interface StorageShareFrame {
   storage: string;
   full: { percent: string; basis: string } | null;
   comparison: DetailBaseline;
+  /** Set when the shown normal draws on part of its period, as the page says. */
+  partialPeriod: string | null;
   months: readonly DetailMonth[];
   readingDate: string;
   late: string | null;
@@ -31,12 +35,16 @@ export function storageShareFrame(input: StorageShareInput): StorageShareFrame |
   const { reservoir, label, baseline, choices, minimumYears } = input;
   if (!Number.isFinite(reservoir.current_storage_af)) return null;
   const view = describeReservoir(reservoir, "", baseline, choices, minimumYears);
+  const active = activeBaseline(reservoir, baseline, minimumYears);
+  const partial = active.value !== null && active.value.normal_af !== null
+    && active.shown !== null && !active.value.covers_full_period;
   return {
     name: label,
     storage: `${formatAcreFeet(reservoir.current_storage_af)} acre-feet`,
     full: headlinePercent(reservoir) === null ? null
       : { percent: view.percent, basis: percentFullBasis(reservoir) },
     comparison: view.baseline,
+    partialPeriod: partial ? PARTIAL_PERIOD_NOTE : null,
     months: view.months,
     readingDate: `Reading date: ${formatDate(reservoir.as_of)}`,
     late: view.late,

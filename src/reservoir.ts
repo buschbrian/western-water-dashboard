@@ -56,8 +56,9 @@ import { createLocationFacts } from "./ui/location-facts";
 import { measurementCard } from "./ui/measurement-card";
 import { renderElevationYears } from "./viz/elevation-years";
 import {
-  isShareView, SHARE_CHART_HEIGHT, SHARE_CHART_SCALE, shareFrame
+  isShareView, SHARE_CHART_HEIGHT, SHARE_CHART_SCALE, SHARE_TREND_SCALE, shareFrame
 } from "./reservoir-share-model";
+import { storageShareFrame, type StorageShareFrame } from "./reservoir-storage-share-model";
 import { wireTheme } from "./ui/theme";
 import { stampTheme } from "./ui/theme-stamp";
 import { coordinateText } from "./viz/coordinates";
@@ -88,9 +89,11 @@ if (!found) throw new Error("Missing #reservoir-main");
 const main: HTMLElement = found;
 
 function finish(state: ReservoirPageState["status"],
-  elevation?: "drawn" | "card" | "none"): void {
+  elevation?: "drawn" | "card" | "none", share?: "level" | "storage" | "none"): void {
   main.setAttribute("aria-busy", "false");
-  window.__reservoirReady = elevation ? { status: state, elevation } : { status: state };
+  window.__reservoirReady = {
+    status: state, ...(elevation ? { elevation } : {}), ...(share ? { share } : {})
+  };
 }
 
 /** A paragraph with the class every other state message on this page wears. */
@@ -510,40 +513,110 @@ async function renderFound(payload: ReservoirPayload,
   finish("found", elevationState);
 }
 
+function shareText(tag: "p" | "h1", className: string, content: string): HTMLElement {
+  const element = document.createElement(tag);
+  element.className = className;
+  element.textContent = content;
+  return element;
+}
+
 /**
- * The share frame (ADR-141): the name, the level with its datum, the reading
- * date and the water-year chart, drawn large enough to read on a link card.
+ * The storage frame (ADR-154): stored water, percent full with its basis,
+ * the comparison with its period and years, and the twelve months. The chart
+ * takes the height the words leave, so a long name or a long comparison
+ * shortens the chart and never pushes the source line out of the picture.
+ */
+function renderStorageShare(frame: StorageShareFrame): boolean {
+  main.classList.add("reservoir-share-storage");
+  const title = document.createElement("div");
+  title.className = "share-title";
+  title.append(shareText("p", "share-site", "Western Water Dashboard"),
+    shareText("h1", "reservoir-name", frame.name),
+    shareText("p", "share-date", frame.readingDate));
+  if (frame.late) title.append(shareText("p", "share-late", frame.late));
+  const figures = document.createElement("div");
+  figures.className = "share-level";
+  if (frame.full) {
+    figures.append(shareText("p", "share-figure", frame.full.percent),
+      shareText("p", "share-basis", frame.full.basis),
+      shareText("p", "share-stored", `Stored now: ${frame.storage}`));
+  } else {
+    figures.append(shareText("p", "share-figure", frame.storage),
+      shareText("p", "share-basis", "stored now"));
+  }
+  const head = document.createElement("header");
+  head.className = "share-head";
+  head.append(title, figures);
+  const comparison = shareText("p", "share-comparison",
+    `${frame.comparison.label}: ${frame.comparison.value}${
+      frame.comparison.value.endsWith(".") ? "" : "."}${
+      frame.partialPeriod ? ` ${frame.partialPeriod}` : ""}`);
+  const chartHost = document.createElement("div");
+  chartHost.className = "trend-chart-host";
+  chartHost.id = "reservoir-trend-chart";
+  const key = document.createElement("ul");
+  key.className = "trend-key share-key";
+  for (const [swatch, label] of [
+    ["trend-key-bar", "Average storage for each month"],
+    ["trend-key-line", "Normal value"]
+  ] as const) {
+    const entry = document.createElement("li");
+    entry.className = "trend-key-entry";
+    const mark = document.createElement("span");
+    mark.className = swatch;
+    mark.setAttribute("aria-hidden", "true");
+    entry.append(mark, label);
+    key.append(entry);
+  }
+  const foot = document.createElement("footer");
+  foot.className = "share-foot";
+  foot.append(key, shareText("p", "share-source", frame.source));
+  main.replaceChildren(head, comparison, chartHost, foot);
+  const room = chartHost.getBoundingClientRect().height;
+  return renderTrendChart(chartHost, frame.months, frame.name, {
+    scale: SHARE_TREND_SCALE, table: false,
+    ...(room > 0 ? { height: room / SHARE_TREND_SCALE } : {})
+  });
+}
+
+/**
+ * The share frame: the name, the level with its datum, the reading date and
+ * the water-year chart, drawn large enough to read on a link card (ADR-141).
  * A reservoir with no reviewed level, or a history that cannot be read, gets
- * its name and one sentence, so the deploy never saves an empty frame as a
- * success: readiness says `drawn` only when the chart is on the page.
+ * the storage frame instead (ADR-154) and asks for no level history. The
+ * deploy never saves an empty frame as a success: `elevation` says `drawn`
+ * only when the level chart is on the page, and `share` says which frame is.
  */
 async function renderShare(payload: ReservoirPayload,
   state: Extract<ReservoirPageState, { status: "found" }>): Promise<void> {
   const { reservoir, label } = state;
   document.title = `${label} — Western Water Dashboard`;
-  const history = await loadElevationHistory().catch((error: unknown) => {
-    console.warn("The elevation history could not be read; the share frame is omitted:", error);
-    return null;
-  });
+  const history = !reservoir.elevation ? null
+    : await loadElevationHistory().catch((error: unknown) => {
+      console.warn("The elevation history could not be read; the level frame is omitted:", error);
+      return null;
+    });
   const entry = history?.reservoirs.find(
     (candidate) => candidate.source_station_id === reservoir.source_station_id);
   const chart = entry ? elevationChart(reservoir, entry) : null;
   const frame = chart ? shareFrame(reservoir, label, payload.generated_at) : null;
   if (!chart || !frame) {
+    const level = reservoir.elevation ? "card" : "none";
+    const storage = storageShareFrame({
+      reservoir, label, baseline: payload.default_baseline ?? "recent",
+      choices: baselineChoices(payload),
+      minimumYears: payload.climate_normals?.minimum_years ?? 0
+    });
+    if (storage && renderStorageShare(storage)) return finish("found", level, "storage");
+    main.classList.remove("reservoir-share-storage");
     const heading = document.createElement("h1");
     heading.className = "reservoir-name";
     heading.textContent = label;
-    main.replaceChildren(heading, note("No surface level can be shown for this reservoir."));
-    finish("found", reservoir.elevation ? "card" : "none");
-    return;
+    main.replaceChildren(heading, note("No storage chart can be shown for this reservoir."));
+    return finish("found", level, "none");
   }
 
-  const text = (tag: "p" | "h1", className: string, content: string): HTMLElement => {
-    const element = document.createElement(tag);
-    element.className = className;
-    element.textContent = content;
-    return element;
-  };
+  const text = shareText;
   const title = document.createElement("div");
   title.append(text("p", "share-site", "Western Water Dashboard"),
     text("h1", "reservoir-name", frame.name), text("p", "share-date", frame.readingDate));
@@ -564,7 +637,7 @@ async function renderShare(payload: ReservoirPayload,
   main.replaceChildren(head, chartHost, foot);
   const drawn = renderElevationYears(chartHost, chart,
     { scale: SHARE_CHART_SCALE, height: SHARE_CHART_HEIGHT });
-  finish("found", drawn ? "drawn" : "card");
+  finish("found", drawn ? "drawn" : "card", "level");
 }
 
 /**

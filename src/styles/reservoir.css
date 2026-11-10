@@ -250,6 +250,29 @@ html.share-view body { background: var(--app-surface); }
 .reservoir-share .share-key .elevation-swatch { inline-size: 32px; }
 .share-source { margin: 0; font-size: 20px; color: var(--app-muted); }
 
+/* The storage frame (ADR-154), for a reservoir with no level chart. Any
+ * published name must fit, so the name is smaller and may take two lines,
+ * and the chart takes the height the words leave. The percentage carries no
+ * class colour; the bars under it do (ADR-008). */
+.reservoir-share-storage .share-title { flex: 1 1 0; min-inline-size: 0; }
+.reservoir-share-storage .share-level { flex: none; }
+.reservoir-share-storage .reservoir-name {
+  font-size: 54px; white-space: normal; text-wrap: balance; overflow-wrap: anywhere;
+}
+.reservoir-share-storage .share-figure { color: var(--app-text); }
+.share-late, .share-stored, .share-comparison {
+  margin: 4px 0 0; font-size: 22px; line-height: 1.25; color: var(--app-text);
+}
+.share-comparison { margin: 0; }
+.reservoir-share-storage .trend-chart-host {
+  flex: 1 1 0; min-block-size: 0; overflow: hidden;
+}
+.reservoir-share-storage .share-foot { margin-block-start: 0; }
+.reservoir-share-storage .share-key { padding: 0; list-style: none; }
+.reservoir-share-storage .share-key .trend-key-bar,
+.reservoir-share-storage .share-key .trend-key-line { width: 32px; }
+.reservoir-share-storage .share-key .trend-key-bar { height: 14px; }
+
 /* A reservoir with a reviewed level leads with two tiles: the level above
  * its named datum beside percent full and its basis. One column on a phone,
  * where "3,531.69 feet" needs the whole width. The level carries no storage

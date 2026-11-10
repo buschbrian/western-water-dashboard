@@ -2,8 +2,7 @@ import { describe, expect, it } from "vitest";
 import { readPayload } from "./data/payload-fixture";
 import { SITE_ADDRESS } from "./reservoir-share-model";
 import { storageShareFrame } from "./reservoir-storage-share-model";
-import { baselineChoices } from "./state/baseline";
-import type { Reservoir } from "./types";
+import type { BaselineChoice, Reservoir } from "./types";
 
 const payload = readPayload();
 const { elevation: _level, ...withoutLevel } = payload.reservoirs[0]!;
@@ -18,10 +17,17 @@ const base: Reservoir = {
   }
 };
 
+const CHOICES: BaselineChoice[] = [
+  { id: "recent", label: "Recent years", period_label: "2015 through 2025",
+    start_year: 2015, end_year: 2025, note: "" },
+  { id: "climate", label: "Standard climate period", period_label: "1991 through 2020",
+    start_year: 1991, end_year: 2020, note: "" }
+];
+
 function frame(reservoir: Reservoir = base) {
   return storageShareFrame({
     reservoir, label: "Testwater, Utah", baseline: "climate",
-    choices: baselineChoices(payload), minimumYears: 10
+    choices: CHOICES, minimumYears: 10
   });
 }
 
@@ -42,6 +48,17 @@ describe("the storage share-frame model", () => {
     expect(comparison.value).toContain("80.0%");
     expect(comparison.value).toContain("30 years of 1991 through 2020");
     expect(comparison.substituted).toBe(false);
+    expect(frame()!.partialPeriod).toBeNull();
+  });
+
+  it("says when the normal draws on part of its period, without changing the years", () => {
+    const result = frame({ ...base, baselines: {
+      default: "climate", recent: null,
+      climate: { ...base.baselines!.climate!, sample_years: 12,
+        covers_full_period: false, first_obs: "2009-01-01" }
+    } })!;
+    expect(result.comparison.value).toContain("12 years of 1991 through 2020");
+    expect(result.partialPeriod).toBe("This reservoir has readings for part of that period.");
   });
 
   it("names a substitute period when the requested period has too few years", () => {

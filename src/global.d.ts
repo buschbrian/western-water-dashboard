@@ -418,6 +418,9 @@ interface Window {
      * only the card is, "none" for a reservoir with no reviewed level. Absent
      * on every state but "found". */
     elevation?: "drawn" | "card" | "none";
+    /** The picture view only (ADR-154): "level" for the reviewed-level frame,
+     * "storage" for the storage frame, "none" when neither could be drawn. */
+    share?: "level" | "storage" | "none";
   };
   /** The terminal-lakes page settled (ADR-119). `lakes` is what the payload
    * published and `rendered` what the page drew, so a page that loaded its

@@ -137,10 +137,11 @@ work from this wave is explicit:
 
 ### 5. A share frame for any reservoir
 
-Started locally: the storage-frame model and nine regression tests. It
-reuses the reservoir page's storage, comparison and monthly builders and is
-not yet connected to the rendered frame. Proposed ADR-154 covers this item
-and the permanent addresses in item 6.
+Implemented locally: the storage-frame model, its regression tests, and the
+rendered frame. `reservoir.html?name=...&view=share` draws the storage frame
+for a reservoir with no level chart. No picture is captured from it yet;
+that is item 6. Proposed ADR-154 covers this item and the permanent
+addresses in item 6.
 
 `shareFrame` in `src/reservoir-share-model.ts` returns nothing without a
 reviewed level. Add a storage frame at the same 1200 by 630: name, percent

@@ -88,12 +88,6 @@ than two providers gets a neutral credit line.
 
 #### The share frame and the share pages
 
-Wave 2 preparation adds the pure `reservoir-storage-share-model.ts` builder:
-storage with its date, percent full with its basis, the page's normal
-comparison, monthly points, late-data note and source. It has no runtime
-consumer yet; the share view below still follows ADR-141. Proposed ADR-154
-records the intended storage frame and permanent share-address ledger.
-
 `reservoir.html?name=...&view=share` (ADR-141) is the same page in a picture
 mode: one 1200 by 630 frame of the name, the surface level with its datum, the
 reading date and the water-year chart, drawn twice its size (300 px high) so
@@ -104,8 +98,20 @@ buschbrian.github.io/western-water-dashboard" (owner's display ruling U9,
 2026-10-31): a picture travels without its page. The committed fallback
 pictures carry the same source line. No navigation, no place chooser, no map, always the light
 theme, nothing stored. Its words come from the page's own level card
-(`reservoir-share-model.ts`). A reservoir with no reviewed level, or an
-unreadable history, signals `elevation` as `none` or `card`, never `drawn`.
+(`reservoir-share-model.ts`).
+
+A reservoir with no reviewed level, or an unreadable level history, gets the
+storage frame instead (proposed ADR-154), built by the pure
+`reservoir-storage-share-model.ts` from the page's own builders: percent full
+with its basis, stored water, the reading date and late-data note, the normal
+comparison with its period and years (and the sentence for a normal that
+covers part of its period), the twelve-month chart with its key, and the
+source line. It asks for no level history. The name may take two lines and
+the chart takes the height the words leave, so any published name fits. It
+signals `elevation` as `none` or `card`, never `drawn`; the readiness field
+`share` says which frame is on the page: `level`, `storage` or `none`. The
+deploy still photographs only the two level frames; pictures and pages for
+every reservoir are the next slice.
 
 The pictures behind a shared link are made from it. `public/share/` holds, for
 Lake Powell and Lake Mead, a hand-kept page (`lake-powell.html`) with the
