@@ -275,6 +275,65 @@ arcgis-scale-bar {
 .summary-stat span { color: var(--app-muted); font-size: .75rem; }
 .summary-stat strong { margin-block: .25rem; font-size: 1.5rem; font-variant-numeric: tabular-nums; }
 .summary-stat small { color: var(--app-muted); font-size: .75rem; line-height: 1.35; }
+/* The comparison with normal takes a row of its own under the two figures
+ * (ADR-153): a third column in a 21rem panel left each tile about 100px, and
+ * its note names a period and a count. */
+.summary-stat.summary-stat-wide {
+  grid-column: 1 / -1;
+  border-inline-start: 0;
+  border-block-start: 1px solid var(--app-border);
+}
+.summary-subtotal {
+  grid-column: 1 / -1;
+  min-width: 0;
+  padding: .75rem .5rem;
+  border-block-start: 1px solid var(--app-border);
+}
+.summary-subtotal[hidden] { display: none; }
+.summary-subtotal span { display: block; color: var(--app-muted); font-size: .75rem; }
+.summary-subtotal p { margin: .25rem 0 0; font-size: .875rem; line-height: 1.4; }
+
+/* The phone's figures over the map. Hidden on a wide screen, where the
+ * summary panel is open beside the map. Top centre, between the SDK's two
+ * control lanes (the 56px gutter on each side) and clear of the legend at the
+ * bottom. A tap card docked to the top takes the same band, so the control
+ * steps aside while that card is open rather than sitting under it. */
+.map-summary { display: none; }
+@media (max-width: 47.99rem) {
+  .map-summary:not([hidden]) {
+    position: absolute;
+    z-index: 4;
+    inset-block-start: .75rem;
+    inset-inline: 3.5rem;
+    display: grid;
+    gap: .1rem;
+    align-content: center;
+    justify-items: center;
+    min-block-size: 2.75rem;
+    min-width: 0;
+    padding: .3rem .6rem;
+    color: var(--app-text);
+    font: inherit;
+    font-size: .8125rem;
+    line-height: 1.3;
+    text-align: center;
+    background: color-mix(in srgb, var(--app-surface-raised) 92%, transparent);
+    border: 1px solid var(--app-border);
+    border-radius: .3rem;
+    box-shadow: 0 .15rem .5rem rgb(20 45 56 / 14%);
+    cursor: pointer;
+  }
+  .map-summary span { min-width: 0; overflow-wrap: anywhere; }
+  .map-summary span:first-child { font-weight: 700; }
+  .map-summary:focus-visible {
+    outline: 2px solid var(--app-accent);
+    outline-offset: 2px;
+  }
+  .map-hover.is-docked:not(.is-docked-end):not([hidden]) ~ .map-summary { display: none; }
+  /* A map notice (slow start, another background) takes the same top band
+   * and is the more urgent message; the sheet still holds every figure. */
+  .map-stage:has(#map-host > calcite-notice) > .map-summary { display: none; }
+}
 
 /* The map key. Two lists: the storage classes, which are a scale and read
  * as one block, and the three symbols that are not a class, which each need
@@ -423,6 +482,13 @@ arcgis-scale-bar {
  * to an ellipsis: the reader needs all of it to tell two reservoirs apart. */
 .list-name { min-width: 0; overflow-wrap: anywhere; }
 .list-percent { font-variant-numeric: tabular-nums; font-size: .8125rem; }
+.list-figures { display: grid; justify-items: end; }
+.list-normal {
+  color: var(--app-muted);
+  font-size: .6875rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
 .list-late {
   padding: .0625rem .3125rem;
   border-radius: .625rem;

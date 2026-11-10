@@ -22,7 +22,8 @@ import { formatAcreFeet, formatDate, formatPercent } from "../viz/format";
 import { monthLabel } from "../data/months";
 
 /** Which columns hold numbers, so the cells and headings align right. */
-const NUMERIC: ReadonlySet<SortKey> = new Set<SortKey>(["percent", "storage", "capacity"]);
+const NUMERIC: ReadonlySet<SortKey> =
+  new Set<SortKey>(["percent", "normal", "storage", "capacity"]);
 
 const ARIA_SORT: Record<"asc" | "desc", "ascending" | "descending"> = {
   asc: "ascending",
@@ -43,6 +44,9 @@ function readingText(reading: string): string {
 function cellText(row: TableRow, key: SortKey): string {
   switch (key) {
     case "percent": return formatPercent(row.percent);
+    /* Empty, not a dash, where the reservoir has no normal for the chosen
+     * period: nothing is said rather than another period's figure. */
+    case "normal": return row.percentOfNormal === null ? "" : formatPercent(row.percentOfNormal);
     case "storage": return `${formatAcreFeet(row.storageAf)} acre-feet`;
     case "capacity": return `${formatAcreFeet(row.capacityAf)} acre-feet`;
     case "area": return row.areaName;
@@ -50,7 +54,15 @@ function cellText(row: TableRow, key: SortKey): string {
   }
 }
 
-function headingCell(key: SortKey, sort: TableSort, onSort: (key: SortKey) => void): HTMLElement {
+/* The comparison column names its years, because two periods are published
+ * and the number does not say which one it is (ADR-041). */
+function headingText(key: SortKey, normalPeriod: string | null): string {
+  return key === "normal" && normalPeriod !== null
+    ? `${COLUMN_LABELS[key]}, ${normalPeriod}` : COLUMN_LABELS[key];
+}
+
+function headingCell(key: SortKey, sort: TableSort, onSort: (key: SortKey) => void,
+  normalPeriod: string | null): HTMLElement {
   const cell = document.createElement("th");
   cell.scope = "col";
   if (NUMERIC.has(key)) cell.classList.add("table-number");
@@ -63,7 +75,7 @@ function headingCell(key: SortKey, sort: TableSort, onSort: (key: SortKey) => vo
   button.className = "table-sort";
   button.dataset.sort = key;
   const label = document.createElement("span");
-  label.textContent = COLUMN_LABELS[key];
+  label.textContent = headingText(key, normalPeriod);
   /* The arrow is decorative -- `aria-sort` on the cell is what carries the
    * fact -- but the button's own words have to say what pressing it does,
    * and "Reservoir" alone does not. */
@@ -151,7 +163,10 @@ export function renderTable(
 
   const head = document.createElement("thead");
   const headRow = document.createElement("tr");
-  for (const key of SORT_KEYS) headRow.append(headingCell(key, sort, callbacks.onSort));
+  const normalPeriod = rows[0]?.normalPeriod ?? null;
+  for (const key of SORT_KEYS) {
+    headRow.append(headingCell(key, sort, callbacks.onSort, normalPeriod));
+  }
   const reading = document.createElement("th");
   reading.scope = "col";
   /* Not sortable, and deliberately: it holds a date for the newest reading

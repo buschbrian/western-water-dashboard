@@ -109,7 +109,8 @@ The four different scopes, the hydrologic level, and what a link carries.
   [ADR-105](ADR-105-open-on-the-areas-the-map-draws.md),
   [ADR-108](ADR-108-apply-reviewed-waterbody-points-without-refreshing-readings.md),
   [ADR-109](ADR-109-remove-scofields-rejected-dam-point.md),
-  [ADR-149](ADR-149-let-the-weekly-storage-figures-follow-every-filter.md)
+  [ADR-149](ADR-149-let-the-weekly-storage-figures-follow-every-filter.md),
+  [ADR-153](ADR-153-state-the-maps-storage-against-normal-and-subtotal-the-filtered-rows.md)
 - Boundary sourcing: [ADR-024](ADR-024-use-full-resolution-watersheds-for-snow-sites.md),
   [ADR-034](ADR-034-hosted-boundary-layers-with-a-deadline.md),
   [ADR-037](ADR-037-refetch-the-boundaries-at-the-resolution-the-source-stops-adding.md)
@@ -191,7 +192,8 @@ ADR-008, then ADR-032 and ADR-061.**
   [ADR-132](ADR-132-draw-storage-charts-when-they-near-the-screen.md),
   [ADR-133](ADR-133-serve-atkinson-hyperlegible-next-from-this-site.md),
   [ADR-142](ADR-142-show-the-weeks-change-in-mountain-soil-moisture.md),
-  [ADR-151](ADR-151-keep-reader-context-with-the-current-figures.md)
+  [ADR-151](ADR-151-keep-reader-context-with-the-current-figures.md),
+  [ADR-153](ADR-153-state-the-maps-storage-against-normal-and-subtotal-the-filtered-rows.md)
 - Superseded, read only for history: ADR-007, ADR-016, ADR-022, ADR-025,
   ADR-027, ADR-030, ADR-043, ADR-054
 - Current architecture: [`docs/architecture/frontend.md`](../architecture/frontend.md)
@@ -301,7 +303,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-092](ADR-092-separate-drought-place-controls-from-presentation-controls.md) | Separate drought place controls from presentation controls | Accepted; layer-control placement superseded by ADR-093 |
 | [ADR-093](ADR-093-align-drought-layer-actions-and-summary-cards.md) | Align drought layer actions and summary cards | Accepted; supersedes ADR-092 only for layer-control placement |
 | [ADR-094](ADR-094-order-snowpack-place-controls-and-separate-site-options.md) | Order Snowpack place controls and separate site options | Accepted; supersedes ADR-084's snow presentation and ADR-085's coarser rows |
-| [ADR-095](ADR-095-order-storage-map-place-filters-from-state-to-area.md) | Order Storage map place filters from state to area | Accepted; supersedes ADR-084 for the Storage map |
+| [ADR-095](ADR-095-order-storage-map-place-filters-from-state-to-area.md) | Order Storage map place filters from state to area | Accepted; supersedes ADR-084 for the Storage map; amended by ADR-153 (a subtotal for the filtered rows beside the unchanged total) |
 | [ADR-096](ADR-096-publish-point-location-without-publishing-new-geography.md) | Publish point location without publishing new geography | Accepted; HUC path from payload rosters, visible table rows exported as WGS84 points |
 | [ADR-097](ADR-097-filter-snow-by-the-committed-upstream-set.md) | Filter snow by the committed upstream set | Accepted; extends ADR-077 and keeps ADR-081's estimator |
 | [ADR-098](ADR-098-use-a-pipeline-only-key-for-the-usgs-ogc-service.md) | Use a pipeline-only key for the USGS OGC service | Accepted; supersedes ADR-080 and narrows ADR-004 |
@@ -357,6 +359,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-149](ADR-149-let-the-weekly-storage-figures-follow-every-filter.md) | Let the weekly storage figures follow every filter | Accepted; supersedes the ADR-011 scope-versus-filter line for the storage charts' weekly card; its storage figures follow the state, county, search, reporting and storage-class filters as well as both switches and the drainage area; snow and drought stay whole-region; the scope line says "N of M" |
 | [ADR-150](ADR-150-read-the-daily-series-before-calling-a-station-quiet-or-a-high-a-spike.md) | Read the daily series before calling a station quiet or a high a spike | Accepted; extends ADR-116; the California audit screens the daily series where the monthly one is silent, a monthly high the daily reading confirms is not a spike, and the refresh reports a record high above the full level or a record low far below its neighbours, removing nothing; ADR-148 and ADR-149 are other records |
 | [ADR-151](ADR-151-keep-reader-context-with-the-current-figures.md) | Keep reader context with the current figures | Accepted; current snow place sentence, regional weekly headings, reviewed reservoir lead and share context, split soil lists, precipitation reference and reporter guide; amends ADR-135 and ADR-142 presentation only |
+| [ADR-153](ADR-153-state-the-maps-storage-against-normal-and-subtotal-the-filtered-rows.md) | State the map's storage against normal, and subtotal the filtered rows | Accepted; amends ADR-095; a "Compared with normal" tile naming its period, shared with the storage charts' sentence; Compare against changes the summary; the headline stays the wider total and a labelled subtotal covers the filtered rows; a past month has no comparison; a phone control over the map; a per-reservoir list figure, table column (`sort=normal-*`) and two appended CSV columns with GeoJSON properties |
 
 ## Relationship to the historical journal
 

@@ -21,6 +21,7 @@ import {
   type SortKey,
   type TableRow
 } from "./table";
+import { percentOfNormalFor } from "./baseline";
 import type { NullableNumber, Reservoir } from "../types";
 
 const payload = readPayload();
@@ -113,7 +114,7 @@ describe("the table's order", () => {
     const row = (name: string, percent: NullableNumber): TableRow => ({
       name, reservoirName: name, state: "", waterbodyStates: [],
       sourceIdentifier: name, huc6: "140100", lat: 40, lon: -110,
-      percent, storageAf: percent, capacityAf: null,
+      percent, percentOfNormal: null, normalPeriod: null, storageAf: percent, capacityAf: null,
       areaName: "", late: false, reading: "2026-08-14"
     });
     const source = [row("A", null), row("B", 10), row("C", 90)];
@@ -128,7 +129,7 @@ describe("the table's order", () => {
     const tie = (name: string): TableRow => ({
       name, reservoirName: name, state: "", waterbodyStates: [],
       sourceIdentifier: name, huc6: "140100", lat: 40, lon: -110,
-      percent: 50, storageAf: 50, capacityAf: 100,
+      percent: 50, percentOfNormal: null, normalPeriod: null, storageAf: 50, capacityAf: 100,
       areaName: "Jordan", late: false, reading: "2026-08-14"
     });
     const sorted = [tie("Zebra"), tie("Alpha"), tie("Middle")]
@@ -220,5 +221,69 @@ describe("a row for a month whose full level was not today's", () => {
     expect(rowFor(last.month)?.capacityAf).toBe(40000);
     // With no month chosen the row is about today, which is the limit.
     expect(rowFor(null)?.capacityAf).toBe(40000);
+  });
+});
+
+/* The comparison column (ADR-153): the reader's period or nothing. */
+describe("the compared-with-normal column", () => {
+  const normal = { baseline: "climate" as const, periodLabel: "1991 through 2020",
+    minimumYears: payload.climate_normals?.minimum_years ?? 0 };
+  const rowsWithNormal = (sort = DEFAULT_SORT, month: string | null = null): TableRow[] =>
+    tableRows({ reservoirs, filter: ALL_RESERVOIRS, sort, month,
+      percentOf: headlinePercent, normal });
+
+  it("takes each reservoir's figure for the chosen period and never the other", () => {
+    const rows = rowsWithNormal();
+    for (const row of rows) {
+      const reservoir = reservoirs.find(
+        (candidate) => reservoirLabel(candidate, reservoirs) === row.name) as Reservoir;
+      expect(row.percentOfNormal)
+        .toBe(percentOfNormalFor(reservoir, "climate", normal.minimumYears));
+      expect(row.normalPeriod).toBe("1991 through 2020");
+    }
+    /* A reservoir with no standard-period normal stays empty even where the
+     * recent period has one. */
+    const missing = reservoirs.find((reservoir) =>
+      percentOfNormalFor(reservoir, "climate", normal.minimumYears) === null
+      && percentOfNormalFor(reservoir, "recent", normal.minimumYears) !== null);
+    if (missing) {
+      const row = rows.find((candidate) =>
+        candidate.name === reservoirLabel(missing, reservoirs));
+      expect(row?.percentOfNormal).toBeNull();
+    }
+  });
+
+  it("makes no comparison on a past month", () => {
+    const month = reservoirs.flatMap((reservoir) => reservoir.monthly).at(-1)?.month ?? null;
+    expect(month).not.toBeNull();
+    for (const row of rowsWithNormal(DEFAULT_SORT, month)) {
+      expect(row.percentOfNormal).toBeNull();
+      expect(row.normalPeriod).toBeNull();
+    }
+  });
+
+  it("makes no comparison when no period is given", () => {
+    expect(rowsFor().every((row) => row.percentOfNormal === null
+      && row.normalPeriod === null)).toBe(true);
+  });
+
+  it("sorts by the comparison with empty rows last both ways", () => {
+    for (const direction of ["asc", "desc"] as const) {
+      const values = rowsWithNormal({ key: "normal", direction })
+        .map((row) => row.percentOfNormal);
+      const present = values.filter((value): value is number => value !== null);
+      const firstEmpty = values.indexOf(null);
+      if (firstEmpty >= 0) expect(values.slice(firstEmpty).every((value) => value === null)).toBe(true);
+      expect(present).toEqual([...present].sort((a, b) =>
+        direction === "asc" ? a - b : b - a));
+    }
+  });
+
+  /* Added to the URL values without changing any existing one. */
+  it("reads and writes the new sort value and keeps the old ones", () => {
+    expect(sortToken({ key: "normal", direction: "desc" })).toBe("normal-desc");
+    expect(sortFromToken("normal-asc")).toEqual({ key: "normal", direction: "asc" });
+    expect(sortFromToken("percent-desc")).toEqual({ key: "percent", direction: "desc" });
+    expect(sortFromToken("area-asc")).toEqual({ key: "area", direction: "asc" });
   });
 });

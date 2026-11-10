@@ -9,7 +9,8 @@ import "@esri/calcite-components/components/calcite-option";
 import "@esri/calcite-components/components/calcite-select";
 
 import { loadReservoirs } from "./data/load";
-import { baselineChoices, periodLabel } from "./state/baseline";
+import { baselineChoices } from "./state/baseline";
+import { describeUsualStorage } from "./state/storage-summary";
 import { loadDroughtCoverage } from "./data/drought-load";
 import { loadSnowpack } from "./data/snow-load";
 import {
@@ -217,7 +218,6 @@ function updateKpis(
   });
   const signed = (value: number): string =>
     `${value >= 0 ? "+" : ""}${formatAcreFeet(value)}`;
-  const years = periodLabel(period.choices, rollup.normalBaseline);
   const { coverage } = rollup;
   const sinceLow = describeSinceLowTotal(rollup.sinceLow);
   const values: Record<string, string> = {
@@ -234,10 +234,9 @@ function updateKpis(
      * number a drought reader is actually looking for. The years are named
      * because two periods are published and they do not agree (ADR-041). */
     normal: formatPercent(rollup.percentOfNormal),
-    "normal-note": rollup.normalCovers === rollup.count
-      ? `Of the usual storage for this date, ${years}`
-      : `Of the usual storage for this date, ${years}, for ${rollup.normalCovers} `
-        + `of ${rollup.count} reservoirs`,
+    /* Written by the helper the storage map's tile uses too, so the two
+     * pages cannot say one comparison two ways (ADR-153). */
+    "normal-note": describeUsualStorage(rollup, period.choices),
     year: signed(rollup.change365dAf),
     change: `Acre-feet. 30 days: ${signed(rollup.change30dAf)}`,
     "since-low": sinceLow.value,

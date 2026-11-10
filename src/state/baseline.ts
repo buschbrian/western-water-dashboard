@@ -87,6 +87,23 @@ export function readBaseline(
   };
 }
 
+/**
+ * One reservoir's percent of normal for exactly the period asked, or null.
+ *
+ * The same rule the combined comparison uses: a period with too few years is
+ * no comparison. Unlike `activeBaseline` this never takes the other period,
+ * because a table column or a list figure has no room to say it swapped
+ * (ADR-041). The details panel is where a substitution is shown and named.
+ */
+export function percentOfNormalFor(
+  reservoir: Reservoir, id: BaselineId, minimumYears = 0
+): number | null {
+  const found = readBaseline(reservoir, id);
+  if (!found || found.sample_years < minimumYears) return null;
+  const share = found.pct_of_normal;
+  return share !== null && Number.isFinite(share) ? share : null;
+}
+
 export interface ActiveBaseline {
   /** The period the reader asked for. */
   requested: BaselineId;

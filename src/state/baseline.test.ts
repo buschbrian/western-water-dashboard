@@ -11,7 +11,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   activeBaseline, baselineChoices, baselineCoverage, baselineRowLabel,
-  describeBaseline, isBaselineId, periodLabel, readBaseline
+  describeBaseline, isBaselineId, percentOfNormalFor, periodLabel, readBaseline
 } from "./baseline";
 import type {
   Baseline, BaselineChoice, Reservoir, ReservoirPayload
@@ -246,5 +246,29 @@ describe("what the control offers", () => {
       })
     ];
     expect(baselineCoverage(thin, "climate", 10)).toEqual({ covered: 1, total: 2 });
+  });
+});
+
+/* The table column and the list figure (ADR-153) have no room to say they
+ * swapped periods, so they never do. */
+describe("one reservoir's percent of normal for exactly one period", () => {
+  it("answers for the period asked and refuses the other", () => {
+    const young = reservoir({
+      baselines: { recent: baseline({ pct_of_normal: 72 }), climate: null, default: "climate" }
+    } as Partial<Reservoir>);
+    expect(percentOfNormalFor(young, "recent", 10)).toBe(72);
+    expect(percentOfNormalFor(young, "climate", 10)).toBeNull();
+  });
+
+  it("refuses a period with too few years", () => {
+    const thin = reservoir({
+      baselines: {
+        recent: baseline({ pct_of_normal: 72 }),
+        climate: baseline({ pct_of_normal: 60, sample_years: 3 }),
+        default: "climate"
+      }
+    } as Partial<Reservoir>);
+    expect(percentOfNormalFor(thin, "climate", 10)).toBeNull();
+    expect(percentOfNormalFor(thin, "climate", 0)).toBe(60);
   });
 });

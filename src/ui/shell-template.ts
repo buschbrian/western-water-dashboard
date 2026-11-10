@@ -40,6 +40,21 @@ function panelContents(suffix: string): string {
           <span>Reservoirs</span><strong data-value="count">—</strong>
           <small data-value="updated">—</small>
         </div>
+        <!-- Whether that is low for the date (ADR-153). The note names the
+             years the figure was measured against, and the Compare against
+             control below changes them. Its own row, so a long note cannot
+             squeeze the two figures above. -->
+        <div class="summary-stat summary-stat-wide">
+          <span>Compared with normal</span><strong data-value="normal">—</strong>
+          <small data-value="normal-note">—</small>
+        </div>
+        <!-- The rows the analysis controls leave, totalled on their own. The
+             figures above stay the wider total (ADR-029, ADR-095); this
+             says what the filtered rows add up to beside it. -->
+        <div class="summary-subtotal" data-summary="subtotal" hidden>
+          <span>Subtotal for the filtered reservoirs</span>
+          <p data-value="subtotal"></p>
+        </div>
       </section>
       <!-- Before the list, not after it. The list scrolls inside its own
            box, so controls placed below it sat behind a nested scroller --
@@ -195,6 +210,12 @@ export function renderShell(root: HTMLElement): void {
           <div class="legend-host" data-legend="map"></div>
         </details>
         <div id="map-hover" class="map-hover" aria-hidden="true" hidden></div>
+        <!-- On a phone the summary is a closed sheet, so the map showed no
+             figure at all. This one control carries the place, the count and
+             both percentages, and opens the sheet. Shown only below 48rem,
+             and after the hover card so a card docked at the top can hide
+             it rather than sit on it. -->
+        <button id="map-summary" class="map-summary" type="button" hidden></button>
       </section>
 
       <!-- The numbers behind the circles, under the map rather than beside

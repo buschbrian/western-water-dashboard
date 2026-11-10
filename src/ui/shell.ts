@@ -123,12 +123,19 @@ function syncResponsiveShell(): void {
   reportToggle(SURFACE_TOGGLES.detail, isOpen(activeSurface("detail")));
 }
 
+/** Which control opened the storage summary, so closing it returns there. */
+let startOpener: "controls-toggle" | "map-summary" = "controls-toggle";
+
 export function wirePanels(): void {
   const startSheet = elementById<ToggleSurface>("start-sheet");
   const detailSheet = elementById<ToggleSurface>("detail-sheet");
   startSheet.addEventListener("calciteSheetClose", () => {
     reportToggle(SURFACE_TOGGLES.start, false);
-    void elementById<CalciteFocusable>("controls-toggle").setFocus();
+    if (startOpener === "map-summary") {
+      document.getElementById("map-summary")?.focus({ preventScroll: true });
+    } else {
+      void elementById<CalciteFocusable>("controls-toggle").setFocus();
+    }
   });
   detailSheet.addEventListener("calciteSheetClose", () => {
     reportToggle(SURFACE_TOGGLES.detail, false);
@@ -144,6 +151,13 @@ export function wirePanels(): void {
     });
   });
   elementById("controls-toggle").addEventListener("click", () => {
+    startOpener = "controls-toggle";
+    setSurfaceOpen("start", !isOpen(activeSurface("start")));
+  });
+  /* The phone's figures over the map open the same summary the header action
+   * does. Focus goes back to whichever of the two opened it. */
+  document.getElementById("map-summary")?.addEventListener("click", () => {
+    startOpener = "map-summary";
     setSurfaceOpen("start", !isOpen(activeSurface("start")));
   });
   elementById("detail-toggle").addEventListener("click", () => {
@@ -364,6 +378,8 @@ export function setDataState(state: DataState): void {
 export interface ReservoirListEntry {
   name: string;
   percent: string;
+  /** Percent of normal for the chosen period, in words, or empty for none. */
+  normal: string;
   color: string;
   late: boolean;
 }
@@ -395,8 +411,19 @@ export function setReservoirList(
       const percent = document.createElement("span");
       percent.className = "list-percent";
       percent.textContent = entry.percent;
+      /* The comparison with normal sits under the percentage as a second,
+       * smaller figure: one grid cell, so the row keeps its columns. */
+      const figures = document.createElement("span");
+      figures.className = "list-figures";
+      figures.append(percent);
+      if (entry.normal) {
+        const normal = document.createElement("span");
+        normal.className = "list-normal";
+        normal.textContent = entry.normal;
+        figures.append(normal);
+      }
 
-      button.append(swatch, name, percent);
+      button.append(swatch, name, figures);
       if (entry.late) {
         const late = document.createElement("span");
         late.className = "list-late";
@@ -790,7 +817,8 @@ export function revealDetail(): void {
 }
 
 export function setSummary(
-  values: Record<"percent" | "storage" | "count" | "updated" | "scope", string>
+  values: Record<
+    "percent" | "storage" | "count" | "updated" | "scope" | "normal" | "normal-note", string>
 ): void {
   for (const [name, value] of Object.entries(values)) {
     document.querySelectorAll<HTMLElement>(`[data-value="${name}"]`)
@@ -798,4 +826,42 @@ export function setSummary(
   }
   document.querySelectorAll<HTMLElement>(".summary")
     .forEach((element) => { element.hidden = false; });
+}
+
+/**
+ * The filtered rows' subtotal under the headline, or nothing when the
+ * analysis controls leave every row (ADR-153). Both panel copies follow.
+ */
+export function setSubtotal(text: string | null): void {
+  document.querySelectorAll<HTMLElement>('[data-summary="subtotal"]').forEach((element) => {
+    element.hidden = text === null;
+  });
+  document.querySelectorAll<HTMLElement>('[data-value="subtotal"]').forEach((element) => {
+    element.textContent = text ?? "";
+  });
+}
+
+/**
+ * The phone's one control over the map. CSS shows it only below 48rem, where
+ * the summary is a closed sheet and the map otherwise shows no figure.
+ */
+export function setMapSummary(text: { lines: readonly string[]; action: string } | null): void {
+  const button = document.getElementById("map-summary");
+  if (!button) return;
+  button.hidden = text === null;
+  if (text === null) return;
+  /* The name is the text itself. Each line is followed by a full stop only a
+   * screen reader meets, so the lines are read as sentences, and the action
+   * comes last. */
+  const unseen = (words: string): HTMLElement => {
+    const span = document.createElement("span");
+    span.className = "visually-hidden";
+    span.textContent = words;
+    return span;
+  };
+  button.replaceChildren(...text.lines.flatMap((line) => {
+    const span = document.createElement("span");
+    span.textContent = line;
+    return [span, unseen(". ")];
+  }), unseen(text.action));
 }

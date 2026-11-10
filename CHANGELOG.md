@@ -13,6 +13,20 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
+- **The storage map compares its storage with normal** (ADR-153). A
+  "Compared with normal" tile gives the percent of the usual storage for this
+  date and names the period it used, in the same words as the storage charts.
+  Compare against now changes the summary, not only the details panel. When
+  an analysis control narrows the rows, a labelled subtotal gives their own
+  count, percent full and comparison, while the headline stays the wider
+  total. On a phone, one control over the map shows the place and its figures,
+  with the subtotal on a third line when there is one, and opens the summary.
+  The list, the table (sortable, `sort=normal-asc`)
+  and its CSV and GeoJSON files carry each reservoir's comparison for the
+  chosen period: the CSV gains "Compared with normal (percent)" and "Normal
+  period" after its earlier columns, and the GeoJSON `percent_of_normal` and
+  `normal_period`.
+
 - **A page for reporters.** `reporters.html` says how to cite a figure (the
   provider first, then this site, with the reading date and a link to the page
   that shows it), what the main figures mean, and what they cannot support: no
