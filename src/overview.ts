@@ -24,6 +24,8 @@ import {
 } from "./data/opening-scope";
 import { weeklyScopeText, weeklySummary } from "./weekly-model";
 import { describeWeek } from "./viz/weekly-summary";
+import { weeklyFigures } from "./state/figures-text";
+import { createCopyFigures, type CopyFigures } from "./ui/copy-figures";
 import { downloadCsv } from "./data/download";
 import { overviewCsv, overviewCsvFilename } from "./data/export";
 import {
@@ -1149,6 +1151,8 @@ function weeklyPayloads(): Promise<[SnowpackPayload | null, DroughtCoveragePaylo
   return weeklyContext;
 }
 
+let weeklyCopy: CopyFigures | null = null;
+
 async function renderWeekly(reservoirs: readonly Reservoir[],
   scoped: readonly Reservoir[]): Promise<void> {
   const card = document.querySelector<HTMLElement>("#weekly-summary");
@@ -1164,7 +1168,8 @@ async function renderWeekly(reservoirs: readonly Reservoir[],
   const scopeLine = document.querySelector<HTMLElement>('[data-weekly="scope"]');
   if (scopeLine) scopeLine.textContent = weeklyScopeText(reservoirs, scoped);
 
-  const sections = describeWeek(weeklySummary(reservoirs, snow, drought));
+  const summary = weeklySummary(reservoirs, snow, drought);
+  const sections = describeWeek(summary);
   host.replaceChildren(...sections.map((section) => {
     const block = document.createElement("section");
     block.className = "weekly-section";
@@ -1178,6 +1183,11 @@ async function renderWeekly(reservoirs: readonly Reservoir[],
     }
     return block;
   }));
+  /* The storage sentences again, for copying: the same rows as the card, so
+   * a filter that changes the card changes the text. */
+  weeklyCopy ??= createCopyFigures({ id: "weekly-figures", level: 3 });
+  if (!weeklyCopy.element.isConnected) host.after(weeklyCopy.element);
+  weeklyCopy.update(weeklyFigures(summary, reservoirs, scoped));
   card.setAttribute("aria-busy", "false");
 
   window.__overviewReady = {

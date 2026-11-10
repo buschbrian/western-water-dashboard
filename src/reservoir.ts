@@ -46,6 +46,8 @@ import {
 import {
   baselineChoices
 } from "./state/baseline";
+import { reservoirFigures } from "./state/figures-text";
+import { createCopyFigures } from "./ui/copy-figures";
 import { reservoirTemplate } from "./ui/reservoir-template";
 import { upstreamSection } from "./ui/upstream-section";
 import { setupPlaceChooser } from "./ui/opening-splash";
@@ -353,6 +355,20 @@ async function renderFound(payload: ReservoirPayload,
   }
   children.push(headlineBlock, answerTiles(answerRows, (label) =>
     label === view.baseline.label || label === "Since the 4-month low"));
+
+  // The same figures as sentences, with their dates and source, to copy.
+  const figures = reservoirFigures({
+    reservoir, label, runDate: payload.generated_at,
+    baseline: payload.default_baseline ?? "recent", choices: baselineChoices(payload),
+    minimumYears: payload.climate_normals?.minimum_years ?? 0
+  });
+  if (figures) {
+    const copy = createCopyFigures({
+      id: "reservoir-figures", level: 2, headingClass: "reservoir-subhead"
+    });
+    copy.update(figures);
+    children.push(copy.element);
+  }
 
   // The twelve months, drawn by the same SVG builder the details panel uses.
   const chartHost = document.createElement("div");

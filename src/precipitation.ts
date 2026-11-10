@@ -61,11 +61,14 @@ wireTheme();
 void setupPlaceChooser();
 setupPlaceSearch("precipitation");
 
-function placeSummary(place: SnowPlace): string {
+function placeName(place: SnowPlace): string {
   const state = place.scope.selection.state !== "all" ? stateName(place.scope.selection.state) : null;
   const area = openingAreaName(place.scope);
-  const where = state && area ? `${state}, in ${area}` : state ?? area ?? "the whole region";
-  return `Showing precipitation for ${where}: ${place.stations.length} measurement sites.`;
+  return state && area ? `${state}, in ${area}` : state ?? area ?? "the whole region";
+}
+
+function placeSummary(place: SnowPlace): string {
+  return `Showing precipitation for ${placeName(place)}: ${place.stations.length} measurement sites.`;
 }
 
 function navigateWithPlace(selection: OpeningSelection): void {
@@ -130,7 +133,7 @@ function renderPage(place: SnowPlace, rosters: OpeningRosters, level: number): v
   const card = createPrecipitationCard(section, () => {
     mapSection?.update(card.recent.window, card.recent.totals);
     publishReady();
-  }, { siteHref, recentMap: true });
+  }, { siteHref, recentMap: true, copyFigures: { where: placeName(place) } });
   const publishReady = (): void => {
     window.__precipReady = {
       level,

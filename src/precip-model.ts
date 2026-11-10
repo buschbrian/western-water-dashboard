@@ -295,3 +295,20 @@ export function ordinal(value: number): string {
   if (tens >= 11 && tens <= 13) return `${value}th`;
   return `${value}${["th", "st", "nd", "rd"][value % 10] ?? "th"}`;
 }
+
+/** Inches as the card writes them: "4.1 in". */
+export function formatInches(value: number): string {
+  return `${value.toFixed(1)} in`;
+}
+
+/**
+ * How far the headline is from the median for its date, to the tenth of an
+ * inch the card prints. Under half a tenth it is the same: the gauges do not
+ * measure a smaller step.
+ */
+export function medianDifference(headline: Pick<PrecipitationHeadline, "inches" | "medianInches">):
+  { inches: number; direction: "more" | "less" | "same" } {
+  const difference = headline.inches - headline.medianInches;
+  if (Math.abs(difference) < 0.05) return { inches: 0, direction: "same" };
+  return { inches: Math.abs(difference), direction: difference > 0 ? "more" : "less" };
+}

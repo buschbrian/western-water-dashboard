@@ -6257,6 +6257,170 @@ for (const failure of [
 }
 
 /*
+ * "Copy these figures": the sentences a reporter can copy, built by code from
+ * what the page shows. What only a browser can answer: the block is on the
+ * reservoir page with its name, its reading date as the page writes it and
+ * the site's address; the copy button confirms and then returns; the picture
+ * view has no block; and the storage charts and precipitation pages carry
+ * one. Compared with the page's own text, never with a literal number.
+ */
+{
+  const SITE_ADDRESS = "buschbrian.github.io/western-water-dashboard";
+  const context = await newPageContext(browser, VIEWPORTS[0]);
+  await context.grantPermissions(["clipboard-read", "clipboard-write"], { origin: URL });
+  const tab = await context.newPage();
+  const errors = [];
+  tab.on("pageerror", (error) => errors.push(String(error)));
+  watchConsoleErrors(tab, errors);
+  const label = "Copy these figures";
+  console.log(`\n=== ${label}`);
+  const readBlock = (scope) => tab.evaluate((root) => {
+    const block = document.querySelector(`${root} [data-copy-figures="block"]`);
+    const labelledBy = block?.getAttribute("aria-labelledby") ?? "";
+    return {
+      present: Boolean(block),
+      hidden: block?.hidden ?? null,
+      heading: block?.querySelector("h2, h3")?.textContent ?? "",
+      labelled: labelledBy ? (document.getElementById(labelledBy)?.textContent ?? "") : "",
+      lines: [...(block?.querySelectorAll('[data-copy-figures="text"] p') ?? [])]
+        .map((line) => line.textContent ?? ""),
+      buttons: [...(block?.querySelectorAll("button") ?? [])].map((button) => ({
+        text: button.textContent ?? "", height: button.getBoundingClientRect().height })),
+      readingDate: [...document.querySelectorAll("#reservoir-main .reservoir-tiles > div")]
+        .find((tile) => tile.querySelector("dt")?.textContent === "Reading date")
+        ?.querySelector("dd")?.textContent ?? "",
+      afterTiles: (() => {
+        const tiles = document.querySelector("#reservoir-main .reservoir-tiles");
+        return Boolean(block && tiles
+          && (tiles.compareDocumentPosition(block) & Node.DOCUMENT_POSITION_FOLLOWING));
+      })()
+    };
+  }, scope);
+  try {
+    for (const name of ["Lake Powell", "Flaming Gorge"]) {
+      const row = payload.reservoirs.find((reservoir) => reservoir.name === name);
+      const expectsLevel = Boolean(elevationRoster[row?.source_station_id]);
+      await tab.goto(`${URL}reservoir.html?name=${encodeURIComponent(name)}`,
+        { waitUntil: "load", timeout: 90000 });
+      await tab.waitForFunction(() => window.__reservoirReady?.status === "found",
+        null, { timeout: 90000 });
+      const block = await readBlock("#reservoir-main");
+      const text = block.lines.join("\n");
+      check(block.present && block.hidden === false && block.heading === "Copy these figures"
+        && block.labelled === "Copy these figures" && block.afterTiles,
+      `${label} (${name}): the block is missing, hidden, unnamed or not after the answer tiles `
+        + JSON.stringify({ present: block.present, hidden: block.hidden, heading: block.heading,
+          labelled: block.labelled, afterTiles: block.afterTiles }));
+      check(text.includes(name) && block.readingDate !== "" && text.includes(block.readingDate)
+        && text.includes(SITE_ADDRESS),
+      `${label} (${name}): the text lacks the name, the page's reading date "${block.readingDate}" `
+        + `or the site address: ${JSON.stringify(block.lines)}`);
+      check(block.lines[block.lines.length - 1]?.startsWith("Source: ") === true,
+        `${label} (${name}): the credit line is not last`);
+      check(text.includes("The surface level was") === expectsLevel,
+        `${label} (${name}): a level sentence is ${expectsLevel ? "missing" : "present without a reviewed level"}`);
+      check(["Copy text", "Copy link"].every((text) => block.buttons.some((b) => b.text === text))
+        && block.buttons.every((b) => b.height >= 43.5),
+      `${label} (${name}): the buttons are missing or under 44px ${JSON.stringify(block.buttons)}`);
+      const retired = RETIRED_TERMS.exec(text);
+      check(retired === null, `${label} (${name}): uses a retired term: "${retired?.[0]}"`);
+
+      const copy = tab.locator('[data-copy-figures="copy-text"]');
+      await copy.focus();
+      check(await tab.evaluate(() => document.activeElement?.getAttribute("data-copy-figures")
+        === "copy-text"), `${label} (${name}): "Copy text" cannot receive keyboard focus`);
+      await copy.click();
+      await tab.waitForFunction(() => document.querySelector(
+        '[data-copy-figures="copy-text"]')?.textContent === "Text copied", null, { timeout: 5000 });
+      const copied = await tab.evaluate(() => navigator.clipboard.readText());
+      check(copied === text,
+        `${label} (${name}): copied ${JSON.stringify(copied.slice(0, 80))}, not the text shown`);
+      await tab.waitForFunction(() => document.querySelector(
+        '[data-copy-figures="copy-text"]')?.textContent === "Copy text", null, { timeout: 8000 });
+      await tab.locator('[data-copy-figures="copy-link"]').click();
+      await tab.waitForFunction(() => document.querySelector(
+        '[data-copy-figures="copy-link"]')?.textContent === "Link copied", null, { timeout: 5000 });
+      check(await tab.evaluate(() => navigator.clipboard.readText()) === tab.url(),
+        `${label} (${name}): "Copy link" did not copy the address`);
+    }
+
+    /* The picture view is a picture, not a page to copy from. */
+    await tab.goto(`${URL}reservoir.html?name=Lake%20Powell&view=share`,
+      { waitUntil: "load", timeout: 90000 });
+    await tab.waitForFunction(() => window.__reservoirReady !== undefined,
+      null, { timeout: 90000 });
+    check(await tab.evaluate(() =>
+      document.querySelectorAll('[data-copy-figures="block"]').length) === 0,
+    `${label}: the share view has a copy block`);
+
+    /* The other states offer none. */
+    for (const path of ["reservoir.html?name=LRA", "reservoir.html?name=Not%20A%20Reservoir",
+      "reservoir.html"]) {
+      await tab.goto(`${URL}${path}`, { waitUntil: "load", timeout: 90000 });
+      await tab.waitForFunction(() => window.__reservoirReady !== undefined,
+        null, { timeout: 90000 });
+      check(await tab.evaluate(() =>
+        document.querySelectorAll('[data-copy-figures="block"]').length) === 0,
+      `${label}: ${path} has a copy block`);
+    }
+
+    /* The storage charts page: the block follows the same rows as the card. */
+    for (const query of ["", "?state=UT"]) {
+      await tab.goto(`${URL}overview.html${query}`, { waitUntil: "domcontentloaded", timeout: 60000 });
+      await tab.waitForFunction(() => window.__overviewReady?.weeklySections !== undefined,
+        null, { timeout: 120000 });
+      const week = await readBlock("#weekly-summary");
+      const scope = await tab.evaluate(() =>
+        document.querySelector('[data-weekly="scope"]')?.textContent ?? "");
+      check(week.present && week.hidden === false && week.heading === "Copy these figures"
+        && week.labelled === "Copy these figures",
+      `${label} (storage charts${query}): the block is missing or hidden `
+        + JSON.stringify({ present: week.present, hidden: week.hidden }));
+      check(week.lines[0] === scope && scope.startsWith("Storage covers"),
+        `${label} (storage charts${query}): the first sentence "${week.lines[0]}" is not the card's `
+        + `scope line "${scope}"`);
+      check(week.lines.join("\n").includes(SITE_ADDRESS)
+        && week.lines.some((line) => /^Readings? are from |^All readings are from /.test(line)),
+      `${label} (storage charts${query}): the date range or the site address is missing`);
+    }
+
+    /* The precipitation page: the card loads when it nears the screen. */
+    await tab.goto(`${URL}precipitation.html?state=UT`,
+      { waitUntil: "domcontentloaded", timeout: 60000 });
+    await tab.waitForFunction(() => window.__precipReady !== undefined, null, { timeout: 60000 });
+    await tab.locator("#precip-card").scrollIntoViewIfNeeded();
+    await tab.waitForFunction(() => window.__precipReady?.precipitation
+      && window.__precipReady.precipitation.state !== "loading", null, { timeout: 60000 });
+    const precip = await readBlock("#precip-card");
+    const drawn = await tab.evaluate(() => ({
+      date: window.__precipReady?.precipitation?.date ?? null,
+      kpiNote: document.querySelector("#precip-card .precip-kpis small")?.textContent ?? ""
+    }));
+    if (drawn.date === null) {
+      /* First days of a water year: no headline, so no block. */
+      check(!precip.present || precip.hidden === true,
+        `${label} (precipitation): a block is shown with no headline`);
+    } else {
+      const pageDate = /to (.+)$/.exec(drawn.kpiNote)?.[1] ?? "";
+      const precipText = precip.lines.join("\n");
+      check(precip.present && precip.hidden === false && precip.heading === "Copy these figures"
+        && precip.labelled === "Copy these figures",
+      `${label} (precipitation): the block is missing or hidden `
+        + JSON.stringify({ present: precip.present, hidden: precip.hidden }));
+      check(pageDate !== "" && precipText.includes(pageDate) && precipText.includes(SITE_ADDRESS)
+        && precipText.includes("Source: Natural Resources Conservation Service data")
+        && /water years \d{4} to \d{4}/.test(precipText),
+      `${label} (precipitation): the date "${pageDate}", period, provider or address is missing `
+        + JSON.stringify(precip.lines));
+    }
+  } catch (error) {
+    failures.push(`${label}: ${error.message}`);
+  }
+  for (const message of errors) failures.push(`${label}: ${message}`);
+  await context.close();
+}
+
+/*
  * The terminal-lakes page (ADR-119), at every width.
  *
  * One page for every published lake, so the contract is the readiness

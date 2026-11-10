@@ -7,10 +7,14 @@
  * Every exit from loading clears `aria-busy`, the failed one included.
  */
 import { loadPrecipitation, loadPrecipitationHistory } from "../data/precip-load";
-import { ordinal, precipitationView, type PrecipitationView } from "../precip-model";
+import {
+  formatInches, medianDifference, ordinal, precipitationView, type PrecipitationView
+} from "../precip-model";
 import {
   firstAvailableEnd, STORM_WINDOWS, stormTotals, type StormTotals, type StormWindow, type StormWindowTotal
 } from "../precip-storm-model";
+import { precipitationFigures } from "../state/figures-text";
+import { createCopyFigures } from "./copy-figures";
 import type { PrecipitationHistory, PrecipitationPayload, SnowSite } from "../types";
 import { formatDate } from "../viz/format";
 import { renderPrecipitationStrip } from "../viz/precip-strip";
@@ -67,6 +71,10 @@ export interface PrecipitationCardOptions {
    * the station list, with the day buttons above it (ADR-131). The page
    * fills `parts.mapSlot`. */
   recentMap?: boolean;
+  /** Offer "Copy these figures" for the headline figures, naming the place
+   * as the page does. Only the full card has them; the page sets the place
+   * once, because a different place is a full navigation. */
+  copyFigures?: { where: string };
 }
 
 export interface PrecipitationCard {
@@ -113,9 +121,7 @@ export interface PrecipitationCardParts {
 const MONTH_LONG = ["January", "February", "March", "April", "May", "June", "July",
   "August", "September", "October", "November", "December"];
 
-function inches(value: number): string {
-  return `${value.toFixed(1)} in`;
-}
+const inches = formatInches;
 
 function text(tag: string, className: string, content: string): HTMLElement {
   const node = document.createElement(tag);
@@ -184,10 +190,10 @@ function stormLeftOut(total: StormWindowTotal): string {
 
 function headlineKpis(view: PrecipitationView): HTMLElement[] {
   const h = view.headline!;
-  const difference = h.inches - h.medianInches;
-  const differenceText = Math.abs(difference) < 0.05
+  const difference = medianDifference(h);
+  const differenceText = difference.direction === "same"
     ? "The same as the median"
-    : `${inches(Math.abs(difference))} ${difference > 0 ? "more" : "less"} than the median`;
+    : `${inches(difference.inches)} ${difference.direction} than the median`;
   const percent = h.percentOfMedian === null ? "" : ` · ${h.percentOfMedian}% of the median`;
   const kpis = [
     kpi("Since 1 October", inches(h.inches),
@@ -428,8 +434,11 @@ export function createPrecipitationCard(
     stripKey.append(...HISTORY_REGIONS.map((region) => legendItem(`precip-swatch-region ${region.className}`, region.label)));
     strip.append(stripKey);
   }
+  const copyFigures = !stripOnly && options.copyFigures
+    ? createCopyFigures({ id: "precip-figures", level: 3 }) : null;
   if (stripOnly) section.append(strip, host);
-  else section.append(...(withStorm ? [storm] : []), top, strip, controls, axisTitle, host, historyKey, april, coverage, details, readNote);
+  else section.append(...(withStorm ? [storm] : []), top, ...(copyFigures ? [copyFigures.element] : []),
+    strip, controls, axisTitle, host, historyKey, april, coverage, details, readNote);
   const tbody = details.querySelector("tbody")!;
 
   const status: PrecipitationStatus = {
@@ -523,6 +532,7 @@ export function createPrecipitationCard(
        * current water year, and two years side by side on one page would
        * read as one. */
       kpis.replaceChildren();
+      copyFigures?.update(null);
       strip.hidden = true;
       split.replaceChildren();
       legend.hidden = true;
@@ -555,6 +565,7 @@ export function createPrecipitationCard(
     status.bandDays = view.bands.length;
     if (!view.headline) {
       kpis.replaceChildren();
+      copyFigures?.update(null);
       strip.hidden = true;
       split.replaceChildren();
       legend.hidden = true;
@@ -576,6 +587,7 @@ export function createPrecipitationCard(
       status.stripYears = 0;
     } else {
       kpis.replaceChildren(...headlineKpis(view));
+      if (options.copyFigures) copyFigures?.update(precipitationFigures(view, options.copyFigures.where));
       const stripBand = view.bands.find((band) => band.date === view.headline!.date);
       if (stripBand && view.headline!.yearsOnDate.length > 0) {
         const headline = view.headline!;

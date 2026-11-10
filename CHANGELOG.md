@@ -21,6 +21,15 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   new computation. The reservoir, terminal lakes, terms and landscape pages
   link to it from their footers.
 
+- **Copy these figures.** The reservoir page, the storage charts page and the
+  precipitation page each offer the page's own figures as plain sentences, ready
+  to copy, with "Copy text", "Copy link" and, where the browser has a share
+  sheet, "Share" buttons. The sentences open under "Text to copy". Every sentence carries its reading date, a normal
+  carries its period, a late reading is said to be late, and the last line is
+  the credit line from the reporters page, with the provider first. The text is
+  built by code from the numbers the page already shows: no new figure is
+  computed and nothing is stored. The snowpack page is not included yet.
+
 - **River flow and the soil-moisture change kept day by day** (ADR-146).
   `river_history.json` keeps every day of mean flow at each gauge, with its
   review status, qualifiers and, at a natural gauge, its flow class.
