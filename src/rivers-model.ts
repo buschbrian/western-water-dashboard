@@ -159,13 +159,23 @@ export function describeComparison(gauge: NaturalRiverGauge): {
   };
 }
 
+/** The state the survey's station name ends with, when it is not the gauge's own. */
+function namedForState(gauge: RiverGauge): string | null {
+  const code = /,\s*([A-Z]{2})\.?$/.exec(gauge.usgs_name.trim())?.[1];
+  return code && code !== gauge.state ? STATE_NAMES[code] ?? null : null;
+}
+
 export function whereSentence(gauge: RiverGauge): string {
   const state = STATE_NAMES[gauge.state];
   const place = state ? `This gauge is in ${state}.` : "";
+  const named = state ? namedForState(gauge) : null;
+  const naming = named
+    ? ` The U.S. Geological Survey names it for a place in ${named}.`
+    : "";
   const toward = gauge.flows_toward
     ? ` The river flows on toward ${gauge.flows_toward}.`
     : "";
-  return `${place}${toward}`.trim();
+  return `${place}${naming}${toward}`.trim();
 }
 
 /** What the survey says about a value's review, in words. */
