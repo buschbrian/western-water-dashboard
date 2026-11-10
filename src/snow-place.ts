@@ -23,6 +23,16 @@ import type { SnowpackPayload } from "./types";
 import { stateName } from "./data/state-vocabulary";
 
 export function snowScopeSummary(stateCode: string, area: string | null,
+  widenedForSite: string | null, framedSite: string | null = null): string | null {
+  const place = snowPlaceSentence(stateCode, area, widenedForSite);
+  if (framedSite === null) return place;
+  /* The sentence about the place still describes every site shown; this one
+   * only says where the map is centred. */
+  const framed = `The map is centred on ${framedSite}.`;
+  return place === null ? framed : `${place} ${framed}`;
+}
+
+function snowPlaceSentence(stateCode: string, area: string | null,
   widenedForSite: string | null): string | null {
   if (widenedForSite !== null && area === null) {
     return `Showing the whole region so the linked measurement site, ${widenedForSite}, is included.`;

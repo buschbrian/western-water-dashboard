@@ -18,6 +18,8 @@ import {
   monthReadings,
   payloadAtLevel,
   newestFloored,
+  percentAmounts,
+  PERCENT_BASIS_SENTENCE,
   newestHeadline,
   newestReading,
   percentIsMeaningful,
@@ -509,6 +511,46 @@ describe("labels", () => {
   it("names the season from the water year", () => {
     expect(seasonLabel(payload))
       .toBe(`October ${payload.water_year - 1} through September ${payload.water_year}`);
+  });
+});
+
+describe("the amounts behind a percent", () => {
+  it("states the snow water and the usual amount in inches", () => {
+    const point: CurvePoint = {
+      date: "2025-11-05", percent: 200, reportingSites: 150,
+      meanInches: 0.4, normalInches: 0.2
+    };
+    expect(percentAmounts(point))
+      .toBe("Snow water is 0.40 in. The usual amount for this date is 0.20 in.");
+  });
+
+  it("keeps enough figures for the two amounts to give the percent shown", () => {
+    const small: CurvePoint = {
+      date: "2025-11-20", percent: 76.5, reportingSites: 120,
+      meanInches: 1.04, normalInches: 1.36
+    };
+    const [value, usual] = [...percentAmounts(small)!.matchAll(/(\d+\.\d+) in/g)]
+      .map((match) => Number(match[1]));
+    expect(Math.abs(value! / usual! * 100 - small.percent!)).toBeLessThan(1);
+    const deep: CurvePoint = {
+      date: "2026-03-20", percent: 94.6, reportingSites: 120,
+      meanInches: 14.32, normalInches: 15.14
+    };
+    expect(percentAmounts(deep))
+      .toBe("Snow water is 14.3 in. The usual amount for this date is 15.1 in.");
+  });
+
+  it("says nothing when either amount is missing", () => {
+    const base: CurvePoint = { date: "2025-11-05", percent: 90, reportingSites: 150 };
+    expect(percentAmounts(base)).toBeNull();
+    expect(percentAmounts({ ...base, meanInches: 3.2 })).toBeNull();
+    expect(percentAmounts({ ...base, meanInches: null, normalInches: 3.5 })).toBeNull();
+    expect(percentAmounts({ ...base, meanInches: 3.2, normalInches: null })).toBeNull();
+  });
+
+  it("keeps the explanation to one short sentence", () => {
+    expect(PERCENT_BASIS_SENTENCE.split(/\s+/).length).toBeLessThanOrEqual(25);
+    expect(PERCENT_BASIS_SENTENCE).toContain("not with a whole winter");
   });
 });
 

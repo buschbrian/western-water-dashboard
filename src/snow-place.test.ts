@@ -21,6 +21,15 @@ describe("the snow place sentence follows the current selection", () => {
     expect(snowScopeSummary("all", "Gunnison", "Linked site"))
       .toBe("Showing snow measurements for Gunnison.");
   });
+
+  it("adds where the map is centred without changing the place sentence", () => {
+    expect(snowScopeSummary("all", null, null, "Atwater")).toBe("The map is centred on Atwater.");
+    expect(snowScopeSummary("UT", null, null, "Atwater"))
+      .toBe("Showing snow measurements for Utah. The map is centred on Atwater.");
+    expect(snowScopeSummary("all", null, "Atwater", "Atwater"))
+      .toBe("Showing the whole region so the linked measurement site, Atwater, is included. " +
+        "The map is centred on Atwater.");
+  });
 });
 
 /* Rosters built from the frozen season's own areas, so the test does not

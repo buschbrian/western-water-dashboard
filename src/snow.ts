@@ -60,6 +60,8 @@ import {
   resolveSeason,
   shiftSeason,
   bestAgainstNormal,
+  percentAmounts,
+  PERCENT_BASIS_SENTENCE,
   seasonComplete,
   seasonLabel,
   seasonName,
@@ -163,6 +165,14 @@ setupPlaceSearch("snow");
 
 function formatFeet(value: number): string {
   return Math.round(value).toLocaleString("en-US");
+}
+
+/* Brings a card's section to the top of the view. Under reduced motion the
+ * jump is immediate whatever the page's own scroll behaviour is. */
+function scrollCardIntoView(card: HTMLElement): void {
+  const reduced = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  card.closest("section")?.scrollIntoView(
+    { block: "start", behavior: reduced ? "instant" : "auto" });
 }
 
 function formatInches(value: number | null): string {
@@ -464,6 +474,8 @@ function renderSnow(
   let currentDay = startDay;
   let currentArea: string | null = null;
   let currentSite: string | null = null;
+  /* The site the map is centred on and marks: the one the site card shows. */
+  let framedSite: string | null = null;
   let currentBasin: string | null = null;
   /* The three controls that narrow only the site table. Held together so
    * every writer of the address bar carries all of them -- the reason the
@@ -605,6 +617,8 @@ function renderSnow(
          * The day the reading beside the slider calls the high point. */
         mapPeak: peakDay,
         mapDay: map.status.day,
+        /* The site the map is centred on and marks, or null. */
+        mapSite: map.status.site,
         mapBasemap: map.status.basemap,
         mapViewReady: map.status.viewReady,
         /* The areas carry their names now, placed by the label engine.
@@ -789,6 +803,8 @@ function renderSnow(
         parts.push(`Newest value: ${formatPercent(latest.percent)} of normal ` +
           `on ${formatDate(latest.date)}, from ${latest.reportingSites} of ` +
           `${rollup.site_count} sites.`);
+        const amounts = percentAmounts(latest);
+        if (amounts) parts.push(amounts);
       } else if (newest?.meanInches !== null && newest?.meanInches !== undefined) {
         /* Same rule as the page's own headline: the depth leads where the
          * ratio has nothing to divide by. */
@@ -800,7 +816,10 @@ function renderSnow(
       if (peak) {
         parts.push(`Best against normal: ${formatPercent(peak.percent)} ` +
           `on ${formatDate(peak.date)}.`);
+        const amounts = percentAmounts(peak);
+        if (amounts) parts.push(amounts);
       }
+      if (latest || peak) parts.push(PERCENT_BASIS_SENTENCE);
       reading.textContent = parts.length > 0 ? parts.join(" ")
         : "Too few sites in this area have values yet this season.";
 
@@ -880,16 +899,34 @@ function renderSnow(
     publishReady();
   };
 
+  /* Rebuilt from the current place and the current framed site, never kept:
+   * the place sentence describes every site shown, and the framing sentence
+   * only says where the map is centred (ADR-151). Named only while a map
+   * exists to be centred. */
+  const writeScopeSummary = (): void => {
+    if (!scopeSummaryEl) return;
+    const chosen = currentArea;
+    const area = chosen !== null
+      ? choices.find((choice) => choice.code === chosen)?.label ?? null
+      : openingAreaCleared ? null : openingAreaName(openingScope);
+    const framed = map && framedSite ? siteByStation(payload, framedSite)?.name ?? null : null;
+    const summary = snowScopeSummary(openingScope.selection.state, area, widenedForSite, framed);
+    scopeSummaryEl.textContent = summary ?? "";
+    scopeSummaryEl.hidden = summary === null;
+  };
+
+  /* Centres the map on one site and marks it. The card below is the reading;
+   * this is the place. Called for a link, a table-name click and the picker. */
+  const frameSite = (station: string | null): void => {
+    framedSite = station;
+    if (map) map.setSite(station);
+    writeScopeSummary();
+    publishReady();
+  };
+
   const update = (): void => {
     const chosen = currentArea;
-    if (scopeSummaryEl) {
-      const area = chosen !== null
-        ? choices.find((choice) => choice.code === chosen)?.label ?? null
-        : openingAreaCleared ? null : openingAreaName(openingScope);
-      const summary = snowScopeSummary(openingScope.selection.state, area, widenedForSite);
-      scopeSummaryEl.textContent = summary ?? "";
-      scopeSummaryEl.hidden = summary === null;
-    }
+    writeScopeSummary();
     const chosenLabel = chosen === null
       ? "the whole region"
       : choices.find((choice) => choice.code === chosen)?.label ?? "the whole region";
@@ -917,8 +954,9 @@ function renderSnow(
         ? `${reading.meanInches.toFixed(1)} in`
         : "—");
     setKpi("now-note", latest
-      ? `${formatDate(latest.date)} · ${latest.reportingSites} of ${rows.length} sites; ` +
-        "at least half required"
+      ? [`${formatDate(latest.date)} · ${latest.reportingSites} of ${rows.length} sites; ` +
+        "at least half required.", percentAmounts(latest), PERCENT_BASIS_SENTENCE]
+        .filter(Boolean).join(" ")
       : reading
         ? `Snow water on ${formatDate(reading.date)}. There is too little ` +
           "normal snow for this date to compare against"
@@ -926,7 +964,8 @@ function renderSnow(
     const peak = bestAgainstNormal(curve, floor);
     setKpi("peak", peak ? formatPercent(peak.percent) : "—");
     setKpi("peak-note", peak
-      ? `${formatDate(peak.date)} · ${peak.reportingSites} sites`
+      ? [`${formatDate(peak.date)} · ${peak.reportingSites} sites.`, percentAmounts(peak)]
+        .filter(Boolean).join(" ")
       : "Too few sites have values yet this season");
     setKpi("sites", String(rows.length));
     setKpi("late", String(rows.filter((row) => row.late).length));
@@ -1027,7 +1066,8 @@ function renderSnow(
         `Show the season for ${site.name}`);
       nameButton.addEventListener("click", () => {
         renderSiteDetail(site.station);
-        siteDetail.closest("section")?.scrollIntoView({ block: "start" });
+        frameSite(site.station);
+        scrollCardIntoView(siteDetail);
       });
       nameCell.append(nameButton);
       row.append(nameCell);
@@ -1265,6 +1305,9 @@ function renderSnow(
 
   sitePicker.addEventListener("change", () => {
     renderSiteDetail(sitePicker.value || null);
+    /* The mark follows the card, so the place sentence never names a site
+     * the card no longer shows. */
+    frameSite(sitePicker.value || null);
   });
   basinPicker.addEventListener("change", () => {
     renderBasinDetail(basinPicker.value || null);
@@ -1379,6 +1422,9 @@ function renderSnow(
   // A linked site the payload does not carry falls back to none chosen.
   if (wanted.site !== null && siteByStation(payload, wanted.site)) {
     renderSiteDetail(wanted.site);
+    framedSite = wanted.site;
+    /* After the layout that follows this call has settled enough to measure. */
+    requestAnimationFrame(() => scrollCardIntoView(siteDetail));
   }
   // Same rule for a linked drainage area's season card.
   if (wanted.basin !== null
@@ -1428,6 +1474,8 @@ function renderSnow(
         }
       });
       map.setArea(currentArea);
+      /* A linked site, or one chosen while the map was starting. */
+      if (framedSite) frameSite(framedSite);
       /* After the map claims the host, never before: see the note beside the
        * key's construction. */
       mapHost.append(legend);
