@@ -267,7 +267,9 @@ the way a withdrawal notice refuses a measurement. `fetch_cdec_series` applies
 them where readings are read and names each dropped reading on the console, and
 `tools/audit_cdec_stations.py` screens the same filtered series so its verdict
 is the pipeline's. Matching is on station, sensor, day **and** raw value, so a
-corrected reading is a different reading and returns on its own.
+corrected reading is a different reading and returns on its own. The issue may
+be closed when every reading it names is a mechanical error and is unchanged at
+the provider (ADR-152); the exclusion stays and its `issue_url` keeps the evidence.
 
 ## Drought coverage
 

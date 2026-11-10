@@ -1,6 +1,7 @@
 # ADR-116: Exclude a reviewed reading, and never repair one
 
-- Status: Accepted
+- Status: Accepted; amended by [ADR-152](ADR-152-close-a-provider-issue-whose-every-reading-is-a-mechanical-error.md)
+  (an issue whose every reading is a mechanical error may be closed)
 - Date: 2026-09-04
 - Extends: ADR-056 and ADR-072's no-repair rule
 - Qualifies: ADR-065's spike screen
