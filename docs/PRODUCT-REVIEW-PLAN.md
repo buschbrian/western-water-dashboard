@@ -211,7 +211,7 @@ and their operator definitions (ADR-156); upstream station means, the
 precipitation link and aligned 30-day context (ADR-157). The focused browser
 target passes at all three widths, including the history failure path.
 The final full-suite result is still to be recorded. History is backfilled
-for 401 of 409 published stations. The other eight use the Geological
+for 412 of 420 published stations. The other eight use the Geological
 Survey key in GitHub Secrets; the diagnostic workflow has a read-only
 artifact job and the builder can validate and merge that artifact locally.
 No branch has been pushed and no release has been made from this work.

@@ -605,3 +605,8 @@ both.
 **The rule this does not change:** generalized geometry is still never used
 for analysis. The numbers above are about what a browser draws, and a
 41-vertex Utah cannot resolve a border whatever it costs to send.
+
+After the eleven California admissions were rebased on 2026-11-11, the generated
+storage-history directory holds 414 files for 412 of 420 published reservoirs:
+50,931,130 raw bytes and 9,820,233 gzip bytes. The eight missing records remain
+the USGS source histories; use the read-only Actions backfill with its secret.
