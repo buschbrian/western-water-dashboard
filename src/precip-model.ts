@@ -11,7 +11,7 @@
  * average station has had 4.1 inches" is a sentence a reader can use.
  */
 import { MEANINGFUL_NORMAL_INCHES } from "./snow-model";
-import type { PrecipitationHistory, PrecipitationPayload, PrecipitationSite, SnowSite } from "./types";
+import type { PrecipitationHistory, PrecipitationPayload, SnowSite } from "./types";
 
 export interface BandStep {
   date: string;
@@ -138,7 +138,7 @@ function snowWaterByDate(site: SnowSite): Map<string, number> {
 
 /** The newest day on which at least `SET_SHARE` of these stations have a reading. */
 export function newestSetDay(
-  dates: readonly string[], sites: readonly PrecipitationSite[]
+  dates: readonly string[], sites: readonly { readings: ReadonlyMap<string, unknown> }[]
 ): string | undefined {
   const needed = Math.ceil(sites.length * SET_SHARE);
   return [...dates].reverse().find((date) =>

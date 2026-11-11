@@ -199,6 +199,18 @@ export function methodsMarkup(search: string): string {
           <br /><strong>Precipitation is not snow.</strong> Beside the figures, the page gives
           the snow water at the same sites. It also gives how much more the gauges caught than
           the snow holds. These two values do not show where the rest of the water went.</dd>
+        <dt>Snow water against earlier seasons</dt>
+        <dd>The snow page also compares this season's snow water equivalent with every
+          season from 1990–91 to the last one that ended. It uses the precipitation history's
+          rules. Only sites with a full snow water record for every one of those seasons are
+          used, so every season is measured at the same sites. The history is kept once a
+          week, and each season is read on a straight line between its weekly values.
+          <br /><strong>Snow water is not snowfall.</strong> It is the water in the snow on
+          the ground on a date. Snow that melts or blows away between two dates is not in it.
+          <br />Its percent of normal uses the same rules as the page's other snow figures:
+          the sites' snow water added up, over their normal added up. It is given only when
+          the normal is one inch or more and the set holds at least half the sites in the
+          place.</dd>
         <dt>Soil moisture change</dt>
         <dd>The change in soil moisture over 7 days, in percentage points, at the same
           mountain sites. The Natural Resources Conservation Service measures the water in

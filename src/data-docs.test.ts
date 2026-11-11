@@ -11,6 +11,7 @@ import {
   RIVER_GROUPS,
   RIVER_HISTORY_GROUPS,
   SNOW_GROUPS,
+  SNOW_HISTORY_GROUPS,
   SOIL_GROUPS,
   SOIL_HISTORY_GROUPS,
   type ApiFieldGroup
@@ -51,6 +52,12 @@ describe("public API field documentation", () => {
     const history = read("precipitation_history.json");
     expectFields(PRECIPITATION_HISTORY_GROUPS, "precipitation-history-header", history);
     expectFields(PRECIPITATION_HISTORY_GROUPS, "precipitation-history-site", merged(history.sites));
+  });
+
+  it("covers the snow water history fields", () => {
+    const history = read("snow_history.json");
+    expectFields(SNOW_HISTORY_GROUPS, "snow-history-header", history);
+    expectFields(SNOW_HISTORY_GROUPS, "snow-history-site", merged(history.sites));
   });
 
   it("covers every current reservoir field", () => {

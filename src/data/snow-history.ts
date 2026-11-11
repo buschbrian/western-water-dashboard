@@ -3,6 +3,12 @@ import { SNOW_TIMEOUT_MS } from "./snow-load";
 import { validatePrecipitationHistory } from "./precip-validate";
 import type { PrecipitationHistory } from "../types";
 
+/*
+ * Snow water on the precipitation history's weekly steps (ADR-160). The
+ * file has the same shape, so it goes through the same validator, and then
+ * through what is true only of snow: its element, a window from 1991, no
+ * negative value and one calendar running 1 October to 30 September.
+ */
 export function validateSnowHistory(value: unknown): PrecipitationHistory {
   const raw = value as Record<string, unknown> | null;
   if (!raw || raw.schema_version !== 1 || raw.element !== "WTEQ" || raw.first_water_year !== 1991) {
@@ -23,7 +29,11 @@ export function validateSnowHistory(value: unknown): PrecipitationHistory {
   return history;
 }
 
-export async function loadSnowHistory(): Promise<PrecipitationHistory> {
-  const response = await fetchWithin(import.meta.env.DEV ? "./snow_history.json" : "./data/snow_history.json", SNOW_TIMEOUT_MS);
+/* About 430 KB gzipped, so the card asks for it only when it nears the
+ * screen; the snow file's own deadline applies. */
+export async function loadSnowHistory(
+  url = import.meta.env.DEV ? "./snow_history.json" : "./data/snow_history.json"
+): Promise<PrecipitationHistory> {
+  const response = await fetchWithin(url, SNOW_TIMEOUT_MS);
   return validateSnowHistory(await response.json() as unknown);
 }
