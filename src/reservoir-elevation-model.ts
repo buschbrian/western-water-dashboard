@@ -144,6 +144,15 @@ export function datumRelationSentence(elevation: ReservoirElevation): string | n
     + `to give the level above the ${datumName(relation.datum)}.`;
 }
 
+function isNgsHost(url: string): boolean {
+  try {
+    const host = new URL(url).hostname;
+    return host === "ngs.noaa.gov" || host.endsWith(".ngs.noaa.gov");
+  } catch {
+    return false;
+  }
+}
+
 export function datumNote(name: string, elevation: ReservoirElevation): ElevationNote {
   const relation = datumRelationSentence(elevation);
   const paragraphs = [
@@ -179,7 +188,7 @@ export function datumNote(name: string, elevation: ReservoirElevation): Elevatio
       + "same water. This difference is calculated from survey marks of the National Geodetic "
       + "Survey on the dam and from the datum relation above. It is not a measurement at "
       + "the reservoir.");
-    const marks = derived.sources.find((source) => source.url.includes("ngs.noaa.gov"));
+    const marks = derived.sources.find((source) => isNgsHost(source.url));
     if (marks) links.push({ text: "National Geodetic Survey marks on the dam", href: marks.url });
   }
   if (elevation.reference_levels_datum_stated === false && elevation.datum_relation) {

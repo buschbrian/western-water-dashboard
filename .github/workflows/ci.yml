@@ -18,6 +18,9 @@ concurrency:
   group: ci-${{ github.ref }}
   cancel-in-progress: true
 
+permissions:
+  contents: read
+
 jobs:
   frontend-tests:
     name: Modernization typecheck, unit tests and build
