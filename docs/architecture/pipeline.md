@@ -357,7 +357,7 @@ unchanged, even if the inputs have since changed. Original figures, wording,
 source dates and caption are saved together. Invalid stored history fails
 rather than silently starting a new ledger.
 
-The separate **Publish weekly figures** workflow runs Mondays at 13:00 UTC,
+The separate **Publish weekly figures** workflow runs Mondays at 15:00 UTC,
 shares `refresh-data-<ref>` concurrency with daily refresh, and commits only
 the ledger. Its successful main-branch run triggers Pages explicitly because
 its own token's push does not. It has no provider credential and posts to no

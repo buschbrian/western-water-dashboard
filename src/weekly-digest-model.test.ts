@@ -1,10 +1,11 @@
 import { describe, expect, it } from "vitest";
 import { readPayload, readSnowpackSeasonFixture } from "./data/payload-fixture";
-import { weeklyScopeText, weeklySummary } from "./weekly-model";
+import { weeklyScopeText, weeklySummary, type WeeklySnow } from "./weekly-model";
 import { describeWeek } from "./viz/weekly-summary";
-import { appendDigest, digestEntry, validateDigestLedger, weekOf } from "./weekly-digest-model";
+import { appendDigest, digestEntry, snowFrameLine, validateDigestLedger, weekOf } from "./weekly-digest-model";
 import { weeklyFeeds, weeklyPage } from "./build/weekly-pages";
 import { weeklyReadingNotes } from "./state/figures-text";
+import { formatDate } from "./viz/format";
 
 const payload = readPayload();
 const snow = readSnowpackSeasonFixture();
@@ -20,6 +21,15 @@ describe("frozen weekly digests", () => {
     expect(saved.notes).toEqual(expect.arrayContaining(weeklyReadingNotes(payload.reservoirs)));
     expect(saved.caption.match(/buschbrian\.github\.io\/western-water-dashboard/g)).toHaveLength(1);
     expect(saved.caption).toContain("Drought measurements were unavailable.");
+  });
+  it("titles an entry by its newest reading and never shows a snow percent the caption refuses", () => {
+    const saved = entry();
+    expect(saved.frame.name).toBe(`Week ending ${formatDate(weeklySummary(payload.reservoirs, snow, null).through)}`);
+    const base: WeeklySnow = { comparable: false, day: "2026-11-09", previousDay: "2026-11-02",
+      percentNow: 54.6, percentBefore: null, reporting: 40 };
+    expect(snowFrameLine(base)).toBe("Snow: no comparison with normal is available.");
+    expect(snowFrameLine({ ...base, comparable: true, percentBefore: 50 }))
+      .toBe("Snow: 54.6% of normal on Nov 9, 2026.");
   });
   it("keys a week by its Monday across year and leap-day boundaries", () => {
     expect(weekOf("2027-01-01")).toBe("2026-12-28");

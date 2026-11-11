@@ -17,7 +17,9 @@ replace evidence about one week with today's observations or wording.
 `data/weekly-digest.json` is an append-only ledger. A week starts Monday in
 America/Denver. A capture saves the existing models' figures and sentences,
 their scope, reading dates, late-data notes and sources, the publication
-timestamp, a caption and picture-frame content. One entry per week, in order.
+timestamp, a caption and picture-frame content. One entry per week, in order. An entry is titled by its newest reservoir
+reading ("Week ending …"), not by the week it was captured in, because a Monday
+capture holds the seven days before it.
 A rerun in the same week changes no bytes; a later provider revision or model
 change does not rewrite a saved entry. Missing snow or drought is explicitly
 unavailable, never zero. Storage always describes the whole published West
@@ -30,7 +32,7 @@ HMR and WebSocket serving disabled; the runner closes in `finally`. No new
 dependency and no language model enter the data pipeline. The ledger is
 written atomically and an unreadable existing ledger is refused.
 
-A separate Monday Actions job installs the locked build tools, captures the
+A separate Monday Actions job, at 15:00 UTC so that a late daily refresh has finished, installs the locked build tools, captures the
 entry and commits only the ledger. It shares the refresh workflow's
 concurrency group, has only contents-write permission, and rebases before
 pushing. The Pages workflow explicitly chains off its successful completion,

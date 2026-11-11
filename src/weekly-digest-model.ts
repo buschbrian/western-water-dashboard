@@ -1,5 +1,5 @@
 import type { DroughtCoveragePayload, ReservoirPayload, SnowpackPayload } from "./types";
-import { weeklyScopeText, weeklySummary } from "./weekly-model";
+import { weeklyScopeText, weeklySummary, type WeeklySnow } from "./weekly-model";
 import { describeWeek, type WeeklySection } from "./viz/weekly-summary";
 import { formatAcreFeet, formatDate, formatPercent } from "./viz/format";
 import { creditLine, weeklyReadingNotes } from "./state/figures-text";
@@ -61,6 +61,13 @@ export function validateDigestLedger(value: unknown): WeeklyDigestLedger {
   return value as unknown as WeeklyDigestLedger;
 }
 
+/** The picture's snow line says what the caption says: no percent when the week has no fair comparison. */
+export function snowFrameLine(snow: WeeklySnow): string {
+  return !snow.comparable || snow.percentNow === null || snow.day === null
+    ? "Snow: no comparison with normal is available."
+    : `Snow: ${formatPercent(snow.percentNow)} of normal on ${formatDate(snow.day)}.`;
+}
+
 export function digestEntry(payload: ReservoirPayload, snow: SnowpackPayload | null,
   drought: DroughtCoveragePayload | null, day: string, published: string): WeeklyDigestEntry {
   const summary = weeklySummary(payload.reservoirs, snow, drought);
@@ -68,7 +75,7 @@ export function digestEntry(payload: ReservoirPayload, snow: SnowpackPayload | n
   const scope = weeklyScopeText(payload.reservoirs, payload.reservoirs);
   const sections = describeWeek(summary);
   const dates = { storage: payload.generated_at, snow: snow?.as_of ?? null, drought: drought?.map_date ?? null };
-  const title = `Week of ${formatDate(weekOf(day))}`;
+  const title = `Week ending ${formatDate(summary.through)}`;
   const source = creditLine([...payload.reservoirs.map(providerName),
     ...(snow ? ["Natural Resources Conservation Service"] : []), ...(drought ? ["U.S. Drought Monitor"] : [])]);
   const dateLines = [
@@ -87,8 +94,7 @@ export function digestEntry(payload: ReservoirPayload, snow: SnowpackPayload | n
     frame: { name: title, figure, stored: "Net change over seven days",
       lines: [
         `${summary.storage.measured} of ${summary.storage.published} reservoirs reported a weekly change.`,
-        summary.snow.percentNow === null ? "Snow: no comparison with normal is available."
-          : `Snow: ${formatPercent(summary.snow.percentNow)} of normal on ${formatDate(summary.snow.day!)}.`,
+        snowFrameLine(summary.snow),
         drought ? `Drought map: ${formatDate(drought.map_date)}. All figures describe the whole region.`
           : "No drought map was available for this summary."
       ], source } };
