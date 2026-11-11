@@ -1783,6 +1783,13 @@
       "county_name": "Placer County",
       "state": "CA"
     },
+    "FMT": {
+      "name": "Fairmont Reservoir",
+      "county_fips": "06037",
+      "county_name": "Los Angeles County",
+      "state": "CA",
+      "retrieved": "2026-11-11"
+    },
     "FRD": {
       "name": "Frenchman Lake",
       "county_fips": "06063",

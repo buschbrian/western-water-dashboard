@@ -537,7 +537,7 @@
     },
     "HEN": {
       "name": "Henrys Lk Dm Henrys Fk nr Mks In",
-      "finding": "No storage series answered inside the last thirty days, so it would be withdrawn for late data the morning it joined the map. Tried: HEN.Stor.Inst.15Minutes.0.Best."
+      "finding": "No storage series answered inside the last thirty days, so it would be withdrawn for late data the morning it joined the map. Tried: HEN.Stor.Inst.15Minutes.0.Best. Re-checked 2026-11-11: the Corps series is still silent, but NRCS (AWDB 13039000) and Reclamation (RISE 130840) both report Henrys Lake again (readings on 2026-11-08 and 11-09). It stays held: the NRCS candidate screen refuses it as holding more water than its dam's inventory figure (93,471 acre-feet observed), the regulated-natural-lake question (ADR-078, ADR-112)."
     },
     "HOPI": {
       "name": "Pend Oreille Lake nr Hope",
@@ -801,5 +801,18 @@
     "Farmington Dam-Pool",
     "Mariposa-Pool",
     "Twitchell"
-  ]
+  ],
+  "excluded_readings": {
+    "BOX": [
+      {
+        "sensor": "BOX",
+        "stamp": "2020-06-16T07:00:00+00:00",
+        "value": 60.0,
+        "reason": "60 acre-feet for 16 June 2020, between 41,880 the day before and 43,220 the day after. The reservoir had been drawn to about 4,000 acre-feet in early June and refilled by 12 June; this single value sits inside the refilled period and returns the next day.",
+        "source_url": "https://cwms-data.usace.army.mil/cwms-data/timeseries?office=NWDP&name=BOX.Stor.Ave.~1Day.1Day.CBT-REV&unit=ac-ft&begin=2020-06-14T00:00:00Z&end=2020-06-19T00:00:00Z",
+        "reviewed_on": "2026-11-11",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/124"
+      }
+    ]
+  }
 }

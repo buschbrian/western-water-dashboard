@@ -1105,8 +1105,10 @@ def load_excluded_readings(path: Path, sensor: int | None) -> dict[str, list[dic
 
     `sensor` is the caller's own storage sensor, so an exclusion cannot
     silently name a different measurement of the same station. A provider
-    whose station key is itself the storage series (Reclamation's RISE item)
-    passes None, and the record's `sensor` must then equal that key.
+    whose station key is itself the storage series (Reclamation's RISE item,
+    the Corps' location, whose roster pins one series) passes None, and the
+    record's `sensor` must then equal that key: the item number, or the
+    location id where the key is not a number.
 
     Returns `{station: [exclusion, ...]}`, empty when the file carries none.
     """
@@ -1128,7 +1130,8 @@ def load_excluded_readings(path: Path, sensor: int | None) -> dict[str, list[dic
                 raise ValueError(
                     f"{station}: an excluded reading carries the reading and "
                     f"the evidence against it, and never a replacement value")
-            expected = sensor if sensor is not None else int(station)
+            expected = sensor if sensor is not None else (
+                int(station) if station.isdigit() else station)
             if record["sensor"] != expected:
                 raise ValueError(
                     f"{station}: an excluded reading must name sensor {expected}")
