@@ -1,6 +1,6 @@
 # ADR-160: Publish storage history apart from the summary
 
-- Status: Accepted; implementation local, not released
+- Status: **Proposed** (for Brian Busch's approval)
 - Date: 2026-11-11
 - Extends: ADR-002, ADR-066, ADR-117, ADR-146, ADR-154
 
