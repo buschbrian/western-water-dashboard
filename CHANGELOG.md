@@ -13,6 +13,16 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
+- **Six California reservoirs** from the California Department of Water
+  Resources: Lake Spaulding, Twitchell Reservoir, Farmington Reservoir,
+  Clifton Court Forebay, Mariposa Reservoir and Brush Creek Reservoir. The
+  October 31 re-audit (ADR-150) surfaced them and admitted none. Re-run on
+  November 10, each passes every admission screen unchanged, reports daily,
+  and takes its full level from the National Inventory of Dams. Five more
+  candidates from the same re-audit -- Lake Fordyce, Kerckhoff, Chesbro,
+  Camino and Utica -- pass the screens but are held for review of a record
+  low the record-figure screen reported far below its neighbours.
+
 - **Main-page picture previews and copyable story embed code.** The storage,
   snow, precipitation, drought and river pages carry dated preview pictures,
   with figure-free fallbacks. The precipitation page offers its full card

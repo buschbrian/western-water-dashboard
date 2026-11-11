@@ -15,7 +15,12 @@
     "FMT": "Fairmont Reservoir. LADWP's operations table publishes 491 acre-feet for Fairmont No. 2, consistent with the CDEC series maximum of 423; CDEC's linked 7,507-acre-foot dam profile is a different facility 2.8 km south. Held until an LADWP map or owner confirmation establishes the No. 2 coordinates.",
     "BMP": "Bon Tempe. Five usable monthly readings ever, the last in March 2023, and daily readings to 2023-11-19. Still quiet under ADR-150, which reads both series. Screened out by the audit's own recency rule rather than held here; named because it was publishable before that rule.",
     "GDR": "Guadalupe Reservoir. Re-reviewed 2026-10-31. The readings are real. The December 2021 monthly 1,762 acre-feet equals CDEC's daily value for 31 December, after a storm fill from 391 acre-feet on 12 December. The monthly series stopped after three months, and the spike and quiet findings described only that short series. The daily series continues into October 2026 and has no spike: its highest readings are 2,175, 2,152 and 2,146 acre-feet, in March 2023. Held for its full level, not its readings. A dam-safety order has held this reservoir below its full level since 2012-04-25 (California Division of Safety of Dams, September 2025 report, reason seismic). Under ADR-111 that limit is the full level. Valley Water states the limit as 18 feet below the spillway crest, with no volume (https://valleywater.org/project-updates/guadalupe-dam-seismic-retrofit-project, checked 2026-10-31). Its January 2026 draft plan gives two volumes: 2,152 acre-feet in Table 1 and 2,134 in Table 2 (https://assets.valleywater.org/files/2026-03/03122026%20SPOC%20Agenda%20Packetv2.pdf, checked 2026-10-31). Total capacity also differs: 3,320 acre-feet in the plan, 3,415 on the project page. Under ADR-150 the audit screens its daily series, and the quiet and spike findings no longer apply (re-run 2026-10-31). Release needs one restricted volume from the operator or the state. Then admit it as Vail was, with one dated version from 2012-04-25.",
-    "LRA": "Leroy Anderson. Withheld while its dated operating full levels remain unresolved (ADR-113; its public notice is ADR-115's); its storage readings remain current and plausible. NID and Valley Water's general reservoir page both state 89,073 acre-feet (https://www.valleywater.org/accordion/anderson-dam-and-reservoir). The retrofit project page describes a future restoration objective of 90,373 (https://www.valleywater.org/project-updates/c1-anderson-dam-seismic-retrofit). An earlier owner restriction was about 52,553 acre-feet; the state list dates the restriction to 2017-05-08 and a later drawdown began 2020-10-01. The January 2026 draft plan tables show 3,159, but its text describes an April 4, 2024 amendment allowing 3,485 (https://assets.valleywater.org/files/2026-03/03122026%20SPOC%20Agenda%20Packetv2.pdf). Historical storage of 48,547 inside a drawdown period does not by itself disprove an operating limit. Checked 2026-09-04. Re-review when the operator's applicable dated limits can be verified, or a single restored full level is established. No replacement denominator is selected here."
+    "LRA": "Leroy Anderson. Withheld while its dated operating full levels remain unresolved (ADR-113; its public notice is ADR-115's); its storage readings remain current and plausible. NID and Valley Water's general reservoir page both state 89,073 acre-feet (https://www.valleywater.org/accordion/anderson-dam-and-reservoir). The retrofit project page describes a future restoration objective of 90,373 (https://www.valleywater.org/project-updates/c1-anderson-dam-seismic-retrofit). An earlier owner restriction was about 52,553 acre-feet; the state list dates the restriction to 2017-05-08 and a later drawdown began 2020-10-01. The January 2026 draft plan tables show 3,159, but its text describes an April 4, 2024 amendment allowing 3,485 (https://assets.valleywater.org/files/2026-03/03122026%20SPOC%20Agenda%20Packetv2.pdf). Historical storage of 48,547 inside a drawdown period does not by itself disprove an operating limit. Checked 2026-09-04. Re-review when the operator's applicable dated limits can be verified, or a single restored full level is established. No replacement denominator is selected here.",
+    "LKF": "Lake Fordyce. Re-audited 2026-11-10: every admission screen passes. The dam is Lake Fordyce Dam (CA00357), confirmed by position at 0.237 km, and the full level is the inventory's 46,700 acre-feet (normal_storage). Held for review of its record low: on a trial refresh the record-figure screen (ADR-150) reported a record low far below its neighbours, 0 acre-feet on 2024-12-29, beside 6,622 on 2024-12-28 and 7,250 on 2024-12-30. The screen reports and a person decides. If the reading is false, release needs an ADR-116 exclusion with its provider issue; if it is real, the reservoir can be admitted as it stands.",
+    "KKR": "Kerckhoff Reservoir. Re-audited 2026-11-10: every admission screen passes. The dam is Kerckhoff (CA00340), confirmed by name and position at 0.013 km, and the full level is the inventory's 4,250 acre-feet (normal_storage). Held for review of its record low: on a trial refresh the record-figure screen (ADR-150) reported a record low far below its neighbours, 17 acre-feet on 2022-01-17, beside 2,040 on 2022-01-16 and 1,946 on 2022-01-18. The screen reports and a person decides. If the reading is false, release needs an ADR-116 exclusion with its provider issue; if it is real, the reservoir can be admitted as it stands.",
+    "EJC": "Chesbro Reservoir. Re-audited 2026-11-10: every admission screen passes. The dam is Elmer J. Chesbro (CA00806), confirmed by name and position at 0.219 km, and the full level is the inventory's 8,086 acre-feet (max_storage). Held for review of its record low: on a trial refresh the record-figure screen (ADR-150) reported a record low far below its neighbours, 0 acre-feet on 2022-07-05, beside 3,309 on 2022-07-04 and 3,246 on 2022-07-08; it reports 3 readings at this low. The screen reports and a person decides. If the reading is false, release needs an ADR-116 exclusion with its provider issue; if it is real, the reservoir can be admitted as it stands.",
+    "CMI": "Camino Reservoir. Re-audited 2026-11-10: every admission screen passes. The dam is Camino (CA00817), confirmed by name and position at 0.613 km, and the full level is the inventory's 528 acre-feet (normal_storage). Held for review of its record low: on a trial refresh the record-figure screen (ADR-150) reported a record low far below its neighbours, 71 acre-feet on 2023-11-15, beside 179 on 2023-11-14 and 243 on 2023-11-16. The screen reports and a person decides. If the reading is false, release needs an ADR-116 exclusion with its provider issue; if it is real, the reservoir can be admitted as it stands.",
+    "UTI": "Utica Reservoir. Re-audited 2026-11-10: every admission screen passes. The dam is Utica Main (CA00427), confirmed by position at 0.096 km, and the full level is the inventory's 2,350 acre-feet (normal_storage). Held for review of its record low: on a trial refresh the record-figure screen (ADR-150) reported a record low far below its neighbours, 0 acre-feet on 2023-03-21, beside 2,407 on 2023-03-20 and 2,191 on 2023-04-05; it reports 15 readings at this low. The screen reports and a person decides. If the reading is false, release needs an ADR-116 exclusion with its provider issue; if it is real, the reservoir can be admitted as it stands."
   },
   "publication_holds": {
     "LRA": {
@@ -4671,6 +4676,143 @@
         "dam_lon": -118.96841258513626,
         "dam_lat": 37.00420511892405,
         "match_distance_km": 0.103,
+        "match_confirmed_by": "position"
+      }
+    },
+    "SPG": {
+      "name": "Lake Spaulding",
+      "station": "SPG",
+      "lat": 39.329,
+      "lon": -120.641,
+      "cadence": "daily",
+      "huc6": "180201",
+      "huc6_name": "Lower Sacramento",
+      "operator": "Pacific Gas & Electric",
+      "capacity": {
+        "capacity_af": 74700.0,
+        "capacity_basis": "normal_storage",
+        "normal_storage_af": 74700.0,
+        "max_storage_af": 74773.0,
+        "nid_storage_af": 74773.0,
+        "nid_id": "CA00358",
+        "nid_dam_name": "Lake Spaulding No. 2 Dam",
+        "dam_lon": -120.64201313184259,
+        "dam_lat": 39.3295052086851,
+        "match_distance_km": 0.104,
+        "match_confirmed_by": "position"
+      }
+    },
+    "TWT": {
+      "name": "Twitchell Reservoir",
+      "station": "TWT",
+      "lat": 34.983,
+      "lon": -120.317,
+      "cadence": "daily",
+      "huc6": "180600",
+      "huc6_name": "Central California Coastal",
+      "operator": "Santa Maria Valley Water Conservation District",
+      "capacity": {
+        "capacity_af": 151050.0,
+        "capacity_basis": "normal_storage",
+        "normal_storage_af": 151050.0,
+        "max_storage_af": 398120.0,
+        "nid_storage_af": 398120.0,
+        "nid_id": "CA10197",
+        "nid_dam_name": "Twitchell Dam",
+        "dam_lon": -120.3240126065469,
+        "dam_lat": 34.98620483160731,
+        "match_distance_km": 0.732,
+        "match_confirmed_by": "name and position"
+      }
+    },
+    "FRM": {
+      "name": "Farmington Reservoir",
+      "station": "FRM",
+      "lat": 37.915,
+      "lon": -120.935,
+      "cadence": "daily",
+      "huc6": "180400",
+      "huc6_name": "San Joaquin",
+      "operator": "US Army Corps of Engineers",
+      "capacity": {
+        "capacity_af": 119314.0,
+        "capacity_basis": "max_storage",
+        "normal_storage_af": 6623.0,
+        "max_storage_af": 119314.0,
+        "nid_storage_af": 119314.0,
+        "nid_id": "CA10104",
+        "nid_dam_name": "Farmington Dam",
+        "dam_lon": -120.93407225898542,
+        "dam_lat": 37.906806473861195,
+        "match_distance_km": 0.915,
+        "match_confirmed_by": "position"
+      }
+    },
+    "CLC": {
+      "name": "Clifton Court Forebay",
+      "station": "CLC",
+      "lat": 37.8298,
+      "lon": -121.5574,
+      "cadence": "daily",
+      "huc6": "180400",
+      "huc6_name": "San Joaquin",
+      "operator": "CA Dept of Water Resources/Operations and Maintenance",
+      "capacity": {
+        "capacity_af": 29000.0,
+        "capacity_basis": "max_storage",
+        "max_storage_af": 29000.0,
+        "nid_storage_af": 29000.0,
+        "nid_id": "CA00050",
+        "nid_dam_name": "Clifton Court Forebay",
+        "dam_lon": -121.58641309431384,
+        "dam_lat": 37.82100500884735,
+        "match_distance_km": 2.729,
+        "match_confirmed_by": "name and position"
+      }
+    },
+    "MAR": {
+      "name": "Mariposa Reservoir",
+      "station": "MAR",
+      "lat": 37.292,
+      "lon": -120.147,
+      "cadence": "daily",
+      "huc6": "180400",
+      "huc6_name": "San Joaquin",
+      "operator": "US Army Corps of Engineers",
+      "capacity": {
+        "capacity_af": 21500.0,
+        "capacity_basis": "max_storage",
+        "normal_storage_af": 4300.0,
+        "max_storage_af": 21500.0,
+        "nid_storage_af": 21500.0,
+        "nid_id": "CA10107",
+        "nid_dam_name": "Mariposa Dam",
+        "dam_lon": -120.14790509464699,
+        "dam_lat": 37.291184368511495,
+        "match_distance_km": 0.121,
+        "match_confirmed_by": "position"
+      }
+    },
+    "BHC": {
+      "name": "Brush Creek Reservoir",
+      "station": "BHC",
+      "lat": 38.805,
+      "lon": -120.62,
+      "cadence": "daily",
+      "huc6": "180201",
+      "huc6_name": "Lower Sacramento",
+      "operator": "Sacramento Municipal Utility District",
+      "capacity": {
+        "capacity_af": 1320.0,
+        "capacity_basis": "normal_storage",
+        "normal_storage_af": 1320.0,
+        "max_storage_af": 1350.0,
+        "nid_storage_af": 1350.0,
+        "nid_id": "CA00824",
+        "nid_dam_name": "Brush Creek",
+        "dam_lon": -120.62201306271639,
+        "dam_lat": 38.81180516598464,
+        "match_distance_km": 0.777,
         "match_confirmed_by": "position"
       }
     }
