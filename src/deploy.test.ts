@@ -82,7 +82,7 @@ describe("a data-only commit deploys on its own", () => {
      * refresh commit a deploy instead of a main-branch-only update. */
     const workflow = await read(".github/workflows/deploy-pages.yml");
     expect(workflow).toContain("workflow_run:");
-    expect(workflow).toContain('workflows: ["Refresh reservoir data"]');
+    expect(workflow).toContain('workflows: ["Refresh reservoir data", "Publish weekly figures"]');
     expect(workflow).toContain("github.event.workflow_run.conclusion == 'success'");
   });
 
@@ -488,6 +488,7 @@ describe("every published address is the site's own", () => {
       .map((match) => match[1]!)
       .filter((name) => !NOT_LISTED.has(name))
       .map((name) => name === "index" ? `${base}/` : `${base}/${name}.html`);
+    pages.push(`${base}/weekly.html`);
     expect(pages.length).toBeGreaterThan(10);
     const listed = [...(await read("public/sitemap.xml")).matchAll(/<loc>([^<]+)<\/loc>/g)]
       .map((match) => match[1]!);

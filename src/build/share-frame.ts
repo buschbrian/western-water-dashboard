@@ -9,7 +9,7 @@ export interface FrameContent {
 export const escapeHtml = (value: string): string => value.replace(/[&<>"']/g,
   (character) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[character]!);
 
-export function shareFrameDocument(content: FrameContent, policy: string, kind: "scope" | "page"): string {
+export function shareFrameDocument(content: FrameContent, policy: string, kind: "scope" | "page" | "weekly"): string {
   const { name, figure, stored, lines, source } = content;
   return `<!doctype html><html lang="en"><head><meta charset="UTF-8" />
 <meta http-equiv="Content-Security-Policy" content="${escapeHtml(policy)}" />

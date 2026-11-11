@@ -23,6 +23,12 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   Inventory of Dams. Five carry a record low the record-figure screen
   reports for review, as several published reservoirs already do.
 
+- **Saved weekly summaries, feeds and a caption** (ADR-158). One capture per
+  Mountain Time week keeps its original figures, dates and reporting coverage.
+  Atom and JSON feeds publish the latest 52 entries; earlier pages remain.
+  Each entry has a picture and a caption to copy. The capture uses the site's
+  existing arithmetic and text builders; no model writes the summary.
+
 - **Main-page picture previews and copyable story embed code.** The storage,
   snow, precipitation, drought and river pages carry dated preview pictures,
   with figure-free fallbacks. The precipitation page offers its full card

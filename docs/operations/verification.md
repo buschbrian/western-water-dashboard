@@ -130,3 +130,11 @@ perfect score from a renderer that never drew. Leave the window in front.
   Colour balance, density and visual hierarchy need a human at a real browser.
 - Hover cannot be exercised in a hidden pane: `requestAnimationFrame` never
   fires there and `view.hitTest()` never settles.
+
+## Weekly pages and feeds
+
+`npm run verify:browser -- --weekly` rebuilds and checks Atom XML parsing,
+JSON Feed content, permanent links, caption selection, the 1200 by 630 picture
+frame and accessibility down to 320 pixels. It uses the standard system-Chrome
+setting. The full browser target includes the same cases. Screenshots are
+written to `screenshots/weekly-*.png`.

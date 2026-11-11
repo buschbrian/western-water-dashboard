@@ -2,7 +2,7 @@
 
 Status: The four Wave 1 implementation PRs (#115–#118) were published on
 2026-11-09. Wave 2, sharing and place: items 5–7 are implemented locally;
-items 8 and 9 remain.
+item 8 is implemented locally (ADR-158), and item 9 remains.
 Brian Busch chose the four scopes below
 on 2026-11-09. ADR-153 records the storage-map choice; each later wave writes
 its own record where required.

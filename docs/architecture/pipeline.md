@@ -345,3 +345,21 @@ record high above the full level or a record low far below its neighbours
 (ADR-150). The refresh step's raw log is the complete referral list; the
 run page's annotation list is a convenience view. Review the full log.
 The warning opens no issue and removes nothing.
+
+## Weekly digest ledger (ADR-158)
+
+`node scripts/build-weekly-digest.mjs` runs the existing TypeScript weekly
+models through the installed Vite SSR loader, with network serving and file
+watching disabled. `src/build/weekly-digest.ts` validates the current payloads
+and atomically appends a capture to `data/weekly-digest.json`. The week is its
+Monday in Mountain Time. A second run leaves an existing week's bytes
+unchanged, even if the inputs have since changed. Original figures, wording,
+source dates and caption are saved together. Invalid stored history fails
+rather than silently starting a new ledger.
+
+The separate **Publish weekly figures** workflow runs Mondays at 13:00 UTC,
+shares `refresh-data-<ref>` concurrency with daily refresh, and commits only
+the ledger. Its successful main-branch run triggers Pages explicitly because
+its own token's push does not. It has no provider credential and posts to no
+social service. The build publishes the frozen entries as pages and feeds;
+none enters an application JavaScript bundle.
