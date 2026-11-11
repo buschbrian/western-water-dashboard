@@ -166,7 +166,7 @@ def places_index() -> dict:
         "topic": "places",
         "as_of": str(reservoirs["generated_at"])[:10],
         "generated_at": reservoirs["generated_at"],
-        "reservoirs": [{"name": item["name"], "state": item.get("state")}
+        "reservoirs": [{"name": item["name"], "state": item.get("state"), **({"huc8": item["huc8"]} if item.get("huc8") else {})}
                        for item in reservoirs["reservoirs"]],
         "areas": areas,
         "sites": [{"station": site["station"], "name": site["name"],

@@ -427,6 +427,13 @@
       "writer": "tools/build_share_ledger.py",
       "staged_by_refresh": true,
       "note": "Append-only permanent reservoir share addresses. Entries survive renames, withdrawal and removal."
+    },
+    {
+      "path": "data/assistant/towns.json",
+      "class": "derived-on-demand",
+      "writer": "tools/build_town_index.py",
+      "staged_by_refresh": false,
+      "note": "Census 2026 place internal points assigned offline to committed drainage areas; not water-supply areas."
     }
   ]
 }

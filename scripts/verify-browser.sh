@@ -19,6 +19,10 @@ fi
 
 npx vite build
 mkdir -p screenshots
+if [ "${1:-}" = "--towns" ]; then
+  node tests/smoke-modern.mjs --towns
+  exit 0
+fi
 if [ "${1:-}" = "--embeds" ]; then
   node tests/smoke-modern.mjs --embeds
   exit 0

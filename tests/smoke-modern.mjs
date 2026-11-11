@@ -805,6 +805,14 @@ const browser = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
   ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH }
   : {});
 
+if (process.argv.includes("--towns")) {
+  await checkTownSearch();
+  await browser.close();
+  server.close();
+  for (const failure of failures) console.error(failure);
+  process.exit(failures.length ? 1 : 0);
+}
+
 if (process.argv.includes("--embeds")) {
   await checkStoryEmbeds();
   await browser.close();
@@ -8122,6 +8130,51 @@ await checkStoryEmbeds();
     await phone.close();
   }
 }
+
+async function checkTownSearch() {
+  const index = JSON.parse(await readFile(path.join(ROOT, "data/assistant/places.json"), "utf8"));
+  const towns = JSON.parse(await readFile(path.join(ROOT, "data/assistant/towns.json"), "utf8")).towns;
+  const names = [...index.reservoirs, ...index.areas, ...index.sites, ...towns].map((row) => row.name);
+  const town = towns.find((row) => row.name === "Millcreek" && names.filter((name) => name === row.name).length === 1)
+    ?? towns.find((row) => names.filter((name) => name === row.name).length === 1);
+  const area = index.areas.filter((row) => town.huc8.startsWith(row.code)
+    && index.reservoirs.some((reservoir) => reservoir.huc8?.startsWith(row.code)))
+    .sort((a, b) => b.level - a.level)[0];
+  for (const viewport of VIEWPORTS) {
+    const label = `Town search (${viewport.name})`;
+    console.log(`\n=== ${label}`);
+    const context = await browser.newContext({ viewport, colorScheme: viewport.name === "mobile" ? "dark" : "light" });
+    const tab = await context.newPage();
+    const errors = [];
+    tab.on("pageerror", (error) => errors.push(error.message));
+    tab.on("console", (message) => {
+      if (message.type() === "error" && !/font|favicon/i.test(message.text() + message.location().url)) errors.push(message.text());
+    });
+    try {
+      await tab.goto(`${URL}methods.html?state=all`, { waitUntil: "domcontentloaded", timeout: 60000 });
+      await tab.locator("#place-search-trigger").click();
+      await tab.getByRole("combobox", { name: "Find a place" }).fill(town.name);
+      const option = tab.locator("#place-search-list .place-search-option").filter({ hasText: "Town or city" }).first();
+      await option.waitFor({ state: "visible", timeout: 30000 });
+      check((await option.innerText()).includes(`point in ${area.name}`), `${label}: result does not name the containing area`);
+      check((await tab.locator("#town-search-note").innerText()).includes("do not show where a town gets water"), `${label}: missing water-supply limit`);
+      check(await tab.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${label}: horizontal overflow`);
+      await checkAccessibility(tab, check, label);
+      await tab.screenshot({ path: `screenshots/town-search-${viewport.name}.png` });
+      await option.click();
+      await tab.waitForURL((url) => url.searchParams.get("area") === area.code, { timeout: 30000 });
+      check(new globalThis.URL(tab.url()).searchParams.get("state") === "all", `${label}: town link lost explicit all-state scope`);
+      await tab.waitForFunction(() => window.__dashboardReady, { timeout: 90000 });
+      check(await tab.locator("dialog.opening-splash[open]").count() === 0, `${label}: a chooser covers the town link`);
+    } catch (error) { failures.push(`${label}: ${error.message}`); }
+    finally {
+      errors.forEach((error) => failures.push(`${label}: ${error}`));
+      await context.close();
+    }
+  }
+}
+
+await checkTownSearch();
 
 await browser.close();
 server.close();

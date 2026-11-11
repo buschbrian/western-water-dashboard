@@ -345,3 +345,10 @@ record high above the full level or a record low far below its neighbours
 (ADR-150). The refresh step's raw log is the complete referral list; the
 run page's annotation list is a convenience view. Review the full log.
 The warning opens no issue and removes nothing.
+
+The on-demand `tools/build_town_index.py` reads the downloaded Census 2026
+national places ZIP, filters eleven states, and assigns internal points with
+the existing HUC helper and level-8 drawn scope. It merges the separate town
+reference by Census identifier and enforces a 96 KiB gzip limit (ADR-159).
+The daily places index carries current reservoir subbasin codes so search
+can resolve a town against the currently published roster.

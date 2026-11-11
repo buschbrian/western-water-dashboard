@@ -173,3 +173,12 @@ would otherwise have a thirty-year fact deleted over a fortnight of silence. **A
 reservoir with no record is not asked again**: "no readings in the period" is a
 finding about a dam built in 2011, not a fetch to retry; only "the provider did
 not answer" is retryable.
+
+## Town search reference
+
+Download the national places ZIP linked from the Census 2026 gazetteer page,
+then run `.venv/bin/python tools/build_town_index.py --input <zip>`. This
+network-independent builder merges the reference, reports its gzip cost,
+and refuses a different vintage. Run `npm run verify:pipeline` and the
+browser town-search checks before committing the reference. The daily
+assistant-index writer supplies the current reservoir subbasins separately.

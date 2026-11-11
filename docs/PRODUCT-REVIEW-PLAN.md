@@ -185,18 +185,11 @@ Record: one.
 
 ### 9. Search finds towns
 
-- An offline tool takes place names from the Census Bureau's gazetteer for the
-  eleven states and assigns each to a drainage area with the committed,
-  unpublished `data/watersheds/west-huc8.geojson`. It writes a reference file
-  beside the existing index, inside a measured byte budget.
-- Search gains a town result. Choosing one opens the finest area around it
-  that holds a published reservoir, and says the town is in that area. It
-  never says where a town's water comes from.
-- No geocoder and no new host (ADR-004, ADR-036).
-- Whether a link carries the town is a URL question for the `scope-state`
-  skill and the record.
-
-Record: one.
+Implemented locally on `feat/town-search` (ADR-159). The offline Census
+reference holds 4,283 place points in 48,735 gzip bytes. Search opens the
+finest containing published area with a current reservoir and names the
+point's location without claiming a water-supply area. Existing area URLs
+carry the selection; no town parameter or preference is introduced.
 
 ## Wave 3: new data
 

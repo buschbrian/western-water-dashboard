@@ -130,3 +130,8 @@ perfect score from a renderer that never drew. Leave the window in front.
   Colour balance, density and visual hierarchy need a human at a real browser.
 - Hover cannot be exercised in a hidden pane: `requestAnimationFrame` never
   fires there and `view.hitTest()` never settles.
+
+`npm run verify:browser -- --towns` rebuilds and checks town search at all
+three widths, the point and supply-area wording, keyboard semantics through
+axe, the resulting all-state area link, and the absence of a covering chooser.
+The normal browser target includes these checks.

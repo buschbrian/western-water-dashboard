@@ -581,3 +581,8 @@ both.
 **The rule this does not change:** generalized geometry is still never used
 for analysis. The numbers above are about what a browser draws, and a
 41-vertex Utah cannot resolve a border whatever it costs to send.
+
+Town search reference, 2026-11-11: 4,283 Census place points, 289,002 raw
+bytes and 48,735 gzip bytes. Budget: 96 KiB gzip, enforced by the builder.
+It is fetched on search focus beside the current names index, never on
+ordinary page startup. No boundary geometry travels in this reference.

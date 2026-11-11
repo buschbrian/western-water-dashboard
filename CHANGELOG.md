@@ -13,6 +13,10 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
+- **Town search** (ADR-159): Census place points join Find a place, opening
+  the finest containing drainage area with a published reservoir. The search
+  states that drainage areas do not show where a town gets water.
+
 - **Eleven California reservoirs** from the California Department of Water
   Resources: Lake Spaulding, Twitchell Reservoir, Farmington Reservoir,
   Clifton Court Forebay, Mariposa Reservoir, Brush Creek Reservoir, Lake

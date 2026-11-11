@@ -114,6 +114,7 @@ The four different scopes, the hydrologic level, and what a link carries.
   [ADR-109](ADR-109-remove-scofields-rejected-dam-point.md),
   [ADR-149](ADR-149-let-the-weekly-storage-figures-follow-every-filter.md),
   [ADR-153](ADR-153-state-the-maps-storage-against-normal-and-subtotal-the-filtered-rows.md)
+- Town search: [ADR-159](ADR-159-find-towns-by-their-census-place-points.md)
 - Boundary sourcing: [ADR-024](ADR-024-use-full-resolution-watersheds-for-snow-sites.md),
   [ADR-034](ADR-034-hosted-boundary-layers-with-a-deadline.md),
   [ADR-037](ADR-037-refetch-the-boundaries-at-the-resolution-the-source-stops-adding.md)
@@ -374,3 +375,5 @@ things noticed while testing. These records are the opposite — each one is
 fixed at the moment of decision. Where the two overlap, the journal is the
 narrative and the record is the decision. Neither is current architecture;
 that is [`docs/architecture/`](../architecture/README.md).
+
+| [ADR-159](ADR-159-find-towns-by-their-census-place-points.md) | Find towns by their Census place points | Accepted; implementation local |

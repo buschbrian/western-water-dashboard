@@ -11,18 +11,25 @@ import "@esri/calcite-components/components/calcite-icon";
 import { fetchWithin } from "../data/fetch";
 import type { PageId } from "./page-header";
 import {
-  buildPlaces, onlyMatch, parsePlaceIndex, PLACE_INDEX_URL, placeHref, searchPlaces,
+  buildPlaces, onlyMatch, parsePlaceIndex, parseTownIndex, PLACE_INDEX_URL, TOWN_INDEX_URL, placeHref, searchPlaces,
   type Place
 } from "./place-search-model";
 
 const TRIGGER_ID = "place-search-trigger";
 
-type Loaded = { places: Place[] } | { error: true };
+type Loaded = { places: Place[]; townsUnavailable: boolean } | { error: true };
 let loading: Promise<Loaded> | null = null;
 
 function loadPlaces(): Promise<Loaded> {
-  loading ??= fetchWithin(PLACE_INDEX_URL)
-    .then(async (response) => ({ places: buildPlaces(parsePlaceIndex(await response.json())) }))
+  loading ??= Promise.all([
+    fetchWithin(PLACE_INDEX_URL).then(async (response) => parsePlaceIndex(await response.json())),
+    fetchWithin(TOWN_INDEX_URL).then(async (response) => parseTownIndex(await response.json()))
+      .catch((error: unknown) => {
+        console.warn("The town search could not load its names:", error);
+        return null;
+      })
+  ])
+    .then(([index, towns]) => ({ places: buildPlaces(index, towns ?? []), townsUnavailable: towns === null }))
     .catch((error: unknown) => {
       console.warn("The place search could not load its names:", error);
       return { error: true } as const;
@@ -140,7 +147,13 @@ export function setupPlaceSearch(current: PageId): void {
     list.setAttribute("aria-busy", "true");
     void loadPlaces().then((loaded) => {
       list.removeAttribute("aria-busy");
-      if ("places" in loaded) places = loaded.places;
+      if ("places" in loaded) {
+        places = loaded.places;
+        if (loaded.townsUnavailable) {
+          const note = document.getElementById("town-search-note");
+          if (note) note.textContent = "Town names could not be loaded. Reservoirs, drainage areas and snow sites can still be found.";
+        }
+      }
       else failed = true;
       if (input.value.trim()) render();
     });
@@ -171,7 +184,7 @@ export function setupPlaceSearch(current: PageId): void {
       "aria-autocomplete": "list", "aria-expanded": "false",
       "aria-controls": "place-search-list", autocomplete: "off",
       autocapitalize: "off", spellcheck: "false",
-      placeholder: "Reservoir, drainage area or snow site"
+      placeholder: "Town, reservoir, drainage area or snow site"
     });
     const closer = element("button", {
       type: "button", class: "place-search-close", "aria-label": "Close the search"
@@ -184,7 +197,10 @@ export function setupPlaceSearch(current: PageId): void {
     });
     list.hidden = true;
     status = element("p", { class: "visually-hidden", role: "status" });
-    root.append(label, row, list, status);
+    const note = element("p", { class: "place-search-detail place-search-note", id: "town-search-note" },
+      "Towns use Census place points. Drainage areas do not show where a town gets water.");
+    input.setAttribute("aria-describedby", note.id);
+    root.append(label, row, list, note, status);
 
     input.addEventListener("focus", ensureLoaded);
     input.addEventListener("input", () => { ensureLoaded(); render(); });

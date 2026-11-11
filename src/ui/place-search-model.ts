@@ -14,15 +14,35 @@ import { isUsStateCode, parseStateList, stateName } from "../data/state-vocabula
 import type { PageId } from "./page-header";
 
 export const PLACE_INDEX_URL = "./data/assistant/places.json";
+export const TOWN_INDEX_URL = "./data/assistant/towns.json";
 export const PLACE_RESULT_LIMIT = 8;
 
 export interface PlaceIndex {
-  reservoirs: { name: string; state: string | null }[];
+  reservoirs: { name: string; state: string | null; huc8?: string }[];
   areas: { level: number; code: string; name: string; states: string }[];
   sites: { station: string; name: string; state: string | null }[];
 }
 
-export type PlaceKind = "reservoir" | "area" | "site";
+export type PlaceKind = "reservoir" | "area" | "site" | "town";
+
+interface Town { id: string; name: string; state: string; huc8: string }
+
+export function parseTownIndex(value: unknown): Town[] {
+  const root = value as Record<string, unknown> | null;
+  if (!root || root.schema_version !== 1 || !Array.isArray(root.towns)) {
+    throw new Error("towns.json is not a town index");
+  }
+  const ids = new Set<string>();
+  return root.towns.map((row: unknown) => {
+    const town = row as Town;
+    if (!town || typeof town !== "object" || !/^\d{7}$/.test(town.id) ||
+      !/^\d{8}$/.test(town.huc8) || !text(town.name) || !isUsStateCode(town.state) || ids.has(town.id)) {
+      throw new Error("Invalid or repeated town");
+    }
+    ids.add(town.id);
+    return { id: town.id, name: town.name, state: town.state, huc8: town.huc8 };
+  });
+}
 
 export interface Place {
   kind: PlaceKind;
@@ -35,6 +55,7 @@ export interface Place {
   id: string;
   /** Area level, for the link. */
   level?: number;
+  area?: string;
   /** The folded name, matched against the folded query. */
   key: string;
   /** Name, type and location folded together, for multi-word queries. */
@@ -60,7 +81,8 @@ export function parsePlaceIndex(value: unknown): PlaceIndex {
     Boolean(row) && typeof row === "object");
   const reservoirs = rows(root.reservoirs).flatMap((row) => {
     const name = text(row.name);
-    return name ? [{ name, state: text(row.state) }] : [];
+    return name ? [{ name, state: text(row.state),
+      ...(typeof row.huc8 === "string" && /^\d{8}$/.test(row.huc8) ? { huc8: row.huc8 } : {}) }] : [];
   });
   const areas = rows(root.areas).flatMap((row) => {
     const code = text(row.code);
@@ -118,7 +140,7 @@ export function placeText(entry: Place): string {
  * Anything still alike after that gets its identifier, so no two results
  * ever read the same.
  */
-export function buildPlaces(index: PlaceIndex): Place[] {
+export function buildPlaces(index: PlaceIndex, towns: readonly Town[] = []): Place[] {
   const areaNames = new Map(index.areas.map((area) => [`${area.level}:${area.code}`, area.name]));
   const repeated = (keys: string[]) => {
     const counts = new Map<string, number>();
@@ -151,7 +173,16 @@ export function buildPlaces(index: PlaceIndex): Place[] {
         location, area.code, area.level);
     }),
     ...index.sites.map((site) => place("site", site.name, "Snow site",
-      site.state ? stateName(site.state) : null, site.station))
+      site.state ? stateName(site.state) : null, site.station)),
+    ...towns.flatMap((town) => {
+      const area = index.areas.filter((candidate) => town.huc8.startsWith(candidate.code) &&
+        index.reservoirs.some((reservoir) => reservoir.huc8?.startsWith(candidate.code)))
+        .sort((a, b) => b.level - a.level)[0];
+      if (!area) return [];
+      return [{ ...place("town", town.name, "Town or city",
+        `${stateName(town.state)}; point in ${area.name} ${AREA_TYPES[area.level]?.toLowerCase() ?? "drainage area"}`,
+        town.id, area.level), area: area.code }];
+    })
   ];
   const stillAlike = repeated(places.map(placeText));
   return places.map((entry) => stillAlike(placeText(entry))
@@ -174,7 +205,7 @@ export function matchRank(entry: Place, query: string): number | null {
   return null;
 }
 
-const KIND_ORDER: Readonly<Record<PlaceKind, number>> = { reservoir: 0, area: 1, site: 2 };
+const KIND_ORDER: Readonly<Record<PlaceKind, number>> = { reservoir: 0, area: 1, site: 2, town: 3 };
 
 /** Exact names first, then names that start with the query, then the rest. */
 export function searchPlaces(
@@ -226,7 +257,8 @@ export function placeHref(entry: Place, current: PageId): string {
     return `./snow.html?state=all&site=${encodeURIComponent(entry.id)}`;
   }
   const page = AREA_PAGES[current] ?? "./";
-  const level = entry.level ?? entry.id.length;
-  return `${page}?state=all&area=${encodeURIComponent(entry.id)}` +
+  const area = entry.area ?? entry.id;
+  const level = entry.level ?? area.length;
+  return `${page}?state=all&area=${encodeURIComponent(area)}` +
     (level === DEFAULT_LEVEL ? "" : `&level=${level}`);
 }
