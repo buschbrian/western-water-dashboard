@@ -386,4 +386,4 @@ fixed at the moment of decision. Where the two overlap, the journal is the
 narrative and the record is the decision. Neither is current architecture;
 that is [`docs/architecture/`](../architecture/README.md).
 
-| [ADR-164](ADR-164-find-towns-by-their-census-place-points.md) | Find towns by their Census place points | Accepted; implementation local |
+| [ADR-164](ADR-164-find-towns-by-their-census-place-points.md) | Find towns by their Census place points | Proposed; implementation local |

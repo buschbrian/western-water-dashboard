@@ -1,6 +1,6 @@
 # ADR-164: Find towns by their Census place points
 
-- Status: Accepted; implementation local
+- Status: **Proposed** (for Brian Busch's approval)
 - Date: 2026-11-11
 
 ## Context
