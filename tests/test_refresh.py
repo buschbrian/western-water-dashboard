@@ -1556,6 +1556,9 @@ def test_the_reviewed_readings_are_committed_with_their_evidence():
     assert {station: len(records) for station, records in named.items()} == {
         "ALM": 21, "BCL": 34, "BTV": 24, "CGS": 4, "CHV": 3, "CTG": 9,
         "LVY": 16, "MHW": 2, "SLC": 3,
+        # The ADR-158 batch of 2026-11-11, one reading each but Lower Bear's two.
+        "ELC": 1, "HNT": 1, "HTH": 1, "LKF": 1, "LPY": 1, "LWB": 2, "LYS": 1,
+        "NAT": 1, "PT6": 1, "PT7": 1,
     }
     assert ("2020-4-4 00:00", 8918440) in named["ALM"]
     assert ("2016-7-30 00:00", 955539) in named["BCL"]
@@ -3086,6 +3089,52 @@ def test_cwms_exclusions_must_name_their_own_location(tmp_path):
     path = exclusion_file(tmp_path, [exclusion(sensor="CAB")], station="BOX", withheld=False)
     with pytest.raises(ValueError, match="sensor BOX"):
         R.load_excluded_readings(path, None)
+
+
+def awdb_payload(rows):
+    return [{"stationTriplet": "09009040:CO:BOR", "data": [{"values": [
+        {"date": stamp, "value": value} for stamp, value in rows]}]}]
+
+
+def test_awdb_exclusions_drop_the_named_reading_and_nothing_else(tmp_path, monkeypatch, capsys):
+    """ADR-116 for an NRCS station: the triplet is its own sensor, the stamp is the service's date."""
+    triplet = "09009040:CO:BOR"
+    path = exclusion_file(tmp_path, [exclusion(sensor=triplet, stamp="2023-06-13", value=0)],
+                          station=triplet, withheld=False)
+    monkeypatch.setattr(R.providers, "AWDB_EXCLUDED_READINGS", R.load_excluded_readings(path, None))
+    rows = [("2023-06-12", 22928), ("2023-06-13", 0), ("2023-06-14", 16511)]
+    monkeypatch.setattr(R.providers, "_get_awdb_json", lambda params: awdb_payload(rows))
+    frame = R.fetch_awdb_series(triplet, "daily", "20230601", "20230630")
+    assert frame["storage_af"].tolist() == [22928.0, 16511.0]
+    printed = capsys.readouterr().out
+    assert f"{triplet}: 1 reviewed reading(s) excluded (ADR-116)" in printed
+
+    other = R.fetch_awdb_series("14097310:OR:BOR", "daily", "20230601", "20230630")
+    assert 0.0 in other["storage_af"].tolist()
+
+
+def test_awdb_exclusions_match_the_raw_value(tmp_path, monkeypatch):
+    triplet = "09009040:CO:BOR"
+    path = exclusion_file(tmp_path, [exclusion(sensor=triplet, stamp="2023-06-13", value=0)],
+                          station=triplet, withheld=False)
+    monkeypatch.setattr(R.providers, "AWDB_EXCLUDED_READINGS", R.load_excluded_readings(path, None))
+    rows = [("2023-06-12", 22928), ("2023-06-13", 19000), ("2023-06-14", 16511)]
+    monkeypatch.setattr(R.providers, "_get_awdb_json", lambda params: awdb_payload(rows))
+    frame = R.fetch_awdb_series(triplet, "daily", "20230601", "20230630")
+    assert frame["storage_af"].tolist() == [22928.0, 19000.0, 16511.0]
+
+
+def test_awdb_exclusions_must_name_their_own_station(tmp_path):
+    path = exclusion_file(tmp_path, [exclusion(sensor="14097310:OR:BOR")],
+                          station="09009040:CO:BOR", withheld=False)
+    with pytest.raises(ValueError, match="sensor 09009040:CO:BOR"):
+        R.load_excluded_readings(path, None)
+
+
+def test_the_committed_awdb_exclusion_is_the_reviewed_homestake_zero():
+    named = {station: [(record["stamp"], record["value"]) for record in records]
+             for station, records in R.providers.AWDB_EXCLUDED_READINGS.items()}
+    assert named == {"09009040:CO:BOR": [("2023-06-13", 0)]}
 
 
 def test_the_committed_cwms_exclusion_is_the_reviewed_box_canyon_reading():

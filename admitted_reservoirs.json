@@ -3196,5 +3196,18 @@
       }
     }
   },
+  "excluded_readings": {
+    "09009040:CO:BOR": [
+      {
+        "sensor": "09009040:CO:BOR",
+        "stamp": "2023-06-13",
+        "value": 0,
+        "reason": "ADR-152 test met: zero (a daily reading of 0 with both neighbours above zero). 0 acre-feet between 22,928 on 2023-06-12 and 16,511 on 2023-06-14. Served unchanged on 2026-11-11, and not part of a run of three readings at one value (ADR-158).",
+        "source_url": "https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1/data?stationTriplets=09009040%3ACO%3ABOR&elements=RESC&duration=DAILY&beginDate=2023-06-12&endDate=2023-06-14&periodRef=END",
+        "reviewed_on": "2026-11-11",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/135"
+      }
+    ]
+  },
   "keyed_by": "station_triplet"
 }
