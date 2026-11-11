@@ -21,7 +21,7 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from .constants import (
-    ADMITTED_CDEC_RESERVOIRS_PATH, ADMITTED_RISE_RESERVOIRS_PATH,
+    ADMITTED_CDEC_RESERVOIRS_PATH, ADMITTED_CWMS_RESERVOIRS_PATH, ADMITTED_RISE_RESERVOIRS_PATH,
     AWDB_DATA_URL, RISE_RESULT_URL,
     local_today,
 )
@@ -300,6 +300,11 @@ CDEC_EXCLUDED_READINGS = load_excluded_readings(
 #: Reviewed exclusions of RISE results, by item (ADR-116). The item is the
 #: station key, so a record names the item as its own `sensor`.
 RISE_EXCLUDED_READINGS = load_excluded_readings(ADMITTED_RISE_RESERVOIRS_PATH, None)
+
+#: Reviewed exclusions of Corps readings, by location (ADR-116). The roster
+#: pins one series per location, so a record names the location as its
+#: `sensor` and its stamp as the service's UTC instant.
+CWMS_EXCLUDED_READINGS = load_excluded_readings(ADMITTED_CWMS_RESERVOIRS_PATH, None)
 
 
 def exclude_cached_storage_readings(days: dict, record: dict) -> None:
@@ -1188,6 +1193,21 @@ def fetch_cwms_series(office: str, timeseries: str, start: str, end: str) -> pd.
         return pd.DataFrame({"date": pd.Series(dtype="datetime64[ns]"),
                              "storage_af": pd.Series(dtype="float64")})
     frame = pd.DataFrame(rows)
+    # A reviewed exclusion is applied where Corps readings are read (ADR-116),
+    # matched on the UTC instant the service writes and the raw value.
+    location = timeseries.split(".", 1)[0]
+    if CWMS_EXCLUDED_READINGS.get(location):
+        instants = pd.to_datetime(frame["epoch_ms"], unit="ms", utc=True, errors="coerce")
+        gone = [None if pd.isna(instant) else excluded_reading(
+                    location, instant.isoformat(), reading, CWMS_EXCLUDED_READINGS)
+                for instant, reading in zip(instants, frame["storage_af"])]
+        dropped = [found for found in gone if found is not None]
+        if dropped:
+            print(f"  {location}: {len(dropped)} reviewed reading(s) excluded (ADR-116)")
+            for record in dropped:
+                print(f"    {record['stamp']}  {record['value']:,.2f} acre-feet  "
+                      f"{record['issue_url']}")
+            frame = frame[[found is None for found in gone]].reset_index(drop=True)
     observed = pd.to_datetime(frame["epoch_ms"], unit="ms", utc=True, errors="coerce")
     if zone:
         try:

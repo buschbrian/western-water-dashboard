@@ -1538,6 +1538,20 @@
       "county_name": "Nevada County",
       "state": "CA"
     },
+    "Bear-Pool": {
+      "name": "Bear Reservoir",
+      "county_fips": "06047",
+      "county_name": "Merced County",
+      "state": "CA",
+      "retrieved": "2026-11-11"
+    },
+    "Big Dry Cr": {
+      "name": "Big Dry Creek Reservoir",
+      "county_fips": "06019",
+      "county_name": "Fresno County",
+      "state": "CA",
+      "retrieved": "2026-11-11"
+    },
     "CAB": {
       "name": "Cabinet Gorge Reservoir",
       "county_fips": "16017",
@@ -1768,6 +1782,13 @@
       "county_fips": "06061",
       "county_name": "Placer County",
       "state": "CA"
+    },
+    "FMT": {
+      "name": "Fairmont Reservoir",
+      "county_fips": "06037",
+      "county_name": "Los Angeles County",
+      "state": "CA",
+      "retrieved": "2026-11-11"
     },
     "FRD": {
       "name": "Frenchman Lake",
@@ -2161,6 +2182,13 @@
       "county_fips": "06057",
       "county_name": "Nevada County",
       "state": "CA"
+    },
+    "Mojave": {
+      "name": "Mojave Reservoir",
+      "county_fips": "06071",
+      "county_name": "San Bernardino County",
+      "state": "CA",
+      "retrieved": "2026-11-11"
     },
     "NAT": {
       "name": "Lake Natoma",
