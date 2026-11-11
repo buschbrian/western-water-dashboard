@@ -46,6 +46,7 @@ different populations.
 
 import argparse
 import json
+import math
 import os
 import sys
 import tempfile
@@ -75,6 +76,26 @@ RETRIES = 3
 
 RETRYABLE_REASONS = frozenset({"the provider did not answer"})
 
+#: What each measurement's file says about itself. Snow water (ADR-160) uses
+#: the same steps, substitution and merge rules as precipitation.
+ELEMENTS = {
+    "PREC": {"writer": "tools/build_precipitation_history.py",
+             "units": "tenths of an inch, accumulated since 1 October",
+             "missing": "no precipitation record"},
+    "WTEQ": {"writer": "tools/build_snow_history.py",
+             "units": "tenths of an inch, water held in snow",
+             "missing": "no snow-water record"},
+}
+
+
+def usable(value, element: str) -> bool:
+    """Precipitation keeps every numeric reading as published; snow water
+    cannot be negative or unbounded."""
+    if not isinstance(value, (int, float)):
+        return False
+    return element != "WTEQ" or (not isinstance(value, bool)
+                                 and math.isfinite(value) and value >= 0)
+
 
 def step_month_days() -> list[str]:
     """Calendar days of the steps, read off a water year with no 29 February."""
@@ -96,19 +117,19 @@ def to_tenths(value: float) -> int:
     return int(round(value * 10))
 
 
-def readings_by_date(record: dict) -> dict[str, float]:
+def readings_by_date(record: dict, *, element: str = "PREC") -> dict[str, float]:
     series = [
         entry for entry in record.get("data", [])
-        if entry.get("stationElement", {}).get("elementCode") == "PREC"
+        if entry.get("stationElement", {}).get("elementCode") == element
         and entry.get("stationElement", {}).get("durationName") == "DAILY"
     ]
     if len(series) > 1:
         raise ValueError(f"{record.get('stationTriplet')} has {len(series)} "
-                         "daily precipitation series")
+                         f"daily {element} series")
     values = {}
     for entry in series[0]["values"] if series else []:
         value = entry.get("value")
-        if isinstance(value, (int, float)):
+        if usable(value, element):
             values[entry["date"][:10]] = float(value)
     return values
 
@@ -144,14 +165,14 @@ def encode(values: list[int]) -> list[int]:
 
 
 def build_site(station: str, record: dict | None, years: range,
-               month_days: list[str]) -> dict:
+               month_days: list[str], *, element: str = "PREC") -> dict:
     if record is None:
         return {"station": station, "available": False,
                 "reason": "the provider did not answer"}
-    readings = readings_by_date(record)
+    readings = readings_by_date(record, element=element)
     if not readings:
         return {"station": station, "available": False,
-                "reason": "no precipitation record"}
+                "reason": ELEMENTS[element]["missing"]}
     encoded, substituted = [], 0
     for water_year in years:
         values, borrowed = year_steps(readings, water_year, month_days)
@@ -166,10 +187,10 @@ def build_site(station: str, record: dict | None, years: range,
 
 
 def fetch_batch(session: requests.Session, stations: list[str],
-                begin: date, end: date) -> dict[str, dict]:
+                begin: date, end: date, *, element: str = "PREC") -> dict[str, dict]:
     params = {
         "stationTriplets": ",".join(stations),
-        "elements": "PREC",
+        "elements": element,
         "duration": "DAILY",
         "beginDate": begin.isoformat(),
         "endDate": end.isoformat(),
@@ -182,7 +203,7 @@ def fetch_batch(session: requests.Session, stations: list[str],
             response.raise_for_status()
             payload = response.json()
             if not isinstance(payload, list):
-                raise ValueError("precipitation response is not a list")
+                raise ValueError(f"{element} response is not a list")
             wanted = set(stations)
             return {row["stationTriplet"]: row for row in payload
                     if row.get("stationTriplet") in wanted}
@@ -190,7 +211,7 @@ def fetch_batch(session: requests.Session, stations: list[str],
             last_error = error
             if attempt + 1 < RETRIES:
                 time.sleep(5 * 2 ** attempt)
-    raise RuntimeError(f"precipitation history request failed: {last_error}")
+    raise RuntimeError(f"{element} history request failed: {last_error}")
 
 
 def already_built(path: Path) -> dict:
@@ -207,15 +228,15 @@ def needs_building(station: str, existing_sites: dict[str, dict]) -> bool:
 
 
 def build_payload(sites: list[dict], *, first: int, last: int,
-                  month_days: list[str], checked: str) -> dict:
+                  month_days: list[str], checked: str, element: str = "PREC") -> dict:
     available = [site for site in sites if site["available"]]
     return {
         "schema_version": SCHEMA_VERSION,
-        "generated_by": "tools/build_precipitation_history.py",
+        "generated_by": ELEMENTS[element]["writer"],
         "checked": checked,
         "source": DATA_URL,
-        "element": "PREC",
-        "units": "tenths of an inch, accumulated since 1 October",
+        "element": element,
+        "units": ELEMENTS[element]["units"],
         "encoding": "per year: the first step's value, then each step's change",
         "first_water_year": first,
         "last_water_year": last,
@@ -240,11 +261,12 @@ def write_atomic(path: Path, payload: dict) -> None:
             os.unlink(temporary)
 
 
-def main() -> int:
-    parser = argparse.ArgumentParser(description=__doc__,
+def main(*, element: str = "PREC", output_path: Path = OUTPUT_PATH,
+         description: str | None = __doc__) -> int:
+    parser = argparse.ArgumentParser(description=description,
                                      formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("--inventory", type=Path, default=INVENTORY_PATH)
-    parser.add_argument("--output", type=Path, default=OUTPUT_PATH)
+    parser.add_argument("--output", type=Path, default=output_path)
     parser.add_argument("--through", type=int, default=None, metavar="WATER_YEAR",
                         help="last water year in the window (default: the last finished one)")
     parser.add_argument("--only", nargs="+", default=None, metavar="STATION")
@@ -265,6 +287,9 @@ def main() -> int:
               json.loads(args.inventory.read_text(encoding="utf-8"))["sites"]]
 
     existing = already_built(args.output)
+    if existing and existing.get("element") != element:
+        print("ERROR: the existing history measures another element", file=sys.stderr)
+        return 2
     if existing and (existing.get("first_water_year"), existing.get("last_water_year")) \
             != (FIRST_WATER_YEAR, last):
         if args.only or args.missing:
@@ -300,11 +325,11 @@ def main() -> int:
 
     def run(batch: list[str]) -> list[dict]:
         try:
-            records = fetch_batch(session, batch, begin, end)
+            records = fetch_batch(session, batch, begin, end, element=element)
         except RuntimeError as error:
             print(f"  batch starting {batch[0]} failed: {error}", file=sys.stderr)
             records = {}
-        return [build_site(station, records.get(station), years, month_days)
+        return [build_site(station, records.get(station), years, month_days, element=element)
                 for station in batch]
 
     with ThreadPoolExecutor(max_workers=max(1, args.workers)) as pool:
@@ -319,7 +344,7 @@ def main() -> int:
               if station in roster_set and station not in built}
     merged.update(built)
     payload = build_payload(list(merged.values()), first=FIRST_WATER_YEAR, last=last,
-                            month_days=month_days, checked=today.isoformat())
+                            month_days=month_days, checked=today.isoformat(), element=element)
     write_atomic(args.output, payload)
     unanswered = sum(1 for site in merged.values()
                      if site.get("reason") in RETRYABLE_REASONS)
