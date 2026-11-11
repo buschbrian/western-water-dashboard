@@ -30,6 +30,25 @@ def entry(**overrides) -> dict:
     return row
 
 
+def salt_lake(**overrides) -> dict:
+    row = json.loads(json.dumps(roster.admitted_terminal_lakes()["great-salt-lake"]))
+    row.update(overrides)
+    return row
+
+
+def walker_only() -> dict[str, dict]:
+    """The roster as the Walker-only tests were written against it."""
+    return {"10288500": roster.admitted_terminal_lakes()["10288500"]}
+
+
+def target(**overrides) -> dict:
+    row = {"name": "Restoration level", "authority": "A board", "decision": "Decision 1",
+           "source_url": "https://example.test/order", "set_on": "2020-01-01",
+           "vertical_datum": "NGVD29", "elevation_ft": 3950.0}
+    row.update(overrides)
+    return row
+
+
 def daily(column: str, base: float, amplitude: float, *, years: int = 6,
           stale_days: int = 0, seed: int = 3) -> pd.DataFrame:
     rng = np.random.default_rng(seed)
@@ -85,9 +104,9 @@ def test_walker_lake_stays_out_of_every_reservoir_roster():
     assert "Walker Lake" not in R.ALL_RESERVOIR_NAMES
 
 
-def write_roster(tmp_path, row) -> Path:
+def write_roster(tmp_path, row, key=None) -> Path:
     document = json.loads((ROOT / "admitted_terminal_lakes.json").read_text())
-    document["lakes"] = {row["station"]: row}
+    document["lakes"] = {key or row["station"]: row}
     path = tmp_path / "admitted_terminal_lakes.json"
     path.write_text(json.dumps(document))
     return path
@@ -113,20 +132,98 @@ def test_the_loader_refuses_a_volume_without_its_relation(tmp_path):
         roster.load_admitted_terminal_lakes(write_roster(tmp_path, row))
 
 
-def test_the_loader_refuses_a_target_spelled_as_a_capacity(tmp_path):
-    target = {"name": "Restoration level", "authority": "A board",
-              "source_url": "https://example.test/order", "set_on": "2020-01-01",
-              "elevation_ft": 3950.0, "capacity_af": 100}
-    with pytest.raises(ValueError, match="never a capacity"):
-        roster.load_admitted_terminal_lakes(write_roster(tmp_path, entry(targets=[target])))
+@pytest.mark.parametrize("field", ["capacity_af", "pct_of_target", "percent_of_target",
+                                   "share", "denominator", "full_level_ft", "volume_af"])
+def test_the_loader_refuses_a_target_stored_as_a_capacity_or_a_denominator(
+        tmp_path, field):
+    """ADR-159: a target is a named line, never a full level or a divisor."""
+    path = write_roster(tmp_path, entry(targets=[target(**{field: 100})]))
+    with pytest.raises(ValueError, match="never a capacity or a denominator"):
+        roster.load_admitted_terminal_lakes(path)
+
+
+@pytest.mark.parametrize("field", ["authority", "decision", "set_on", "vertical_datum"])
+def test_the_loader_refuses_a_target_without_its_authority_decision_date_or_datum(
+        tmp_path, field):
+    row = target()
+    del row[field]
+    with pytest.raises(ValueError, match=f"missing {field}"):
+        roster.load_admitted_terminal_lakes(write_roster(tmp_path, entry(targets=[row])))
 
 
 def test_the_loader_accepts_a_named_target_with_its_authority(tmp_path):
-    target = {"name": "Restoration level", "authority": "A board",
-              "source_url": "https://example.test/order", "set_on": "2020-01-01",
-              "elevation_ft": 3950.0}
-    rows = roster.load_admitted_terminal_lakes(write_roster(tmp_path, entry(targets=[target])))
+    rows = roster.load_admitted_terminal_lakes(write_roster(tmp_path, entry(targets=[target()])))
     assert rows["10288500"]["targets"][0]["elevation_ft"] == 3950.0
+    assert rows["10288500"]["targets"][0]["decision"] == "Decision 1"
+
+
+def test_the_loader_accepts_an_elevation_only_lake_that_says_why(tmp_path):
+    row = entry(volume_finding="No reviewed volume relation.")
+    del row["volume"]
+    rows = roster.load_admitted_terminal_lakes(write_roster(tmp_path, row))
+    assert "volume" not in rows["10288500"]
+
+
+def test_the_loader_refuses_a_missing_volume_that_is_not_explained(tmp_path):
+    row = entry()
+    del row["volume"]
+    with pytest.raises(ValueError, match="volume_finding"):
+        roster.load_admitted_terminal_lakes(write_roster(tmp_path, row))
+
+
+# --- arms (ADR-159) ------------------------------------------------------
+
+def test_great_salt_lake_is_admitted_by_arm_with_no_combined_level():
+    row = roster.admitted_terminal_lakes()["great-salt-lake"]
+    assert row["name"] == "Great Salt Lake"
+    assert [arm["name"] for arm in row["arms"]] == ["South Arm", "North Arm"]
+    assert [arm["station"] for arm in row["arms"]] == ["10010000", "10010100"]
+    for arm in row["arms"]:
+        assert arm["elevation"]["vertical_datum"] == "NGVD29"
+        assert arm["elevation"]["parameter_code"] == "62614"
+        assert arm["point"]["source_url"].startswith("https://")
+        assert "volume" not in arm and arm["volume_finding"]
+    assert not {"station", "lat", "lon", "elevation", "volume"} & set(row)
+    assert row["closed_basin"]["huc6"] == "160203"
+    assert row["targets"] == []
+
+
+@pytest.mark.parametrize("field", ["elevation", "volume", "lat", "station"])
+def test_the_loader_refuses_a_combined_level_or_point_on_a_lake_measured_by_arm(
+        tmp_path, field):
+    row = salt_lake(**{field: entry()[field]})
+    with pytest.raises(ValueError, match="no level, volume or point of its own"):
+        roster.load_admitted_terminal_lakes(write_roster(tmp_path, row, "great-salt-lake"))
+
+
+def test_the_loader_refuses_an_arm_without_its_reviewed_point(tmp_path):
+    row = salt_lake()
+    del row["arms"][1]["point"]
+    with pytest.raises(ValueError, match="North Arm needs a reviewed point"):
+        roster.load_admitted_terminal_lakes(write_roster(tmp_path, row, "great-salt-lake"))
+
+
+def test_the_loader_refuses_an_arm_without_its_datum(tmp_path):
+    row = salt_lake()
+    del row["arms"][0]["elevation"]["vertical_datum"]
+    with pytest.raises(ValueError, match="datum"):
+        roster.load_admitted_terminal_lakes(write_roster(tmp_path, row, "great-salt-lake"))
+
+
+def test_the_loader_refuses_two_arms_on_one_site(tmp_path):
+    row = salt_lake()
+    row["arms"][1]["station"] = row["arms"][0]["station"]
+    with pytest.raises(ValueError, match="its own survey site"):
+        roster.load_admitted_terminal_lakes(write_roster(tmp_path, row, "great-salt-lake"))
+
+
+def test_a_target_on_a_lake_measured_by_arm_names_its_arm(tmp_path):
+    with pytest.raises(ValueError, match="names the arm"):
+        roster.load_admitted_terminal_lakes(write_roster(
+            tmp_path, salt_lake(targets=[target()]), "great-salt-lake"))
+    rows = roster.load_admitted_terminal_lakes(write_roster(
+        tmp_path, salt_lake(targets=[target(arm="South Arm")]), "great-salt-lake"))
+    assert rows["great-salt-lake"]["targets"][0]["arm"] == "South Arm"
 
 
 def test_the_loader_needs_a_reviewed_closed_basin(tmp_path):
@@ -224,6 +321,139 @@ def test_a_lake_needs_both_series():
                              pd.DataFrame({"date": [], "volume_af": []}), TODAY)
 
 
+def test_walker_lake_publishes_the_fields_it_did_before_and_an_empty_arms_list():
+    """ADR-159 leaves Walker Lake as it was: one site, one point, a level and a
+    volume. The only new field is an empty arms list."""
+    record = lakes.summarize_lake(
+        entry(), daily("elevation_ft", 3915, 3), daily("volume_af", 1_150_000, 40_000), TODAY)
+    assert list(record) == [
+        "name", "water_type", "source_key", "source_label", "source_url",
+        "source_station_id", "state", "lat", "lon", "data_frequency", "stale_after_days",
+        "as_of", "days_stale", "is_stale", "fetch_ok", "elevation", "volume", "arms",
+        "targets", "first_obs", "years_of_record"]
+    assert record["source_station_id"] == "10288500" and record["arms"] == []
+    assert record["volume"]["relation"]["in_use_from"] == "2014-10-01"
+
+
+def test_an_elevation_only_lake_publishes_a_null_volume_and_validates():
+    row = entry(volume_finding="No reviewed volume relation.")
+    del row["volume"]
+    record = lakes.summarize_lake(row, daily("elevation_ft", 3915, 3), None, TODAY)
+    assert record["volume"] is None
+    assert record["elevation"]["vertical_datum"] == "NGVD29"
+    lakes.validate_payload(build([record]), {"10288500": row})
+
+
+def test_an_elevation_only_lake_still_needs_its_elevation():
+    row = entry(volume_finding="No reviewed volume relation.")
+    del row["volume"]
+    with pytest.raises(ValueError, match="elevation series is required"):
+        lakes.summarize_lake(row, pd.DataFrame({"date": [], "elevation_ft": []}), None, TODAY)
+
+
+def arm_series(south_stale: int = 0, north_stale: int = 0) -> dict:
+    return {"10010000": (daily("elevation_ft", 4192, 1, stale_days=south_stale, seed=4), None),
+            "10010100": (daily("elevation_ft", 4190, 1, stale_days=north_stale, seed=5), None)}
+
+
+def test_a_lake_measured_by_arm_publishes_named_arms_and_no_combined_level():
+    record = lakes.summarize_armed_lake(salt_lake(), arm_series(), TODAY)
+    assert record["elevation"] is None and record["volume"] is None
+    assert record["source_station_id"] is None and record["lat"] is None
+    assert [arm["name"] for arm in record["arms"]] == ["South Arm", "North Arm"]
+    for arm, station in zip(record["arms"], ["10010000", "10010100"]):
+        assert arm["source_station_id"] == station
+        assert arm["elevation"]["vertical_datum"] == "NGVD29"
+        assert arm["elevation"]["statistic_id"] == "00003"
+        assert arm["volume"] is None
+        assert "change_365d_pct" not in arm["elevation"]
+    assert not (lakes.RESERVOIR_ONLY_FIELDS & set(record))
+    lakes.validate_payload(build([record]), {"great-salt-lake": salt_lake()})
+
+
+def test_a_lake_measured_by_arm_is_as_current_as_its_oldest_arm():
+    record = lakes.summarize_armed_lake(salt_lake(), arm_series(north_stale=5), TODAY)
+    assert record["days_stale"] == 5 and record["is_stale"] is True
+    assert record["as_of"] == record["arms"][1]["elevation"]["as_of"]
+    quiet = lakes.summarize_armed_lake(salt_lake(), arm_series(south_stale=90), TODAY)
+    payload = build([quiet])
+    assert payload["lakes"] == [] and payload["withdrawn"][0]["name"] == "Great Salt Lake"
+
+
+def test_the_validator_refuses_a_combined_level_beside_arms():
+    record = lakes.summarize_armed_lake(salt_lake(), arm_series(), TODAY)
+    record["elevation"] = record["arms"][0]["elevation"]
+    with pytest.raises(ValueError, match="no combined level"):
+        lakes.validate_payload(build([record]), {"great-salt-lake": salt_lake()})
+
+
+@pytest.mark.parametrize("where", ["record", "elevation"])
+def test_the_validator_refuses_a_share_of_a_target(where):
+    record = lakes.summarize_lake(
+        entry(targets=[target()]), daily("elevation_ft", 3915, 3),
+        daily("volume_af", 1_150_000, 40_000), TODAY)
+    (record if where == "record" else record["elevation"])["pct_of_target"] = 92.0
+    with pytest.raises(ValueError, match="never a denominator"):
+        lakes.validate_payload(build([record]), walker_only())
+
+
+def test_the_validator_refuses_a_target_stored_as_a_capacity():
+    record = lakes.summarize_lake(
+        entry(targets=[target()]), daily("elevation_ft", 3915, 3),
+        daily("volume_af", 1_150_000, 40_000), TODAY)
+    record["targets"][0]["capacity_af"] = 100
+    with pytest.raises(ValueError, match="never a capacity"):
+        lakes.validate_payload(build([record]), walker_only())
+
+
+def test_each_arm_is_assigned_from_its_own_point_and_the_lake_where_they_agree():
+    record = lakes.summarize_armed_lake(salt_lake(), arm_series(), TODAY)
+    lakes.attach_watersheds([record])
+    for arm in record["arms"]:
+        assert arm["huc6"] == "160203" and arm["huc8"] == "16020310"
+        assert arm["huc_assignment_source"] == "published_point"
+    assert record["huc6"] == "160203" and record["huc8"] == "16020310"
+    assert record["in_utah"] is True
+    assert "huc_assignment_point" not in record
+
+
+def test_the_refresh_writes_both_lakes_and_carries_a_quiet_arm(monkeypatch, tmp_path, capsys):
+    path = tmp_path / "lakes.json"
+
+    def fetch(entry_row, *_args):
+        if entry_row.get("arms"):
+            return arm_series()
+        return {"10288500": (daily("elevation_ft", 3915, 3),
+                             daily("volume_af", 1_150_000, 40_000))}
+
+    monkeypatch.setattr(refresh_lakes, "fetch_lake", fetch)
+    monkeypatch.setattr(refresh_lakes, "LAKES_OUTPUT_PATH", path)
+    monkeypatch.setattr(refresh_lakes.time, "sleep", lambda _s: None)
+    monkeypatch.setattr(sys, "argv", ["refresh_lakes.py"])
+    assert refresh_lakes.main() == 0, capsys.readouterr().err
+    payload = json.loads(path.read_text())
+    assert payload["schema_version"] == 2
+    published = {r["name"]: r for r in payload["lakes"]}
+    assert set(published) == {"Walker Lake", "Great Salt Lake"}
+    assert published["Walker Lake"]["volume"]["unit"] == "acre_feet"
+    assert [a["name"] for a in published["Great Salt Lake"]["arms"]] == ["South Arm",
+                                                                         "North Arm"]
+
+    def quiet_north(entry_row, *_args):
+        series = fetch(entry_row)
+        if entry_row.get("arms"):
+            empty = pd.DataFrame({"date": pd.to_datetime([])})
+            series["10010100"] = (empty.assign(elevation_ft=[]), None)
+        return series
+
+    monkeypatch.setattr(refresh_lakes, "fetch_lake", quiet_north)
+    monkeypatch.setattr(refresh_lakes, "local_today", lambda: TODAY + pd.Timedelta(days=1))
+    assert refresh_lakes.main() == 0, capsys.readouterr().err
+    carried = {r["name"]: r for r in json.loads(path.read_text())["lakes"]}["Great Salt Lake"]
+    assert carried["fetch_ok"] is False and carried["is_stale"] is True
+    assert "North Arm elevation" in carried["fetch_error"]
+
+
 def test_the_assignment_comes_from_the_lake_point_and_says_so():
     record = lakes.summarize_lake(
         entry(), daily("elevation_ft", 3915, 3), daily("volume_af", 1_150_000, 40_000), TODAY)
@@ -248,7 +478,7 @@ def test_the_payload_names_its_type_and_versions_and_validates():
     assert payload["schema_version"] == R.constants.LAKE_SCHEMA_VERSION
     assert payload["method_version"] == R.METHOD_VERSION
     assert payload["lake_count"] == 1 and payload["withdrawn_count"] == 0
-    lakes.validate_payload(payload, roster.admitted_terminal_lakes())
+    lakes.validate_payload(payload, walker_only())
 
 
 def test_a_reservoir_field_on_a_lake_is_refused():
@@ -256,7 +486,7 @@ def test_a_reservoir_field_on_a_lake_is_refused():
         entry(), daily("elevation_ft", 3915, 3), daily("volume_af", 1_150_000, 40_000), TODAY)
     record["pct_of_capacity"] = 55.0
     with pytest.raises(ValueError, match="no full level"):
-        lakes.validate_payload(build([record]), roster.admitted_terminal_lakes())
+        lakes.validate_payload(build([record]), walker_only())
 
 
 def test_a_quiet_lake_is_withdrawn_with_a_notice_and_no_measurement():
@@ -268,12 +498,12 @@ def test_a_quiet_lake_is_withdrawn_with_a_notice_and_no_measurement():
     notice = payload["withdrawn"][0]
     assert set(notice) <= lakes.NOTICE_FIELDS
     assert "elevation" not in notice and "volume" not in notice
-    lakes.validate_payload(payload, roster.admitted_terminal_lakes())
+    lakes.validate_payload(payload, walker_only())
 
 
 def test_a_lake_missing_from_the_payload_fails_validation():
     with pytest.raises(ValueError, match="missing \\['Walker Lake'\\]"):
-        lakes.validate_payload(build([]), roster.admitted_terminal_lakes())
+        lakes.validate_payload(build([]), walker_only())
 
 
 # --- the orchestrator ----------------------------------------------------
@@ -284,8 +514,8 @@ def test_carry_forward_keeps_yesterday_marked_late(monkeypatch, tmp_path):
     previous = tmp_path / "lakes.json"
     previous.write_text(json.dumps(build([record])))
     kept = refresh_lakes.load_previous(previous)
-    assert set(kept) == {"10288500"}
-    carried = R.carry_forward(kept["10288500"], TODAY + pd.Timedelta(days=3), "down")
+    assert set(kept) == {"Walker Lake"}
+    carried = R.carry_forward(kept["Walker Lake"], TODAY + pd.Timedelta(days=3), "down")
     assert carried["is_stale"] is True and carried["fetch_ok"] is False
     assert carried["elevation"]["current"] == record["elevation"]["current"]
 
@@ -307,9 +537,10 @@ def test_a_withdrawn_lake_stays_withdrawn_while_its_feed_is_down(
         if outage == "raises":
             raise ConnectionError("feed down")
         empty = pd.DataFrame({"date": pd.to_datetime([])})
-        return empty.assign(elevation_ft=[]), empty.assign(volume_af=[])
+        return {"10288500": (empty.assign(elevation_ft=[]), empty.assign(volume_af=[]))}
 
     tomorrow = TODAY + pd.Timedelta(days=1)
+    monkeypatch.setattr(refresh_lakes, "admitted_terminal_lakes", walker_only)
     monkeypatch.setattr(refresh_lakes, "fetch_lake", down)
     monkeypatch.setattr(refresh_lakes, "local_today", lambda: tomorrow)
     monkeypatch.setattr(refresh_lakes, "LAKES_OUTPUT_PATH", path)
@@ -324,7 +555,7 @@ def test_a_withdrawn_lake_stays_withdrawn_while_its_feed_is_down(
     assert notice["name"] == "Walker Lake"
     assert notice["as_of"] == day_before["as_of"]
     assert notice["days_stale"] == day_before["days_stale"] + 1
-    lakes.validate_payload(payload, roster.admitted_terminal_lakes())
+    lakes.validate_payload(payload, walker_only())
 
 
 def test_the_daily_script_runs_the_lake_refresh_after_snow_and_before_the_commit():

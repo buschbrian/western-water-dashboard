@@ -23,7 +23,7 @@ from .constants import (
     ADMITTED_RESERVOIR_ELEVATIONS_PATH,
     ADMITTED_RIVER_GAUGES_PATH,
     BASE_AWDB_RESERVOIRS,
-    BASE_RISE_RESERVOIRS, CAPACITY_PATH,
+    BASE_RISE_RESERVOIRS, CAPACITY_PATH, TARGET_SHARE_WORDS,
 )
 
 
@@ -524,23 +524,111 @@ def load_admitted_usgs_reservoirs(
 ADMITTED_USGS_RESERVOIRS = load_admitted_usgs_reservoirs()
 
 
+def _lake_series(name: str, where: str, measure: str, series: object) -> dict:
+    """One measured series: the survey's parameter, statistic and unit."""
+    if not isinstance(series, dict):
+        raise ValueError(f"{name}: the {where}{measure} series is required")
+    for field in ("parameter_code", "statistic_id", "unit"):
+        if not isinstance(series.get(field), str) or not series[field]:
+            raise ValueError(f"{name}: {where}{measure} needs {field}")
+    return series
+
+
+def _lake_gauge(name: str, where: str, gauge: dict) -> None:
+    """What one gauge must carry: a point, an elevation with its datum, and a
+    volume on a named relation or a reviewed finding that there is none.
+
+    Used for a lake read at one site and for each arm of a lake measured by
+    arm (ADR-159); `where` names the arm in a refusal.
+    """
+    if not isinstance(gauge.get("lat"), (int, float)) or not isinstance(
+            gauge.get("lon"), (int, float)):
+        raise ValueError(f"{name}: {where}coordinates are required")
+    elevation = _lake_series(name, where, "elevation", gauge.get("elevation"))
+    if not isinstance(elevation.get("vertical_datum"), str) \
+            or not elevation["vertical_datum"]:
+        raise ValueError(f"{name}: an elevation is meaningless without its datum")
+    volume = gauge.get("volume")
+    if volume is None:
+        # Elevation alone is allowed and said, never implied by a gap
+        # (ADR-159): the finding is the reviewed reason there is no volume.
+        finding = gauge.get("volume_finding")
+        if not isinstance(finding, str) or not finding:
+            raise ValueError(
+                f"{name}: {where}a lake without a volume needs a volume_finding "
+                "that says why")
+        return
+    _lake_series(name, where, "volume", volume)
+    relation = volume.get("relation")
+    if not isinstance(relation, dict) or not relation.get("name") \
+            or not isinstance(relation.get("source_url"), str) \
+            or not relation["source_url"].startswith("https://"):
+        raise ValueError(
+            f"{name}: the volume must name its elevation-volume relation and an "
+            "HTTPS source")
+
+
+def _lake_targets(name: str, targets: object, arm_names: set[str]) -> None:
+    """A target is a named line with its authority, decision and date."""
+    if not isinstance(targets, list):
+        raise ValueError(f"{name}: targets must be a list, empty when there are none")
+    for target in targets:
+        if not isinstance(target, dict):
+            raise ValueError(f"{name}: a target is a named level")
+        spelled = sorted(key for key in target
+                         if any(word in key.lower() for word in TARGET_SHARE_WORDS))
+        if spelled:
+            raise ValueError(
+                f"{name}: a target is never a capacity or a denominator (ADR-112, "
+                f"ADR-159); remove {spelled}")
+        for field in ("name", "authority", "decision", "source_url", "set_on",
+                      "vertical_datum"):
+            if not isinstance(target.get(field), str) or not target[field]:
+                raise ValueError(
+                    f"{name}: a target is a named level with its authority, "
+                    f"decision, source, date and datum; missing {field}")
+        if not target["source_url"].startswith("https://"):
+            raise ValueError(f"{name}: a target's source must be HTTPS")
+        _reviewed_date(name, "target.set_on", target["set_on"])
+        if not isinstance(target.get("elevation_ft"), (int, float)) \
+                or isinstance(target.get("elevation_ft"), bool):
+            raise ValueError(f"{name}: a target is an elevation in feet")
+        arm = target.get("arm")
+        if arm is not None and arm not in arm_names:
+            raise ValueError(f"{name}: a target names an arm the lake does not have")
+        if arm is None and arm_names:
+            raise ValueError(
+                f"{name}: a lake measured by arm has no level of its own, so a "
+                "target names the arm it is read against")
+
+
 def load_admitted_terminal_lakes(
     path: Path = ADMITTED_TERMINAL_LAKES_PATH,
 ) -> dict[str, dict]:
-    """Load the reviewed natural terminal lakes (ADR-112).
+    """Load the reviewed natural terminal lakes (ADR-112, ADR-159).
 
     Not a reservoir roster and not loaded by one: a lake has no dam, no full
     level and no percent full, so `validate_capacity_evidence` never sees it,
     and any capacity-shaped field in an entry is refused outright -- the way a
     waiver with no reason is refused in the reservoir files. What a lake must
-    carry instead is the evidence the decision asks for: a reviewed waterbody
-    point, a reviewed closed-basin assignment, and for each of its two
-    measurements the survey's parameter, statistic and unit, with the
-    published elevation-volume relation named beside the volume.
+    carry instead is the evidence the decisions ask for: a reviewed waterbody
+    point, a reviewed closed-basin assignment, and for each gauge the survey's
+    parameter, statistic, unit and datum.
+
+    A lake is read at one site and keyed by it, or measured by arm. A lake
+    measured by arm is keyed by its own name and carries no site, point, level
+    or volume of its own -- the arms stand at different levels behind the
+    causeway, so no combined level exists to publish -- and lists each arm
+    with its own site, reviewed point and elevation (ADR-159).
+
+    The volume is optional for a lake or an arm. Without one, the entry says
+    why in `volume_finding`, so a missing volume is a reviewed statement and
+    never a gap.
 
     A target -- a restoration or regulatory level -- is admitted only as a
-    named target with its authority, source and date. It is never a capacity,
-    and the loader will not let one be spelled as one.
+    named line with its authority, decision, source, date and datum. It is
+    never a capacity or a denominator, and the loader will not let one be
+    spelled as either.
     """
     document = json.loads(path.read_text(encoding="utf-8"))
     if document.get("water_type") != "natural_terminal_lake":
@@ -550,21 +638,18 @@ def load_admitted_terminal_lakes(
         raise ValueError(f"{path.name} must contain a non-empty lakes object")
     forbidden = {"capacity", "capacity_af", "pct_of_capacity", "nid_id", "dam_lat",
                  "dam_lon", "full_level_af", "physical_capacity_af"}
-    for station, row in rows.items():
-        if not isinstance(station, str) or not station or not isinstance(row, dict):
+    names: set[str] = set()
+    for key, row in rows.items():
+        if not isinstance(key, str) or not key or not isinstance(row, dict):
             raise ValueError(f"invalid lake entry in {path.name}")
         name = row.get("name")
         if not isinstance(name, str) or not name:
-            raise ValueError(f"{station}: a lake needs a name to be called by")
-        if row.get("station") != station:
-            raise ValueError(
-                f"{station}: keyed by one station and configured for "
-                f"{row.get('station')!r}")
+            raise ValueError(f"{key}: a lake needs a name to be called by")
+        if name in names:
+            raise ValueError(f"{name}: a lake is listed twice")
+        names.add(name)
         if row.get("cadence") != "daily":
             raise ValueError(f"{name}: a terminal lake series must be daily")
-        if not isinstance(row.get("lat"), (int, float)) or not isinstance(
-                row.get("lon"), (int, float)):
-            raise ValueError(f"{name}: coordinates are required")
         spelled = forbidden & set(row)
         if spelled:
             raise ValueError(
@@ -587,36 +672,55 @@ def load_admitted_terminal_lakes(
             if not isinstance(basin.get(field), str) or not basin[field]:
                 raise ValueError(f"{name}: closed_basin needs {field}")
         _reviewed_date(name, "closed_basin.reviewed", basin.get("reviewed"))
-        for measure in ("elevation", "volume"):
-            series = row.get(measure)
-            if not isinstance(series, dict):
-                raise ValueError(f"{name}: the {measure} series is required")
-            for field in ("parameter_code", "statistic_id", "unit"):
-                if not isinstance(series.get(field), str) or not series[field]:
-                    raise ValueError(f"{name}: {measure} needs {field}")
-        if not isinstance(row["elevation"].get("vertical_datum"), str) \
-                or not row["elevation"]["vertical_datum"]:
-            raise ValueError(f"{name}: an elevation is meaningless without its datum")
-        relation = row["volume"].get("relation")
-        if not isinstance(relation, dict) or not relation.get("name") \
-                or not isinstance(relation.get("source_url"), str) \
-                or not relation["source_url"].startswith("https://"):
-            raise ValueError(
-                f"{name}: the volume must name its elevation-volume relation and an "
-                "HTTPS source")
-        targets = row.get("targets")
-        if not isinstance(targets, list):
-            raise ValueError(f"{name}: targets must be a list, empty when there are none")
-        for target in targets:
-            for field in ("name", "authority", "source_url", "set_on"):
-                if not isinstance(target.get(field), str) or not target[field]:
+
+        arms = row.get("arms")
+        arm_names: set[str] = set()
+        if arms is None:
+            if row.get("station") != key:
+                raise ValueError(
+                    f"{key}: keyed by one station and configured for "
+                    f"{row.get('station')!r}")
+            _lake_gauge(name, "", row)
+        else:
+            if not isinstance(arms, list) or len(arms) < 2:
+                raise ValueError(f"{name}: a lake measured by arm lists two or more arms")
+            combined = sorted({"station", "lat", "lon", "elevation", "volume"} & set(row))
+            if combined:
+                # No combined level: the arms stand at different levels. A
+                # combined volume needs the survey to publish one, and none is
+                # reviewed here (ADR-159).
+                raise ValueError(
+                    f"{name}: a lake measured by arm has no level, volume or point "
+                    f"of its own; remove {combined}")
+            if key.isdigit():
+                raise ValueError(
+                    f"{name}: a lake measured by arm is keyed by its name, not a site")
+            stations: set[str] = set()
+            for arm in arms:
+                if not isinstance(arm, dict):
+                    raise ValueError(f"{name}: an arm is an object")
+                arm_name = arm.get("name")
+                if not isinstance(arm_name, str) or not arm_name or arm_name in arm_names:
+                    raise ValueError(f"{name}: each arm needs its own name")
+                arm_names.add(arm_name)
+                station = arm.get("station")
+                if not isinstance(station, str) or not station.isdigit() \
+                        or station in stations:
+                    raise ValueError(f"{name}: {arm_name} needs its own survey site")
+                stations.add(station)
+                point = arm.get("point")
+                if not isinstance(point, dict) or not isinstance(
+                        point.get("source_url"), str) \
+                        or not point["source_url"].startswith("https://"):
                     raise ValueError(
-                        f"{name}: a target is a named level with its authority, "
-                        f"source and date; missing {field}")
-            if not isinstance(target.get("elevation_ft"), (int, float)):
-                raise ValueError(f"{name}: a target is an elevation in feet")
-            if any(key in target for key in ("capacity_af", "volume_af", "pct")):
-                raise ValueError(f"{name}: a target is never a capacity (ADR-112)")
+                        f"{name}: {arm_name} needs a reviewed point with an HTTPS source")
+                _reviewed_date(name, f"{arm_name}.point.checked", point.get("checked"))
+                spelled = forbidden & set(arm)
+                if spelled:
+                    raise ValueError(
+                        f"{name}: a terminal lake has no capacity; remove {sorted(spelled)}")
+                _lake_gauge(name, f"{arm_name}: ", arm)
+        _lake_targets(name, row.get("targets"), arm_names)
     return rows
 
 

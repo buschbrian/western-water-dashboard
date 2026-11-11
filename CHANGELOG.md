@@ -13,6 +13,18 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
+- **Great Salt Lake on the terminal lakes page, by arm** (ADR-159). The South
+  Arm (U.S. Geological Survey site 10010000, Saltair Boat Harbor) and the
+  North Arm (10010100, near Saline) each show their own daily surface level
+  above the National Geodetic Vertical Datum of 1929, at their own point. No
+  level is shown for the whole lake, because the arms stand at different
+  levels behind the railroad causeway, and no volume, because the survey
+  publishes no daily volume for either arm. `lakes.json` moves to structure
+  version 2: a lake may carry `arms`, its `volume` may be null, and a target
+  names its decision and datum. Walker Lake is unchanged apart from an empty
+  `arms` list. Pyramid Lake stays held for its monthly readings and Mono Lake
+  for a daily elevation series; the roster records exactly what each needs.
+
 - **Fairmont Reservoir** from the California Department of Water Resources,
   on a reviewed match to Fairmont No. 2 (493 acre-feet). The automatic match
   had taken a larger dam 2.8 km away. LADWP plans to reline the reservoir

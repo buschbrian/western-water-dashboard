@@ -258,7 +258,15 @@ ELEVATION_HISTORY_SCHEMA_VERSION = 1
 
 #: The shape of `lakes.json`, versioned apart from the reservoir payload: a
 #: lake record has no capacity or percent full to share a contract with.
-LAKE_SCHEMA_VERSION = 1
+#: Version 2 (ADR-159): a lake may be measured by arm, its volume may be
+#: null, and a target names its decision and datum.
+LAKE_SCHEMA_VERSION = 2
+
+#: Words that make a lake target a full level or a denominator. A target is a
+#: named elevation with its authority; a share of it reads as a percent full,
+#: which ADR-112 forbids, so a field spelling one is refused (ADR-159).
+TARGET_SHARE_WORDS = ("capacity", "volume", "pct", "percent", "share",
+                      "denominator", "full")
 
 #: The shape of `rivers.json` (ADR-136). Version 2 admits the natural tier
 #: and its comparison with normal (ADR-144); version 3 compares a day with

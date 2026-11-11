@@ -106,10 +106,12 @@ should be worked:
    around, and the `script-src` measurement behind ADR-036.
 5. **The next terminal lakes.** Walker Lake is published end to end: the
    roster and payload (ADR-118) and its own page, reached from the methods and
-   data pages (ADR-119). What remains is contract work before it is page work:
-   Pyramid Lake needs the volume block to become optional by decision, Great
-   Salt Lake needs an arm-aware record, and whether a lake earns a place in the
-   navigation bar waits for a second lake. The current lake payload is
+   data pages (ADR-119). ADR-159 made the volume optional and added arms, and
+   Great Salt Lake is admitted by arm. Pyramid Lake is held for its monthly
+   update schedule, and Mono Lake for a daily elevation series; the roster's
+   withheld block says exactly what each needs. Whether a lake earns a place
+   in the navigation bar is the next page decision, now that there is a second
+   lake. The current lake payload is
    included in [`data-transfer.md`](data-transfer.md).
 6. **The remaining reservoir coverage gaps, now much narrower.** The Corps of
    Engineers' Columbia Basin service (ADR-102) covers Idaho, Oregon and

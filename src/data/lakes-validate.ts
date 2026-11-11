@@ -8,10 +8,12 @@
  * percent full, and a withdrawal notice carrying a level or a volume. Both
  * are the pipeline's own rules (ADR-112, ADR-056) and the client holds them
  * too, so a payload written by something other than the pipeline cannot
- * smuggle a full level onto a lake.
+ * smuggle a full level onto a lake. ADR-159 adds three more: a lake measured
+ * by arm with a combined level, a target spelled as a capacity, and any
+ * field that divides by a target.
  */
 import type {
-  LakeElevation, LakeMeasurement, LakePayload, LakeTarget, LakeVolume,
+  LakeArm, LakeElevation, LakeMeasurement, LakePayload, LakeTarget, LakeVolume,
   MonthlyRecord, TerminalLake, WithdrawnLake
 } from "../types";
 
@@ -100,16 +102,66 @@ function isVolume(value: unknown): value is LakeVolume {
   return isMonthly(record.monthly);
 }
 
+/** Words that make a target a full level or a denominator (ADR-112, ADR-159). */
+const TARGET_SHARE_WORDS = ["capacity", "volume", "pct", "percent", "share", "denominator", "full"];
+
 function isTarget(value: unknown): value is LakeTarget {
-  return isObject(value) && typeof value.name === "string" && value.name.length > 0
+  if (!isObject(value)) return false;
+  /* A target spelled as a capacity or a share is refused, not ignored. */
+  if (Object.keys(value).some((key) =>
+    TARGET_SHARE_WORDS.some((word) => key.toLowerCase().includes(word)))) return false;
+  return typeof value.name === "string" && value.name.length > 0
     && typeof value.authority === "string" && value.authority.length > 0
+    && typeof value.decision === "string" && value.decision.length > 0
     && isHttps(value.source_url) && isDate(value.set_on)
+    && typeof value.vertical_datum === "string" && value.vertical_datum.length > 0
     && hasNumber(value.elevation_ft)
-    /* A target spelled as a capacity or a share is refused, not ignored. */
-    && !("capacity_af" in value) && !("volume_af" in value) && !("pct" in value);
+    && (value.arm === undefined || (typeof value.arm === "string" && value.arm.length > 0));
 }
 
-function validateLake(value: unknown, index: number): TerminalLake {
+/** A field that divides by a target, wherever it is put. */
+function sharesATarget(value: Record<string, unknown>): string | undefined {
+  return Object.keys(value).find((key) => key.includes("target") && key !== "targets");
+}
+
+function checkHucFields(name: string, value: Record<string, unknown>): void {
+  for (const field of ["huc6", "huc6_name", "huc8", "huc8_name"]) {
+    const huc = value[field];
+    if (huc !== undefined && huc !== null && typeof huc !== "string") {
+      throw new Error(`${name}: ${field} must be text or null`);
+    }
+  }
+}
+
+/** One gauge's level and volume: a level always, a volume or null (ADR-159). */
+function checkGauge(name: string, value: Record<string, unknown>): void {
+  if (!isElevation(value.elevation)) throw new Error(`${name}: the elevation block is malformed`);
+  if (value.volume !== null && !isVolume(value.volume)) {
+    throw new Error(`${name}: the volume block is malformed`);
+  }
+  for (const block of [value.elevation, value.volume]) {
+    if (isObject(block) && sharesATarget(block)) {
+      throw new Error(`${name}: a target is never a denominator`);
+    }
+  }
+}
+
+function validateArm(lake: string, value: unknown): LakeArm {
+  if (!isObject(value) || typeof value.name !== "string" || !value.name) {
+    throw new Error(`${lake}: an arm needs a name`);
+  }
+  const name = `${lake}, ${value.name}`;
+  if (typeof value.source_station_id !== "string" || !value.source_station_id) {
+    throw new Error(`${name}: an arm needs its own site`);
+  }
+  if (!hasNumber(value.lat) || !hasNumber(value.lon)) throw new Error(`${name}: no point`);
+  checkGauge(name, value);
+  if (!isDate(value.first_obs)) throw new Error(`${name}: record provenance is incomplete`);
+  checkHucFields(name, value);
+  return value as unknown as LakeArm;
+}
+
+function validateLake(value: unknown, index: number, version: number): TerminalLake {
   if (!isObject(value)) throw new Error(`lake ${index} is not an object`);
   const name = typeof value.name === "string" ? value.name : `lake ${index}`;
   if (value.water_type !== "natural_terminal_lake") {
@@ -118,12 +170,12 @@ function validateLake(value: unknown, index: number): TerminalLake {
   for (const field of RESERVOIR_ONLY) {
     if (field in value) throw new Error(`${name}: a terminal lake has no full level (${field})`);
   }
+  if (sharesATarget(value)) throw new Error(`${name}: a target is never a denominator`);
   if (typeof value.name !== "string" || !value.name) throw new Error(`lake ${index} has no name`);
   if (value.source_key !== "usgs" || typeof value.source_label !== "string"
-      || !isHttps(value.source_url) || typeof value.source_station_id !== "string") {
+      || !isHttps(value.source_url)) {
     throw new Error(`${name}: provenance is incomplete`);
   }
-  if (!hasNumber(value.lat) || !hasNumber(value.lon)) throw new Error(`${name}: no point`);
   if (value.state !== null && typeof value.state !== "string") {
     throw new Error(`${name}: state must be a code or null`);
   }
@@ -134,21 +186,38 @@ function validateLake(value: unknown, index: number): TerminalLake {
       || typeof value.is_stale !== "boolean" || typeof value.fetch_ok !== "boolean") {
     throw new Error(`${name}: freshness fields are incomplete`);
   }
-  if (!isElevation(value.elevation)) throw new Error(`${name}: the elevation block is malformed`);
-  if (!isVolume(value.volume)) throw new Error(`${name}: the volume block is malformed`);
+  /* Version 1 had no arms and a volume on every lake; it is read as version 2
+   * with an empty arms list, so the file written before ADR-159 still draws
+   * until the next refresh rewrites it. */
+  const rawArms = version === 1 && value.arms === undefined ? [] : value.arms;
+  if (!Array.isArray(rawArms)) throw new Error(`${name}: arms must be a list`);
+  const arms = rawArms.map((arm) => validateArm(name, arm));
+  if (arms.length > 0) {
+    /* No combined level: the arms stand at different levels (ADR-159). */
+    if (value.elevation !== null || value.volume !== null || value.source_station_id !== null
+        || value.lat !== null || value.lon !== null) {
+      throw new Error(`${name}: a lake measured by arm has no level, volume or point of its own`);
+    }
+    if (new Set(arms.map((arm) => arm.name)).size !== arms.length) {
+      throw new Error(`${name}: two arms have one name`);
+    }
+  } else {
+    if (typeof value.source_station_id !== "string") throw new Error(`${name}: provenance is incomplete`);
+    if (!hasNumber(value.lat) || !hasNumber(value.lon)) throw new Error(`${name}: no point`);
+    checkGauge(name, value);
+  }
   if (!Array.isArray(value.targets) || !value.targets.every(isTarget)) {
-    throw new Error(`${name}: a target is a named level with its authority, source and date`);
+    throw new Error(`${name}: a target is a named level with its authority, decision, source and date`);
+  }
+  if (arms.length > 0 && !value.targets.every((target: LakeTarget) =>
+    arms.some((arm) => arm.name === target.arm))) {
+    throw new Error(`${name}: a target on a lake measured by arm names its arm`);
   }
   if (!isDate(value.first_obs) || !hasNumber(value.years_of_record)) {
     throw new Error(`${name}: record provenance is incomplete`);
   }
-  for (const field of ["huc6", "huc6_name", "huc8", "huc8_name"]) {
-    const huc = value[field];
-    if (huc !== undefined && huc !== null && typeof huc !== "string") {
-      throw new Error(`${name}: ${field} must be text or null`);
-    }
-  }
-  return value as unknown as TerminalLake;
+  checkHucFields(name, value);
+  return { ...value, arms } as unknown as TerminalLake;
 }
 
 function validateNotice(value: unknown, index: number): WithdrawnLake {
@@ -170,7 +239,7 @@ function validateNotice(value: unknown, index: number): WithdrawnLake {
 
 export function validateLakePayload(value: unknown): LakePayload {
   if (!isObject(value)) throw new Error("lakes payload is not an object");
-  if (value.schema_version !== 1) {
+  if (value.schema_version !== 1 && value.schema_version !== 2) {
     throw new Error(`unsupported lakes structure version ${String(value.schema_version)}`);
   }
   if (value.water_type !== "natural_terminal_lake") {
@@ -186,7 +255,8 @@ export function validateLakePayload(value: unknown): LakePayload {
   if (!Array.isArray(value.lakes) || !Array.isArray(value.withdrawn)) {
     throw new Error("lakes payload is missing its lists");
   }
-  const lakes = value.lakes.map(validateLake);
+  const version = value.schema_version as number;
+  const lakes = value.lakes.map((lake, index) => validateLake(lake, index, version));
   const withdrawn = value.withdrawn.map(validateNotice);
   if (value.lake_count !== lakes.length) throw new Error("lake_count does not match the lakes array");
   if (value.withdrawn_count !== withdrawn.length) {

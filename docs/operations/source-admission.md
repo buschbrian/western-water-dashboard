@@ -220,9 +220,14 @@ capacity-shaped field and requires: a `waterbody` block naming the NHDPlus HR
 identifier the point resolves to, with its probe date; a `closed_basin` block
 with `huc6`, `huc8`, the evidence and a review date; an `elevation` block with
 the survey's parameter, statistic, unit and vertical datum; a `volume` block
-with the same and the published elevation-volume relation named beside it; and
-a `targets` list, empty when there are none, where each entry is a named
-elevation with its authority, source and date. The probe is
+with the same and the published elevation-volume relation named beside it, or
+a `volume_finding` saying why there is none (ADR-159); and a `targets` list,
+empty when there are none, where each entry is a named elevation with its
+authority, decision, source, date and datum, and never a capacity or a share. A
+lake measured in parts (ADR-159) is keyed by its own name, carries no site,
+point or level of its own, and lists `arms`, each with its own site, a `point`
+block citing the survey's site record and the source that names the arm, and
+its own elevation and volume or finding. The probe is
 `tools/probe_nhd_waterbody.query_layer` against the point at 100 metres; the
 assignment is `huc.assign_huc` against the committed geometry, made from the
 lake point because a closed basin has no outlet to assign from. Walker Lake is

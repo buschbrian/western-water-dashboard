@@ -164,9 +164,12 @@ One reading page, `lakes.html`, for every published natural terminal lake
 (ADR-119). It fetches `lakes.json` through `loadLakes`, whose validator
 refuses a lake record carrying a reservoir-only field, a level carrying a
 percentage change, a target spelled as a capacity and a notice carrying a
-measurement -- the browser holds ADR-112's rules as the pipeline does. Each
-lake shows two measurement cards, surface level above a datum named in full
-and volume on a named table, with dated record readings, dated changes and a
+measurement -- the browser holds ADR-112's rules as the pipeline does, and
+ADR-159's: a lake measured by arm has no level of its own, and no field may
+divide by a target. Each lake, or each arm as a named sub-record, shows a
+surface level card above a datum named in full and, where one is reviewed, a
+volume card on a named table, or a plain statement that no such table exists,
+with dated record readings, dated changes and a
 history rank that reads as a position only ("3rd-lowest of 12"), then the
 twelve months of volume through the shared trend chart in one neutral colour.
 Readiness is `window.__lakesReady`: `lakes` is what the payload published,
