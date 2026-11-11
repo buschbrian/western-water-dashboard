@@ -105,9 +105,13 @@ root.innerHTML = `
         <h3>Terminal lakes</h3>
         <p><a href="./api/lakes.json"><code>/api/lakes.json</code></a></p>
         <p>Natural lakes with no outlet and no dam. Each record carries the surface
-          level above a named datum and the volume on a published table. Changes,
-          record readings and history rank are included. No full level and no percent
-          full, because none is defined for a terminal lake. Structure version 1.
+          level above a named datum, and the volume on a published table where one is
+          reviewed; otherwise the volume is null. A lake whose parts are measured apart
+          lists them in <code>arms</code>, each with its own station, point and level,
+          and has no level of its own. Changes, record readings and history rank are
+          included. No full level and no percent full, because none is defined for a
+          terminal lake. A target is a named level with its authority and decision,
+          never a share. Structure version 2.
           Refreshed each morning, separately from the reservoirs, and never added to a
           reservoir total. Shown on the <a href="./lakes.html">terminal lakes page</a>.</p>
       </article>

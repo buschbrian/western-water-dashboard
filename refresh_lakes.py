@@ -2,8 +2,10 @@
 
 A separate orchestrator for a separate water type. It reads the reviewed
 roster in `admitted_terminal_lakes.json`, fetches each lake's daily surface
-elevation and volume from the U.S. Geological Survey's OGC daily collection,
-and writes a record with no capacity, no percent full and no dam point. The
+elevation -- and its volume, where one is reviewed -- from the U.S. Geological
+Survey's OGC daily collection, at each arm where the lake is measured by arm
+(ADR-159), and writes a record with no capacity, no percent full and no dam
+point. The
 sequence is the reservoir one -- fetch, summarize, assemble, validate, write --
 and the arithmetic lives in `pipeline.lakes`; nothing here is imported by
 `refresh_reservoirs.py` and nothing here writes `reservoirs.json`.
@@ -45,9 +47,13 @@ def _read_previous(path) -> dict:
 
 
 def load_previous(path=LAKES_OUTPUT_PATH) -> dict[str, dict]:
-    """Yesterday's published records by station, for carry-forward."""
-    return {str(r.get("source_station_id")): r
-            for r in _read_previous(path).get("lakes") or []}
+    """Yesterday's published records by lake name, for carry-forward.
+
+    The name, because a lake measured by arm has no one site to be keyed by
+    (ADR-159), and the roster name is the key the validator checks against.
+    """
+    return {r["name"]: r for r in _read_previous(path).get("lakes") or []
+            if isinstance(r, dict) and r.get("name")}
 
 
 def load_previous_withdrawals(path=LAKES_OUTPUT_PATH) -> dict[str, dict]:
@@ -63,18 +69,57 @@ def load_previous_withdrawals(path=LAKES_OUTPUT_PATH) -> dict[str, dict]:
     return {n["name"]: n for n in notices if isinstance(n, dict) and n.get("name")}
 
 
-def fetch_lake(station: str, entry: dict, start: str, end: str
-               ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Both series for one lake, each screened to its own parameter and unit."""
+def fetch_gauge(station: str, spec: dict, start: str, end: str
+                ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
+    """One gauge's series, each screened to its own parameter and unit.
+
+    The volume is None where the roster reviews none (ADR-159): nothing is
+    requested that the record will not publish.
+    """
     elevation = fetch_usgs_parameter_series(
-        station, entry["elevation"]["parameter_code"],
-        entry["elevation"]["statistic_id"], entry["elevation"]["unit"],
+        station, spec["elevation"]["parameter_code"],
+        spec["elevation"]["statistic_id"], spec["elevation"]["unit"],
         start, end, column="elevation_ft")
+    if spec.get("volume") is None:
+        return elevation, None
     volume = fetch_usgs_parameter_series(
-        station, entry["volume"]["parameter_code"],
-        entry["volume"]["statistic_id"], entry["volume"]["unit"],
+        station, spec["volume"]["parameter_code"],
+        spec["volume"]["statistic_id"], spec["volume"]["unit"],
         start, end, column="volume_af")
     return elevation, volume
+
+
+def fetch_lake(entry: dict, start: str, end: str
+               ) -> dict[str, tuple[pd.DataFrame, pd.DataFrame | None]]:
+    """Every gauge of one lake by site: the lake's own, or one per arm."""
+    gauges = entry.get("arms") or [entry]
+    return {gauge["station"]: fetch_gauge(gauge["station"], gauge, start, end)
+            for gauge in gauges}
+
+
+def empty_series(entry: dict, series: dict) -> str | None:
+    """The first series a gauge needed and the survey did not return."""
+    for gauge in entry.get("arms") or [entry]:
+        elevation, volume = series[gauge["station"]]
+        where = f"{gauge['name']} " if entry.get("arms") else ""
+        if elevation.empty:
+            return f"{where}elevation"
+        if gauge.get("volume") is not None and (volume is None or volume.empty):
+            return f"{where}volume"
+    return None
+
+
+def describe_record(record: dict) -> str:
+    """The log line: each level, and the volume where there is one."""
+    def gauge(block: dict) -> str:
+        text = (f"{block['elevation']['current']} ft "
+                f"({block['elevation']['vertical_datum']})")
+        if block.get("volume"):
+            text += f", {block['volume']['current']:,.0f} acre-feet"
+        return text
+    if record.get("arms"):
+        return "; ".join(f"{arm['name']} {gauge(arm)}" for arm in record["arms"])
+    return gauge(record)
 
 
 def main() -> int:
@@ -101,36 +146,41 @@ def main() -> int:
     previous_withdrawn = load_previous_withdrawals(LAKES_OUTPUT_PATH)
     records, carried_notices = [], []
 
-    def carry(station: str, name: str, reason: str) -> None:
+    def carry(name: str, reason: str) -> None:
         # A lake already withdrawn has no record to carry, only its notice.
         # Without the notice the roster check fails and the lake payload
         # freezes on the day after a withdrawal.
-        if station in previous:
-            records.append(carry_forward(previous[station], today, reason))
+        if name in previous:
+            records.append(carry_forward(previous[name], today, reason))
         elif name in previous_withdrawn:
             carried_notices.extend(
                 carry_withdrawals([previous_withdrawn[name]], set(), today))
 
-    for station, entry in targets.items():
+    for key, entry in targets.items():
         name = entry["name"]
         # A lake's own record begins where the roster says its readings are on
         # one relation, and never before the project's shared start.
         start = max(START_DATE, entry["por_start"].replace("-", ""))
         try:
-            elevation, volume = fetch_lake(station, entry, start, end)
+            series = fetch_lake(entry, start, end)
         except Exception as exc:  # noqa: BLE001 -- one lake's fault, not the run's
             reason = (f"fetch failed after {RETRY_ATTEMPTS} attempts: "
                       f"{type(exc).__name__}: {exc}")
-            print(f"WARNING: {name} ({station}) -- {reason}")
-            carry(station, name, reason)
+            print(f"WARNING: {name} ({key}) -- {reason}")
+            carry(name, reason)
             continue
-        if elevation.empty or volume.empty:
-            which = "elevation" if elevation.empty else "volume"
+        which = empty_series(entry, series)
+        if which:
+            # One quiet arm carries the whole lake forward: a lake measured by
+            # arm is as current as its oldest arm (ADR-159).
             reason = f"the survey returned no usable {which} rows for the requested range"
-            print(f"WARNING: {name} ({station}) -- {reason}")
-            carry(station, name, reason)
+            print(f"WARNING: {name} ({key}) -- {reason}")
+            carry(name, reason)
             continue
-        records.append(lakes.summarize_lake(entry, elevation, volume, today))
+        if entry.get("arms"):
+            records.append(lakes.summarize_armed_lake(entry, series, today))
+        else:
+            records.append(lakes.summarize_lake(entry, *series[key], today))
         time.sleep(0.5)
 
     lakes.attach_watersheds(records)
@@ -152,9 +202,7 @@ def main() -> int:
 
     for record in payload["lakes"]:
         late = f" LATE ({record['days_stale']}d)" if record["is_stale"] else ""
-        print(f"{record['name']}: {record['elevation']['current']} ft "
-              f"({record['elevation']['vertical_datum']}), "
-              f"{record['volume']['current']:,.0f} acre-feet as of "
+        print(f"{record['name']}: {describe_record(record)} as of "
               f"{record['as_of']}{late}")
     for notice in payload["withdrawn"]:
         print(f"{notice['name']}: withdrawn, last reading {notice['as_of']} "

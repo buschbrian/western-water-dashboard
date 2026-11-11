@@ -144,17 +144,24 @@ they change.
 `pipeline.roster.load_admitted_terminal_lakes`, which refuses any
 capacity-shaped field and requires the evidence ADR-112 asks for: a reviewed
 waterbody point, a reviewed closed-basin assignment, the elevation's vertical
-datum and the volume's published elevation-volume relation. `refresh_lakes.py`
-reads both daily series from the Geological Survey's OGC collection through
+datum and the volume's published elevation-volume relation -- or, since
+ADR-159, a `volume_finding` saying why there is none. A lake measured by arm is
+keyed by its own name, has no site, point or level of its own, and lists each
+arm with its site, reviewed point and elevation. A target names its authority,
+decision, date and datum, and any field spelling it as a capacity or a share is
+refused. `refresh_lakes.py` reads each gauge's daily series from the
+Geological Survey's OGC collection through
 `fetch_usgs_parameter_series` — the storage fetcher is the same function with
 parameter 00054 filled in — and writes `lakes.json` under `LAKE_SCHEMA_VERSION`.
-Each record carries an `elevation` block and a `volume` block, each with its
+Each record carries an `elevation` block and a `volume` block (null where
+none is reviewed), or an `arms` list of such blocks for a lake measured by arm,
+each with its
 current value, dated record extremes, dated changes and the same-date seasonal
 rank from the unchanged reservoir estimator; volume also carries a percentage
 change and the twelve-month history, elevation no percentage of anything. The
-record's `as_of` is the earlier of the two series' last dates. Freshness is
-ADR-056's: carried forward marked late, then withdrawn to a notice with no
-measurement. `pipeline.lakes.validate_payload` refuses a lake record carrying a
+record's `as_of` is the earliest of its series' last dates, across every arm,
+and one quiet arm carries the whole lake forward. Freshness is ADR-056's:
+carried forward marked late, then withdrawn to a notice with no measurement. `pipeline.lakes.validate_payload` refuses a lake record carrying a
 reservoir-only field, a notice carrying a measurement, and a roster lake absent
 from both lists. The file is generated and committed by the refresh.
 `lakes.html` fetches it (ADR-119); the build publishes it at the site root,

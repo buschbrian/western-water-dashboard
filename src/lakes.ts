@@ -15,6 +15,7 @@ import { hydrologicPath, referenceRosters } from "./data/hydrologic-path";
 import type { HydrologicRosters } from "./data/hydrologic-path";
 import { loadLakes } from "./data/load";
 import { describeLake, withdrawnSentence } from "./lakes-model";
+import type { LakeGaugeView } from "./lakes-model";
 import type { LakePayload, TerminalLake } from "./types";
 import { lakesTemplate } from "./ui/lakes-template";
 import { definitionList, measurementCard } from "./ui/measurement-card";
@@ -55,11 +56,37 @@ function note(text: string, className = "reservoir-note"): HTMLParagraphElement 
   return p;
 }
 
-function heading(level: "h2" | "h3", text: string, className: string): HTMLHeadingElement {
+function heading(level: "h2" | "h3" | "h4", text: string, className: string): HTMLHeadingElement {
   const element = document.createElement(level);
   element.className = className;
   element.textContent = text;
   return element;
+}
+
+/*
+ * One gauge's cards, chart and table. A lake read at one site draws these
+ * straight into its article with h3 headings, as it always has; an arm is a
+ * named sub-record one heading level down (ADR-159).
+ */
+function renderGauge(gauge: LakeGaugeView, host: HTMLElement, name: string,
+  sub: "h3" | "h4"): void {
+  const cards = document.createElement("div");
+  cards.className = "lake-measurements";
+  cards.append(measurementCard(gauge.level, sub, "lake-measure-heading"));
+  if (gauge.volume) cards.append(measurementCard(gauge.volume, sub, "lake-measure-heading"));
+  host.append(cards);
+  if (gauge.noVolume) host.append(note(gauge.noVolume, "reservoir-note lake-no-volume"));
+
+  if (gauge.months.length === 0) return;
+  const chartHost = document.createElement("div");
+  chartHost.className = "trend-chart-host";
+  const chart = renderTrendChart(chartHost, gauge.months, name);
+  const table = renderTrendTable(gauge.months, { fullLevel: false });
+  if (chart || table) {
+    host.append(heading(sub, "Volume in the last 12 months", "reservoir-subhead"));
+    if (chart) host.append(chartHost);
+    if (table) host.append(table);
+  }
 }
 
 function renderLake(lake: TerminalLake, rosters: HydrologicRosters): HTMLElement {
@@ -67,30 +94,35 @@ function renderLake(lake: TerminalLake, rosters: HydrologicRosters): HTMLElement
   const article = document.createElement("article");
   article.className = "lake";
   article.append(heading("h2", view.name, "lake-name"), note(view.statement));
+  if (view.armsNote) article.append(note(view.armsNote));
   if (view.late) article.append(note(view.late, "detail-late"));
 
-  const cards = document.createElement("div");
-  cards.className = "lake-measurements";
-  cards.append(measurementCard(view.level, "h3", "lake-measure-heading"),
-    measurementCard(view.volume, "h3", "lake-measure-heading"));
-  article.append(cards);
-
-  const chartHost = document.createElement("div");
-  chartHost.className = "trend-chart-host";
-  const chart = renderTrendChart(chartHost, view.months, view.name);
-  const table = renderTrendTable(view.months, { fullLevel: false });
-  if (chart || table) {
-    article.append(heading("h3", "Volume in the last 12 months", "reservoir-subhead"));
-    if (chart) article.append(chartHost);
-    if (table) article.append(table);
+  const armed = view.gauges.some((gauge) => gauge.heading !== null);
+  for (const gauge of view.gauges) {
+    if (gauge.heading === null) {
+      renderGauge(gauge, article, view.name, "h3");
+      continue;
+    }
+    const section = document.createElement("section");
+    section.className = "lake-arm";
+    section.setAttribute("aria-label", `${view.name}, ${gauge.heading}`);
+    section.append(heading("h3", gauge.heading, "lake-arm-name"),
+      note(`Station ${gauge.station}`, "reservoir-note lake-arm-station"));
+    renderGauge(gauge, section, `${view.name}, ${gauge.heading}`, "h4");
+    const point = createLocationFacts([], coordinateText(gauge.lat, gauge.lon), "Gauge point");
+    if (point) section.append(heading("h4", "Gauge location", "reservoir-subhead"), point);
+    article.append(section);
   }
 
+  /* A lake measured by arm has no point of its own: its drainage path is the
+   * one every arm agrees on, and each arm states its own point above. */
   const location = createLocationFacts(
     hydrologicPath(lake.huc6, lake.huc6_name, rosters, lake.huc8, lake.huc8_name),
-    coordinateText(lake.lat, lake.lon));
+    armed || lake.lat === null || lake.lon === null ? null : coordinateText(lake.lat, lake.lon));
   if (location) article.append(heading("h3", "Location", "reservoir-subhead"), location);
 
-  article.append(heading("h3", "Targets", "reservoir-subhead"), note(view.targets));
+  article.append(heading("h3", "Targets", "reservoir-subhead"),
+    ...view.targets.map((line) => note(line)));
   article.append(heading("h3", "Source", "reservoir-subhead"), definitionList(view.source),
     note(view.note));
   return article;

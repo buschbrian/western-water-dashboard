@@ -19,7 +19,7 @@ export function definitionList(rows: readonly MeasurementRow[],
   return dl;
 }
 
-export function measurementCard(view: MeasurementView, headingTag: "h2" | "h3",
+export function measurementCard(view: MeasurementView, headingTag: "h2" | "h3" | "h4",
   headingClass: string): HTMLElement {
   const card = document.createElement("section");
   const heading = document.createElement(headingTag);

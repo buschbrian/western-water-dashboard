@@ -841,25 +841,54 @@ export interface LakeVolume extends LakeMeasurement {
   monthly: MonthlyRecord[];
 }
 
-/** A restoration or regulatory level: a named target, never a capacity. */
+/**
+ * A restoration or regulatory level: a named line with its authority and
+ * decision, never a capacity and never a denominator (ADR-112, ADR-159).
+ */
 export interface LakeTarget {
   name: string;
   authority: string;
+  /** The decision that set it: "Decision 1631". */
+  decision: string;
   source_url: string;
   set_on: string;
+  vertical_datum: string;
   elevation_ft: number;
+  /** For a lake measured by arm, the arm the target is read against. */
+  arm?: string;
 }
 
+/** One arm of a lake measured apart (ADR-159): its own site, point and level. */
+export interface LakeArm {
+  name: string;
+  source_station_id: string;
+  lat: number;
+  lon: number;
+  elevation: LakeElevation;
+  /** Null where no reviewed volume relation exists. */
+  volume: LakeVolume | null;
+  first_obs: string;
+  huc6?: string | null;
+  huc6_name?: string | null;
+  huc8?: string | null;
+  huc8_name?: string | null;
+}
+
+/**
+ * A terminal lake. Read at one site, it has its own point and level and an
+ * empty `arms`; measured by arm, it has no site, point, level or volume of
+ * its own and lists its arms (ADR-159).
+ */
 export interface TerminalLake {
   name: string;
   water_type: "natural_terminal_lake";
   source_key: "usgs";
   source_label: string;
   source_url: string;
-  source_station_id: string;
+  source_station_id: string | null;
   state: string | null;
-  lat: number;
-  lon: number;
+  lat: number | null;
+  lon: number | null;
   data_frequency: "daily";
   stale_after_days: number;
   as_of: string;
@@ -867,8 +896,10 @@ export interface TerminalLake {
   is_stale: boolean;
   fetch_ok: boolean;
   fetch_error?: string;
-  elevation: LakeElevation;
-  volume: LakeVolume;
+  elevation: LakeElevation | null;
+  /** Null where no reviewed volume relation exists (ADR-159). */
+  volume: LakeVolume | null;
+  arms: LakeArm[];
   targets: LakeTarget[];
   first_obs: string;
   years_of_record: number;

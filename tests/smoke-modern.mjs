@@ -6533,7 +6533,9 @@ for (const failure of [
  * signal's: what the payload published is what the page drew, aria-busy has
  * cleared, the page names its lake and its two units, says no percent full
  * anywhere, and does not scroll sideways. The vocabulary check catches the
- * datum's initials or the provider's on their way to a reader.
+ * datum's initials or the provider's on their way to a reader. The card
+ * count comes from the payload: one level card per gauge, a volume card only
+ * where the gauge has a volume, and a gauge is the lake or one arm (ADR-159).
  */
 for (const viewport of VIEWPORTS) {
   const context = await newPageContext(browser,
@@ -6561,6 +6563,7 @@ for (const viewport of VIEWPORTS) {
     })(),
     cards: document.querySelectorAll("#lakes-main .lake-measurements > section").length,
     pathRows: document.querySelectorAll("#lakes-main .hydrologic-path li").length,
+    paths: document.querySelectorAll("#lakes-main .hydrologic-path").length,
     scroll: document.documentElement.scrollWidth,
     viewport: document.documentElement.clientWidth
   }));
@@ -6571,17 +6574,24 @@ for (const viewport of VIEWPORTS) {
     && state.ready?.rendered === state.ready?.lakes,
   `Lakes page (${viewport.name}): published ${state.ready?.lakes} lake(s) and drew `
     + `${state.ready?.rendered}`);
-  check(state.cards === 2 * (state.ready?.rendered ?? 0),
+  const expectedCards = await tab.evaluate(async () => {
+    const published = await (await fetch(new URL("lakes.json", location.href))).json();
+    return published.lakes.reduce((sum, lake) => sum
+      + ((lake.arms ?? []).length > 0 ? lake.arms : [lake])
+        .reduce((cards, gauge) => cards + 1 + (gauge.volume ? 1 : 0), 0), 0);
+  });
+  check(state.cards === expectedCards,
     `Lakes page (${viewport.name}): ${state.cards} measurement cards for `
-    + `${state.ready?.rendered} lake(s)`);
+    + `${state.ready?.rendered} lake(s); the payload has ${expectedCards}`);
   check(state.text.includes("Walker Lake") && state.text.includes("acre-feet")
     && state.text.includes("feet"),
   `Lakes page (${viewport.name}): the page does not name its lake and both units`);
   check(!/percent full|% full|full level/i.test(
     state.allText.replace(/no percent full|no full level|not as a full level|never a percent full/gi, "")),
   `Lakes page (${viewport.name}): a terminal lake was given a full level`);
-  check(state.pathRows === 4,
-    `Lakes page (${viewport.name}): has ${state.pathRows} hydrologic path rows`);
+  check(state.paths === state.ready?.rendered && state.pathRows === 4 * state.paths,
+    `Lakes page (${viewport.name}): has ${state.paths} hydrologic paths and `
+    + `${state.pathRows} rows`);
   check(state.scroll <= state.viewport + 1,
     `Lakes page (${viewport.name}): scrolls sideways (${state.scroll} > ${state.viewport})`);
   const visible = await tab.evaluate(COLLECT_SHADOW_TEXT);

@@ -2,9 +2,9 @@
   "water_type": "natural_terminal_lake",
   "storage_source": "U.S. Geological Survey",
   "storage_source_url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/daily/items",
-  "reviewed": "2026-09-06",
-  "selection": "Natural terminal lakes that ADR-112 permits as a separate water type: a closed basin with no dam and no engineered full pool, an owner-operated daily series of both surface elevation and volume, a published elevation-volume relation, and a reviewed waterbody point that resolves to exactly one NHDPlus HR waterbody at the project's 100-metre tolerance. No capacity, percent full, dam point or reservoir-rollup membership is recorded for any lake here, and a restoration or regulatory level is only ever a named target with its authority and date. Walker Lake is the first admission; the candidates ADR-112 named and kept out are in the withheld block with their findings.",
-  "keyed_by": "usgs_site_no",
+  "reviewed": "2026-11-11",
+  "selection": "Natural terminal lakes that ADR-112 permits as a separate water type: a closed basin with no dam and no engineered full pool, an owner-operated daily series of surface elevation with its datum named, and a reviewed waterbody point that resolves to exactly one NHDPlus HR waterbody at the project's 100-metre tolerance. A volume is published where the survey publishes a daily series on a named elevation-volume relation; without one, the entry says why in volume_finding and publishes the elevation alone (ADR-159). A lake whose parts are measured apart is listed by arm, each arm with its own site, point and elevation, and no combined level (ADR-159). No capacity, percent full, dam point or reservoir-rollup membership is recorded for any lake here, and a restoration or regulatory level is only ever a named target with its authority, decision, date and datum. Walker Lake was the first admission and Great Salt Lake the second; the candidates still held are in the withheld block with their findings.",
+  "keyed_by": "usgs_site_no, or the lake's own key for a lake measured by arm (each arm names its site)",
   "lakes": {
     "10288500": {
       "name": "Walker Lake",
@@ -66,11 +66,88 @@
         }
       },
       "targets": []
+    },
+    "great-salt-lake": {
+      "name": "Great Salt Lake",
+      "state": "UT",
+      "cadence": "daily",
+      "por_start": "2015-01-01",
+      "waterbody": {
+        "gnis_name": "Great Salt Lake",
+        "nhdplus_hr_permanent_identifier": "126780698",
+        "ftype": 390,
+        "ftype_name": "LakePond",
+        "esri_water_bodies_agree": true,
+        "tolerance_metres": 100,
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/9",
+        "probed": "2026-11-11",
+        "note": "Each arm's site point resolves to exactly one NHDPlus HR waterbody within 100 metres, and it is the same one for both arms: NHDPlus HR draws Great Salt Lake as one LakePond polygon across the railroad causeway. Esri's USA Detailed Water Bodies names Great Salt Lake at both points. The one polygon is why the lake is published by arm and not by waterbody: the arms are measured apart and stand at different levels (ADR-159)."
+      },
+      "closed_basin": {
+        "huc6": "160203",
+        "huc6_name": "Great Salt Lake",
+        "huc8": "16020310",
+        "huc8_name": "Great Salt Lake",
+        "usgs_hydrologic_unit": "160203100200",
+        "evidence": "The survey's Utah Water Science Center describes Great Salt Lake as a terminal lake with no outlet to the sea (https://www.usgs.gov/centers/utah-water-science-center/science/great-salt-lake-elevations-and-areal-extent, checked 2026-11-11). The committed west-huc8 geometry places both arm points in subbasin 16020310 Great Salt Lake inside basin 160203 Great Salt Lake, and the survey's own hydrologic unit for both sites (160203100200) agrees. The assignment is made from the published arm points, never from a synthetic outlet (ADR-112).",
+        "reviewed": "2026-11-11"
+      },
+      "arms": [
+        {
+          "name": "South Arm",
+          "station": "10010000",
+          "lat": 40.73133329,
+          "lon": -112.21355685,
+          "point": {
+            "source": "USGS monitoring location USGS-10010000, GREAT SALT LAKE AT SALTAIR BOAT HARBOR, UT, in decimal degrees on NAD83 (the site record's coordinate datum is NAD27; the decimal coordinates are the survey's NAD83 conversion). The survey's Utah Water Science Center names this gauge, in the Saltair Boat Harbor at the southern end of the lake, as the record of the south part of the lake, which the Union Pacific Railroad causeway (1959) divides from the north part.",
+            "source_url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items/USGS-10010000",
+            "arm_source_url": "https://www.usgs.gov/centers/utah-water-science-center/science/great-salt-lake-elevations-and-areal-extent",
+            "checked": "2026-11-11"
+          },
+          "elevation": {
+            "parameter_code": "62614",
+            "statistic_id": "00003",
+            "unit": "ft",
+            "vertical_datum": "NGVD29",
+            "series_begins": "1847-10-18",
+            "series_ends_when_checked": "2026-11-09",
+            "source_url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/time-series-metadata/items?monitoring_location_id=USGS-10010000",
+            "checked": "2026-11-11",
+            "note": "Lake water surface elevation above NGVD 1929, the daily mean, in feet. The datum is named by the parameter itself (62614 is the NGVD29 elevation; 62615 would be NAVD88), and the site record's vertical datum is NGVD29 with a gauge altitude of 4,186.8 feet. A level is published as a level and never as a percentage of anything (ADR-112)."
+          },
+          "volume_finding": "The survey publishes no daily volume series at this site: the time-series catalog lists elevation (62614) only. Its area-and-volume tables for the south arm are a published relation, but computing a volume from them is a method this project has not reviewed, so the arm publishes its elevation alone (ADR-159)."
+        },
+        {
+          "name": "North Arm",
+          "station": "10010100",
+          "lat": 41.25521065,
+          "lon": -112.49690297,
+          "point": {
+            "source": "USGS monitoring location USGS-10010100, GREAT SALT LAKE NEAR SALINE, UT, in decimal degrees on NAD83 (the site record's coordinate datum is NAD27; the decimal coordinates are the survey's NAD83 conversion). The survey's Utah Water Science Center names this gauge as the record of the north part of the lake since April 1966, north of the Union Pacific Railroad causeway (1959).",
+            "source_url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items/USGS-10010100",
+            "arm_source_url": "https://www.usgs.gov/centers/utah-water-science-center/science/great-salt-lake-elevations-and-areal-extent",
+            "checked": "2026-11-11"
+          },
+          "elevation": {
+            "parameter_code": "62614",
+            "statistic_id": "00003",
+            "unit": "ft",
+            "vertical_datum": "NGVD29",
+            "series_begins": "1966-04-15",
+            "series_ends_when_checked": "2026-11-09",
+            "source_url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/time-series-metadata/items?monitoring_location_id=USGS-10010100",
+            "checked": "2026-11-11",
+            "note": "Lake water surface elevation above NGVD 1929, the daily mean, in feet. The datum is named by the parameter itself, and the site record's vertical datum is NGVD29 with a gauge altitude of 4,189.8 feet. A level is published as a level and never as a percentage of anything (ADR-112)."
+          },
+          "volume_finding": "The survey publishes no daily volume series at this site: the time-series catalog lists elevation (62614) only. Its area-and-volume tables for the north arm are a published relation, but computing a volume from them is a method this project has not reviewed, so the arm publishes its elevation alone (ADR-159)."
+        }
+      ],
+      "volume_finding": "No combined volume: the survey publishes no daily volume series for the whole lake or for either arm. Its Utah Water Science Center publishes elevation-area-volume relationships for the lake and for each arm, but computing a volume from them is a method this project has not reviewed (ADR-159).",
+      "targets": []
     }
   },
   "withheld": {
-    "Pyramid Lake": "ADR-112's second candidate. The survey publishes a strong elevation series and no reviewed modern volume relation in this project; an elevation-only lake record needs the volume block to be optional, which this roster's loader does not yet permit. Held until the relation is reviewed or the contract admits elevation alone by decision.",
-    "Great Salt Lake": "Separately measured arms (ADR-112). One point and one volume would collapse waters that the survey measures apart; held until an arm-aware representation exists.",
-    "Mono Lake": "Its regulatory restoration level is a target set by the California State Water Resources Control Board and not a physical capacity (ADR-112). A target may be published only as a named target with its authority and date; held until the measurement series and the target's citation are reviewed together."
+    "Pyramid Lake": "Held for its update schedule, not its volume. The survey publishes the level at USGS-10336500, PYRAMID LAKE NR NIXON, NV, as parameter 00062 in feet above NGVD29 (the site record's vertical datum, altitude 3,940.29 feet), current to 2026-11-02 -- but only as discrete readings about once a month (statistic 00011; 23 readings from 2024-11-01 to 2026-11-02, none between 2025-09-03 and 2025-12-01), and the daily collection holds no series for the site (both checked 2026-11-11). ADR-159 makes the volume optional, so the missing volume relation no longer holds the lake. This roster and its freshness rule are daily (a reading is late after 2 days), and a monthly level needs its own update schedule, fetch path and late threshold, which is a decision of its own. The only other survey sites at the lake are two sediment-core sites with no series. This project's western source review (docs/WESTERN-SOURCE-CANDIDATES.md) recorded the Natural Resources Conservation Service's listing for the lake as monthly and semimonthly only.",
+    "Mono Lake": "Held for its elevation series; its target is confirmed. The State Water Resources Control Board's Mono Lake page (https://www.waterboards.ca.gov/waterrights/water_issues/programs/mono_lake/, checked 2026-11-11) states that Decision 1631, adopted in 1994, set a long-term management level of 6,392 feet above sea level, with a transition level of 6,391 feet; the decision text is linked there as wrd1631.pdf. No current, citable daily elevation series was found: USGS-10287000, MONO LK NR MONO LAKE CA, lists no time series in the survey's catalog; the Los Angeles Department of Water and Power's daily Mono Basin operations report (https://wsoweb.ladwp.com/aqueduct/operations/monobasin.htm) showed the lake elevation as n/a with no read date on 2026-11-11, on its own datum ('add 0.4 ft for USGS datum'), with no data file; and the Mono Lake Committee's lake-level page could not be read on 2026-11-11 (it refused the request), so its record is unreviewed. Held until a current daily elevation series with a stated datum is reviewed, and until the target's 'above sea level' is tied to that series' datum so the gap can be published in feet."
   }
 }
