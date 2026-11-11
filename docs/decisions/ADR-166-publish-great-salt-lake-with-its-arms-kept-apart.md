@@ -1,7 +1,9 @@
 # ADR-166: Publish Great Salt Lake with its arms kept apart
 
-- Status: Accepted
+- Status: **Proposed** (for Brian Busch's approval)
 - Date: 2026-11-11
+- Implements: ADR-159 (accepted 2026-11-11: a terminal lake by arm, and
+  without a volume where none is reviewed), for Great Salt Lake
 - Extends: ADR-112 and ADR-118 (the arm-aware record and the elevation-only
   record both left for a later decision)
 - Supersedes: ADR-119's navigation clause (reached from the methods and data
@@ -16,7 +18,10 @@ Brian chose on 2026-11-09 to add "Great Salt Lake with its arms kept apart".
 ADR-112 held it out because the survey measures its arms separately and "one
 point and one volume would collapse waters that the survey measures apart".
 ADR-118 recorded that an elevation-only lake "needs the volume block to become
-optional by a later decision". This is both decisions.
+optional by a later decision". ADR-159 made both decisions; this record
+shows how they are built for Great Salt Lake and the evidence for its arms.
+Pyramid Lake and Mono Lake, which ADR-159 also makes eligible, still need
+their own station, datum and target reviews and stay withheld here.
 
 The evidence, read on 2026-11-11 from primary sources:
 
