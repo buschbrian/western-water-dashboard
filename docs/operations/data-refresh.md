@@ -142,6 +142,8 @@ These are **not** part of the daily run:
 .venv/bin/python tools/build_county_assignments.py
 .venv/bin/python tools/build_precipitation_history.py      # each October, after the water year closes
 .venv/bin/python tools/build_precipitation_history.py --missing
+.venv/bin/python tools/build_snow_history.py               # each October, after precipitation's
+.venv/bin/python tools/build_snow_history.py --missing
 .venv/bin/python tools/fetch_watershed_scope.py
 ```
 
@@ -165,6 +167,13 @@ closed, so the window gains that year, and with `--missing` when the
 inventory grows or a run reports stations that did not answer. A change of
 window refuses `--only` and `--missing`, because two windows are two
 populations; the full run rebuilds every station.
+
+`build_snow_history.py` (ADR-160) is the same builder fetching snow water
+(`WTEQ`) into `snow_history.json`, at the same cost. Run it each October
+after the precipitation history, with the same `--missing` rule; give it its
+own run rather than running both at once, to keep the load on the provider
+at two requests. Commit the file with a note of the stations that joined or
+left the set. The snow page's card picks up the new year with no code change.
 
 **Every run merges; none replaces.** A reservoir absent from today's payload
 keeps its normal and the run says so — the roster it reads is what the

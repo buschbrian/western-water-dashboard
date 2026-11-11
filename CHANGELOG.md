@@ -13,6 +13,15 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
+- **Snow water against earlier seasons** (ADR-160). The snow page draws this
+  season's snow water equivalent over the range of every earlier season since
+  1990–91, at one fixed set of sites with a full record, for whatever place
+  the page shows: a state, a drainage area or an upstream set. It gives the
+  median for the date, the history rank and, behind the page's usual floors,
+  a percent of normal at those sites. The card names its sites and says the
+  values are not snowfall. Its new file, `snow_history.json` (about 420 KB on
+  the wire), loads only when the card nears the screen. No existing snow
+  figure changes.
 - **Eleven California reservoirs** from the California Department of Water
   Resources: Lake Spaulding, Twitchell Reservoir, Farmington Reservoir,
   Clifton Court Forebay, Mariposa Reservoir, Brush Creek Reservoir, Lake

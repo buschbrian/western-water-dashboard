@@ -250,6 +250,15 @@ Each is a new published contract. Verify with `npm run verify:pipeline` and
 
 ### 13. Snow water against earlier seasons
 
+Implemented locally on `feat/snow-history`, awaiting Brian's review and
+publication (ADR-160): `snow_history.json` from the precipitation builder
+with `WTEQ` (366 of 639 stations cover 1991–2026), and a lazy card under the
+snow page's season chart that follows the page's place. On 2026-11-11 it
+compares 365 sites for the West and 74 for Utah with 36 earlier seasons. It
+keeps ADR-081's summed ratio and ADR-121's floors, and no existing snow
+figure moves. Current behaviour is in `architecture/frontend.md` and
+`architecture/hydrology-methods.md`.
+
 A snow-water history since 1991, built the way
 `tools/build_precipitation_history.py` builds precipitation's, so the snow
 page draws this season against the range of earlier ones for a state, a

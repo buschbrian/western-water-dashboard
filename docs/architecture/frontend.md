@@ -17,7 +17,7 @@ module that owns the behaviour and read the entry point only for the sequence.
 | Storage map | `src/main.ts` | `src/ui/map.ts`, `src/ui/layers.ts`, `src/ui/shell.ts`, `src/state/filters.ts`, `src/state/url.ts`, `src/state/detail.ts`, `src/data/rollup.ts` |
 | Storage charts | `src/overview.ts` | `src/overview-model.ts` (all filtering and grouping), `src/overview-charts.ts`, `src/state/overview-url.ts`, `src/weekly-model.ts` |
 | Precipitation | `src/precipitation.ts` | `src/ui/precipitation-card.ts`, `src/precip-model.ts`, `src/precip-storm-model.ts`, `src/viz/precip-*.ts`; the place from `src/snow-place.ts`, as the snow page and story views narrow it (ADR-130); the map is `src/ui/precip-map-section.ts` (lazy, no static SDK import), `src/ui/precip-map.ts` and `src/precip-map-model.ts` (ADR-131); its "Rain \| Soil moisture" switch is `src/ui/precip-map-mode-model.ts`, `src/soil-map-model.ts`, `src/viz/soil-classes.ts` and `src/data/soil-load.ts`, the soil file fetched on first use (ADR-142); soil mode lists the four largest changes wetter and the four largest drier apart (`soilMostChange`, "Largest increase" and "Largest decrease"); once the soil file is in, its switch button names the end date ("Soil moisture to Oct 26") and the date line gives the ADR-129 set-day share as the reason it can end before the rain totals |
-| Snowpack | `src/snow.ts` | `src/snow-model.ts`, `src/ui/snow-map.ts`, `src/viz/snow-curve.ts`, `src/state/snow-url.ts` |
+| Snowpack | `src/snow.ts` | `src/snow-model.ts`, `src/ui/snow-map.ts`, `src/viz/snow-curve.ts`, `src/state/snow-url.ts`; the earlier-seasons card is `src/ui/snow-history-card.ts`, `src/snow-history-model.ts` and `src/data/snow-history.ts`, drawn with `src/viz/precip-curve.ts` (ADR-160) |
 | Drought | `src/drought.ts` | `src/drought-model.ts`, `src/ui/drought-map.ts`, `src/viz/drought-*.ts`, `src/state/drought-url.ts` |
 | One reservoir | `src/reservoir.ts` | `src/reservoir-model.ts` (link resolution, both baselines, provenance), `src/reservoir-elevation-model.ts` (the surface level, ADR-135), `src/viz/elevation-years.ts`, `src/ui/reservoir-template.ts`; the reading itself is `describeReservoir`, shared with the map's details panel so the two cannot drift |
 | Methods, data, terms | `src/methods.ts`, `src/data-docs.ts` | `src/data-docs-schema.ts` is the field-by-field contract |
@@ -593,6 +593,21 @@ when the chart comes near the screen. Early in a season, when `seasonPeak` is
 null, a line under the map links to the last finished season at its peak.
 The map draws areas and sites below the denominator floor as their own
 hatched state, apart from no value.
+
+**Snow water against earlier seasons** (ADR-160) is a card under the season
+chart. It takes the sites the page shows, after every narrowing (state,
+level, area, upstream set), and the season shown; it has no URL parameter.
+It reuses the precipitation chart, its five history regions and its range
+buttons ("Season so far", "Whole season"), passing snow words through
+`CurveWords`; the precipitation page keeps `PRECIPITATION_WORDS`. Four
+figures (the season's inches, the median for the date, the history rank, and
+"Of normal at these sites" behind ADR-121's floors), a key, a sentence
+naming the set and its left-out sites, a collapsed list of the set's site
+names, a first-of-month table and a reading note. `snow_history.json` is
+fetched when the card comes within 800 pixels of the screen, with
+`SNOW_TIMEOUT_MS`; until then `__snowReady.snowHistory.state` is
+`"waiting"`. A failed fetch writes its message in the chart's place, hides
+the figures and clears `aria-busy`.
 
 The Snowpack filter card separates place from table filters. State, Area size
 and the hydrologic area form the first pane. The **Site options** pane puts
