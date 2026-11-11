@@ -534,9 +534,15 @@ def load_admitted_terminal_lakes(
     and any capacity-shaped field in an entry is refused outright -- the way a
     waiver with no reason is refused in the reservoir files. What a lake must
     carry instead is the evidence the decision asks for: a reviewed waterbody
-    point, a reviewed closed-basin assignment, and for each of its two
-    measurements the survey's parameter, statistic and unit, with the
-    published elevation-volume relation named beside the volume.
+    point, a reviewed closed-basin assignment, and for each measurement the
+    survey's parameter, statistic and unit, with the elevation's datum and the
+    volume's published relation named beside them. The volume is optional
+    (ADR-161); an entry without one says why in `no_volume`.
+
+    A lake the survey measures in separate arms is one entry per arm, keyed by
+    the arm's own station, each naming its `arm` with the evidence for it. The
+    entries share the lake's name, state and targets, and there are at least
+    two of them: one arm alone would be a lake published as one of its parts.
 
     A target -- a restoration or regulatory level -- is admitted only as a
     named target with its authority, source and date. It is never a capacity,
@@ -587,7 +593,14 @@ def load_admitted_terminal_lakes(
             if not isinstance(basin.get(field), str) or not basin[field]:
                 raise ValueError(f"{name}: closed_basin needs {field}")
         _reviewed_date(name, "closed_basin.reviewed", basin.get("reviewed"))
-        for measure in ("elevation", "volume"):
+        has_volume = "volume" in row
+        if has_volume == bool(row.get("no_volume")):
+            raise ValueError(
+                f"{name}: a lake carries a volume series or a no_volume reason, "
+                "exactly one of them")
+        if "no_volume" in row and not isinstance(row["no_volume"], str):
+            raise ValueError(f"{name}: no_volume is the reason, in words")
+        for measure in ("elevation", "volume") if has_volume else ("elevation",):
             series = row.get(measure)
             if not isinstance(series, dict):
                 raise ValueError(f"{name}: the {measure} series is required")
@@ -597,13 +610,23 @@ def load_admitted_terminal_lakes(
         if not isinstance(row["elevation"].get("vertical_datum"), str) \
                 or not row["elevation"]["vertical_datum"]:
             raise ValueError(f"{name}: an elevation is meaningless without its datum")
-        relation = row["volume"].get("relation")
-        if not isinstance(relation, dict) or not relation.get("name") \
-                or not isinstance(relation.get("source_url"), str) \
-                or not relation["source_url"].startswith("https://"):
-            raise ValueError(
-                f"{name}: the volume must name its elevation-volume relation and an "
-                "HTTPS source")
+        if has_volume:
+            relation = row["volume"].get("relation")
+            if not isinstance(relation, dict) or not relation.get("name") \
+                    or not isinstance(relation.get("source_url"), str) \
+                    or not relation["source_url"].startswith("https://"):
+                raise ValueError(
+                    f"{name}: the volume must name its elevation-volume relation and an "
+                    "HTTPS source")
+        if "arm" in row:
+            arm = row["arm"]
+            if not isinstance(arm, dict) or not isinstance(arm.get("name"), str) \
+                    or not arm["name"] or not isinstance(arm.get("evidence"), str) \
+                    or not arm["evidence"] or not isinstance(arm.get("source_url"), str) \
+                    or not arm["source_url"].startswith("https://"):
+                raise ValueError(
+                    f"{name}: an arm names itself, its evidence and an HTTPS source")
+            _reviewed_date(name, "arm.checked", arm.get("checked"))
         targets = row.get("targets")
         if not isinstance(targets, list):
             raise ValueError(f"{name}: targets must be a list, empty when there are none")
@@ -617,7 +640,31 @@ def load_admitted_terminal_lakes(
                 raise ValueError(f"{name}: a target is an elevation in feet")
             if any(key in target for key in ("capacity_af", "volume_af", "pct")):
                 raise ValueError(f"{name}: a target is never a capacity (ADR-112)")
+    _check_arms(rows)
     return rows
+
+
+def _check_arms(rows: dict[str, dict]) -> None:
+    """Entries that share a name are the arms of one lake (ADR-161)."""
+    by_name: dict[str, list[dict]] = {}
+    for row in rows.values():
+        by_name.setdefault(row["name"], []).append(row)
+    for name, entries in by_name.items():
+        armed = [row for row in entries if "arm" in row]
+        if len(entries) == 1:
+            if armed:
+                raise ValueError(
+                    f"{name}: one arm alone would publish a lake as one of its parts")
+            continue
+        if len(armed) != len(entries):
+            raise ValueError(
+                f"{name}: entries that share a name must each name the arm they measure")
+        arm_names = [row["arm"]["name"] for row in entries]
+        if len(set(arm_names)) != len(arm_names):
+            raise ValueError(f"{name}: each arm needs its own name")
+        for field in ("state", "targets"):
+            if any(row.get(field) != entries[0].get(field) for row in entries):
+                raise ValueError(f"{name}: the arms disagree on the lake's {field}")
 
 
 @functools.cache

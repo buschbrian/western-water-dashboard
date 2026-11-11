@@ -23,6 +23,11 @@ if [ "${1:-}" = "--embeds" ]; then
   node tests/smoke-modern.mjs --embeds
   exit 0
 fi
+# The arm-aware lake and the lakes page's place in the bar (ADR-161), alone.
+if [ "${1:-}" = "--great-salt-lake" ]; then
+  node tests/smoke-modern.mjs --great-salt-lake
+  exit 0
+fi
 node tests/smoke.mjs
 node tests/smoke-modern.mjs
 # The two suites above exercise whatever the network gave them that morning.

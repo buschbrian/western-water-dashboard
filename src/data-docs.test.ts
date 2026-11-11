@@ -242,6 +242,26 @@ describe("public API field documentation", () => {
       .toBe(true);
   });
 
+  it("covers every terminal lake field, on a lake and on its arms", () => {
+    const data = read("lakes.json");
+    expectFields(LAKE_GROUPS, "lake-header", data);
+    const lakes = data.lakes as Record<string, any>[];
+    /* Required fields are the ones every lake carries; the rest are marked
+     * optional, so one lake of each shape is enough to check both ways. */
+    for (const lake of lakes) {
+      const undocumented = Object.keys(lake).filter((key) =>
+        !group(LAKE_GROUPS, "lake-record").fields.some((field) => field.key === key));
+      expect(undocumented, `${String(lake.name)} has undocumented fields`).toEqual([]);
+    }
+    expectFields(LAKE_GROUPS, "lake-record", merged(lakes));
+    const arms = lakes.flatMap((lake) => (lake.arms ?? []) as Record<string, unknown>[]);
+    if (arms.length > 0) expectFields(LAKE_GROUPS, "lake-arm", merged(arms));
+    const gauges = [...lakes.filter((lake) => !lake.arms), ...arms];
+    expectFields(LAKE_GROUPS, "lake-elevation", merged(gauges.map((g) => g.elevation)));
+    const volumes = gauges.filter((g) => g.volume).map((g) => g.volume);
+    if (volumes.length > 0) expectFields(LAKE_GROUPS, "lake-volume", merged(volumes));
+  });
+
   it("keeps API explanations in plain language", () => {
     const prose = [...RESERVOIR_GROUPS, ...ELEVATION_HISTORY_GROUPS, ...LAKE_GROUPS,
       ...RIVER_GROUPS, ...RIVER_HISTORY_GROUPS, ...SNOW_GROUPS, ...SOIL_HISTORY_GROUPS,

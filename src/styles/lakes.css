@@ -14,3 +14,13 @@
 .lake-name { font-size: clamp(1.35rem, 3vw, 1.8rem); line-height: 1.15; margin-block: 0.25rem 0.75rem; }
 
 .lakes-main .trend-chart-host { margin-block-start: 0.5rem; }
+
+/* A lake measured in arms (ADR-161): each arm is its own section under the
+ * lake's name, so the two levels are read apart and never as one. */
+.lake-arm {
+  margin-block-start: 1.5rem;
+  padding-inline-start: 0.875rem;
+  border-inline-start: 3px solid var(--app-border);
+}
+.lake-arm-name { font-size: 1.2rem; line-height: 1.2; margin-block: 0 0.5rem; }
+.lake-arm .lake-measure-heading { font-size: 1rem; }

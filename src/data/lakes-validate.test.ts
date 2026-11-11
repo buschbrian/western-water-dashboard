@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 
 import { validateLakePayload } from "./lakes-validate";
+import type { GaugedLake } from "../types";
 
 function measurement(current: number, extra: Record<string, unknown> = {}) {
   return {
@@ -43,7 +44,7 @@ export function lake(overrides: Record<string, unknown> = {}) {
 
 export function payload(overrides: Record<string, unknown> = {}) {
   return {
-    schema_version: 1, method_version: "m", water_type: "natural_terminal_lake",
+    schema_version: 2, method_version: "m", water_type: "natural_terminal_lake",
     fetched_at: "2026-09-06T12:00:00+00:00", run_date: "2026-09-06",
     stale_after_days: 2, withdraw_after_days: 60,
     lake_count: 1, stale_count: 0, withdrawn_count: 0,
@@ -52,11 +53,76 @@ export function payload(overrides: Record<string, unknown> = {}) {
   };
 }
 
+/** One arm: a station's own fields, its level and no volume (ADR-161). */
+export function arm(name: string, station: string, overrides: Record<string, unknown> = {}) {
+  return {
+    arm: name, source_station_id: station, lat: 40.73, lon: -112.21,
+    as_of: "2026-09-05", days_stale: 1, is_stale: false, fetch_ok: true,
+    elevation: measurement(4190.0, { unit: "ft", vertical_datum: "NGVD29",
+      parameter_code: "62614", statistic_id: "00003" }),
+    first_obs: "2015-01-01", years_of_record: 11.7,
+    huc6: "160203", huc6_name: "Great Salt Lake", huc8: "16020310",
+    huc8_name: "Great Salt Lake",
+    ...overrides
+  };
+}
+
+export function armedLake(overrides: Record<string, unknown> = {}) {
+  return {
+    name: "Great Salt Lake", water_type: "natural_terminal_lake",
+    source_key: "usgs", source_label: "U.S. Geological Survey",
+    source_url: "https://api.waterdata.usgs.gov/ogcapi/v1/collections/daily/items",
+    state: "UT", data_frequency: "daily", stale_after_days: 2,
+    as_of: "2026-09-05", days_stale: 1, is_stale: false, fetch_ok: true,
+    arms: [arm("South arm", "10010000"),
+      arm("North arm", "10010100", { lat: 41.26, lon: -112.5 })],
+    targets: [], first_obs: "2015-01-01", years_of_record: 11.7,
+    ...overrides
+  };
+}
+
 describe("the lake payload validator", () => {
   it("accepts the pipeline's shape", () => {
-    const valid = validateLakePayload(payload());
-    expect(valid.lakes[0]!.elevation.vertical_datum).toBe("NGVD29");
-    expect(valid.lakes[0]!.volume.relation.source_url).toContain("doi.org");
+    const valid = validateLakePayload(payload()).lakes[0] as GaugedLake;
+    expect(valid.elevation.vertical_datum).toBe("NGVD29");
+    expect(valid.volume?.relation.source_url).toContain("doi.org");
+  });
+
+  it("accepts a lake with no volume, and a lake measured in arms", () => {
+    const levelOnly = lake();
+    delete (levelOnly as Record<string, unknown>).volume;
+    const valid = validateLakePayload(payload({
+      lakes: [levelOnly, armedLake()], lake_count: 2
+    }));
+    expect("volume" in valid.lakes[0]!).toBe(false);
+    expect(valid.lakes[1]!.arms?.map((part) => part.arm)).toEqual(["South arm", "North arm"]);
+  });
+
+  it("refuses a lake-wide level, point or station beside the arms", () => {
+    for (const field of ["elevation", "lat", "source_station_id", "volume"]) {
+      const collapsed = armedLake({ [field]: field === "elevation" || field === "volume"
+        ? arm("South arm", "10010000").elevation : 1 });
+      expect(() => validateLakePayload(payload({ lakes: [collapsed] })),
+        field).toThrow(/no lake-wide/);
+    }
+  });
+
+  it("refuses one arm alone, two arms with one name, and an arm with no level", () => {
+    expect(() => validateLakePayload(payload({
+      lakes: [armedLake({ arms: [arm("South arm", "10010000")] })]
+    }))).toThrow(/two or more/);
+    expect(() => validateLakePayload(payload({
+      lakes: [armedLake({ arms: [arm("South arm", "1"), arm("South arm", "2")] })]
+    }))).toThrow(/its own name/);
+    const noLevel = arm("North arm", "10010100");
+    delete (noLevel as Record<string, unknown>).elevation;
+    expect(() => validateLakePayload(payload({
+      lakes: [armedLake({ arms: [arm("South arm", "10010000"), noLevel] })]
+    }))).toThrow(/North arm: the elevation block/);
+    expect(() => validateLakePayload(payload({
+      lakes: [armedLake({ arms: [arm("South arm", "1", { capacity_af: 1 }),
+        arm("North arm", "2")] })]
+    }))).toThrow(/no full level/);
   });
 
   it("refuses a full level on a lake", () => {
@@ -104,6 +170,6 @@ describe("the lake payload validator", () => {
 
   it("refuses another water type and another structure version", () => {
     expect(() => validateLakePayload(payload({ water_type: "reservoir" }))).toThrow(/water type/);
-    expect(() => validateLakePayload(payload({ schema_version: 2 }))).toThrow(/version/);
+    expect(() => validateLakePayload(payload({ schema_version: 1 }))).toThrow(/version/);
   });
 });

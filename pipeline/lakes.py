@@ -16,6 +16,12 @@ second definition of "normal for this date".
 A restoration or regulatory level is admitted only as a *target* -- a named
 elevation with its authority, source and date -- and never as capacity. It is
 copied from the roster as written and nothing here computes a share of it.
+
+The volume is optional (ADR-161): a lake the survey publishes no daily volume
+for carries its level alone. A lake measured in separate arms is summarised
+one station at a time and then grouped into one record whose `arms` keep each
+station's point and level; the record has no lake-wide point, level or volume
+of its own, because one would collapse waters the survey measures apart.
 """
 
 import pandas as pd
@@ -49,26 +55,42 @@ RESERVOIR_ONLY_FIELDS = frozenset({
 #: to withhold.
 NOTICE_FIELDS = frozenset({"name", "as_of", "days_stale", "source_label", "reason"})
 
-def summarize_lake(entry: dict, elevation: pd.DataFrame, volume: pd.DataFrame,
+#: What the arms of one lake share, said once on the lake record. Everything
+#: else in a station's record -- its point, freshness and measurements -- is
+#: the arm's own (ADR-161).
+LAKE_FIELDS = ("name", "water_type", "source_key", "source_label", "source_url",
+               "state", "data_frequency", "stale_after_days", "targets")
+
+#: A record with arms has no lake-wide value of these: each is one station's.
+ARM_ONLY_FIELDS = frozenset({"source_station_id", "lat", "lon", "elevation", "volume"})
+
+
+def summarize_lake(entry: dict, elevation: pd.DataFrame, volume: pd.DataFrame | None,
                    today: pd.Timestamp) -> dict:
-    """Turn a lake's two daily series into the record the payload publishes.
+    """Turn a lake's daily series into the record the payload publishes.
 
     `elevation` is [date, elevation_ft] and `volume` is [date, volume_af], as
     `fetch_usgs_parameter_series` returns them. The record's own `as_of` is
     the earlier of the two series' last dates: both are read at the same
     gauge and computed on the same relation, so they normally agree, and when
     they do not the lake is as current as its older measurement.
+
+    An entry with no volume series (ADR-161) publishes its level alone and
+    `volume` is not read.
     """
+    has_volume = "volume" in entry
     levels = elevation.set_index("date")["elevation_ft"].sort_index()
-    volumes = volume.set_index("date")["volume_af"].sort_index()
-    if levels.empty or volumes.empty:
+    volumes = (volume.set_index("date")["volume_af"].sort_index()
+               if has_volume and volume is not None else pd.Series(dtype="float64"))
+    if levels.empty or (has_volume and volumes.empty):
         raise ValueError(f"{entry['name']}: both series are required")
-    last_level, last_volume = levels.index[-1], volumes.index[-1]
+    last_level = levels.index[-1]
+    last_volume = volumes.index[-1] if has_volume else last_level
     as_of = min(last_level, last_volume)
     days_stale = int((today - as_of).days)
-    first_obs = min(levels.index[0], volumes.index[0])
+    first_obs = min(levels.index[0], volumes.index[0]) if has_volume else levels.index[0]
 
-    return {
+    record = {
         "name": entry["name"],
         "water_type": WATER_TYPE,
         "source_key": SOURCE_KEY,
@@ -87,7 +109,7 @@ def summarize_lake(entry: dict, elevation: pd.DataFrame, volume: pd.DataFrame,
         "is_stale": days_stale > STALE_AFTER_DAYS,
         "fetch_ok": True,
 
-        # --- the two measurements, each with its own provenance ---
+        # --- the measurements, each with its own provenance ---
         "elevation": {
             "unit": "ft",
             "vertical_datum": entry["elevation"]["vertical_datum"],
@@ -95,7 +117,9 @@ def summarize_lake(entry: dict, elevation: pd.DataFrame, volume: pd.DataFrame,
             "statistic_id": entry["elevation"]["statistic_id"],
             **summarize_measurement(levels, last_level, places=2, with_pct=False),
         },
-        "volume": {
+    }
+    if has_volume:
+        record["volume"] = {
             "unit": "acre_feet",
             "parameter_code": entry["volume"]["parameter_code"],
             "statistic_id": entry["volume"]["statistic_id"],
@@ -108,8 +132,8 @@ def summarize_lake(entry: dict, elevation: pd.DataFrame, volume: pd.DataFrame,
             },
             **summarize_measurement(volumes, last_volume, places=0, with_pct=True),
             "monthly": monthly_history(volumes),
-        },
-
+        }
+    record.update({
         # A named target, never a capacity: copied as reviewed, with no share
         # of it computed here (ADR-112).
         "targets": [dict(target) for target in entry.get("targets") or []],
@@ -117,7 +141,63 @@ def summarize_lake(entry: dict, elevation: pd.DataFrame, volume: pd.DataFrame,
         # --- provenance ---
         "first_obs": first_obs.date().isoformat(),
         "years_of_record": _round((as_of - first_obs).days / 365.25, 1),
-    }
+    })
+    return record
+
+
+def group_arms(records: list[dict], roster: dict[str, dict]) -> list[dict]:
+    """One record per lake, with a measured-apart lake's stations as its arms.
+
+    A station whose roster entry names no arm is a lake on its own and passes
+    through unchanged. The arms of one lake become one record in roster
+    order: the fields they share once, the lake as current as its oldest arm,
+    and each arm's own point, freshness and level beside its name. A lake
+    missing an arm today is not published at all -- one arm would read as
+    the lake -- and the roster check then keeps the last complete file.
+    """
+    grouped: list[dict] = []
+    arms_of: dict[str, list[str]] = {}
+    for station, entry in roster.items():
+        if "arm" in entry:
+            arms_of.setdefault(entry["name"], []).append(station)
+    by_station = {str(r.get("source_station_id")): r for r in records}
+    for record in records:
+        if record["name"] not in arms_of:
+            grouped.append(record)
+    for name, stations in arms_of.items():
+        if not all(station in by_station for station in stations):
+            continue
+        parts = [by_station[station] for station in stations]
+        as_of = min(pd.Timestamp(part["as_of"]) for part in parts)
+        first_obs = min(pd.Timestamp(part["first_obs"]) for part in parts)
+        lake = {field: parts[0][field] for field in LAKE_FIELDS if field != "targets"}
+        lake.update({
+            "as_of": as_of.date().isoformat(),
+            "days_stale": max(part["days_stale"] for part in parts),
+            "is_stale": any(part["is_stale"] for part in parts),
+            "fetch_ok": all(part["fetch_ok"] for part in parts),
+            "arms": [{"arm": roster[station]["arm"]["name"],
+                      **{k: v for k, v in part.items() if k not in LAKE_FIELDS}}
+                     for station, part in zip(stations, parts)],
+            "targets": parts[0]["targets"],
+            "first_obs": first_obs.date().isoformat(),
+            "years_of_record": _round((as_of - first_obs).days / 365.25, 1),
+        })
+        grouped.append(lake)
+    return grouped
+
+
+def flatten_arms(record: dict) -> list[dict]:
+    """A published lake back into one record per station, for carry-forward.
+
+    The inverse of `group_arms`, so yesterday's arm can be carried forward
+    exactly as yesterday's single-station lake is.
+    """
+    if "arms" not in record:
+        return [record]
+    shared = {field: record[field] for field in LAKE_FIELDS if field in record}
+    return [{**shared, **{k: v for k, v in arm.items() if k != "arm"}}
+            for arm in record["arms"]]
 
 
 def attach_watersheds(records: list[dict]) -> None:
@@ -175,22 +255,52 @@ def build_payload(records: list[dict], today: pd.Timestamp, fetched_at: str,
 def validate_payload(payload: dict, roster: dict[str, dict]) -> None:
     """Refuse a payload that claims what a terminal lake cannot have.
 
-    Three checks, each a sentence of ADR-112 made mechanical: no lake record
-    carries a reservoir-only field; no withdrawal notice carries a
-    measurement; and every lake on the roster is either published or
-    withdrawn, so a silently failed fetch cannot look like a decision.
+    Each check is a sentence of ADR-112 or ADR-161 made mechanical: no lake
+    record carries a reservoir-only field; a lake with arms publishes every
+    arm the roster names and no lake-wide point, level or volume; a volume is
+    published exactly where the roster has a volume series; no withdrawal
+    notice carries a measurement; and every lake on the roster is either
+    published or withdrawn, so a silently failed fetch cannot look like a
+    decision.
     """
-    for record in payload["lakes"]:
-        if record.get("water_type") != WATER_TYPE:
-            raise ValueError(f"{record.get('name')}: a lake record must say what it is")
-        spilled = RESERVOIR_ONLY_FIELDS & set(record)
+    entries_of: dict[str, list[dict]] = {}
+    for entry in roster.values():
+        entries_of.setdefault(entry["name"], []).append(entry)
+
+    def check_measures(name: str, part: dict, entry: dict) -> None:
+        spilled = RESERVOIR_ONLY_FIELDS & set(part)
         if spilled:
             raise ValueError(
-                f"{record['name']}: a terminal lake has no full level; refusing "
-                f"{sorted(spilled)}")
-        for block in ("elevation", "volume"):
-            if not isinstance(record.get(block), dict) or "current" not in record[block]:
-                raise ValueError(f"{record['name']}: the {block} block is required")
+                f"{name}: a terminal lake has no full level; refusing {sorted(spilled)}")
+        blocks = ("elevation", "volume") if "volume" in entry else ("elevation",)
+        for block in blocks:
+            if not isinstance(part.get(block), dict) or "current" not in part[block]:
+                raise ValueError(f"{name}: the {block} block is required")
+        if "volume" not in entry and "volume" in part:
+            raise ValueError(f"{name}: the roster has no volume series to publish")
+
+    for record in payload["lakes"]:
+        name = record.get("name")
+        if record.get("water_type") != WATER_TYPE:
+            raise ValueError(f"{name}: a lake record must say what it is")
+        entries = entries_of.get(name) or []
+        if "arms" in record:
+            collapsed = (ARM_ONLY_FIELDS | RESERVOIR_ONLY_FIELDS) & set(record)
+            if collapsed:
+                raise ValueError(
+                    f"{name}: a lake measured in arms has no lake-wide value; "
+                    f"refusing {sorted(collapsed)}")
+            expected = [entry["arm"]["name"] for entry in entries if "arm" in entry]
+            published = [arm.get("arm") for arm in record["arms"]]
+            if published != expected:
+                raise ValueError(
+                    f"{name}: arms {published} do not match the roster's {expected}")
+            for arm, entry in zip(record["arms"], entries):
+                check_measures(f"{name}, {arm['arm']}", arm, entry)
+        else:
+            if any("arm" in entry for entry in entries):
+                raise ValueError(f"{name}: a lake measured in arms is published with them")
+            check_measures(name, record, entries[0] if entries else {"volume": True})
         for target in record.get("targets") or []:
             if any(key in target for key in ("capacity_af", "volume_af", "pct")):
                 raise ValueError(f"{record['name']}: a target is never a capacity")

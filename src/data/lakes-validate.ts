@@ -15,6 +15,9 @@ import type {
   MonthlyRecord, TerminalLake, WithdrawnLake
 } from "../types";
 
+/** The structure version this page reads: optional volume and arms (ADR-161). */
+export const LAKE_SCHEMA_VERSION = 2;
+
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
@@ -49,6 +52,9 @@ const RESERVOIR_ONLY = [
 ] as const;
 
 const NOTICE_FIELDS = new Set(["name", "as_of", "days_stale", "source_label", "reason"]);
+
+/** One station's own values. A lake with arms carries none of them itself. */
+const GAUGE_ONLY = ["source_station_id", "lat", "lon", "elevation", "volume"] as const;
 
 function isMeasurement(value: unknown): value is LakeMeasurement {
   if (!isObject(value)) return false;
@@ -109,6 +115,33 @@ function isTarget(value: unknown): value is LakeTarget {
     && !("capacity_af" in value) && !("volume_af" in value) && !("pct" in value);
 }
 
+function checkFreshness(value: Record<string, unknown>, name: string): void {
+  if (!isDate(value.as_of) || !hasNumber(value.days_stale)
+      || typeof value.is_stale !== "boolean" || typeof value.fetch_ok !== "boolean") {
+    throw new Error(`${name}: freshness fields are incomplete`);
+  }
+  if (!isDate(value.first_obs) || !hasNumber(value.years_of_record)) {
+    throw new Error(`${name}: record provenance is incomplete`);
+  }
+}
+
+/** A station's point, level and optional volume, on a lake or on one arm. */
+function checkGauge(value: Record<string, unknown>, name: string): void {
+  if (typeof value.source_station_id !== "string") throw new Error(`${name}: no station`);
+  if (!hasNumber(value.lat) || !hasNumber(value.lon)) throw new Error(`${name}: no point`);
+  checkFreshness(value, name);
+  if (!isElevation(value.elevation)) throw new Error(`${name}: the elevation block is malformed`);
+  if ("volume" in value && !isVolume(value.volume)) {
+    throw new Error(`${name}: the volume block is malformed`);
+  }
+  for (const field of ["huc6", "huc6_name", "huc8", "huc8_name"]) {
+    const huc = value[field];
+    if (huc !== undefined && huc !== null && typeof huc !== "string") {
+      throw new Error(`${name}: ${field} must be text or null`);
+    }
+  }
+}
+
 function validateLake(value: unknown, index: number): TerminalLake {
   if (!isObject(value)) throw new Error(`lake ${index} is not an object`);
   const name = typeof value.name === "string" ? value.name : `lake ${index}`;
@@ -120,33 +153,41 @@ function validateLake(value: unknown, index: number): TerminalLake {
   }
   if (typeof value.name !== "string" || !value.name) throw new Error(`lake ${index} has no name`);
   if (value.source_key !== "usgs" || typeof value.source_label !== "string"
-      || !isHttps(value.source_url) || typeof value.source_station_id !== "string") {
+      || !isHttps(value.source_url)) {
     throw new Error(`${name}: provenance is incomplete`);
   }
-  if (!hasNumber(value.lat) || !hasNumber(value.lon)) throw new Error(`${name}: no point`);
   if (value.state !== null && typeof value.state !== "string") {
     throw new Error(`${name}: state must be a code or null`);
   }
   if (value.data_frequency !== "daily" || !hasNumber(value.stale_after_days)) {
     throw new Error(`${name}: the series must be daily with a late threshold`);
   }
-  if (!isDate(value.as_of) || !hasNumber(value.days_stale)
-      || typeof value.is_stale !== "boolean" || typeof value.fetch_ok !== "boolean") {
-    throw new Error(`${name}: freshness fields are incomplete`);
-  }
-  if (!isElevation(value.elevation)) throw new Error(`${name}: the elevation block is malformed`);
-  if (!isVolume(value.volume)) throw new Error(`${name}: the volume block is malformed`);
   if (!Array.isArray(value.targets) || !value.targets.every(isTarget)) {
     throw new Error(`${name}: a target is a named level with its authority, source and date`);
   }
-  if (!isDate(value.first_obs) || !hasNumber(value.years_of_record)) {
-    throw new Error(`${name}: record provenance is incomplete`);
-  }
-  for (const field of ["huc6", "huc6_name", "huc8", "huc8_name"]) {
-    const huc = value[field];
-    if (huc !== undefined && huc !== null && typeof huc !== "string") {
-      throw new Error(`${name}: ${field} must be text or null`);
+  if ("arms" in value) {
+    /* Arms are kept apart: a lake-wide level or point beside them would be
+     * the collapsed value ADR-112 refuses. */
+    for (const field of GAUGE_ONLY) {
+      if (field in value) throw new Error(`${name}: a lake measured in arms has no lake-wide ${field}`);
     }
+    checkFreshness(value, name);
+    if (!Array.isArray(value.arms) || value.arms.length < 2) {
+      throw new Error(`${name}: a lake measured in arms has two or more of them`);
+    }
+    const seen = new Set<string>();
+    for (const arm of value.arms as unknown[]) {
+      if (!isObject(arm) || typeof arm.arm !== "string" || !arm.arm || seen.has(arm.arm)) {
+        throw new Error(`${name}: each arm needs its own name`);
+      }
+      seen.add(arm.arm);
+      for (const field of RESERVOIR_ONLY) {
+        if (field in arm) throw new Error(`${name}, ${arm.arm}: no full level (${field})`);
+      }
+      checkGauge(arm, `${name}, ${arm.arm}`);
+    }
+  } else {
+    checkGauge(value, name);
   }
   return value as unknown as TerminalLake;
 }
@@ -170,7 +211,7 @@ function validateNotice(value: unknown, index: number): WithdrawnLake {
 
 export function validateLakePayload(value: unknown): LakePayload {
   if (!isObject(value)) throw new Error("lakes payload is not an object");
-  if (value.schema_version !== 1) {
+  if (value.schema_version !== LAKE_SCHEMA_VERSION) {
     throw new Error(`unsupported lakes structure version ${String(value.schema_version)}`);
   }
   if (value.water_type !== "natural_terminal_lake") {

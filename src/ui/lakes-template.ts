@@ -22,8 +22,9 @@ export function lakesTemplate(search: string): string {
     <h1 class="reservoir-name">Lakes with no outlet</h1>
     <p class="reservoir-note">A terminal lake sits at the end of a closed basin. Water
       flows in and leaves only by evaporation. No dam holds it and no full level is
-      defined for it, so this site shows its surface level and its volume, and never a
-      percent full. These lakes are not counted in any reservoir total.</p>
+      defined for it, so this site shows its surface level, its volume where one is
+      published, and never a percent full. These lakes are not counted in any
+      reservoir total.</p>
     <div id="lakes-list"><p class="initial-loading">Loading lake readings&hellip;</p></div>
   </main>
   <footer class="app-footer reservoir-footer">

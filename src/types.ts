@@ -830,26 +830,21 @@ export interface LakeTarget {
   elevation_ft: number;
 }
 
-export interface TerminalLake {
-  name: string;
-  water_type: "natural_terminal_lake";
-  source_key: "usgs";
-  source_label: string;
-  source_url: string;
+/**
+ * One station's measurements: its point, freshness, level and, where the
+ * survey publishes one daily, its volume (optional since ADR-161).
+ */
+export interface LakeGauge {
   source_station_id: string;
-  state: string | null;
   lat: number;
   lon: number;
-  data_frequency: "daily";
-  stale_after_days: number;
   as_of: string;
   days_stale: number;
   is_stale: boolean;
   fetch_ok: boolean;
   fetch_error?: string;
   elevation: LakeElevation;
-  volume: LakeVolume;
-  targets: LakeTarget[];
+  volume?: LakeVolume;
   first_obs: string;
   years_of_record: number;
   huc6?: string | null;
@@ -860,6 +855,45 @@ export interface TerminalLake {
   in_utah?: boolean;
   intersects_utah?: boolean;
 }
+
+/** One measured arm of a lake the survey measures apart (ADR-161). */
+export interface LakeArm extends LakeGauge {
+  arm: string;
+}
+
+interface LakeCommon {
+  name: string;
+  water_type: "natural_terminal_lake";
+  source_key: "usgs";
+  source_label: string;
+  source_url: string;
+  state: string | null;
+  data_frequency: "daily";
+  stale_after_days: number;
+  as_of: string;
+  days_stale: number;
+  is_stale: boolean;
+  fetch_ok: boolean;
+  fetch_error?: string;
+  targets: LakeTarget[];
+  first_obs: string;
+  years_of_record: number;
+}
+
+/** A lake measured at one station. */
+export interface GaugedLake extends LakeCommon, LakeGauge {
+  arms?: undefined;
+}
+
+/**
+ * A lake measured in arms: no lake-wide point, level or volume, because one
+ * would collapse waters the survey measures apart (ADR-112, ADR-161).
+ */
+export interface ArmedLake extends LakeCommon {
+  arms: LakeArm[];
+}
+
+export type TerminalLake = GaugedLake | ArmedLake;
 
 /** A lake the payload is not publishing (ADR-056): no measurement in it. */
 export interface WithdrawnLake {

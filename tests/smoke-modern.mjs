@@ -813,6 +813,17 @@ if (process.argv.includes("--embeds")) {
   process.exit(failures.length ? 1 : 0);
 }
 
+/* `--great-salt-lake`: the arm-aware lake (ADR-161) and the page menu entry
+ * it brought, alone, for a quick run after a lake or navigation change. */
+if (process.argv.includes("--great-salt-lake")) {
+  await checkGreatSaltLake();
+  await browser.close();
+  server.close();
+  for (const failure of failures) console.error(failure);
+  console.log(`\n=== Great Salt Lake: ${failures.length} failure(s)`);
+  process.exit(failures.length ? 1 : 0);
+}
+
 
 /* The first-visit chooser is the only surface the ordinary page contexts
  * deliberately skip. Exercise it in the system state that exposed two
@@ -1498,21 +1509,21 @@ for (const viewport of VIEWPORTS) {
       };
       return {
         menu: shown("#page-menu"),
-        buttons: ["#overview-link", "#precipitation-link", "#snow-link", "#drought-link", "#rivers-link", "#methods-link"].filter(shown),
+        buttons: ["#overview-link", "#precipitation-link", "#snow-link", "#drought-link", "#rivers-link", "#lakes-link", "#methods-link"].filter(shown),
         menuItems: [...document.querySelectorAll("#page-menu calcite-dropdown-item[href]")]
           .map((item) => item.getAttribute("href")),
-        buttonHrefs: ["#overview-link", "#precipitation-link", "#snow-link", "#drought-link", "#rivers-link", "#methods-link"]
+        buttonHrefs: ["#overview-link", "#precipitation-link", "#snow-link", "#drought-link", "#rivers-link", "#lakes-link", "#methods-link"]
           .map((selector) => document.querySelector(selector)?.getAttribute("href"))
       };
     });
     const wideBar = viewport.width >= 1024;
     check(pageLinks.menu === !wideBar,
       `${label}: the page menu is ${pageLinks.menu ? "showing" : "hidden"} at ${viewport.width}px`);
-    check(pageLinks.buttons.length === (wideBar ? 6 : 0),
+    check(pageLinks.buttons.length === (wideBar ? 7 : 0),
       `${label}: ${pageLinks.buttons.length} page link buttons are showing at ${viewport.width}px`);
-    check(pageLinks.menuItems.join(",") === "./,./overview.html,./precipitation.html,./snow.html,./drought.html,./rivers.html,./methods.html",
+    check(pageLinks.menuItems.join(",") === "./,./overview.html,./precipitation.html,./snow.html,./drought.html,./rivers.html,./lakes.html,./methods.html",
       `${label}: the page menu offers ${pageLinks.menuItems.join(", ")}`);
-    check(pageLinks.buttonHrefs.join(",") === "./overview.html,./precipitation.html,./snow.html,./drought.html,./rivers.html,./methods.html",
+    check(pageLinks.buttonHrefs.join(",") === "./overview.html,./precipitation.html,./snow.html,./drought.html,./rivers.html,./lakes.html,./methods.html",
       `${label}: the page link buttons point at ${pageLinks.buttonHrefs.join(", ")}`);
     check(await tab.locator(".map-stage > .map-alternative").count() === 0,
       `${label}: the old table and charts overlay still covers the map`);
@@ -2056,7 +2067,7 @@ for (const viewport of VIEWPORTS) {
       /* Whatever is actually on the bar at this width. The link buttons
        * swap for the menu below 64rem, so naming a fixed set here would
        * measure a control that is display:none and pass on a zero box. */
-      const ids = ["brand", "place-search-trigger", "page-menu", "overview-link", "snow-link", "drought-link", "rivers-link", "methods-link",
+      const ids = ["brand", "place-search-trigger", "page-menu", "overview-link", "snow-link", "drought-link", "rivers-link", "lakes-link", "methods-link",
         "controls-toggle", "detail-toggle", "table-toggle", "theme-toggle"]
         .filter((id) => {
           const element = document.getElementById(id);
@@ -3097,7 +3108,8 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
       ...(viewport.width >= 1024
         ? {
           "map-link": "./", "precipitation-link": "./precipitation.html", "snow-link": "./snow.html",
-          "drought-link": "./drought.html", "rivers-link": "./rivers.html", "methods-link": "./methods.html"
+          "drought-link": "./drought.html", "rivers-link": "./rivers.html", "lakes-link": "./lakes.html",
+          "methods-link": "./methods.html"
         }
         : { "page-menu-trigger": null })
     };
@@ -6531,23 +6543,22 @@ for (const failure of [
  *
  * One page for every published lake, so the contract is the readiness
  * signal's: what the payload published is what the page drew, aria-busy has
- * cleared, the page names its lake and its two units, says no percent full
- * anywhere, and does not scroll sideways. The vocabulary check catches the
- * datum's initials or the provider's on their way to a reader.
+ * cleared, the page names each lake, draws one level card per station and a
+ * volume card only where a volume is published (ADR-161), says no percent
+ * full anywhere, and does not scroll sideways. The vocabulary check catches
+ * the datum's initials or the provider's on their way to a reader. The
+ * payload is the oracle for every count; no number is written down here.
  */
-for (const viewport of VIEWPORTS) {
-  const context = await newPageContext(browser,
-    { width: viewport.width, height: viewport.height });
-  const tab = await context.newPage();
-  const errors = [];
-  tab.on("pageerror", (error) => errors.push(String(error)));
-  watchConsoleErrors(tab, errors);
-  await tab.goto(`${URL}lakes.html`, { waitUntil: "load", timeout: 90000 });
-  await tab.waitForFunction(() => window.__lakesReady !== undefined,
-    null, { timeout: 90000 }).catch(() => {});
-  const state = await tab.evaluate(() => ({
+const LAKE_PAGE_STATE = () => (async () => {
+  const payload = await fetch("./data/lakes.json").then((response) => response.json());
+  const gauges = payload.lakes.flatMap((lake) => lake.arms ?? [lake]);
+  return {
     ready: window.__lakesReady ?? null,
     busy: document.querySelector("#lakes-main")?.getAttribute("aria-busy"),
+    names: payload.lakes.map((lake) => lake.name),
+    expectedCards: gauges.reduce((sum, gauge) => sum + (gauge.volume ? 2 : 1), 0),
+    expectedLocations: gauges.length,
+    anyVolume: gauges.some((gauge) => gauge.volume),
     text: document.body.innerText,
     // `innerText` skips a closed <details>, and the monthly table is one.
     // The full-level refusal reads every text node instead, with source
@@ -6560,10 +6571,24 @@ for (const viewport of VIEWPORTS) {
       return copy.textContent.replace(/\s+/g, " ");
     })(),
     cards: document.querySelectorAll("#lakes-main .lake-measurements > section").length,
+    pathLists: document.querySelectorAll("#lakes-main .hydrologic-path").length,
     pathRows: document.querySelectorAll("#lakes-main .hydrologic-path li").length,
     scroll: document.documentElement.scrollWidth,
     viewport: document.documentElement.clientWidth
-  }));
+  };
+})();
+
+for (const viewport of VIEWPORTS) {
+  const context = await newPageContext(browser,
+    { width: viewport.width, height: viewport.height });
+  const tab = await context.newPage();
+  const errors = [];
+  tab.on("pageerror", (error) => errors.push(String(error)));
+  watchConsoleErrors(tab, errors);
+  await tab.goto(`${URL}lakes.html`, { waitUntil: "load", timeout: 90000 });
+  await tab.waitForFunction(() => window.__lakesReady !== undefined,
+    null, { timeout: 90000 }).catch(() => {});
+  const state = await tab.evaluate(LAKE_PAGE_STATE);
   check(state.ready !== null && state.busy === "false",
     `Lakes page (${viewport.name}): readiness ${JSON.stringify(state.ready)} `
     + `with aria-busy="${state.busy}" -- every exit clears it`);
@@ -6571,17 +6596,18 @@ for (const viewport of VIEWPORTS) {
     && state.ready?.rendered === state.ready?.lakes,
   `Lakes page (${viewport.name}): published ${state.ready?.lakes} lake(s) and drew `
     + `${state.ready?.rendered}`);
-  check(state.cards === 2 * (state.ready?.rendered ?? 0),
-    `Lakes page (${viewport.name}): ${state.cards} measurement cards for `
-    + `${state.ready?.rendered} lake(s)`);
-  check(state.text.includes("Walker Lake") && state.text.includes("acre-feet")
-    && state.text.includes("feet"),
-  `Lakes page (${viewport.name}): the page does not name its lake and both units`);
+  check(state.cards === state.expectedCards,
+    `Lakes page (${viewport.name}): ${state.cards} measurement cards, the payload `
+    + `has ${state.expectedCards}`);
+  check(state.names.every((name) => state.text.includes(name)) && state.text.includes("feet")
+    && (!state.anyVolume || state.text.includes("acre-feet")),
+  `Lakes page (${viewport.name}): the page does not name every lake and its units`);
   check(!/percent full|% full|full level/i.test(
     state.allText.replace(/no percent full|no full level|not as a full level|never a percent full/gi, "")),
   `Lakes page (${viewport.name}): a terminal lake was given a full level`);
-  check(state.pathRows === 4,
-    `Lakes page (${viewport.name}): has ${state.pathRows} hydrologic path rows`);
+  check(state.pathLists === state.expectedLocations && state.pathRows === 4 * state.expectedLocations,
+    `Lakes page (${viewport.name}): has ${state.pathLists} locations and ${state.pathRows} `
+    + `hydrologic path rows for ${state.expectedLocations} stations`);
   check(state.scroll <= state.viewport + 1,
     `Lakes page (${viewport.name}): scrolls sideways (${state.scroll} > ${state.viewport})`);
   const visible = await tab.evaluate(COLLECT_SHADOW_TEXT);
@@ -6597,6 +6623,192 @@ for (const viewport of VIEWPORTS) {
   await context.close();
 }
 console.log(`\n=== Lakes page: ${VIEWPORTS.length} widths`);
+
+/*
+ * Great Salt Lake on the lakes page (ADR-161), and the page's place in the
+ * navigation. Run alone with `--great-salt-lake`.
+ *
+ * The arms are the contract: one section per arm the payload publishes, in
+ * its order, each named by a heading the section is labelled by, each with
+ * one surface-level card whose number is the arm's own and no volume card,
+ * and nothing in the lake's article outside the arms that reads as one
+ * level for the whole lake. The page menu offers the lakes page on every
+ * page and marks it current here; the bar's lakes button fits at 1,024 and
+ * 1,280 pixels on the storage map, the widest bar. The 360-pixel picture is
+ * saved for a person to look at.
+ */
+async function checkGreatSaltLake() {
+  const LAKE = "Great Salt Lake";
+  /* This runs before the shared console watcher is defined, so it keeps its
+   * own: the same noise filter, and a hosted service's refusal is not this
+   * page's fault. */
+  const watchErrors = (tab, errors) => tab.on("console", (message) => {
+    if (message.type() !== "error") return;
+    const text = `${message.text()} ${message.location()?.url ?? ""}`;
+    if (/favicon|tile|sprite|font/i.test(text)) return;
+    if (/\.arcgis\.com|hydro\.nationalmap\.gov|tigerweb\.geo\.census\.gov/.test(text)) return;
+    errors.push(`console error: ${message.text()}`);
+  });
+  for (const viewport of VIEWPORTS) {
+    const label = `Great Salt Lake (${viewport.name})`;
+    console.log(`\n=== ${label}`);
+    const context = await newPageContext(browser,
+      { width: viewport.width, height: viewport.height });
+    const tab = await context.newPage();
+    const errors = [];
+    tab.on("pageerror", (error) => errors.push(String(error)));
+    watchErrors(tab, errors);
+    try {
+      await tab.goto(`${URL}lakes.html`, { waitUntil: "load", timeout: 90000 });
+      await tab.waitForFunction(() => window.__lakesReady !== undefined,
+        null, { timeout: 90000 });
+      const state = await tab.evaluate(async (name) => {
+        const payload = await fetch("./data/lakes.json").then((response) => response.json());
+        const lake = payload.lakes.find((entry) => entry.name === name) ?? null;
+        const article = [...document.querySelectorAll("#lakes-main article.lake")]
+          .find((element) => element.querySelector("h2")?.textContent === name) ?? null;
+        const sections = article ? [...article.querySelectorAll("section.lake-arm")] : [];
+        const feet = (value) => value.toLocaleString("en-US",
+          { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        return {
+          published: lake !== null,
+          arms: (lake?.arms ?? []).map((arm) => ({
+            name: arm.arm, station: arm.source_station_id,
+            level: feet(arm.elevation.current), volume: "volume" in arm
+          })),
+          lakeWide: lake ? ["elevation", "volume", "lat", "lon", "source_station_id"]
+            .filter((field) => field in lake) : [],
+          drawn: sections.map((section) => {
+            const heading = document.getElementById(section.getAttribute("aria-labelledby") ?? "");
+            return {
+              heading: heading?.textContent ?? null,
+              headingTag: heading?.tagName ?? null,
+              inside: heading ? section.contains(heading) : false,
+              cards: [...section.querySelectorAll(".lake-measurements > section")]
+                .map((card) => ({
+                  heading: card.querySelector(".lake-measure-heading")?.textContent ?? "",
+                  headingTag: card.querySelector(".lake-measure-heading")?.tagName ?? "",
+                  headline: card.querySelector(".detail-headline strong")?.textContent ?? ""
+                })),
+              text: section.innerText
+            };
+          }),
+          /* Cards straight under the lake's article, outside any arm: a
+           * whole-lake level would be one of these. */
+          looseCards: article
+            ? [...article.querySelectorAll(".lake-measurements")]
+              .filter((cards) => !cards.closest("section.lake-arm")).length
+            : -1,
+          statement: article?.querySelector("p")?.textContent ?? "",
+          articleText: article?.innerText ?? "",
+          menuItem: (() => {
+            const item = document.getElementById("menu-lakes-link");
+            return item ? { href: item.getAttribute("href"),
+              current: item.getAttribute("aria-current"), text: item.textContent.trim() } : null;
+          })(),
+          lakesButton: document.getElementById("lakes-link") !== null,
+          scroll: document.documentElement.scrollWidth,
+          viewport: document.documentElement.clientWidth
+        };
+      }, LAKE);
+      check(state.published, `${label}: the payload does not publish ${LAKE}`);
+      check(state.lakeWide.length === 0,
+        `${label}: the payload gives the lake a lake-wide ${state.lakeWide.join(", ")}`);
+      check(state.arms.length >= 2 && state.arms.every((arm) => !arm.volume),
+        `${label}: the payload has ${state.arms.length} arm(s), or a volume on one`);
+      check(state.drawn.length === state.arms.length,
+        `${label}: the page draws ${state.drawn.length} arm sections for ${state.arms.length} arms`);
+      state.arms.forEach((arm, index) => {
+        const drawn = state.drawn[index];
+        check(drawn?.heading === arm.name && drawn.headingTag === "H3" && drawn.inside,
+          `${label}: arm ${index + 1} is headed "${drawn?.heading}" (${drawn?.headingTag}), `
+          + `expected "${arm.name}" as the section's own h3`);
+        check(drawn?.cards.length === 1 && drawn.cards[0].heading === "Surface level"
+          && drawn.cards[0].headingTag === "H4",
+        `${label}: ${arm.name} draws ${JSON.stringify(drawn?.cards.map((card) => card.heading))}`);
+        check(drawn?.cards[0]?.headline === `${arm.level} feet`,
+          `${label}: ${arm.name} reads "${drawn?.cards[0]?.headline}", its own level is ${arm.level} feet`);
+        check(drawn?.text.includes(arm.station),
+          `${label}: ${arm.name} does not name its station ${arm.station}`);
+        check(drawn?.text.includes("publishes no daily volume for this arm"),
+          `${label}: ${arm.name} does not say why it shows no volume`);
+        check(drawn?.text.includes("National Geodetic Vertical Datum of 1929"),
+          `${label}: ${arm.name} does not name its datum in full`);
+      });
+      check(state.looseCards === 0,
+        `${label}: ${state.looseCards} measurement group(s) sit outside the arms`);
+      check(state.statement.includes("does not combine them into one level"),
+        `${label}: the lake does not say its arms are kept apart`);
+      check(!/acre-feet|percent full of|% full/i.test(state.articleText),
+        `${label}: the lake shows a volume or a share it does not publish`);
+      check(state.menuItem?.href === "./lakes.html" && state.menuItem.current === "page"
+        && state.menuItem.text === "Terminal lakes",
+      `${label}: the page menu's lakes item is ${JSON.stringify(state.menuItem)}`);
+      check(!state.lakesButton, `${label}: the bar offers a button for the page it is on`);
+      check(state.scroll <= state.viewport + 1,
+        `${label}: scrolls sideways (${state.scroll} > ${state.viewport})`);
+      const visible = await tab.evaluate(COLLECT_SHADOW_TEXT);
+      const retired = RETIRED_TERMS.exec(visible);
+      check(retired === null, `${label}: visible text uses a retired term: "${retired?.[0]}"`);
+      await checkAccessibility(tab, check, label);
+      await tab.screenshot({ path: `screenshots/lakes-great-salt-lake-${viewport.name}.png`,
+        fullPage: true });
+    } catch (error) {
+      failures.push(`${label}: ${error.message}`);
+    }
+    for (const message of errors) failures.push(`${label}: ${message}`);
+    await context.close();
+  }
+
+  /* The bar on the storage map, which carries the most controls: the lakes
+   * button is there and on screen at both wide widths, and at a phone width
+   * the menu offers the page instead. */
+  for (const width of [1024, 1280, 360]) {
+    const label = `Lakes in the page menu (storage map, ${width}px)`;
+    const context = await newPageContext(browser, { width, height: 800 });
+    const tab = await context.newPage();
+    try {
+      await tab.goto(URL, { waitUntil: "domcontentloaded", timeout: 90000 });
+      await tab.waitForSelector("#menu-lakes-link", { state: "attached", timeout: 90000 });
+      await tab.waitForTimeout(500);
+      const bar = await tab.evaluate(() => {
+        const box = (id) => {
+          const element = document.getElementById(id);
+          if (!element || getComputedStyle(element).display === "none") return null;
+          const rect = element.getBoundingClientRect();
+          return { left: Math.round(rect.left), right: Math.round(rect.right) };
+        };
+        return {
+          button: box("lakes-link"),
+          menu: box("page-menu"),
+          controls: ["brand", "place-search-trigger", "page-menu", "overview-link",
+            "precipitation-link", "snow-link", "drought-link", "rivers-link", "lakes-link",
+            "methods-link", "controls-toggle", "detail-toggle", "table-toggle", "theme-toggle"]
+            .map((id) => ({ id, box: box(id) })).filter((control) => control.box),
+          href: document.getElementById("menu-lakes-link")?.getAttribute("href"),
+          viewport: document.documentElement.clientWidth
+        };
+      });
+      check(bar.href === "./lakes.html", `${label}: the menu item points at ${bar.href}`);
+      if (width >= 1024) {
+        check(bar.button !== null && bar.menu === null,
+          `${label}: the lakes button is ${bar.button ? "showing" : "missing"} and the menu `
+          + `is ${bar.menu ? "showing" : "hidden"}`);
+      } else {
+        check(bar.button === null && bar.menu !== null,
+          `${label}: at a phone width the menu, not a button, offers the lakes page`);
+      }
+      for (const control of bar.controls) {
+        check(control.box.left >= 0 && control.box.right <= bar.viewport + 1,
+          `${label}: ${control.id} is clipped (${control.box.left}-${control.box.right} `
+          + `in ${bar.viewport}px)`);
+      }
+    } catch (error) {
+      failures.push(`${label}: ${error.message}`);
+    }
+    await context.close();
+  }
+}
 
 /*
  * The river-flow page (ADR-136, ADR-144), at every width.

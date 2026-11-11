@@ -1,9 +1,11 @@
 """Refresh the natural terminal lakes payload, `lakes.json` (ADR-112).
 
 A separate orchestrator for a separate water type. It reads the reviewed
-roster in `admitted_terminal_lakes.json`, fetches each lake's daily surface
-elevation and volume from the U.S. Geological Survey's OGC daily collection,
-and writes a record with no capacity, no percent full and no dam point. The
+roster in `admitted_terminal_lakes.json`, fetches each station's daily surface
+elevation, and volume where the roster has one (ADR-161), from the U.S.
+Geological Survey's OGC daily collection, groups a measured-apart lake's
+stations into one record with its arms kept apart, and writes a record with no
+capacity, no percent full and no dam point. The
 sequence is the reservoir one -- fetch, summarize, assemble, validate, write --
 and the arithmetic lives in `pipeline.lakes`; nothing here is imported by
 `refresh_reservoirs.py` and nothing here writes `reservoirs.json`.
@@ -45,9 +47,14 @@ def _read_previous(path) -> dict:
 
 
 def load_previous(path=LAKES_OUTPUT_PATH) -> dict[str, dict]:
-    """Yesterday's published records by station, for carry-forward."""
+    """Yesterday's published records by station, for carry-forward.
+
+    A lake with arms is one record per arm here, so one quiet arm is carried
+    forward on its own and its lake is regrouped around it.
+    """
     return {str(r.get("source_station_id")): r
-            for r in _read_previous(path).get("lakes") or []}
+            for lake in _read_previous(path).get("lakes") or []
+            for r in lakes.flatten_arms(lake)}
 
 
 def load_previous_withdrawals(path=LAKES_OUTPUT_PATH) -> dict[str, dict]:
@@ -64,12 +71,17 @@ def load_previous_withdrawals(path=LAKES_OUTPUT_PATH) -> dict[str, dict]:
 
 
 def fetch_lake(station: str, entry: dict, start: str, end: str
-               ) -> tuple[pd.DataFrame, pd.DataFrame]:
-    """Both series for one lake, each screened to its own parameter and unit."""
+               ) -> tuple[pd.DataFrame, pd.DataFrame | None]:
+    """One station's series, each screened to its own parameter and unit.
+
+    The volume is None for an entry the survey publishes no volume for.
+    """
     elevation = fetch_usgs_parameter_series(
         station, entry["elevation"]["parameter_code"],
         entry["elevation"]["statistic_id"], entry["elevation"]["unit"],
         start, end, column="elevation_ft")
+    if "volume" not in entry:
+        return elevation, None
     volume = fetch_usgs_parameter_series(
         station, entry["volume"]["parameter_code"],
         entry["volume"]["statistic_id"], entry["volume"]["unit"],
@@ -107,7 +119,8 @@ def main() -> int:
         # freezes on the day after a withdrawal.
         if station in previous:
             records.append(carry_forward(previous[station], today, reason))
-        elif name in previous_withdrawn:
+        elif name in previous_withdrawn and not any(
+                notice["name"] == name for notice in carried_notices):
             carried_notices.extend(
                 carry_withdrawals([previous_withdrawn[name]], set(), today))
 
@@ -124,7 +137,7 @@ def main() -> int:
             print(f"WARNING: {name} ({station}) -- {reason}")
             carry(station, name, reason)
             continue
-        if elevation.empty or volume.empty:
+        if elevation.empty or (volume is not None and volume.empty):
             which = "elevation" if elevation.empty else "volume"
             reason = f"the survey returned no usable {which} rows for the requested range"
             print(f"WARNING: {name} ({station}) -- {reason}")
@@ -138,6 +151,11 @@ def main() -> int:
     if args.only:
         print(json.dumps(records, indent=2))
         return 0
+    records = lakes.group_arms(records, targets)
+    # A lake regrouped around a carried arm can also have yesterday's notice;
+    # it is either published or withdrawn, never both.
+    published_names = {record["name"] for record in records}
+    carried_notices = [n for n in carried_notices if n["name"] not in published_names]
 
     fetched_at = dt.datetime.now(dt.timezone.utc).isoformat(timespec="seconds")
     payload = lakes.build_payload(records, today, fetched_at, carried_notices)
@@ -152,10 +170,13 @@ def main() -> int:
 
     for record in payload["lakes"]:
         late = f" LATE ({record['days_stale']}d)" if record["is_stale"] else ""
-        print(f"{record['name']}: {record['elevation']['current']} ft "
-              f"({record['elevation']['vertical_datum']}), "
-              f"{record['volume']['current']:,.0f} acre-feet as of "
-              f"{record['as_of']}{late}")
+        for part in record.get("arms") or [record]:
+            label = f"{record['name']}, {part['arm']}" if "arm" in part else record["name"]
+            volume = (f", {part['volume']['current']:,.0f} acre-feet"
+                      if "volume" in part else "")
+            print(f"{label}: {part['elevation']['current']} ft "
+                  f"({part['elevation']['vertical_datum']}){volume} as of "
+                  f"{part['as_of']}{late}")
     for notice in payload["withdrawn"]:
         print(f"{notice['name']}: withdrawn, last reading {notice['as_of']} "
               f"({notice['days_stale']} days)")

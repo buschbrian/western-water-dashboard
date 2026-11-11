@@ -837,14 +837,38 @@ export const REFERENCE_GROUPS: readonly ApiFieldGroup[] = [
 ];
 
 /*
- * The terminal-lake payload (ADR-118). Two measurement blocks with the same
- * fields, so the block is documented once and named twice.
+ * The terminal-lake payload (ADR-118, ADR-161). Two measurement blocks with
+ * the same fields, so the block is documented once and named twice.
  */
 const LAKE_MEASUREMENT = (unit: string): readonly ApiField[] => [
   ...measurementFields(unit),
   f("parameter_code", "identifier", "Publisher's code for the measured quantity."),
   f("statistic_id", "identifier", "Publisher's code for the daily statistic.")
 ];
+
+/* What one station publishes: on a lake with one station these are the
+ * lake's own fields, and on a lake with arms they are each arm's (ADR-161). */
+function lakeGaugeFields(onArm: boolean): readonly ApiField[] {
+  const absent = onArm ? "" : " Absent on a lake with arms.";
+  return [
+    f("source_station_id", "identifier", `Publisher's site number.${absent}`, !onArm),
+    f("lat", "degrees", `Latitude of the published station point.${absent}`, !onArm),
+    f("lon", "degrees", `Longitude of the published station point.${absent}`, !onArm),
+    f("elevation", "object", `Surface level block. Fields are listed below.${absent}`, !onArm),
+    f("volume", "object",
+      `Volume block. Fields are listed below. Absent where the publisher has no daily volume.${absent}`,
+      true),
+    f("in_utah", "true or false", "Whether the station point is in Utah.", true),
+    f("intersects_utah", "true or false", "Whether the drainage area of the station point reaches Utah.", true),
+    f("huc6", "code", "Six-digit drainage area that contains the station point.", true),
+    f("huc6_name", "text", "Name of that drainage area.", true),
+    f("huc8", "code", "Eight-digit subbasin that contains the station point.", true),
+    f("huc8_name", "text", "Name of that subbasin.", true),
+    f("connected_states", "array", "States the drainage area reaches.", true),
+    f("huc_assignment_point", "longitude, latitude", "Point used for drainage-area assignment: the station point.", true),
+    f("huc_assignment_source", "text", "Evidence used for the assignment point.", true)
+  ];
+}
 
 export const LAKE_GROUPS: readonly ApiFieldGroup[] = [
   { id: "lake-header", title: "File header", path: "root", fields: [
@@ -864,36 +888,40 @@ export const LAKE_GROUPS: readonly ApiFieldGroup[] = [
   { id: "lake-record", title: "Lake record", path: "lakes[]", fields: [
     f("name", "text", "Name of the lake."),
     f("water_type", "identifier", "Always natural_terminal_lake."),
-    f("source_key", "identifier", "Provider key. Always usgs for the first lake."),
+    f("source_key", "identifier", "Provider key. Always usgs."),
     f("source_label", "text", "Publisher's name in full."),
     f("source_url", "web address", "Service the readings came from."),
-    f("source_station_id", "identifier", "Publisher's site number."),
-    f("state", "code", "Two-letter state code of the lake point, or null."),
-    f("lat", "degrees", "Latitude of the published lake point."),
-    f("lon", "degrees", "Longitude of the published lake point."),
+    f("state", "code", "Two-letter state code of the lake, or null."),
     f("data_frequency", "identifier", "Always daily."),
     f("stale_after_days", "days", "Days allowed before this lake's reading is late."),
-    f("as_of", "date", "Date of the newest reading present in both measurements."),
+    f("as_of", "date", "Date of the newest reading present in every measurement, and in every arm when the lake has arms."),
     f("days_stale", "days", "Age of that reading on the refresh date."),
-    f("is_stale", "true or false", "True when the reading is late."),
+    f("is_stale", "true or false", "True when the reading, or the reading of any arm, is late."),
     f("fetch_ok", "true or false", "False when today's request failed and the last record was kept."),
-    f("elevation", "object", "Surface level block. Fields are listed below."),
-    f("volume", "object", "Volume block. Fields are listed below."),
+    f("fetch_error", "text", "Why today's request failed.", true),
     f("targets", "array", "Restoration or regulatory levels, each with its authority, source and date. Never a full level. Empty when there are none."),
-    f("first_obs", "date", "First date in either published series."),
+    f("first_obs", "date", "First date in any published series."),
     f("years_of_record", "years", "Length of the published record."),
-    f("huc6", "code", "Six-digit drainage area that contains the lake point.", true),
-    f("huc6_name", "text", "Name of that drainage area.", true),
-    f("huc8", "code", "Eight-digit subbasin that contains the lake point.", true),
-    f("huc8_name", "text", "Name of that subbasin.", true),
-    f("connected_states", "array", "States the drainage area reaches.", true)
+    f("arms", "array", "Only on a lake that the publisher measures in separate arms. Each arm has its own station, point and surface level, listed below. Such a lake has no station, point, level or volume of its own, because one value for the whole lake would combine waters that are measured apart.", true),
+    ...lakeGaugeFields(false)
   ]},
-  { id: "lake-elevation", title: "Surface level", path: "lakes[].elevation", fields: [
+  { id: "lake-arm", title: "Lake arm", path: "lakes[].arms[]", fields: [
+    f("arm", "text", "Name of the arm, such as South arm."),
+    f("as_of", "date", "Date of the newest reading present in every measurement of this arm."),
+    f("days_stale", "days", "Age of that reading on the refresh date."),
+    f("is_stale", "true or false", "True when this arm's reading is late."),
+    f("fetch_ok", "true or false", "False when today's request for this arm failed and its last record was kept."),
+    f("fetch_error", "text", "Why today's request for this arm failed.", true),
+    f("first_obs", "date", "First date in this arm's published series."),
+    f("years_of_record", "years", "Length of this arm's published record."),
+    ...lakeGaugeFields(true)
+  ]},
+  { id: "lake-elevation", title: "Surface level", path: "lakes[].elevation and lakes[].arms[].elevation", fields: [
     f("unit", "identifier", "Always ft."),
     f("vertical_datum", "identifier", "Datum the level is measured above."),
     ...LAKE_MEASUREMENT("feet")
   ]},
-  { id: "lake-volume", title: "Volume", path: "lakes[].volume", fields: [
+  { id: "lake-volume", title: "Volume", path: "lakes[].volume, where published", fields: [
     f("unit", "identifier", "Always acre_feet."),
     f("relation", "object", "The published table that turns a water level into a volume: its name, source and the date it came into use."),
     f("change_7d_pct", "percent", "The 7-day change as a share of the earlier reading, or null."),
