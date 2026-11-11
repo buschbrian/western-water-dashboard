@@ -3,7 +3,7 @@
   "storage_source_url": "https://cwms-data.usace.army.mil/cwms-data/",
   "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams. This provider publishes no full level in acre-feet -- its pools are defined by elevation -- so ADR-070 never fires and ADR-003 with ADR-072 decides every denominator (ADR-102).",
   "reviewed": "2026-08-30",
-  "selection": "Every storage-bearing location under the NWDP office, audited with tools/audit_cwms_stations.py on 2026-08-30: one series chosen per location by the stated preference and confirmed by a read, then the shared screens in admission.py. 12 admitted on confirmed dam matches, 24 withheld with the finding behind each. 73 further locations are already published within 3 km through another provider and are deduplicated rather than withheld (ADR-069); their location ids are listed below. Names are reviewed display names, not the service's gauge labels (ADR-079). Re-audited on 2026-10-31: Galesville (GSV) and Mill Creek (MLL), held because no window returned values, now answer inside thirty days and pass every screen, so 14 are admitted and 22 withheld; every other finding is unchanged.",
+  "selection": "Every storage-bearing location under the NWDP office, audited with tools/audit_cwms_stations.py on 2026-08-30: one series chosen per location by the stated preference and confirmed by a read, then the shared screens in admission.py. 12 admitted on confirmed dam matches, 24 withheld with the finding behind each. 73 further locations are already published within 3 km through another provider and are deduplicated rather than withheld (ADR-069); their location ids are listed below. Names are reviewed display names, not the service's gauge labels (ADR-079). Re-audited on 2026-10-31: Galesville (GSV) and Mill Creek (MLL), held because no window returned values, now answer inside thirty days and pass every screen, so 14 are admitted and 22 withheld; every other finding is unchanged. Widened on 2026-11-11 under ADR-155 to every office whose catalog carries storage (NWDP, SPK, SPL, SPA, NWDM) with tools/audit_cwms_stations.py: Bear Reservoir, Big Dry Creek Reservoir and Mojave Reservoir are admitted, and 35 more locations are withheld with their findings. Locations outside the drawn areas and the two location-id collisions (Lemon and Vallecito, under both SPK and SPA, already published through Reclamation) are in the audit's evidence, not here. Farmington Dam-Pool, Mariposa-Pool and Twitchell moved to the deduplicated list on 2026-11-11, after California's own stations for the same water (FRM, MAR, TWT) were admitted (ADR-069).",
   "keyed_by": "cwms_location",
   "reservoirs": {
     "BOX": {
@@ -419,6 +419,91 @@
         "waived": "conservation pool below the observed record",
         "why": "The water has stood at 309,450 acre-feet, above the 277,000 conservation pool, so ADR-072 divides by the 330,000 maximum pool instead -- a figure the record fits inside. The conservation pool is not wrong about the pool; it is the wrong figure to divide a gross reading by."
       }
+    },
+    "Bear-Pool": {
+      "name": "Bear Reservoir",
+      "station": "Bear-Pool",
+      "office": "SPK",
+      "timeseries": "Bear-Pool.Stor.Inst.~1Day.0.Calc-val",
+      "lat": 37.3580556,
+      "lon": -120.235278,
+      "cadence": "daily",
+      "operator": "U.S. Army Corps of Engineers",
+      "huc6": "180400",
+      "huc6_name": "San Joaquin",
+      "por_start": "2015-01-01",
+      "capacity": {
+        "capacity_af": 7723.0,
+        "capacity_basis": "normal_storage",
+        "normal_storage_af": 7723.0,
+        "max_storage_af": 12700.0,
+        "nid_storage_af": 12700.0,
+        "nid_id": "CA10101",
+        "nid_dam_name": "Bear Dam",
+        "dam_lon": -120.22802664899807,
+        "dam_lat": 37.36834370701659,
+        "match_distance_km": 1.311,
+        "match_confirmed_by": "position",
+        "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
+        "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
+        "capacity_source_checked": "2026-11-11"
+      }
+    },
+    "Big Dry Cr": {
+      "name": "Big Dry Creek Reservoir",
+      "station": "Big Dry Cr",
+      "office": "SPK",
+      "timeseries": "Big Dry Cr.Stor.Inst.~1Day.0.MANUAL",
+      "lat": 36.8833333,
+      "lon": -119.6666667,
+      "cadence": "daily",
+      "operator": "Fresno Metropolitan Flood Control District",
+      "huc6": "180300",
+      "huc6_name": "Tulare-Buena Vista Lakes",
+      "por_start": "2015-01-01",
+      "capacity": {
+        "capacity_af": 30200.0,
+        "capacity_basis": "max_storage",
+        "max_storage_af": 30200.0,
+        "nid_storage_af": 30200.0,
+        "nid_id": "CA01075",
+        "nid_dam_name": "Big Dry Creek",
+        "dam_lon": -119.66031268632622,
+        "dam_lat": 36.88740506016969,
+        "match_distance_km": 0.724,
+        "match_confirmed_by": "name and position",
+        "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
+        "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
+        "capacity_source_checked": "2026-11-11"
+      }
+    },
+    "Mojave": {
+      "name": "Mojave Reservoir",
+      "station": "Mojave",
+      "office": "SPL",
+      "timeseries": "Mojave.Stor.Inst.1Hour.0.GOES-rev",
+      "lat": 34.3425,
+      "lon": -117.238056,
+      "cadence": "daily",
+      "operator": "U.S. Army Corps of Engineers",
+      "huc6": "180902",
+      "huc6_name": "Northern Mojave",
+      "por_start": "2015-01-01",
+      "capacity": {
+        "capacity_af": 179400.0,
+        "capacity_basis": "max_storage",
+        "max_storage_af": 179400.0,
+        "nid_storage_af": 179400.0,
+        "nid_id": "CA10021",
+        "nid_dam_name": "Mojave River Dam",
+        "dam_lon": -117.23469558253106,
+        "dam_lat": 34.343634369175135,
+        "match_distance_km": 0.333,
+        "match_confirmed_by": "position",
+        "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
+        "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
+        "capacity_source_checked": "2026-11-11"
+      }
     }
   },
   "withheld": {
@@ -452,7 +537,7 @@
     },
     "HEN": {
       "name": "Henrys Lk Dm Henrys Fk nr Mks In",
-      "finding": "No storage series answered inside the last thirty days, so it would be withdrawn for late data the morning it joined the map. Tried: HEN.Stor.Inst.15Minutes.0.Best."
+      "finding": "No storage series answered inside the last thirty days, so it would be withdrawn for late data the morning it joined the map. Tried: HEN.Stor.Inst.15Minutes.0.Best. Re-checked 2026-11-11: the Corps series is still silent, but NRCS (AWDB 13039000) and Reclamation (RISE 130840) both report Henrys Lake again (readings on 2026-11-08 and 11-09). It stays held: the NRCS candidate screen refuses it as holding more water than its dam's inventory figure (93,471 acre-feet observed), the regulated-natural-lake question (ADR-078, ADR-112)."
     },
     "HOPI": {
       "name": "Pend Oreille Lake nr Hope",
@@ -460,7 +545,7 @@
     },
     "KER": {
       "name": "Flathead Lake",
-      "finding": "Flathead Lake, matched to Polson Sewage Lagoon 1.19 km away holding 84 acre-feet against 1,865,340 observed -- the wrong structure, and Seli\u0161 Ksanka Q\u0142ispe Dam (formerly Kerr) is not in the inventory set the match could reach. It is also a regulated natural lake, so the ADR-078 question applies here too."
+      "finding": "Flathead Lake, matched to Polson Sewage Lagoon 1.19 km away holding 84 acre-feet against 1,865,340 observed -- the wrong structure, and Seliš Ksanka Qłispe Dam (formerly Kerr) is not in the inventory set the match could reach. It is also a regulated natural lake, so the ADR-078 question applies here too."
     },
     "LLK": {
       "name": "Long Lake Dam",
@@ -509,6 +594,134 @@
     "YAL": {
       "name": "Yale Reservoir",
       "finding": "No storage series answered inside the last thirty days, so it would be withdrawn for late data the morning it joined the map. Tried: YAL.Stor.Inst.0.0.MIXED-COMPUTED-REV, YAL.Stor.Ave.~1Day.1Day.MIXED-COMPUTED-REV."
+    },
+    "Burns-Pool": {
+      "name": "Burns-Pool",
+      "finding": "Audited 2026-11-11 under SPK (ADR-155). Confirmed by position. Held by the screens: unstable maximum: highest reading 6,878 acre-feet against a third highest of 4,422."
+    },
+    "Eastman Lake-Pool": {
+      "name": "Eastman Lk-Pool",
+      "finding": "Audited 2026-11-11 under SPK (ADR-155). No dam close enough to confirm. Held by the screens: no confirmed dam: no dam close enough to confirm."
+    },
+    "Los Banos": {
+      "name": "Los Banos Reservoir",
+      "finding": "Audited 2026-11-11 under SPK (ADR-155). No dam close enough to confirm. Held by the screens: no confirmed dam: no dam close enough to confirm."
+    },
+    "Owens-Pool": {
+      "name": "Owens-Pool",
+      "finding": "Audited 2026-11-11 under SPK (ADR-155). No dam close enough to confirm. Held by the screens: no confirmed dam: no dam close enough to confirm."
+    },
+    "Success Lake-Pool": {
+      "name": "Success Lake-Pool",
+      "finding": "Audited 2026-11-11 under SPK (ADR-155). Passes the screens on the inventory's 230,000 acre-feet, but California's withheld finding for the same water (SCC) holds it for a full level containing its 2019 water. A Corps series does not route around that hold (ADR-155)."
+    },
+    "Alamo": {
+      "name": "Alamo Dam",
+      "finding": "Audited 2026-11-11 under SPL (ADR-155). Confirmed by name and position. Held by the screens: never seen a third full: 244,843 acre-feet observed against 1,409,000, 17%."
+    },
+    "Brea": {
+      "name": "Brea Dam",
+      "finding": "Audited 2026-11-11 under SPL (ADR-155). Confirmed by name and position. Held by the screens: unstable maximum: highest reading 215 acre-feet against a third highest of 9; never seen a third full: 215 acre-feet observed against 7,420, 3%."
+    },
+    "Carbon Canyon": {
+      "name": "Carbon Canyon Dam",
+      "finding": "Audited 2026-11-11 under SPL (ADR-155). Confirmed by name and position. Held by the screens: unstable maximum: highest reading 41 acre-feet against a third highest of 6; never seen a third full: 41 acre-feet observed against 12,063, 0%."
+    },
+    "Fullerton": {
+      "name": "Fullerton Dam",
+      "finding": "Audited 2026-11-11 under SPL (ADR-155). Confirmed by name and position. Held by the screens: unstable maximum: highest reading 335 acre-feet against a third highest of 95; never seen a third full: 335 acre-feet observed against 1,342, 25%."
+    },
+    "Hansen": {
+      "name": "Hansen Dam",
+      "finding": "Audited 2026-11-11 under SPL (ADR-155). Confirmed by name and position. Held by the screens: never seen a third full: 4,438 acre-feet observed against 44,990, 10%."
+    },
+    "Lopez": {
+      "name": "Lopez Dam",
+      "finding": "Audited 2026-11-11 under SPL (ADR-155). Holds more water than the dam can contain (263 acre-feet seen). Held by the screens: no confirmed dam: holds more water than the dam can contain (263 acre-feet seen); seen above the capacity it would be divided by: 263 acre-feet observed against 209, +26%."
+    },
+    "Mathews Cnyn": {
+      "name": "Mathews Canyon Dam",
+      "finding": "Audited 2026-11-11 under SPL (ADR-155). Confirmed by name and position. Held by the screens: unstable maximum: highest reading 1,017 acre-feet against a third highest of 450; never seen a third full: 1,017 acre-feet observed against 12,420, 8%."
+    },
+    "Painted Rock": {
+      "name": "Painted Rock Dam",
+      "finding": "Audited 2026-11-11 under SPL (ADR-155). Confirmed by name and position. Held by the screens: never seen a third full: 234,017 acre-feet observed against 4,831,500, 5%."
+    },
+    "Pine Cnyn": {
+      "name": "Pine Cnyn Dam",
+      "finding": "Audited 2026-11-11 under SPL (ADR-155). Confirmed by position. Held by the screens: never seen a third full: 1,062 acre-feet observed against 10,725, 10%."
+    },
+    "Prado": {
+      "name": "Prado Dam",
+      "finding": "Audited 2026-11-11 under SPL (ADR-155). Confirmed by name and position. Held by the screens: never seen a third full: 40,664 acre-feet observed against 295,581, 14%."
+    },
+    "San Antonio": {
+      "name": "San Antonio Dam",
+      "finding": "Audited 2026-11-11 under SPL (ADR-155). Confirmed by name and position. Held by the screens: never seen a third full: 2,094 acre-feet observed against 11,880, 18%."
+    },
+    "Santa Fe": {
+      "name": "Santa Fe Dam",
+      "finding": "Audited 2026-11-11 under SPL (ADR-155). Confirmed by name and position. Held by the screens: never seen a third full: 3,231 acre-feet observed against 45,409, 7%."
+    },
+    "Sepulveda": {
+      "name": "Sepulveda Dam",
+      "finding": "Audited 2026-11-11 under SPL (ADR-155). Confirmed by name and position. Held by the screens: unstable maximum: highest reading 5,366 acre-feet against a third highest of 1,610; never seen a third full: 5,366 acre-feet observed against 27,563, 19%."
+    },
+    "Tat Momolikat": {
+      "name": "Tat Momolikat Dam",
+      "finding": "Audited 2026-11-11 under SPL (ADR-155). Confirmed by position. Held by the screens: never seen a third full: 15,361 acre-feet observed against 482,222, 3%."
+    },
+    "Villa Park": {
+      "name": "Villa Park Dam",
+      "finding": "Audited 2026-11-11 under SPL (ADR-155). Confirmed by name and position. Held by the screens: unstable maximum: highest reading 2,536 acre-feet against a third highest of 1,473; never seen a third full: 2,536 acre-feet observed against 15,600, 16%."
+    },
+    "WN Rio Hondo": {
+      "name": "Whittier Narrows Dam Rio Hondo",
+      "finding": "Audited 2026-11-11 under SPL (ADR-155). No dam close enough to confirm. Held by the screens: no confirmed dam: no dam close enough to confirm."
+    },
+    "WN San Gabriel": {
+      "name": "Whittier Narrows Dam SanGabriel",
+      "finding": "Audited 2026-11-11 under SPL (ADR-155). Confirmed by position. Held by the screens: never seen a third full: 364 acre-feet observed against 66,702, 1%."
+    },
+    "Whitlow Ranch": {
+      "name": "Whitlow Ranch Dam",
+      "finding": "Audited 2026-11-11 under SPL (ADR-155). Confirmed by name and position. Held by the screens: unstable maximum: highest reading 1,352 acre-feet against a third highest of 213; never seen a third full: 1,352 acre-feet observed against 64,910, 2%."
+    },
+    "Little Dell": {
+      "name": "Little Dell Dam & Lake",
+      "finding": "Audited 2026-11-11 under SPK (ADR-155). Every storage series carries a USBR version (Little Dell.Stor.Inst.~1Day.0.Raw-USBRSLC;MANUAL): Reclamation's reading republished, so the Corps is not its source (ADR-102)."
+    },
+    "Mountain Dell": {
+      "name": "Mountain Dell Dam & Reservoir",
+      "finding": "Audited 2026-11-11 under SPK (ADR-155). Every storage series carries a USBR version (Mountain Dell.Stor.Inst.~1Day.0.Raw-USBRSLC;MANUAL): Reclamation's reading republished, so the Corps is not its source (ADR-102)."
+    },
+    "Red Fleet": {
+      "name": "Red Fleet Dam & Reservoir",
+      "finding": "Audited 2026-11-11 under SPK (ADR-155). Every storage series carries a USBR version (Red Fleet.Stor.Inst.~1Day.0.Rev-USBRSLC): Reclamation's reading republished, so the Corps is not its source (ADR-102)."
+    },
+    "Starvation": {
+      "name": "Starvation Dam & Reservoir",
+      "finding": "Audited 2026-11-11 under SPK (ADR-155). Every storage series carries a USBR version (Starvation.Stor.Inst.~1Day.0.Rev-USBRSLC): Reclamation's reading republished, so the Corps is not its source (ADR-102)."
+    },
+    "GOR": {
+      "name": "Gorge Res near Newhalem 3NE",
+      "finding": "Audited 2026-11-11 under NWDP (ADR-155). No storage series answered inside the last thirty days. Tried: GOR.Stor.Inst.~1Day.0.CBT-REV, GOR.Stor.Inst.~1Day.0.CBT-RAW."
+    },
+    "Haines Cnyn-abv Hansen": {
+      "name": "Haines Canyon Debris Basin",
+      "finding": "Audited 2026-11-11 under SPL (ADR-155). No storage series answered inside the last thirty days. Tried: Haines Cnyn-abv Hansen.Stor.Inst.~15Minutes.0.GOES-rev."
+    },
+    "Twitchell-Orifice": {
+      "name": "Twitchell Orifice",
+      "finding": "Audited 2026-11-11 under SPL (ADR-155). No storage series answered inside the last thirty days. Tried: Twitchell-Orifice.Stor.Inst.1Hour.0.GOES-rev."
+    },
+    "Success Lake": {
+      "name": "Schafer Dam / Success Lake",
+      "finding": "Audited 2026-11-11 under SPK (ADR-155). No storage series could be read. Tried: none."
+    },
+    "Nuevo Rd-Perris Vly Storm Drain": {
+      "name": "Nuevo Road",
+      "finding": "Audited 2026-11-11 under SPL (ADR-155). No storage series could be read. Tried: none."
     }
   },
   "deduplicated": [
@@ -584,6 +797,22 @@
     "WIL",
     "WLD",
     "WOD",
-    "WYN"
-  ]
+    "WYN",
+    "Farmington Dam-Pool",
+    "Mariposa-Pool",
+    "Twitchell"
+  ],
+  "excluded_readings": {
+    "BOX": [
+      {
+        "sensor": "BOX",
+        "stamp": "2020-06-16T07:00:00+00:00",
+        "value": 60.0,
+        "reason": "60 acre-feet for 16 June 2020, between 41,880 the day before and 43,220 the day after. The reservoir had been drawn to about 4,000 acre-feet in early June and refilled by 12 June; this single value sits inside the refilled period and returns the next day.",
+        "source_url": "https://cwms-data.usace.army.mil/cwms-data/timeseries?office=NWDP&name=BOX.Stor.Ave.~1Day.1Day.CBT-REV&unit=ac-ft&begin=2020-06-14T00:00:00Z&end=2020-06-19T00:00:00Z",
+        "reviewed_on": "2026-11-11",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/124"
+      }
+    ]
+  }
 }

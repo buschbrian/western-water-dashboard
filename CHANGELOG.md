@@ -13,6 +13,18 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
+- **Fairmont Reservoir** from the California Department of Water Resources,
+  on a reviewed match to Fairmont No. 2 (493 acre-feet). The automatic match
+  had taken a larger dam 2.8 km away. LADWP plans to reline the reservoir
+  from 2026 to 2031, so its readings may run low during the work.
+
+- **Three Corps of Engineers reservoirs from offices beyond the Columbia
+  Basin** (ADR-155): Bear Reservoir and Big Dry Creek Reservoir from the
+  Sacramento District's office, and Mojave Reservoir from the Los Angeles
+  District's. All three are flood-control pools that sit near empty between
+  storms. The Corps audit now reads every office whose catalog carries
+  storage, and 35 more locations it keeps out are recorded with their
+  findings.
 - **Eleven California reservoirs** from the California Department of Water
   Resources: Lake Spaulding, Twitchell Reservoir, Farmington Reservoir,
   Clifton Court Forebay, Mariposa Reservoir, Brush Creek Reservoir, Lake
@@ -301,6 +313,12 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   `lakes.json` names the new address from the next morning's refresh.
 
 ### Fixed
+
+- **Two false record lows are excluded** (ADR-116): Barrett's July 2024
+  month-end of 1,607 acre-feet, between 32,598 and 29,306, and Box Canyon's
+  60 acre-feet on 16 June 2020, between 41,880 and 43,220. Each names its
+  provider issue (#123, #124). Corps readings can now carry reviewed
+  exclusions too, matched on the service's own UTC stamp and raw value.
 
 - The first-visit place question shows every state and region on a wide
   screen. Its height limit hid the last row of regions, Pacific Northwest and
