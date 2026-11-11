@@ -82,7 +82,12 @@ jobs:
           # Browser-only test dependency; the application dependency graph
           # remains exactly what npm ci installed from the lockfile.
           bash scripts/install-playwright.sh
-          node node_modules/playwright/cli.js install --with-deps chromium
+          # The runner image's Google Chrome, as scripts/share-images.sh uses:
+          # no browser download and no apt step, so an Ubuntu mirror outage
+          # cannot fail the job before a page loads.
+          chrome="$(command -v google-chrome)"
+          echo "PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=$chrome" >> "$GITHUB_ENV"
+          "$chrome" --version
       - name: Check retired route redirects in a real browser
         run: |
           mkdir -p screenshots
