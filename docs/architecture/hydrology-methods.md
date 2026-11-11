@@ -172,8 +172,16 @@ volume's twelve-month history carries the period-of-record monthly normal
 (`normal_af`, with `normal_years`) that a reservoir's does; no 1991–2020
 climate normal is published for a lake until the normals builder learns the
 type. The payload is `lakes.json`, shown on `lakes.html` (ADR-119).
-Great Salt Lake requires an arm-aware representation; one point and one total
-would collapse separately measured waters.
+
+Great Salt Lake is the second lake (ADR-161), published as its two arms: the
+south arm at USGS 10010000 (Saltair Boat Harbor) and the north arm at USGS
+10010100 (near Saline), which the survey measures apart because the railroad
+causeway divides the lake. Each arm publishes the survey's daily mean lake
+elevation, parameter 62614, in feet above NGVD29 as the parameter defines it,
+from 2015-01-01, with the same extremes, dated changes and same-date rank as
+any level. No volume is published: the survey publishes no daily volume for
+either arm, and none is computed here. No level, point or volume is published
+for the lake as a whole, and the lake is as current as its oldest arm.
 
 ## Reservoir surface level
 

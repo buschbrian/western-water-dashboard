@@ -19,7 +19,7 @@ modules in `pipeline/`:
 | `pipeline/seasonal.py` | The seasonal estimator: window, annual votes, normals, rank, percentile. |
 | `pipeline/freshness.py` | Carry-forward, the withdrawal threshold and the withdrawal notice. |
 | `pipeline/geography.py` | County and drainage-area assignment onto finished records. |
-| `pipeline/lakes.py` | The natural terminal lakes (ADR-112, ADR-118): a record of elevation and volume with no full level, its validator, and the lake payload envelope. |
+| `pipeline/lakes.py` | The natural terminal lakes (ADR-112, ADR-118, ADR-161): a record of elevation and optional volume, grouped into arms where the survey measures a lake apart, with no full level, its validator, and the lake payload envelope. |
 | `pipeline/measurement.py` | One daily series summarised: current value, dated extremes, dated changes and the same-date rank. Shared by a lake's level and volume and a reservoir's surface level, so a level means one thing. |
 | `pipeline/elevation.py` | Reviewed reservoir surface elevation (ADR-135): the record's `elevation` block, the history entries, `elevation_history.json` and their checks. |
 | `pipeline/rivers.py` | Daily river flow (ADR-136): a gauge's 30-day record with no rank or total, its validator, and the river payload envelope; for a natural gauge, the committed day-of-year percentiles' loader and WaterWatch's class (ADR-144). |
@@ -144,19 +144,28 @@ they change.
 `pipeline.roster.load_admitted_terminal_lakes`, which refuses any
 capacity-shaped field and requires the evidence ADR-112 asks for: a reviewed
 waterbody point, a reviewed closed-basin assignment, the elevation's vertical
-datum and the volume's published elevation-volume relation. `refresh_lakes.py`
-reads both daily series from the Geological Survey's OGC collection through
+datum, and either the volume's published elevation-volume relation or a
+`no_volume` reason (ADR-161). A lake the survey measures in arms is one entry
+per arm, keyed by the arm's station and naming its `arm`; the entries share the
+lake's name, state and targets. `refresh_lakes.py` reads each station's daily
+series from the Geological Survey's OGC collection through
 `fetch_usgs_parameter_series` — the storage fetcher is the same function with
-parameter 00054 filled in — and writes `lakes.json` under `LAKE_SCHEMA_VERSION`.
-Each record carries an `elevation` block and a `volume` block, each with its
-current value, dated record extremes, dated changes and the same-date seasonal
-rank from the unchanged reservoir estimator; volume also carries a percentage
-change and the twelve-month history, elevation no percentage of anything. The
-record's `as_of` is the earlier of the two series' last dates. Freshness is
-ADR-056's: carried forward marked late, then withdrawn to a notice with no
-measurement. `pipeline.lakes.validate_payload` refuses a lake record carrying a
-reservoir-only field, a notice carrying a measurement, and a roster lake absent
-from both lists. The file is generated and committed by the refresh.
+parameter 00054 filled in — and writes `lakes.json` under `LAKE_SCHEMA_VERSION`
+(2). Each station's record carries an `elevation` block and, where the roster
+has one, a `volume` block, each with its current value, dated record extremes,
+dated changes and the same-date seasonal rank from the unchanged reservoir
+estimator; volume also carries a percentage change and the twelve-month
+history, elevation no percentage of anything. The record's `as_of` is the
+earlier of its series' last dates. `pipeline.lakes.group_arms` then turns a
+lake's arms into one record with an `arms` list and no lake-wide station,
+point, level or volume; the lake is as current as its oldest arm.
+Freshness is ADR-056's: an arm or a lake is carried forward marked late (an
+arm on its own, through `flatten_arms`), and a lake past the threshold, or
+with any arm past it, is withdrawn to a notice with no measurement.
+`pipeline.lakes.validate_payload` refuses a lake record carrying a
+reservoir-only field, a lake with arms carrying a lake-wide value or arms that
+differ from the roster's, a volume the roster has no series for, a notice
+carrying a measurement, and a roster lake absent from both lists. The file is generated and committed by the refresh.
 `lakes.html` fetches it (ADR-119); the build publishes it at the site root,
 `/data/lakes.json` and `/api/lakes.json`.
 

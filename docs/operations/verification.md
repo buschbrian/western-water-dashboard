@@ -68,6 +68,12 @@ with Google Chrome installed does not need a second Chromium:
 PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH="/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" npm run verify:browser
 ```
 
+For a focused terminal-lake check, use
+`npm run verify:browser -- --great-salt-lake`: it rebuilds and runs only the
+Great Salt Lake arm checks at every width (with a full-page picture of each
+in `screenshots/`) and the lakes entry in the storage map's bar at 1,024,
+1,280 and 360 pixels (ADR-161).
+
 For a focused story-embed check, use `npm run verify:browser -- --embeds`
 with the same browser setting. It rebuilds and runs the existing iframe cases
 without the other page checks. The normal target still runs the full suite.

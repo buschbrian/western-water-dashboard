@@ -156,6 +156,7 @@ ADR-041.**
   [ADR-112](ADR-112-publish-terminal-lakes-as-a-separate-water-type.md),
   [ADR-118](ADR-118-publish-terminal-lakes-from-their-own-roster-and-payload.md),
   [ADR-119](ADR-119-show-terminal-lakes-on-their-own-page.md),
+  [ADR-161](ADR-161-publish-great-salt-lake-with-its-arms-kept-apart.md),
   [ADR-128](ADR-128-publish-compact-story-views-for-embedding.md),
   [ADR-114](ADR-114-publish-a-water-type-and-an-operating-character.md),
   [ADR-079](ADR-079-rename-through-a-former-name-table-and-publish-the-operator.md),
@@ -330,7 +331,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md) | Exclude a reviewed reading, and never repair one | Accepted; extends ADR-072's no-repair rule; five readings named across four withheld California stations, the issues stay open; issue closure amended by ADR-152 |
 | [ADR-117](ADR-117-close-the-scope-at-version-1-0-0.md) | Close the scope at version 1.0.0 | Superseded by ADR-124 for the bounded pilot; versioning, release approval and other scope limits retained; ADR-123 brings the drought time series and ADR-125 precipitation back into scope |
 | [ADR-118](ADR-118-publish-terminal-lakes-from-their-own-roster-and-payload.md) | Publish terminal lakes from their own roster and payload | Accepted; implements ADR-112 and extends ADR-056 and ADR-098; Walker Lake is the first lake, generated and not yet shown |
-| [ADR-119](ADR-119-show-terminal-lakes-on-their-own-page.md) | Show terminal lakes on their own page | Accepted; extends ADR-118 and ADR-045; reached from the methods and data pages, not the bar |
+| [ADR-119](ADR-119-show-terminal-lakes-on-their-own-page.md) | Show terminal lakes on their own page | Accepted, navigation clause superseded by ADR-161; extends ADR-118 and ADR-045 |
 | [ADR-120](ADR-120-ask-where-to-start-before-loading-the-map.md) | Ask where to start before loading the map | Accepted; extends ADR-086; the storage map fetches the map SDK only after the first-visit question closes without a choice |
 | [ADR-121](ADR-121-keep-the-finished-snow-season-and-open-the-new-one-honestly.md) | Keep the finished snow season, and open the new one honestly | Accepted; amends ADR-040; one denominator floor for the map and the peak, a write-once archive per water year, and a season choice |
 | [ADR-122](ADR-122-measure-drought-from-the-monitors-full-resolution-archive.md) | Measure drought from the monitor's full-resolution archive, back ten years | Accepted; method `drought-coverage-3`; the weekly run never measures the simplified download; the archives hold a decade |
@@ -365,6 +366,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-152](ADR-152-close-a-provider-issue-whose-every-reading-is-a-mechanical-error.md) | Close a provider issue whose every reading is a mechanical error | Accepted; amends ADR-116's "the issues stay open"; zero, power-of-ten shift, one digit dropped or added, or same-day exchange, re-checked unchanged at the provider; exclusions unchanged; #44, #105, #108, #109, #110 and #111 closed, eight issues stay open |
 | [ADR-153](ADR-153-state-the-maps-storage-against-normal-and-subtotal-the-filtered-rows.md) | State the map's storage against normal, and subtotal the filtered rows | Accepted; amends ADR-095; a "Compared with normal" tile naming its period, shared with the storage charts' sentence; Compare against changes the summary; the headline stays the wider total and a labelled subtotal covers the filtered rows; a past month has no comparison; a phone control over the map; a per-reservoir list figure, table column (`sort=normal-*`) and two appended CSV columns with GeoJSON properties |
 | [ADR-154](ADR-154-keep-a-permanent-share-address-for-every-reservoir.md) | Keep a permanent share address for every reservoir | Accepted; permanent station-keyed share pages, retained withdrawal notices, storage and level frames, state/region/West cards and bounded capture; implemented locally |
+| [ADR-161](ADR-161-publish-great-salt-lake-with-its-arms-kept-apart.md) | Publish Great Salt Lake with its arms kept apart | Accepted; extends ADR-112 and ADR-118; optional volume with a stated `no_volume` reason, one roster entry per measured arm, an `arms` list with no lake-wide point, level or volume, `lakes.json` structure version 2; Great Salt Lake's south arm (10010000) and north arm (10010100) at NGVD29 with no volume; the lakes page in the bar and the page menu; Pyramid Lake still withheld; implemented locally |
 
 ## Relationship to the historical journal
 

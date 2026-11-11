@@ -2,7 +2,7 @@
 
 Status: The four Wave 1 implementation PRs (#115–#118) were published on
 2026-11-09. Wave 2, sharing and place: items 5–7 are implemented locally;
-items 8 and 9 remain.
+items 8 and 9 remain. Wave 4: item 14 is implemented locally.
 Brian Busch chose the four scopes below
 on 2026-11-09. ADR-153 records the storage-map choice; each later wave writes
 its own record where required.
@@ -259,6 +259,12 @@ worth most if it lands before February.
 
 ### 14. Great Salt Lake
 
+Implemented locally on 2026-11-11 in
+[ADR-161](decisions/ADR-161-publish-great-salt-lake-with-its-arms-kept-apart.md):
+the south arm (10010000) and north arm (10010100) at NGVD29, no volume because
+the survey publishes none, and the lakes page in the bar and the page menu.
+Pyramid Lake stays withheld for its own station and datum review.
+
 The terminal-lake record gains arms that are measured apart and an optional
 volume block, which is what `admitted_terminal_lakes.json` says holds both
 Great Salt Lake and Pyramid Lake. Station identity and datum go through the
@@ -281,7 +287,6 @@ Waves run in order; items inside a wave are independent except where noted.
 - The repository growth and transfer cost of daily history.
 - The size of the town reference file.
 - Reclamation's inflow items and what its inflow figure is.
-- Great Salt Lake's stations and datum.
 - Map rendering and visual hierarchy below 500 CSS pixels in a visible
   browser. Automated layout checks passed at 390 and 360 pixels.
 

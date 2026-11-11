@@ -13,6 +13,18 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
+- **Great Salt Lake, with its two arms kept apart** (ADR-161). The terminal
+  lakes page shows the south arm (U.S. Geological Survey station 10010000,
+  Saltair Boat Harbor) and the north arm (10010100, near Saline) each in its
+  own section, with its own surface level above the National Geodetic
+  Vertical Datum of 1929, record readings, dated changes and history rank.
+  The survey publishes no daily volume for either arm, so none is shown, and
+  no single level is given for the whole lake. The lakes page is now in the
+  navigation bar and the page menu. `lakes.json` is structure version 2: a
+  lake may have no `volume` block, and a lake measured apart has an `arms`
+  list instead of its own station, point and level. Walker Lake's record is
+  unchanged.
+
 - **Eleven California reservoirs** from the California Department of Water
   Resources: Lake Spaulding, Twitchell Reservoir, Farmington Reservoir,
   Clifton Court Forebay, Mariposa Reservoir, Brush Creek Reservoir, Lake

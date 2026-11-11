@@ -40,7 +40,7 @@ No recent-conditions payload or raster is included in this comparison.
 | `snowpack.json` | 3,629 KB | **304 KB** |
 | `reservoirs.json` | 2,055 KB | 220.8 KB |
 | `snow_sites.json` | 143 KB | 22 KB |
-| `lakes.json` | 7.1 KB | 1.4 KB |
+| `lakes.json` | 11.2 KB | 1.9 KB |
 | `elevation_history.json` | 434 KB | 117 KB |
 | `rivers.json` | 42.7 KB | 3.7 KB |
 | `precipitation.json` | 155 KB | 8.9 KB |
@@ -80,7 +80,9 @@ fetched only when a reader turns the precipitation map to soil moisture.
 440 B raw a day (ADR-146); projections are in that record. No page fetches them.
 
 `lakes.json` was measured 2026-09-06 on its first generated file, one lake
-(ADR-118); it is fetched only by the terminal-lakes page (ADR-119).
+(ADR-118), and again on 2026-11-11 with Great Salt Lake's two arms added
+(ADR-161): 11,242 bytes raw, 1,935 gzipped (gzip -6), from 1,516. It is
+fetched only by the terminal-lakes page (ADR-119).
 
 `elevation_history.json` was measured 2026-10-27 on its first generated copy
 (gzip -6, 119,504 bytes; 444,872 raw): Lake Mead's daily level from

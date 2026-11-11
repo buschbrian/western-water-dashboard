@@ -1,6 +1,8 @@
 # ADR-119: Show terminal lakes on their own page
 
-- Status: Accepted
+- Status: Accepted; the navigation clause (reached from the methods and data
+  pages, not from the bar) is superseded by
+  [ADR-161](ADR-161-publish-great-salt-lake-with-its-arms-kept-apart.md)
 - Date: 2026-09-06
 - Extends: ADR-118 and ADR-045
 - Qualifies: ADR-078's glossary statement, already superseded by ADR-112
