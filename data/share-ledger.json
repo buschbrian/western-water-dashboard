@@ -2053,5 +2053,80 @@
     "source_station_id": "opslakepleasant",
     "name": "Lake Pleasant",
     "slug": "reservoir-lake-pleasant-7887f015041c"
+  },
+  {
+    "source_station_id": "BHC",
+    "name": "Brush Creek Reservoir",
+    "slug": "reservoir-brush-creek-reservoir-45ddca38a87b"
+  },
+  {
+    "source_station_id": "Bear-Pool",
+    "name": "Bear Reservoir",
+    "slug": "reservoir-bear-reservoir-62fadafaa038"
+  },
+  {
+    "source_station_id": "Big Dry Cr",
+    "name": "Big Dry Creek Reservoir",
+    "slug": "reservoir-big-dry-creek-reservoir-947f46309581"
+  },
+  {
+    "source_station_id": "CLC",
+    "name": "Clifton Court Forebay",
+    "slug": "reservoir-clifton-court-forebay-3f0395803f7e"
+  },
+  {
+    "source_station_id": "CMI",
+    "name": "Camino Reservoir",
+    "slug": "reservoir-camino-reservoir-2ed8534e9822"
+  },
+  {
+    "source_station_id": "EJC",
+    "name": "Chesbro Reservoir",
+    "slug": "reservoir-chesbro-reservoir-846051b7f91d"
+  },
+  {
+    "source_station_id": "FMT",
+    "name": "Fairmont Reservoir",
+    "slug": "reservoir-fairmont-reservoir-db978fcc0ad3"
+  },
+  {
+    "source_station_id": "FRM",
+    "name": "Farmington Reservoir",
+    "slug": "reservoir-farmington-reservoir-7bb8698b6399"
+  },
+  {
+    "source_station_id": "KKR",
+    "name": "Kerckhoff Reservoir",
+    "slug": "reservoir-kerckhoff-reservoir-db74d07203a8"
+  },
+  {
+    "source_station_id": "LKF",
+    "name": "Lake Fordyce",
+    "slug": "reservoir-lake-fordyce-090b9c4e6907"
+  },
+  {
+    "source_station_id": "MAR",
+    "name": "Mariposa Reservoir",
+    "slug": "reservoir-mariposa-reservoir-8904c61a98db"
+  },
+  {
+    "source_station_id": "Mojave",
+    "name": "Mojave Reservoir",
+    "slug": "reservoir-mojave-reservoir-712918b7857a"
+  },
+  {
+    "source_station_id": "SPG",
+    "name": "Lake Spaulding",
+    "slug": "reservoir-lake-spaulding-ab28bb839056"
+  },
+  {
+    "source_station_id": "TWT",
+    "name": "Twitchell Reservoir",
+    "slug": "reservoir-twitchell-reservoir-07912ee9ef3c"
+  },
+  {
+    "source_station_id": "UTI",
+    "name": "Utica Reservoir",
+    "slug": "reservoir-utica-reservoir-4cc8bd0bfd28"
   }
 ]
