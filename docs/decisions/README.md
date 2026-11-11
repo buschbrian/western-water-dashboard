@@ -376,7 +376,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-157](ADR-157-divide-a-regulated-natural-lake-by-a-full-level-on-its-own-basis.md) | Divide a regulated natural lake by a full level on its series' own basis | Accepted; applies ADR-078's reservoir rule as kept by ADR-112 and ADR-114: a regulated natural lake is divided by a full level on its series' own basis, never a dam's top-few-feet figure |
 | [ADR-158](ADR-158-exclude-readings-that-meet-a-mechanical-error-test-in-one-reviewed-batch.md) | Exclude readings that meet a mechanical-error test in one reviewed batch | Accepted; extends ADR-152 and ADR-116: readings that meet an ADR-152 test exactly, not in a run, are excluded in one reviewed batch per provider; spikes, runs and series disagreements stay individual |
 | [ADR-159](ADR-159-publish-a-terminal-lake-by-arm-and-without-a-volume.md) | Publish a terminal lake by arm, and without a volume where none is reviewed | Accepted; extends ADR-112 and ADR-118: a terminal lake may carry arms and may omit volume; a target is a named line, never a denominator |
-| [ADR-163](ADR-163-save-weekly-figures-once-and-publish-feeds.md) | Save weekly figures once and publish feeds | Accepted; append-only Mountain Time weekly ledger, Atom and JSON feeds, permanent pages, picture and caption; local implementation |
+| [ADR-163](ADR-163-save-weekly-figures-once-and-publish-feeds.md) | Save weekly figures once and publish feeds | Proposed; append-only Mountain Time weekly ledger, Atom and JSON feeds, permanent pages, picture and caption; local implementation |
 
 ## Relationship to the historical journal
 
