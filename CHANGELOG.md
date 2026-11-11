@@ -20,6 +20,15 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   storms. The Corps audit now reads every office whose catalog carries
   storage, and 35 more locations it keeps out are recorded with their
   findings.
+- **Eleven California reservoirs** from the California Department of Water
+  Resources: Lake Spaulding, Twitchell Reservoir, Farmington Reservoir,
+  Clifton Court Forebay, Mariposa Reservoir, Brush Creek Reservoir, Lake
+  Fordyce, Kerckhoff Reservoir, Chesbro Reservoir, Camino Reservoir and
+  Utica Reservoir. The October 31 re-audit (ADR-150) surfaced them and
+  admitted none. Re-run on November 10, each passes every admission screen
+  unchanged, reports daily, and takes its full level from the National
+  Inventory of Dams. Five carry a record low the record-figure screen
+  reports for review, as several published reservoirs already do.
 
 - **Main-page picture previews and copyable story embed code.** The storage,
   snow, precipitation, drought and river pages carry dated preview pictures,
