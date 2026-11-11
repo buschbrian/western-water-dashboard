@@ -60,8 +60,11 @@ def validate_entry(value: dict) -> None:
 
 
 def publish(records: list[dict], frames: dict[str, pd.DataFrame], run_date: str,
-            directory: Path = DIRECTORY) -> dict:
+            directory: Path = DIRECTORY, *, skip_failures: bool = False) -> dict:
     """Merge reported dates; leave unrequested and withdrawn histories intact.
+
+    With ``skip_failures`` (the daily refresh), a station whose reading or
+    archive is unusable keeps its published files and the others continue.
 
     Finished years live in one station file. It is rewritten only when new
     finished dates or a provider correction change it; no daily timestamp.
@@ -85,33 +88,12 @@ def publish(records: list[dict], frames: dict[str, pd.DataFrame], run_date: str,
                 for day, row in daily.decode(previous, ("values",)).items()
                 if row["values"] is not None])
     for record in records:
-        station = str(record["source_station_id"])
-        frame = frames.get(station)
-        if frame is None or frame.empty:
-            continue
-        path = directory / archive_name(station)
-        archive = read(path).get("reservoir")
-        prior = daily.decode(archive, ("values",))
-        prior.update(daily.decode(stored.get(station), ("values",)))
-        previous = {**record, **daily.encode(prior, ("values",))} if prior else None
-        combined = entry(record, frame, previous)
-        validate_entry(combined)
-        days = daily.decode(combined, ("values",))
-        past = {day: row for day, row in days.items() if water_year(day) < year}
-        present = {day: row for day, row in days.items() if water_year(day) >= year}
-        metadata = {key: value for key, value in combined.items()
-                    if key not in {"start", "end", "values"}}
-        if past and any(row["values"] is not None for row in past.values()):
-            archived = {"schema_version": 1, "unit": "acre-ft",
-                        "reservoir": {**metadata, **daily.encode(past, ("values",))}}
-            if read(path) != archived:
-                daily.write_compact(path, archived)
-        if present and any(row["values"] is not None for row in present.values()):
-            stored[station] = {**metadata, **daily.encode(present, ("values",))}
-        else:
-            stored.pop(station, None)
-        index[station] = {"archive": path.name if past and path.exists() else None,
-                          "start": combined["start"], "end": combined["end"]}
+        try:
+            publish_station(record, frames, stored, index, directory, year)
+        except (ValueError, OSError) as error:
+            if not skip_failures:
+                raise
+            print(f"WARNING: {record.get('name')} storage history kept as published -- {error}")
     payload = {"schema_version": 1, "unit": "acre-ft", "water_year": year,
                "run_date": run_date, "reservoirs": sorted(stored.values(),
                                                           key=lambda e: e["source_station_id"])}
@@ -122,3 +104,34 @@ def publish(records: list[dict], frames: dict[str, pd.DataFrame], run_date: str,
     if read(index_path) != result:
         daily.write_compact(index_path, result)
     return result
+
+
+def publish_station(record: dict, frames: dict[str, pd.DataFrame], stored: dict,
+                    index: dict, directory: Path, year: int) -> None:
+    station = str(record["source_station_id"])
+    frame = frames.get(station)
+    if frame is None or frame.empty:
+        return
+    path = directory / archive_name(station)
+    archive = read(path).get("reservoir")
+    prior = daily.decode(archive, ("values",))
+    prior.update(daily.decode(stored.get(station), ("values",)))
+    previous = {**record, **daily.encode(prior, ("values",))} if prior else None
+    combined = entry(record, frame, previous)
+    validate_entry(combined)
+    days = daily.decode(combined, ("values",))
+    past = {day: row for day, row in days.items() if water_year(day) < year}
+    present = {day: row for day, row in days.items() if water_year(day) >= year}
+    metadata = {key: value for key, value in combined.items()
+                if key not in {"start", "end", "values"}}
+    if past and any(row["values"] is not None for row in past.values()):
+        archived = {"schema_version": 1, "unit": "acre-ft",
+                    "reservoir": {**metadata, **daily.encode(past, ("values",))}}
+        if read(path) != archived:
+            daily.write_compact(path, archived)
+    if present and any(row["values"] is not None for row in present.values()):
+        stored[station] = {**metadata, **daily.encode(present, ("values",))}
+    else:
+        stored.pop(station, None)
+    index[station] = {"archive": path.name if past and path.exists() else None,
+                      "start": combined["start"], "end": combined["end"]}

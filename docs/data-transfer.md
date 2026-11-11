@@ -19,8 +19,10 @@ Two rules before any figure below is read:
 
 Measured from the generated files, compressing each JSON separately with gzip.
 This is payload size, not a complete network or rendering-speed audit.
-The backfill covers 401 of 409 published reservoirs. The eight Geological
-Survey series still require the key-backed Actions artifact.
+Measured before the California admissions were rebased: the backfill then
+covered 401 of 409 published reservoirs. The rebase note below gives the
+current figures (412 of 420). The eight Geological Survey
+series still require the key-backed Actions artifact.
 
 | Payload | Raw bytes | Gzip bytes |
 |---|---:|---:|

@@ -1513,11 +1513,20 @@ def main() -> int:
         print("\n--dry-run: not writing reservoirs.json")
         return 0
 
-    storage_history.publish(records, storage_frames, today.date().isoformat())
+    # Histories are supplementary: a fault in one never holds back the
+    # morning's reservoirs.json, which is the deploy.
+    try:
+        storage_history.publish(records, storage_frames, today.date().isoformat(),
+                                skip_failures=True)
+    except (ValueError, OSError) as error:
+        print(f"WARNING: storage histories kept as published -- {error}")
     if rise_targets:
-        flow_history = reservoir_flows.refresh(
-            [r for r in records if str(r.get("source_station_id")) in rise_targets], previous, today)
-        daily_history.write_compact(reservoir_flows.HISTORY, flow_history)
+        try:
+            flow_history = reservoir_flows.refresh(
+                [r for r in records if str(r.get("source_station_id")) in rise_targets], previous, today)
+            daily_history.write_compact(reservoir_flows.HISTORY, flow_history)
+        except (ValueError, OSError) as error:
+            print(f"WARNING: reservoir flow history kept as published -- {error}")
     OUTPUT_PATH.write_text(json.dumps(payload, indent=2) + "\n")
     if elevation_targets:
         # Written compact, as snowpack.json is: a daily series is read by a

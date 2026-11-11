@@ -61,6 +61,18 @@ def test_bad_input_and_corrupt_archive_never_overwrite(tmp_path):
     assert path.read_text() == "broken"
 
 
+def test_daily_refresh_skips_a_bad_station_and_keeps_the_others(tmp_path):
+    good, bad = record("509"), record("6124")
+    H.publish([good, bad], {"509": frame(("2025-10-01", 10)), "6124": frame(("2025-10-01", 20))},
+              "2025-10-01", tmp_path)
+    H.publish([good, bad], {"509": frame(("2025-10-02", 11)),
+                            "6124": frame(("2025-10-02", float("nan")))},
+              "2025-10-02", tmp_path, skip_failures=True)
+    current = {r["source_station_id"]: r["values"]
+               for r in json.loads((tmp_path / "current.json").read_text())["reservoirs"]}
+    assert current == {"509": [10, 11], "6124": [20]}
+
+
 def test_station_paths_never_depend_on_name_or_unescaped_station():
     assert H.archive_name("../../x").endswith(".json")
     assert "/" not in H.archive_name("../../x")
