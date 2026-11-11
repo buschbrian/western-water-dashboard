@@ -6851,6 +6851,12 @@ async function checkSnowHistory() {
         `${label}: the month table has ${state.rows} rows`);
       check(/not snowfall/.test(state.text) && /snow water equivalent/i.test(state.text),
         `${label}: the card does not say what it measures`);
+      /* The page-wide sentence check reads the page before this card loads,
+       * so the card's own sentences answer to the same 25-word limit here. */
+      const long = state.text.split("\n").flatMap((line) => line.trim()
+        .split(/(?<=[.!?])\s+(?=[A-Z"\u2014\d])/))
+        .filter((sentence) => sentence.trim().split(/\s+/).length > 25);
+      check(long.length === 0, `${label}: sentences over 25 words: ${long.join(" | ")}`);
       check(state.scroll <= state.width + 1,
         `${label}: page overflows horizontally (${state.scroll}px in ${state.width}px)`);
       await tab.getByRole("button", { name: "Whole season", exact: true }).click();

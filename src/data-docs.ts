@@ -202,7 +202,7 @@ root.innerHTML = `
           as the precipitation history. It is the water in the snow on the ground on each date. It is not snowfall.
           Rebuilt each October, with the date checked in the file. Structure version 1.
           A station must cover every year and step to enter the snow page's fixed comparison set.</p>
-        <p>The stored values are integers in tenths of an inch, in the same encoding: the first is the reading,
+        <p>The stored values are integers in tenths of an inch, in the same encoding. The first is the reading,
           and each later integer is the change from the preceding step. A change is negative when snow melts.
           A reading below zero is not used, so no decoded value is below zero.</p>
         <p>A historical step may use a reading up to three days earlier, within the same water year.
