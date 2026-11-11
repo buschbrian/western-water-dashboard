@@ -599,16 +599,16 @@ def test_awdb_inventory_has_traceable_capacity_and_cadence():
     # 146 after ADR-113 withheld Anderson; Vail and Grant Lake bring it to 148.
     # Vail uses a dated limit; Grant passed after its reviewed exclusion.
     # Eastman Lake (BUC) makes 149, admitted after its reviewed exclusion too.
-    # The 2026-11-10 re-audit admits six that ADR-150 surfaced and left for
-    # review; five more pass the screens but stay held for a record low.
-    assert len(R.ADMITTED_CDEC_RESERVOIRS) == 155
-    assert len(R.CDEC_RESERVOIRS) == 155
+    # The 2026-11-10 re-audit admits eleven that ADR-150 surfaced and left
+    # for review.
+    assert len(R.ADMITTED_CDEC_RESERVOIRS) == 160
+    assert len(R.CDEC_RESERVOIRS) == 160
     assert sum(1 for row in R.ADMITTED_CDEC_RESERVOIRS.values()
                if row.get("review")) == 6
     cdec_document = json.loads(R.ADMITTED_CDEC_RESERVOIRS_PATH.read_text())
     assert set(cdec_document["withheld"]) == {
-        "BMP", "CLA", "CMI", "EJC", "FMT", "GDR",
-        "HVS", "KKR", "LKF", "LRA", "MAT", "ONF", "RLC", "SCC", "UTI",
+        "BMP", "CLA", "FMT", "GDR",
+        "HVS", "LRA", "MAT", "ONF", "RLC", "SCC",
     }, "every unresolved California candidate must keep its finding"
     # An exclusion is not an admission (ADR-116): removing a reading answers
     # one screen and nothing else, so an excluded station is either still
@@ -637,9 +637,9 @@ def test_awdb_inventory_has_traceable_capacity_and_cadence():
     # Arizona Project (ADR-104), less Leroy Anderson, withheld for
     # irreconcilable full levels (ADR-113), plus Vail, Grant Lake and Topaz,
     # and Galesville and Bennington Lake from the Corps' 2026-10-31 re-audit,
-    # and Eastman Lake from California's, then six more from California's
+    # and Eastman Lake from California's, then eleven more from California's
     # 2026-11-10 re-audit.
-    assert len(R.ALL_RESERVOIR_IDS) == 416
+    assert len(R.ALL_RESERVOIR_IDS) == 421
     assert not (set(R.RESERVOIRS) & set(R.AWDB_RESERVOIRS))
     # Nine providers, nine disjoint sets of station ids. An id in two of
     # them is one reservoir fetched twice and summed twice (ADR-069).

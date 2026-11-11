@@ -1595,6 +1595,13 @@
       "state": "CA",
       "retrieved": "2026-11-10"
     },
+    "CMI": {
+      "name": "Camino Reservoir",
+      "county_fips": "06017",
+      "county_name": "El Dorado County",
+      "state": "CA",
+      "retrieved": "2026-11-11"
+    },
     "CMN": {
       "name": "Camanche Reservoir",
       "county_fips": "06077",
@@ -1711,6 +1718,13 @@
       "county_fips": "06017",
       "county_name": "El Dorado County",
       "state": "CA"
+    },
+    "EJC": {
+      "name": "Chesbro Reservoir",
+      "county_fips": "06085",
+      "county_name": "Santa Clara County",
+      "state": "CA",
+      "retrieved": "2026-11-11"
     },
     "ELC": {
       "name": "El Capitan Lake",
@@ -1929,6 +1943,13 @@
       "county_name": "San Diego County",
       "state": "CA"
     },
+    "KKR": {
+      "name": "Kerckhoff Reservoir",
+      "county_fips": "06019",
+      "county_name": "Fresno County",
+      "state": "CA",
+      "retrieved": "2026-11-11"
+    },
     "KNT": {
       "name": "Kent",
       "county_fips": "06041",
@@ -1953,6 +1974,13 @@
       "county_fips": "06063",
       "county_name": "Plumas County",
       "state": "CA"
+    },
+    "LKF": {
+      "name": "Lake Fordyce",
+      "county_fips": "06057",
+      "county_name": "Nevada County",
+      "state": "CA",
+      "retrieved": "2026-11-11"
     },
     "LMN": {
       "name": "Lake Herbert G. West",
@@ -2490,6 +2518,13 @@
       "county_name": "Alameda County",
       "state": "CA",
       "retrieved": "2026-10-31"
+    },
+    "UTI": {
+      "name": "Utica Reservoir",
+      "county_fips": "06003",
+      "county_name": "Alpine County",
+      "state": "CA",
+      "retrieved": "2026-11-11"
     },
     "UVA": {
       "name": "Uvas Reservoir",
