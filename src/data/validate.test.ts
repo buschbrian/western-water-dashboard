@@ -338,3 +338,45 @@ describe("the committed payload", () => {
     expect(missing).toEqual([]);
   });
 });
+
+describe("a reviewed operating character (ADR-114)", () => {
+  const withCharacter = (value: unknown): Record<string, unknown> => {
+    const payload = validPayload();
+    const [record] = payload.reservoirs as Record<string, unknown>[];
+    if (!record) throw new Error("the fixture has no reservoir");
+    record.operating_character = value;
+    return payload;
+  };
+
+  it("accepts none, null and each of the three with what its sentence needs", () => {
+    expect(() => validateReservoirPayload(validPayload())).not.toThrow();
+    expect(() => validateReservoirPayload(withCharacter(null))).not.toThrow();
+    for (const character of ["run_of_river", "flood_space"]) {
+      const [read] = validateReservoirPayload(withCharacter(
+        { character, source_url: "https://example.gov/ruling" })).reservoirs;
+      expect(read?.operating_character?.character).toBe(character);
+    }
+    const [restricted] = validateReservoirPayload(withCharacter({
+      character: "restricted", source_url: "https://example.gov/order",
+      authority: "A state dam safety office", effective_from: "2015-05-27"
+    })).reservoirs;
+    expect(restricted?.operating_character?.effective_from).toBe("2015-05-27");
+  });
+
+  it("refuses a value outside the three, or one missing what it must carry", () => {
+    for (const broken of [
+      "flood_space",
+      { character: "target_filled", source_url: "https://example.gov/ruling" },
+      { character: "flood_space" },
+      { character: "flood_space", source_url: "http://example.gov/ruling" },
+      { character: "restricted", source_url: "https://example.gov/order" },
+      { character: "restricted", source_url: "https://example.gov/order",
+        authority: "A state dam safety office", effective_from: "May 27, 2015" },
+      { character: "run_of_river", source_url: "https://example.gov/ruling",
+        effective_from: "2015-05-27" }
+    ]) {
+      expect(() => validateReservoirPayload(withCharacter(broken)), JSON.stringify(broken))
+        .toThrow();
+    }
+  });
+});

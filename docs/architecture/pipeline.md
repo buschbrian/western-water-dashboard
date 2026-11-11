@@ -277,7 +277,8 @@ source for the independent figure, the review date and the open issue;
 `load_excluded_readings` refuses an unknown station, a missing or extra field,
 a foreign sensor, a non-HTTPS URL, a malformed date -- and a replacement value,
 the way a withdrawal notice refuses a measurement. `fetch_cdec_series` applies
-them where readings are read and names each dropped reading on the console, and
+them where readings are read (`fetch_awdb_series` does the same, keyed by the
+station triplet) and names each dropped reading on the console, and
 `tools/audit_cdec_stations.py` screens the same filtered series so its verdict
 is the pipeline's. Matching is on station, sensor, day **and** raw value, so a
 corrected reading is a different reading and returns on its own. The issue may

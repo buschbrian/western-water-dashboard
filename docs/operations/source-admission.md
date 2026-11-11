@@ -108,6 +108,18 @@ question is tracked in [issue #100](https://github.com/buschbrian/western-water-
 Eastman Lake, behind Buchanan Dam, passes the admission screens with that
 reading excluded and is published.
 
+**A reading that meets an ADR-152 test may be excluded in a batch** (ADR-158).
+`tools/batch_mechanical_exclusions.py` takes a record-check file or stations,
+fetches each reading again, and admits it only when it meets a zero,
+power-of-ten or one-digit test with ADR-152's neighbours, is served unchanged,
+and is not part of a run of three or more readings at one value. It prints the
+evidence; with `--write` it adds the ADR-116 records to the CDEC or NRCS file,
+with a reason generated from the test and `.../issues/BATCH-CDEC` or
+`.../issues/BATCH-AWDB` as the placeholder `issue_url`. Replace the placeholder
+with the batch's issue after you open it. A same-day exchange is not tested.
+The NRCS adapter applies exclusions in `fetch_awdb_series`, keyed by the
+station triplet.
+
 **A monthly reading can be checked against the station's own daily series.**
 A CDEC monthly value is the daily value on the month's last day, rounded to
 about four significant figures. `tools/audit_cdec_stations.py --monthly-daily`

@@ -34,7 +34,7 @@ import {
   setupPlaceChooser, shouldAskWhere, wasDismissed
 } from "./ui/opening-splash";
 import {
-  asScoped, isLakeMead, isLakePowell, isLate, rollupOfScoped,
+  asScoped, isLakeMead, isLakePowell, isLate, isSeasonalStorage, rollupOfScoped,
   type ScopedReservoirs,
   type RollupCoverage
 } from "./data/rollup";
@@ -76,7 +76,8 @@ import {
   baselineChoices, baselineCoverage, FALLBACK_CHOICES, percentOfNormalFor, periodLabel
 } from "./state/baseline";
 import {
-  describeSubtotal, describeUsualStorage, filteredSubtotal, mapSummaryText, PAST_MONTH_NORMAL
+  describeAreaSplit, describeSubtotal, describeUsualStorage, filteredSubtotal, mapSummaryText,
+  PAST_MONTH_NORMAL, PAST_MONTH_SEASONAL
 } from "./state/storage-summary";
 import { levelFromSearch, writeLevel } from "./state/level";
 import { supportsDashboard } from "./state/shell";
@@ -119,6 +120,7 @@ import {
   setScopeControl,
   setScopeValue,
   setSubtotal,
+  setAreaSplit,
   setSummary,
   setTableCaption,
   setTableRowOpen,
@@ -395,6 +397,12 @@ function updateSummary(): void {
   });
   setSubtotal(subtotal === null ? null
     : describeSubtotal(subtotal, baselineOptions, month === null ? null : monthLabel(month)));
+  /* Seasonal storage apart from steady pools and flood-control basins
+   * (ADR-156). Shown only where the place holds such waters. */
+  const seasonalOnly = inScope.some((reservoir) => !isSeasonalStorage(reservoir));
+  const split = current ? describeAreaSplit(placeName(), current) : null;
+  setAreaSplit(split !== null ? split.join(" ")
+    : seasonalOnly ? PAST_MONTH_SEASONAL : null);
   setMapSummary(mapSummaryText({
     place: placeName(),
     count: rollup.count,
@@ -402,7 +410,8 @@ function updateSummary(): void {
     percentOfNormal: normal,
     monthName: month === null ? null : monthLabel(month),
     subtotal: subtotal === null ? null
-      : { count: subtotal.count, percentFull: subtotal.percentFull }
+      : { count: subtotal.count, percentFull: subtotal.percentFull },
+    seasonalOnly
   }));
 
   summaryStatus.percent = rollup.percentFull;

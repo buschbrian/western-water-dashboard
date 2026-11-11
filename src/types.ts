@@ -84,6 +84,19 @@ export interface ReservoirBaselines {
   default: BaselineId;
 }
 
+/** The three reviewed ways a water is run apart from ordinary storage. */
+export type OperatingCharacterValue = "restricted" | "run_of_river" | "flood_space";
+
+export interface OperatingCharacter {
+  character: OperatingCharacterValue;
+  /** The source the reviewed ruling names. */
+  source_url: string;
+  /** Who set the level, for `restricted` only. */
+  authority?: string;
+  /** When the order took effect, for `restricted` only. */
+  effective_from?: string;
+}
+
 export interface Reservoir {
   name: string;
   rise_item_id: number | null;
@@ -131,6 +144,13 @@ export interface Reservoir {
    * figure is kept beside the limit and never replaced by it (ADR-111).
    */
   physical_capacity_af?: NullableNumber;
+  /**
+   * How the water is run, where a person has reviewed it as an exception
+   * (ADR-114). Absent or null is ordinary storage. It decides which line of
+   * an area total the reservoir is added to (ADR-156); its own figures do
+   * not change.
+   */
+  operating_character?: OperatingCharacter | null;
   seasonal_percentile: NullableNumber;
   /**
    * The same comparison as a position among the earlier years.

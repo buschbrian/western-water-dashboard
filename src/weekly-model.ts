@@ -28,6 +28,7 @@
  *     comparing a week with itself.
  */
 import { isLakeMead, isLakePowell } from "./data/rollup";
+import { isSeasonalStorage } from "./data/area-line";
 import type { DroughtCoveragePayload, Reservoir, SnowpackPayload } from "./types";
 import { isMeasured, shareAtOrWorse, worstClass, type StorageSource } from "./drought-model";
 import { MEANINGFUL_NORMAL_INCHES, percentOfNormal } from "./snow-model";
@@ -80,6 +81,9 @@ export interface WeeklyStorage {
    * Null when none of them publishes a full level to divide by. */
   percentNow: number | null;
   percentBefore: number | null;
+  /** True when steady pools or flood-control basins were measured, so the
+   * two percentages are seasonal storage only (ADR-156). */
+  seasonalOnly?: boolean;
   /** The largest rise and fall by volume, which is what moves a region. */
   biggestRise: WeeklyMove | null;
   biggestFall: WeeklyMove | null;
@@ -93,7 +97,7 @@ export interface WeeklyStorage {
 type WeeklySource = Pick<
   Reservoir,
   "name" | "as_of" | "current_storage_af" | "capacity_af" | "record_max_af"
-  | "change_7d_af" | "change_7d_pct"
+  | "change_7d_af" | "change_7d_pct" | "operating_character"
 >;
 
 /**
@@ -118,9 +122,15 @@ export function weeklyStorage(reservoirs: readonly WeeklySource[]): WeeklyStorag
   let biggestRise: WeeklyMove | null = null;
   let biggestFall: WeeklyMove | null = null;
   let largestShareMove: WeeklyMove | null = null;
+  let seasonalOnly = false;
 
   for (const reservoir of measured) {
     const change = reservoir.change_7d_af as number;
+    /* The combined percent is seasonal storage, like every area total
+     * (ADR-156). The net change is every measured acre-foot: the water is
+     * real, and each reservoir's own move still counts below. */
+    const seasonal = isSeasonalStorage(reservoir);
+    if (!seasonal) seasonalOnly = true;
     netAf += change;
     if (change > 0) rose += 1;
     else if (change < 0) fell += 1;
@@ -130,7 +140,7 @@ export function weeklyStorage(reservoirs: readonly WeeklySource[]): WeeklyStorag
      * fallback the map and the details panel use, so one reservoir cannot be
      * measured two ways on two surfaces. */
     const full = reservoir.capacity_af ?? reservoir.record_max_af;
-    if (full > 0) {
+    if (full > 0 && seasonal) {
       capacity += full;
       storageNow += reservoir.current_storage_af;
       storageBefore += reservoir.current_storage_af - change;
@@ -164,6 +174,7 @@ export function weeklyStorage(reservoirs: readonly WeeklySource[]): WeeklyStorag
     steady,
     percentNow: capacity > 0 ? (storageNow / capacity) * 100 : null,
     percentBefore: capacity > 0 ? (storageBefore / capacity) * 100 : null,
+    seasonalOnly,
     biggestRise,
     biggestFall,
     largestShareMove

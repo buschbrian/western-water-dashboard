@@ -4,8 +4,8 @@ import { storageColor } from "../viz/classes";
 import { headlinePercent } from "../viz/symbols";
 import {
   CAPACITY_BASIS_KEYS, capacityBasisName, capacityBasisShortName, changeLabel, describeReservoir,
-  describeSinceLow, lateMessage, monthlyDetail, percentFullBasis, providerName, rankPosition,
-  rankWithYears
+  describeSinceLow, lateMessage, monthlyDetail, operatingCharacterSentence, percentFullBasis,
+  providerName, rankPosition, rankWithYears
 } from "./detail";
 import { createSelectionStore, findReservoir, normalizeSelectionValue } from "./selection";
 import { loadLegacyApi } from "../data/legacy-harness";
@@ -632,5 +632,40 @@ describe("storage gained since the low", () => {
     delete older.change_since_low_af;
     expect(describeReservoir(older, "#000").rows
       .some((row) => row.label === "Since the 4-month low")).toBe(false);
+  });
+});
+
+describe("how a reservoir is run (ADR-114)", () => {
+  const base = reservoirs[0] as Reservoir;
+  const run = (operating_character: Reservoir["operating_character"]): string | undefined =>
+    describeReservoir(operating_character === undefined ? base
+      : { ...base, operating_character }, "#000").rows
+      .find((row) => row.label === "How it is run")?.value;
+
+  it("says nothing for ordinary storage", () => {
+    expect(run(undefined)).toBeUndefined();
+    expect(run(null)).toBeUndefined();
+    expect(operatingCharacterSentence(base)).toBeNull();
+  });
+
+  it("uses ADR-114's sentences as written", () => {
+    expect(run({ character: "restricted", source_url: "https://example.gov/order",
+      authority: "A state dam safety office", effective_from: "2015-05-27" }))
+      .toBe("A dam safety order holds this reservoir below its full level. "
+        + "The order started on May 27, 2015.");
+    expect(run({ character: "run_of_river", source_url: "https://example.gov/ruling" }))
+      .toBe("The operator keeps this reservoir at a steady level all year. "
+        + "Its percent full changes very little.");
+    expect(run({ character: "flood_space", source_url: "https://example.gov/ruling" }))
+      .toBe("This reservoir keeps space empty to catch floods. It is not expected to fill.");
+  });
+
+  it("keeps the reservoir's own figures", () => {
+    const plain = describeReservoir(base, "#000");
+    const pool = describeReservoir(
+      { ...base, operating_character: { character: "run_of_river",
+        source_url: "https://example.gov/ruling" } }, "#000");
+    expect(pool.percent).toBe(plain.percent);
+    expect(pool.rows.filter((row) => row.label !== "How it is run")).toEqual(plain.rows);
   });
 });

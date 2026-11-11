@@ -10,7 +10,7 @@ import "@esri/calcite-components/components/calcite-select";
 
 import { loadReservoirs } from "./data/load";
 import { baselineChoices } from "./state/baseline";
-import { describeUsualStorage } from "./state/storage-summary";
+import { describeAreaSplit, describeUsualStorage } from "./state/storage-summary";
 import { loadDroughtCoverage } from "./data/drought-load";
 import { loadSnowpack } from "./data/snow-load";
 import {
@@ -229,7 +229,10 @@ function updateKpis(
     /* Which reservoirs, and against how many kinds of full level. The tile
      * used to say "Utah-intersecting waterbodies", which was the whole
      * roster's description once and describes 60 of 198 rows now. */
-    "count-note": describeDenominator(rollup),
+    "count-note": rollup.seasonalCount < rollup.count
+      /* The full levels below are seasonal storage's (ADR-156). */
+      ? `${rollup.seasonalCount} with seasonal storage. ${describeDenominator(rollup)}`
+      : describeDenominator(rollup),
     /* How full against how full it usually is on this date. The headline
      * percentage cannot answer that on its own: a reservoir at 60% in April
      * and one at 60% in September are not the same news, and this is the
@@ -252,6 +255,14 @@ function updateKpis(
   for (const [name, value] of Object.entries(values)) {
     const element = document.querySelector<HTMLElement>(`[data-kpi="${name}"]`);
     if (element) element.textContent = value;
+  }
+  /* Seasonal storage apart from steady pools and flood-control basins
+   * (ADR-156), only where the rows in view hold them. */
+  const split = describeAreaSplit("The reservoirs in view", rollup);
+  const splitNote = document.querySelector<HTMLElement>('[data-kpi-split="area"]');
+  if (splitNote) {
+    splitNote.hidden = split === null;
+    splitNote.textContent = split === null ? "" : split.join(" ");
   }
 }
 
@@ -368,6 +379,7 @@ async function renderOverview(
       <article class="overview-kpi"><span>Late or unavailable</span><strong data-kpi="late">—</strong><small>Against each source's update schedule</small></article>
       <article class="overview-kpi"><span>Data published</span><strong>${formatDate(generatedAt.slice(0, 10))}</strong><small data-kpi="observed">—</small></article>
     </section>
+    <p class="card-note" data-kpi-split="area" hidden></p>
     <section class="class-strip" aria-labelledby="class-heading">
       <div class="class-strip-head">
         <h2 id="class-heading">How the reservoirs are spread</h2>

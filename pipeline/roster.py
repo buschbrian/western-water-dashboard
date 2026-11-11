@@ -142,6 +142,77 @@ def _reviewed_date(name: str, field: str, value: object) -> dt.date:
         raise ValueError(f"{name}: {field} must be a YYYY-MM-DD date") from error
 
 
+#: How a water is run when it is not ordinary target-filled storage (ADR-114).
+#: Absence is the ordinary case; the roster's own `reviewed` date makes it
+#: mean "found ordinary" rather than "not looked at".
+OPERATING_CHARACTERS = ("restricted", "run_of_river", "flood_space")
+
+#: What every reviewed character names before a loader accepts it. The series
+#: may be evidence and is never the source (ADR-114, ADR-156).
+OPERATING_CHARACTER_FIELDS = ("character", "reviewed", "source_url", "evidence")
+
+#: What a `restricted` character adds: who set the level and when the order
+#: took effect, because the published sentence states that date (ADR-114).
+RESTRICTED_CHARACTER_FIELDS = ("authority", "effective_from")
+
+
+def _https(value: object) -> bool:
+    return isinstance(value, str) and value.startswith("https://")
+
+
+def validate_operating_character(name: str, value: object) -> None:
+    """Refuse a reviewed operating character that cannot show its evidence.
+
+    `None` is the ordinary case and passes. Anything else is a ruling a
+    person made region by region (ADR-156), so it carries the value, the day
+    it was reviewed, the source that names it and at least one piece of
+    evidence, each with its own HTTPS source.
+    """
+    if value is None:
+        return
+    if not isinstance(value, dict) or any(field not in value
+                                          for field in OPERATING_CHARACTER_FIELDS):
+        raise ValueError(
+            f"{name}: an operating character needs "
+            f"{', '.join(OPERATING_CHARACTER_FIELDS)}")
+    character = value["character"]
+    if character not in OPERATING_CHARACTERS:
+        raise ValueError(
+            f"{name}: operating character must be one of {', '.join(OPERATING_CHARACTERS)}")
+    _reviewed_date(name, "operating_character.reviewed", value["reviewed"])
+    if not _https(value["source_url"]):
+        raise ValueError(f"{name}: an operating character needs an HTTPS source_url")
+    evidence = value["evidence"]
+    if not isinstance(evidence, list) or not evidence:
+        raise ValueError(f"{name}: an operating character needs its evidence")
+    for item in evidence:
+        if not isinstance(item, dict) \
+                or not all(isinstance(item.get(field), str) and item[field].strip()
+                           for field in ("what", "value")) \
+                or not _https(item.get("source")):
+            raise ValueError(
+                f"{name}: each piece of evidence names what, value and an HTTPS source")
+    if character == "restricted":
+        authority = value.get("authority")
+        if not isinstance(authority, str) or not authority.strip():
+            raise ValueError(f"{name}: a restricted character names its authority")
+        _reviewed_date(name, "operating_character.effective_from", value.get("effective_from"))
+    elif any(field in value for field in RESTRICTED_CHARACTER_FIELDS):
+        raise ValueError(
+            f"{name}: only a restricted character carries an authority and a start date")
+
+
+def published_operating_character(value: dict | None) -> dict | None:
+    """The part of a reviewed character a reader's record carries."""
+    if value is None:
+        return None
+    published = {"character": value["character"], "source_url": value["source_url"]}
+    if value["character"] == "restricted":
+        published["authority"] = value["authority"]
+        published["effective_from"] = value["effective_from"]
+    return published
+
+
 def validate_capacity_versions(name: str, capacity: dict) -> None:
     """Check a reservoir's dated full levels (ADR-111).
 
@@ -360,6 +431,7 @@ def load_admitted_rise_reservoirs(
                 row.get("lon"), (int, float)):
             raise ValueError(f"{name}: coordinates are required")
         validate_capacity_evidence(name, row.get("capacity"))
+        validate_operating_character(name, row.get("operating_character"))
     return rows
 
 
@@ -406,6 +478,7 @@ def load_admitted_reservoirs(path: Path = ADMITTED_RESERVOIRS_PATH) -> dict[str,
                 row.get("lon"), (int, float)):
             raise ValueError(f"{name}: coordinates are required")
         validate_capacity_evidence(name, row.get("capacity"))
+        validate_operating_character(name, row.get("operating_character"))
     return rows
 
 
@@ -458,6 +531,7 @@ def load_admitted_cdec_reservoirs(
                     f"{name}: a reviewed admission must name the screen it "
                     "was admitted against, and why")
         validate_capacity_evidence(name, row.get("capacity"))
+        validate_operating_character(name, row.get("operating_character"))
     return rows
 
 
@@ -742,10 +816,6 @@ ELEVATION_DATUMS = frozenset({"NGVD29", "NAVD88"})
 #: Reclamation project datums at Davis and Parker). Admitted only with its name
 #: and a stated, sourced relation to a national datum.
 PROJECT_DATUM = "project"
-
-
-def _https(value: object) -> bool:
-    return isinstance(value, str) and value.startswith("https://")
 
 
 def load_admitted_reservoir_elevations(
@@ -1328,3 +1398,53 @@ def load_capacities() -> dict[str, dict]:
     for station, capacity in loaded.items():
         validate_capacity_versions(station, capacity)
     return loaded
+
+
+def reviewed_operating_characters(
+    rosters: dict[str, dict[str, dict]] | None = None,
+) -> dict[tuple[str, str], dict]:
+    """Each reviewed operating character, by provider and station (ADR-114).
+
+    Keyed by the provider as well as the station, because a station id is the
+    provider's own and two providers may use the same one. Only exceptions
+    appear: an ordinary reservoir carries nothing. The base Utah rosters held
+    in `constants` have no entry to carry a character and are not read here.
+    """
+    if rosters is None:
+        rosters = {
+            "rise": ADMITTED_RISE_RESERVOIRS, "awdb": ADMITTED_RESERVOIRS,
+            "cdec": ADMITTED_CDEC_RESERVOIRS, "cdss": ADMITTED_CDSS_RESERVOIRS,
+            "usgs": ADMITTED_USGS_RESERVOIRS, "srp": ADMITTED_SRP_RESERVOIRS,
+            "dnrc": ADMITTED_DNRC_RESERVOIRS, "cwms": ADMITTED_CWMS_RESERVOIRS,
+            "cap": ADMITTED_CAP_RESERVOIRS,
+        }
+    return {
+        (source_key, str(station)): published_operating_character(row["operating_character"])
+        for source_key, rows in rosters.items()
+        for station, row in rows.items()
+        if row.get("operating_character") is not None
+    }
+
+
+def attach_operating_characters(
+    records: list[dict], characters: dict[tuple[str, str], dict] | None = None,
+) -> int:
+    """Write each record's reviewed character, and remove one no longer reviewed.
+
+    Applied to every record, carried-forward ones included, so a character
+    the roster withdraws leaves the payload on the next run. The key is
+    omitted for an ordinary reservoir, the way `capacity_history` is.
+    Returns how many records carry one.
+    """
+    if characters is None:
+        characters = reviewed_operating_characters()
+    carried = 0
+    for record in records:
+        key = (str(record.get("source_key")), str(record.get("source_station_id")))
+        found = characters.get(key)
+        if found is None:
+            record.pop("operating_character", None)
+        else:
+            record["operating_character"] = dict(found)
+            carried += 1
+    return carried
