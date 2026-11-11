@@ -13,7 +13,10 @@ import { asScoped, rollupOfScoped, type StatewideRollup } from "../data/rollup";
 import { ALL_RESERVOIRS, matchesFilter, type FilterState } from "./filters";
 import {
   PAST_MONTH_NORMAL,
+  PAST_MONTH_SEASONAL,
+  describeAreaSplit,
   describeSubtotal,
+  type AreaSplit,
   describeUsualStorage,
   filteredSubtotal,
   mapSummaryText,
@@ -107,9 +110,12 @@ describe("the filtered subtotal", () => {
 });
 
 describe("the subtotal in words", () => {
+  /* Every reservoir in these fixtures is seasonal storage (ADR-156), so the
+   * comparison is out of `count`, as it was before the split. */
   const rollup = (over: Partial<StatewideRollup> = {}): StatewideRollup => ({
-    ...rollupOfScoped(asScoped([])), count: 12, percentFull: 63.24,
-    percentOfNormal: 88.06, normalCovers: 11, normalBaseline: "climate", ...over
+    ...rollupOfScoped(asScoped([])), count: 12, seasonalCount: over.count ?? 12,
+    percentFull: 63.24, percentOfNormal: 88.06, normalCovers: 11, normalBaseline: "climate",
+    ...over
   });
 
   it("states the count, percent full and the comparison with its period", () => {
@@ -201,5 +207,82 @@ describe("the phone's summary over the map", () => {
       subtotal: { count: 1, percentFull: null }
     });
     expect(none.lines[2]).toBe("Subtotal: 1 reservoir");
+  });
+
+  it("says the figure is seasonal storage where the place holds other waters", () => {
+    const text = mapSummaryText({
+      place: "Middle Columbia", count: 11, percentFull: 12, percentOfNormal: null,
+      monthName: null, subtotal: null, seasonalOnly: true
+    });
+    expect(text.lines[1]).toBe("Seasonal storage 12.0% full");
+  });
+});
+
+describe("seasonal storage apart from steady pools and flood space (ADR-156)", () => {
+  const split = (over: Partial<AreaSplit> = {}): AreaSplit => ({
+    percentFull: 12, steadyPools: null, floodSpace: null, ...over
+  });
+
+  it("shows nothing where the place holds seasonal storage only", () => {
+    expect(describeAreaSplit("Sevier", split())).toBeNull();
+  });
+
+  it("uses ADR-156's three lines", () => {
+    expect(describeAreaSplit("Middle Columbia", split({
+      steadyPools: { count: 9, storageAf: 2_200_000, capacityAf: 2_300_000 },
+      floodSpace: { count: 1, storageAf: 4_400, capacityAf: 130_000, emptyAf: 125_600 }
+    }))).toEqual([
+      "Middle Columbia: seasonal storage is 12.0% full.",
+      "2,200,000 acre-feet in pools held at a steady level for barges and power.",
+      "4,400 acre-feet held in flood-control basins, which are kept empty to catch storms. "
+        + "Their empty space is 125,600 acre-feet."
+    ]);
+  });
+
+  it("gives a place with no seasonal storage no percent", () => {
+    const lines = describeAreaSplit("Lower Snake", split({
+      percentFull: null,
+      steadyPools: { count: 4, storageAf: 1_900_000, capacityAf: 2_000_000 }
+    }));
+    expect(lines?.[0]).toBe("Lower Snake has no seasonal storage.");
+    expect(lines?.join(" ")).not.toMatch(/%/);
+  });
+
+  it("never gives a percent for steady pools or flood space", () => {
+    const lines = describeAreaSplit("Somewhere", split({
+      steadyPools: { count: 1, storageAf: 95, capacityAf: 100 },
+      floodSpace: { count: 1, storageAf: 5, capacityAf: 100, emptyAf: 95 }
+    })) ?? [];
+    expect(lines.slice(1).join(" ")).not.toMatch(/%|percent/);
+  });
+
+  it("words a subtotal that holds other waters as its seasonal storage", () => {
+    const normal = { percentOfNormal: 80, normalCovers: 3, count: 5, seasonalCount: 3,
+      normalBaseline: "climate" as const };
+    expect(describeSubtotal(
+      { count: 5, percentFull: 40, normal, month: null, reporting: 5, seasonalCount: 3 },
+      CHOICES, null))
+      .toBe("Seasonal storage in these 5 reservoirs is 40.0% full. It holds 80.0% of the "
+        + "usual storage for this date, 1991 through 2020.");
+    expect(describeSubtotal(
+      { count: 2, percentFull: null, normal, month: null, reporting: 2, seasonalCount: 0 },
+      CHOICES, null)).toBe("These 2 reservoirs hold no seasonal storage.");
+    expect(describeSubtotal(
+      { count: 5, percentFull: 51, normal: null, month: "2026-03", reporting: 3,
+        seasonalCount: 3 },
+      CHOICES, "March 2026"))
+      .toBe("Seasonal storage in these 5 reservoirs was 51.0% full on average through "
+        + `March 2026. ${PAST_MONTH_NORMAL}`);
+  });
+
+  it("keeps every split sentence within 25 words", () => {
+    const lines = describeAreaSplit("Tulare-Buena Vista Lakes", split({
+      steadyPools: { count: 1, storageAf: 1, capacityAf: 1 },
+      floodSpace: { count: 1, storageAf: 1, capacityAf: 1, emptyAf: 0 }
+    })) ?? [];
+    for (const sentence of [...lines, PAST_MONTH_SEASONAL].join(" ")
+      .split(/(?<=[.!?])\s+(?=[A-Z\d])/)) {
+      expect(sentence.split(/\s+/).length).toBeLessThanOrEqual(25);
+    }
   });
 });

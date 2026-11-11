@@ -7,6 +7,7 @@
  * region living on savings. The join is by drainage area, the geography both
  * payloads already share.
  */
+import { isSeasonalStorage } from "./data/area-line";
 import { drainageCodeAtLevel } from "./data/huc";
 import type { DroughtPreviousWeek, DroughtUnit, Reservoir } from "./types";
 import { DROUGHT_CLASSES, type DroughtClass } from "./viz/drought-classes";
@@ -127,6 +128,7 @@ export function regionWorst(units: readonly DroughtUnit[]): DroughtClass | null 
  * build fixtures without fabricating forty unrelated fields. */
 export type StorageSource = Pick<
   Reservoir, "huc6" | "huc8" | "current_storage_af" | "capacity_af" | "record_max_af"
+  | "operating_character"
 >;
 
 export interface StorageContext {
@@ -137,13 +139,15 @@ export interface StorageContext {
 
 /** Combined percent full per drainage area, every published reservoir
  * counted -- this is context for land conditions, not the map's scoped
- * headline, so nothing is excluded. */
+ * headline, so no dominant reservoir is excluded. The percent is seasonal
+ * storage, like every area total (ADR-156): a pool kept at a steady level or
+ * a basin kept empty for floods is left out of it, and the count with it. */
 export function storageByArea(
   reservoirs: readonly StorageSource[], level = 6
 ): Map<string, StorageContext> {
   const groups = new Map<string, { storage: number; capacity: number; count: number }>();
   for (const reservoir of reservoirs) {
-    if (!reservoir.huc6) continue;
+    if (!reservoir.huc6 || !isSeasonalStorage(reservoir)) continue;
     /* No capacity, no participation -- not a fall back to the highest
      * observed storage. A record maximum is a ceiling the water has been
      * seen at, not a figure it was designed against; summed into a basin

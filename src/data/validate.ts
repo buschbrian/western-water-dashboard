@@ -194,6 +194,23 @@ function isOptionalPoint(value: unknown): boolean {
     (Array.isArray(value) && value.length === 2 && value.every(hasNumber));
 }
 
+/**
+ * A reviewed operating character (ADR-114), or none. A value outside the
+ * three, or a `restricted` one without the authority and date its sentence
+ * prints, refuses the record rather than reaching a reader.
+ */
+function isOptionalOperatingCharacter(value: unknown): boolean {
+  if (value === undefined || value === null) return true;
+  if (!isObject(value) || typeof value.source_url !== "string"
+    || !value.source_url.startsWith("https://")) return false;
+  if (value.character === "restricted") {
+    return typeof value.authority === "string" && value.authority.length > 0
+      && isDate(value.effective_from);
+  }
+  return (value.character === "run_of_river" || value.character === "flood_space")
+    && value.authority === undefined && value.effective_from === undefined;
+}
+
 function isReservoir(value: unknown): value is Reservoir {
   if (!isObject(value)) return false;
   return typeof value.name === "string" && value.name.length > 0 &&
@@ -222,6 +239,7 @@ function isReservoir(value: unknown): value is Reservoir {
     hasNullableNumber(value.pct_of_capacity) &&
     isOptionalCapacityHistory(value) &&
     optionalNullableNumber(value.physical_capacity_af) &&
+    isOptionalOperatingCharacter(value.operating_character) &&
     hasNullableNumber(value.seasonal_percentile) &&
     /* Optional: they arrive from the pipeline, and a payload written before
      * they did is still a valid payload. `undefined` passes, a wrong type

@@ -48,6 +48,9 @@ function panelContents(suffix: string): string {
           <span>Compared with normal</span><strong data-value="normal">—</strong>
           <small data-value="normal-note">—</small>
         </div>
+        <!-- Seasonal storage apart from steady pools and flood-control
+             basins (ADR-156). Written only where the place holds them. -->
+        <p class="summary-split" data-value="area-split" hidden></p>
         <!-- The rows the analysis controls leave, totalled on their own. The
              figures above stay the wider total (ADR-029, ADR-095); this
              says what the filtered rows add up to beside it. -->

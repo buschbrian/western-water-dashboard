@@ -8,18 +8,27 @@
  * was measured against (`normalBaseline`), never the one a page would prefer
  * (ADR-041).
  */
-import { asScoped, rollupOfScoped, type ScopedReservoirs, type StatewideRollup }
-  from "../data/rollup";
+import {
+  asScoped, isSeasonalStorage, rollupOfScoped, type ScopedReservoirs, type StatewideRollup
+} from "../data/rollup";
 import { monthlyRollup, type MonthKey } from "../data/months";
 import { matchesFilter, type FilterState } from "./filters";
 import { periodLabel } from "./baseline";
-import { formatPercent } from "../viz/format";
+import { formatAcreFeet, formatPercent } from "../viz/format";
 import type { BaselineChoice, BaselineId } from "../types";
 
-/** The four rollup fields a comparison with normal is made of. */
+/**
+ * The rollup fields a comparison with normal is made of. `seasonalCount` is
+ * the reservoirs the comparison can cover (ADR-156); without it, `count`.
+ */
 export type NormalComparison = Pick<
   StatewideRollup, "percentOfNormal" | "normalCovers" | "count" | "normalBaseline"
->;
+> & Partial<Pick<StatewideRollup, "seasonalCount">>;
+
+/** How many reservoirs a comparison with normal is out of. */
+function comparedOutOf(rollup: NormalComparison): number {
+  return rollup.seasonalCount ?? rollup.count;
+}
 
 /** What the map says in place of a normal while the slider is on a past month. */
 export const PAST_MONTH_NORMAL = "The map compares only the newest reading with normal.";
@@ -32,10 +41,40 @@ export function usualStorageClause(
   rollup: NormalComparison, choices: readonly BaselineChoice[]
 ): string {
   const years = periodLabel(choices, rollup.normalBaseline);
-  return rollup.normalCovers === rollup.count
+  const outOf = comparedOutOf(rollup);
+  return rollup.normalCovers === outOf
     ? `of the usual storage for this date, ${years}`
     : `of the usual storage for this date, ${years}, for ${rollup.normalCovers} `
-      + `of ${rollup.count} reservoirs`;
+      + `of ${outOf} reservoirs`;
+}
+
+/** What a past month's figure says where the place holds other waters. */
+export const PAST_MONTH_SEASONAL = "This figure is seasonal storage only.";
+
+/** The parts of an area total that say how its waters are run (ADR-156). */
+export type AreaSplit = Pick<StatewideRollup, "percentFull" | "steadyPools" | "floodSpace">;
+
+/**
+ * The area total in three lines, or null when the area holds seasonal
+ * storage only (ADR-156). Then the headline needs no words of its own, and
+ * nothing is shown. The words are ADR-156's.
+ */
+export function describeAreaSplit(place: string, split: AreaSplit): string[] | null {
+  const { steadyPools, floodSpace } = split;
+  if (steadyPools === null && floodSpace === null) return null;
+  const lines = [split.percentFull === null
+    ? `${place} has no seasonal storage.`
+    : `${place}: seasonal storage is ${formatPercent(split.percentFull)} full.`];
+  if (steadyPools !== null) {
+    lines.push(`${formatAcreFeet(steadyPools.storageAf)} acre-feet in pools held at `
+      + "a steady level for barges and power.");
+  }
+  if (floodSpace !== null) {
+    lines.push(`${formatAcreFeet(floodSpace.storageAf)} acre-feet held in flood-control `
+      + "basins, which are kept empty to catch storms. "
+      + `Their empty space is ${formatAcreFeet(floodSpace.emptyAf)} acre-feet.`);
+  }
+  return lines;
 }
 
 /** The note under a percent-of-normal figure: the clause as its own line. */
@@ -58,6 +97,8 @@ export interface Subtotal {
   month: MonthKey | null;
   /** How many of `count` reported the month; `count` for the newest reading. */
   reporting: number;
+  /** How many of `count` are seasonal storage (ADR-156); `count` when absent. */
+  seasonalCount?: number;
 }
 
 export interface SubtotalOptions {
@@ -89,7 +130,8 @@ export function filteredSubtotal(
       percentFull: monthly.percentFull,
       normal: null,
       month: options.month,
-      reporting: monthly.reporting
+      reporting: monthly.reporting,
+      seasonalCount: shown.filter(isSeasonalStorage).length
     };
   }
   const rollup = rollupOfScoped(scoped, {
@@ -101,7 +143,8 @@ export function filteredSubtotal(
     percentFull: rollup.percentFull,
     normal: rollup,
     month: null,
-    reporting: rollup.count
+    reporting: rollup.count,
+    seasonalCount: rollup.seasonalCount
   };
 }
 
@@ -113,30 +156,40 @@ export function describeSubtotal(
   if (count === 0) return "No reservoir matches the analysis controls.";
   const one = count === 1;
   const these = one ? "This reservoir" : `These ${count} reservoirs`;
+  /* Where some of the rows are steady pools or flood-control basins, the
+   * figure is their seasonal storage and says so (ADR-156). */
+  const seasonal = subtotal.seasonalCount ?? count;
+  const split = seasonal < count;
+  const inThese = `Seasonal storage in ${one ? "this reservoir" : `these ${count} reservoirs`}`;
+  const noSeasonal = `${these} ${one ? "holds" : "hold"} no seasonal storage.`;
   if (subtotal.month !== null) {
     const name = monthName ?? subtotal.month;
+    if (split && seasonal === 0) return `${noSeasonal} ${PAST_MONTH_NORMAL}`;
     if (subtotal.percentFull === null) {
       const none = one ? `This reservoir did not report in ${name}.`
         : `None of these ${count} reservoirs reported in ${name}.`;
       return `${none} ${PAST_MONTH_NORMAL}`;
     }
-    const reported = subtotal.reporting < count
+    const reported = subtotal.reporting < seasonal
       ? ` ${subtotal.reporting} of them reported that month.` : "";
-    return `${these} ${one ? "was" : "were"} ${formatPercent(subtotal.percentFull)} full `
+    const was = split ? `${inThese} was` : `${these} ${one ? "was" : "were"}`;
+    return `${was} ${formatPercent(subtotal.percentFull)} full `
       + `on average through ${name}.${reported} ${PAST_MONTH_NORMAL}`;
   }
+  if (split && seasonal === 0) return noSeasonal;
   const full = subtotal.percentFull === null
     ? `${these} ${one ? "has" : "have"} no percent full.`
-    : `${these} ${one ? "is" : "are"} ${formatPercent(subtotal.percentFull)} full.`;
+    : split ? `${inThese} is ${formatPercent(subtotal.percentFull)} full.`
+      : `${these} ${one ? "is" : "are"} ${formatPercent(subtotal.percentFull)} full.`;
   const normal = subtotal.normal;
   if (normal === null) return full;
   if (normal.percentOfNormal === null) {
     const years = periodLabel(choices, normal.normalBaseline);
-    return `${full} ${one ? `It has no normal for ${years}.`
+    return `${full} ${one || split ? `It has no normal for ${years}.`
       : `None of them has a normal for ${years}.`}`;
   }
-  return `${full} ${one ? "It holds" : "They hold"} ${formatPercent(normal.percentOfNormal)} `
-    + `${usualStorageClause(normal, choices)}.`;
+  return `${full} ${one || split ? "It holds" : "They hold"} `
+    + `${formatPercent(normal.percentOfNormal)} ${usualStorageClause(normal, choices)}.`;
 }
 
 /**
@@ -162,6 +215,9 @@ export interface MapSummaryInput {
    * A shared link to one drainage area opens on a phone with only this
    * control in view, so the wider total cannot stand there alone. */
   subtotal: { count: number; percentFull: number | null } | null;
+  /** True when the area also holds steady pools or flood-control basins, so
+   * the figure is its seasonal storage and says so (ADR-156). */
+  seasonalOnly?: boolean;
 }
 
 function reservoirCount(count: number): string {
@@ -170,7 +226,8 @@ function reservoirCount(count: number): string {
 
 export function mapSummaryText(input: MapSummaryInput): MapSummaryText {
   const first = `${input.place}, ${reservoirCount(input.count)}`;
-  const full = `${formatPercent(input.percentFull)} full`;
+  const full = `${input.seasonalOnly ? "Seasonal storage " : ""}`
+    + `${formatPercent(input.percentFull)} full`;
   const second = input.monthName !== null
     ? `${full}, ${input.monthName}`
     : input.percentOfNormal === null

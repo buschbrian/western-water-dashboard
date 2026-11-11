@@ -28,6 +28,7 @@
  *     comparing a week with itself.
  */
 import { isLakeMead, isLakePowell } from "./data/rollup";
+import { isSeasonalStorage } from "./data/area-line";
 import type { DroughtCoveragePayload, Reservoir, SnowpackPayload } from "./types";
 import { isMeasured, shareAtOrWorse, worstClass, type StorageSource } from "./drought-model";
 import { MEANINGFUL_NORMAL_INCHES, percentOfNormal } from "./snow-model";
@@ -93,7 +94,7 @@ export interface WeeklyStorage {
 type WeeklySource = Pick<
   Reservoir,
   "name" | "as_of" | "current_storage_af" | "capacity_af" | "record_max_af"
-  | "change_7d_af" | "change_7d_pct"
+  | "change_7d_af" | "change_7d_pct" | "operating_character"
 >;
 
 /**
@@ -121,7 +122,10 @@ export function weeklyStorage(reservoirs: readonly WeeklySource[]): WeeklyStorag
 
   for (const reservoir of measured) {
     const change = reservoir.change_7d_af as number;
-    netAf += change;
+    /* The combined figures are seasonal storage, like every area total
+     * (ADR-156); each reservoir's own move still counts below. */
+    const seasonal = isSeasonalStorage(reservoir);
+    if (seasonal) netAf += change;
     if (change > 0) rose += 1;
     else if (change < 0) fell += 1;
     else steady += 1;
@@ -130,7 +134,7 @@ export function weeklyStorage(reservoirs: readonly WeeklySource[]): WeeklyStorag
      * fallback the map and the details panel use, so one reservoir cannot be
      * measured two ways on two surfaces. */
     const full = reservoir.capacity_af ?? reservoir.record_max_af;
-    if (full > 0) {
+    if (full > 0 && seasonal) {
       capacity += full;
       storageNow += reservoir.current_storage_af;
       storageBefore += reservoir.current_storage_af - change;

@@ -403,6 +403,37 @@ export function monthlyDetail(
   });
 }
 
+/** "May 27, 2015": the date in ADR-114's sentence, with the month in full. */
+function longDate(value: string): string {
+  const date = new Date(`${value}T00:00:00Z`);
+  return Number.isNaN(date.getTime()) ? value : date.toLocaleDateString("en-US", {
+    year: "numeric", month: "long", day: "numeric", timeZone: "UTC"
+  });
+}
+
+/**
+ * How the reservoir is run, in ADR-114's words, or null for ordinary
+ * storage. The sentences are decided in that record and used as written.
+ */
+export function operatingCharacterSentence(reservoir: Reservoir): string | null {
+  const found = reservoir.operating_character;
+  if (!found) return null;
+  if (found.character === "restricted") {
+    return "A dam safety order holds this reservoir below its full level."
+      + (found.effective_from ? ` The order started on ${longDate(found.effective_from)}.` : "");
+  }
+  if (found.character === "run_of_river") {
+    return "The operator keeps this reservoir at a steady level all year. "
+      + "Its percent full changes very little.";
+  }
+  return "This reservoir keeps space empty to catch floods. It is not expected to fill.";
+}
+
+function characterRows(reservoir: Reservoir): DetailRow[] {
+  const sentence = operatingCharacterSentence(reservoir);
+  return sentence === null ? [] : [{ label: "How it is run", value: sentence }];
+}
+
 function sinceLowRows(reservoir: Reservoir): DetailRow[] {
   const value = describeSinceLow(reservoir);
   return value === null ? [] : [{ label: "Since the 4-month low", value }];
@@ -452,6 +483,7 @@ export function describeReservoir(
         label: "What the reservoir can hold",
         value: `${formatAcreFeet(reservoir.physical_capacity_af)} acre-feet`
       }] : []),
+      ...characterRows(reservoir),
       { label: comparison.label, value: comparison.value },
       {
         label: changeLabel("Change in 30 days", reservoir.change_30d_elapsed_days),

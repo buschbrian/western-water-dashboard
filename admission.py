@@ -451,7 +451,8 @@ def unstable_maximum(highest_readings):
 
 
 def discrepancies(decision, highest_readings=None, service_capacity_af=None,
-                  provider_basis=None, highest_confirmed=False):
+                  provider_basis=None, highest_confirmed=False,
+                  operating_character=None):
     """Everything about this candidate that two sources do not agree about.
 
     `admit` answers one question -- is this the right dam -- and answers it
@@ -486,6 +487,11 @@ def discrepancies(decision, highest_readings=None, service_capacity_af=None,
     reported as disagreeing with itself. `highest_confirmed` is True when a
     second series from the same station confirms the highest reading on the
     day it describes; the spike screen then stays quiet (ADR-150).
+    `operating_character` is a reviewed character's value (ADR-114). A water
+    a person has already ruled `flood_space` keeps its space empty on
+    purpose, so the never-filled screen has nothing left to refer to a
+    person (ADR-156). Every other screen still runs, and no other character
+    quiets this one.
     """
     found = []
     if not decision.admitted:
@@ -523,7 +529,8 @@ def discrepancies(decision, highest_readings=None, service_capacity_af=None,
                 "seen above the capacity it would be divided by",
                 f"{observed:,.0f} acre-feet observed against {capacity:,.0f}, "
                 f"{observed / capacity - 1:+.0%}"))
-        elif observed < capacity * NEVER_FILLED_SHARE:
+        elif observed < capacity * NEVER_FILLED_SHARE \
+                and operating_character != "flood_space":
             found.append((
                 "never seen a third full",
                 f"{observed:,.0f} acre-feet observed against {capacity:,.0f}, "

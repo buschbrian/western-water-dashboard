@@ -842,6 +842,17 @@ export function setSubtotal(text: string | null): void {
 }
 
 /**
+ * Seasonal storage apart from steady pools and flood-control basins
+ * (ADR-156), or nothing where the place holds seasonal storage only.
+ */
+export function setAreaSplit(text: string | null): void {
+  document.querySelectorAll<HTMLElement>('[data-value="area-split"]').forEach((element) => {
+    element.hidden = text === null;
+    element.textContent = text ?? "";
+  });
+}
+
+/**
  * The phone's one control over the map. CSS shows it only below 48rem, where
  * the summary is a closed sheet and the map otherwise shows no figure.
  */

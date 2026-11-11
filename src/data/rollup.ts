@@ -1,4 +1,5 @@
 import { readBaseline } from "../state/baseline";
+import { areaLineOf, isSeasonalStorage } from "./area-line";
 import type { BaselineId, Reservoir } from "../types";
 import { STORAGE_CLASSES, storageClass } from "../viz/classes";
 
@@ -111,8 +112,54 @@ export function sinceLowTotal(reservoirs: readonly Reservoir[]): SinceLowTotal {
   };
 }
 
-export interface StatewideRollup {
+export { areaLineOf, isSeasonalStorage, type AreaLine } from "./area-line";
+
+/** Water an area holds outside its seasonal storage, as volume only (ADR-156). */
+export interface SplitTotal {
   count: number;
+  storageAf: number;
+  capacityAf: number;
+}
+
+/** The flood line also states the space kept empty, never a percent. */
+export interface FloodSpaceTotal extends SplitTotal {
+  /** Space still empty, summed per basin and never below zero for one. */
+  emptyAf: number;
+}
+
+function splitTotal(reservoirs: readonly Reservoir[]): SplitTotal | null {
+  if (reservoirs.length === 0) return null;
+  return {
+    count: reservoirs.length,
+    storageAf: reservoirs.reduce((total, row) => total + row.current_storage_af, 0),
+    capacityAf: reservoirs.reduce((total, row) => total + sizeBasis(row), 0)
+  };
+}
+
+function floodSpaceTotal(reservoirs: readonly Reservoir[]): FloodSpaceTotal | null {
+  const total = splitTotal(reservoirs);
+  return total === null ? null : {
+    ...total,
+    emptyAf: reservoirs.reduce((sum, row) =>
+      sum + Math.max(0, sizeBasis(row) - row.current_storage_af), 0)
+  };
+}
+
+/**
+ * An area total, split by how its waters are run (ADR-156).
+ *
+ * Every acre-foot field, the comparison with normal, the reading dates and
+ * the full-level kinds describe seasonal storage, so the headline and the
+ * words around it cover the same reservoirs. `count`, `stale`, `belowHalf`
+ * and `classes` count every reservoir in the area by its own figure, because
+ * each reservoir keeps its own figures. With no reviewed character in the
+ * area, seasonal storage is every reservoir and every figure is what it was.
+ */
+export interface StatewideRollup {
+  /** Every reservoir in the area, whichever line it is added to. */
+  count: number;
+  /** The reservoirs the headline figures are made from. */
+  seasonalCount: number;
   storageAf: number;
   capacityAf: number;
   percentFull: number | null;
@@ -132,6 +179,10 @@ export interface StatewideRollup {
   coverage: RollupCoverage;
   /** Largest share of the denominator first. */
   basisShares: BasisShare[];
+  /** Pools kept at a steady level, or null where the area has none. */
+  steadyPools: SplitTotal | null;
+  /** Flood-control basins, or null where the area has none. */
+  floodSpace: FloodSpaceTotal | null;
 }
 
 export type LakePowellChoice = "include" | "exclude";
@@ -378,7 +429,11 @@ export function statewideRollup(
   allReservoirs: readonly Reservoir[],
   options: StatewideRollupOptions
 ): StatewideRollup {
-  const reservoirs = allReservoirs.filter((reservoir) => reservoirInScope(reservoir, options));
+  const inArea = allReservoirs.filter((reservoir) => reservoirInScope(reservoir, options));
+  /* The headline is seasonal storage (ADR-156). Filtered in the payload's own
+   * order, so with no reviewed character the sums below are the same sums,
+   * added in the same order, as before the split. */
+  const reservoirs = inArea.filter(isSeasonalStorage);
   const sum = (pick: (reservoir: Reservoir) => number | null): number =>
     reservoirs.reduce((total, reservoir) => total + (pick(reservoir) ?? 0), 0);
   const storageAf = sum((reservoir) => reservoir.current_storage_af);
@@ -402,12 +457,13 @@ export function statewideRollup(
   const classes = STORAGE_CLASSES.map((entry) => ({
     label: entry.label,
     color: entry.color,
-    count: reservoirs.filter((reservoir) =>
+    count: inArea.filter((reservoir) =>
       storageClass(percentFull(reservoir))?.min === entry.min).length
   }));
 
   return {
-    count: reservoirs.length,
+    count: inArea.length,
+    seasonalCount: reservoirs.length,
     storageAf,
     capacityAf,
     percentFull: capacityAf > 0 ? storageAf / capacityAf * 100 : null,
@@ -421,11 +477,13 @@ export function statewideRollup(
     normalBaseline: baseline,
     coverage: coverageOf(reservoirs, capacityAf),
     basisShares: basisShares(reservoirs),
-    stale: reservoirs.filter(isLate).length,
-    belowHalf: reservoirs.filter((reservoir) => {
+    stale: inArea.filter(isLate).length,
+    belowHalf: inArea.filter((reservoir) => {
       const percent = percentFull(reservoir);
       return percent !== null && percent < 50;
     }).length,
-    classes
+    classes,
+    steadyPools: splitTotal(inArea.filter((row) => areaLineOf(row) === "steady")),
+    floodSpace: floodSpaceTotal(inArea.filter((row) => areaLineOf(row) === "flood"))
   };
 }

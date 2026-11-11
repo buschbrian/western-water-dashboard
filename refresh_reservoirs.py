@@ -98,7 +98,9 @@ from pipeline.roster import (  # noqa: F401
     published_capacity_history, reviewed_hold_notices,
     EXCLUDED_READING_FIELDS, load_excluded_readings,
     validate_capacity_evidence, validate_capacity_versions,
-    admitted_reservoir_elevations, load_admitted_reservoir_elevations
+    admitted_reservoir_elevations, load_admitted_reservoir_elevations,
+    attach_operating_characters, reviewed_operating_characters,
+    validate_operating_character,
 )
 from pipeline.providers import (  # noqa: F401
     CDEC_DATA_URL, CDEC_EXCLUDED_READINGS, CDEC_MISSING_VALUE,
@@ -1320,6 +1322,10 @@ def main() -> int:
 
     watersheds = attach_watersheds(records)
     counties = attach_counties(records)
+    # How each water is run, from the reviewed rosters (ADR-114, ADR-156).
+    # Here rather than in `summarize`, so a carried-forward record gains or
+    # loses its character with the roster as well.
+    attach_operating_characters(records)
 
     # Physical size is the primary browse order in every surface.
     records.sort(key=lambda r: (r.get("capacity_af") is None,

@@ -6,6 +6,7 @@ import { validateReservoirPayload } from "../data/validate";
 import { reservoirInState } from "../overview-model";
 import { SITE_ADDRESS } from "../reservoir-share-model";
 import { baselineChoices, periodLabel } from "../state/baseline";
+import { describeAreaSplit } from "../state/storage-summary";
 import { creditLine } from "../state/figures-text";
 import { providerName } from "../state/detail";
 import { reservoirLabel } from "../state/selection";
@@ -76,13 +77,17 @@ function scopeFrame(name: string, rows: Reservoir[], payload: ReservoirPayload, 
   const dates = total.coverage;
   const period = periodLabel(baselineChoices(payload), baseline);
   const normal = total.percentOfNormal === null ? "No normal comparison is available."
-    : `${formatPercent(total.percentOfNormal)} of normal (${period}); ${total.normalCovers} of ${total.count} reservoirs have this comparison.`;
+    : `${formatPercent(total.percentOfNormal)} of normal (${period}); ${total.normalCovers} of ${total.seasonalCount} reservoirs have this comparison.`;
+  /* Seasonal storage apart from steady pools and flood-control basins
+   * (ADR-156), only where the place holds them. */
+  const split = describeAreaSplit(name, total) ?? [];
   const dateText = dates.earliestDate && dates.latestDate
     ? `${formatDate(dates.earliestDate)} to ${formatDate(dates.latestDate)}` : "No readings";
   const lines = [
     `${total.count} reservoirs · ${dates.lateCount} with late readings.`,
     `Reading dates: ${dateText}.`,
     normal,
+    ...split,
     "Percent full uses the combined full levels; these have different definitions.",
     "Lake Powell and Lake Mead are included where they are in this view."
   ];
