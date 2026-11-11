@@ -68,7 +68,8 @@ denominator. **Start with ADR-070, then ADR-072, then ADR-003.**
   [ADR-135](ADR-135-publish-a-reservoir-level-only-above-a-reviewed-datum.md),
   [ADR-139](ADR-139-review-each-reservoirs-vertical-datum-before-publishing-an-elevation.md),
   [ADR-150](ADR-150-read-the-daily-series-before-calling-a-station-quiet-or-a-high-a-spike.md),
-  [ADR-152](ADR-152-close-a-provider-issue-whose-every-reading-is-a-mechanical-error.md)
+  [ADR-152](ADR-152-close-a-provider-issue-whose-every-reading-is-a-mechanical-error.md),
+  [ADR-155](ADR-155-audit-every-corps-office-that-publishes-storage.md)
 - Freshness and withdrawal:
   [ADR-056](ADR-056-withdraw-a-reading-that-belongs-to-another-season.md),
   [ADR-115](ADR-115-state-a-reviewed-hold-where-the-reservoir-used-to-be.md),
@@ -365,6 +366,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-152](ADR-152-close-a-provider-issue-whose-every-reading-is-a-mechanical-error.md) | Close a provider issue whose every reading is a mechanical error | Accepted; amends ADR-116's "the issues stay open"; zero, power-of-ten shift, one digit dropped or added, or same-day exchange, re-checked unchanged at the provider; exclusions unchanged; #44, #105, #108, #109, #110 and #111 closed, eight issues stay open |
 | [ADR-153](ADR-153-state-the-maps-storage-against-normal-and-subtotal-the-filtered-rows.md) | State the map's storage against normal, and subtotal the filtered rows | Accepted; amends ADR-095; a "Compared with normal" tile naming its period, shared with the storage charts' sentence; Compare against changes the summary; the headline stays the wider total and a labelled subtotal covers the filtered rows; a past month has no comparison; a phone control over the map; a per-reservoir list figure, table column (`sort=normal-*`) and two appended CSV columns with GeoJSON properties |
 | [ADR-154](ADR-154-keep-a-permanent-share-address-for-every-reservoir.md) | Keep a permanent share address for every reservoir | Accepted; permanent station-keyed share pages, retained withdrawal notices, storage and level frames, state/region/West cards and bounded capture; implemented locally |
+| [ADR-155](ADR-155-audit-every-corps-office-that-publishes-storage.md) | Audit every Corps office that publishes storage | Accepted; amends ADR-102's single `NWDP` office; the audit reads `SPK`, `SPL`, `SPA` and `NWDM` too, counts the Corps' own published reservoirs as already published, reports location-id collisions across offices; Bear, Big Dry Creek and Mojave admitted, 35 more withheld with findings |
 
 ## Relationship to the historical journal
 
