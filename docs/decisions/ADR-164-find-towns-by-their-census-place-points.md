@@ -1,4 +1,4 @@
-# ADR-159: Find towns by their Census place points
+# ADR-164: Find towns by their Census place points
 
 - Status: Accepted; implementation local
 - Date: 2026-11-11

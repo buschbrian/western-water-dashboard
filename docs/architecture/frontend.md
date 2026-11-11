@@ -483,7 +483,7 @@ Each was found by a failing test or a screenshot. Do not regress them.
   reference, fetched on first focus. Each result names its point's containing
   area. The finest published area with a current reservoir opens through the
   same area link. Missing town data leaves the original search available and
-  names the failure. No town preference or query parameter is stored (ADR-159).
+  names the failure. No town preference or query parameter is stored (ADR-164).
 - **A `calcite-sheet` takes its height from `--calcite-sheet-height`.**
   `--calcite-sheet-max-height` only caps it.
 - **`ResizeObserver` needs a render loop.** Its callbacks arrive with the

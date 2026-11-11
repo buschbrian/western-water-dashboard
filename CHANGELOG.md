@@ -13,7 +13,7 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
-- **Town search** (ADR-159): Census place points join Find a place, opening
+- **Town search** (ADR-164): Census place points join Find a place, opening
   the finest containing drainage area with a published reservoir. The search
   states that drainage areas do not show where a town gets water.
 

@@ -185,7 +185,7 @@ Record: one.
 
 ### 9. Search finds towns
 
-Implemented locally on `feat/town-search` (ADR-159). The offline Census
+Implemented locally on `feat/town-search` (ADR-164). The offline Census
 reference holds 4,283 place points in 48,735 gzip bytes. Search opens the
 finest containing published area with a current reservoir and names the
 point's location without claiming a water-supply area. Existing area URLs

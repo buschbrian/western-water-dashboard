@@ -368,4 +368,4 @@ Town search assigns Census internal points offline to the committed drawn
 level-8 scope. Its link selects the finest containing published area with a
 current reservoir, widening only to its parents. It uses explicit `state=all`
 and the existing area and level parameters, with no town parameter. A result
-names a point in an area, not a town water-supply area (ADR-159).
+names a point in an area, not a town water-supply area (ADR-164).

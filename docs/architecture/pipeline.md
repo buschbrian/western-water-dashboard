@@ -349,6 +349,6 @@ The warning opens no issue and removes nothing.
 The on-demand `tools/build_town_index.py` reads the downloaded Census 2026
 national places ZIP, filters eleven states, and assigns internal points with
 the existing HUC helper and level-8 drawn scope. It merges the separate town
-reference by Census identifier and enforces a 96 KiB gzip limit (ADR-159).
+reference by Census identifier and enforces a 96 KiB gzip limit (ADR-164).
 The daily places index carries current reservoir subbasin codes so search
 can resolve a town against the currently published roster.
