@@ -21,7 +21,7 @@ const TYPES = { ".html": "text/html", ".js": "text/javascript", ".css": "text/cs
 const server = createServer(async (req, res) => {
   try {
     let file = join(dist, decodeURIComponent(req.url.split("?")[0]));
-    if (file !== dist && !file.startsWith(dist + sep)) { res.writeHead(403).end("forbidden"); return; }
+    if (!file.startsWith(dist + sep)) { res.writeHead(403).end("forbidden"); return; }
     if ((await stat(file).catch(() => null))?.isDirectory()) file = join(file, "index.html");
     const body = await readFile(file);
     res.writeHead(200, { "content-type": TYPES[extname(file)] ?? "application/octet-stream" });
