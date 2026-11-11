@@ -1,6 +1,6 @@
-# ADR-NNN: Publish a terminal lake by arm, and without a volume where none is reviewed
+# ADR-159: Publish a terminal lake by arm, and without a volume where none is reviewed
 
-- Status: **Proposed** (for Brian Busch's approval; no number claimed until it lands)
+- Status: Accepted (Brian Busch, 2026-11-11)
 - Date: 2026-11-11
 - Extends: ADR-112 (terminal lakes as a separate water type), ADR-118 (their own roster and payload)
 
@@ -16,7 +16,7 @@ ADR-112 and ADR-118 admitted terminal lakes with two measurements, an elevation 
 
 Brian ruled on 2026-11-11 to build the representation Great Salt Lake and Mono need. Great Salt Lake is the lake Utah readers will ask about.
 
-## Decision (proposed)
+## Decision
 
 1. **A lake record may carry arms.** Each arm has its own reviewed point and its own elevation block (datum named), plus a volume block where the survey publishes one for that arm.
    - The lake's headline is a named list of its arms: for Great Salt Lake, the South Arm and the North Arm.

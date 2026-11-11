@@ -1,8 +1,9 @@
-# ADR-NNN: Divide a regulated natural lake by a full level on its series' own basis
+# ADR-157: Divide a regulated natural lake by a full level on its series' own basis
 
-- Status: **Proposed** (for Brian Busch's approval; no number claimed until it lands)
+- Status: Accepted (Brian Busch, 2026-11-11)
 - Date: 2026-11-11
-- Applies: ADR-078 (a natural lake raised by a control structure is a reservoir; no third type)
+- Applies: ADR-078's rule that a natural lake raised by a control structure is a reservoir, which ADR-112 kept when it
+  superseded ADR-078's single type to admit terminal lakes, and ADR-114's water type
 - Relates to: ADR-070 (the operator's own full level), ADR-072 (a figure the water has not been seen above), ADR-110 (a reviewed non-inventory capacity), ADR-065 (the ceiling), ADR-112 (terminal lakes stay separate)
 
 ## Context
@@ -31,7 +32,7 @@ ADR-078 settled what these waters are: a natural lake raised by a dam or outlet 
 
 The screens are right to refuse these as matched. A series that reports the whole lake, divided by a dam's figure for its top few feet, publishes a percent above 100 every wet spring. The fault is the denominator's basis, not the water.
 
-## Decision (proposed)
+## Decision
 
 1. **A regulated natural lake is published against a full level on the same basis as its storage series**, chosen in this order:
    1. the operator's or regulator's stated full level on that basis (ADR-070);

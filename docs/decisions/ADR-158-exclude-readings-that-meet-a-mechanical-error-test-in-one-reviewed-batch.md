@@ -1,6 +1,6 @@
-# ADR-NNN: Exclude readings that meet a mechanical-error test in one reviewed batch
+# ADR-158: Exclude readings that meet a mechanical-error test in one reviewed batch
 
-- Status: **Proposed** (for Brian Busch's approval; no number claimed until it lands)
+- Status: Accepted (Brian Busch, 2026-11-11)
 - Date: 2026-11-11
 - Extends: ADR-152 (close a provider issue whose every reading is a mechanical error), ADR-116 (exclude a reviewed reading and never repair one), ADR-150 (the record-figure screen)
 
@@ -17,7 +17,7 @@ The record-figure screen now reports 63 published reservoirs for review. A deter
 
 Writing 18 exclusions, each with its own evidence and issue, repeats one judgment 18 times. The judgment is already written down in ADR-152.
 
-## Decision (proposed)
+## Decision
 
 1. **A reading may be excluded in a reviewed batch when it meets an ADR-152 test exactly as that record defines it**, re-checked unchanged at the provider on the batch date, and it is not part of a run. A run is three or more consecutive readings at the same value, because a run may be a real drawdown.
 2. **A tool writes the batch.** It writes every reading's ADR-116 record (sensor, stamp, raw value, reason, source URL, reviewed date, issue URL) and names the test each one meets and its neighbours. The reviewer approves the batch as one diff. The reason is generated from the test, never written freehand.

@@ -1,6 +1,6 @@
-# ADR-NNN: Read seasonal storage apart from steady pools and kept-empty flood space
+# ADR-156: Read seasonal storage apart from steady pools and kept-empty flood space
 
-- Status: **Proposed** (for Brian Busch's approval; no number claimed until it lands)
+- Status: Accepted (Brian Busch, 2026-11-11)
 - Date: 2026-11-11
 - Extends: ADR-114 (water type and operating character), which labelled these waters and deferred the arithmetic
 - Relates to: ADR-153 (the map's storage against normal), ADR-072 (the denominator), ADR-102 and ADR-155 (the Corps)
@@ -36,7 +36,7 @@ The waters that fit ADR-114's own sentence, "keeps space empty to catch floods; 
 
 Their yearly peaks since 2015 stay under 25% of full even in 2023, one of the wettest years on record in Southern California.
 
-## Decision (proposed)
+## Decision
 
 1. **Narrow `flood_space` to detention.** A reservoir is `flood_space` only when its primary purpose is flood risk reduction AND it holds no conservation or supply pool that it refills each year.
    - Evidence toward the ruling: the NID purposes, the operator's description, and a record whose yearly peaks never reach a third of full. The series is evidence, never the source (ADR-114).
