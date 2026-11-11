@@ -1,4 +1,4 @@
-# ADR-158: Save weekly figures once and publish feeds
+# ADR-163: Save weekly figures once and publish feeds
 
 - Status: Accepted; implementation local, not released
 - Date: 2026-11-11

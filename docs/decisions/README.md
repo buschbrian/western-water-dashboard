@@ -37,7 +37,7 @@ than bundled. **Start with ADR-002.**
   [ADR-146](ADR-146-keep-river-flow-and-soil-moisture-change-day-by-day.md),
   [ADR-154](ADR-154-keep-a-permanent-share-address-for-every-reservoir.md)
   (permanent reservoir and scope share pages, storage frames and bounded daily capture),
-  [ADR-158](ADR-158-save-weekly-figures-once-and-publish-feeds.md) (frozen weekly entries and feeds).
+  [ADR-163](ADR-163-save-weekly-figures-once-and-publish-feeds.md) (frozen weekly entries and feeds).
 - Superseded, read only for history: ADR-012, ADR-019,
   [ADR-141](ADR-141-publish-a-share-page-and-a-daily-picture-for-a-reservoir-link.md),
   [ADR-117](ADR-117-close-the-scope-at-version-1-0-0.md) (pilot scope exception only)
@@ -366,7 +366,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-152](ADR-152-close-a-provider-issue-whose-every-reading-is-a-mechanical-error.md) | Close a provider issue whose every reading is a mechanical error | Accepted; amends ADR-116's "the issues stay open"; zero, power-of-ten shift, one digit dropped or added, or same-day exchange, re-checked unchanged at the provider; exclusions unchanged; #44, #105, #108, #109, #110 and #111 closed, eight issues stay open |
 | [ADR-153](ADR-153-state-the-maps-storage-against-normal-and-subtotal-the-filtered-rows.md) | State the map's storage against normal, and subtotal the filtered rows | Accepted; amends ADR-095; a "Compared with normal" tile naming its period, shared with the storage charts' sentence; Compare against changes the summary; the headline stays the wider total and a labelled subtotal covers the filtered rows; a past month has no comparison; a phone control over the map; a per-reservoir list figure, table column (`sort=normal-*`) and two appended CSV columns with GeoJSON properties |
 | [ADR-154](ADR-154-keep-a-permanent-share-address-for-every-reservoir.md) | Keep a permanent share address for every reservoir | Accepted; permanent station-keyed share pages, retained withdrawal notices, storage and level frames, state/region/West cards and bounded capture; implemented locally |
-| [ADR-158](ADR-158-save-weekly-figures-once-and-publish-feeds.md) | Save weekly figures once and publish feeds | Accepted; append-only Mountain Time weekly ledger, Atom and JSON feeds, permanent pages, picture and caption; local implementation |
+| [ADR-163](ADR-163-save-weekly-figures-once-and-publish-feeds.md) | Save weekly figures once and publish feeds | Accepted; append-only Mountain Time weekly ledger, Atom and JSON feeds, permanent pages, picture and caption; local implementation |
 
 ## Relationship to the historical journal
 

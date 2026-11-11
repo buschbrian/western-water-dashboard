@@ -433,7 +433,7 @@
       "class": "generated-archive",
       "writer": "scripts/build-weekly-digest.mjs",
       "staged_by_refresh": false,
-      "note": "Append-only weekly evidence. Each Mountain Time week is captured once by the separate weekly workflow. A rerun leaves prior entries byte for byte. ADR-158."
+      "note": "Append-only weekly evidence. Each Mountain Time week is captured once by the separate weekly workflow. A rerun leaves prior entries byte for byte. ADR-163."
     }
   ]
 }

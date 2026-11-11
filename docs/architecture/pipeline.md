@@ -346,7 +346,7 @@ record high above the full level or a record low far below its neighbours
 run page's annotation list is a convenience view. Review the full log.
 The warning opens no issue and removes nothing.
 
-## Weekly digest ledger (ADR-158)
+## Weekly digest ledger (ADR-163)
 
 `node scripts/build-weekly-digest.mjs` runs the existing TypeScript weekly
 models through the installed Vite SSR loader, with network serving and file
