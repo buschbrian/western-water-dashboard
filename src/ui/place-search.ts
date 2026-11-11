@@ -12,29 +12,35 @@ import { fetchWithin } from "../data/fetch";
 import type { PageId } from "./page-header";
 import {
   buildPlaces, onlyMatch, parsePlaceIndex, parseTownIndex, PLACE_INDEX_URL, TOWN_INDEX_URL, placeHref, searchPlaces,
-  type Place
+  type Place, type PlaceIndex, type Town
 } from "./place-search-model";
 
 const TRIGGER_ID = "place-search-trigger";
 
-type Loaded = { places: Place[]; townsUnavailable: boolean } | { error: true };
+type Loaded = { index: PlaceIndex } | { error: true };
 let loading: Promise<Loaded> | null = null;
+let townLoading: Promise<Town[] | null> | null = null;
 
 function loadPlaces(): Promise<Loaded> {
-  loading ??= Promise.all([
-    fetchWithin(PLACE_INDEX_URL).then(async (response) => parsePlaceIndex(await response.json())),
-    fetchWithin(TOWN_INDEX_URL).then(async (response) => parseTownIndex(await response.json()))
-      .catch((error: unknown) => {
-        console.warn("The town search could not load its names:", error);
-        return null;
-      })
-  ])
-    .then(([index, towns]) => ({ places: buildPlaces(index, towns ?? []), townsUnavailable: towns === null }))
+  loading ??= fetchWithin(PLACE_INDEX_URL)
+    .then(async (response) => ({ index: parsePlaceIndex(await response.json()) }))
     .catch((error: unknown) => {
       console.warn("The place search could not load its names:", error);
       return { error: true } as const;
     });
   return loading;
+}
+
+/* Separate from the place index, so a slow town file never holds back the
+ * reservoirs, areas and snow sites. */
+function loadTowns(): Promise<Town[] | null> {
+  townLoading ??= fetchWithin(TOWN_INDEX_URL)
+    .then(async (response) => parseTownIndex(await response.json()))
+    .catch((error: unknown) => {
+      console.warn("The town search could not load its names:", error);
+      return null;
+    });
+  return townLoading;
 }
 
 interface ActionElement extends HTMLElement {
@@ -145,17 +151,25 @@ export function setupPlaceSearch(current: PageId): void {
   function ensureLoaded(): void {
     if (places || failed) return;
     list.setAttribute("aria-busy", "true");
+    const towns = loadTowns();
     void loadPlaces().then((loaded) => {
       list.removeAttribute("aria-busy");
-      if ("places" in loaded) {
-        places = loaded.places;
-        if (loaded.townsUnavailable) {
+      if ("error" in loaded) {
+        failed = true;
+        if (input.value.trim()) render();
+        return;
+      }
+      places = buildPlaces(loaded.index);
+      if (input.value.trim()) render();
+      void towns.then((points) => {
+        if (points === null) {
           const note = document.getElementById("town-search-note");
           if (note) note.textContent = "Town names could not be loaded. Reservoirs, drainage areas and snow sites can still be found.";
+          return;
         }
-      }
-      else failed = true;
-      if (input.value.trim()) render();
+        places = buildPlaces(loaded.index, points);
+        if (input.value.trim()) render();
+      });
     });
   }
 
@@ -198,7 +212,7 @@ export function setupPlaceSearch(current: PageId): void {
     list.hidden = true;
     status = element("p", { class: "visually-hidden", role: "status" });
     const note = element("p", { class: "place-search-detail place-search-note", id: "town-search-note" },
-      "Towns use Census place points. Drainage areas do not show where a town gets water.");
+      "Towns use Census place points, only in drainage areas that have a reservoir on this site. Drainage areas do not show where a town gets water.");
     input.setAttribute("aria-describedby", note.id);
     root.append(label, row, list, note, status);
 

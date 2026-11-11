@@ -20,8 +20,14 @@ Do not guess a nearest area for a point outside coverage. Names drop only the
 terminal legal suffix city, town, village, CDP or municipality. Census place
 identifiers remain distinct, including identical names within one state.
 
+Towns only fill the result space that reservoirs, drainage areas and snow
+sites leave, so adding them never moves or removes an existing result. Enter
+decides on the existing kinds first and opens a town only when none matched.
+The search shows existing places as soon as their index loads and adds towns
+when the separate town file arrives.
+
 `tools/build_town_index.py --input <downloaded-zip>` writes the separate
-`data/assistant/towns.json` reference, merges by place identifier, and refuses
+`data/assistant/towns.json` reference from the source alone, and refuses
 a different source vintage without a reviewed migration. It carries the
 source, vintage and check date. The first output contains 4,283 places,
 289,002 raw bytes and 48,735 gzip bytes; its enforced budget is 96 KiB gzip.

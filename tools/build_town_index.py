@@ -54,8 +54,8 @@ def publish(content: str, output: Path) -> dict:
     previous = json.loads(output.read_text()) if output.exists() else None
     if previous and previous.get("source_url") != SOURCE_URL:
         raise ValueError("A new Census vintage needs a reviewed migration")
-    merged = {row["id"]: row for row in (previous or {}).get("towns", [])}
-    merged.update({row["id"]: row for row in rows})
+    # Rebuilt from the source alone: a row whose point leaves the coverage goes.
+    merged = {row["id"]: row for row in rows}
     payload = {"schema_version": 1, "source_url": SOURCE_URL, "source_year": 2026,
                "checked_at": dt.date.today().isoformat(),
                "point_definition": "Census internal point; not a water-supply service area",

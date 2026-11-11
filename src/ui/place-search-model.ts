@@ -25,7 +25,7 @@ export interface PlaceIndex {
 
 export type PlaceKind = "reservoir" | "area" | "site" | "town";
 
-interface Town { id: string; name: string; state: string; huc8: string }
+export interface Town { id: string; name: string; state: string; huc8: string }
 
 export function parseTownIndex(value: unknown): Town[] {
   const root = value as Record<string, unknown> | null;
@@ -142,6 +142,9 @@ export function placeText(entry: Place): string {
  */
 export function buildPlaces(index: PlaceIndex, towns: readonly Town[] = []): Place[] {
   const areaNames = new Map(index.areas.map((area) => [`${area.level}:${area.code}`, area.name]));
+  const reservoirAreas = index.reservoirs.flatMap((reservoir) => reservoir.huc8 ?? []);
+  const areasWithReservoirs = towns.length ? index.areas.filter((area) =>
+    reservoirAreas.some((huc8) => huc8.startsWith(area.code))) : [];
   const repeated = (keys: string[]) => {
     const counts = new Map<string, number>();
     for (const key of keys) counts.set(key, (counts.get(key) ?? 0) + 1);
@@ -175,13 +178,14 @@ export function buildPlaces(index: PlaceIndex, towns: readonly Town[] = []): Pla
     ...index.sites.map((site) => place("site", site.name, "Snow site",
       site.state ? stateName(site.state) : null, site.station)),
     ...towns.flatMap((town) => {
-      const area = index.areas.filter((candidate) => town.huc8.startsWith(candidate.code) &&
-        index.reservoirs.some((reservoir) => reservoir.huc8?.startsWith(candidate.code)))
+      const area = areasWithReservoirs.filter((candidate) => town.huc8.startsWith(candidate.code))
         .sort((a, b) => b.level - a.level)[0];
       if (!area) return [];
+      const type = AREA_TYPES[area.level];
+      /* Region names already end in "Region". */
+      const within = type === "Region" ? area.name : `${area.name} ${type?.toLowerCase() ?? "drainage area"}`;
       return [{ ...place("town", town.name, "Town or city",
-        `${stateName(town.state)}; point in ${area.name} ${AREA_TYPES[area.level]?.toLowerCase() ?? "drainage area"}`,
-        town.id, area.level), area: area.code }];
+        `${stateName(town.state)}; point in ${within}`, town.id, area.level), area: area.code }];
     })
   ];
   const stillAlike = repeated(places.map(placeText));
@@ -218,7 +222,10 @@ export function searchPlaces(
       const rank = matchRank(entry, folded);
       return rank === null ? [] : [{ entry, rank }];
     })
-    .sort((a, b) => a.rank - b.rank ||
+    /* Towns only fill the space the other kinds leave, so adding them never
+     * moves or removes a reservoir, area or snow-site result. */
+    .sort((a, b) => Number(a.entry.kind === "town") - Number(b.entry.kind === "town") ||
+      a.rank - b.rank ||
       a.entry.name.length - b.entry.name.length ||
       a.entry.name.localeCompare(b.entry.name) ||
       KIND_ORDER[a.entry.kind] - KIND_ORDER[b.entry.kind] ||
@@ -236,9 +243,13 @@ export function searchPlaces(
  * first would answer a question the reader did not ask.
  */
 export function onlyMatch(results: readonly Place[], query: string): Place | null {
-  if (results.length === 1) return results[0]!;
+  /* Towns never take Enter from a reservoir, area or snow site: the rule is
+   * decided on those first, and on towns only when none of them matched. */
+  const existing = results.filter((entry) => entry.kind !== "town");
+  const candidates = existing.length ? existing : results;
+  if (candidates.length === 1) return candidates[0]!;
   const folded = foldText(query);
-  const exact = results.filter((entry) => entry.key === folded);
+  const exact = candidates.filter((entry) => entry.key === folded);
   return exact.length === 1 ? exact[0]! : null;
 }
 

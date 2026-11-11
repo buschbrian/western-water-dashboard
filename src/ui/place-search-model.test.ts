@@ -57,6 +57,27 @@ describe("Census place points", () => {
     expect(() => parseTownIndex({ schema_version: 1, towns: [towns[0], towns[0]] })).toThrow();
     expect(() => parseTownIndex({ schema_version: 1, towns: [{ ...towns[0], huc8: "../file" }] })).toThrow();
   });
+  it("never moves an existing result or takes Enter from it", async () => {
+    const read = async (file: string) => JSON.parse(await readFile(resolve(process.cwd(), file), "utf8")) as unknown;
+    const index = parsePlaceIndex(await read("data/assistant/places.json"));
+    const without = buildPlaces(index);
+    const withTowns = buildPlaces(index, parseTownIndex(await read("data/assistant/towns.json")));
+    const queries = new Set(without.flatMap((entry) => [entry.name, entry.name.slice(0, 4), entry.name.split(" ").at(-1)!]));
+    for (const query of queries) {
+      const before = searchPlaces(without, query);
+      const after = searchPlaces(withTowns, query);
+      expect(after.slice(0, before.length).map(placeText), query).toEqual(before.map(placeText));
+      const enter = onlyMatch(before, query);
+      const opened = onlyMatch(after, query);
+      if (enter) expect(opened && placeText(opened), query).toBe(placeText(enter));
+    }
+  }, 60_000);
+  it("names a region once", () => {
+    const entries = buildPlaces({ ...INDEX, reservoirs: [{ name: "Test", state: "UT", huc8: "14010001" }] },
+      parseTownIndex({ schema_version: 1, towns: [{ id: "4900009", name: "Far", state: "UT", huc8: "14990001" }] }));
+    const town = entries.find((entry) => entry.kind === "town");
+    expect(town?.location).toBe("Utah; point in Upper Colorado Region");
+  });
   it("keeps each published town distinct and links only to areas in the published index", async () => {
     const read = async (file: string) => JSON.parse(await readFile(resolve(process.cwd(), file), "utf8")) as unknown;
     const index = parsePlaceIndex(await read("data/assistant/places.json"));
