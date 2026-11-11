@@ -274,7 +274,7 @@ describes (ADR-121), is page-local and never portable, and leaves the four
 scope questions where they were: a finished season is narrowed by the same
 state, level, area and upstream set as the current one.
 
-### Precipitation's upstream station set (ADR-157)
+### Precipitation's upstream station set (ADR-162)
 
 Precipitation also accepts page-local `?upstream=<reservoir station ID>`.
 It intersects the resolved state, area and level with the committed upstream

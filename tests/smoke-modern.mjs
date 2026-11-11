@@ -3314,7 +3314,7 @@ for (const viewport of VIEWPORTS) {
       "./api/lakes.json", "./lakes.html",
       // Daily river flow (ADR-136): its own file and page.
       "./api/rivers.json", "./rivers.html",
-      // Storage and reviewed reservoir flow (ADR-155, ADR-156).
+      // Storage and reviewed reservoir flow (ADR-160, ADR-161).
       "./data/storage-history/index.json", "./data/storage-history/current.json",
       "./api/reservoir_flow_history.json",
       // Its history, kept day by day (ADR-146).

@@ -36,8 +36,8 @@ than bundled. **Start with ADR-002.**
   [ADR-145](ADR-145-compare-river-gauges-above-ten-years-shorten-two-names-and-round-the-page.md),
   [ADR-146](ADR-146-keep-river-flow-and-soil-moisture-change-day-by-day.md),
   [ADR-154](ADR-154-keep-a-permanent-share-address-for-every-reservoir.md),
-  [ADR-155](ADR-155-publish-storage-history-apart-from-the-summary.md),
-  [ADR-156](ADR-156-publish-only-reviewed-reservoir-inflow-and-release.md).
+  [ADR-160](ADR-160-publish-storage-history-apart-from-the-summary.md),
+  [ADR-161](ADR-161-publish-only-reviewed-reservoir-inflow-and-release.md).
 - Superseded, read only for history: ADR-012, ADR-019,
   [ADR-141](ADR-141-publish-a-share-page-and-a-daily-picture-for-a-reservoir-link.md),
   [ADR-117](ADR-117-close-the-scope-at-version-1-0-0.md) (pilot scope exception only)
@@ -70,7 +70,7 @@ denominator. **Start with ADR-070, then ADR-072, then ADR-003.**
   [ADR-139](ADR-139-review-each-reservoirs-vertical-datum-before-publishing-an-elevation.md),
   [ADR-150](ADR-150-read-the-daily-series-before-calling-a-station-quiet-or-a-high-a-spike.md),
   [ADR-152](ADR-152-close-a-provider-issue-whose-every-reading-is-a-mechanical-error.md),
-  [ADR-156](ADR-156-publish-only-reviewed-reservoir-inflow-and-release.md)
+  [ADR-161](ADR-161-publish-only-reviewed-reservoir-inflow-and-release.md)
 - Freshness and withdrawal:
   [ADR-056](ADR-056-withdraw-a-reading-that-belongs-to-another-season.md),
   [ADR-115](ADR-115-state-a-reviewed-hold-where-the-reservoir-used-to-be.md),
@@ -116,7 +116,7 @@ The four different scopes, the hydrologic level, and what a link carries.
   [ADR-109](ADR-109-remove-scofields-rejected-dam-point.md),
   [ADR-149](ADR-149-let-the-weekly-storage-figures-follow-every-filter.md),
   [ADR-153](ADR-153-state-the-maps-storage-against-normal-and-subtotal-the-filtered-rows.md),
-  [ADR-157](ADR-157-show-upstream-conditions-without-claiming-inflow.md)
+  [ADR-162](ADR-162-show-upstream-conditions-without-claiming-inflow.md)
 - Boundary sourcing: [ADR-024](ADR-024-use-full-resolution-watersheds-for-snow-sites.md),
   [ADR-034](ADR-034-hosted-boundary-layers-with-a-deadline.md),
   [ADR-037](ADR-037-refetch-the-boundaries-at-the-resolution-the-source-stops-adding.md)
@@ -368,9 +368,9 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-152](ADR-152-close-a-provider-issue-whose-every-reading-is-a-mechanical-error.md) | Close a provider issue whose every reading is a mechanical error | Accepted; amends ADR-116's "the issues stay open"; zero, power-of-ten shift, one digit dropped or added, or same-day exchange, re-checked unchanged at the provider; exclusions unchanged; #44, #105, #108, #109, #110 and #111 closed, eight issues stay open |
 | [ADR-153](ADR-153-state-the-maps-storage-against-normal-and-subtotal-the-filtered-rows.md) | State the map's storage against normal, and subtotal the filtered rows | Accepted; amends ADR-095; a "Compared with normal" tile naming its period, shared with the storage charts' sentence; Compare against changes the summary; the headline stays the wider total and a labelled subtotal covers the filtered rows; a past month has no comparison; a phone control over the map; a per-reservoir list figure, table column (`sort=normal-*`) and two appended CSV columns with GeoJSON properties |
 | [ADR-154](ADR-154-keep-a-permanent-share-address-for-every-reservoir.md) | Keep a permanent share address for every reservoir | Accepted; permanent station-keyed share pages, retained withdrawal notices, storage and level frames, state/region/West cards and bounded capture; implemented locally |
-| [ADR-155](ADR-155-publish-storage-history-apart-from-the-summary.md) | Publish storage history apart from the summary | Accepted; revisable station archives, shared current water year, on-demand backfill, lazy water-year chart and full-record CSV; local implementation |
-| [ADR-156](ADR-156-publish-only-reviewed-reservoir-inflow-and-release.md) | Publish only reviewed reservoir inflow and release | Accepted; Powell computed inflow and Powell/Mead total release, reviewed definitions and live catalog checks; Mead inflow remains unavailable; local implementation |
-| [ADR-157](ADR-157-show-upstream-conditions-without-claiming-inflow.md) | Show upstream conditions without claiming inflow | Accepted; station means above a reservoir, page-local upstream precipitation link and aligned daily context without a causal claim; local implementation |
+| [ADR-160](ADR-160-publish-storage-history-apart-from-the-summary.md) | Publish storage history apart from the summary | Accepted; revisable station archives, shared current water year, on-demand backfill, lazy water-year chart and full-record CSV; local implementation |
+| [ADR-161](ADR-161-publish-only-reviewed-reservoir-inflow-and-release.md) | Publish only reviewed reservoir inflow and release | Accepted; Powell computed inflow and Powell/Mead total release, reviewed definitions and live catalog checks; Mead inflow remains unavailable; local implementation |
+| [ADR-162](ADR-162-show-upstream-conditions-without-claiming-inflow.md) | Show upstream conditions without claiming inflow | Accepted; station means above a reservoir, page-local upstream precipitation link and aligned daily context without a causal claim; local implementation |
 
 ## Relationship to the historical journal
 

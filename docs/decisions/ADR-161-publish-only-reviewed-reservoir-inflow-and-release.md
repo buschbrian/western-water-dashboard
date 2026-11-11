@@ -1,4 +1,4 @@
-# ADR-156: Publish only reviewed reservoir inflow and release
+# ADR-161: Publish only reviewed reservoir inflow and release
 
 - Status: Accepted; implementation local, not released
 - Date: 2026-11-11

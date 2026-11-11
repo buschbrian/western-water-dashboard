@@ -1,4 +1,4 @@
-# ADR-155: Publish storage history apart from the summary
+# ADR-160: Publish storage history apart from the summary
 
 - Status: Accepted; implementation local, not released
 - Date: 2026-11-11

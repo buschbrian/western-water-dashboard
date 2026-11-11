@@ -1,8 +1,8 @@
-# ADR-157: Show upstream conditions without claiming inflow
+# ADR-162: Show upstream conditions without claiming inflow
 
 - Status: Accepted; implementation local, not released
 - Date: 2026-11-11
-- Extends: ADR-097, ADR-125, ADR-127, ADR-129, ADR-156
+- Extends: ADR-097, ADR-125, ADR-127, ADR-129, ADR-161
 
 ## Context
 

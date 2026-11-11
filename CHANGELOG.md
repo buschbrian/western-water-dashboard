@@ -23,7 +23,7 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   Inventory of Dams. Five carry a record low the record-figure screen
   reports for review, as several published reservoirs already do.
 
-- **Reservoir storage history and upstream conditions** (ADR-155–157).
+- **Reservoir storage history and upstream conditions** (ADR-160–157).
   Reservoir pages have a lazy water-year storage chart, a table and a
   full-record CSV. Storage share frames use that chart when available.
   Powell shows Reclamation's computed inflow and total release; Mead shows

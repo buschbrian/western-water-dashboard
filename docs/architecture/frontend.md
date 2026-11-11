@@ -86,7 +86,7 @@ page's own formats; the last line is the credit line from `reporters.html`,
 with the provider first and `SITE_ADDRESS` once. A combined figure from more
 than two providers gets a neutral credit line.
 
-#### Storage history and upstream conditions (ADR-155–157)
+#### Storage history and upstream conditions (ADR-160–157)
 
 `data/storage-history.ts` loads the index, current water year and only the
 requested station's archive, with runtime validation and bounded fetches.
@@ -139,7 +139,7 @@ storage frame instead (ADR-154), built by the pure
 `reservoir-storage-share-model.ts` from the page's own builders: percent full
 with its basis, stored water, the reading date and late-data note, the normal
 comparison with its period and years (and the sentence for a normal that
-covers part of its period), the storage water-year chart with its key (ADR-155),
+covers part of its period), the storage water-year chart with its key (ADR-160),
 and the source line. A missing storage history keeps the twelve-month chart. It asks for no level history. The name may take two lines and
 the chart takes the height the words leave, so any published name fits. It
 signals `elevation` as `none` or `card`, never `drawn`; the readiness field

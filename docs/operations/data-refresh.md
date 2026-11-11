@@ -174,7 +174,7 @@ reservoir with no record is not asked again**: "no readings in the period" is a
 finding about a dam built in 2011, not a fetch to retry; only "the provider did
 not answer" is retryable.
 
-## Storage-history backfill (ADR-155)
+## Storage-history backfill (ADR-160)
 
 The morning refresh keeps the series it already reads. Earlier history is an
 on-demand build, not another full historical query each morning:

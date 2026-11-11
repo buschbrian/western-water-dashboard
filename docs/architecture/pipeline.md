@@ -346,7 +346,7 @@ record high above the full level or a record low far below its neighbours
 run page's annotation list is a convenience view. Review the full log.
 The warning opens no issue and removes nothing.
 
-## Storage history and reviewed reservoir flow (ADR-155–157)
+## Storage history and reviewed reservoir flow (ADR-160–157)
 
 `pipeline/storage_history.py` publishes the already-fetched storage series
 apart from `reservoirs.json`. `data/storage-history/index.json` maps station

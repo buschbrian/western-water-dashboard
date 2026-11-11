@@ -39,7 +39,7 @@ is 181,520 bytes gzip. The build publishes the storage directory once under
 archives change only at rollover or when reported observations change; the
 current-year file carries the ordinary daily changes. The initial repository
 addition is about 50.5 MB raw. This does not measure Git's eventual packed
-object size. The history contract and bounds are ADR-155.
+object size. The history contract and bounds are ADR-160.
 
 ## Dependency upgrade budget (2026-10-23)
 

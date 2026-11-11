@@ -434,14 +434,14 @@
       "class": "generated-history",
       "writer": "refresh_reservoirs.py",
       "staged_by_refresh": true,
-      "note": "Station-keyed storage histories, with current water year and index. Backfill: tools/build_storage_history.py. ADR-155."
+      "note": "Station-keyed storage histories, with current water year and index. Backfill: tools/build_storage_history.py. ADR-160."
     },
     {
       "path": "reservoir_flow_history.json",
       "class": "generated-daily",
       "writer": "refresh_reservoirs.py",
       "staged_by_refresh": true,
-      "note": "Reviewed reservoir inflow and total release merged by date. ADR-156."
+      "note": "Reviewed reservoir inflow and total release merged by date. ADR-161."
     },
     {
       "path": "admitted_reservoir_flows.json",

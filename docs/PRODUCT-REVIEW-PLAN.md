@@ -2,7 +2,7 @@
 
 Status: The four Wave 1 implementation PRs (#115–#118) were published on
 2026-11-09. Wave 2, sharing and place: items 5–7 are merged through PR #120;
-items 8 and 9 remain. Wave 3 is implemented locally under ADR-155–157;
+items 8 and 9 remain. Wave 3 is implemented locally under ADR-160–157;
 final acceptance and the eight USGS storage backfills remain. Mead daily
 inflow is a source gap, explicitly shown as unavailable.
 Brian Busch chose the four scopes below
@@ -206,9 +206,9 @@ Each is a new published contract. Verify with `npm run verify:pipeline` and
 `npm run verify:browser`; payloads regenerate in CI.
 
 Local implementation on 2026-11-11: the history writer, lazy chart, full CSV
-and storage share chart (ADR-155); the three available observed flow series
-and their operator definitions (ADR-156); upstream station means, the
-precipitation link and aligned 30-day context (ADR-157). The focused browser
+and storage share chart (ADR-160); the three available observed flow series
+and their operator definitions (ADR-161); upstream station means, the
+precipitation link and aligned 30-day context (ADR-162). The focused browser
 target passes at all three widths, including the history failure path.
 The final full-suite result is still to be recorded. History is backfilled
 for 412 of 420 published stations. The other eight use the Geological
