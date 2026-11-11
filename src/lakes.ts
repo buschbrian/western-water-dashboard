@@ -4,7 +4,7 @@
  *
  * Every lake the payload publishes is on this one page. A lake the survey
  * measures in arms shows each arm in its own section, with its own level and
- * place, and nothing that combines them (ADR-161). A lake the payload
+ * place, and nothing that combines them (ADR-166). A lake the payload
  * withdrew is stated, not measured (ADR-056). The words are the model's;
  * this file is the sequence.
  */

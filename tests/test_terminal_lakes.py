@@ -343,7 +343,7 @@ def test_the_daily_script_runs_the_lake_refresh_after_snow_and_before_the_commit
     assert "refresh_lakes.py" in plan and "lakes.json" in plan
 
 
-# --- a lake measured in arms, and a lake with no volume (ADR-161) --------
+# --- a lake measured in arms, and a lake with no volume (ADR-166) --------
 
 GSL = ("10010000", "10010100")
 

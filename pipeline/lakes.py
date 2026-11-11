@@ -17,7 +17,7 @@ A restoration or regulatory level is admitted only as a *target* -- a named
 elevation with its authority, source and date -- and never as capacity. It is
 copied from the roster as written and nothing here computes a share of it.
 
-The volume is optional (ADR-161): a lake the survey publishes no daily volume
+The volume is optional (ADR-166): a lake the survey publishes no daily volume
 for carries its level alone. A lake measured in separate arms is summarised
 one station at a time and then grouped into one record whose `arms` keep each
 station's point and level; the record has no lake-wide point, level or volume
@@ -57,7 +57,7 @@ NOTICE_FIELDS = frozenset({"name", "as_of", "days_stale", "source_label", "reaso
 
 #: What the arms of one lake share, said once on the lake record. Everything
 #: else in a station's record -- its point, freshness and measurements -- is
-#: the arm's own (ADR-161).
+#: the arm's own (ADR-166).
 LAKE_FIELDS = ("name", "water_type", "source_key", "source_label", "source_url",
                "state", "data_frequency", "stale_after_days", "targets")
 
@@ -75,7 +75,7 @@ def summarize_lake(entry: dict, elevation: pd.DataFrame, volume: pd.DataFrame | 
     gauge and computed on the same relation, so they normally agree, and when
     they do not the lake is as current as its older measurement.
 
-    An entry with no volume series (ADR-161) publishes its level alone and
+    An entry with no volume series (ADR-166) publishes its level alone and
     `volume` is not read.
     """
     has_volume = "volume" in entry
@@ -255,7 +255,7 @@ def build_payload(records: list[dict], today: pd.Timestamp, fetched_at: str,
 def validate_payload(payload: dict, roster: dict[str, dict]) -> None:
     """Refuse a payload that claims what a terminal lake cannot have.
 
-    Each check is a sentence of ADR-112 or ADR-161 made mechanical: no lake
+    Each check is a sentence of ADR-112 or ADR-166 made mechanical: no lake
     record carries a reservoir-only field; a lake with arms publishes every
     arm the roster names and no lake-wide point, level or volume; a volume is
     published exactly where the roster has a volume series; no withdrawal

@@ -1,4 +1,4 @@
-# ADR-161: Publish Great Salt Lake with its arms kept apart
+# ADR-166: Publish Great Salt Lake with its arms kept apart
 
 - Status: Accepted
 - Date: 2026-11-11

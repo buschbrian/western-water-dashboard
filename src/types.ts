@@ -832,7 +832,7 @@ export interface LakeTarget {
 
 /**
  * One station's measurements: its point, freshness, level and, where the
- * survey publishes one daily, its volume (optional since ADR-161).
+ * survey publishes one daily, its volume (optional since ADR-166).
  */
 export interface LakeGauge {
   source_station_id: string;
@@ -856,7 +856,7 @@ export interface LakeGauge {
   intersects_utah?: boolean;
 }
 
-/** One measured arm of a lake the survey measures apart (ADR-161). */
+/** One measured arm of a lake the survey measures apart (ADR-166). */
 export interface LakeArm extends LakeGauge {
   arm: string;
 }
@@ -887,7 +887,7 @@ export interface GaugedLake extends LakeCommon, LakeGauge {
 
 /**
  * A lake measured in arms: no lake-wide point, level or volume, because one
- * would collapse waters the survey measures apart (ADR-112, ADR-161).
+ * would collapse waters the survey measures apart (ADR-112, ADR-166).
  */
 export interface ArmedLake extends LakeCommon {
   arms: LakeArm[];

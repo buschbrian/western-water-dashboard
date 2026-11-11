@@ -13,7 +13,7 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
-- **Great Salt Lake, with its two arms kept apart** (ADR-161). The terminal
+- **Great Salt Lake, with its two arms kept apart** (ADR-166). The terminal
   lakes page shows the south arm (U.S. Geological Survey station 10010000,
   Saltair Boat Harbor) and the north arm (10010100, near Saline) each in its
   own section, with its own surface level above the National Geodetic

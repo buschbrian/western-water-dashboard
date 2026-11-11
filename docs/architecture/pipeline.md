@@ -19,7 +19,7 @@ modules in `pipeline/`:
 | `pipeline/seasonal.py` | The seasonal estimator: window, annual votes, normals, rank, percentile. |
 | `pipeline/freshness.py` | Carry-forward, the withdrawal threshold and the withdrawal notice. |
 | `pipeline/geography.py` | County and drainage-area assignment onto finished records. |
-| `pipeline/lakes.py` | The natural terminal lakes (ADR-112, ADR-118, ADR-161): a record of elevation and optional volume, grouped into arms where the survey measures a lake apart, with no full level, its validator, and the lake payload envelope. |
+| `pipeline/lakes.py` | The natural terminal lakes (ADR-112, ADR-118, ADR-166): a record of elevation and optional volume, grouped into arms where the survey measures a lake apart, with no full level, its validator, and the lake payload envelope. |
 | `pipeline/measurement.py` | One daily series summarised: current value, dated extremes, dated changes and the same-date rank. Shared by a lake's level and volume and a reservoir's surface level, so a level means one thing. |
 | `pipeline/elevation.py` | Reviewed reservoir surface elevation (ADR-135): the record's `elevation` block, the history entries, `elevation_history.json` and their checks. |
 | `pipeline/rivers.py` | Daily river flow (ADR-136): a gauge's 30-day record with no rank or total, its validator, and the river payload envelope; for a natural gauge, the committed day-of-year percentiles' loader and WaterWatch's class (ADR-144). |
@@ -145,7 +145,7 @@ they change.
 capacity-shaped field and requires the evidence ADR-112 asks for: a reviewed
 waterbody point, a reviewed closed-basin assignment, the elevation's vertical
 datum, and either the volume's published elevation-volume relation or a
-`no_volume` reason (ADR-161). A lake the survey measures in arms is one entry
+`no_volume` reason (ADR-166). A lake the survey measures in arms is one entry
 per arm, keyed by the arm's station and naming its `arm`; the entries share the
 lake's name, state and targets. `refresh_lakes.py` reads each station's daily
 series from the Geological Survey's OGC collection through

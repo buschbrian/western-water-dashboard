@@ -258,7 +258,7 @@ ELEVATION_HISTORY_SCHEMA_VERSION = 1
 
 #: The shape of `lakes.json`, versioned apart from the reservoir payload: a
 #: lake record has no capacity or percent full to share a contract with.
-#: Version 2 makes the volume block optional and adds `arms` (ADR-161).
+#: Version 2 makes the volume block optional and adds `arms` (ADR-166).
 LAKE_SCHEMA_VERSION = 2
 
 #: The shape of `rivers.json` (ADR-136). Version 2 admits the natural tier

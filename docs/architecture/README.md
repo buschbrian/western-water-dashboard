@@ -44,7 +44,7 @@ and the Python pipelines.
 | `precipitation.html`, `src/precipitation.ts` | Recent and season precipitation at the snow sites (ADR-130). |
 | `snow.html`, `src/snow*` | Snow curves, drainage-area map, site map, detail views. |
 | `drought.html`, `src/drought*` | Weekly drought map and comparison charts. |
-| `lakes.html`, `src/lakes*` | Natural terminal-lake surface level, volume where published, and measured arms kept apart (ADR-119, ADR-161). |
+| `lakes.html`, `src/lakes*` | Natural terminal-lake surface level, volume where published, and measured arms kept apart (ADR-119, ADR-166). |
 | `rivers.html`, `src/rivers*` | Daily mean river flow, comparisons and grouped readings (ADR-136, ADR-148). |
 | `story.html`, `src/story.ts` | Embeddable figures (ADR-128). |
 | `landscape.html` | Drought photographs and the gallery notice. |

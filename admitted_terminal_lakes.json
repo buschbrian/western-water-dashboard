@@ -3,7 +3,7 @@
   "storage_source": "U.S. Geological Survey",
   "storage_source_url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/daily/items",
   "reviewed": "2026-11-11",
-  "selection": "Natural terminal lakes that ADR-112 permits as a separate water type: a closed basin with no dam and no engineered full pool, an owner-operated daily series of surface elevation with its vertical datum, a volume only where the survey publishes one daily on a published elevation-volume relation (an entry without one states why in no_volume, ADR-161), and a reviewed waterbody point that resolves to exactly one NHDPlus HR waterbody at the project's 100-metre tolerance. A lake whose parts the survey measures apart is one entry per measured arm, each keyed by its own station and naming its arm; the entries share the lake's name and are published as one lake with its arms kept apart, never as one combined level or volume (ADR-112, ADR-161). No capacity, percent full, dam point or reservoir-rollup membership is recorded for any lake here, and a restoration or regulatory level is only ever a named target with its authority and date. Walker Lake was the first admission and Great Salt Lake the second; the candidates still held are in the withheld block with their findings.",
+  "selection": "Natural terminal lakes that ADR-112 permits as a separate water type: a closed basin with no dam and no engineered full pool, an owner-operated daily series of surface elevation with its vertical datum, a volume only where the survey publishes one daily on a published elevation-volume relation (an entry without one states why in no_volume, ADR-166), and a reviewed waterbody point that resolves to exactly one NHDPlus HR waterbody at the project's 100-metre tolerance. A lake whose parts the survey measures apart is one entry per measured arm, each keyed by its own station and naming its arm; the entries share the lake's name and are published as one lake with its arms kept apart, never as one combined level or volume (ADR-112, ADR-166). No capacity, percent full, dam point or reservoir-rollup membership is recorded for any lake here, and a restoration or regulatory level is only ever a named target with its authority and date. Walker Lake was the first admission and Great Salt Lake the second; the candidates still held are in the withheld block with their findings.",
   "keyed_by": "usgs_site_no",
   "lakes": {
     "10288500": {
@@ -95,7 +95,7 @@
         "tolerance_metres": 100,
         "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/9",
         "probed": "2026-11-11",
-        "note": "The site point resolves to exactly one NHDPlus HR waterbody within 100 metres, and Esri's USA Detailed Water Bodies names the same lake -- the probe's strongest outcome (ADR-106). Both arms' points resolve to this one polygon: the hydrography maps Great Salt Lake as one water body and does not divide it at the causeway, so the arms are told apart by their stations and never by a polygon (ADR-161)."
+        "note": "The site point resolves to exactly one NHDPlus HR waterbody within 100 metres, and Esri's USA Detailed Water Bodies names the same lake -- the probe's strongest outcome (ADR-106). Both arms' points resolve to this one polygon: the hydrography maps Great Salt Lake as one water body and does not divide it at the causeway, so the arms are told apart by their stations and never by a polygon (ADR-166)."
       },
       "closed_basin": {
         "huc6": "160203",
@@ -119,11 +119,11 @@
           "site_vertical_datum": "NGVD29",
           "site_altitude_ft": 4186.8,
           "source_url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items/USGS-10010000",
-          "note": "The datum is part of the series' own definition: the survey defines parameter 62614 as lake or reservoir elevation above NGVD29 (the code 62615 is the NAVD88 series, and 00062 states no datum). The site record's vertical datum agrees. This is the measuring agency's own series and not a republication, so the agreement ADR-139 asks of a Reclamation level is not the test here; no conversion is applied and the level is published as the survey writes it (ADR-161)."
+          "note": "The datum is part of the series' own definition: the survey defines parameter 62614 as lake or reservoir elevation above NGVD29 (the code 62615 is the NAVD88 series, and 00062 states no datum). The site record's vertical datum agrees. This is the measuring agency's own series and not a republication, so the agreement ADR-139 asks of a Reclamation level is not the test here; no conversion is applied and the level is published as the survey writes it (ADR-166)."
         },
         "note": "Lake elevation, the daily mean, in feet above NGVD29. The survey's daily series begins on 1847-10-18; the published record starts on 2015-01-01, the project's shared start. An elevation is published as a level and never as a percentage of any datum (ADR-112)."
       },
-      "no_volume": "The survey publishes no daily volume for this arm: its time-series metadata for the station lists the lake elevation (62614) and nothing else. A volume computed here from a published table would be this project's figure and not the survey's, and no combined volume for the two arms is published either, so the record carries the level alone (ADR-161).",
+      "no_volume": "The survey publishes no daily volume for this arm: its time-series metadata for the station lists the lake elevation (62614) and nothing else. A volume computed here from a published table would be this project's figure and not the survey's, and no combined volume for the two arms is published either, so the record carries the level alone (ADR-166).",
       "targets": []
     },
     "10010100": {
@@ -154,7 +154,7 @@
         "tolerance_metres": 100,
         "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/9",
         "probed": "2026-11-11",
-        "note": "The site point resolves to exactly one NHDPlus HR waterbody within 100 metres, and Esri's USA Detailed Water Bodies names the same lake -- the probe's strongest outcome (ADR-106). Both arms' points resolve to this one polygon: the hydrography maps Great Salt Lake as one water body and does not divide it at the causeway, so the arms are told apart by their stations and never by a polygon (ADR-161)."
+        "note": "The site point resolves to exactly one NHDPlus HR waterbody within 100 metres, and Esri's USA Detailed Water Bodies names the same lake -- the probe's strongest outcome (ADR-106). Both arms' points resolve to this one polygon: the hydrography maps Great Salt Lake as one water body and does not divide it at the causeway, so the arms are told apart by their stations and never by a polygon (ADR-166)."
       },
       "closed_basin": {
         "huc6": "160203",
@@ -178,16 +178,16 @@
           "site_vertical_datum": "NGVD29",
           "site_altitude_ft": 4189.8,
           "source_url": "https://api.waterdata.usgs.gov/ogcapi/v0/collections/monitoring-locations/items/USGS-10010100",
-          "note": "The datum is part of the series' own definition: the survey defines parameter 62614 as lake or reservoir elevation above NGVD29 (the code 62615 is the NAVD88 series, and 00062 states no datum). The site record's vertical datum agrees. This is the measuring agency's own series and not a republication, so the agreement ADR-139 asks of a Reclamation level is not the test here; no conversion is applied and the level is published as the survey writes it (ADR-161)."
+          "note": "The datum is part of the series' own definition: the survey defines parameter 62614 as lake or reservoir elevation above NGVD29 (the code 62615 is the NAVD88 series, and 00062 states no datum). The site record's vertical datum agrees. This is the measuring agency's own series and not a republication, so the agreement ADR-139 asks of a Reclamation level is not the test here; no conversion is applied and the level is published as the survey writes it (ADR-166)."
         },
         "note": "Lake elevation, the daily mean, in feet above NGVD29. The survey's daily series begins on 1966-04-15; the published record starts on 2015-01-01, the project's shared start. An elevation is published as a level and never as a percentage of any datum (ADR-112)."
       },
-      "no_volume": "The survey publishes no daily volume for this arm: its time-series metadata for the station lists the lake elevation (62614) and nothing else. A volume computed here from a published table would be this project's figure and not the survey's, and no combined volume for the two arms is published either, so the record carries the level alone (ADR-161).",
+      "no_volume": "The survey publishes no daily volume for this arm: its time-series metadata for the station lists the lake elevation (62614) and nothing else. A volume computed here from a published table would be this project's figure and not the survey's, and no combined volume for the two arms is published either, so the record carries the level alone (ADR-166).",
       "targets": []
     }
   },
   "withheld": {
-    "Pyramid Lake": "ADR-112's second candidate. The survey publishes a strong elevation series and no reviewed modern volume relation in this project. ADR-161 made the volume block optional, so the missing volume no longer holds it; what holds it now is that its station identity, vertical datum, waterbody point and closed-basin assignment have not been reviewed. Held until those reviews are recorded here.",
+    "Pyramid Lake": "ADR-112's second candidate. The survey publishes a strong elevation series and no reviewed modern volume relation in this project. ADR-166 made the volume block optional, so the missing volume no longer holds it; what holds it now is that its station identity, vertical datum, waterbody point and closed-basin assignment have not been reviewed. Held until those reviews are recorded here.",
     "Mono Lake": "Its regulatory restoration level is a target set by the California State Water Resources Control Board and not a physical capacity (ADR-112). A target may be published only as a named target with its authority and date; held until the measurement series and the target's citation are reviewed together."
   }
 }

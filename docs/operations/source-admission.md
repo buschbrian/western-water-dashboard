@@ -220,7 +220,7 @@ with `huc6`, `huc8`, the evidence and a review date; an `elevation` block with
 the survey's parameter, statistic, unit and vertical datum; either a `volume`
 block with the same and the published elevation-volume relation named beside
 it, or a `no_volume` reason when the survey publishes no daily volume
-(ADR-161); and a `targets` list, empty when there are none, where each entry is a named
+(ADR-166); and a `targets` list, empty when there are none, where each entry is a named
 elevation with its authority, source and date. The probe is
 `tools/probe_nhd_waterbody.query_layer` against the point at 100 metres; the
 assignment is `huc.assign_huc` against the committed geometry, made from the
@@ -229,7 +229,7 @@ the record to copy for a lake with one station. A lake the survey measures in
 arms is one entry per arm, each keyed by its own station with an `arm` block
 (name, evidence, HTTPS source, check date) and the full evidence set, sharing
 the lake's name, state and targets; Great Salt Lake is the record to copy
-(ADR-161). The `elevation` block may carry a `datum_review` that quotes the
+(ADR-166). The `elevation` block may carry a `datum_review` that quotes the
 parameter's own datum definition beside the site record's. The candidates ADR-112 named and kept out are in the same
 file's `withheld` block with their findings. As with a reservoir, the refresh
 lands in the same change: `pipeline.lakes.validate_payload` fails the run if a

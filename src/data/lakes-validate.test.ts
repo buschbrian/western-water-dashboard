@@ -53,7 +53,7 @@ export function payload(overrides: Record<string, unknown> = {}) {
   };
 }
 
-/** One arm: a station's own fields, its level and no volume (ADR-161). */
+/** One arm: a station's own fields, its level and no volume (ADR-166). */
 export function arm(name: string, station: string, overrides: Record<string, unknown> = {}) {
   return {
     arm: name, source_station_id: station, lat: 40.73, lon: -112.21,

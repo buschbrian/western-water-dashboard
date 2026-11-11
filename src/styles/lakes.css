@@ -15,7 +15,7 @@
 
 .lakes-main .trend-chart-host { margin-block-start: 0.5rem; }
 
-/* A lake measured in arms (ADR-161): each arm is its own section under the
+/* A lake measured in arms (ADR-166): each arm is its own section under the
  * lake's name, so the two levels are read apart and never as one. */
 .lake-arm {
   margin-block-start: 1.5rem;

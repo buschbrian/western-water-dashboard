@@ -837,7 +837,7 @@ export const REFERENCE_GROUPS: readonly ApiFieldGroup[] = [
 ];
 
 /*
- * The terminal-lake payload (ADR-118, ADR-161). Two measurement blocks with
+ * The terminal-lake payload (ADR-118, ADR-166). Two measurement blocks with
  * the same fields, so the block is documented once and named twice.
  */
 const LAKE_MEASUREMENT = (unit: string): readonly ApiField[] => [
@@ -847,7 +847,7 @@ const LAKE_MEASUREMENT = (unit: string): readonly ApiField[] => [
 ];
 
 /* What one station publishes: on a lake with one station these are the
- * lake's own fields, and on a lake with arms they are each arm's (ADR-161). */
+ * lake's own fields, and on a lake with arms they are each arm's (ADR-166). */
 function lakeGaugeFields(onArm: boolean): readonly ApiField[] {
   const absent = onArm ? "" : " Absent on a lake with arms.";
   return [

@@ -23,7 +23,7 @@ export type LakeMeasurementView = MeasurementView;
 
 /**
  * One station's part of the page: the whole lake when it has one station, or
- * one arm of a lake the survey measures apart (ADR-161).
+ * one arm of a lake the survey measures apart (ADR-166).
  */
 export interface LakeGaugeView {
   /** The arm's name, or null for a lake measured at one station. */

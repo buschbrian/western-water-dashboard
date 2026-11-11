@@ -813,7 +813,7 @@ if (process.argv.includes("--embeds")) {
   process.exit(failures.length ? 1 : 0);
 }
 
-/* `--great-salt-lake`: the arm-aware lake (ADR-161) and the page menu entry
+/* `--great-salt-lake`: the arm-aware lake (ADR-166) and the page menu entry
  * it brought, alone, for a quick run after a lake or navigation change. */
 if (process.argv.includes("--great-salt-lake")) {
   await checkGreatSaltLake();
@@ -6544,7 +6544,7 @@ for (const failure of [
  * One page for every published lake, so the contract is the readiness
  * signal's: what the payload published is what the page drew, aria-busy has
  * cleared, the page names each lake, draws one level card per station and a
- * volume card only where a volume is published (ADR-161), says no percent
+ * volume card only where a volume is published (ADR-166), says no percent
  * full anywhere, and does not scroll sideways. The vocabulary check catches
  * the datum's initials or the provider's on their way to a reader. The
  * payload is the oracle for every count; no number is written down here.
@@ -6625,7 +6625,7 @@ for (const viewport of VIEWPORTS) {
 console.log(`\n=== Lakes page: ${VIEWPORTS.length} widths`);
 
 /*
- * Great Salt Lake on the lakes page (ADR-161), and the page's place in the
+ * Great Salt Lake on the lakes page (ADR-166), and the page's place in the
  * navigation. Run alone with `--great-salt-lake`.
  *
  * The arms are the contract: one section per arm the payload publishes, in

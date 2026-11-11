@@ -173,7 +173,7 @@ volume's twelve-month history carries the period-of-record monthly normal
 climate normal is published for a lake until the normals builder learns the
 type. The payload is `lakes.json`, shown on `lakes.html` (ADR-119).
 
-Great Salt Lake is the second lake (ADR-161), published as its two arms: the
+Great Salt Lake is the second lake (ADR-166), published as its two arms: the
 south arm at USGS 10010000 (Saltair Boat Harbor) and the north arm at USGS
 10010100 (near Saline), which the survey measures apart because the railroad
 causeway divides the lake. Each arm publishes the survey's daily mean lake

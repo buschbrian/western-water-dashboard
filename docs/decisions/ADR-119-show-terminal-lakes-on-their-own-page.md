@@ -2,7 +2,7 @@
 
 - Status: Accepted; the navigation clause (reached from the methods and data
   pages, not from the bar) is superseded by
-  [ADR-161](ADR-161-publish-great-salt-lake-with-its-arms-kept-apart.md)
+  [ADR-166](ADR-166-publish-great-salt-lake-with-its-arms-kept-apart.md)
 - Date: 2026-09-06
 - Extends: ADR-118 and ADR-045
 - Qualifies: ADR-078's glossary statement, already superseded by ADR-112

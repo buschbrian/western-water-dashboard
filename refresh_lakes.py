@@ -2,7 +2,7 @@
 
 A separate orchestrator for a separate water type. It reads the reviewed
 roster in `admitted_terminal_lakes.json`, fetches each station's daily surface
-elevation, and volume where the roster has one (ADR-161), from the U.S.
+elevation, and volume where the roster has one (ADR-166), from the U.S.
 Geological Survey's OGC daily collection, groups a measured-apart lake's
 stations into one record with its arms kept apart, and writes a record with no
 capacity, no percent full and no dam point. The

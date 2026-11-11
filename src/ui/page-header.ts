@@ -66,7 +66,7 @@ const PAGE_SUBJECTS: Record<PageId, string> = {
    * replaces the tab title with the reservoir's name once it resolves. */
   reservoir: "Reservoir Details",
   /* The natural terminal lakes (ADR-119). In the bar and the page menu
-   * since a second lake was published (ADR-161). */
+   * since a second lake was published (ADR-166). */
   lakes: "Terminal Lakes",
   /* Daily river flow (ADR-136). In the bar since ADR-148. */
   rivers: "River Flow"
@@ -132,7 +132,7 @@ const PAGES: readonly PageLink[] = [
     label: "Open the daily river flow", compact: true
   },
   {
-    /* ADR-161: in the bar and the page menu once a second lake was
+    /* ADR-166: in the bar and the page menu once a second lake was
      * published. Like river flow, its icon alone until the bar is wide
      * enough for its text. */
     id: "lakes", href: "./lakes.html", icon: "absolute-elevation",

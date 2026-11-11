@@ -260,7 +260,7 @@ worth most if it lands before February.
 ### 14. Great Salt Lake
 
 Implemented locally on 2026-11-11 in
-[ADR-161](decisions/ADR-161-publish-great-salt-lake-with-its-arms-kept-apart.md):
+[ADR-166](decisions/ADR-166-publish-great-salt-lake-with-its-arms-kept-apart.md):
 the south arm (10010000) and north arm (10010100) at NGVD29, no volume because
 the survey publishes none, and the lakes page in the bar and the page menu.
 Pyramid Lake stays withheld for its own station and datum review.

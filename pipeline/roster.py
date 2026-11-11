@@ -537,7 +537,7 @@ def load_admitted_terminal_lakes(
     point, a reviewed closed-basin assignment, and for each measurement the
     survey's parameter, statistic and unit, with the elevation's datum and the
     volume's published relation named beside them. The volume is optional
-    (ADR-161); an entry without one says why in `no_volume`.
+    (ADR-166); an entry without one says why in `no_volume`.
 
     A lake the survey measures in separate arms is one entry per arm, keyed by
     the arm's own station, each naming its `arm` with the evidence for it. The
@@ -645,7 +645,7 @@ def load_admitted_terminal_lakes(
 
 
 def _check_arms(rows: dict[str, dict]) -> None:
-    """Entries that share a name are the arms of one lake (ADR-161)."""
+    """Entries that share a name are the arms of one lake (ADR-166)."""
     by_name: dict[str, list[dict]] = {}
     for row in rows.values():
         by_name.setdefault(row["name"], []).append(row)

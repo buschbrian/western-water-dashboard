@@ -72,7 +72,7 @@ For a focused terminal-lake check, use
 `npm run verify:browser -- --great-salt-lake`: it rebuilds and runs only the
 Great Salt Lake arm checks at every width (with a full-page picture of each
 in `screenshots/`) and the lakes entry in the storage map's bar at 1,024,
-1,280 and 360 pixels (ADR-161).
+1,280 and 360 pixels (ADR-166).
 
 For a focused story-embed check, use `npm run verify:browser -- --embeds`
 with the same browser setting. It rebuilds and runs the existing iframe cases

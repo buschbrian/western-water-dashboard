@@ -81,7 +81,7 @@ fetched only when a reader turns the precipitation map to soil moisture.
 
 `lakes.json` was measured 2026-09-06 on its first generated file, one lake
 (ADR-118), and again on 2026-11-11 with Great Salt Lake's two arms added
-(ADR-161): 11,242 bytes raw, 1,935 gzipped (gzip -6), from 1,516. It is
+(ADR-166): 11,242 bytes raw, 1,935 gzipped (gzip -6), from 1,516. It is
 fetched only by the terminal-lakes page (ADR-119).
 
 `elevation_history.json` was measured 2026-10-27 on its first generated copy

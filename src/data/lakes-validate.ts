@@ -15,7 +15,7 @@ import type {
   MonthlyRecord, TerminalLake, WithdrawnLake
 } from "../types";
 
-/** The structure version this page reads: optional volume and arms (ADR-161). */
+/** The structure version this page reads: optional volume and arms (ADR-166). */
 export const LAKE_SCHEMA_VERSION = 2;
 
 function isObject(value: unknown): value is Record<string, unknown> {
