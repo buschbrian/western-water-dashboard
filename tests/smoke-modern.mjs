@@ -6767,10 +6767,14 @@ async function checkGreatSaltLake() {
     const label = `Lakes in the page menu (storage map, ${width}px)`;
     const context = await newPageContext(browser, { width, height: 800 });
     const tab = await context.newPage();
+    /* The bar's icon is a committed asset; a missing one is a 404 and a
+     * console error here, not a blank glyph. */
+    const errors = [];
+    watchErrors(tab, errors);
     try {
       await tab.goto(URL, { waitUntil: "domcontentloaded", timeout: 90000 });
       await tab.waitForSelector("#menu-lakes-link", { state: "attached", timeout: 90000 });
-      await tab.waitForTimeout(500);
+      await tab.waitForTimeout(1500);
       const bar = await tab.evaluate(() => {
         const box = (id) => {
           const element = document.getElementById(id);
@@ -6805,6 +6809,9 @@ async function checkGreatSaltLake() {
       }
     } catch (error) {
       failures.push(`${label}: ${error.message}`);
+    }
+    for (const message of errors.filter((text) => /icon|assets\//i.test(text))) {
+      failures.push(`${label}: ${message}`);
     }
     await context.close();
   }

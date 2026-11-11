@@ -402,9 +402,9 @@ export function methodsMarkup(search: string): string {
         <dd>A natural lake at the end of a closed basin, with no outlet and no dam.
           Water leaves it only by evaporation. This site publishes its surface level,
           and its volume where the U.S. Geological Survey publishes one each day, on
-          the <a href="./lakes.html">terminal lakes page</a>. When the survey measures
-          the arms of a lake separately, as at Great Salt Lake, each arm is shown with
-          its own level and the arms are not combined. It
+          the <a href="./lakes.html">terminal lakes page</a>. The survey measures
+          the arms of some lakes separately, such as Great Salt Lake. This site shows
+          each arm with its own level and does not combine the arms. It
           never publishes a percent full for a lake, because no full level is defined
           for one. A terminal lake is not counted in any reservoir total. A
           restoration or regulatory level is shown as a target, not as a full

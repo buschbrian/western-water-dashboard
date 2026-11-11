@@ -107,6 +107,8 @@ describe("SDK architecture boundaries", () => {
 
   it("ships the small local Calcite asset contract used by the shell", async () => {
     const icons = [
+      /* The lakes page's bar and menu entry (ADR-161). */
+      "absoluteElevation",
       "arrowRightLeft", "basemap", "brightness", "chevronDown", "chevronsRight", "cursorSelection",
       /* The shell panel's resize handle. It arrived with `resizable` on the
        * table row, and its absence was a 404 and a console error on every
