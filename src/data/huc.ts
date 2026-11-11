@@ -21,7 +21,8 @@
  *      three reservoirs would show a cliff and read as a drought.
  */
 
-import type { MonthlyRecord, NullableNumber } from "../types";
+import type { MonthlyRecord, NullableNumber, OperatingCharacter } from "../types";
+import { isSeasonalStorage } from "./area-line";
 
 /** Longitude, latitude -- GeoJSON order, not lat/lon. */
 /**
@@ -85,6 +86,7 @@ export interface HucMember {
   capacity_af?: NullableNumber;
   record_max_af: number;
   monthly?: readonly MonthlyRecord[];
+  operating_character?: OperatingCharacter | null;
 }
 
 export interface HucRollup {
@@ -205,7 +207,8 @@ function groupByHuc(members: readonly HucMember[]): Map<string, HucMember[]> {
  * combined capacity.
  */
 export function rollupByHuc(members: readonly HucMember[]): HucRollup[] {
-  return [...groupByHuc(members)].map(([huc6, group]) => {
+  /* Seasonal storage only, like every area total (ADR-156). */
+  return [...groupByHuc(members.filter(isSeasonalStorage))].map(([huc6, group]) => {
     const storageAf = group.reduce((total, member) =>
       total + member.current_storage_af, 0);
     const capacityAf = group.reduce((total, member) =>
@@ -232,7 +235,7 @@ export function monthlyRollupByHuc(
   members: readonly HucMember[]
 ): Map<string, HucMonthlyPoint[]> {
   const out = new Map<string, HucMonthlyPoint[]>();
-  for (const [huc6, group] of groupByHuc(members)) {
+  for (const [huc6, group] of groupByHuc(members.filter(isSeasonalStorage))) {
     const months = [...new Set(group.flatMap((member) =>
       (member.monthly ?? []).map((record) => record.month)))].sort();
     out.set(huc6, months.map((month) => {

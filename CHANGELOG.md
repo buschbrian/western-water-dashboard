@@ -13,6 +13,26 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
+- **Seasonal storage read apart from steady pools and flood-control basins**
+  (ADR-156, carrying out ADR-114's deferred arithmetic). A roster entry can
+  now carry a reviewed `operating_character` (`restricted`, `run_of_river` or
+  `flood_space`) with its evidence and source, and the loaders refuse one
+  without them. It reaches the reservoir record in `reservoirs.json` as an
+  optional `operating_character` object, absent for ordinary storage. Every
+  area total is split: seasonal storage (ordinary and `restricted`) carries
+  the percent full and the comparison with normal, `run_of_river` pools are
+  stated as volume held at a steady level, and `flood_space` basins as water
+  held with their empty space. The storage map, the storage charts and the
+  share cards show the split only where a place holds such waters, and a
+  reservoir's details give ADR-114's sentence. A reviewed `flood_space`
+  candidate is no longer referred for never being seen a third full.
+  **No reservoir carries a character yet**, so no published figure changes;
+  characters are ruled one drainage region at a time. `METHOD_VERSION` is not
+  moved by this release: it names the seasonal estimator, and no normal is
+  invalidated while every area total is unchanged. It moves when the first
+  region's characters land and area figures change, as ADR-156's
+  consequences describe.
+
 - **Fairmont Reservoir** from the California Department of Water Resources,
   on a reviewed match to Fairmont No. 2 (493 acre-feet). The automatic match
   had taken a larger dam 2.8 km away. LADWP plans to reline the reservoir

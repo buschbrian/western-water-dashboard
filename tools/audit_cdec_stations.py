@@ -68,6 +68,7 @@ from admission import (  # noqa: E402
 )
 from huc import assign_huc, load_units  # noqa: E402
 from pipeline.providers import excluded_reading  # noqa: E402
+from pipeline.roster import reviewed_operating_characters  # noqa: E402
 from tools.audit_candidate_capacity import (  # noqa: E402
     dam_states, fetch_dams, find_dam_layer,
 )
@@ -816,7 +817,10 @@ def review(candidate: dict, decision, service_capacity_af: float | None) -> dict
             highest_readings=candidate.get("highest_readings"),
             service_capacity_af=service_capacity_af,
             provider_basis=CDEC_CAPACITY_BASIS,
-            highest_confirmed=bool(check and check["confirmed"]))]
+            highest_confirmed=bool(check and check["confirmed"]),
+            # A character a person has already ruled on the roster (ADR-156).
+            operating_character=(reviewed_operating_characters().get(
+                ("cdec", str(candidate["station"]))) or {}).get("character"))]
     evidence["publishable"] = evidence["admitted"] and not evidence["discrepancies"]
     return evidence
 

@@ -133,12 +133,39 @@ level all year, `flood_space` where it keeps room empty to catch floods.
 Ordinary storage carries no value, and the roster's own `reviewed` date is what
 makes that absence mean reviewed rather than unexamined.
 
-The character labels and does not calculate. Every published figure is what it
-was, and whether a steady-level pool belongs in a drainage area's combined full
-level is a separate decision with its own measurement. It matters because two
-published areas are almost entirely such pools -- Lower Snake at 97.6% of its
-combined full level and Middle Columbia at 94.9% -- so a combined percentage
-for either is close to a constant and reads as a drought signal.
+**A character is a reviewed ruling, written on the roster entry.** Every
+admitted roster's loader refuses one that does not carry the value, the date
+it was reviewed, an HTTPS `source_url` and at least one piece of evidence
+(`what`, `value`, `source`); a `restricted` one also names its `authority`
+and the order's `effective_from`, because the published sentence states that
+date (`pipeline.roster.validate_operating_character`). `flood_space` means
+detention only: a primary purpose of flood risk reduction and no supply pool
+refilled each year (ADR-156). The series is evidence toward a ruling, never
+its source. Rulings are made one drainage region at a time; the census in
+`data/reviews/operating-character-census.json` is a list of proposals and is
+not applied. The base Utah rosters held in `pipeline/constants.py` have no
+entry to carry a character.
+
+**Each reservoir keeps its own figures; area totals split in three**
+(ADR-156). `src/data/area-line.ts` assigns each reservoir to one line, and
+every area total uses it -- `statewideRollup` (the storage map, the storage
+charts, the filtered subtotal, the share cards, the upstream totals),
+`monthlyRollup`, `storageByArea` (the drought page and the map's drainage
+figures), `weeklyStorage` and `rollupByHuc`:
+
+- **Seasonal storage** -- ordinary and `restricted` waters -- carries the
+  headline percent full, the comparison with normal, the acre-foot changes,
+  the reading dates and the full-level kinds.
+- **Steady pools** -- `run_of_river` -- are stated as stored volume only.
+- **Flood-control basins** -- `flood_space` -- are stated as water held and
+  the empty space beside it, floored at zero for each basin, never as a
+  percent.
+
+Counts of reservoirs by their own figure (the class spread, late readings,
+reservoirs below half) still count every reservoir. The split lines are shown
+only where a place holds such waters. While no reservoir carries a character,
+seasonal storage is every reservoir and every published figure is what it was;
+`src/data/area-split.test.ts` holds that on the committed payload.
 
 ## Elevation datum
 

@@ -292,6 +292,17 @@ arcgis-scale-bar {
 .summary-subtotal[hidden] { display: none; }
 .summary-subtotal span { display: block; color: var(--app-muted); font-size: .75rem; }
 .summary-subtotal p { margin: .25rem 0 0; font-size: .875rem; line-height: 1.4; }
+/* Seasonal storage apart from steady pools and flood-control basins (ADR-156). */
+.summary-split {
+  grid-column: 1 / -1;
+  min-width: 0;
+  margin: 0;
+  padding: .75rem .5rem;
+  border-block-start: 1px solid var(--app-border);
+  font-size: .875rem;
+  line-height: 1.4;
+}
+.summary-split[hidden] { display: none; }
 
 /* The phone's figures over the map. Hidden on a wide screen, where the
  * summary panel is open beside the map. Top centre, between the SDK's two

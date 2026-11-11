@@ -19,6 +19,7 @@
  * being a port.
  */
 
+import { isSeasonalStorage } from "./area-line";
 import { monthObservationDate, sizeBasisOn } from "./capacity";
 import type { NullableNumber, Reservoir } from "../types";
 
@@ -91,8 +92,11 @@ export interface MonthlyRollup {
  * a drought dashboard must not be wrong in by accident.
  */
 export function monthlyRollup(
-  reservoirs: readonly Reservoir[], month: MonthKey
+  allReservoirs: readonly Reservoir[], month: MonthKey
 ): MonthlyRollup {
+  /* A past month's area figure is seasonal storage too, like today's
+   * (ADR-156). With no reviewed character this is every reservoir. */
+  const reservoirs = allReservoirs.filter(isSeasonalStorage);
   let storageAf = 0;
   let capacityAf = 0;
   let reporting = 0;

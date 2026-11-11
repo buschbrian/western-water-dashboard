@@ -237,6 +237,12 @@ export const RESERVOIR_GROUPS: readonly ApiFieldGroup[] = [
     f("physical_capacity_af", "acre-feet",
       "What the reservoir can hold when a safety order allows less. Present "
       + "with the allowed level, and never a replacement for it.", true),
+    f("operating_character", "object",
+      "How the reservoir is run, where a person reviewed it as different from "
+      + "ordinary storage. Absent for ordinary storage. Area totals put a "
+      + "run_of_river reservoir in the line for water held at a steady level "
+      + "and a flood_space reservoir in the line for flood-control basins; "
+      + "the reservoir's own figures do not change.", true),
     f("seasonal_percentile", "percent",
       "Rank against one value from each earlier year near the same date."),
     f("seasonal_rank", "position",
@@ -385,6 +391,16 @@ export const RESERVOIR_GROUPS: readonly ApiFieldGroup[] = [
       f("source_term", "text", "The authority's own name for the level.", true),
       f("authority", "text", "Who set the level."),
       f("url", "web address", "Where the level is published.")
+    ]},
+  { id: "reservoir-operating-character", title: "How the reservoir is run",
+    path: "reservoirs[].operating_character", fields: [
+      f("character", "identifier",
+        "restricted where a dam safety order holds the reservoir below its full "
+        + "level, run_of_river where the operator keeps it at a steady level all "
+        + "year, flood_space where it keeps space empty to catch floods."),
+      f("source_url", "web address", "The source the reviewed ruling names."),
+      f("authority", "text", "Who ordered the lower level. restricted only.", true),
+      f("effective_from", "date", "When the order took effect. restricted only.", true)
     ]},
   { id: "reservoir-capacity-version", title: "Full-level version",
     path: "reservoirs[].capacity_history[]", fields: [
