@@ -130,8 +130,9 @@ describe("one reservoir", () => {
   it("ends with the credit line, naming the provider first", () => {
     for (const reservoir of payload.reservoirs) {
       const lines = figures(reservoir);
+      const provider = providerName(reservoir).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
       expect(lines[lines.length - 1]).toMatch(
-        new RegExp(`^Source: ${providerName(reservoir).replace(/[.]/g, "\\.")}`
+        new RegExp(`^Source: ${provider}`
           + `( and Bureau of Reclamation)? data, shown on the Western Water Dashboard `));
       expect(lines[lines.length - 1]).toContain(SITE_ADDRESS);
     }
