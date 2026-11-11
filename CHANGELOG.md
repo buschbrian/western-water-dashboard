@@ -314,6 +314,22 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   provider issue (#123, #124). Corps readings can now carry reviewed
   exclusions too, matched on the service's own UTC stamp and raw value.
 
+- **Twelve more readings that meet a mechanical-error test are excluded in one
+  reviewed batch** (ADR-158, ADR-152, ADR-116). A reading is in the batch only
+  when it is a zero, a power-of-ten shift or a dropped digit between its
+  neighbours, the provider still serves it unchanged, and it is not part of a
+  run of three or more readings at one value. `tools/batch_mechanical_exclusions.py`
+  re-checks each reading and writes the records. The NRCS adapter can now carry
+  reviewed exclusions too. The record figures change for nine reservoirs:
+  Hetch Hetchy (record low 342 to 31,733 acre-feet), El Capitan Lake (0 to
+  10,534), Huntington Lake (record high 277,789 to 88,622), Lake Pillsbury (0
+  to 11,097), Lower Bear (0 to 5,774), Homestake Reservoir (0 to 5,295), Pit 7
+  Reservoir (3,111 to 12,210), Pit Six Reservoir (3,257 to 5,247) and Lyons
+  Reservoir (0 to 4). Lake Natoma and Lake Fordyce keep a record low of 0
+  because other readings at 0 remain, a run at Natoma and a later zero at
+  Fordyce, and each needs its own review. Seven candidates stay individual
+  because each is part of a run.
+
 - The first-visit place question shows every state and region on a wide
   screen. Its height limit hid the last row of regions, Pacific Northwest and
   California, under a scroll.
