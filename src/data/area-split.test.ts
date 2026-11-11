@@ -14,7 +14,8 @@ import { monthKeys, monthlyRollup } from "./months";
 import { drainageCodeAtLevel, rollupByHuc } from "./huc";
 import { storageByArea } from "../drought-model";
 import { weeklyStorage } from "../weekly-model";
-import { reservoirInState } from "../overview-model";
+import { reservoirInState, watershedRecords } from "../overview-model";
+import { describeStorage } from "../viz/weekly-summary";
 import type { OperatingCharacter, Reservoir } from "../types";
 
 const payload = readPayload();
@@ -191,9 +192,38 @@ describe("an area total in three lines", () => {
     expect(rollupByHuc(characterised)).toEqual(rollupByHuc(seasonal));
     const week = weeklyStorage(characterised);
     const seasonalWeek = weeklyStorage(seasonal);
-    expect(week.netAf).toBe(seasonalWeek.netAf);
     expect(week.percentNow).toBe(seasonalWeek.percentNow);
-    /* Each reservoir's own move still counts. */
+    expect(week.seasonalOnly).toBe(true);
+    /* The water is real: the net change and each reservoir's own move still
+     * count every measured reservoir. */
+    expect(week.netAf).toBe(weeklyStorage(rows).netAf);
     expect(week.measured).toBe(weeklyStorage(rows).measured);
+  });
+});
+
+describe("the surfaces that print an area total", () => {
+  const base = rows[0] as Reservoir;
+  const pool = (huc6_name: string, storage: number): Reservoir => ({
+    ...base, huc6_name, current_storage_af: storage,
+    operating_character: ruled("run_of_river")
+  });
+
+  it("leaves a drainage area of steady pools off the percent chart", () => {
+    const records = watershedRecords([pool("Lower Snake", 900), pool("Lower Snake", 800),
+      { ...base, huc6_name: "Sevier" }]);
+    expect(records.map((record) => record.label)).toEqual(["Sevier"]);
+  });
+
+  it("counts only seasonal storage under a drainage area's chart figure", () => {
+    const [record] = watershedRecords([pool("Mixed", 900), { ...base, huc6_name: "Mixed" }]);
+    expect(record?.detail).toMatchObject({ reservoirCount: 1 });
+  });
+
+  it("says the week's combined percent is seasonal storage where it is", () => {
+    const week = weeklyStorage(withFixtureCharacters());
+    const lines = describeStorage(week);
+    expect(lines.some((line) => line.startsWith("Their seasonal storage moved from"))).toBe(true);
+    expect(describeStorage(weeklyStorage(rows))
+      .some((line) => line.includes("seasonal storage"))).toBe(false);
   });
 });

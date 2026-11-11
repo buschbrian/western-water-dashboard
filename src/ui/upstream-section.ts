@@ -4,6 +4,7 @@
  * (ADR-128), so the two cannot word or total it differently.
  */
 import { reservoirLabel } from "../state/selection";
+import { describeAreaSplit } from "../state/storage-summary";
 import type { Reservoir, UpstreamTrace } from "../types";
 import { GROUP_AFTER, upstreamSummary, type UpstreamGroup, type UpstreamRow } from "../upstream-model";
 import { storageColor } from "../viz/classes";
@@ -130,8 +131,11 @@ function groupHead(group: UpstreamGroup): HTMLElement[] {
   count.className = "upstream-group-count";
   count.textContent = ` · ${group.rows.length} reservoir${group.rows.length === 1 ? "" : "s"}`;
   name.append(count);
+  /* Where the area also holds steady pools or flood-control basins, the
+   * figures are its seasonal storage and say so (ADR-156). */
+  const seasonal = group.rollup.seasonalCount < group.rollup.count ? "Seasonal storage " : "";
   return [name, fillBar(group.rollup.percentFull), note(
-    `${group.rollup.percentFull === null ? "—" : `${Math.round(group.rollup.percentFull)}%`} · ` +
+    `${seasonal}${group.rollup.percentFull === null ? "—" : `${Math.round(group.rollup.percentFull)}%`} · ` +
     `${formatAcreFeet(group.rollup.storageAf)} acre-feet`, "upstream-figure")];
 }
 
@@ -147,9 +151,17 @@ export function upstreamStorage(
   const summary = upstreamSummary(stations, roster, (reservoir) => reservoirLabel(reservoir, roster));
   if (summary.rows.length === 0) return [];
   const total = summary.rollup;
+  /* Seasonal storage apart from steady pools and flood-control basins
+   * (ADR-156): the lead names it, and the other two lines follow it. */
+  const split = describeAreaSplit("They", total);
+  const lead = split === null
+    ? `Together they hold ${formatAcreFeet(total.storageAf)} acre-feet` +
+      (total.percentFull === null ? "." : `, ${Math.round(total.percentFull)}% of what they can hold.`)
+    : total.seasonalCount === 0 ? "They hold no seasonal storage."
+      : `Their seasonal storage is ${formatAcreFeet(total.storageAf)} acre-feet` +
+        (total.percentFull === null ? "." : `, ${Math.round(total.percentFull)}% of what it can hold.`);
   const out: HTMLElement[] = [note(
-    `Together they hold ${formatAcreFeet(total.storageAf)} acre-feet` +
-    (total.percentFull === null ? "." : `, ${Math.round(total.percentFull)}% of what they can hold.`) +
+    lead + (split === null ? "" : ` ${split.slice(1).join(" ")}`) +
     " Their readings are not all from the same day." +
     (summary.notPublished > 0
       ? ` ${summary.notPublished} more ${summary.notPublished === 1 ? "is" : "are"} above it but not published today.`

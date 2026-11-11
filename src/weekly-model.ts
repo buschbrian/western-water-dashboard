@@ -81,6 +81,9 @@ export interface WeeklyStorage {
    * Null when none of them publishes a full level to divide by. */
   percentNow: number | null;
   percentBefore: number | null;
+  /** True when steady pools or flood-control basins were measured, so the
+   * two percentages are seasonal storage only (ADR-156). */
+  seasonalOnly?: boolean;
   /** The largest rise and fall by volume, which is what moves a region. */
   biggestRise: WeeklyMove | null;
   biggestFall: WeeklyMove | null;
@@ -119,13 +122,16 @@ export function weeklyStorage(reservoirs: readonly WeeklySource[]): WeeklyStorag
   let biggestRise: WeeklyMove | null = null;
   let biggestFall: WeeklyMove | null = null;
   let largestShareMove: WeeklyMove | null = null;
+  let seasonalOnly = false;
 
   for (const reservoir of measured) {
     const change = reservoir.change_7d_af as number;
-    /* The combined figures are seasonal storage, like every area total
-     * (ADR-156); each reservoir's own move still counts below. */
+    /* The combined percent is seasonal storage, like every area total
+     * (ADR-156). The net change is every measured acre-foot: the water is
+     * real, and each reservoir's own move still counts below. */
     const seasonal = isSeasonalStorage(reservoir);
-    if (seasonal) netAf += change;
+    if (!seasonal) seasonalOnly = true;
+    netAf += change;
     if (change > 0) rose += 1;
     else if (change < 0) fell += 1;
     else steady += 1;
@@ -168,6 +174,7 @@ export function weeklyStorage(reservoirs: readonly WeeklySource[]): WeeklyStorag
     steady,
     percentNow: capacity > 0 ? (storageNow / capacity) * 100 : null,
     percentBefore: capacity > 0 ? (storageBefore / capacity) * 100 : null,
+    seasonalOnly,
     biggestRise,
     biggestFall,
     largestShareMove

@@ -77,6 +77,14 @@ describe("public API field documentation", () => {
     expectFields(RESERVOIR_GROUPS, "reservoir-record", merged(data.reservoirs));
     expectFields(RESERVOIR_GROUPS, "reservoir-month",
       merged(data.reservoirs.flatMap((record: Record<string, any>) => record.monthly)));
+    /* A reviewed operating character is on exceptions only (ADR-114), and on
+     * none until the first region is ruled; checked when any record has one. */
+    const characters = data.reservoirs
+      .map((record: Record<string, any>) => record.operating_character)
+      .filter((block: unknown) => block != null) as Record<string, any>[];
+    if (characters.length > 0) {
+      expectFields(RESERVOIR_GROUPS, "reservoir-operating-character", merged(characters));
+    }
     /* A reviewed level is on a few reservoirs only (ADR-135); checked when any
      * record carries one. */
     const levels = data.reservoirs

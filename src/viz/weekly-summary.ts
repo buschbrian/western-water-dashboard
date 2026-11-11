@@ -72,8 +72,9 @@ export function describeStorage(storage: WeeklyStorage): string[] {
   if (storage.percentNow !== null && storage.percentBefore !== null) {
     const points = storage.percentNow - storage.percentBefore;
     lines.push(
-      `Together they moved from ${formatPercent(storage.percentBefore)} full to ` +
-      `${formatPercent(storage.percentNow)}, ${signedPoints(points)}.`);
+      `${storage.seasonalOnly ? "Their seasonal storage" : "Together they"} moved from `
+      + `${formatPercent(storage.percentBefore)} full to `
+      + `${formatPercent(storage.percentNow)}, ${signedPoints(points)}.`);
   }
 
   lines.push(

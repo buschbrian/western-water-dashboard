@@ -5,6 +5,7 @@ import type { OpeningRosters, OpeningSelection } from "./data/opening-scope";
 import {
   asScoped,
   isLate,
+  isSeasonalStorage,
   rollupOfScoped,
   scopeReservoirs,
   type ScopedReservoirs,
@@ -1085,7 +1086,11 @@ export function watershedRecords(reservoirs: readonly Reservoir[]): OverviewChar
     const label = reservoir.huc6_name ?? "Not assigned";
     groups.set(label, [...(groups.get(label) ?? []), reservoir]);
   }
-  return [...groups].map(([label, group], index) => {
+  /* The chart is each area's seasonal storage (ADR-156). An area holding
+   * only steady pools or flood-control basins has no percent to chart; it
+   * is left out rather than drawn as empty. */
+  return [...groups].filter(([, group]) => group.some(isSeasonalStorage))
+    .map(([label, group], index) => {
     /* Every reservoir in this group shares the group's drainage area, so
      * they all carry the same `connected_states`; the first that answers is
      * the area's own list. Read from the group rather than published again,
@@ -1110,7 +1115,7 @@ export function watershedRecords(reservoirs: readonly Reservoir[]): OverviewChar
       /* A rollup has no rank, county or movement of its own; what it can
        * say is how many reservoirs its numbers answer for. */
       detail: { fullLevel: `${formatAcreFeet(rollup.capacityAf)} acre-feet`,
-                reservoirCount: group.length }
+                reservoirCount: rollup.seasonalCount }
     };
   }).sort((a, b) => b.capacityAf - a.capacityAf)
     .map((record, index) => ({ ...record, id: index + 1 }));

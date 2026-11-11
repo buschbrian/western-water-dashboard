@@ -129,14 +129,18 @@ def test_a_character_reaches_its_own_record_and_leaves_with_the_roster():
     assert "operating_character" not in records[2]
 
 
-def test_the_published_records_carry_exactly_the_reviewed_characters():
-    """The payload and the rosters agree, whatever the rosters hold."""
+def test_each_published_record_carries_its_roster_character_and_no_other():
+    """The payload and the rosters agree for every reservoir published today.
+
+    Read per published record rather than as two whole sets, so a reservoir
+    withdrawn on a quiet feed (ADR-056) cannot turn this red on a morning when
+    no code changed.
+    """
     payload = json.loads((ROOT / "reservoirs.json").read_text(encoding="utf-8"))
-    published = {
-        (str(record["source_key"]), str(record["source_station_id"])):
-            record["operating_character"]
-        for record in payload["reservoirs"] if "operating_character" in record}
-    assert published == roster.reviewed_operating_characters()
+    reviewed = roster.reviewed_operating_characters()
+    for record in payload["reservoirs"]:
+        key = (str(record["source_key"]), str(record["source_station_id"]))
+        assert record.get("operating_character") == reviewed.get(key), record["name"]
 
 
 class TestNeverFilledFollowsTheLabel:

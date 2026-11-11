@@ -229,7 +229,10 @@ function updateKpis(
     /* Which reservoirs, and against how many kinds of full level. The tile
      * used to say "Utah-intersecting waterbodies", which was the whole
      * roster's description once and describes 60 of 198 rows now. */
-    "count-note": describeDenominator(rollup),
+    "count-note": rollup.seasonalCount < rollup.count
+      /* The full levels below are seasonal storage's (ADR-156). */
+      ? `${rollup.seasonalCount} with seasonal storage. ${describeDenominator(rollup)}`
+      : describeDenominator(rollup),
     /* How full against how full it usually is on this date. The headline
      * percentage cannot answer that on its own: a reservoir at 60% in April
      * and one at 60% in September are not the same news, and this is the

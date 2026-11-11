@@ -63,7 +63,7 @@ export function describeAreaSplit(place: string, split: AreaSplit): string[] | n
   const { steadyPools, floodSpace } = split;
   if (steadyPools === null && floodSpace === null) return null;
   const lines = [split.percentFull === null
-    ? `${place} has no seasonal storage.`
+    ? `${place}: no seasonal storage.`
     : `${place}: seasonal storage is ${formatPercent(split.percentFull)} full.`];
   if (steadyPools !== null) {
     lines.push(`${formatAcreFeet(steadyPools.storageAf)} acre-feet in pools held at `
@@ -226,8 +226,8 @@ function reservoirCount(count: number): string {
 
 export function mapSummaryText(input: MapSummaryInput): MapSummaryText {
   const first = `${input.place}, ${reservoirCount(input.count)}`;
-  const full = `${input.seasonalOnly ? "Seasonal storage " : ""}`
-    + `${formatPercent(input.percentFull)} full`;
+  const full = input.seasonalOnly && input.percentFull === null ? "No seasonal storage"
+    : `${input.seasonalOnly ? "Seasonal storage " : ""}${formatPercent(input.percentFull)} full`;
   const second = input.monthName !== null
     ? `${full}, ${input.monthName}`
     : input.percentOfNormal === null

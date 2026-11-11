@@ -84,7 +84,7 @@ function scopeFrame(name: string, rows: Reservoir[], payload: ReservoirPayload, 
   const dateText = dates.earliestDate && dates.latestDate
     ? `${formatDate(dates.earliestDate)} to ${formatDate(dates.latestDate)}` : "No readings";
   const lines = [
-    `${total.count} reservoirs · ${dates.lateCount} with late readings.`,
+    `${total.count} reservoirs · ${total.stale} with late readings.`,
     `Reading dates: ${dateText}.`,
     normal,
     ...split,

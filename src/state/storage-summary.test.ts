@@ -244,7 +244,11 @@ describe("seasonal storage apart from steady pools and flood space (ADR-156)", (
       percentFull: null,
       steadyPools: { count: 4, storageAf: 1_900_000, capacityAf: 2_000_000 }
     }));
-    expect(lines?.[0]).toBe("Lower Snake has no seasonal storage.");
+    expect(lines?.[0]).toBe("Lower Snake: no seasonal storage.");
+    expect(mapSummaryText({
+      place: "Lower Snake", count: 4, percentFull: null, percentOfNormal: null,
+      monthName: null, subtotal: null, seasonalOnly: true
+    }).lines[1]).toBe("No seasonal storage");
     expect(lines?.join(" ")).not.toMatch(/%/);
   });
 
