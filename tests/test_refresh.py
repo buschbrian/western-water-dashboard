@@ -638,8 +638,9 @@ def test_awdb_inventory_has_traceable_capacity_and_cadence():
     # irreconcilable full levels (ADR-113), plus Vail, Grant Lake and Topaz,
     # and Galesville and Bennington Lake from the Corps' 2026-10-31 re-audit,
     # and Eastman Lake from California's, then eleven more from California's
-    # 2026-11-10 re-audit.
-    assert len(R.ALL_RESERVOIR_IDS) == 421
+    # 2026-11-10 re-audit, and Bear, Big Dry Creek and Mojave from the Corps'
+    # other offices (ADR-155).
+    assert len(R.ALL_RESERVOIR_IDS) == 424
     assert not (set(R.RESERVOIRS) & set(R.AWDB_RESERVOIRS))
     # Nine providers, nine disjoint sets of station ids. An id in two of
     # them is one reservoir fetched twice and summed twice (ADR-069).
@@ -650,15 +651,16 @@ def test_awdb_inventory_has_traceable_capacity_and_cadence():
                    | set(R.CDEC_RESERVOIRS)))
     assert len(R.SRP_RESERVOIRS) == 4
     assert len(R.DNRC_RESERVOIRS) == 1
-    assert len(R.CWMS_RESERVOIRS) == 14
+    # Bear, Big Dry Creek and Mojave from the 2026-11-10 widening (ADR-155).
+    assert len(R.CWMS_RESERVOIRS) == 17
     assert len(R.CAP_RESERVOIRS) == 1
     # Every Corps location the audit kept out names its finding, and the
     # ones already published through another provider are listed as
     # deduplicated rather than silently dropped (ADR-069).
     cwms_document = json.loads(R.ADMITTED_CWMS_RESERVOIRS_PATH.read_text())
-    assert len(cwms_document["withheld"]) == 22
+    assert len(cwms_document["withheld"]) == 54
     assert all(entry["finding"] for entry in cwms_document["withheld"].values())
-    assert len(cwms_document["deduplicated"]) == 73
+    assert len(cwms_document["deduplicated"]) == 76
     provider_ids = [set(rows) for rows in (
         R.RESERVOIRS, R.AWDB_RESERVOIRS, R.CDEC_RESERVOIRS,
         R.CDSS_RESERVOIRS, R.USGS_RESERVOIRS, R.SRP_RESERVOIRS,

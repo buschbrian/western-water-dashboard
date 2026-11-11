@@ -13,6 +13,13 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
+- **Three Corps of Engineers reservoirs from offices beyond the Columbia
+  Basin** (ADR-155): Bear Reservoir and Big Dry Creek Reservoir from the
+  Sacramento District's office, and Mojave Reservoir from the Los Angeles
+  District's. All three are flood-control pools that sit near empty between
+  storms. The Corps audit now reads every office whose catalog carries
+  storage, and 35 more locations it keeps out are recorded with their
+  findings.
 - **Eleven California reservoirs** from the California Department of Water
   Resources: Lake Spaulding, Twitchell Reservoir, Farmington Reservoir,
   Clifton Court Forebay, Mariposa Reservoir, Brush Creek Reservoir, Lake
