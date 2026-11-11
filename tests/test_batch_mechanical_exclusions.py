@@ -46,6 +46,18 @@ def test_a_zero_beside_a_zero_neighbour_is_not_the_zero_test():
     assert batch.zero_test(5, 8100, 8115) is None
 
 
+def test_a_monthly_zero_is_not_the_zero_test():
+    """ADR-152 names a daily reading of 0; Fairmont's monthly zero stays individual."""
+    assert batch.zero_test(0, 8100, 8115, "monthly") is None
+    assert batch.mechanical_test(0, 8100, 8115, "monthly") is None
+    series = [
+        {"stamp": "2020-9", "day": pd.Timestamp("2020-09-30"), "value": 8100.0, "excluded": False},
+        {"stamp": "2020-10", "day": pd.Timestamp("2020-10-31"), "value": 0.0, "excluded": False},
+        {"stamp": "2020-11", "day": pd.Timestamp("2020-11-30"), "value": 8115.0, "excluded": False},
+    ]
+    assert not batch.assess(series, series[1]["day"], 0.0, "monthly")["admitted"]
+
+
 def test_a_power_of_ten_shift_needs_neighbours_that_agree():
     assert batch.power_of_ten_test(3111, 30964, 30584)[0] == "power-of-ten shift"
     assert batch.power_of_ten_test(277789, 27378, 27614)[0] == "power-of-ten shift"

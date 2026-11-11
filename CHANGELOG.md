@@ -326,7 +326,7 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   to 11,097), Lower Bear (0 to 5,774), Homestake Reservoir (0 to 5,295), Pit 7
   Reservoir (3,111 to 12,210), Pit Six Reservoir (3,257 to 5,247) and Lyons
   Reservoir (0 to 4). Lake Natoma and Lake Fordyce keep a record low of 0
-  because other readings at 0 remain, a run at Natoma and a later zero at
+  because other readings at 0 remain, a run at Natoma and another zero at
   Fordyce, and each needs its own review. Seven candidates stay individual
   because each is part of a run.
 

@@ -80,8 +80,9 @@ def agree(before: float, after: float) -> bool:
     return min(before, after) > 0 and abs(before - after) <= AGREE * max(before, after)
 
 
-def zero_test(value: float, before: float, after: float):
-    if value == 0 and before > 0 and after > 0:
+def zero_test(value: float, before: float, after: float, cadence: str = "daily"):
+    """ADR-152 names a daily reading; a monthly zero is never admitted here."""
+    if cadence == "daily" and value == 0 and before > 0 and after > 0:
         return "zero", "a daily reading of 0 with both neighbours above zero"
     return None
 
@@ -116,13 +117,12 @@ def one_digit_test(value: float, before: float, after: float):
     return None
 
 
-def mechanical_test(value: float, before: float, after: float):
+def mechanical_test(value: float, before: float, after: float, cadence: str = "daily"):
     """The first ADR-152 test the reading meets, as (name, detail), or None."""
-    for test in (zero_test, power_of_ten_test, one_digit_test):
-        met = test(value, before, after)
-        if met:
-            return met
-    return None
+    met = zero_test(value, before, after, cadence)
+    if met:
+        return met
+    return power_of_ten_test(value, before, after) or one_digit_test(value, before, after)
 
 
 def reading_day(stamp: str, cadence: str) -> pd.Timestamp:
@@ -196,7 +196,7 @@ def assess(series: list[dict], day: pd.Timestamp, value: float, cadence: str) ->
             return {"admitted": False,
                     "why": f"no non-excluded neighbour on both sides within the window "
                            f"of {series[member]['day']:%Y-%m-%d}"}
-        met = mechanical_test(value, before["value"], after["value"])
+        met = mechanical_test(value, before["value"], after["value"], cadence)
         if met is None:
             return {"admitted": False,
                     "why": f"meets no ADR-152 test between {before['value']:,.0f} and "
