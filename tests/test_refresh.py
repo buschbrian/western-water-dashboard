@@ -601,13 +601,14 @@ def test_awdb_inventory_has_traceable_capacity_and_cadence():
     # Eastman Lake (BUC) makes 149, admitted after its reviewed exclusion too.
     # The 2026-11-10 re-audit admits eleven that ADR-150 surfaced and left
     # for review.
-    assert len(R.ADMITTED_CDEC_RESERVOIRS) == 160
-    assert len(R.CDEC_RESERVOIRS) == 160
+    # Fairmont (FMT) on a reviewed match to Fairmont No. 2 makes 161 (2026-11-11).
+    assert len(R.ADMITTED_CDEC_RESERVOIRS) == 161
+    assert len(R.CDEC_RESERVOIRS) == 161
     assert sum(1 for row in R.ADMITTED_CDEC_RESERVOIRS.values()
-               if row.get("review")) == 6
+               if row.get("review")) == 7
     cdec_document = json.loads(R.ADMITTED_CDEC_RESERVOIRS_PATH.read_text())
     assert set(cdec_document["withheld"]) == {
-        "BMP", "CLA", "FMT", "GDR",
+        "BMP", "CLA", "GDR",
         "HVS", "LRA", "MAT", "ONF", "RLC", "SCC",
     }, "every unresolved California candidate must keep its finding"
     # An exclusion is not an admission (ADR-116): removing a reading answers
@@ -640,7 +641,7 @@ def test_awdb_inventory_has_traceable_capacity_and_cadence():
     # and Eastman Lake from California's, then eleven more from California's
     # 2026-11-10 re-audit, and Bear, Big Dry Creek and Mojave from the Corps'
     # other offices (ADR-155).
-    assert len(R.ALL_RESERVOIR_IDS) == 424
+    assert len(R.ALL_RESERVOIR_IDS) == 425
     assert not (set(R.RESERVOIRS) & set(R.AWDB_RESERVOIRS))
     # Nine providers, nine disjoint sets of station ids. An id in two of
     # them is one reservoir fetched twice and summed twice (ADR-069).
@@ -1543,8 +1544,9 @@ def test_the_reviewed_readings_are_committed_with_their_evidence():
         for station, records in R.CDEC_EXCLUDED_READINGS.items()
     }
     monthly = {station: named.pop(station)
-               for station in ("BUC", "GNT", "HVS", "ONF", "RLC")}
+               for station in ("BRT", "BUC", "GNT", "HVS", "ONF", "RLC")}
     assert monthly == {
+        "BRT": [("2024-7-1 00:00", 1607)],
         "BUC": [("2022-12-1 00:00", 172105)],
         "GNT": [("2023-3-1 00:00", 82410)],
         "HVS": [("2024-11-1 00:00", 5775421), ("2025-5-1 00:00", 5913000)],
@@ -3055,6 +3057,41 @@ def test_rise_exclusions_must_name_their_own_item(tmp_path):
                           station="134092", withheld=False)
     with pytest.raises(ValueError, match="sensor 134092"):
         R.load_excluded_readings(path, None)
+
+
+def cwms_page(timeseries, rows):
+    return {"office-id": "NWDP", "name": timeseries, "units": R.providers.CWMS_UNIT,
+            "time-zone": "US/Pacific",
+            "values": [[int(pd.Timestamp(stamp).timestamp() * 1000), value, 0] for stamp, value in rows]}
+
+
+def test_cwms_exclusions_drop_the_named_reading_and_nothing_else(tmp_path, monkeypatch, capsys):
+    """ADR-116 for a Corps location: the location is its own sensor, the stamp is the service's UTC instant."""
+    series = "BOX.Stor.Ave.~1Day.1Day.CBT-REV"
+    path = exclusion_file(tmp_path, [exclusion(sensor="BOX", stamp="2020-06-16T07:00:00+00:00", value=60.0)],
+                          station="BOX", withheld=False)
+    monkeypatch.setattr(R.providers, "CWMS_EXCLUDED_READINGS", R.load_excluded_readings(path, None))
+    rows = [("2020-06-15T07:00:00+00:00", 41880.0), ("2020-06-16T07:00:00+00:00", 60.0),
+            ("2020-06-17T07:00:00+00:00", 43220.0)]
+    monkeypatch.setattr(R.providers, "_get_cwms_json", lambda url, params: cwms_page(params["name"], rows))
+    frame = R.fetch_cwms_series("NWDP", series, "20200614", "20200618")
+    assert frame["storage_af"].tolist() == [41880.0, 43220.0]
+    assert "BOX: 1 reviewed reading(s) excluded (ADR-116)" in capsys.readouterr().out
+
+    other = R.fetch_cwms_series("NWDP", "CAB.Stor.Ave.~1Day.1Day.CBT-REV", "20200614", "20200618")
+    assert 60.0 in other["storage_af"].tolist()
+
+
+def test_cwms_exclusions_must_name_their_own_location(tmp_path):
+    path = exclusion_file(tmp_path, [exclusion(sensor="CAB")], station="BOX", withheld=False)
+    with pytest.raises(ValueError, match="sensor BOX"):
+        R.load_excluded_readings(path, None)
+
+
+def test_the_committed_cwms_exclusion_is_the_reviewed_box_canyon_reading():
+    named = {location: [(record["stamp"], record["value"]) for record in records]
+             for location, records in R.providers.CWMS_EXCLUDED_READINGS.items()}
+    assert named == {"BOX": [("2020-06-16T07:00:00+00:00", 60.0)]}
 
 
 def test_the_committed_rise_exclusions_are_the_reviewed_rifle_gap_readings():
