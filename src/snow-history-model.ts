@@ -1,5 +1,5 @@
 /*
- * Snow water against earlier seasons (ADR-160): the snow page's place,
+ * Snow water against earlier seasons (ADR-165): the snow page's place,
  * measured at one fixed set of sites in every season, by the precipitation
  * history's rules (ADR-125). Every number is a mean over that one set, so
  * a band is a statement about snow and never about which sites reported.

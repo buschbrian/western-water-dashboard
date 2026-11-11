@@ -168,7 +168,7 @@ inventory grows or a run reports stations that did not answer. A change of
 window refuses `--only` and `--missing`, because two windows are two
 populations; the full run rebuilds every station.
 
-`build_snow_history.py` (ADR-160) is the same builder fetching snow water
+`build_snow_history.py` (ADR-165) is the same builder fetching snow water
 (`WTEQ`) into `snow_history.json`, at the same cost. Run it each October
 after the precipitation history, with the same `--missing` rule; give it its
 own run rather than running both at once, to keep the load on the provider

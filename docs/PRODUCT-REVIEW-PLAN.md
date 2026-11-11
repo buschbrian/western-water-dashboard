@@ -251,7 +251,7 @@ Each is a new published contract. Verify with `npm run verify:pipeline` and
 ### 13. Snow water against earlier seasons
 
 Implemented locally on `feat/snow-history`, awaiting Brian's review and
-publication (ADR-160): `snow_history.json` from the precipitation builder
+publication (ADR-165): `snow_history.json` from the precipitation builder
 with `WTEQ` (366 of 639 stations cover 1991–2026), and a lazy card under the
 snow page's season chart that follows the page's place. On 2026-11-11 it
 compares 365 sites for the West and 74 for Utah with 36 earlier seasons. It

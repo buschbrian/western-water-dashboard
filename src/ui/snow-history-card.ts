@@ -1,5 +1,5 @@
 /*
- * Snow water against earlier seasons (ADR-160), on the snow page. It is the
+ * Snow water against earlier seasons (ADR-165), on the snow page. It is the
  * precipitation card's chart, key and table (ADR-125) over the snow history,
  * and it follows the page's place: the page hands it the sites in view.
  *

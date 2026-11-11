@@ -3293,7 +3293,7 @@ for (const viewport of VIEWPORTS) {
       "./data/snow/snowpack-wy2026.json",
       "./data/precipitation.json", "./precipitation.html",
       "./data/precipitation_history.json",
-      // Snow water on the same weekly steps (ADR-160).
+      // Snow water on the same weekly steps (ADR-165).
       "./data/snow_history.json", "./snow.html",
       // The week's change in soil moisture (ADR-142).
       "./data/soil_moisture.json", "./precipitation.html",
@@ -6787,7 +6787,7 @@ async function checkStoryEmbeds() {
 await checkStoryEmbeds();
 
 /*
- * Snow water against earlier seasons (ADR-160). The history is fetched only
+ * Snow water against earlier seasons (ADR-165). The history is fetched only
  * when the card nears the screen; once in, the card is held to the file's
  * own window and to the page's own site count, never to a number the
  * morning decides. A refused file must say so and clear aria-busy.

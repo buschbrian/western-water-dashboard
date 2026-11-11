@@ -144,7 +144,7 @@ ADR-041.**
   [ADR-142](ADR-142-show-the-weeks-change-in-mountain-soil-moisture.md),
   [ADR-144](ADR-144-compare-natural-river-gauges-with-the-surveys-day-of-year-percentiles.md),
   [ADR-145](ADR-145-compare-river-gauges-above-ten-years-shorten-two-names-and-round-the-page.md),
-  [ADR-160](ADR-160-compare-snow-water-with-earlier-seasons-at-a-fixed-set-of-sites.md)
+  [ADR-165](ADR-165-compare-snow-water-with-earlier-seasons-at-a-fixed-set-of-sites.md)
 - Current architecture: [`docs/architecture/hydrology-methods.md`](../architecture/hydrology-methods.md)
 
 ### Visible language, accessibility and naming
@@ -366,7 +366,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-152](ADR-152-close-a-provider-issue-whose-every-reading-is-a-mechanical-error.md) | Close a provider issue whose every reading is a mechanical error | Accepted; amends ADR-116's "the issues stay open"; zero, power-of-ten shift, one digit dropped or added, or same-day exchange, re-checked unchanged at the provider; exclusions unchanged; #44, #105, #108, #109, #110 and #111 closed, eight issues stay open |
 | [ADR-153](ADR-153-state-the-maps-storage-against-normal-and-subtotal-the-filtered-rows.md) | State the map's storage against normal, and subtotal the filtered rows | Accepted; amends ADR-095; a "Compared with normal" tile naming its period, shared with the storage charts' sentence; Compare against changes the summary; the headline stays the wider total and a labelled subtotal covers the filtered rows; a past month has no comparison; a phone control over the map; a per-reservoir list figure, table column (`sort=normal-*`) and two appended CSV columns with GeoJSON properties |
 | [ADR-154](ADR-154-keep-a-permanent-share-address-for-every-reservoir.md) | Keep a permanent share address for every reservoir | Accepted; permanent station-keyed share pages, retained withdrawal notices, storage and level frames, state/region/West cards and bounded capture; implemented locally |
-| [ADR-160](ADR-160-compare-snow-water-with-earlier-seasons-at-a-fixed-set-of-sites.md) | Compare snow water with earlier seasons at a fixed set of sites | Accepted; ADR-125's builder and fixed-set rule over snow water (`snow_history.json`), a lazy snow-page card that follows the page's place; keeps ADR-081's summed ratio and ADR-121's floors; moves no published snow figure; implemented locally |
+| [ADR-165](ADR-165-compare-snow-water-with-earlier-seasons-at-a-fixed-set-of-sites.md) | Compare snow water with earlier seasons at a fixed set of sites | Accepted; ADR-125's builder and fixed-set rule over snow water (`snow_history.json`), a lazy snow-page card that follows the page's place; keeps ADR-081's summed ratio and ADR-121's floors; moves no published snow figure; implemented locally |
 
 ## Relationship to the historical journal
 

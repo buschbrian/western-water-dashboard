@@ -74,7 +74,7 @@ copies (ADR-125). The history is fetched only when the snow page's
 precipitation card nears the screen.
 
 `snow_history.json` was measured 2026-11-11 on its first generated copy
-(ADR-160), at gzip -9 to compare with the precipitation history above
+(ADR-165), at gzip -9 to compare with the precipitation history above
 (433 KB at gzip -6): 366 stations with every water year 1991–2026. It is
 fetched only when the snow page's earlier-seasons card comes within 800
 pixels of the screen.

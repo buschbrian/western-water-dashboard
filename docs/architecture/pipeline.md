@@ -136,7 +136,7 @@ the old file's bytes to `data/snow/snowpack-wy<YEAR>.json` first. The archive
 is write-once, owned in `data/generated-files.json` as one directory entry,
 and fetched by the page only on request.
 
-**The two weekly histories share one builder** (ADR-125, ADR-160).
+**The two weekly histories share one builder** (ADR-125, ADR-165).
 `tools/build_precipitation_history.py` takes the provider element as a
 parameter; `tools/build_snow_history.py` runs it with `WTEQ` into
 `snow_history.json`. The steps, substitution, encoding and merge are one

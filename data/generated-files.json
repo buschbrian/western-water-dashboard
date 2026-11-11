@@ -200,7 +200,7 @@
       "class": "derived-on-demand",
       "writer": "tools/build_snow_history.py",
       "staged_by_refresh": false,
-      "note": "Snow water equivalent on the precipitation history's weekly steps, every water year from 1991 at each snow station whose record covers all of them (ADR-160). Rebuilt each October after the year closes; network job; every run merges."
+      "note": "Snow water equivalent on the precipitation history's weekly steps, every water year from 1991 at each snow station whose record covers all of them (ADR-165). Rebuilt each October after the year closes; network job; every run merges."
     },
     {
       "path": "counties.json",

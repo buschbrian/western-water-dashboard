@@ -424,7 +424,7 @@ October. A history is not a normal, and each card names its own years.
 
 ## Snow water against its own history
 
-**Precipitation's rules, over snow water** (ADR-160).
+**Precipitation's rules, over snow water** (ADR-165).
 `tools/build_snow_history.py` runs the precipitation builder with `WTEQ`:
 the same 53 calendar steps, the same three-day substitution inside the water
 year, the same encoding and merge, written to `snow_history.json`. A reading

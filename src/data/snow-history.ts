@@ -4,7 +4,7 @@ import { validatePrecipitationHistory } from "./precip-validate";
 import type { PrecipitationHistory } from "../types";
 
 /*
- * Snow water on the precipitation history's weekly steps (ADR-160). The
+ * Snow water on the precipitation history's weekly steps (ADR-165). The
  * file has the same shape, so it goes through the same validator, and then
  * through what is true only of snow: its element, a window from 1991, no
  * negative value and one calendar running 1 October to 30 September.

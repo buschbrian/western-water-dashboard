@@ -1,4 +1,4 @@
-# ADR-160: Compare snow water with earlier seasons at a fixed set of sites
+# ADR-165: Compare snow water with earlier seasons at a fixed set of sites
 
 - Status: Accepted
 - Date: 2026-11-11

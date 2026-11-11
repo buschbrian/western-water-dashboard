@@ -76,7 +76,7 @@ RETRIES = 3
 
 RETRYABLE_REASONS = frozenset({"the provider did not answer"})
 
-#: What each measurement's file says about itself. Snow water (ADR-160) uses
+#: What each measurement's file says about itself. Snow water (ADR-165) uses
 #: the same steps, substitution and merge rules as precipitation.
 ELEMENTS = {
     "PREC": {"writer": "tools/build_precipitation_history.py",

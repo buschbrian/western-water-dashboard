@@ -613,7 +613,7 @@ function renderSnow(
       comparisonStatus,
       comparisonPoints: lastComparisonPoints,
       seasonRoute: seasonRouteYear,
-      /* Snow water against earlier seasons (ADR-160). */
+      /* Snow water against earlier seasons (ADR-165). */
       ...(historyCard ? { snowHistory: historyCard.status } : {}),
       ...(map ? {
         mapBasins: map.status.basins,

@@ -13,7 +13,7 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
-- **Snow water against earlier seasons** (ADR-160). The snow page draws this
+- **Snow water against earlier seasons** (ADR-165). The snow page draws this
   season's snow water equivalent over the range of every earlier season since
   1990–91, at one fixed set of sites with a full record, for whatever place
   the page shows: a state, a drainage area or an upstream set. It gives the

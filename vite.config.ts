@@ -66,7 +66,7 @@ function preserveRuntimeDataAndRedirects(): Plugin {
         "elevation_history.json",
         // ADR-125: the daily precipitation file and its committed history.
         "precipitation.json", "precipitation_history.json",
-        // ADR-160: snow water on the same weekly steps, for the snow page.
+        // ADR-165: snow water on the same weekly steps, for the snow page.
         "snow_history.json",
         // ADR-142: the daily soil-moisture file.
         "soil_moisture.json",

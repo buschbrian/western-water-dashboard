@@ -1,6 +1,6 @@
 """Build snow_history.json -- snow water equivalent on the same weekly steps
 as precipitation_history.json, every water year since 1991, at each snow
-station whose record covers all of them (ADR-160).
+station whose record covers all of them (ADR-165).
 
 The steps, the three-day substitution, the encoding and the merge rules are
 tools/build_precipitation_history.py's, unchanged; only the element differs.

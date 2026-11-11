@@ -202,7 +202,7 @@ interface Window {
     /** The finished season the early-season map links to, or null while the
      * shown season has a peak of its own. */
     seasonRoute?: number | null;
-    /** Snow water against earlier seasons (ADR-160): the card's load and
+    /** Snow water against earlier seasons (ADR-165): the card's load and
      * what it drew. */
     snowHistory?: import("./ui/snow-history-card").SnowHistoryStatus;
     sites: number;

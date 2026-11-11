@@ -45,7 +45,7 @@ const SEASON_MINIMUM_DAYS = 56;
 
 export type PrecipitationRange = "season" | "year";
 
-/** The words the chart writes, so the snow history (ADR-160) can draw on it. */
+/** The words the chart writes, so the snow history (ADR-165) can draw on it. */
 export interface CurveWords {
   shown: string;
   median: string;
