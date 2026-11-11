@@ -1,6 +1,6 @@
 # ADR-155: Audit every Corps office that publishes storage
 
-- Status: **Proposed** (for Brian Busch's approval. The number follows ADR-154 on
+- Status: Accepted (Brian Busch, 2026-11-11. The number follows ADR-154 on
   `origin/main` at 2a37299; renumber if another branch claims it first.)
 - Date: 2026-11-11
 - Amends: ADR-102 ("reading the `NWDP` office")
@@ -26,7 +26,7 @@ The pipeline already reads any office: every roster entry commits its own
 `office`, and `load_admitted_cwms_reservoirs` refuses an entry without one.
 Only the audit and this record's predecessor were bound to `NWDP`.
 
-## Decision (proposed)
+## Decision
 
 1. **The audit reads every office whose catalog carries storage**
    (`--office`, default all five) and decides each location with the shared
@@ -47,8 +47,11 @@ Only the audit and this record's predecessor were bound to `NWDP`.
    inventory's 230,000 acre-feet, but California's withheld finding for the
    same water (SCC) holds it for a full level containing its 2019 water,
    and that finding stands until it is resolved.
-5. **Admissions are separate changes**, each through the reviewed roster.
-   Nothing is admitted by this record.
+5. **Admissions go through the reviewed roster.** Accepted with the first
+   three: Bear Reservoir (`Bear-Pool`, SPK), Big Dry Creek Reservoir
+   (`Big Dry Cr`, SPK) and Mojave Reservoir (`Mojave`, SPL). Every other
+   location the widened audit kept out is recorded in the roster's
+   `withheld` block with its finding.
 
 ## Evidence (2026-11-11, `origin/main` 2a37299)
 
@@ -79,8 +82,9 @@ Narrows, Painted Rock, Alamo and others. They sit near empty between storms.
 
 - `tools/audit_cwms_stations.py` takes `--office` and reports `offices`,
   `location_id_collisions` and each record's `office`.
-- If accepted, Bear, Big Dry Creek and Mojave can be admitted in one roster
-  change. All three are flood-control pools that sit low most of the year.
+- Bear, Big Dry Creek and Mojave are admitted. All three are flood-control
+  pools that sit low most of the year: Bear read 1.6 acre-feet and Mojave 0 on
+  the day of the audit.
 - Re-run the audit after #121 merges: Farmington, Mariposa and Twitchell
   then report as already published.
 - Lemon and Vallecito are already published through Reclamation, so their

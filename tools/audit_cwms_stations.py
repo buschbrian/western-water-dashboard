@@ -188,17 +188,17 @@ def main() -> int:
                                 "state": state, "published_as": nearest[1],
                                 "provider": nearest[2], "distance_km": round(nearest[0], 3)})
                 continue
+            unit = assign_huc((lon, lat), units)
+            if not unit:
+                outside.append({"station": location, "office": office, "name": name,
+                                "state": state})
+                continue
             ranked = sorted(filter(None, (series_rank(series, earliest.get(series, ""))
                                           for series in by_location[location])))
             own = [rank for rank in ranked if "USBR" not in rank[-1]]
             if ranked and not own:
                 republished.append({"station": location, "office": office, "name": name,
                                     "state": state, "series": [rank[-1] for rank in ranked]})
-                continue
-            unit = assign_huc((lon, lat), units)
-            if not unit:
-                outside.append({"station": location, "office": office, "name": name,
-                                "state": state})
                 continue
 
             chosen, frame = None, None

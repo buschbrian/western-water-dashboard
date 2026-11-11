@@ -24,7 +24,7 @@ republished Reclamation (`USBR`) version, because the version suffix is what
 says whose number a series is (ADR-102). `tools/audit_cwms_stations.py` is
 its audit; it reads every office whose catalog carries storage, `--office`
 narrows it, and the Corps' own published reservoirs count as already
-published (ADR-155, proposed). The Central Arizona Project is one reservoir behind one endpoint
+published (ADR-155). The Central Arizona Project is one reservoir behind one endpoint
 that holds no history; its series grows in the dense-history cache from the
 day of admission (ADR-104).
 

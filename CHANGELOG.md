@@ -13,6 +13,14 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
+- **Three Corps of Engineers reservoirs from offices beyond the Columbia
+  Basin** (ADR-155): Bear Reservoir and Big Dry Creek Reservoir from the
+  Sacramento District's office, and Mojave Reservoir from the Los Angeles
+  District's. All three are flood-control pools that sit near empty between
+  storms. The Corps audit now reads every office whose catalog carries
+  storage, and 35 more locations it keeps out are recorded with their
+  findings.
+
 - **Main-page picture previews and copyable story embed code.** The storage,
   snow, precipitation, drought and river pages carry dated preview pictures,
   with figure-free fallbacks. The precipitation page offers its full card
