@@ -1161,6 +1161,125 @@
         "reviewed_on": "2026-11-11",
         "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/123"
       }
+    ],
+    "ELC": [
+      {
+        "sensor": 15,
+        "stamp": "2024-8-27 00:00",
+        "value": 0,
+        "reason": "ADR-152 test met: zero (a daily reading of 0 with both neighbours above zero). 0 acre-feet between 32,865 on 2024-08-26 and 32,398 on 2024-08-28. Served unchanged on 2026-11-11, and not part of a run of three readings at one value (ADR-158).",
+        "source_url": "https://cdec.water.ca.gov/dynamicapp/req/JSONDataServlet?Stations=ELC&SensorNums=15&dur_code=D&Start=2024-08-26&End=2024-08-28",
+        "reviewed_on": "2026-11-11",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/134"
+      }
+    ],
+    "HTH": [
+      {
+        "sensor": 15,
+        "stamp": "2020-7-22 00:00",
+        "value": 342,
+        "reason": "ADR-152 test met: power-of-ten shift (342 x 1,000 = 342,000, between the neighbours). 342 acre-feet between 342,770 on 2020-07-21 and 341,024 on 2020-07-23. Served unchanged on 2026-11-11, and not part of a run of three readings at one value (ADR-158).",
+        "source_url": "https://cdec.water.ca.gov/dynamicapp/req/JSONDataServlet?Stations=HTH&SensorNums=15&dur_code=D&Start=2020-07-21&End=2020-07-23",
+        "reviewed_on": "2026-11-11",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/134"
+      }
+    ],
+    "HNT": [
+      {
+        "sensor": 15,
+        "stamp": "2023-4-25 00:00",
+        "value": 277789,
+        "reason": "ADR-152 test met: power-of-ten shift (277,789 / 10 = 27,779, between the neighbours). 277,789 acre-feet between 27,378 on 2023-04-24 and 27,614 on 2023-04-26. Served unchanged on 2026-11-11, and not part of a run of three readings at one value (ADR-158).",
+        "source_url": "https://cdec.water.ca.gov/dynamicapp/req/JSONDataServlet?Stations=HNT&SensorNums=15&dur_code=D&Start=2023-04-24&End=2023-04-26",
+        "reviewed_on": "2026-11-11",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/134"
+      }
+    ],
+    "NAT": [
+      {
+        "sensor": 15,
+        "stamp": "2026-1-16 00:00",
+        "value": 0,
+        "reason": "ADR-152 test met: zero (a daily reading of 0 with both neighbours above zero). 0 acre-feet between 8,106 on 2026-01-15 and 8,115 on 2026-01-17. Served unchanged on 2026-11-11, and not part of a run of three readings at one value (ADR-158).",
+        "source_url": "https://cdec.water.ca.gov/dynamicapp/req/JSONDataServlet?Stations=NAT&SensorNums=15&dur_code=D&Start=2026-01-15&End=2026-01-17",
+        "reviewed_on": "2026-11-11",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/134"
+      }
+    ],
+    "LPY": [
+      {
+        "sensor": 15,
+        "stamp": "2020-2-11 00:00",
+        "value": 0,
+        "reason": "ADR-152 test met: zero (a daily reading of 0 with both neighbours above zero). 0 acre-feet between 40,761 on 2020-02-10 and 34,088 on 2020-02-12. Served unchanged on 2026-11-11, and not part of a run of three readings at one value (ADR-158).",
+        "source_url": "https://cdec.water.ca.gov/dynamicapp/req/JSONDataServlet?Stations=LPY&SensorNums=15&dur_code=D&Start=2020-02-10&End=2020-02-12",
+        "reviewed_on": "2026-11-11",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/134"
+      }
+    ],
+    "LWB": [
+      {
+        "sensor": 15,
+        "stamp": "2022-1-4 00:00",
+        "value": 0,
+        "reason": "ADR-152 test met: zero (a daily reading of 0 with both neighbours above zero). 0 acre-feet between 25,318 on 2022-01-03 and 24,488 on 2022-01-06. Served unchanged on 2026-11-11, and not part of a run of three readings at one value (ADR-158).",
+        "source_url": "https://cdec.water.ca.gov/dynamicapp/req/JSONDataServlet?Stations=LWB&SensorNums=15&dur_code=D&Start=2022-01-03&End=2022-01-06",
+        "reviewed_on": "2026-11-11",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/134"
+      },
+      {
+        "sensor": 15,
+        "stamp": "2022-1-5 00:00",
+        "value": 0,
+        "reason": "ADR-152 test met: zero (a daily reading of 0 with both neighbours above zero). 0 acre-feet between 25,318 on 2022-01-03 and 24,488 on 2022-01-06. Served unchanged on 2026-11-11, and not part of a run of three readings at one value (ADR-158).",
+        "source_url": "https://cdec.water.ca.gov/dynamicapp/req/JSONDataServlet?Stations=LWB&SensorNums=15&dur_code=D&Start=2022-01-03&End=2022-01-06",
+        "reviewed_on": "2026-11-11",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/134"
+      }
+    ],
+    "LYS": [
+      {
+        "sensor": 15,
+        "stamp": "2022-5-4 00:00",
+        "value": 0,
+        "reason": "ADR-152 test met: zero (a daily reading of 0 with both neighbours above zero). 0 acre-feet between 5,137 on 2022-05-03 and 5,222 on 2022-05-05. Served unchanged on 2026-11-11, and not part of a run of three readings at one value (ADR-158).",
+        "source_url": "https://cdec.water.ca.gov/dynamicapp/req/JSONDataServlet?Stations=LYS&SensorNums=15&dur_code=D&Start=2022-05-03&End=2022-05-05",
+        "reviewed_on": "2026-11-11",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/134"
+      }
+    ],
+    "PT7": [
+      {
+        "sensor": 15,
+        "stamp": "2021-10-8 00:00",
+        "value": 3111,
+        "reason": "ADR-152 test met: power-of-ten shift (3,111 x 10 = 31,110, between the neighbours). 3,111 acre-feet between 30,964 on 2021-10-07 and 30,584 on 2021-10-09. Served unchanged on 2026-11-11, and not part of a run of three readings at one value (ADR-158).",
+        "source_url": "https://cdec.water.ca.gov/dynamicapp/req/JSONDataServlet?Stations=PT7&SensorNums=15&dur_code=D&Start=2021-10-07&End=2021-10-09",
+        "reviewed_on": "2026-11-11",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/134"
+      }
+    ],
+    "PT6": [
+      {
+        "sensor": 15,
+        "stamp": "2021-12-25 00:00",
+        "value": 3257,
+        "reason": "ADR-152 test met: one digit dropped or added (inserting one digit gives 13,257, between the neighbours). 3,257 acre-feet between 13,257 on 2021-12-24 and 14,253 on 2021-12-26. Served unchanged on 2026-11-11, and not part of a run of three readings at one value (ADR-158).",
+        "source_url": "https://cdec.water.ca.gov/dynamicapp/req/JSONDataServlet?Stations=PT6&SensorNums=15&dur_code=D&Start=2021-12-24&End=2021-12-26",
+        "reviewed_on": "2026-11-11",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/134"
+      }
+    ],
+    "LKF": [
+      {
+        "sensor": 15,
+        "stamp": "2024-12-29 00:00",
+        "value": 0,
+        "reason": "ADR-152 test met: zero (a daily reading of 0 with both neighbours above zero). 0 acre-feet between 6,622 on 2024-12-28 and 7,250 on 2024-12-30. Served unchanged on 2026-11-11, and not part of a run of three readings at one value (ADR-158).",
+        "source_url": "https://cdec.water.ca.gov/dynamicapp/req/JSONDataServlet?Stations=LKF&SensorNums=15&dur_code=D&Start=2024-12-28&End=2024-12-30",
+        "reviewed_on": "2026-11-11",
+        "issue_url": "https://github.com/buschbrian/western-water-dashboard/issues/134"
+      }
     ]
   },
   "keyed_by": "source_station_id",

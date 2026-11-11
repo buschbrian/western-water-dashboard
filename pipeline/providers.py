@@ -21,8 +21,8 @@ from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
 from .constants import (
-    ADMITTED_CDEC_RESERVOIRS_PATH, ADMITTED_CWMS_RESERVOIRS_PATH, ADMITTED_RISE_RESERVOIRS_PATH,
-    AWDB_DATA_URL, RISE_RESULT_URL,
+    ADMITTED_CDEC_RESERVOIRS_PATH, ADMITTED_CWMS_RESERVOIRS_PATH, ADMITTED_RESERVOIRS_PATH,
+    ADMITTED_RISE_RESERVOIRS_PATH, AWDB_DATA_URL, RISE_RESULT_URL,
     local_today,
 )
 from .roster import load_excluded_readings
@@ -242,14 +242,33 @@ def fetch_awdb_series(station_triplet: str, cadence: str,
             values.extend(block.get("values") or [])
 
     rows = []
+    dropped = []
     for value in values:
         if cadence == "monthly":
             year, month = value.get("year"), value.get("month")
             date = (pd.Timestamp(year=int(year), month=int(month), day=1) +
                     pd.offsets.MonthEnd(0)) if year and month else pd.NaT
+            stamp = f"{int(year)}-{int(month)}" if year and month else None
         else:
             date = pd.to_datetime(value.get("date"), errors="coerce")
-        rows.append({"date": date, "storage_af": value.get("value")})
+            stamp = value.get("date")
+        reading = value.get("value")
+        # A reviewed exclusion is applied where NRCS readings are read
+        # (ADR-116), matched on the station key and the raw value.
+        if stamp is not None and isinstance(reading, (int, float)):
+            found = excluded_reading(station_triplet, stamp, reading,
+                                     AWDB_EXCLUDED_READINGS)
+            if found is not None:
+                dropped.append(found)
+                continue
+        rows.append({"date": date, "storage_af": reading})
+
+    if dropped:
+        print(f"  {station_triplet}: {len(dropped)} reviewed reading(s) excluded "
+              f"(ADR-116)")
+        for record in dropped:
+            print(f"    {record['stamp']}  {record['value']:,.0f} acre-feet  "
+                  f"{record['issue_url']}")
 
     if not rows:
         return pd.DataFrame({"date": pd.Series(dtype="datetime64[ns]"),
@@ -296,6 +315,10 @@ CDEC_MISSING_VALUE = -9999
 CDEC_EXCLUDED_READINGS = load_excluded_readings(
     ADMITTED_CDEC_RESERVOIRS_PATH, CDEC_STORAGE_SENSOR)
 
+
+#: Reviewed exclusions of NRCS readings, by station triplet (ADR-116). The
+#: triplet is the roster's key and the record's own `sensor`.
+AWDB_EXCLUDED_READINGS = load_excluded_readings(ADMITTED_RESERVOIRS_PATH, None)
 
 #: Reviewed exclusions of RISE results, by item (ADR-116). The item is the
 #: station key, so a record names the item as its own `sensor`.
