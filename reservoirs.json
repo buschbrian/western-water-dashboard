@@ -1611,7 +1611,21 @@
       "waterbody_states": [
         "AZ",
         "NV"
-      ]
+      ],
+      "water_flow": {
+        "unit": "ft^3/s",
+        "inflow_unavailable": "Reclamation's Lake Mead catalog has no daily inflow series. River gauges are not used as reservoir inflow.",
+        "inflow_review_url": "https://data.usbr.gov/catalog/4370",
+        "inflow": null,
+        "release": {
+          "source_item_id": 6125,
+          "source_url": "https://data.usbr.gov/catalog/4370/item/6125",
+          "definition": "The daily average total release from Hoover Dam, in cubic feet per second, as published by Reclamation.",
+          "definition_url": "https://data.usbr.gov/catalog/4370/item/6125",
+          "as_of": "2026-11-11",
+          "current": 4831.83
+        }
+      }
     },
     {
       "name": "Lake Powell",
@@ -1913,7 +1927,28 @@
       "waterbody_states": [
         "AZ",
         "UT"
-      ]
+      ],
+      "water_flow": {
+        "unit": "ft^3/s",
+        "inflow_unavailable": null,
+        "inflow_review_url": null,
+        "inflow": {
+          "source_item_id": 511,
+          "source_url": "https://data.usbr.gov/catalog/2362/item/511",
+          "definition": "Reclamation computes inflow from releases and the change in stored water. It also accounts for evaporation and changes in bank storage when those values are included.",
+          "definition_url": "https://www.usbr.gov/rsvrWater/rsv40Day.html?siteid=919",
+          "as_of": "2026-11-10",
+          "current": 13709.8
+        },
+        "release": {
+          "source_item_id": 4315,
+          "source_url": "https://data.usbr.gov/catalog/2362/item/4315",
+          "definition": "The daily average total release from Glen Canyon Dam, in cubic feet per second, as published by Reclamation.",
+          "definition_url": "https://data.usbr.gov/catalog/2362/item/4315",
+          "as_of": "2026-11-10",
+          "current": 6577.68
+        }
+      }
     },
     {
       "name": "Franklin D. Roosevelt Lake",

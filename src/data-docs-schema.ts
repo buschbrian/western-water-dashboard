@@ -303,10 +303,26 @@ export const RESERVOIR_GROUPS: readonly ApiFieldGroup[] = [
       "Every state the drainage area reaches, which is where the water comes from."),
     f("county_fips", "identifier", "Five-digit county code holding the published point."),
     f("county_name", "text", "County name. Read it with the state: several names repeat."),
+    f("water_flow", "object", "Reviewed daily inflow and total release from Reclamation, with separate dates and definitions. Present only at Lake Powell and Lake Mead; Mead has no published daily inflow.", true),
     f("elevation", "object",
       "Surface level block, only for a reservoir whose datum has been reviewed. "
       + "Fields are listed below.", true)
   ]},
+  { id: "reservoir-water-flow", title: "Reservoir inflow and release", path: "reservoirs[].water_flow", fields: [
+    f("unit", "identifier", "ft^3/s: cubic feet per second."),
+    f("inflow", "object or null", "Reclamation's computed daily inflow, with its definition. Null when unavailable."),
+    f("release", "object or null", "Daily average total dam release. Null when unavailable."),
+    f("inflow_unavailable", "text or null", "Why daily inflow is unavailable."),
+    f("inflow_review_url", "URL or null", "Catalog checked for daily inflow.")
+  ] },
+  { id: "reservoir-flow-reading", title: "One flow reading", path: "reservoirs[].water_flow.inflow or release", fields: [
+    f("current", "cubic feet per second", "Newest observed daily flow."),
+    f("as_of", "date", "The flow reading's own day."),
+    f("source_item_id", "identifier", "Reviewed Reclamation item number."),
+    f("source_url", "URL", "Reclamation's item page."),
+    f("definition", "text", "What the operator's measurement means."),
+    f("definition_url", "URL", "Operator's source for that definition.")
+  ] },
   { id: "reservoir-elevation", title: "Surface level", path: "reservoirs[].elevation", fields: [
     f("unit", "identifier", "Always ft."),
     f("vertical_datum", "identifier",

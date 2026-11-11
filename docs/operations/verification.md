@@ -75,6 +75,10 @@ The iframe checks wait at most five seconds for busy flags to clear after
 story readiness; responsive charts can still be finishing their bounded
 resize redraw at that point. The final zero-busy assertion is unchanged.
 
+Focused checks also accept `--wave-three`, `--chooser`, and `--data-docs`.
+They rebuild before checking the named contract; the normal target keeps all
+of these checks and the hosted-service-outage suite.
+
 ## What each suite is for
 
 `tests/smoke-modern.mjs` is the one that catches what the others cannot: a page
@@ -130,3 +134,13 @@ perfect score from a renderer that never drew. Leave the window in front.
   Colour balance, density and visual hierarchy need a human at a real browser.
 - Hover cannot be exercised in a hidden pane: `requestAnimationFrame` never
   fires there and `view.hitTest()` never settles.
+
+## Focused wave-three check
+
+`npm run verify:browser -- --wave-three` rebuilds and checks storage-history
+charts and downloads, upstream summaries, Powell flow definitions, aligned
+30-day plots, upstream precipitation links, and the failed-history fallback
+at all three widths. It uses the same system-Chromium setting as the full
+suite. The normal browser target includes these cases as well. Screenshots
+are kept under `screenshots/wave-three-*.png`; the charts are SVG and can be
+inspected there. This does not establish ArcGIS map-canvas rendering.

@@ -86,6 +86,40 @@ page's own formats; the last line is the credit line from `reporters.html`,
 with the provider first and `SITE_ADDRESS` once. A combined figure from more
 than two providers gets a neutral credit line.
 
+#### Storage history and upstream conditions (ADR-155–157)
+
+`data/storage-history.ts` loads the index, current water year and only the
+requested station's archive, with runtime validation and bounded fetches.
+`storage-history-model.ts` aligns up to six water years by calendar date,
+retains gaps and monthly point observations, and serializes the full record
+as CSV. `ui/storage-history.ts` mounts the chart 600px before it reaches the
+screen, using the same SVG renderer as the level chart with storage ticks.
+The normal comparison and full-level basis are unchanged. The readiness field
+`storageHistory` is waiting, loading, drawn or unavailable. Failed loading
+clears busy state and keeps the monthly view.
+
+`ui/reservoir-conditions.ts` shows the optional `water_flow` block, with units,
+separate dates, source definitions and late-data text. Powell inflow explicitly
+says it is computed by Reclamation. Mead has release and a catalog-backed
+unavailable-inflow explanation. Historical flow is never reconstructed from
+river gauges.
+
+The same module lazily loads the mountain gauge catch and snow water for
+`upstream_index.json` membership. `upstream-conditions-model.ts` uses the
+existing storm totals and snow-depth mean, with reporting dates and site
+counts. The sentence separating these readings from inflow, storage change
+and a claim about where water went stays beside the values. The precipitation
+link carries `state=all&upstream=<station>` and intersects any explicit place
+on that page. The full historical comparison remains there.
+
+For Powell and Mead, `reservoir-context-model.ts` aligns the last 30 calendar
+days of catch, the four reviewed rivers toward Powell, available reservoir
+inflow and release, and reviewed level. `viz/reservoir-context.ts` draws separate
+value scales on identical calendar axes, with units, sources and daily text
+values. Missing observations stay missing. `upstreamConditions` and `context`
+are separate readiness facts; a failed optional file does not turn the rest
+of the reservoir page into an error.
+
 #### The share frame and the share pages
 
 `reservoir.html?name=...&view=share` (ADR-141) is the same page in a picture
@@ -105,8 +139,8 @@ storage frame instead (ADR-154), built by the pure
 `reservoir-storage-share-model.ts` from the page's own builders: percent full
 with its basis, stored water, the reading date and late-data note, the normal
 comparison with its period and years (and the sentence for a normal that
-covers part of its period), the twelve-month chart with its key, and the
-source line. It asks for no level history. The name may take two lines and
+covers part of its period), the storage water-year chart with its key (ADR-155),
+and the source line. A missing storage history keeps the twelve-month chart. It asks for no level history. The name may take two lines and
 the chart takes the height the words leave, so any published name fits. It
 signals `elevation` as `none` or `card`, never `drawn`; the readiness field
 `share` says which frame is on the page: `level`, `storage` or `none`. The

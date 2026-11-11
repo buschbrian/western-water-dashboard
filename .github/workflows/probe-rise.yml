@@ -1,8 +1,8 @@
 name: Probe RISE catalog
 
-# Manual-only diagnostic. Prints what RISE publishes about a reservoir
-# beyond its storage timeseries, so catalog work can be written against the
-# real payload rather than a guess about the API's shape.
+# Manual diagnostic and bounded storage-history backfill. The ordinary
+# probe prints RISE catalog metadata; the optional USGS job uses the existing
+# secret and returns public observations as an artifact, without publishing.
 #
 # Manual only. Note that workflow_dispatch can only target a workflow that
 # already exists on the default branch -- until this lands on main, the only
@@ -14,6 +14,10 @@ on:
         description: "Reservoir name (must match a key in RESERVOIRS)"
         required: false
         default: "Lake Powell"
+      backfill_usgs_storage:
+        description: Generate USGS storage histories as a data artifact instead of probing RISE
+        type: boolean
+        default: false
       dump:
         description: "Also print full payloads"
         type: boolean
@@ -24,6 +28,7 @@ permissions:
 
 jobs:
   probe:
+    if: ${{ !inputs.backfill_usgs_storage }}
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -37,3 +42,32 @@ jobs:
         run: |
           NAME="${{ inputs.name }}"
           python tools/probe_rise.py --name "${NAME:-Lake Powell}"
+
+  backfill-usgs-storage:
+    if: ${{ inputs.backfill_usgs_storage }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - name: Install pipeline dependencies
+        run: pip install -r requirements-pipeline.txt
+      - name: Build observed USGS storage histories
+        env:
+          PYTHONUNBUFFERED: "1"
+          USGS_API_KEY: ${{ secrets.USGS_API_KEY }}
+        run: python tools/build_storage_history.py --source usgs --workers 2 --output storage-history-backfill
+      - name: Keep the data for local verification
+        if: ${{ always() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: usgs-storage-history
+          path: storage-history-backfill/
+          if-no-files-found: error
+          retention-days: 7

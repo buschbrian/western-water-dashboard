@@ -61,6 +61,10 @@ import {
   isShareView, SHARE_CHART_HEIGHT, SHARE_CHART_SCALE, SHARE_TREND_SCALE, shareFrame
 } from "./reservoir-share-model";
 import { storageShareFrame, type StorageShareFrame } from "./reservoir-storage-share-model";
+import { storageHistorySection, drawStorageYears, storageYearKey } from "./ui/storage-history";
+import { loadStorageHistory } from "./data/storage-history";
+import { storageYears } from "./storage-history-model";
+import { reservoirFlowSection, mountUpstreamConditions, mountReservoirContext } from "./ui/reservoir-conditions";
 import { wireTheme } from "./ui/theme";
 import { stampTheme } from "./ui/theme-stamp";
 import { coordinateText } from "./viz/coordinates";
@@ -89,11 +93,20 @@ if (!found) throw new Error("Missing #reservoir-main");
 /* A narrowed alias: the render helpers below run after this guard, and the
  * checker does not carry a narrowing into another function body. */
 const main: HTMLElement = found;
+type ReadyFacts = Omit<NonNullable<Window["__reservoirReady"]>, "status">;
+const readyFacts: ReadyFacts = {};
+
+function updateReady(facts: ReadyFacts): void {
+  Object.assign(readyFacts, facts);
+  if (window.__reservoirReady) Object.assign(window.__reservoirReady, facts);
+}
 
 function finish(state: ReservoirPageState["status"],
   elevation?: "drawn" | "card" | "none", share?: "level" | "storage" | "none"): void {
   main.setAttribute("aria-busy", "false");
   window.__reservoirReady = {
+    ...window.__reservoirReady,
+    ...readyFacts,
     status: state, ...(elevation ? { elevation } : {}), ...(share ? { share } : {})
   };
 }
@@ -390,9 +403,15 @@ async function renderFound(payload: ReservoirPayload,
   }
 
   // The reviewed surface level (ADR-135), only where the roster gave one.
+  const storageHistory = storageHistorySection(reservoir, (storageHistory) => {
+    updateReady({ storageHistory });
+  });
+  children.push(storageHistory.element);
   const elevationView = describeElevation(reservoir, payload.generated_at);
   const elevationParts = elevationView ? elevationSection(elevationView) : null;
   if (elevationParts) children.push(elevationParts.section);
+  const flowSection = reservoirFlowSection(reservoir, payload.generated_at);
+  if (flowSection) children.push(flowSection);
 
   // Both comparisons, each saying how many years stand behind it. A reader
   // who wants only one is on the map page; here they can see what choosing
@@ -495,6 +514,8 @@ async function renderFound(payload: ReservoirPayload,
     const trace = station === null ? null : index.traces[station];
     if (trace && station) {
       upstreamHost.append(...upstreamSection(trace, payload.reservoirs, station));
+      mountUpstreamConditions(upstreamHost, trace, station, (upstreamConditions) => updateReady({ upstreamConditions }));
+      mountReservoirContext(upstreamHost, trace, station, payload.generated_at, (context) => updateReady({ context }));
       const embed = createEmbedView("reservoir-embed", [{
         label: "Reservoir and water upstream", title: `Water stored at and above ${label}`,
         request: { ok: true, view: "upstream", reservoir: station, theme: null }
@@ -519,6 +540,7 @@ async function renderFound(payload: ReservoirPayload,
       return "card";
     }
   })();
+  storageHistory.mount();
   const [, , elevationState] = await Promise.all([imageryReady, upstreamReady, elevationReady]);
   finish("found", elevationState);
 }
@@ -617,7 +639,25 @@ async function renderShare(payload: ReservoirPayload,
       choices: baselineChoices(payload),
       minimumYears: payload.climate_normals?.minimum_years ?? 0
     });
-    if (storage && renderStorageShare(storage)) return finish("found", level, "storage");
+    if (storage && renderStorageShare(storage)) {
+      updateReady({ storageHistory: "unavailable" });
+      try {
+        const history = await loadStorageHistory(reservoir.source_station_id);
+        const years = history ? storageYears(history, reservoir.as_of) : null;
+        const host = main.querySelector<HTMLElement>("#reservoir-trend-chart");
+        if (years && host) {
+          const room = host.getBoundingClientRect().height;
+          drawStorageYears(host, years, { scale: SHARE_TREND_SCALE,
+            ...(room > 0 ? { height: room / SHARE_TREND_SCALE } : {}) });
+          const key = main.querySelector(".share-key");
+          const next = storageYearKey(years);
+          next.classList.add("share-key");
+          key?.replaceWith(next);
+          updateReady({ storageHistory: "drawn" });
+        }
+      } catch (error) { console.warn("The storage share frame keeps its monthly chart:", error); }
+      return finish("found", level, "storage");
+    }
     main.classList.remove("reservoir-share-storage");
     const heading = document.createElement("h1");
     heading.className = "reservoir-name";

@@ -24,7 +24,8 @@
     "generated-archive": "Append-only history written by a generator. Never hand-edit, never rewrite in place.",
     "derived-on-demand": "Rebuilt by a named tool when its inputs change, not by the daily job.",
     "reviewed-by-hand": "Edited by a person, carrying the evidence for each entry.",
-    "frozen": "Retained for compatibility and parity checks. Do not regenerate."
+    "frozen": "Retained for compatibility and parity checks. Do not regenerate.",
+    "generated-history": "Daily observations merged by date. A provider correction replaces a reported date; unreported dates are retained. Never hand-edit."
   },
   "files": [
     {
@@ -427,6 +428,27 @@
       "writer": "tools/build_share_ledger.py",
       "staged_by_refresh": true,
       "note": "Append-only permanent reservoir share addresses. Entries survive renames, withdrawal and removal."
+    },
+    {
+      "path": "data/storage-history",
+      "class": "generated-history",
+      "writer": "refresh_reservoirs.py",
+      "staged_by_refresh": true,
+      "note": "Station-keyed storage histories, with current water year and index. Backfill: tools/build_storage_history.py. ADR-155."
+    },
+    {
+      "path": "reservoir_flow_history.json",
+      "class": "generated-daily",
+      "writer": "refresh_reservoirs.py",
+      "staged_by_refresh": true,
+      "note": "Reviewed reservoir inflow and total release merged by date. ADR-156."
+    },
+    {
+      "path": "admitted_reservoir_flows.json",
+      "class": "reviewed-by-hand",
+      "writer": null,
+      "staged_by_refresh": false,
+      "note": "Reclamation item, observed status, units and definitions for Powell inflow and Powell/Mead total release. Mead inflow remains unavailable."
     }
   ]
 }

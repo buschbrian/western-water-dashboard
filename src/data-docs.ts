@@ -133,6 +133,23 @@ root.innerHTML = `
         <pre tabindex="0" role="region" aria-label="River flow example, scrolls sideways"><code>{"date": "2026-10-30", "cfs": 101.0, "approval": "Provisional", "qualifiers": []}</code></pre>
       </article>
       <article class="api-file">
+        <h3>Storage and reservoir flow histories</h3>
+        <p><a href="./data/storage-history/index.json">Storage history index</a> names each station's
+          finished-year file. <a href="./data/storage-history/current.json">Current water year</a>
+          holds the daily observations from October 1. Each station carries its name, source,
+          reporting interval, <code>start</code>, <code>end</code> and <code>values</code>.
+          Position zero is the start date, each following position is the next day, and null is
+          no reading. Values are acre-feet. Monthly feeds keep the days between readings empty.
+          Earlier records are backfilled from each provider where available; a missing station in
+          the index has no published history yet. These files do not change the normal or full level.</p>
+        <p><a href="./api/reservoir_flow_history.json">Reservoir flow history</a> uses the same dated
+          list for each station's <code>inflow</code> and <code>release</code>, in cubic feet per second.
+          It starts with the first run's 90-day window and grows daily. Each series carries the
+          Reclamation item, definition and source. Lake Mead has no daily inflow item; a river
+          gauge is never substituted. A provider correction replaces its date, and a date the
+          provider leaves out stays as stored.</p>
+      </article>
+      <article class="api-file">
         <h3>River flow history</h3>
         <p><a href="./api/river_history.json"><code>/api/river_history.json</code></a></p>
         <p>Every day of mean flow this site has read at each river gauge, in cubic feet per

@@ -23,6 +23,16 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   Inventory of Dams. Five carry a record low the record-figure screen
   reports for review, as several published reservoirs already do.
 
+- **Reservoir storage history and upstream conditions** (ADR-155–157).
+  Reservoir pages have a lazy water-year storage chart, a table and a
+  full-record CSV. Storage share frames use that chart when available.
+  Powell shows Reclamation's computed inflow and total release; Mead shows
+  total release and states that daily inflow is unavailable. Mountain gauge
+  catch and snow water name their reporting sites and dates. An upstream
+  precipitation link and aligned 30-day charts give context without claiming
+  inflow, causality or travel time. Earlier storage history is backfilled
+  through existing adapters; the eight USGS histories await the read-only
+  Actions job with the existing secret.
 - **Main-page picture previews and copyable story embed code.** The storage,
   snow, precipitation, drought and river pages carry dated preview pictures,
   with figure-free fallbacks. The precipitation page offers its full card

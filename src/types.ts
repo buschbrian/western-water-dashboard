@@ -245,6 +245,7 @@ export interface Reservoir {
   connected_states?: string[];
   /** The reviewed surface level (ADR-135); absent for every other reservoir. */
   elevation?: ReservoirElevation;
+  water_flow?: ReservoirWaterFlow;
 }
 
 /** The measured difference between two vertical datums at one site. */
@@ -323,6 +324,23 @@ export interface ReservoirElevation extends MeasurementSummary {
   record_starts?: RecordStart;
   /** False where the operator does not say which datum its reference levels use. */
   reference_levels_datum_stated?: boolean;
+}
+
+export interface ReservoirFlowReading {
+  current: number;
+  as_of: string;
+  source_item_id: number;
+  source_url: string;
+  definition: string;
+  definition_url: string;
+}
+
+export interface ReservoirWaterFlow {
+  unit: "ft^3/s";
+  inflow: ReservoirFlowReading | null;
+  release: ReservoirFlowReading | null;
+  inflow_unavailable: string | null;
+  inflow_review_url: string | null;
 }
 
 /** One reservoir's daily levels: `values[i]` is the level `i` days after `start`. */

@@ -1,0 +1,45 @@
+{
+  "reviewed": "2026-11-11",
+  "keyed_by": "source_station_id",
+  "reservoirs": {
+    "509": {
+      "name": "Lake Powell",
+      "inflow": {
+        "item_id": 511,
+        "catalog_record": 2362,
+        "parameter": "Lake/Reservoir Inflow",
+        "unit": "cfs",
+        "modeled": false,
+        "definition": "Reclamation computes inflow from releases and the change in stored water. It also accounts for evaporation and changes in bank storage when those values are included.",
+        "definition_url": "https://www.usbr.gov/rsvrWater/rsv40Day.html?siteid=919",
+        "source_url": "https://data.usbr.gov/catalog/2362/item/511"
+      },
+      "release": {
+        "item_id": 4315,
+        "catalog_record": 2362,
+        "parameter": "Lake/Reservoir Release - Total",
+        "unit": "cfs",
+        "modeled": false,
+        "definition": "The daily average total release from Glen Canyon Dam, in cubic feet per second, as published by Reclamation.",
+        "definition_url": "https://data.usbr.gov/catalog/2362/item/4315",
+        "source_url": "https://data.usbr.gov/catalog/2362/item/4315"
+      }
+    },
+    "6124": {
+      "name": "Lake Mead",
+      "inflow": null,
+      "inflow_unavailable": "Reclamation's Lake Mead catalog has no daily inflow series. River gauges are not used as reservoir inflow.",
+      "inflow_review_url": "https://data.usbr.gov/catalog/4370",
+      "release": {
+        "item_id": 6125,
+        "catalog_record": 4370,
+        "parameter": "Lake/Reservoir Release - Total",
+        "unit": "cfs",
+        "modeled": false,
+        "definition": "The daily average total release from Hoover Dam, in cubic feet per second, as published by Reclamation.",
+        "definition_url": "https://data.usbr.gov/catalog/4370/item/6125",
+        "source_url": "https://data.usbr.gov/catalog/4370/item/6125"
+      }
+    }
+  }
+}

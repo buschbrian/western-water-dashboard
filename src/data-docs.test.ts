@@ -75,6 +75,13 @@ describe("public API field documentation", () => {
       expectFields(RESERVOIR_GROUPS, "reservoir-reviewed-holds", merged(data.reviewed_holds));
     }
     expectFields(RESERVOIR_GROUPS, "reservoir-record", merged(data.reservoirs));
+    const flows = data.reservoirs.map((record: Record<string, any>) => record.water_flow)
+      .filter(Boolean) as Record<string, any>[];
+    if (flows.length) {
+      expectFields(RESERVOIR_GROUPS, "reservoir-water-flow", merged(flows));
+      expectFields(RESERVOIR_GROUPS, "reservoir-flow-reading", merged(flows.flatMap((flow) =>
+        [flow.inflow, flow.release].filter(Boolean))));
+    }
     expectFields(RESERVOIR_GROUPS, "reservoir-month",
       merged(data.reservoirs.flatMap((record: Record<string, any>) => record.monthly)));
     /* A reviewed level is on a few reservoirs only (ADR-135); checked when any

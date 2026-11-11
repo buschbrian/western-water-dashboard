@@ -173,3 +173,39 @@ would otherwise have a thirty-year fact deleted over a fortnight of silence. **A
 reservoir with no record is not asked again**: "no readings in the period" is a
 finding about a dam built in 2011, not a fetch to retry; only "the provider did
 not answer" is retryable.
+
+## Storage-history backfill (ADR-155)
+
+The morning refresh keeps the series it already reads. Earlier history is an
+on-demand build, not another full historical query each morning:
+
+```bash
+.venv/bin/python tools/build_storage_history.py --workers 2
+.venv/bin/python tools/build_storage_history.py --only "Station ID"
+.venv/bin/python tools/build_storage_history.py --missing
+```
+
+`--missing` means no finished-year archive exists; it does not replace an
+explicit full backfill of a newly admitted station whose daily refresh has
+already created a shorter archive. Use `--only` for that station. Every run
+merges, including provider corrections, and keeps unrequested stations. SRP
+and CAP can only supply their retained source cache. A failed station reports
+its error and leaves previous data intact; the process exits nonzero.
+
+The Geological Survey key is stored in GitHub Secrets. To backfill that
+provider without copying a secret locally, dispatch the existing **Probe RISE catalog** workflow on the reviewed implementation branch, with
+`backfill_usgs_storage=true`. This selects the separate read-only job and
+skips the ordinary RISE probe. This diagnostic workflow has no deploy trigger. Download its
+`usgs-storage-history` artifact and import its extracted directory:
+
+```bash
+.venv/bin/python tools/build_storage_history.py --import-from /path/to/extracted/artifact
+npm run verify:pipeline
+npm run verify:frontend
+```
+
+The import checks station and provider identity, dense dates, finite values,
+source metadata and archive paths, then merges rather than replacing the
+local directory. The job does not push or deploy, and its artifact expires
+after seven days. A failed run can retain a partial artifact: its failure
+and missing station IDs must be reported, never described as complete.

@@ -1,8 +1,10 @@
 # Product review plan, November 2026
 
 Status: The four Wave 1 implementation PRs (#115–#118) were published on
-2026-11-09. Wave 2, sharing and place: items 5–7 are implemented locally;
-items 8 and 9 remain.
+2026-11-09. Wave 2, sharing and place: items 5–7 are merged through PR #120;
+items 8 and 9 remain. Wave 3 is implemented locally under ADR-155–157;
+final acceptance and the eight USGS storage backfills remain. Mead daily
+inflow is a source gap, explicitly shown as unavailable.
 Brian Busch chose the four scopes below
 on 2026-11-09. ADR-153 records the storage-map choice; each later wave writes
 its own record where required.
@@ -202,6 +204,21 @@ Record: one.
 
 Each is a new published contract. Verify with `npm run verify:pipeline` and
 `npm run verify:browser`; payloads regenerate in CI.
+
+Local implementation on 2026-11-11: the history writer, lazy chart, full CSV
+and storage share chart (ADR-155); the three available observed flow series
+and their operator definitions (ADR-156); upstream station means, the
+precipitation link and aligned 30-day context (ADR-157). The focused browser
+target passes at all three widths, including the history failure path.
+The final full-suite result is still to be recorded. History is backfilled
+for 401 of 409 published stations. The other eight use the Geological
+Survey key in GitHub Secrets; the diagnostic workflow has a read-only
+artifact job and the builder can validate and merge that artifact locally.
+No branch has been pushed and no release has been made from this work.
+
+Reclamation's Mead catalog contains no daily inflow series. That part of
+item 11 remains a source-evidence gap. The implementation publishes release
+and the reason inflow is unavailable, rather than manufacturing a series.
 
 ### 10. Daily storage history for every reservoir
 

@@ -302,6 +302,25 @@ CDEC_EXCLUDED_READINGS = load_excluded_readings(
 RISE_EXCLUDED_READINGS = load_excluded_readings(ADMITTED_RISE_RESERVOIRS_PATH, None)
 
 
+def exclude_cached_storage_readings(days: dict, record: dict) -> None:
+    """Apply the same reviewed identities to observations retained in a cache.
+
+    A newly excluded day is absent from the fetch, which must not leave its
+    old cached value published. CDEC monthly stamps name the month's start;
+    the retained observation already carries the corrected month-end date.
+    """
+    source = record["source_key"]
+    table = (RISE_EXCLUDED_READINGS if source == "rise" else
+             CDEC_EXCLUDED_READINGS if source == "cdec" else {})
+    for excluded in table.get(str(record["source_station_id"]), ()):
+        day = pd.Timestamp(excluded["stamp"]).normalize()
+        if source == "cdec" and record["data_frequency"] == "monthly":
+            day += pd.offsets.MonthEnd(0)
+        row = days.get(day.date().isoformat())
+        if row is not None and row.get("values") == excluded["value"]:
+            row["values"] = None
+
+
 @functools.lru_cache(maxsize=None)
 def _reading_day(stamp):
     """One stamp's own calendar day, or None where it does not parse.

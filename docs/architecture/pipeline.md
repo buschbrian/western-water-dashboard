@@ -345,3 +345,42 @@ record high above the full level or a record low far below its neighbours
 (ADR-150). The refresh step's raw log is the complete referral list; the
 run page's annotation list is a convenience view. Review the full log.
 The warning opens no issue and removes nothing.
+
+## Storage history and reviewed reservoir flow (ADR-155–157)
+
+`pipeline/storage_history.py` publishes the already-fetched storage series
+apart from `reservoirs.json`. `data/storage-history/index.json` maps station
+IDs to SHA-256-named archives of finished years; `current.json` carries the
+current water year across stations. Values are dense daily positions with
+null gaps, in acre-feet, with cadence and provider metadata. Provider-owned
+cache exclusion logic removes a newly reviewed raw day/value identity from
+stored history too, using the same CDEC month-end correction; a corrected
+value on that day remains valid. The writer merges
+reported dates, preserves unrequested and withdrawn stations, and rolls over
+unfetched stations as well. An unreadable stored file fails rather than
+silently replacing its past. Archives have no daily timestamp and are written
+only when observations change. `generated-history` permits provider corrections
+without changing the frozen-archive contract of finished snow seasons.
+
+`tools/build_storage_history.py` fetches earlier records through the existing
+provider adapters with at most three workers. `--source`, `--only` and
+`--missing` bound the requested set; all runs merge. `--import-from` validates
+and merges a generated artifact without network access. Earlier SRP and CAP
+observations are limited to the retained source cache. Backfill failures are
+reported, and missing entries remain visible gaps in the published coverage.
+
+`pipeline/reservoir_flows.py` loads `admitted_reservoir_flows.json` and reads
+Powell computed inflow and Powell/Mead total release. The live catalog must
+still match each reviewed item, record, observed status, parameter, unit and
+daily-average transformation. Each record's optional `water_flow` block has
+independently dated readings and operator definitions. A failed fetch keeps
+the prior reading; a reading beyond the 60-day publication window becomes
+null. Daily values merge by date into `reservoir_flow_history.json`, starting
+with the first run's 90-day window. Mead's catalog has no daily inflow, and
+neither a modeled value nor a river gauge is substituted.
+
+The normal daily workflow remains independent of the manual Actions backfill.
+In **Probe RISE catalog**, `backfill_usgs_storage=true` skips the RISE probe, runs a
+read-only USGS backfill with the existing secret, and uploads only the data
+as a short-lived artifact. It neither commits nor deploys. The artifact is
+imported locally and checked before entering the normal data publication.

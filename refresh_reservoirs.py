@@ -131,6 +131,7 @@ from pipeline.numbers import (  # noqa: F401
 from pipeline.history import (  # noqa: F401
     monthly_history, recent_low, value_asof
 )
+from pipeline import daily_history, reservoir_flows, storage_history
 from pipeline.freshness import (  # noqa: F401
     carry_forward, carry_unrefreshed, carry_withdrawals, partition_by_age,
     withdrawal_notice
@@ -940,6 +941,13 @@ def main() -> int:
             print(f"ERROR: unknown reservoir(s): {', '.join(sorted(missing))}", file=sys.stderr)
             return 2
 
+    storage_frames = {}
+
+    def summarize_and_keep(*args, **kwargs):
+        record = summarize(*args, **kwargs)
+        storage_frames[record["source_station_id"]] = args[4].copy()
+        return record
+
     records = []
     for station_id, (name, lat, lon) in rise_targets.items():
         # The key is the identity and the value carries the label (ADR-066).
@@ -963,7 +971,7 @@ def main() -> int:
                 records.append(carry_forward(previous[station_id], today, reason))
             continue
 
-        records.append(summarize(name, item_id, lat, lon, df, today,
+        records.append(summarize_and_keep(name, item_id, lat, lon, df, today,
                                  capacities.get(station_id), normals=normals))
         time.sleep(0.5)  # be polite to RISE's server
 
@@ -991,7 +999,7 @@ def main() -> int:
             "capacity_af": capacity_af,
             "capacity_basis": "awdb_reservoir_metadata",
         }
-        records.append(summarize(
+        records.append(summarize_and_keep(
             name, None, lat, lon, df, today,
             capacity,
             source_key="awdb", source_label="USDA NRCS AWDB",
@@ -1023,7 +1031,7 @@ def main() -> int:
 
         stale_after = (AWDB_MONTHLY_STALE_AFTER_DAYS
                        if cadence == "monthly" else STALE_AFTER_DAYS)
-        records.append(summarize(
+        records.append(summarize_and_keep(
             name, None, lat, lon, df, today,
             ADMITTED_CDEC_RESERVOIRS[station]["capacity"],
             source_key="cdec", source_label="California Data Exchange Center",
@@ -1061,7 +1069,7 @@ def main() -> int:
 
         stale_after = (AWDB_MONTHLY_STALE_AFTER_DAYS
                        if cadence == "monthly" else STALE_AFTER_DAYS)
-        records.append(summarize(
+        records.append(summarize_and_keep(
             name, None, lat, lon, df, today,
             ADMITTED_CDSS_RESERVOIRS[abbrev]["capacity"],
             source_key="cdss", source_label="Colorado Division of Water Resources",
@@ -1098,7 +1106,7 @@ def main() -> int:
 
         stale_after = AWDB_MONTHLY_STALE_AFTER_DAYS if cadence == "monthly" \
             else STALE_AFTER_DAYS
-        records.append(summarize(
+        records.append(summarize_and_keep(
             name, None, lat, lon, df, today,
             ADMITTED_USGS_RESERVOIRS[site_no]["capacity"],
             source_key="usgs", source_label="U.S. Geological Survey",
@@ -1145,7 +1153,7 @@ def main() -> int:
             if measurement_key in previous:
                 records.append(carry_forward(previous[measurement_key], today, reason))
             continue
-        records.append(summarize(
+        records.append(summarize_and_keep(
             name, None, lat, lon, df, today, row["capacity"],
             source_key="srp", source_label="Salt River Project",
             source_url="https://streamflow.watershedconnection.com/dwr",
@@ -1170,7 +1178,7 @@ def main() -> int:
             if sensor_id in previous:
                 records.append(carry_forward(previous[sensor_id], today, reason))
             continue
-        records.append(summarize(
+        records.append(summarize_and_keep(
             name, None, lat, lon, df, today, row["capacity"],
             source_key="dnrc", source_label="Montana DNRC StAGE",
             source_url="https://gis.dnrc.mt.gov/arcgis/rest/services/WRD/WMB_StAGE/MapServer",
@@ -1195,7 +1203,7 @@ def main() -> int:
             if location in previous:
                 records.append(carry_forward(previous[location], today, reason))
             continue
-        records.append(summarize(
+        records.append(summarize_and_keep(
             name, None, lat, lon, df, today, row["capacity"],
             source_key="cwms", source_label="U.S. Army Corps of Engineers CWMS",
             source_url=CWMS_BASE_URL,
@@ -1228,7 +1236,7 @@ def main() -> int:
             if key in previous:
                 records.append(carry_forward(previous[key], today, reason))
             continue
-        records.append(summarize(
+        records.append(summarize_and_keep(
             name, None, lat, lon, df, today, row["capacity"],
             source_key="cap", source_label="Central Arizona Project",
             source_url=row["endpoint_url"],
@@ -1505,6 +1513,11 @@ def main() -> int:
         print("\n--dry-run: not writing reservoirs.json")
         return 0
 
+    storage_history.publish(records, storage_frames, today.date().isoformat())
+    if rise_targets:
+        flow_history = reservoir_flows.refresh(
+            [r for r in records if str(r.get("source_station_id")) in rise_targets], previous, today)
+        daily_history.write_compact(reservoir_flows.HISTORY, flow_history)
     OUTPUT_PATH.write_text(json.dumps(payload, indent=2) + "\n")
     if elevation_targets:
         # Written compact, as snowpack.json is: a daily series is read by a
