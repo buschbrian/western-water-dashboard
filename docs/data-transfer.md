@@ -15,6 +15,32 @@ Two rules before any figure below is read:
 - **Re-measure rather than reason.** Every number here came from a real
   request and each one moves with things that are easy to change by accident.
 
+## Wave-three histories (2026-11-11)
+
+Measured from the generated files, compressing each JSON separately with gzip.
+This is payload size, not a complete network or rendering-speed audit.
+Measured before the California admissions were rebased: the backfill then
+covered 401 of 409 published reservoirs. The rebase note below gives the
+current figures (412 of 420). The eight Geological Survey
+series still require the key-backed Actions artifact.
+
+| Payload | Raw bytes | Gzip bytes |
+|---|---:|---:|
+| Entire storage-history directory, 403 files | 50,531,991 | 9,733,013 |
+| Storage station index | — | 19,945 |
+| Shared current water year | — | 44,770 |
+| Largest individual finished-year station archive | — | 116,805 |
+| Reservoir inflow and release history | 3,382 | 1,642 |
+
+A reservoir chart requests the index, the shared current year and one station
+archive, when its card comes near the screen. The largest measured combination
+is 181,520 bytes gzip. The build publishes the storage directory once under
+`data/`, rather than copying it into root and API aliases too. Finished-year
+archives change only at rollover or when reported observations change; the
+current-year file carries the ordinary daily changes. The initial repository
+addition is about 50.5 MB raw. This does not measure Git's eventual packed
+object size. The history contract and bounds are ADR-160.
+
 ## Dependency upgrade budget (2026-10-23)
 
 `npm run budget:sdk` compared commit `995a69b` with the dependency upgrade
@@ -581,3 +607,13 @@ both.
 **The rule this does not change:** generalized geometry is still never used
 for analysis. The numbers above are about what a browser draws, and a
 41-vertex Utah cannot resolve a border whatever it costs to send.
+
+After the eleven California admissions were rebased on 2026-11-11, the generated
+storage-history directory holds 414 files for 412 of 420 published reservoirs:
+50,931,130 raw bytes and 9,820,233 gzip bytes. The eight missing records remain
+the USGS source histories; use the read-only Actions backfill with its secret.
+
+After main's four later admissions (three Corps reservoirs and Fairmont) were
+backfilled on 2026-11-11, the directory holds 418 files for 416 of 424
+published reservoirs: 51,339,819 raw bytes and 9,848,494 gzip bytes. The same
+eight USGS histories are still missing.

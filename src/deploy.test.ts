@@ -47,14 +47,14 @@ const COMMITTED_BUT_UNPUBLISHED = [
  * contract beside it. */
 const SOURCE_ONLY_ROSTERS = [
   "admitted_reservoirs.json", "admitted_rise_reservoirs.json",
-  "admitted_reservoir_elevations.json"
+  "admitted_reservoir_elevations.json", "admitted_reservoir_flows.json"
 ];
 
 const RUNTIME_DATA = [
   "reservoirs.json", "lakes.json", "snow_sites.json", "snowpack.json",
   "reference.json", "capacities.json", "precipitation.json", "precipitation_history.json",
   "soil_moisture.json", "elevation_history.json", "rivers.json",
-  "river_history.json", "soil_moisture_history.json"
+  "river_history.json", "soil_moisture_history.json", "reservoir_flow_history.json"
 ];
 
 describe("a data-only commit deploys on its own", () => {

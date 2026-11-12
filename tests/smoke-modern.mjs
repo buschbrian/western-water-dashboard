@@ -797,6 +797,60 @@ const FIND_CREDENTIAL_UI = `(() => {
   return found;
 })()`;
 
+/*
+ * Somebody else's outage, told apart from this application's own faults.
+ *
+ * Several layers on these pages are hosted by Esri and fetched at runtime:
+ * the drainage outlines, the state and county boundaries, the drought change
+ * surface. Every one is optional by design -- each has a deadline, and a
+ * layer that does not answer is simply not added, because a page drawing its
+ * own committed data must not go blank when another organisation's service
+ * is down.
+ *
+ * That design is what made this suite untrustworthy. On a machine that
+ * cannot reach those services the SDK logs one console error per layer, and
+ * every listener below counted each of them as a failure -- so the run
+ * failed differently every time and said nothing about the application.
+ * Measured on 2026-08-31: thirteen failures on a working branch and four on
+ * the same commit's parent, every one of them this.
+ *
+ * They are now counted apart rather than filtered away, which is the
+ * difference that matters. Filtering would hide the day the fallback itself
+ * breaks. Counting apart lets the run say "these layers were unreachable"
+ * out loud, and lets each page assert the thing that was never asserted
+ * before: that it still reached readiness without them.
+ */
+const HOSTED_LAYER_FAILURE = new RegExp([
+  "\\[@arcgis/core/layers/(Feature|VectorTile|Scene)Layer\\]",
+  "\\[@arcgis/core/views/support/LayerViewManager\\]",
+  "\\[@arcgis/core/portal/"
+].join("|"));
+
+/*
+ * The same outage told by the other narrator.
+ *
+ * A refused layer is reported twice: once by the SDK, in the messages above,
+ * and once by Chromium itself as a bare `Failed to load resource`. The second
+ * one carries no SDK prefix, so the matcher above cannot see it -- which is
+ * why a run could still fail three times on a layer it had already excused.
+ *
+ * These are matched by host instead, and only these hosts. Anything served
+ * from this repository's own origin stays a failure: a payload this project
+ * publishes and cannot then fetch is exactly the fault these suites exist to
+ * catch, and must never be filed under somebody else's outage.
+ */
+const HOSTED_SERVICE_HOST =
+  /https?:\/\/[^\s]*(\.arcgis\.com|hydro\.nationalmap\.gov|tigerweb\.geo\.census\.gov)/;
+const NETWORK_REFUSAL = /Failed to load resource|net::ERR_/;
+
+/* Chrome noise that has never meant anything here: a missing favicon, and
+ * the basemap's own tiles, sprites and glyph atlases, which have their own
+ * watchers above. */
+const IGNORED_CONSOLE = /favicon|tile|sprite|font/i;
+
+/** Every hosted-layer failure seen in this run, for the closing summary. */
+const hostedLayerOutages = [];
+
 await new Promise((resolve) => server.listen(PORT, resolve));
 URL = `http://127.0.0.1:${server.address().port}/`;
 
@@ -804,6 +858,22 @@ URL = `http://127.0.0.1:${server.address().port}/`;
 const browser = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH
   ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH }
   : {});
+
+if (process.argv.includes("--data-docs")) {
+  await checkPublicDataReference();
+  await browser.close();
+  server.close();
+  for (const failure of failures) console.error(failure);
+  process.exit(failures.length ? 1 : 0);
+}
+
+if (process.argv.includes("--wave-three")) {
+  await checkWaveThree();
+  await browser.close();
+  server.close();
+  for (const failure of failures) console.error(failure);
+  process.exit(failures.length ? 1 : 0);
+}
 
 if (process.argv.includes("--embeds")) {
   await checkStoryEmbeds();
@@ -876,13 +946,21 @@ if (process.argv.includes("--embeds")) {
   check(opened.shortestPlaceButton >= 44,
     `${label}: a place button is only ${opened.shortestPlaceButton}px high`);
 
+  if (process.argv.includes("--chooser")) {
+    await tab.route("**/data/reference.json", async (route) => {
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+      await route.continue();
+    });
+  }
   await tab.getByRole("button", { name: "Show the whole west" }).click();
+  await tab.waitForURL((url) => url.searchParams.get("state") === "all", { timeout: 60000 });
+  await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 90000 });
   await tab.waitForFunction(() =>
     !document.querySelector("dialog.opening-splash")?.hasAttribute("open"));
   const closed = await tab.locator("dialog.opening-splash").evaluate((dialog) => ({
     display: getComputedStyle(dialog).display,
     rectangles: dialog.getClientRects().length
-  }));
+  }), undefined, { timeout: process.argv.includes("--chooser") ? 1000 : 30000 });
   console.log("  closed:", JSON.stringify(closed));
   check(closed.display === "none" && closed.rectangles === 0,
     `${label}: the closed chooser remains visible (${closed.display}, `
@@ -900,6 +978,13 @@ if (process.argv.includes("--embeds")) {
   check(!/[?&](class|late|reservoir|sort)=/.test(tab.url()),
     `${label}: the reset destination kept page-owned state (${tab.url()})`);
   await context.close();
+}
+
+if (process.argv.includes("--chooser")) {
+  await browser.close();
+  server.close();
+  for (const failure of failures) console.error(failure);
+  process.exit(failures.length ? 1 : 0);
 }
 
 /* The first-visit question is asked before the map SDK is fetched, and
@@ -1025,59 +1110,7 @@ if (process.argv.includes("--embeds")) {
 
 
 
-/*
- * Somebody else's outage, told apart from this application's own faults.
- *
- * Several layers on these pages are hosted by Esri and fetched at runtime:
- * the drainage outlines, the state and county boundaries, the drought change
- * surface. Every one is optional by design -- each has a deadline, and a
- * layer that does not answer is simply not added, because a page drawing its
- * own committed data must not go blank when another organisation's service
- * is down.
- *
- * That design is what made this suite untrustworthy. On a machine that
- * cannot reach those services the SDK logs one console error per layer, and
- * every listener below counted each of them as a failure -- so the run
- * failed differently every time and said nothing about the application.
- * Measured on 2026-08-31: thirteen failures on a working branch and four on
- * the same commit's parent, every one of them this.
- *
- * They are now counted apart rather than filtered away, which is the
- * difference that matters. Filtering would hide the day the fallback itself
- * breaks. Counting apart lets the run say "these layers were unreachable"
- * out loud, and lets each page assert the thing that was never asserted
- * before: that it still reached readiness without them.
- */
-const HOSTED_LAYER_FAILURE = new RegExp([
-  "\\[@arcgis/core/layers/(Feature|VectorTile|Scene)Layer\\]",
-  "\\[@arcgis/core/views/support/LayerViewManager\\]",
-  "\\[@arcgis/core/portal/"
-].join("|"));
 
-/*
- * The same outage told by the other narrator.
- *
- * A refused layer is reported twice: once by the SDK, in the messages above,
- * and once by Chromium itself as a bare `Failed to load resource`. The second
- * one carries no SDK prefix, so the matcher above cannot see it -- which is
- * why a run could still fail three times on a layer it had already excused.
- *
- * These are matched by host instead, and only these hosts. Anything served
- * from this repository's own origin stays a failure: a payload this project
- * publishes and cannot then fetch is exactly the fault these suites exist to
- * catch, and must never be filed under somebody else's outage.
- */
-const HOSTED_SERVICE_HOST =
-  /https?:\/\/[^\s]*(\.arcgis\.com|hydro\.nationalmap\.gov|tigerweb\.geo\.census\.gov)/;
-const NETWORK_REFUSAL = /Failed to load resource|net::ERR_/;
-
-/* Chrome noise that has never meant anything here: a missing favicon, and
- * the basemap's own tiles, sprites and glyph atlases, which have their own
- * watchers above. */
-const IGNORED_CONSOLE = /favicon|tile|sprite|font/i;
-
-/** Every hosted-layer failure seen in this run, for the closing summary. */
-const hostedLayerOutages = [];
 
 /**
  * Collects console errors into `errors`, keeping third-party layer failures
@@ -3244,6 +3277,7 @@ for (const timing of ["page-start", "after-first-chart"]) {
 /* The public data reference is a build entry, not part of the map runtime.
  * Its readiness counts protect against a page that paints the shared shell
  * but silently loses one file or a section of field documentation. */
+async function checkPublicDataReference() {
 for (const viewport of VIEWPORTS) {
   const context = await newPageContext(browser, viewport);
   const tab = await context.newPage();
@@ -3267,7 +3301,7 @@ for (const viewport of VIEWPORTS) {
       scroll: document.documentElement.scrollWidth
     }));
     console.log("  ready:", JSON.stringify(state.ready));
-    check(state.ready?.files === 13 && state.files === 13,
+    check(state.ready?.files === 14 && state.files === 14,
       `${label}: rendered ${state.files} file cards, readiness reported ${state.ready?.files}`);
     check(state.ready?.groups === state.groups && state.groups >= 20,
       `${label}: rendered ${state.groups} field groups, readiness reported ${state.ready?.groups}`);
@@ -3280,6 +3314,9 @@ for (const viewport of VIEWPORTS) {
       "./api/lakes.json", "./lakes.html",
       // Daily river flow (ADR-136): its own file and page.
       "./api/rivers.json", "./rivers.html",
+      // Storage and reviewed reservoir flow (ADR-160, ADR-161).
+      "./data/storage-history/index.json", "./data/storage-history/current.json",
+      "./api/reservoir_flow_history.json",
       // Its history, kept day by day (ADR-146).
       "./api/river_history.json",
       "./api/snowpack.json", "./snow.html",
@@ -3324,6 +3361,9 @@ for (const viewport of VIEWPORTS) {
   for (const err of errors) failures.push(`${label}: ${err}`);
   await context.close();
 }
+}
+
+await checkPublicDataReference();
 
 
 /*
@@ -6130,9 +6170,9 @@ for (const failure of [
         levelCards: document.querySelectorAll(
           "#reservoir-main .reservoir-elevation .measurement-cards > section").length,
         levelLines: document.querySelectorAll(
-          "#reservoir-main .elevation-years .elevation-line").length,
+          "#reservoir-elevation-chart .elevation-line").length,
         currentLines: document.querySelectorAll(
-          "#reservoir-main .elevation-years .elevation-line-current").length,
+          "#reservoir-elevation-chart .elevation-line-current").length,
         referenceLines: document.querySelectorAll(
           "#reservoir-main .elevation-years .elevation-reference").length,
         chartBusy: document.querySelector("#reservoir-main .elevation-chart")
@@ -6284,10 +6324,12 @@ for (const failure of [
       frame: window.__reservoirReady?.share ?? null,
       footBottom: document.querySelector(".share-foot")?.getBoundingClientRect().bottom ?? 0,
       bars: document.querySelectorAll("#reservoir-trend-chart .trend-bar").length,
+      storageLines: document.querySelectorAll("#reservoir-trend-chart .elevation-line").length,
+      storageHistory: window.__reservoirReady?.storageHistory,
       comparison: document.querySelector(".share-comparison")?.textContent ?? "",
       trendAxis: (() => {
         const svg = document.querySelector("#reservoir-trend-chart svg");
-        const label = svg?.querySelector(".trend-axis");
+        const label = svg?.querySelector(".trend-axis, .elevation-axis");
         return svg && label ? Number.parseFloat(getComputedStyle(label).fontSize)
           * (svg.getBoundingClientRect().width / svg.viewBox.baseVal.width) : 0;
       })(),
@@ -6332,7 +6374,7 @@ for (const failure of [
     } else {
       check(share.elevation === "none" && share.lines === 0,
         `Share frame (${name}): a reservoir with no reviewed level signalled ${share.elevation}`);
-      check(share.frame === "storage" && share.bars >= 1 && share.text.includes(name)
+      check(share.frame === "storage" && share.storageHistory === "drawn" && share.storageLines >= 1 && share.text.includes(name)
         && /^[\d.]+%$/.test(share.level) && share.text.includes("Reading date:")
         && /Stored now: [\d,]+ acre-feet/.test(share.text)
         && share.comparison.startsWith("Normal for this week, "),
@@ -8133,6 +8175,79 @@ await checkStoryEmbeds();
   }
 }
 
+async function checkWaveThree() {
+  console.log("\n=== Wave three: storage history, upstream conditions and daily reservoir flow");
+  const snow = JSON.parse(await readFile(path.join(ROOT, "data/snowpack.json"), "utf8"));
+  const upstream = JSON.parse(await readFile(path.join(ROOT, "data/upstream_index.json"), "utf8"));
+  const expected = snow.sites.filter((site) => upstream.traces["509"].upstream_snow_sites.includes(site.station)).length;
+  for (const viewport of VIEWPORTS) {
+    const context = await newPageContext(browser, viewport);
+    const tab = await context.newPage();
+    const label = `Wave three (${viewport.name})`;
+    const errors = [];
+    tab.on("pageerror", (error) => errors.push(error.message));
+    watchConsoleErrors(tab, errors);
+    try {
+      await tab.goto(`${URL}reservoir.html?name=Flaming%20Gorge`, { waitUntil: "domcontentloaded", timeout: 60000 });
+      await tab.waitForFunction(() => window.__reservoirReady?.status === "found", null, { timeout: 90000 });
+      check(await tab.locator("#reservoir-main").getAttribute("aria-busy") === "false",
+        `${label}: optional history signalled page readiness before the page settled`);
+      await tab.locator("#reservoir-storage-history").scrollIntoViewIfNeeded();
+      await tab.waitForFunction(() => window.__reservoirReady?.storageHistory === "drawn", null, { timeout: 35000 });
+      check(await tab.locator("#reservoir-storage-chart .elevation-line").count() >= 1,
+        `${label}: no storage water-year line drew`);
+      const download = tab.waitForEvent("download");
+      await tab.getByRole("button", { name: "Download the full storage record (CSV)" }).click();
+      check((await download).suggestedFilename() === "reservoir-storage-history.csv", `${label}: no full-record CSV download`);
+      await tab.locator("#reservoir-storage-history").screenshot({ path: path.join(REPO_ROOT, `screenshots/wave-three-storage-${viewport.name}.png`) });
+      await checkAccessibility(tab, check, `${label}, storage history`);
+
+      await tab.goto(`${URL}reservoir.html?name=Lake%20Powell`, { waitUntil: "domcontentloaded", timeout: 60000 });
+      await tab.waitForFunction(() => window.__reservoirReady?.status === "found", null, { timeout: 90000 });
+      check((await tab.locator("#reservoir-water-flow").innerText()).includes("Reclamation computes inflow"),
+        `${label}: the computed inflow has no operator definition`);
+      await tab.locator("#reservoir-upstream-conditions").scrollIntoViewIfNeeded();
+      await tab.waitForFunction(() => window.__reservoirReady?.upstreamConditions === "loaded", null, { timeout: 35000 });
+      check((await tab.locator("#reservoir-upstream-conditions").innerText()).includes("not reservoir inflow"),
+        `${label}: upstream catch has no caution`);
+      await tab.locator("#reservoir-context").scrollIntoViewIfNeeded();
+      await tab.waitForFunction(() => window.__reservoirReady?.context === "drawn", null, { timeout: 35000 });
+      check(await tab.locator("#reservoir-context svg").count() >= 7,
+        `${label}: the aligned daily charts did not draw`);
+      await tab.locator("#reservoir-context").screenshot({ path: path.join(REPO_ROOT, `screenshots/wave-three-context-${viewport.name}.png`) });
+      await checkAccessibility(tab, check, `${label}, upstream and flow`);
+
+      await tab.goto(`${URL}precipitation.html?state=all&upstream=509`, { waitUntil: "domcontentloaded", timeout: 60000 });
+      await tab.waitForFunction(() => window.__precipReady?.precipitation?.recent === "ready", null, { timeout: 90000 });
+      const result = await tab.evaluate(() => ({ ...window.__precipReady,
+        chooser: Boolean(document.querySelector("dialog.opening-splash[open]")),
+        wide: document.documentElement.scrollWidth > window.innerWidth + 1 }));
+      check(result.upstreamApplied && result.sites === expected && !result.chooser && !result.wide,
+        `${label}: the upstream precipitation link resolved incorrectly: ${JSON.stringify(result)}`);
+      await checkAccessibility(tab, check, `${label}, precipitation link`);
+      await tab.getByRole("button", { name: "Clear upstream filter" }).click();
+      await tab.waitForFunction(() => window.__precipReady?.sites > 0, null, { timeout: 90000 });
+      check(!new globalThis.URL(tab.url()).searchParams.has("upstream"), `${label}: clear kept the upstream filter`);
+    } catch (error) { failures.push(`${label}: ${error.message}`); }
+    for (const error of errors) failures.push(`${label}: ${error}`);
+    await context.close();
+  }
+  const context = await newPageContext(browser, VIEWPORTS[0]);
+  const tab = await context.newPage();
+  await tab.route("**/data/storage-history/**", (route) => route.fulfill({ status: 503, body: "Unavailable" }));
+  try {
+    await tab.goto(`${URL}reservoir.html?name=Flaming%20Gorge`, { waitUntil: "domcontentloaded", timeout: 60000 });
+    await tab.waitForFunction(() => window.__reservoirReady?.status === "found", null, { timeout: 90000 });
+    await tab.locator("#reservoir-storage-history").scrollIntoViewIfNeeded();
+    await tab.waitForFunction(() => window.__reservoirReady?.storageHistory === "unavailable", null, { timeout: 35000 });
+    check(await tab.locator('#reservoir-storage-history [aria-busy="true"]').count() === 0,
+      "Wave three: a failed history left the card busy");
+    check(await tab.locator(".trend-bar").count() > 0, "Wave three: a failed history lost the monthly fallback");
+  } catch (error) { failures.push(`Wave three failed-history path: ${error.message}`); }
+  await context.close();
+}
+
+await checkWaveThree();
 await browser.close();
 server.close();
 

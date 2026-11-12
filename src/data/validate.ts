@@ -12,6 +12,7 @@ import type {
 } from "../types";
 import { HUC_CODE } from "./huc";
 import { isReservoirElevation } from "./elevation-validate";
+import { isReservoirWaterFlow } from "./reservoir-flow";
 import { capacityVersionOn } from "./capacity";
 
 function isDate(value: unknown): value is string {
@@ -292,7 +293,8 @@ function isReservoir(value: unknown): value is Reservoir {
     isOptionalStateList(value.connected_states) &&
     /* A reviewed level (ADR-135), on rostered reservoirs only. A malformed
      * one, or one carrying a percentage, refuses the record. */
-    (value.elevation === undefined || isReservoirElevation(value.elevation));
+    (value.elevation === undefined || isReservoirElevation(value.elevation)) &&
+    (value.water_flow === undefined || isReservoirWaterFlow(value.water_flow, value.source_station_id));
 }
 
 export function validateReservoirPayload(value: unknown): ReservoirPayload {

@@ -20,6 +20,8 @@ import {
   type OpeningSelection
 } from "./data/opening-scope";
 import { loadSnowpack } from "./data/snow-load";
+import { loadUpstreamIndex } from "./data/load";
+import { precipitationUpstreamPlace, UPSTREAM_CAUTION } from "./upstream-conditions-model";
 import { stateName } from "./data/state-vocabulary";
 import { basinChoices } from "./snow-model";
 import { openingAreaName, snowPlace, type SnowPlace } from "./snow-place";
@@ -79,7 +81,9 @@ function navigateWithPlace(selection: OpeningSelection): void {
   window.location.replace(`${window.location.pathname}${searchWithPlace(window.location.search, selection)}`);
 }
 
-function renderPage(place: SnowPlace, rosters: OpeningRosters, level: number): void {
+interface PrecipUpstream { station: string; name: string | null; applied: boolean; indexed: number; missing: number }
+
+function renderPage(place: SnowPlace, rosters: OpeningRosters, level: number, upstream: PrecipUpstream | null): void {
   const content = document.querySelector<HTMLElement>("#precip-content");
   if (!content) return;
   const snowHref = linkHref("./snow.html", portableSearch(window.location.search));
@@ -109,6 +113,24 @@ function renderPage(place: SnowPlace, rosters: OpeningRosters, level: number): v
 
   const summary = content.querySelector<HTMLElement>("#precip-scope-summary");
   if (summary) summary.textContent = placeSummary(place);
+  if (upstream && summary) {
+    const status = document.createElement("p");
+    status.id = "precip-upstream-summary";
+    status.textContent = upstream.applied
+      ? `Showing ${place.stations.length} mountain sites upstream of ${upstream.name ?? "the requested reservoir"}, `
+        + `in the chosen place. ${upstream.missing} of ${upstream.indexed} indexed sites are absent from the current snow-site data. ${UPSTREAM_CAUTION}`
+      : "The requested upstream set could not be read. The chosen place is shown instead.";
+    const clear = document.createElement("button");
+    clear.type = "button";
+    clear.textContent = "Clear upstream filter";
+    clear.addEventListener("click", () => {
+      const params = new URLSearchParams(window.location.search);
+      params.delete("upstream");
+      window.location.replace(`${window.location.pathname}?${params.toString() || "state=all"}`);
+    });
+    status.append(document.createTextNode(" "), clear);
+    summary.after(status);
+  }
 
   const filterbar = content.querySelector<HTMLElement>(".mobile-filterbar");
   const filterToggle = content.querySelector<HTMLButtonElement>("#precip-filter-toggle");
@@ -134,12 +156,14 @@ function renderPage(place: SnowPlace, rosters: OpeningRosters, level: number): v
   const card = createPrecipitationCard(section, () => {
     mapSection?.update(card.recent.window, card.recent.totals);
     publishReady();
-  }, { siteHref, recentMap: true, copyFigures: { where: placeName(place) } });
+  }, { siteHref, recentMap: true, copyFigures: { where: upstream?.applied
+    ? `mountain sites upstream of ${upstream.name ?? "the requested reservoir"}, in ${placeName(place)}` : placeName(place) } });
   const publishReady = (): void => {
     window.__precipReady = {
       level,
       area: place.area ?? place.scope.selection.area,
       sites: place.stations.length,
+      ...(upstream ? { upstream: upstream.station, upstreamApplied: upstream.applied } : {}),
       precipitation: card.status,
       ...(mapSection ? { map: mapSection.status } : {})
     };
@@ -164,7 +188,7 @@ function renderPage(place: SnowPlace, rosters: OpeningRosters, level: number): v
     { label: "Where this year stands", title: `Where this year stands for ${placeName(place)}`,
       request: { ok: true, view: "strip", place: storyPlace, theme: null } }
   ]);
-  if (embed) section.after(embed);
+  if (embed && !upstream?.applied) section.after(embed);
   publishReady();
 }
 
@@ -174,20 +198,35 @@ try {
   /* The payload and the rosters together, so the page never paints the
    * whole west and then narrows. A rosters failure costs the area
    * narrowing, not the page, as on the snow page. */
-  const [raw, rosters] = await Promise.all([
+  const upstreamStation = new URLSearchParams(window.location.search).get("upstream");
+  const [raw, rosters, upstreamIndex] = await Promise.all([
     loadSnowpack(),
     loadOpeningRosters().catch((error: unknown): OpeningRosters => {
       console.warn("The opening-scope rosters could not load; the page " +
         "opens with no area narrowing.", error);
       return EMPTY_OPENING_ROSTERS;
-    })
+    }),
+    upstreamStation ? loadUpstreamIndex().catch((error: unknown) => {
+      console.warn("The upstream index could not load:", error);
+      return null;
+    }) : Promise.resolve(null)
   ]);
   const selection = resolveOpeningPlace(window.location.search, readStoredPlace()).selection;
   /* The link's own area first: it may name an area finer than the six
    * digits the opening scope holds (ADR-103). */
   const linkArea = new URLSearchParams(window.location.search).get("area");
-  const place = snowPlace(raw, rosters, { state: selection.state, area: linkArea ?? selection.area, level });
-  renderPage(place, rosters, level);
+  let place = snowPlace(raw, rosters, { state: selection.state, area: linkArea ?? selection.area, level });
+  let upstream: PrecipUpstream | null = null;
+  if (upstreamStation) {
+    const trace = upstreamIndex?.traces[upstreamStation];
+    const narrowed = precipitationUpstreamPlace(place, trace);
+    const indexed = trace?.upstream_snow_sites ?? [];
+    const published = new Set(raw.sites.map((site) => site.station));
+    upstream = { station: upstreamStation, name: trace?.name ?? null, applied: narrowed !== null,
+      indexed: indexed.length, missing: indexed.filter((station) => !published.has(station)).length };
+    if (narrowed) place = narrowed;
+  }
+  renderPage(place, rosters, level, upstream);
 } catch (error) {
   console.error("Precipitation view failed:", error);
   window.__precipReady = { level, area: null, sites: 0, precipitation: null };

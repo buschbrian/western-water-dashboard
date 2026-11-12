@@ -35,8 +35,9 @@ than bundled. **Start with ADR-002.**
   [ADR-144](ADR-144-compare-natural-river-gauges-with-the-surveys-day-of-year-percentiles.md),
   [ADR-145](ADR-145-compare-river-gauges-above-ten-years-shorten-two-names-and-round-the-page.md),
   [ADR-146](ADR-146-keep-river-flow-and-soil-moisture-change-day-by-day.md),
-  [ADR-154](ADR-154-keep-a-permanent-share-address-for-every-reservoir.md)
-  (permanent reservoir and scope share pages, storage frames and bounded daily capture).
+  [ADR-154](ADR-154-keep-a-permanent-share-address-for-every-reservoir.md),
+  [ADR-160](ADR-160-publish-storage-history-apart-from-the-summary.md),
+  [ADR-161](ADR-161-publish-only-reviewed-reservoir-inflow-and-release.md).
 - Superseded, read only for history: ADR-012, ADR-019,
   [ADR-141](ADR-141-publish-a-share-page-and-a-daily-picture-for-a-reservoir-link.md),
   [ADR-117](ADR-117-close-the-scope-at-version-1-0-0.md) (pilot scope exception only)
@@ -73,6 +74,7 @@ denominator. **Start with ADR-070, then ADR-072, then ADR-003.**
   [ADR-155](ADR-155-audit-every-corps-office-that-publishes-storage.md),
   [ADR-157](ADR-157-divide-a-regulated-natural-lake-by-a-full-level-on-its-own-basis.md),
   [ADR-158](ADR-158-exclude-readings-that-meet-a-mechanical-error-test-in-one-reviewed-batch.md)
+  [ADR-161](ADR-161-publish-only-reviewed-reservoir-inflow-and-release.md)
 - Freshness and withdrawal:
   [ADR-056](ADR-056-withdraw-a-reading-that-belongs-to-another-season.md),
   [ADR-115](ADR-115-state-a-reviewed-hold-where-the-reservoir-used-to-be.md),
@@ -117,7 +119,8 @@ The four different scopes, the hydrologic level, and what a link carries.
   [ADR-108](ADR-108-apply-reviewed-waterbody-points-without-refreshing-readings.md),
   [ADR-109](ADR-109-remove-scofields-rejected-dam-point.md),
   [ADR-149](ADR-149-let-the-weekly-storage-figures-follow-every-filter.md),
-  [ADR-153](ADR-153-state-the-maps-storage-against-normal-and-subtotal-the-filtered-rows.md)
+  [ADR-153](ADR-153-state-the-maps-storage-against-normal-and-subtotal-the-filtered-rows.md),
+  [ADR-162](ADR-162-show-upstream-conditions-without-claiming-inflow.md)
 - Boundary sourcing: [ADR-024](ADR-024-use-full-resolution-watersheds-for-snow-sites.md),
   [ADR-034](ADR-034-hosted-boundary-layers-with-a-deadline.md),
   [ADR-037](ADR-037-refetch-the-boundaries-at-the-resolution-the-source-stops-adding.md)
@@ -375,6 +378,9 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-157](ADR-157-divide-a-regulated-natural-lake-by-a-full-level-on-its-own-basis.md) | Divide a regulated natural lake by a full level on its series' own basis | Accepted; applies ADR-078's reservoir rule as kept by ADR-112 and ADR-114: a regulated natural lake is divided by a full level on its series' own basis, never a dam's top-few-feet figure |
 | [ADR-158](ADR-158-exclude-readings-that-meet-a-mechanical-error-test-in-one-reviewed-batch.md) | Exclude readings that meet a mechanical-error test in one reviewed batch | Accepted; extends ADR-152 and ADR-116: readings that meet an ADR-152 test exactly, not in a run, are excluded in one reviewed batch per provider; spikes, runs and series disagreements stay individual |
 | [ADR-159](ADR-159-publish-a-terminal-lake-by-arm-and-without-a-volume.md) | Publish a terminal lake by arm, and without a volume where none is reviewed | Accepted; extends ADR-112 and ADR-118: a terminal lake may carry arms and may omit volume; a target is a named line, never a denominator |
+| [ADR-160](ADR-160-publish-storage-history-apart-from-the-summary.md) | Publish storage history apart from the summary | Proposed; revisable station archives, shared current water year, on-demand backfill, lazy water-year chart and full-record CSV; local implementation |
+| [ADR-161](ADR-161-publish-only-reviewed-reservoir-inflow-and-release.md) | Publish only reviewed reservoir inflow and release | Proposed; Powell computed inflow and Powell/Mead total release, reviewed definitions and live catalog checks; Mead inflow remains unavailable; local implementation |
+| [ADR-162](ADR-162-show-upstream-conditions-without-claiming-inflow.md) | Show upstream conditions without claiming inflow | Proposed; station means above a reservoir, page-local upstream precipitation link and aligned daily context without a causal claim; local implementation |
 
 ## Relationship to the historical journal
 

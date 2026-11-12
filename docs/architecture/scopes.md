@@ -274,6 +274,18 @@ describes (ADR-121), is page-local and never portable, and leaves the four
 scope questions where they were: a finished season is narrowed by the same
 state, level, area and upstream set as the current one.
 
+### Precipitation's upstream station set (ADR-162)
+
+Precipitation also accepts page-local `?upstream=<reservoir station ID>`.
+It intersects the resolved state, area and level with the committed upstream
+snow-site set. Reservoir links explicitly carry `state=all`, as Snowpack's
+do. The summary distinguishes indexed stations absent from current data from
+stations hidden by the chosen place. An unknown or screened trace leaves the
+chosen place shown with an explanation, and a clear control removes only the
+upstream parameter. The parameter is never portable and changes none of the
+four geographic scopes. Upstream-filtered precipitation does not offer a
+place-only story embed, because that embed cannot carry the same set.
+
 ### Drought's sequential selected scope
 
 Drought orders four controls: **State**, **County**, **Area size**, then the

@@ -178,7 +178,7 @@ body {
   --elevation-current: #9fd0ee;
   --elevation-previous: #61798a;
 }
-.reservoir-elevation { margin-block-start: 1.5rem; }
+.reservoir-elevation, .reservoir-storage-history { margin-block-start: 1.5rem; }
 .measurement-cards h2 { margin-block-start: 0; padding-block-start: 0; border-block-start: 0; }
 .elevation-chart-host { inline-size: 100%; margin-block-start: 0.5rem; }
 .elevation-years { display: block; inline-size: 100%; block-size: auto; overflow: visible; }
@@ -195,6 +195,10 @@ body {
 .elevation-line-previous { stroke: var(--elevation-previous); stroke-width: 2; }
 .elevation-line-current { stroke: var(--elevation-current); stroke-width: 3.25; }
 .elevation-latest { fill: var(--elevation-current); stroke: var(--app-surface); stroke-width: 2; }
+.elevation-point-current { fill: var(--elevation-current); }
+.elevation-point-previous { fill: var(--elevation-previous); }
+.elevation-point-earlier { fill: var(--app-muted); fill-opacity: .45; }
+#reservoir-storage-history button { display: block; margin-block-start: 12px; }
 .elevation-key, .elevation-levels, .elevation-sources {
   margin: 0.5rem 0 0; padding: 0; list-style: none;
   display: flex; flex-wrap: wrap; gap: 0.25rem 1rem; font-size: 0.85rem;

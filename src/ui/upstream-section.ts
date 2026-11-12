@@ -89,6 +89,9 @@ export function upstreamSection(
     const link = pageLink(`snow.html?state=all&upstream=${encodeURIComponent(station)}`,
       "See snow upstream of this reservoir", options);
     snowLink.append(link);
+    snowLink.append(document.createTextNode(" · "), pageLink(
+      `precipitation.html?state=all&upstream=${encodeURIComponent(station)}`,
+      "See precipitation upstream of this reservoir", options));
     children.push(snowLink);
   }
   if (count > 0) {

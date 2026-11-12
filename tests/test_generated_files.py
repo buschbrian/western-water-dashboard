@@ -128,12 +128,12 @@ class TestTheRepository:
             "add these to data/generated-files.json with an owner: "
             f"{unclassified}")
 
-    def test_a_directory_entry_is_a_generated_archive(self):
-        """Only a write-once archive may be owned as a directory. Anything
-        else gets a row of its own, so its writer and its class are named."""
+    def test_a_directory_entry_is_generated_history(self):
+        """Growing file sets name either frozen archives or revisable histories.
+        Other data gets a row per file, with its writer and class named."""
         for entry in FILES:
             if (ROOT / entry["path"]).is_dir():
-                assert entry["class"] == "generated-archive", entry["path"]
+                assert entry["class"] in {"generated-archive", "generated-history"}, entry["path"]
 
     def test_the_snow_archive_holds_one_frozen_file_per_finished_season(self):
         """Every finished water year since the archive began is kept, named

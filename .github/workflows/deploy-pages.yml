@@ -72,6 +72,8 @@ jobs:
                       elevation_history.json data/elevation_history.json \
                       rivers.html rivers.json data/rivers.json \
                       data/river_history.json data/soil_moisture_history.json \
+                      data/reservoir_flow_history.json data/storage-history/index.json \
+                      data/storage-history/current.json \
                       data/drought/usdm-current.geojson data/drought/usdm-huc6.json \
                       explore.html maplibre/index.html retired-route.js \
                       terms.html reporters.html landscape.html story.html \
@@ -92,7 +94,7 @@ jobs:
             fi
           done
           for path in api/reservoirs.json api/lakes.json api/elevation_history.json \
-                      api/rivers.json api/river_history.json api/soil_moisture_history.json \
+                      api/rivers.json api/river_history.json api/soil_moisture_history.json api/reservoir_flow_history.json \
                       api/snowpack.json api/reference.json; do
             if [ ! -s "dist/$path" ]; then
               echo "::error title=Missing API alias::$path"

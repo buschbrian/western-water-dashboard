@@ -23,6 +23,18 @@ if [ "${1:-}" = "--embeds" ]; then
   node tests/smoke-modern.mjs --embeds
   exit 0
 fi
+if [ "${1:-}" = "--wave-three" ]; then
+  node tests/smoke-modern.mjs --wave-three
+  exit 0
+fi
+if [ "${1:-}" = "--chooser" ]; then
+  node tests/smoke-modern.mjs --chooser
+  exit 0
+fi
+if [ "${1:-}" = "--data-docs" ]; then
+  node tests/smoke-modern.mjs --data-docs
+  exit 0
+fi
 node tests/smoke.mjs
 node tests/smoke-modern.mjs
 # The two suites above exercise whatever the network gave them that morning.

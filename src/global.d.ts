@@ -253,6 +253,8 @@ interface Window {
    * the place holds; the card reports what it drew from them, and is null
    * only when the page itself could not load. */
   __precipReady?: {
+    upstream?: string;
+    upstreamApplied?: boolean;
     level: number;
     area: string | null;
     sites: number;
@@ -412,6 +414,9 @@ interface Window {
    * "unknown" (no such name), or "none" (a bare `reservoir.html` link, which
    * explains itself). */
   __reservoirReady?: {
+    storageHistory?: "waiting" | "loading" | "drawn" | "unavailable";
+    upstreamConditions?: "waiting" | "loaded" | "unavailable";
+    context?: "waiting" | "drawn" | "unavailable";
     status: "found" | "withdrawn" | "held" | "unknown" | "none";
     /** The surface level (ADR-135): "drawn" when the card and the water-year
      * chart are on the page, "card" when the history could not be read and

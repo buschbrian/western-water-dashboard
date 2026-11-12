@@ -130,12 +130,31 @@ function fitPlate(plate: SVGRectElement, text: SVGTextElement): void {
 export interface ElevationDrawOptions {
   scale?: number;
   height?: number;
+  tickStep?: number;
+  formatValue?: (value: number) => string;
+  markers?: boolean;
+  monthStarts?: readonly (readonly [number, string])[];
 }
 
 export function renderElevationYears(host: HTMLElement, chart: ElevationChart | null,
   options: ElevationDrawOptions = {}): boolean {
+  return renderWaterYears(host, chart, options);
+}
+
+export interface WaterYearPlot {
+  lines: Pick<ElevationChart["lines"][number], "label" | "tier" | "points">[];
+  low: number;
+  high: number;
+  drawn: ElevationChart["drawn"];
+  sharedLabels: string[];
+  ariaLabel: string;
+}
+
+export function renderWaterYears(host: HTMLElement, chart: WaterYearPlot | null,
+  options: ElevationDrawOptions = {}): boolean {
   const scale = options.scale ?? 1;
   const height = options.height ?? HEIGHT;
+  const monthStarts = options.monthStarts ?? MONTH_STARTS;
   if (!chart || chart.lines.length === 0) {
     stopResponsiveChart(host);
     host.replaceChildren();
@@ -155,7 +174,7 @@ export function renderElevationYears(host: HTMLElement, chart: ElevationChart | 
       role: "img", "aria-label": chart.ariaLabel
     });
 
-    const step = feetStep(chart.high - chart.low);
+    const step = options.tickStep ?? feetStep(chart.high - chart.low);
     for (let level = Math.ceil(chart.low / step) * step; level <= chart.high; level += step) {
       const lineY = y(level).toFixed(1);
       svg.append(element("line", {
@@ -165,13 +184,13 @@ export function renderElevationYears(host: HTMLElement, chart: ElevationChart | 
         class: "elevation-axis", x: PAD_LEFT - 6, y: (Number(lineY) + 4).toFixed(1),
         "text-anchor": "end"
       });
-      label.textContent = level.toLocaleString("en-US");
+      label.textContent = options.formatValue?.(level) ?? level.toLocaleString("en-US");
       svg.append(label);
     }
 
-    const every = MONTH_STARTS.findIndex((_, index) =>
-      Math.ceil(MONTH_STARTS.length / (index + 1)) * MONTH_LABEL_LANE <= plotWidth) + 1 || 12;
-    MONTH_STARTS.forEach(([day, name], index) => {
+    const every = monthStarts.findIndex((_, index) =>
+      Math.ceil(monthStarts.length / (index + 1)) * MONTH_LABEL_LANE <= plotWidth) + 1 || 12;
+    monthStarts.forEach(([day, name], index) => {
       const tickX = x(day).toFixed(1);
       svg.append(element("line", {
         class: "elevation-tick", x1: tickX, y1: plotBottom, x2: tickX, y2: plotBottom + 4
@@ -212,10 +231,22 @@ export function renderElevationYears(host: HTMLElement, chart: ElevationChart | 
             class: `elevation-line elevation-line-${line.tier}`, points: points.join(" ")
           }));
         }
+        if (points.length === 1 && !options.markers) {
+          const [cx, cy] = points[0]!.split(",");
+          svg.append(element("circle", {
+            class: `elevation-point elevation-point-${line.tier}`, cx: cx!, cy: cy!, r: 2
+          }));
+        }
         points = [];
       };
       for (const [day, feet] of line.points) {
         if (feet === null) { flush(); continue; }
+        if (options.markers) {
+          svg.append(element("circle", {
+            class: `elevation-point elevation-point-${line.tier}`,
+            cx: x(day).toFixed(1), cy: y(feet).toFixed(1), r: 2
+          }));
+        }
         points.push(`${x(day).toFixed(1)},${y(feet).toFixed(1)}`);
       }
       flush();
