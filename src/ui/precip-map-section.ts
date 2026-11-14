@@ -278,7 +278,7 @@ export function createPrecipMapSection(
   const viewHead = document.createElement("div");
   viewHead.className = "precip-storm-head precip-soil-view-head";
   const viewGroup = document.createElement("div");
-  viewGroup.className = "precip-range";
+  viewGroup.className = "precip-soil-views";
   viewGroup.setAttribute("role", "group");
   viewGroup.setAttribute("aria-label", "What the soil moisture map shows");
   const viewButtons = new Map<SoilView, HTMLButtonElement>();
