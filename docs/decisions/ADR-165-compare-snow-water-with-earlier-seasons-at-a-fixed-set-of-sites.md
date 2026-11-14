@@ -1,6 +1,6 @@
 # ADR-165: Compare snow water with earlier seasons at a fixed set of sites
 
-- Status: **Proposed** (for Brian Busch's approval)
+- Status: Accepted (Brian Busch, 2026-11-14)
 - Date: 2026-11-11
 - Relates to: ADR-081 (snow's summed ratio), ADR-097 (snow filtered by the
   upstream set), ADR-121 (the denominator floor and the finished season),

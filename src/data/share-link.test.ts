@@ -24,4 +24,12 @@ describe("reservoir preview links", () => {
     fetchWithin.mockResolvedValueOnce({ json: async () => [] });
     expect(await reservoirShareUrl("A", fallback)).toBe(fallback);
   });
+
+  it("names the station's share picture, or none without a permanent address", async () => {
+    const { reservoirSharePicture } = await import("./share-link");
+    fetchWithin.mockResolvedValue({ json: async () => [{ source_station_id: "A", name: "Old", slug: "old-name" }] });
+    expect(await reservoirSharePicture("A", fallback)).toBe("https://example.com/dashboard/share/old-name.png");
+    expect(await reservoirSharePicture("B", fallback)).toBeNull();
+    expect(await reservoirSharePicture(null, fallback)).toBeNull();
+  });
 });

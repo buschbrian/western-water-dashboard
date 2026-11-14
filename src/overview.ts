@@ -1,5 +1,6 @@
 import "@esri/calcite-components/main.css";
 import { setAssetPath as setCalciteAssetPath } from "@esri/calcite-components";
+import { scopePictureSlug } from "./state/share-picture";
 import "@esri/calcite-components/components/calcite-action";
 import "@esri/calcite-components/components/calcite-button";
 import "@esri/calcite-components/components/calcite-label";
@@ -914,7 +915,11 @@ async function renderOverview(
      * and the charts. The Powell and Mead switches still change the sentence,
      * and the scope line names both reservoirs whatever took them out. The
      * snow and drought figures still describe the whole region. */
-    void renderWeekly(visible, scoped);
+    void renderWeekly(visible, scoped, scopePictureSlug({
+      state: placeState(), area: chosenDrainage, county: placeCounty(), query: search.value,
+      cadence: cadence.value, storageClass: storageClassFilter,
+      lakePowell: lakePowell.checked, lakeMead: lakeMead.checked
+    }));
     renderClassStrip(matching);
     exportRows = filterAndSort(visible, "", sort.value as OverviewSort);
     renderRows(tbody, exportRows, allReservoirs);
@@ -1165,7 +1170,7 @@ function weeklyPayloads(): Promise<[SnowpackPayload | null, DroughtCoveragePaylo
 let weeklyCopy: CopyFigures | null = null;
 
 async function renderWeekly(reservoirs: readonly Reservoir[],
-  scoped: readonly Reservoir[]): Promise<void> {
+  scoped: readonly Reservoir[], picture: string | null): Promise<void> {
   const card = document.querySelector<HTMLElement>("#weekly-summary");
   const host = card?.querySelector<HTMLElement>(".weekly-sections");
   if (!card || !host) return;
@@ -1199,12 +1204,15 @@ async function renderWeekly(reservoirs: readonly Reservoir[],
   weeklyCopy ??= createCopyFigures({ id: "weekly-figures", level: 3 });
   if (!weeklyCopy.element.isConnected) host.after(weeklyCopy.element);
   weeklyCopy.update(weeklyFigures(summary, reservoirs, scoped));
+  /* The daily picture of this exact view, where the deploy draws one. */
+  weeklyCopy.setPicture(picture ? new URL(`./share/${picture}.png`, window.location.href).href : null);
   card.setAttribute("aria-busy", "false");
 
   window.__overviewReady = {
     ...(window.__overviewReady ?? {}),
     weeklySections: sections.length,
-    weeklyLines: sections.reduce((sum, section) => sum + section.lines.length, 0)
+    weeklyLines: sections.reduce((sum, section) => sum + section.lines.length, 0),
+    sharePicture: picture
   } as NonNullable<typeof window.__overviewReady>;
 }
 

@@ -48,7 +48,7 @@ import {
 } from "./state/baseline";
 import { reservoirFigures } from "./state/figures-text";
 import { createCopyFigures } from "./ui/copy-figures";
-import { reservoirShareUrl } from "./data/share-link";
+import { reservoirSharePicture, reservoirShareUrl } from "./data/share-link";
 import { createEmbedView } from "./ui/embed-view";
 import { reservoirTemplate } from "./ui/reservoir-template";
 import { upstreamSection } from "./ui/upstream-section";
@@ -388,6 +388,10 @@ async function renderFound(payload: ReservoirPayload,
       url: () => previewUrl
     });
     copy.update(figures);
+    void reservoirSharePicture(reservoir.source_station_id, window.location.href).then((href) => {
+      copy.setPicture(href);
+      updateReady({ sharePicture: href !== null });
+    });
     children.push(copy.element);
   }
 

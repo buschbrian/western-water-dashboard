@@ -1,6 +1,6 @@
 # ADR-161: Publish only reviewed reservoir inflow and release
 
-- Status: **Proposed** (for Brian Busch's approval)
+- Status: Accepted (Brian Busch, 2026-11-14)
 - Date: 2026-11-11
 - Extends: ADR-117, ADR-135, ADR-146
 - Retains: ADR-136's rule that a river gauge is not reservoir inflow

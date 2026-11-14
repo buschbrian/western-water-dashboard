@@ -379,6 +379,13 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Removed
 
+- **The unused question service.** `worker/` held a Cloudflare Worker that
+  answered questions from the `data/assistant/` indexes. No page called it, no
+  workflow deployed it, and no worker of that name existed in the account on
+  2026-11-14. The code, its `verify:worker` target and its deploy-address
+  test are removed. The `data/assistant/` files stay published: the page
+  search reads `places.json`, and the other three are public data.
+
 - **Code nothing used, and tests that checked only text.** Removed: unused
   TypeScript (the browser drainage assignment in `huc.ts`, the retired
   `reservoirCIM` builder, `gradient.ts`, `storageColorExpression`) and the
