@@ -8504,7 +8504,9 @@ async function checkGreatSaltLake() {
       const menu = tab.locator("#menu-lakes-link");
       check(await menu.getAttribute("href") === "./lakes.html", `${label}: the menu lost its lakes link`);
       const button = tab.locator("#lakes-link");
-      check(await button.isVisible() === (viewport.width >= 1024), `${label}: the bar link has the wrong visibility`);
+      const barShown = await button.waitFor({ state: viewport.width >= 1024 ? "visible" : "hidden", timeout: 10000 })
+        .then(() => true, () => false);
+      check(barShown, `${label}: the bar link has the wrong visibility`);
       for (const control of await tab.locator('calcite-navigation #brand, calcite-navigation [slot="content-end"]').all()) {
         if (!await control.isVisible()) continue;
         const rect = await control.boundingBox();
