@@ -144,3 +144,9 @@ at all three widths. It uses the same system-Chromium setting as the full
 suite. The normal browser target includes these cases as well. Screenshots
 are kept under `screenshots/wave-three-*.png`; the charts are SVG and can be
 inspected there. This does not establish ArcGIS map-canvas rendering.
+
+
+`npm run verify:browser -- --towns` rebuilds and checks town search at all
+three widths, the point and supply-area wording, keyboard semantics through
+axe, the resulting all-state area link, and the absence of a covering chooser.
+The normal browser target includes these checks.

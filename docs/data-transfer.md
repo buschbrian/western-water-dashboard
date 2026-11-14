@@ -624,3 +624,9 @@ After main's four later admissions (three Corps reservoirs and Fairmont) were
 backfilled on 2026-11-11, the directory holds 418 files for 416 of 424
 published reservoirs: 51,339,819 raw bytes and 9,848,494 gzip bytes. The same
 eight USGS histories are still missing.
+
+
+Town search reference, 2026-11-11: 4,283 Census place points, 289,002 raw
+bytes and 48,735 gzip bytes. Budget: 96 KiB gzip, enforced by the builder.
+It is fetched on search focus beside the current names index, never on
+ordinary page startup. No boundary geometry travels in this reference.

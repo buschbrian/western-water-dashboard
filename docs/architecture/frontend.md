@@ -516,7 +516,11 @@ Each was found by a failing test or a screenshot. Do not regress them.
   `snow.html?state=all&site=`, and an area opens the current page's own topic
   (the storage map from pages without areas) with `state=all`, `area` and
   `level` unless it is a basin. `terms.html` has no shared header and no
-  script, so it has no search.
+  script, so it has no search. Towns use the separate Census place-point
+  reference, fetched on first focus. Each result names its point's containing
+  area. The finest published area with a current reservoir opens through the
+  same area link. Missing town data leaves the original search available and
+  names the failure. No town preference or query parameter is stored (ADR-164).
 - **A `calcite-sheet` takes its height from `--calcite-sheet-height`.**
   `--calcite-sheet-max-height` only caps it.
 - **`ResizeObserver` needs a render loop.** Its callbacks arrive with the

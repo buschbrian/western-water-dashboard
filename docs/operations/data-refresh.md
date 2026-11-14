@@ -218,3 +218,13 @@ source metadata and archive paths, then merges rather than replacing the
 local directory. The job does not push or deploy, and its artifact expires
 after seven days. A failed run can retain a partial artifact: its failure
 and missing station IDs must be reported, never described as complete.
+
+
+## Town search reference
+
+Download the national places ZIP linked from the Census 2026 gazetteer page,
+then run `.venv/bin/python tools/build_town_index.py --input <zip>`. This
+network-independent builder merges the reference, reports its gzip cost,
+and refuses a different vintage. Run `npm run verify:pipeline` and the
+browser town-search checks before committing the reference. The daily
+assistant-index writer supplies the current reservoir subbasins separately.

@@ -1148,6 +1148,7 @@ arcgis-scale-bar {
 .place-search-name { font-weight: 600; }
 .place-search-detail,
 .place-search-message { color: var(--app-muted); }
+.place-search-note { margin: .5rem 0 0; font-size: var(--app-control-text); line-height: 1.4; }
 
 /* The twelve-month slider. Sits between the analysis controls and the list,
  * because it changes what the list is showing. Its gap comes from the

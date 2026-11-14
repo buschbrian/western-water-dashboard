@@ -456,6 +456,13 @@
       "writer": null,
       "staged_by_refresh": false,
       "note": "Reclamation item, observed status, units and definitions for Powell inflow and Powell/Mead total release. Mead inflow remains unavailable."
+    },
+    {
+      "path": "data/assistant/towns.json",
+      "class": "derived-on-demand",
+      "writer": "tools/build_town_index.py",
+      "staged_by_refresh": false,
+      "note": "Census 2026 place internal points assigned offline to committed drainage areas; not water-supply areas."
     }
   ]
 }

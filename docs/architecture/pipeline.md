@@ -399,3 +399,11 @@ In **Probe RISE catalog**, `backfill_usgs_storage=true` skips the RISE probe, ru
 read-only USGS backfill with the existing secret, and uploads only the data
 as a short-lived artifact. It neither commits nor deploys. The artifact is
 imported locally and checked before entering the normal data publication.
+
+
+The on-demand `tools/build_town_index.py` reads the downloaded Census 2026
+national places ZIP, filters eleven states, and assigns internal points with
+the existing HUC helper and level-8 drawn scope. It merges the separate town
+reference by Census identifier and enforces a 96 KiB gzip limit (ADR-164).
+The daily places index carries current reservoir subbasin codes so search
+can resolve a town against the currently published roster.
