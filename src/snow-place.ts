@@ -45,6 +45,21 @@ function snowPlaceSentence(stateCode: string, area: string | null,
 }
 
 /**
+ * The same place as a name, for the sentences a reader copies. It follows
+ * `snowPlaceSentence` case for case, so the copied text and the summary line
+ * never name two places. `upstreamOf` is the reservoir of an applied upstream
+ * filter, as the precipitation page names one.
+ */
+export function snowFiguresPlace(stateCode: string, area: string | null,
+  widenedForSite: string | null, upstreamOf: string | null = null): string {
+  const state = stateCode !== "all" ? stateName(stateCode) : null;
+  const place = widenedForSite !== null && area === null ? "the whole region"
+    : state && area ? `${state}, in ${area}`
+      : state ?? area ?? "the whole region";
+  return upstreamOf === null ? place : `mountain sites upstream of ${upstreamOf}, in ${place}`;
+}
+
+/**
  * The payload narrowed by the reader's opening scope -- `?state=` and
  * `?area=` together, already resolved against the published rosters and
  * coarsest-first fallback rules (`resolveOpeningScope`).

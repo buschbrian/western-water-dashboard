@@ -77,7 +77,10 @@ be read) or `none`; the chart's host is `#reservoir-elevation-chart`.
 "Copy these figures" (`src/ui/copy-figures.ts`, sentences from
 `src/state/figures-text.ts`) follows the answer tiles on a found reservoir page,
 the "What moved this week" card on the storage charts page (the same filtered
-rows as the card) and the precipitation card's headline figures. It is absent
+rows as the card), the precipitation card's headline figures and the snow
+page's summary tiles. On the snow page it gives the percent of normal with
+both amounts and the normal's years, or the depth alone while the normal is
+too small to divide by, and names the place as the summary line does. It is absent
 from the share view and from the withdrawn, held, unknown and landing states,
 and hides itself when the page has no figure it can stand behind. Its buttons
 are always in view and its sentences sit in a closed `<details>`. The text is

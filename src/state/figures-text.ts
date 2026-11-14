@@ -19,6 +19,7 @@ import { formatInches, medianDifference, ordinal } from "../precip-model";
 import { describeElevation } from "../reservoir-elevation-model";
 import { answerRows } from "../reservoir-model";
 import { SITE_ADDRESS } from "../reservoir-share-model";
+import { PERCENT_BASIS_SENTENCE, percentAmounts, type CurvePoint } from "../snow-model";
 import type { BaselineChoice, BaselineId, Reservoir } from "../types";
 import { describeMovers, describeStorage } from "../viz/weekly-summary";
 import { formatAcreFeet, formatDate, formatPercent } from "../viz/format";
@@ -177,6 +178,64 @@ export function precipitationFigures(view: PrecipitationView, where: string): st
   }
   if (view.late > 0) {
     lines.push(`${view.late} ${plural(view.late, "station is", "stations are")} not used because of late data.`);
+  }
+  lines.push(creditLine([PRECIPITATION_PROVIDER]));
+  return lines;
+}
+
+export interface SnowFiguresInput {
+  /** The place as the page's own summary line names it. */
+  where: string;
+  /** The newest day whose percent can carry a headline, or null. */
+  latest: CurvePoint | null;
+  /** The newest day that meets the reporting floor, for the depth alone. */
+  reading: CurvePoint | null;
+  /** The season's highest percent of normal, or null. */
+  peak: CurvePoint | null;
+  /** Sites in view, and how many of them have late data. */
+  sites: number;
+  late: number;
+  /** The years the normal comes from, as the page writes them. */
+  normalPeriod: string;
+  /** The season's name when the page shows a finished one, or null. */
+  finishedSeason: string | null;
+}
+
+/**
+ * The snow page's summary figures for the place the page shows. The points
+ * are the ones its summary tiles print: the percent where the normal is large
+ * enough to divide by, the depth alone where it is not, and nothing where too
+ * few sites reported.
+ */
+export function snowFigures(input: SnowFiguresInput): string[] | null {
+  const { latest, reading, peak } = input;
+  const of = (point: CurvePoint): string =>
+    `${point.reportingSites} of ${input.sites} ${plural(input.sites, "measurement site", "measurement sites")}`;
+  const lines = [`These figures are for ${input.where}.`];
+  if (input.finishedSeason !== null) {
+    lines.push(`This is the finished ${input.finishedSeason} snow season.`);
+  }
+  if (latest) {
+    lines.push(`On ${formatDate(latest.date)}, snow water was ${formatPercent(latest.percent)} `
+      + `of normal at ${of(latest)}.`);
+    const amounts = percentAmounts(latest);
+    if (amounts) lines.push(amounts);
+    lines.push(`Normal is the middle value for the same day in the years ${input.normalPeriod}.`,
+      PERCENT_BASIS_SENTENCE);
+    if (peak && peak.date !== latest.date) {
+      lines.push(`The highest percent of normal this season was ${formatPercent(peak.percent)}, `
+        + `on ${formatDate(peak.date)}.`);
+    }
+  } else if (reading && reading.meanInches !== null && reading.meanInches !== undefined) {
+    lines.push(`On ${formatDate(reading.date)}, the mean snow water was `
+      + `${reading.meanInches.toFixed(1)} inches at ${of(reading)}.`,
+    "There is too little normal snow for this date to compare against.");
+  } else {
+    return null;
+  }
+  if (input.late > 0) {
+    lines.push(`${input.late} ${plural(input.late, "site has", "sites have")} `
+      + "no new value for more than two days.");
   }
   lines.push(creditLine([PRECIPITATION_PROVIDER]));
   return lines;

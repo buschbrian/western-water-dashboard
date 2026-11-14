@@ -3,7 +3,7 @@ import type { DrainageArea } from "./data/boundaries";
 import { EMPTY_OPENING_ROSTERS, type OpeningRosters } from "./data/opening-scope";
 import { readSnowpackSeasonFixture } from "./data/payload-fixture";
 import { siteRows } from "./snow-model";
-import { snowPlace, snowScopeSummary } from "./snow-place";
+import { snowFiguresPlace, snowPlace, snowScopeSummary } from "./snow-place";
 
 describe("the snow place sentence follows the current selection", () => {
   it("updates the place and clears a removed area without losing the state", () => {
@@ -46,6 +46,25 @@ function rostersFor(): OpeningRosters {
   }
   return { ...EMPTY_OPENING_ROSTERS, areas: [...areas.values()] };
 }
+
+describe("the place a copied sentence names", () => {
+  it("names the same place as the summary line, case for case", () => {
+    expect(snowFiguresPlace("all", null, null)).toBe("the whole region");
+    expect(snowFiguresPlace("UT", null, null)).toBe("Utah");
+    expect(snowFiguresPlace("all", "Gunnison", null)).toBe("Gunnison");
+    expect(snowFiguresPlace("UT", "Weber", null)).toBe("Utah, in Weber");
+  });
+
+  it("names the whole region when a linked site widened the view", () => {
+    expect(snowFiguresPlace("UT", null, "Atwater")).toBe("the whole region");
+    expect(snowFiguresPlace("all", "Gunnison", "Atwater")).toBe("Gunnison");
+  });
+
+  it("says when the sites are the ones upstream of a reservoir", () => {
+    expect(snowFiguresPlace("all", null, null, "Lake Powell"))
+      .toBe("mountain sites upstream of Lake Powell, in the whole region");
+  });
+});
 
 describe("a place's snow stations, as the snow page scopes them (ADR-128)", () => {
   it("keeps every station in a state, and no other", () => {

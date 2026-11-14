@@ -124,12 +124,11 @@ The four implementation PRs are published:
 passed. The public page entry bundles, copy control, sitemap and robots file
 match the reviewed build byte for byte.
 
-Current behaviour is documented in `architecture/frontend.md`. Remaining
+Current behaviour is documented in `architecture/frontend.md`. Copyable
+figures reached the snow page after the wave, on the same control. Remaining
 work from this wave is explicit, and each line was checked against `main` on
 2026-11-14:
 
-- Offer copyable snow-summary figures. The control is on the reservoir,
-  storage charts and precipitation pages; the snow page does not use it.
 - Offer a picture download on the reservoir and scope share pages. Items 5
   and 6 now publish those pictures; only the weekly page links one for
   download.
