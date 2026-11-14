@@ -121,13 +121,22 @@ export function weeklyFigures(
 ): string[] | null {
   if (summary.storage.measured === 0) return null;
   const measured = reservoirs.filter((reservoir) => reservoir.change_7d_af !== null);
+  const notes = weeklyReadingNotes(reservoirs);
+  if (notes.length === 0) return null;
+  const lines = [weeklyScopeText(reservoirs, scoped), ...notes];
+  lines.push(...describeStorage(summary.storage), ...describeMovers(summary.storage));
+  lines.push(creditLine(measured.map(providerName)));
+  return lines;
+}
+
+export function weeklyReadingNotes(reservoirs: readonly Reservoir[]): string[] {
+  const measured = reservoirs.filter((reservoir) => reservoir.change_7d_af !== null);
   const dates = measured.map((reservoir) => reservoir.as_of).sort();
   const first = dates[0];
   const last = dates[dates.length - 1];
-  if (first === undefined || last === undefined) return null;
+  if (first === undefined || last === undefined) return [];
 
   const lines = [
-    weeklyScopeText(reservoirs, scoped),
     "These are changes over the last seven days.",
     first === last
       ? `All readings are from ${formatDate(first)}.`
@@ -137,8 +146,6 @@ export function weeklyFigures(
   if (late > 0) {
     lines.push(`${late} ${plural(late, "reservoir has a late reading", "reservoirs have late readings")}.`);
   }
-  lines.push(...describeStorage(summary.storage), ...describeMovers(summary.storage));
-  lines.push(creditLine(measured.map(providerName)));
   return lines;
 }
 

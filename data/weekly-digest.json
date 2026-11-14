@@ -1,0 +1,71 @@
+{
+  "schema_version": 1,
+  "entries": [
+    {
+      "week": "2026-11-09",
+      "published": "2026-11-11T16:42:23.997Z",
+      "through": "2026-11-10",
+      "scope": "Storage covers 420 reservoirs, Lake Powell included, Lake Mead included.",
+      "notes": [
+        "These are changes over the last seven days.",
+        "Readings are from Nov 1, 2026 to Nov 10, 2026.",
+        "26 reservoirs have late readings.",
+        "Reservoir data file: Nov 11, 2026. Latest reservoir reading: Nov 10, 2026.",
+        "Snow measurements to Nov 10, 2026.",
+        "Drought map for Nov 3, 2026."
+      ],
+      "sourceDates": {
+        "storage": "2026-11-11T13:41:51+00:00",
+        "snow": "2026-11-10",
+        "drought": "2026-11-03"
+      },
+      "sections": [
+        {
+          "heading": "Reservoir storage — 420 reservoirs",
+          "lines": [
+            "The measured reservoirs gained 313,707 acre-feet between them.",
+            "Together they moved from 46.2% full to 46.5%, up 0.2 points.",
+            "154 fell, 140 rose and 13 did not move.",
+            "This covers the 307 reservoirs that report every day. The other 113 report once a month and cannot show a weekly change."
+          ]
+        },
+        {
+          "heading": "The week's movers, same reservoirs",
+          "lines": [
+            "Largest fall by volume: Franklin D. Roosevelt Lake fell 195,750 acre-feet, which is 2.0% of its own full level.",
+            "Largest rise by volume: Lake Powell rose 347,730 acre-feet, which is 1.4% of its own full level.",
+            "Largest move for its own size: Redinger Lake rose 11,382 acre-feet, which is 43.6% of its own full level. That is 84.8% of what it held a week earlier."
+          ]
+        },
+        {
+          "heading": "Mountain snow, whole region — 387 reporting sites",
+          "lines": [
+            "There is no snow comparison for this week. Percent of normal measures against the middle value for the same day in 1991 through 2020. From late summer into early autumn that value is zero or nearly zero at these sites. That is too small a base for a fair comparison.",
+            "The snowpack view carries the whole season, including its high point."
+          ]
+        },
+        {
+          "heading": "Drought, whole region — 75 drainage areas",
+          "lines": [
+            "The drought map for the week of Nov 3, 2026 was published on Nov 5, 2026.",
+            "The most severe class with land in it is exceptional drought (D4). 35 of 75 drainage areas have land in severe drought or worse.",
+            "24 areas lost some since Oct 27, 2026.",
+            "The largest change is Lower Bear, down 71.3 points of its land at that class."
+          ]
+        }
+      ],
+      "caption": "Week ending Nov 10, 2026\n\nStorage covers 420 reservoirs, Lake Powell included, Lake Mead included.\n\nThese are changes over the last seven days.\n\nReadings are from Nov 1, 2026 to Nov 10, 2026.\n\n26 reservoirs have late readings.\n\nReservoir data file: Nov 11, 2026. Latest reservoir reading: Nov 10, 2026.\n\nSnow measurements to Nov 10, 2026.\n\nDrought map for Nov 3, 2026.\n\nReservoir storage — 420 reservoirs\n\nThe measured reservoirs gained 313,707 acre-feet between them.\n\nTogether they moved from 46.2% full to 46.5%, up 0.2 points.\n\n154 fell, 140 rose and 13 did not move.\n\nThis covers the 307 reservoirs that report every day. The other 113 report once a month and cannot show a weekly change.\n\nThe week's movers, same reservoirs\n\nLargest fall by volume: Franklin D. Roosevelt Lake fell 195,750 acre-feet, which is 2.0% of its own full level.\n\nLargest rise by volume: Lake Powell rose 347,730 acre-feet, which is 1.4% of its own full level.\n\nLargest move for its own size: Redinger Lake rose 11,382 acre-feet, which is 43.6% of its own full level. That is 84.8% of what it held a week earlier.\n\nMountain snow, whole region — 387 reporting sites\n\nThere is no snow comparison for this week. Percent of normal measures against the middle value for the same day in 1991 through 2020. From late summer into early autumn that value is zero or nearly zero at these sites. That is too small a base for a fair comparison.\n\nThe snowpack view carries the whole season, including its high point.\n\nDrought, whole region — 75 drainage areas\n\nThe drought map for the week of Nov 3, 2026 was published on Nov 5, 2026.\n\nThe most severe class with land in it is exceptional drought (D4). 35 of 75 drainage areas have land in severe drought or worse.\n\n24 areas lost some since Oct 27, 2026.\n\nThe largest change is Lower Bear, down 71.3 points of its land at that class.\n\nSource: Data from several providers, shown on the Western Water Dashboard (buschbrian.github.io/western-water-dashboard).\n\nThis is a saved weekly summary. The live dashboard can show newer readings.",
+      "frame": {
+        "name": "Week ending Nov 10, 2026",
+        "figure": "+313,707 acre-feet",
+        "stored": "Net change over seven days",
+        "lines": [
+          "307 of 420 reservoirs reported a weekly change.",
+          "Snow: no comparison with normal is available.",
+          "Drought map: Nov 3, 2026. All figures describe the whole region."
+        ],
+        "source": "Source: Data from several providers, shown on the Western Water Dashboard (buschbrian.github.io/western-water-dashboard)."
+      }
+    }
+  ]
+}

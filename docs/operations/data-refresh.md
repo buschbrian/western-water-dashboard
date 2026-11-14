@@ -142,6 +142,8 @@ These are **not** part of the daily run:
 .venv/bin/python tools/build_county_assignments.py
 .venv/bin/python tools/build_precipitation_history.py      # each October, after the water year closes
 .venv/bin/python tools/build_precipitation_history.py --missing
+.venv/bin/python tools/build_snow_history.py               # each October, after precipitation's
+.venv/bin/python tools/build_snow_history.py --missing
 .venv/bin/python tools/fetch_watershed_scope.py
 ```
 
@@ -165,6 +167,13 @@ closed, so the window gains that year, and with `--missing` when the
 inventory grows or a run reports stations that did not answer. A change of
 window refuses `--only` and `--missing`, because two windows are two
 populations; the full run rebuilds every station.
+
+`build_snow_history.py` (ADR-165) is the same builder fetching snow water
+(`WTEQ`) into `snow_history.json`, at the same cost. Run it each October
+after the precipitation history, with the same `--missing` rule; give it its
+own run rather than running both at once, to keep the load on the provider
+at two requests. Commit the file with a note of the stations that joined or
+left the set. The snow page's card picks up the new year with no code change.
 
 **Every run merges; none replaces.** A reservoir absent from today's payload
 keeps its normal and the run says so — the roster it reads is what the
@@ -209,3 +218,28 @@ source metadata and archive paths, then merges rather than replacing the
 local directory. The job does not push or deploy, and its artifact expires
 after seven days. A failed run can retain a partial artifact: its failure
 and missing station IDs must be reported, never described as complete.
+
+
+## Town search reference
+
+Download the national places ZIP linked from the Census 2026 gazetteer page,
+then run `.venv/bin/python tools/build_town_index.py --input <zip>`. This
+network-independent builder rebuilds the reference from the complete source, reports its gzip cost,
+and refuses a different vintage. Run `npm run verify:pipeline` and the
+browser town-search checks before committing the reference. The daily
+assistant-index writer supplies the current reservoir subbasins separately.
+
+## Weekly figures
+
+The **Publish weekly figures** workflow captures the current week each Monday,
+using `node scripts/build-weekly-digest.mjs`. A manual dispatch or local run
+can capture the first entry in the current week. A rerun in the same Mountain
+Time week changes nothing. `--output /tmp/weekly-preview.json` writes a
+separate preview without changing the committed ledger. No older week is
+filled with today's data.
+
+The workflow commits only `data/weekly-digest.json` and Pages then builds its
+permanent pages, feeds and pictures. A failed capture keeps existing entries.
+A source correction does not authorize editing an older entry. Inspect the
+live data and the next capture instead; the original source dates remain in
+every caption. The ledger is generated evidence, never hand-edited.

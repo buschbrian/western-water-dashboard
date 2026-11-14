@@ -56,6 +56,22 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   storms. The Corps audit now reads every office whose catalog carries
   storage, and 35 more locations it keeps out are recorded with their
   findings.
+- **Snow water against earlier seasons** (ADR-165). The snow page draws this
+  season's snow water equivalent over the range of every earlier season since
+  1990–91, at one fixed set of sites with a full record, for whatever place
+  the page shows: a state, a drainage area or an upstream set. It gives the
+  median for the date, the history rank and, behind the page's usual floors,
+  a percent of normal at those sites. The card names its sites and says the
+  values are not snowfall. Its new file, `snow_history.json` (about 420 KB on
+  the wire), loads only when the card nears the screen. No existing snow
+  figure changes.
+
+- **Lakes navigation** (ADR-166). Terminal lakes joins the page menu and
+  wide navigation bar, using the lake data contract already merged in ADR-159.
+- **Town search** (ADR-164): Census place points join Find a place, opening
+  the finest containing drainage area with a published reservoir. The search
+  states that drainage areas do not show where a town gets water.
+
 - **Eleven California reservoirs** from the California Department of Water
   Resources: Lake Spaulding, Twitchell Reservoir, Farmington Reservoir,
   Clifton Court Forebay, Mariposa Reservoir, Brush Creek Reservoir, Lake
@@ -76,6 +92,13 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   inflow, causality or travel time. Earlier storage history is backfilled
   through existing adapters; the eight USGS histories await the read-only
   Actions job with the existing secret.
+
+- **Saved weekly summaries, feeds and a caption** (ADR-163). One capture per
+  Mountain Time week keeps its original figures, dates and reporting coverage.
+  Atom and JSON feeds publish the latest 52 entries; earlier pages remain.
+  Each entry has a picture and a caption to copy. The capture uses the site's
+  existing arithmetic and text builders; no model writes the summary.
+
 - **Main-page picture previews and copyable story embed code.** The storage,
   snow, precipitation, drought and river pages carry dated preview pictures,
   with figure-free fallbacks. The precipitation page offers its full card

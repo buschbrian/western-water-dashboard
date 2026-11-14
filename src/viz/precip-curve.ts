@@ -45,6 +45,20 @@ const SEASON_MINIMUM_DAYS = 56;
 
 export type PrecipitationRange = "season" | "year";
 
+/** The words the chart writes, so the snow history (ADR-165) can draw on it. */
+export interface CurveWords {
+  shown: string;
+  median: string;
+  middle: string;
+  extremes: string;
+  after: string;
+}
+
+export const PRECIPITATION_WORDS: CurveWords = {
+  shown: "This year", median: "Median year", middle: "Middle half of years",
+  extremes: "Driest to wettest year", after: "Past years after this date"
+};
+
 /** The five history regions, bottom to top, with the names the key uses. */
 export const HISTORY_REGIONS = [
   { className: "precip-region-driest", label: "Driest years", lower: "lowest", upper: "low10" },
@@ -123,7 +137,8 @@ function inches(value: number | null): string {
 
 export function renderPrecipitationCurve(
   host: HTMLElement, allBands: readonly BandStep[], precipitation: readonly DayValue[],
-  range: PrecipitationRange, ariaLabel: string, chartHeight: number = HEIGHT
+  range: PrecipitationRange, ariaLabel: string, chartHeight: number = HEIGHT,
+  words: CurveWords = PRECIPITATION_WORDS
 ): boolean {
   const height = Math.max(PRECIPITATION_CHART_MIN_HEIGHT, Math.round(chartHeight));
   const newest = [...precipitation].reverse().find((day) => day.inches !== null);
@@ -213,7 +228,7 @@ export function renderPrecipitationCurve(
       const pastLabel = element("text", {
         class: "precip-note-label", x: (latestX + futureWidth / 2).toFixed(1), y: PAD_TOP + 14, "text-anchor": "middle"
       });
-      pastLabel.textContent = "Past years after this date";
+      pastLabel.textContent = words.after;
       svg.append(pastLabel);
     }
 
@@ -253,13 +268,13 @@ export function renderPrecipitationCurve(
       svg.append(node);
     };
     const precipY = y(newest.inches as number);
-    const precipLabel = placeLabel(`This year · ${inches(newest.inches)}`, latestX,
+    const precipLabel = placeLabel(`${words.shown} · ${inches(newest.inches)}`, latestX,
       Math.min(precipY, plotBottom - 10) + 4);
     draw(precipLabel, "precip-end-precip");
     const medianEnd = bands[bands.length - 1]!;
     const medianY = y(medianEnd.median);
     const medianLabel = [medianY - 8, medianY + 16]
-      .map((labelY) => placeLabel("Median year", x(medianEnd.date), Math.min(labelY, plotBottom - 6)))
+      .map((labelY) => placeLabel(words.median, x(medianEnd.date), Math.min(labelY, plotBottom - 6)))
       .find((placed) => !overlaps(placed, precipLabel));
     if (medianLabel) draw(medianLabel, "precip-end-median");
     svg.append(element("circle", {
@@ -288,11 +303,11 @@ export function renderPrecipitationCurve(
        * the table use, never a second interpolation here. */
       const dayBand = bandByDate.get(date);
       const rows: [string, string][] = [];
-      if (precipByDate.has(date)) rows.push(["This year", inches(precipByDate.get(date) ?? null)]);
+      if (precipByDate.has(date)) rows.push([words.shown, inches(precipByDate.get(date) ?? null)]);
       if (dayBand) {
-        rows.push(["Median year", inches(dayBand.median)]);
-        rows.push(["Middle half of years", `${dayBand.low25.toFixed(1)}–${dayBand.high75.toFixed(1)} in`]);
-        rows.push(["Driest to wettest year", `${dayBand.lowest.toFixed(1)}–${dayBand.highest.toFixed(1)} in`]);
+        rows.push([words.median, inches(dayBand.median)]);
+        rows.push([words.middle, `${dayBand.low25.toFixed(1)}–${dayBand.high75.toFixed(1)} in`]);
+        rows.push([words.extremes, `${dayBand.lowest.toFixed(1)}–${dayBand.highest.toFixed(1)} in`]);
       }
       const title = document.createElement("strong");
       title.textContent = formatDate(date);

@@ -380,6 +380,9 @@ The map's breaks are amounts in inches, the same for 1, 3 and 7 days.
 soils, so `soil_moisture.json` carries each station's seven-day change in
 percentage points and no median.
 
+- **Input validity:** soil-water percentages outside 0–100 are missing before
+  rounding or averaging (ADR-167). Zero and 100 are retained. No value is
+  clipped or replaced.
 - **Station value:** the mean of the 2 in (or 4 in where there is no 2 in
   sensor), 8 in and 20 in readings for the day. All three or no value. A
   station without the three sensors is listed in `other_depth_sites` and
@@ -455,6 +458,38 @@ totals are rounded to the gauge's tenth of an inch.
 **The window is not the snow normal.** Snow compares with 1991–2020;
 precipitation with 1991 through the last finished year, rebuilt each
 October. A history is not a normal, and each card names its own years.
+
+## Snow water against its own history
+
+**Precipitation's rules, over snow water** (ADR-165).
+`tools/build_snow_history.py` runs the precipitation builder with `WTEQ`:
+the same 53 calendar steps, the same three-day substitution inside the water
+year, the same encoding and merge, written to `snow_history.json`. A reading
+below zero or not finite is not used, so it cannot complete a step; a zero is
+a measurement and is kept. Snow water falls as well as rises, so a negative
+step change is ordinary melt.
+
+**One fixed set, chosen as precipitation's is.** The place's sites with a
+full history and no late data, narrowed to the ones with a value on the
+newest day nine in ten of them report (`SET_SHARE`). Every number on the
+card -- the line, the bands, the median, the rank -- is a mean over that
+set. A day of this season draws only when every site in the set has a value.
+
+**Earlier seasons stop before the one shown.** The bands run from 1991 to
+the season before the shown one, or the file's last year if that is
+earlier, so a finished season opened with `?season=` is never in its own
+bands. Bands, median and rank use precipitation's type-7 quantile and its
+"strictly above, to a tenth of an inch" rank.
+
+**Its percent is ADR-081's, behind ADR-121's floors.** "Of normal at these
+sites" sums the set's snow water and its 1991–2020 normals over the
+site-days that have both, and divides once. It is printed only when the
+mean normal behind it is at least `MEANINGFUL_NORMAL_INCHES` and those sites
+reach `headlineFloor(placeSites, 2)`, the page headline's own floor: at
+least half the sites in the place, never fewer than two. Inches lead.
+
+**Snow water is not snowfall.** It is the water in the snow on the ground
+on a date; snow that fell and melted between two steps is in neither.
 
 ## The monthly normal window
 

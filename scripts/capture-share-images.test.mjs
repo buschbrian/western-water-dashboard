@@ -42,6 +42,12 @@ describe("daily picture capture", () => {
     expect(validTargets([page])).toEqual([page]);
     expect(() => validTargets([{ ...page, frame: "https://example.com/frame" }])).toThrow();
   });
+  it("captures a weekly picture only from its generated frame", () => {
+    const weekly = { file: "weekly-2026-11-09", name: "Week of Nov 9, 2026", kind: "weekly",
+      frame: "share/weekly-2026-11-09.frame.html" };
+    expect(validTargets([weekly])).toEqual([weekly]);
+    expect(() => validTargets([{ ...weekly, frame: "share/west.frame.html" }])).toThrow();
+  });
 
   it("publishes a valid fallback when Chrome is unavailable, and reports a missing image", async () => {
     const folder = await mkdtemp(path.join(tmpdir(), "wwd-share-")); folders.push(folder);

@@ -122,6 +122,7 @@ import {
 import { formatDate, formatPercent } from "./viz/format";
 import { renderSiteCurve } from "./viz/site-curve";
 import { renderSnowCurve, renderSnowSeasonCurve } from "./viz/snow-curve";
+import { createSnowHistoryCard } from "./ui/snow-history-card";
 import "./styles/overview.css";
 import "./styles/snow.css";
 
@@ -302,6 +303,11 @@ function renderSnow(
       </details>
       <p class="card-note">The line is the mean of the site values for each day. Normal is the middle value for the same day in the years ${normalPeriodLabel(payload)}. Gaps are days with too few reporting sites, or too little normal snow, to give a fair mean.${season.previous !== null ? ` A thinner grey line shows the ${seasonName(season.previous)} season on the same dates.` : ""}</p>
     </section>
+    <section id="snow-history-card" class="overview-card" aria-labelledby="snow-history-heading">
+      <div class="card-heading">
+        <div><h2 id="snow-history-heading">Snow water against earlier seasons</h2><p>Snow water equivalent in inches at one fixed set of sites, against the same sites in every earlier season. It is the water in the snow on the ground on each date. It is not snowfall.</p></div>
+      </div>
+    </section>
     <section class="overview-card" aria-labelledby="snow-basin-heading">
       <div class="card-heading">
         <div><h2 id="snow-basin-heading">One drainage area through the season</h2><p>The mean of the chosen area's site values as a percent of normal, day by day. Choose an area here, or select one on the map above.</p></div>
@@ -353,6 +359,10 @@ function renderSnow(
 
   const status = document.querySelector<HTMLElement>("#snow-status");
   const curveHost = document.querySelector<HTMLElement>("#snow-curve-host");
+  const historySection = document.querySelector<HTMLElement>("#snow-history-card");
+  const historyCard = historySection
+    ? createSnowHistoryCard(historySection, () => publishReady(), { normalPeriod: normalPeriodLabel(payload) })
+    : null;
   const monthRows = document.querySelector<HTMLTableSectionElement>("#snow-month-rows");
   const siteRowsBody = document.querySelector<HTMLTableSectionElement>("#snow-site-rows");
   const querybox = document.querySelector<HTMLInputElement>("#snow-query");
@@ -603,6 +613,8 @@ function renderSnow(
       comparisonStatus,
       comparisonPoints: lastComparisonPoints,
       seasonRoute: seasonRouteYear,
+      /* Snow water against earlier seasons (ADR-165). */
+      ...(historyCard ? { snowHistory: historyCard.status } : {}),
       ...(map ? {
         mapBasins: map.status.basins,
         mapSites: map.status.sites,
@@ -1090,6 +1102,8 @@ function renderSnow(
       : `${shown.length} of ${payload.site_count} sites shown · ${where}`;
 
     drawSpread();
+    historyCard?.update(payload.sites.filter((site) => chosen === null || site.huc6 === chosen),
+      season.shown, season.shown === season.current);
     if (map) map.setArea(chosen);
     writeUrl();
     lastCurvePoints = curvePoints;

@@ -71,6 +71,7 @@ No recent-conditions payload or raster is included in this comparison.
 | `rivers.json` | 42.7 KB | 3.7 KB |
 | `precipitation.json` | 155 KB | 8.9 KB |
 | `precipitation_history.json` | 1,639 KB | 488 KB |
+| `snow_history.json` | 1,736 KB | 419 KB |
 | `soil_moisture.json` | 161 KB | 26.8 KB |
 | `river_history.json` (first copy) | 8.2 KB | 1.4 KB |
 | `soil_moisture_history.json` (first copy) | 5.5 KB | 1.0 KB |
@@ -97,6 +98,12 @@ shows, so at the widest zoom a clip edge would be on screen.
 The two precipitation files were measured 2026-10-24 on their first generated
 copies (ADR-125). The history is fetched only when the snow page's
 precipitation card nears the screen.
+
+`snow_history.json` was measured 2026-11-11 on its first generated copy
+(ADR-165), at gzip -9 to compare with the precipitation history above
+(433 KB at gzip -6): 366 stations with every water year 1991–2026. It is
+fetched only when the snow page's earlier-seasons card comes within 800
+pixels of the screen.
 
 `soil_moisture.json` was measured 2026-10-27 on its first generated copy
 (gzip -6; ADR-142): 369 stations, three depths over fifteen days. It is
@@ -617,3 +624,9 @@ After main's four later admissions (three Corps reservoirs and Fairmont) were
 backfilled on 2026-11-11, the directory holds 418 files for 416 of 424
 published reservoirs: 51,339,819 raw bytes and 9,848,494 gzip bytes. The same
 eight USGS histories are still missing.
+
+
+Town search reference, 2026-11-11: 4,283 Census place points, 289,002 raw
+bytes and 48,735 gzip bytes. Budget: 96 KiB gzip, enforced by the builder.
+It is fetched on search focus beside the current names index, never on
+ordinary page startup. No boundary geometry travels in this reference.

@@ -197,6 +197,13 @@
       "note": "Every water year from 1991 at each snow station whose record covers all of them (ADR-125). Rebuilt each October after the year closes; network job; every run merges."
     },
     {
+      "path": "snow_history.json",
+      "class": "derived-on-demand",
+      "writer": "tools/build_snow_history.py",
+      "staged_by_refresh": false,
+      "note": "Snow water equivalent on the precipitation history's weekly steps, every water year from 1991 at each snow station whose record covers all of them (ADR-165). Rebuilt each October after the year closes; network job; every run merges."
+    },
+    {
       "path": "counties.json",
       "class": "derived-on-demand",
       "writer": "tools/build_county_assignments.py",
@@ -449,6 +456,20 @@
       "writer": null,
       "staged_by_refresh": false,
       "note": "Reclamation item, observed status, units and definitions for Powell inflow and Powell/Mead total release. Mead inflow remains unavailable."
+    },
+    {
+      "path": "data/assistant/towns.json",
+      "class": "derived-on-demand",
+      "writer": "tools/build_town_index.py",
+      "staged_by_refresh": false,
+      "note": "Census 2026 place internal points assigned offline to committed drainage areas; not water-supply areas."
+    },
+    {
+      "path": "data/weekly-digest.json",
+      "class": "generated-archive",
+      "writer": "scripts/build-weekly-digest.mjs",
+      "staged_by_refresh": false,
+      "note": "Append-only weekly evidence. Each Mountain Time week is captured once by the separate weekly workflow. A rerun leaves prior entries byte for byte. ADR-163."
     }
   ]
 }

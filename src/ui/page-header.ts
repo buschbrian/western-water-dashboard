@@ -65,12 +65,10 @@ const PAGE_SUBJECTS: Record<PageId, string> = {
    * reached from a reservoir, not from the navigation. The entry point
    * replaces the tab title with the reservoir's name once it resolves. */
   reservoir: "Reservoir Details",
-  /* The natural terminal lakes (ADR-119). Reached from the methods and data
-   * pages rather than from the bar: the bar clips rather than scrolls, and
-   * whether one lake earns a place in it is a decision not yet made. */
+  /* The natural terminal lakes (ADR-119). In the bar and the page menu
+   * since a second lake was published (ADR-166). */
   lakes: "Terminal Lakes",
-  /* Daily river flow (ADR-136). In the bar since ADR-148; the lakes page
-   * is still reached from the methods and data pages only. */
+  /* Daily river flow (ADR-136). In the bar since ADR-148. */
   rivers: "River Flow"
 };
 
@@ -132,6 +130,14 @@ const PAGES: readonly PageLink[] = [
     id: "rivers", href: "./rivers.html", icon: "graph-time-series",
     text: "River flow", menuText: "River flow",
     label: "Open the daily river flow", compact: true
+  },
+  {
+    /* ADR-166: in the bar and the page menu once a second lake was
+     * published. Like river flow, its icon alone until the bar is wide
+     * enough for its text. */
+    id: "lakes", href: "./lakes.html", icon: "absolute-elevation",
+    text: "Lakes", menuText: "Terminal lakes",
+    label: "Open the terminal lakes page", compact: true
   },
   {
     id: "methods", href: "./methods.html", icon: "question",

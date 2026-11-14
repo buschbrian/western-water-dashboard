@@ -118,6 +118,7 @@ edit that survives review is an unreproducible number on a public page.
 | `normals.json` | long-lived derived | `tools/build_normal_baselines.py`, on demand only |
 | `river_normals.json` | long-lived derived | `tools/build_river_normals.py` |
 | `precipitation_history.json` | long-lived derived | `tools/build_precipitation_history.py` |
+| `snow_history.json` | long-lived derived | `tools/build_snow_history.py` |
 | `upstream_index.json` | long-lived derived | `tools/build_upstream_index.py` |
 | `counties.json` | long-lived derived | `tools/build_county_assignments.py` |
 | `capacities.json` | long-lived derived | `tools/build_capacity_table.py` |

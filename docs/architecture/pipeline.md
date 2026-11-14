@@ -136,6 +136,13 @@ the old file's bytes to `data/snow/snowpack-wy<YEAR>.json` first. The archive
 is write-once, owned in `data/generated-files.json` as one directory entry,
 and fetched by the page only on request.
 
+**The two weekly histories share one builder** (ADR-125, ADR-165).
+`tools/build_precipitation_history.py` takes the provider element as a
+parameter; `tools/build_snow_history.py` runs it with `WTEQ` into
+`snow_history.json`. The steps, substitution, encoding and merge are one
+implementation, and a run refuses to merge into a file of another element.
+Neither is part of the daily refresh.
+
 `docs/data-transfer.md` holds the measurements and is the file to update when
 they change.
 
@@ -392,3 +399,35 @@ In **Probe RISE catalog**, `backfill_usgs_storage=true` skips the RISE probe, ru
 read-only USGS backfill with the existing secret, and uploads only the data
 as a short-lived artifact. It neither commits nor deploys. The artifact is
 imported locally and checked before entering the normal data publication.
+
+
+## Town search reference (ADR-164)
+
+The on-demand `tools/build_town_index.py` reads the downloaded Census 2026
+national places ZIP, filters eleven states, and assigns internal points with
+the existing HUC helper and level-8 drawn scope. It rebuilds the complete town
+reference from that Census vintage, keyed by Census identifier and enforces a 96 KiB gzip limit (ADR-164).
+The daily places index carries current reservoir subbasin codes so search
+can resolve a town against the currently published roster.
+
+The soil writer enforces the client’s existing 0–100 percent bound at each
+SMS reading before averaging (ADR-167). Out-of-range values are missing,
+not clipped. The existing temperature, reporting-day and coverage rules apply.
+
+## Weekly digest ledger (ADR-163)
+
+`node scripts/build-weekly-digest.mjs` runs the existing TypeScript weekly
+models through the installed Vite SSR loader, with network serving and file
+watching disabled. `src/build/weekly-digest.ts` validates the current payloads
+and atomically appends a capture to `data/weekly-digest.json`. The week is its
+Monday in Mountain Time. A second run leaves an existing week's bytes
+unchanged, even if the inputs have since changed. Original figures, wording,
+source dates and caption are saved together. Invalid stored history fails
+rather than silently starting a new ledger.
+
+The separate **Publish weekly figures** workflow runs Mondays at 15:00 UTC,
+shares `refresh-data-<ref>` concurrency with daily refresh, and commits only
+the ledger. Its successful main-branch run triggers Pages explicitly because
+its own token's push does not. It has no provider credential and posts to no
+social service. The build publishes the frozen entries as pages and feeds;
+none enters an application JavaScript bundle.

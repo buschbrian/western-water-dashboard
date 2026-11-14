@@ -100,6 +100,10 @@ const userTextFiles = [
   "src/viz/snow-curve.ts",
   "src/viz/snow-classes.ts",
   "src/viz/site-curve.ts",
+  // Snow water against earlier seasons (ADR-165): the card's words, and the
+  // chart words it shares with precipitation.
+  "src/ui/snow-history-card.ts",
+  "src/viz/precip-curve.ts",
   // The precipitation card writes its own figures, notes and the storm
   // totals' sentences (ADR-125, ADR-129).
   "src/ui/precipitation-card.ts",

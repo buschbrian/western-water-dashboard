@@ -859,6 +859,38 @@ const browser = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
   ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH }
   : {});
 
+if (process.argv.includes("--weekly")) {
+  await checkWeeklyDigest();
+  await browser.close();
+  server.close();
+  for (const failure of failures) console.error(failure);
+  process.exit(failures.length ? 1 : 0);
+}
+
+if (process.argv.includes("--great-salt-lake")) {
+  await checkGreatSaltLake();
+  await browser.close();
+  server.close();
+  for (const failure of failures) console.error(failure);
+  process.exit(failures.length ? 1 : 0);
+}
+
+if (process.argv.includes("--towns")) {
+  await checkTownSearch();
+  await browser.close();
+  server.close();
+  for (const failure of failures) console.error(failure);
+  process.exit(failures.length ? 1 : 0);
+}
+
+if (process.argv.includes("--snow-history")) {
+  await checkSnowHistory();
+  await browser.close();
+  server.close();
+  for (const failure of failures) console.error(failure);
+  process.exit(failures.length ? 1 : 0);
+}
+
 if (process.argv.includes("--data-docs")) {
   await checkPublicDataReference();
   await browser.close();
@@ -1531,21 +1563,21 @@ for (const viewport of VIEWPORTS) {
       };
       return {
         menu: shown("#page-menu"),
-        buttons: ["#overview-link", "#precipitation-link", "#snow-link", "#drought-link", "#rivers-link", "#methods-link"].filter(shown),
+        buttons: ["#overview-link", "#precipitation-link", "#snow-link", "#drought-link", "#rivers-link", "#lakes-link", "#methods-link"].filter(shown),
         menuItems: [...document.querySelectorAll("#page-menu calcite-dropdown-item[href]")]
           .map((item) => item.getAttribute("href")),
-        buttonHrefs: ["#overview-link", "#precipitation-link", "#snow-link", "#drought-link", "#rivers-link", "#methods-link"]
+        buttonHrefs: ["#overview-link", "#precipitation-link", "#snow-link", "#drought-link", "#rivers-link", "#lakes-link", "#methods-link"]
           .map((selector) => document.querySelector(selector)?.getAttribute("href"))
       };
     });
     const wideBar = viewport.width >= 1024;
     check(pageLinks.menu === !wideBar,
       `${label}: the page menu is ${pageLinks.menu ? "showing" : "hidden"} at ${viewport.width}px`);
-    check(pageLinks.buttons.length === (wideBar ? 6 : 0),
+    check(pageLinks.buttons.length === (wideBar ? 7 : 0),
       `${label}: ${pageLinks.buttons.length} page link buttons are showing at ${viewport.width}px`);
-    check(pageLinks.menuItems.join(",") === "./,./overview.html,./precipitation.html,./snow.html,./drought.html,./rivers.html,./methods.html",
+    check(pageLinks.menuItems.join(",") === "./,./overview.html,./precipitation.html,./snow.html,./drought.html,./rivers.html,./lakes.html,./methods.html",
       `${label}: the page menu offers ${pageLinks.menuItems.join(", ")}`);
-    check(pageLinks.buttonHrefs.join(",") === "./overview.html,./precipitation.html,./snow.html,./drought.html,./rivers.html,./methods.html",
+    check(pageLinks.buttonHrefs.join(",") === "./overview.html,./precipitation.html,./snow.html,./drought.html,./rivers.html,./lakes.html,./methods.html",
       `${label}: the page link buttons point at ${pageLinks.buttonHrefs.join(", ")}`);
     check(await tab.locator(".map-stage > .map-alternative").count() === 0,
       `${label}: the old table and charts overlay still covers the map`);
@@ -3301,12 +3333,13 @@ for (const viewport of VIEWPORTS) {
       scroll: document.documentElement.scrollWidth
     }));
     console.log("  ready:", JSON.stringify(state.ready));
-    check(state.ready?.files === 14 && state.files === 14,
+    check(state.ready?.files === 16 && state.files === 16,
       `${label}: rendered ${state.files} file cards, readiness reported ${state.ready?.files}`);
     check(state.ready?.groups === state.groups && state.groups >= 20,
       `${label}: rendered ${state.groups} field groups, readiness reported ${state.ready?.groups}`);
     check(JSON.stringify(state.links) === JSON.stringify([
       "./api/reservoirs.json", "./",
+      "./weekly.html", "./feed.xml", "./feed.json",
       // The reviewed reservoir levels, day by day (ADR-135).
       "./api/elevation_history.json", "./reservoir.html?name=Lake%20Powell",
       "./reservoir.html?name=Lake%20Mead",
@@ -3324,6 +3357,8 @@ for (const viewport of VIEWPORTS) {
       "./data/snow/snowpack-wy2026.json",
       "./data/precipitation.json", "./precipitation.html",
       "./data/precipitation_history.json",
+      // Snow water on the same weekly steps (ADR-165).
+      "./data/snow_history.json", "./snow.html",
       // The week's change in soil moisture (ADR-142).
       "./data/soil_moisture.json", "./precipitation.html",
       "./api/soil_moisture_history.json",
@@ -6831,6 +6866,137 @@ async function checkStoryEmbeds() {
 await checkStoryEmbeds();
 
 /*
+ * Snow water against earlier seasons (ADR-165). The history is fetched only
+ * when the card nears the screen; once in, the card is held to the file's
+ * own window and to the page's own site count, never to a number the
+ * morning decides. A refused file must say so and clear aria-busy.
+ */
+async function checkSnowHistory() {
+  const file = JSON.parse(await readFile(path.join(REPO_ROOT, "snow_history.json"), "utf8"));
+  for (const viewport of VIEWPORTS) {
+    const context = await newPageContext(browser, viewport);
+    const tab = await context.newPage();
+    const errors = [];
+    tab.on("pageerror", (err) => errors.push(`uncaught: ${err.message}`));
+    const hostedOutage = watchConsoleErrors(tab, errors);
+    const asked = [];
+    tab.on("request", (request) => { if (request.url().includes("snow_history.json")) asked.push(request.url()); });
+    const label = `Snow history (${viewport.name} ${viewport.width}px)`;
+    console.log(`\n=== ${label}`);
+    try {
+      await tab.goto(`${URL}snow.html?state=UT`, { waitUntil: "domcontentloaded", timeout: 60000 });
+      await tab.waitForFunction(() => window.__snowReady?.snowHistory !== undefined, { timeout: 60000 });
+      const before = await tab.evaluate(() => window.__snowReady.snowHistory.state);
+      check(before === "waiting" && asked.length === 0,
+        `${label}: the history was ${before} with ${asked.length} request(s) before the card neared the screen`);
+      await tab.locator("#snow-history-card").scrollIntoViewIfNeeded();
+      await tab.waitForFunction(() => ["ready", "failed"].includes(window.__snowReady?.snowHistory?.state),
+        { timeout: 60000 });
+      const state = await tab.evaluate(() => {
+        const card = document.querySelector("#snow-history-card");
+        return {
+          ready: window.__snowReady,
+          busy: card.querySelectorAll('[aria-busy="true"]').length,
+          kpis: card.querySelectorAll(".precip-kpis .overview-kpi").length,
+          regions: card.querySelectorAll("svg.precip-curve .precip-region").length,
+          key: card.querySelectorAll(".precip-history-key .precip-legend-item").length,
+          line: card.querySelectorAll("svg.precip-curve .precip-line").length,
+          rows: card.querySelectorAll("tbody tr").length,
+          sites: card.querySelector(".snow-history-sites summary")?.textContent ?? "",
+          text: card.innerText,
+          scroll: document.documentElement.scrollWidth,
+          width: document.documentElement.clientWidth
+        };
+      });
+      const history = state.ready.snowHistory;
+      console.log("  history:", JSON.stringify({ before, asked: asked.length, ...history }));
+      check(history.state === "ready" && asked.length === 1,
+        `${label}: the card is ${history.state} after ${asked.length} request(s)`);
+      check(state.busy === 0, `${label}: the card is still busy`);
+      check(history.firstWaterYear === file.first_water_year
+        && history.lastWaterYear === Math.min(file.last_water_year, state.ready.season - 1)
+        && history.years === history.lastWaterYear - history.firstWaterYear + 1,
+      `${label}: compares ${history.firstWaterYear}-${history.lastWaterYear} (${history.years} seasons)`);
+      check(history.placeSites === state.ready.tableRows && history.stations > 0
+        && history.stations <= Math.min(file.available_site_count, history.placeSites),
+      `${label}: ${history.stations} sites in the set of ${history.placeSites} in the place`);
+      check(state.sites.startsWith(`The ${history.stations} site`),
+        `${label}: the site list names "${state.sites}" for ${history.stations} sites`);
+      check(history.bandDays >= 365 && history.curveDays > 0 && history.date !== null,
+        `${label}: ${history.bandDays} band days, ${history.curveDays} days of this season`);
+      check(state.kpis === 4 && state.regions === 5 && state.key === 5 && state.line > 0,
+        `${label}: ${state.kpis} figures, ${state.regions} regions, ${state.key} key items, ${state.line} lines`);
+      check(state.rows === history.tableRows && state.rows === 13,
+        `${label}: the month table has ${state.rows} rows`);
+      check(/not snowfall/.test(state.text) && /snow water equivalent/i.test(state.text),
+        `${label}: the card does not say what it measures`);
+      /* The page-wide sentence check reads the page before this card loads,
+       * so the card's own sentences answer to the same 25-word limit here. */
+      const long = state.text.split("\n").flatMap((line) => line.trim()
+        .split(/(?<=[.!?])\s+(?=[A-Z"\u2014\d])/))
+        .filter((sentence) => sentence.trim().split(/\s+/).length > 25);
+      check(long.length === 0, `${label}: sentences over 25 words: ${long.join(" | ")}`);
+      check(state.scroll <= state.width + 1,
+        `${label}: page overflows horizontally (${state.scroll}px in ${state.width}px)`);
+      await tab.getByRole("button", { name: "Whole season", exact: true }).click();
+      check(await tab.evaluate(() => window.__snowReady.snowHistory.range) === "year",
+        `${label}: the whole season was not shown`);
+      await checkAccessibility(tab, check, label);
+      await tab.locator("#snow-history-card").screenshot({ path: `screenshots/snow-history-${viewport.name}.png` });
+
+      const finished = state.ready.season - 1;
+      await tab.goto(`${URL}snow.html?state=UT&season=${finished - 1}-${String(finished % 100).padStart(2, "0")}`,
+        { waitUntil: "domcontentloaded", timeout: 60000 });
+      await tab.waitForFunction(() => window.__snowReady?.snowHistory !== undefined, { timeout: 60000 });
+      await tab.locator("#snow-history-card").scrollIntoViewIfNeeded();
+      await tab.waitForFunction(() => window.__snowReady?.snowHistory?.state === "ready", { timeout: 60000 });
+      const archived = await tab.evaluate(() => ({
+        history: window.__snowReady.snowHistory,
+        label: document.querySelector("#snow-history-card .overview-kpi-primary span")?.textContent ?? ""
+      }));
+      check(archived.history.lastWaterYear === Math.min(file.last_water_year, finished - 1)
+        && archived.label.startsWith("The ") && archived.label.endsWith(" season"),
+      `${label}: a finished season compares to ${archived.history.lastWaterYear} as "${archived.label}"`);
+    } catch (err) {
+      failures.push(`${label}: ${err.message}`);
+    }
+    reportHostedOutage(label, hostedOutage);
+    for (const err of errors) failures.push(`${label}: ${err}`);
+    await context.close();
+  }
+
+  const context = await newPageContext(browser, VIEWPORTS[2]);
+  const tab = await context.newPage();
+  const errors = [];
+  tab.on("pageerror", (err) => errors.push(`uncaught: ${err.message}`));
+  watchConsoleErrors(tab, errors, /favicon|tile|sprite|font|snow water history|snow_history/i);
+  const label = "Snow history, refused file (small-phone)";
+  console.log(`\n=== ${label}`);
+  await context.route("**/snow_history.json", (route) => route.abort());
+  try {
+    await tab.goto(`${URL}snow.html?state=UT`, { waitUntil: "domcontentloaded", timeout: 60000 });
+    await tab.waitForFunction(() => window.__snowReady?.snowHistory !== undefined, { timeout: 60000 });
+    await tab.locator("#snow-history-card").scrollIntoViewIfNeeded();
+    await tab.waitForFunction(() => window.__snowReady?.snowHistory?.state === "failed", { timeout: 60000 });
+    const failed = await tab.evaluate(() => ({
+      busy: document.querySelectorAll('#snow-history-card [aria-busy="true"]').length,
+      message: document.querySelector("#snow-history-card .chart-empty")?.textContent ?? "",
+      kpis: document.querySelectorAll("#snow-history-card .overview-kpi").length,
+      season: window.__snowReady.curvePoints
+    }));
+    console.log("  refused:", JSON.stringify(failed));
+    check(failed.busy === 0 && /could not load/.test(failed.message) && failed.kpis === 0,
+      `${label}: busy ${failed.busy}, message "${failed.message}", ${failed.kpis} figures`);
+  } catch (err) {
+    failures.push(`${label}: ${err.message}`);
+  }
+  for (const err of errors) failures.push(`${label}: ${err}`);
+  await context.close();
+}
+
+await checkSnowHistory();
+
+/*
  * The story views (ADR-128): one figure, alone, filling the frame a story
  * embeds it in.
  *
@@ -8248,6 +8414,146 @@ async function checkWaveThree() {
 }
 
 await checkWaveThree();
+
+async function checkGreatSaltLake() {
+  for (const viewport of [...VIEWPORTS, { width: 1024, height: 800, name: "compact-desktop" }]) {
+    const context = await newPageContext(browser, viewport);
+    const tab = await context.newPage();
+    const label = `Lakes navigation (${viewport.name})`;
+    const errors = [];
+    tab.on("pageerror", (error) => errors.push(error.message));
+    watchConsoleErrors(tab, errors);
+    try {
+      await tab.goto(URL, { waitUntil: "domcontentloaded", timeout: 90000 });
+      await tab.waitForSelector("#menu-lakes-link", { state: "attached", timeout: 90000 });
+      const menu = tab.locator("#menu-lakes-link");
+      check(await menu.getAttribute("href") === "./lakes.html", `${label}: the menu lost its lakes link`);
+      const button = tab.locator("#lakes-link");
+      check(await button.isVisible() === (viewport.width >= 1024), `${label}: the bar link has the wrong visibility`);
+      for (const control of await tab.locator('calcite-navigation #brand, calcite-navigation [slot="content-end"]').all()) {
+        if (!await control.isVisible()) continue;
+        const rect = await control.boundingBox();
+        check(rect !== null && rect.x >= 0 && rect.x + rect.width <= viewport.width + 1,
+          `${label}: a navigation action is clipped`);
+      }
+      await tab.goto(`${URL}lakes.html?state=all`, { waitUntil: "domcontentloaded", timeout: 90000 });
+      await tab.waitForFunction(() => window.__lakesReady !== undefined, null, { timeout: 90000 });
+      check(await tab.locator("#menu-lakes-link").getAttribute("aria-current") === "page",
+        `${label}: the menu does not identify the current page`);
+      check(await tab.locator("#lakes-link").count() === 0, `${label}: the bar links to its current page`);
+      check(await tab.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
+        `${label}: the page scrolls sideways`);
+      await checkAccessibility(tab, check, label);
+      await tab.screenshot({ path: `screenshots/lakes-navigation-${viewport.name}.png`, fullPage: true });
+    } catch (error) { failures.push(`${label}: ${error.message}`); }
+    for (const error of errors) failures.push(`${label}: ${error}`);
+    await context.close();
+  }
+}
+
+await checkGreatSaltLake();
+
+async function checkTownSearch() {
+  const index = JSON.parse(await readFile(path.join(ROOT, "data/assistant/places.json"), "utf8"));
+  const towns = JSON.parse(await readFile(path.join(ROOT, "data/assistant/towns.json"), "utf8")).towns;
+  const names = [...index.reservoirs, ...index.areas, ...index.sites, ...towns].map((row) => row.name);
+  const town = towns.find((row) => row.name === "Millcreek" && names.filter((name) => name === row.name).length === 1)
+    ?? towns.find((row) => names.filter((name) => name === row.name).length === 1);
+  const area = index.areas.filter((row) => town.huc8.startsWith(row.code)
+    && index.reservoirs.some((reservoir) => reservoir.huc8?.startsWith(row.code)))
+    .sort((a, b) => b.level - a.level)[0];
+  for (const viewport of VIEWPORTS) {
+    const label = `Town search (${viewport.name})`;
+    console.log(`\n=== ${label}`);
+    const context = await browser.newContext({ viewport, colorScheme: viewport.name === "mobile" ? "dark" : "light" });
+    const tab = await context.newPage();
+    const errors = [];
+    tab.on("pageerror", (error) => errors.push(error.message));
+    tab.on("console", (message) => {
+      if (message.type() === "error" && !/font|favicon/i.test(message.text() + message.location().url)) errors.push(message.text());
+    });
+    try {
+      await tab.goto(`${URL}methods.html?state=all`, { waitUntil: "domcontentloaded", timeout: 60000 });
+      await tab.locator("#place-search-trigger").click();
+      await tab.getByRole("combobox", { name: "Find a place" }).fill(town.name);
+      const option = tab.locator("#place-search-list .place-search-option").filter({ hasText: "Town or city" }).first();
+      await option.waitFor({ state: "visible", timeout: 30000 });
+      check((await option.innerText()).includes(`point in ${area.name}`), `${label}: result does not name the containing area`);
+      check((await tab.locator("#town-search-note").innerText()).includes("do not show where a town gets water"), `${label}: missing water-supply limit`);
+      check(await tab.evaluate(() => document.documentElement.scrollWidth <= innerWidth), `${label}: horizontal overflow`);
+      await checkAccessibility(tab, check, label);
+      await tab.screenshot({ path: `screenshots/town-search-${viewport.name}.png` });
+      await option.click();
+      await tab.waitForURL((url) => url.searchParams.get("area") === area.code, { timeout: 30000 });
+      check(new globalThis.URL(tab.url()).searchParams.get("state") === "all", `${label}: town link lost explicit all-state scope`);
+      await tab.waitForFunction(() => window.__dashboardReady, { timeout: 90000 });
+      check(await tab.locator("dialog.opening-splash[open]").count() === 0, `${label}: a chooser covers the town link`);
+    } catch (error) { failures.push(`${label}: ${error.message}`); }
+    finally {
+      errors.forEach((error) => failures.push(`${label}: ${error}`));
+      await context.close();
+    }
+  }
+}
+
+await checkTownSearch();
+
+
+async function checkWeeklyDigest() {
+  const ledger = JSON.parse(await readFile(path.join(REPO_ROOT, "data/weekly-digest.json"), "utf8"));
+  const entry = ledger.entries.at(-1);
+  if (!entry) { failures.push("Weekly digest: no saved entry to verify"); return; }
+  const check = (condition, message) => { if (!condition) failures.push(message); };
+  for (const viewport of [...VIEWPORTS, { name: "tiny-phone", width: 320, height: 640 }]) {
+    const context = await newPageContext(browser, viewport);
+    const tab = await context.newPage();
+    const errors = [];
+    tab.on("pageerror", (error) => errors.push(error.message));
+    tab.on("console", (message) => {
+      const diagnostic = `${message.text()} ${message.location().url}`;
+      if (message.type() === "error" && !/favicon/.test(diagnostic)) errors.push(diagnostic);
+    });
+    const label = `Weekly digest (${viewport.name})`;
+    console.log(`\n=== ${label}`);
+    try {
+      await tab.goto(`${URL}weekly.html`, { waitUntil: "load", timeout: 60000 });
+      const feeds = await tab.evaluate(async () => {
+        const [atom, json] = await Promise.all([fetch("./feed.xml").then((r) => r.text()), fetch("./feed.json").then((r) => r.json())]);
+        const xml = new DOMParser().parseFromString(atom, "application/xml");
+        return { namespace: xml.documentElement.namespaceURI, invalid: xml.querySelectorAll("parsererror").length,
+          entries: xml.getElementsByTagNameNS("http://www.w3.org/2005/Atom", "entry").length,
+          caption: xml.getElementsByTagNameNS("http://www.w3.org/2005/Atom", "content")[0]?.textContent,
+          json, wide: document.documentElement.scrollWidth > window.innerWidth + 1 };
+      });
+      check(!feeds.invalid && feeds.namespace === "http://www.w3.org/2005/Atom" && feeds.entries > 0,
+        `${label}: Atom is not a readable feed`);
+      check(feeds.json.version === "https://jsonfeed.org/version/1.1" && feeds.json.items[0].content_text === entry.caption
+        && feeds.caption === entry.caption && !feeds.wide, `${label}: the feeds differ from the frozen entry`);
+      await tab.getByRole("link", { name: entry.frame.name, exact: true }).click();
+      await tab.waitForURL(new RegExp(`weekly-${entry.week}\\.html$`));
+      check(await tab.locator("#weekly-caption").inputValue() === entry.caption, `${label}: the caption changed`);
+      await tab.locator("#weekly-caption").focus();
+      await tab.keyboard.press("Control+A");
+      const selected = await tab.locator("#weekly-caption").evaluate((element) => element.selectionEnd - element.selectionStart);
+      check(selected === entry.caption.length, `${label}: the caption cannot be selected to copy`);
+      check(await tab.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), `${label}: the page scrolls sideways`);
+      await checkAccessibility(tab, check, label);
+      await tab.screenshot({ path: path.join(REPO_ROOT, `screenshots/weekly-${viewport.name}.png`) });
+    } catch (error) { failures.push(`${label}: ${error.message}`); }
+    for (const error of errors) failures.push(`${label}: ${error}`);
+    await context.close();
+  }
+  const context = await newPageContext(browser, { width: 1200, height: 630 });
+  const tab = await context.newPage();
+  await tab.goto(`${URL}share/weekly-${entry.week}.frame.html`, { waitUntil: "load" });
+  check(await tab.locator(".figure").innerText() === entry.frame.figure, "Weekly picture: wrong figure");
+  check(await tab.evaluate(() => document.documentElement.scrollWidth <= 1200 && document.documentElement.scrollHeight <= 630),
+    "Weekly picture: the frame does not fit 1200 by 630");
+  await tab.screenshot({ path: path.join(REPO_ROOT, "screenshots/weekly-picture.png") });
+  await context.close();
+}
+
+await checkWeeklyDigest();
 await browser.close();
 server.close();
 

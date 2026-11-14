@@ -1,10 +1,10 @@
 # Product review plan, November 2026
 
-Status: The four Wave 1 implementation PRs (#115–#118) were published on
-2026-11-09. Wave 2, sharing and place: items 5–7 are merged through PR #120;
-items 8 and 9 remain. Wave 3 is implemented locally under ADR-160–157;
-final acceptance and the eight USGS storage backfills remain. Mead daily
-inflow is a source gap, explicitly shown as unavailable.
+Status: Waves 1–3 are merged through PR #129. The eight USGS storage
+backfills and Mead daily inflow remain source gaps. Items 8, 9 and 13 are
+integrated locally under proposed ADR-163–165, awaiting Brian's review.
+Great Salt Lake's arms already shipped through PR #138 (ADR-159); its
+remaining navigation entry is integrated locally under proposed ADR-166.
 Brian Busch chose the four scopes below
 on 2026-11-09. ADR-153 records the storage-map choice; each later wave writes
 its own record where required.
@@ -187,18 +187,11 @@ Record: one.
 
 ### 9. Search finds towns
 
-- An offline tool takes place names from the Census Bureau's gazetteer for the
-  eleven states and assigns each to a drainage area with the committed,
-  unpublished `data/watersheds/west-huc8.geojson`. It writes a reference file
-  beside the existing index, inside a measured byte budget.
-- Search gains a town result. Choosing one opens the finest area around it
-  that holds a published reservoir, and says the town is in that area. It
-  never says where a town's water comes from.
-- No geocoder and no new host (ADR-004, ADR-036).
-- Whether a link carries the town is a URL question for the `scope-state`
-  skill and the record.
-
-Record: one.
+Implemented locally on `feat/town-search` (ADR-164). The offline Census
+reference holds 4,283 place points in 48,735 gzip bytes. Search opens the
+finest containing published area with a current reservoir and names the
+point's location without claiming a water-supply area. Existing area URLs
+carry the selection; no town parameter or preference is introduced.
 
 ## Wave 3: new data
 
@@ -266,6 +259,15 @@ and the reason inflow is unavailable, rather than manufacturing a series.
 ## Wave 4: before spring
 
 ### 13. Snow water against earlier seasons
+
+Implemented locally on `feat/snow-history`, awaiting Brian's review and
+publication (ADR-165): `snow_history.json` from the precipitation builder
+with `WTEQ` (366 of 639 stations cover 1991–2026), and a lazy card under the
+snow page's season chart that follows the page's place. On 2026-11-11 it
+compares 365 sites for the West and 74 for Utah with 36 earlier seasons. It
+keeps ADR-081's summed ratio and ADR-121's floors, and no existing snow
+figure moves. Current behaviour is in `architecture/frontend.md` and
+`architecture/hydrology-methods.md`.
 
 A snow-water history since 1991, built the way
 `tools/build_precipitation_history.py` builds precipitation's, so the snow
