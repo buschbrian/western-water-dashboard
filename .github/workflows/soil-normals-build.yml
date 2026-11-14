@@ -15,9 +15,6 @@ on:
         description: "Station triplets to rebuild, space-separated (empty rebuilds every station)"
         required: false
         default: ""
-  push:
-    branches: [claude/project-thread-8nfwiy]
-    paths: [.github/workflows/soil-normals-build.yml]
 
 permissions:
   contents: write
