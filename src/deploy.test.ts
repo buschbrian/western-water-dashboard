@@ -407,10 +407,6 @@ describe("every published address is the site's own", () => {
     expect(await read("public/robots.txt")).toContain(`Sitemap: ${base}/sitemap.xml`);
   });
 
-  it("points the question service at the published data", async () => {
-    const wrangler = await read("worker/wrangler.toml");
-    expect(/^PUBLIC_DATA_BASE = "([^"]+)"$/m.exec(wrangler)?.[1]).toBe(await siteBase());
-  });
 });
 
 describe("a shared link shows a picture", () => {

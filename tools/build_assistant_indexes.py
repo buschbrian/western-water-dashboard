@@ -1,7 +1,8 @@
-"""Build compact, public fact indexes for the dashboard question service.
+"""Build compact, public fact indexes of current reservoir, snow and drought facts.
 
-The Worker fetches one topic per question, so this builder keeps reservoir,
-snow and drought facts separate.  It also writes the names the shared
+They were written for a question service that was never deployed and was
+removed on 2026-11-14; the files stay published as part of the public data,
+one topic per file.  It also writes the names the shared
 header's "Find a place" search offers, which no other published file holds
 small enough to fetch on a page that does not need the full payloads.  It
 writes temporary files, validates their shape and size, then replaces every
@@ -23,7 +24,7 @@ MAX_BYTES = {
     "drought.json": 600_000,
     "places.json": 250_000,
 }
-#: The newest weeks of each drought archive the question service is given.
+#: The newest weeks of each drought archive the drought index carries.
 #: The archives hold a decade (ADR-122), about 6 MB across three levels, ten
 #: times this index's budget; half a year answers "how has it changed lately"
 #: and the full series stays one link away in the published archives.

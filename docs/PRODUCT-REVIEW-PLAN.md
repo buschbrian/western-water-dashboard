@@ -134,9 +134,6 @@ work from this wave is explicit, and each line was checked against `main` on
   download.
 - Raise a self-healing issue when a share capture uses a fallback. The Pages
   workflow still logs a warning and nothing else.
-- Confirm or deploy the question service separately if it is in use.
-  `worker/wrangler.toml` names the current data address, and no workflow
-  deploys a Cloudflare worker.
 - Inspect the map canvas and visual hierarchy in a visible browser below
   500 CSS pixels. The automated browser suite cannot establish map rendering,
   and no inspection is recorded.

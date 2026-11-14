@@ -110,9 +110,8 @@ service does not answer.
 | `npm run verify:fast` | Typecheck and run the Vitest unit suite. |
 | `npm run verify:frontend` | Typecheck, unit tests, SDK bundle budget, and build `dist/`. |
 | `npm run verify:pipeline` | Run pipeline, source, geography, and measurement tests. |
-| `npm run verify:worker` | Typecheck and test the question service under `worker/`. |
 | `npm run verify:browser` | Build, run both smoke suites with axe-core, then check the hosted-service outage fallback. |
-| `npm run verify:all` | Frontend, pipeline, worker and browser targets, in order. |
+| `npm run verify:all` | Frontend, pipeline and browser targets, in order. |
 | `scripts/refresh-daily.sh --dry-run` | Print the daily refresh plan and its published file list. |
 | `python refresh_reservoirs.py --dry-run` | Fetch and validate reservoir data without writing. |
 | `python tools/build_normal_baselines.py --missing` | Build only missing 1991–2020 reservoir comparisons. |
