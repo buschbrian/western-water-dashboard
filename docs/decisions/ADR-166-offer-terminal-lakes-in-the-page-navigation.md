@@ -1,6 +1,6 @@
 # ADR-166: Offer terminal lakes in the page navigation
 
-- Status: Proposed
+- Status: Accepted (Brian Busch, 2026-11-14)
 - Date: 2026-11-14
 - Extends: ADR-119 (terminal-lakes page), ADR-148 (compact page links)
 - Supersedes: ADR-119's navigation clause only, on acceptance

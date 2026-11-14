@@ -2,8 +2,8 @@
 
 Status, reconciled against `main` on 2026-11-14: every numbered item below
 is published. Waves 1–3 merged through PR #129; items 8, 9 and 13 and the
-Lakes navigation entry merged through PR #139. ADR-160 to ADR-166 are still
-Proposed and wait on Brian's acceptance. Mead daily inflow remains a source
+Lakes navigation entry merged through PR #139. Brian Busch accepted
+ADR-160 to ADR-167 on 2026-11-14. Mead daily inflow remains a source
 gap. The open work is the follow-up list under Wave 1 and the one entry
 under "Not measured yet".
 Brian Busch chose the four scopes below
@@ -173,7 +173,7 @@ Record: none.
 
 ### 8. A weekly digest and a feed
 
-Published through PR #139, from PR #130 (ADR-163, Proposed): a weekly job
+Published through PR #139, from PR #130 (ADR-163, accepted): a weekly job
 freezes the week's figures into a committed list, and the deploy builds an
 Atom feed, a JSON feed, a weekly share page with its picture and a caption
 ready to copy. Nothing is posted anywhere. Current behaviour is in
@@ -181,7 +181,7 @@ ready to copy. Nothing is posted anywhere. Current behaviour is in
 
 ### 9. Search finds towns
 
-Published through PR #139, from PR #131 (ADR-164, Proposed). The offline Census
+Published through PR #139, from PR #131 (ADR-164, accepted). The offline Census
 reference holds 4,283 place points in 48,735 gzip bytes. Search opens the
 finest containing published area with a current reservoir and names the
 point's location without claiming a water-supply area. Existing area URLs
@@ -193,7 +193,7 @@ Each is a new published contract. Verify with `npm run verify:pipeline` and
 `npm run verify:browser`; payloads regenerate in CI.
 
 All three items are published in PR #129, merged 2026-11-12. ADR-160 to
-ADR-162 are Proposed. Current behaviour is in `architecture/frontend.md` and
+ADR-162 are accepted. Current behaviour is in `architecture/frontend.md` and
 `architecture/pipeline.md`.
 
 ### 10. Daily storage history for every reservoir
@@ -222,7 +222,7 @@ aligned 30-day context for Lake Powell and Lake Mead. It states no cause.
 
 ### 13. Snow water against earlier seasons
 
-Published through PR #139, from PR #132 (ADR-165, Proposed):
+Published through PR #139, from PR #132 (ADR-165, accepted):
 `snow_history.json` from the precipitation builder
 with `WTEQ` (366 of 639 stations cover 1991–2026), and a lazy card under the
 snow page's season chart that follows the page's place. On 2026-11-11 it
@@ -235,7 +235,7 @@ figure moves. Current behaviour is in `architecture/frontend.md` and
 
 Published in PR #138 (ADR-159, accepted 2026-11-11): Great Salt Lake by arm
 and without a volume. The Lakes entry in the page bar and menu followed in
-PR #139 (ADR-166, Proposed). Pyramid Lake and Mono Lake stay withheld;
+PR #139 (ADR-166, accepted). Pyramid Lake and Mono Lake stay withheld;
 `admitted_terminal_lakes.json` carries each finding: Pyramid for its update
 schedule, Mono for its elevation series.
 

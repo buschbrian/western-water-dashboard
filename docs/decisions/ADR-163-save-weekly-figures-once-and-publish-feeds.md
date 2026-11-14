@@ -1,6 +1,6 @@
 # ADR-163: Save weekly figures once and publish feeds
 
-- Status: **Proposed** (for Brian Busch's approval)
+- Status: Accepted (Brian Busch, 2026-11-14)
 - Date: 2026-11-11
 - Extends: ADR-074, ADR-149, ADR-154
 

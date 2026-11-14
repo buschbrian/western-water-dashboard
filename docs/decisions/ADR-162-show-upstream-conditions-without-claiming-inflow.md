@@ -1,6 +1,6 @@
 # ADR-162: Show upstream conditions without claiming inflow
 
-- Status: **Proposed** (for Brian Busch's approval)
+- Status: Accepted (Brian Busch, 2026-11-14)
 - Date: 2026-11-11
 - Extends: ADR-097, ADR-125, ADR-127, ADR-129, ADR-161
 
