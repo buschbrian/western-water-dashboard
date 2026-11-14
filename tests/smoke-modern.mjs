@@ -6848,6 +6848,9 @@ for (const viewport of VIEWPORTS) {
     && state.ready?.rendered === state.ready?.gauges && state.articles === state.ready?.gauges,
   `Rivers page (${viewport.name}): published ${state.ready?.gauges} gauge(s), drew `
     + `${state.ready?.rendered}, found ${state.articles} articles`);
+  check(state.ready?.placeMenus === 2,
+    `Rivers page (${viewport.name}): ${state.ready?.placeMenus} place menus; Where and `
+    + "Drainage area are both offered (ADR-168)");
   check(state.charts === state.articles && state.ready?.charts === state.articles,
     `Rivers page (${viewport.name}): ${state.charts} charts for ${state.articles} gauges`);
   const shaped = state.tiers.filter((a) => a.tier === "shaped");

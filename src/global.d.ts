@@ -468,5 +468,7 @@ interface Window {
     /** Natural gauges whose newest flow is compared with normal (ADR-144). */
     compared: number;
     failed: boolean;
+    /** How many place menus (Where, Drainage area) the page offers (ADR-168). */
+    placeMenus: number;
   };
 }

@@ -7,8 +7,9 @@ import {
   NATURAL_SENTENCE, SHAPED_SENTENCE, SHAPED_SUMMARY, approvalText, calendarDay, describeGauge,
   formatFlow, formatFlowFigures, gaugeAnchor, groupGauges, lateMessage, riversCsv,
   riversCsvFilename, shortRecordSentence, summaryDate, summaryFlowHeading, summaryRow,
-  whereSentence, withdrawnSentence
+  whereSentence, withdrawnSentence, drainageHasGauge, gaugeInPlace, orderGauges, placeCountSentence
 } from "./rivers-model";
+import type { RiverGauge } from "./types";
 
 describe("river model", () => {
   it("words the current reading in full units with its date", () => {
@@ -184,5 +185,34 @@ describe("river model", () => {
     expect(row.flow).toBe("101 on Oct 24");
     expect(summaryDate([late, riverGauge({ as_of: "2026-10-26" })])).toBe("2026-10-26");
     expect(summaryDate([])).toBeNull();
+  });
+});
+
+describe("the river page's place filter (ADR-168)", () => {
+  const at = (state: string, huc8: string, name: string) =>
+    riverGauge({ state, huc8, name }) as RiverGauge;
+  const gauges = [at("UT", "14070006", "B"), at("CO", "14010001", "A"), at("UT", "16020101", "C")];
+
+  it("narrows by state and by a nested drainage code", () => {
+    expect(gauges.filter((g) => gaugeInPlace(g, { state: "UT", area: null })).map((g) => g.name))
+      .toEqual(["B", "C"]);
+    expect(gauges.filter((g) => gaugeInPlace(g, { state: "all", area: "14" })).map((g) => g.name))
+      .toEqual(["B", "A"]);
+    expect(gauges.filter((g) => gaugeInPlace(g, { state: "CO", area: "16" }))).toEqual([]);
+  });
+
+  it("orders by state, then drainage code, then name", () => {
+    expect(orderGauges(gauges).map((g) => g.name)).toEqual(["A", "B", "C"]);
+  });
+
+  it("offers a drainage area only when the chosen state has a gauge in it", () => {
+    expect(drainageHasGauge("1401", gauges, "all")).toBe(true);
+    expect(drainageHasGauge("1401", gauges, "UT")).toBe(false);
+    expect(drainageHasGauge("16", gauges, "UT")).toBe(true);
+  });
+
+  it("says how many gauges it shows", () => {
+    expect(placeCountSentence(3, 3, ["Utah"])).toBe("This page covers 3 reviewed gauges in Utah.");
+    expect(placeCountSentence(1, 3, ["Utah"])).toBe("This page shows 1 of 3 reviewed gauges in Utah.");
   });
 });
