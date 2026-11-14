@@ -6499,8 +6499,8 @@ for (const failure of [
  * what the page shows. What only a browser can answer: the block is on the
  * reservoir page with its name, its reading date as the page writes it and
  * the site's address; the copy button confirms and then returns; the picture
- * view has no block; and the storage charts and precipitation pages carry
- * one. Compared with the page's own text, never with a literal number.
+ * view has no block; and the storage charts, precipitation and snow pages
+ * carry one. Compared with the page's own text, never with a literal number.
  */
 {
   const SITE_ADDRESS = "buschbrian.github.io/western-water-dashboard";
@@ -6657,6 +6657,49 @@ for (const failure of [
         && /water years \d{4} to \d{4}/.test(precipText),
       `${label} (precipitation): the date "${pageDate}", period, provider or address is missing `
         + JSON.stringify(precip.lines));
+    }
+
+    /* The snow page: the block follows the summary tiles and says what the
+     * first tile says. Early in a season that tile has a depth and no
+     * percent, or nothing at all; the block follows it each time. */
+    await tab.goto(`${URL}snow.html?state=UT`, { waitUntil: "domcontentloaded", timeout: 60000 });
+    await tab.waitForFunction(() => window.__snowReady?.tableRows !== undefined,
+      null, { timeout: 120000 });
+    const snow = await readBlock("#snow-content");
+    const tiles = await tab.evaluate(() => {
+      const block = document.querySelector('#snow-content [data-copy-figures="block"]');
+      const summary = document.querySelector("#snow-content .snow-summary");
+      return {
+        now: document.querySelector('[data-snow-kpi="now"]')?.textContent ?? "",
+        note: document.querySelector('[data-snow-kpi="now-note"]')?.textContent ?? "",
+        place: document.querySelector("#snow-scope-summary")?.textContent ?? "",
+        afterSummary: Boolean(block && summary
+          && (summary.compareDocumentPosition(block) & Node.DOCUMENT_POSITION_FOLLOWING))
+      };
+    });
+    if (tiles.now === "\u2014") {
+      check(snow.present && snow.hidden === true,
+        `${label} (snow): a block is shown with no newest value`);
+    } else {
+      const snowDate = /^(?:Snow water on )?(\w+ \d{1,2}, \d{4})/.exec(tiles.note)?.[1] ?? "";
+      const snowText = snow.lines.join("\n");
+      check(snow.present && snow.hidden === false && snow.heading === "Copy these figures"
+        && snow.labelled === "Copy these figures" && tiles.afterSummary,
+      `${label} (snow): the block is missing, hidden or not after the summary tiles `
+        + JSON.stringify({ present: snow.present, hidden: snow.hidden, after: tiles.afterSummary }));
+      check(snow.lines[0] === "These figures are for Utah."
+        && tiles.place === "Showing snow measurements for Utah.",
+      `${label} (snow): the first sentence "${snow.lines[0]}" does not name the place in `
+        + `"${tiles.place}"`);
+      check(snowDate !== "" && snowText.includes(snowDate) && snowText.includes(SITE_ADDRESS)
+        && snowText.includes("Source: Natural Resources Conservation Service data"),
+      `${label} (snow): the date "${snowDate}", provider or address is missing `
+        + JSON.stringify(snow.lines));
+      check(tiles.now.endsWith("%") ? snowText.includes(`${tiles.now} of normal`)
+        && /in the years \d{4} through \d{4}/.test(snowText)
+        : !snowText.includes("%"),
+      `${label} (snow): the text does not carry the tile's value "${tiles.now}" `
+        + JSON.stringify(snow.lines));
     }
   } catch (error) {
     failures.push(`${label}: ${error.message}`);

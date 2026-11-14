@@ -17,7 +17,11 @@ import { headlinePercent } from "../viz/symbols";
 import { weeklySummary } from "../weekly-model";
 import { baselineChoices } from "./baseline";
 import { providerName } from "./detail";
-import { creditLine, precipitationFigures, reservoirFigures, weeklyFigures } from "./figures-text";
+import { PERCENT_BASIS_SENTENCE, percentAmounts, type CurvePoint } from "../snow-model";
+import {
+  creditLine, precipitationFigures, reservoirFigures, snowFigures, weeklyFigures,
+  type SnowFiguresInput
+} from "./figures-text";
 
 const payload = readPayload();
 const choices = baselineChoices(payload);
@@ -313,5 +317,69 @@ describe("precipitation", () => {
   it("is not offered when the card has no headline", () => {
     const empty = precipitationView([], daily({ a: { "2026-10-08": 4 } }), history(["a"]), []);
     expect(precipitationFigures(empty, "Utah")).toBeNull();
+  });
+});
+
+describe("snow", () => {
+  const latest: CurvePoint = {
+    date: "2027-02-01", percent: 84.6, reportingSites: 9, meanInches: 11, normalInches: 13
+  };
+  const peak: CurvePoint = { ...latest, date: "2027-01-10", percent: 112.3 };
+  const input = (over: Partial<SnowFiguresInput> = {}): SnowFiguresInput => ({
+    where: "Utah", latest, reading: latest, peak, sites: 12, late: 0,
+    normalPeriod: "1991 through 2020", finishedSeason: null, ...over
+  });
+
+  it("gives the percent with its date, sites, amounts, period and credit", () => {
+    const lines = snowFigures(input())!;
+    expect(lines[0]).toBe("These figures are for Utah.");
+    expect(lines).toContain(`On ${formatDate(latest.date)}, snow water was `
+      + `${formatPercent(latest.percent)} of normal at 9 of 12 measurement sites.`);
+    expect(lines).toContain(percentAmounts(latest));
+    expect(lines).toContain("Normal is the middle value for the same day in the years 1991 through 2020.");
+    expect(lines).toContain(PERCENT_BASIS_SENTENCE);
+    expect(lines).toContain(`The highest percent of normal this season was `
+      + `${formatPercent(peak.percent)}, on ${formatDate(peak.date)}.`);
+    expect(lines[lines.length - 1]).toBe(creditLine(["Natural Resources Conservation Service"]));
+  });
+
+  it("does not repeat the newest day as the season's highest", () => {
+    const lines = snowFigures(input({ peak: latest }))!;
+    expect(lines.some((line) => line.startsWith("The highest percent"))).toBe(false);
+  });
+
+  it("gives the depth alone when the normal is too small to compare against", () => {
+    const reading: CurvePoint = {
+      date: "2026-10-20", percent: 266, reportingSites: 8, meanInches: 0.64, normalInches: 0.24
+    };
+    const lines = snowFigures(input({ latest: null, reading, peak: null }))!;
+    expect(lines).toContain(`On ${formatDate(reading.date)}, the mean snow water was `
+      + "0.6 inches at 8 of 12 measurement sites.");
+    expect(lines).toContain("There is too little normal snow for this date to compare against.");
+    expect(lines.join("\n")).not.toContain("%");
+  });
+
+  it("is not offered when too few sites reported", () => {
+    expect(snowFigures(input({ latest: null, reading: null, peak: null }))).toBeNull();
+    expect(snowFigures(input({
+      latest: null, peak: null, reading: { date: "2026-10-02", percent: null, reportingSites: 7 }
+    }))).toBeNull();
+  });
+
+  it("says a finished season is finished, and how many sites have late data", () => {
+    const lines = snowFigures(input({ finishedSeason: "2025\u201326", late: 1 }))!;
+    expect(lines[1]).toBe("This is the finished 2025\u201326 snow season.");
+    expect(lines).toContain("1 site has no new value for more than two days.");
+    expect(snowFigures(input({ late: 3 }))).toContain(
+      "3 sites have no new value for more than two days.");
+  });
+
+  it("keeps every sentence short and in the published vocabulary", () => {
+    const where = "mountain sites upstream of Lake Powell, in the whole region";
+    for (const line of snowFigures(input({ where, finishedSeason: "2025\u201326", late: 2 }))!) {
+      expect(words(line), line).toBeLessThanOrEqual(25);
+      expect(line).not.toMatch(RETIRED);
+      expect(line).not.toMatch(OVERREACH);
+    }
   });
 });

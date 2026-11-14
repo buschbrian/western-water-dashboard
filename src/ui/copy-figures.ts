@@ -3,7 +3,7 @@
  * reader can select, with a button to copy them, a button to copy the link,
  * and, where the browser has one, a button for its share sheet.
  *
- * One control, three pages. It owns no wording about the water: a page hands
+ * One control, four pages. It owns no wording about the water: a page hands
  * it lines, or null when it has none it can stand behind, and the control
  * hides itself. The buttons are always in view; the sentences sit in a closed
  * `<details>`, because they repeat the figures the page has just shown. Nothing is stored, and nothing leaves the page unless the

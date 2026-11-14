@@ -1,10 +1,11 @@
 # Product review plan, November 2026
 
-Status: Waves 1–3 are merged through PR #129. The eight USGS storage
-backfills and Mead daily inflow remain source gaps. Items 8, 9 and 13 are
-integrated locally under proposed ADR-163–165, awaiting Brian's review.
-Great Salt Lake's arms already shipped through PR #138 (ADR-159); its
-remaining navigation entry is integrated locally under proposed ADR-166.
+Status, reconciled against `main` on 2026-11-14: every numbered item below
+is published. Waves 1–3 merged through PR #129; items 8, 9 and 13 and the
+Lakes navigation entry merged through PR #139. ADR-160 to ADR-166 are still
+Proposed and wait on Brian's acceptance. Mead daily inflow remains a source
+gap. The open work is the follow-up list under Wave 1 and the one entry
+under "Not measured yet".
 Brian Busch chose the four scopes below
 on 2026-11-09. ADR-153 records the storage-map choice; each later wave writes
 its own record where required.
@@ -123,33 +124,36 @@ The four implementation PRs are published:
 passed. The public page entry bundles, copy control, sitemap and robots file
 match the reviewed build byte for byte.
 
-Current behaviour is documented in `architecture/frontend.md`. Remaining
-work from this wave is explicit:
+Current behaviour is documented in `architecture/frontend.md`. Copyable
+figures reached the snow page after the wave, on the same control. Remaining
+work from this wave is explicit, and each line was checked against `main` on
+2026-11-14:
 
-- Offer copyable snow-summary figures; the existing control covers three
-  pages only.
-- Offer a picture download where a published picture exists. General
-  reservoir pictures depend on items 5 and 6.
-- Raise a self-healing issue when a share capture uses a fallback.
-- Confirm or deploy the question service separately if it is in use; the
-  Pages workflow does not deploy a Cloudflare worker.
+- Offer a picture download on the reservoir and scope share pages. Items 5
+  and 6 now publish those pictures; only the weekly page links one for
+  download.
+- Raise a self-healing issue when a share capture uses a fallback. The Pages
+  workflow still logs a warning and nothing else.
+- Confirm or deploy the question service separately if it is in use.
+  `worker/wrangler.toml` names the current data address, and no workflow
+  deploys a Cloudflare worker.
 - Inspect the map canvas and visual hierarchy in a visible browser below
-  500 CSS pixels. The automated browser suite cannot establish map rendering.
+  500 CSS pixels. The automated browser suite cannot establish map rendering,
+  and no inspection is recorded.
 
 ## Wave 2: sharing and place
 
 ### 5. A share frame for any reservoir
 
-Implemented locally with item 6: storage and reviewed-level frames share the
+Published with item 6 in PR #119: storage and reviewed-level frames share the
 same 1200 by 630 contract. Current behaviour is in `architecture/frontend.md`.
 
 ### 6. A share page and a daily picture for every reservoir
 
-Implemented locally on `feat/permanent-reservoir-shares`, awaiting Brian's
-review and publication (ADR-154): the append-only station ledger, generated
-pages retained after withdrawal, daily captures, and eleven state, five
-region and West cards. Copy link and native Share on a reservoir page use
-its permanent preview address when available. Static descriptions carry no
+Published in PR #119 (ADR-154, accepted): the append-only station ledger,
+generated pages retained after withdrawal, daily captures, and eleven state,
+five region and West cards. Copy link and native Share on a reservoir page
+use its permanent preview address when available. Static descriptions carry no
 water figure; a failed capture keeps a figure-free fallback.
 
 Measured on system Chrome on 2026-11-10: 425 active frames from 428 addresses
@@ -159,8 +163,7 @@ budget. Full regression verification accompanies the implementation commit.
 
 ### 7. Link previews on the main pages, and an embed snippet
 
-Implemented locally on `feat/page-previews-and-story-embeds`, awaiting Brian's
-review and publication: static picture tags on all six main pages, four new
+Published in PR #120: static picture tags on all six main pages, four new
 daily pictures (the two storage pages reuse the West card), and **Embed this
 view** controls on precipitation and reservoir upstream sections. They offer
 the existing full precipitation, history-strip and upstream story views,
@@ -173,21 +176,15 @@ Record: none.
 
 ### 8. A weekly digest and a feed
 
-- Once a week a job writes the week's "what moved" text, from `weeklySummary`
-  and `weeklyScopeText` in `src/weekly-model.ts`, into a committed list. An
-  entry is frozen when written: it is evidence about a date.
-- The deploy builds an Atom feed and a JSON feed from that list, a weekly
-  share page and its picture, and a caption ready to copy.
-- Nothing is posted anywhere.
-
-How a Node step loads the TypeScript models is not settled; confirm it against
-the installed Vite before choosing.
-
-Record: one.
+Published through PR #139, from PR #130 (ADR-163, Proposed): a weekly job
+freezes the week's figures into a committed list, and the deploy builds an
+Atom feed, a JSON feed, a weekly share page with its picture and a caption
+ready to copy. Nothing is posted anywhere. Current behaviour is in
+`architecture/frontend.md` and `architecture/pipeline.md`.
 
 ### 9. Search finds towns
 
-Implemented locally on `feat/town-search` (ADR-164). The offline Census
+Published through PR #139, from PR #131 (ADR-164, Proposed). The offline Census
 reference holds 4,283 place points in 48,735 gzip bytes. Search opens the
 finest containing published area with a current reservoir and names the
 point's location without claiming a water-supply area. Existing area URLs
@@ -198,70 +195,38 @@ carry the selection; no town parameter or preference is introduced.
 Each is a new published contract. Verify with `npm run verify:pipeline` and
 `npm run verify:browser`; payloads regenerate in CI.
 
-Local implementation on 2026-11-11: the history writer, lazy chart, full CSV
-and storage share chart (ADR-160); the three available observed flow series
-and their operator definitions (ADR-161); upstream station means, the
-precipitation link and aligned 30-day context (ADR-162). The focused browser
-target passes at all three widths, including the history failure path.
-The final full-suite result is still to be recorded. History is backfilled
-for 412 of 420 published stations. The other eight use the Geological
-Survey key in GitHub Secrets; the diagnostic workflow has a read-only
-artifact job and the builder can validate and merge that artifact locally.
-No branch has been pushed and no release has been made from this work.
-
-Reclamation's Mead catalog contains no daily inflow series. That part of
-item 11 remains a source-evidence gap. The implementation publishes release
-and the reason inflow is unavailable, rather than manufacturing a series.
+All three items are published in PR #129, merged 2026-11-12. ADR-160 to
+ADR-162 are Proposed. Current behaviour is in `architecture/frontend.md` and
+`architecture/pipeline.md`.
 
 ### 10. Daily storage history for every reservoir
 
-- Publish each reservoir's daily storage from the start of its record in the
-  dense layout `pipeline/daily_history.py` already gives the level, river and
-  soil histories.
-- Proposed shape: finished water years in one file per reservoir, written once
-  a year; the current water year in a shared file the morning commit rewrites.
-  Measure the repository growth and the gzipped transfer before the record is
-  written. R2 storage, which
-  [ADR-124](decisions/ADR-124-bound-recent-conditions-to-a-static-data-pilot.md)
-  already allows for archives, is the alternative.
-- Every reservoir page draws this water year against earlier ones, following
-  `src/viz/elevation-years.ts`, fetched when the chart nears the screen.
-- The share frames switch to that chart, and the CSV file can carry the whole
-  record.
+Published (ADR-160): the history writer, the lazy chart on every reservoir
+page, the full CSV and the storage share chart. On 2026-11-14 the station
+index holds an entry for each of the 424 published reservoirs. The eight
+Geological Survey series, missing when the wave merged, entered the index in
+the 2026-11-12 data refresh commit and start in 2015, the first year the
+pipeline reads.
 
 ### 11. Inflow and release at Lake Powell and Lake Mead
 
-- A reviewed roster in the pattern of `admitted_reservoir_elevations.json`:
-  the Reclamation item, its unit, the operator's own definition and a source
-  for each. The loader refuses an entry without them.
-- An optional block on the reservoir record and a daily history file.
-- A "Water in and out" card on the two pages. Its words wait until
-  Reclamation's definitions have been read; the item numbers are not yet
-  probed.
-- Modelled and forecast series are refused, as ADR-102 refused the Corps'.
-- `REFUSED_FIELDS` in `pipeline/rivers.py` stays. A river gauge is still never
-  a reservoir's inflow.
+Published (ADR-161): the three available observed flow series and their
+operator definitions. Reclamation's Mead catalog contains no daily inflow
+series, so that part remains a source-evidence gap. The page publishes
+release and the reason inflow is unavailable, rather than manufacturing a
+series. A river gauge is still never a reservoir's inflow.
 
 ### 12. Rain and snow upstream of a reservoir
 
-- On the reservoir page, the gauges in the committed upstream set: the catch
-  over the last 7 days and since 1 October, and the snow water now.
-- `precipitation.html?upstream=` narrows that page to the set, as
-  `snow.html?upstream=` does (ADR-097). The comparison with history stays on
-  that page because its file is large.
-- The page keeps the sentence that these values do not show where the water
-  went, and adds that they are not inflow and not the cause of a change in
-  storage.
-- For Lake Powell and Lake Mead, one 30-day view on a shared time axis: the
-  upstream gauges' catch, the four rivers, inflow and level. It states no
-  cause.
+Published (ADR-162): upstream station means, the precipitation link and the
+aligned 30-day context for Lake Powell and Lake Mead. It states no cause.
 
 ## Wave 4: before spring
 
 ### 13. Snow water against earlier seasons
 
-Implemented locally on `feat/snow-history`, awaiting Brian's review and
-publication (ADR-165): `snow_history.json` from the precipitation builder
+Published through PR #139, from PR #132 (ADR-165, Proposed):
+`snow_history.json` from the precipitation builder
 with `WTEQ` (366 of 639 stations cover 1991–2026), and a lazy card under the
 snow page's season chart that follows the page's place. On 2026-11-11 it
 compares 365 sites for the West and 74 for Utah with 36 earlier seasons. It
@@ -269,38 +234,25 @@ keeps ADR-081's summed ratio and ADR-121's floors, and no existing snow
 figure moves. Current behaviour is in `architecture/frontend.md` and
 `architecture/hydrology-methods.md`.
 
-A snow-water history since 1991, built the way
-`tools/build_precipitation_history.py` builds precipitation's, so the snow
-page draws this season against the range of earlier ones for a state, a
-drainage area or an upstream set. It keeps the ratio of sums (ADR-081) and the
-floor (ADR-121) and goes through the `science-method-change` skill. It is
-worth most if it lands before February.
-
 ### 14. Great Salt Lake
 
-The terminal-lake record gains arms that are measured apart and an optional
-volume block, which is what `admitted_terminal_lakes.json` says holds both
-Great Salt Lake and Pyramid Lake. Station identity and datum go through the
-admission and datum reviews (ADR-139). With a second lake published, the
-lakes page takes a place in the page menu.
+Published in PR #138 (ADR-159, accepted 2026-11-11): Great Salt Lake by arm
+and without a volume. The Lakes entry in the page bar and menu followed in
+PR #139 (ADR-166, Proposed). Pyramid Lake and Mono Lake stay withheld;
+`admitted_terminal_lakes.json` carries each finding: Pyramid for its update
+schedule, Mono for its elevation series.
 
 ## Order
 
-Waves run in order; items inside a wave are independent except where noted.
-
-- Item 6 needs item 5. Item 4's "save the picture" needs item 6 for a
-  reservoir without a level.
-- Item 12's 30-day view needs item 11. The rest of item 12 does not.
-- Item 10 changes the chart items 5 and 6 draw; ship them on the twelve-month
-  trend first.
-- Item 13 is the only one with a season on it.
+Every numbered item is published, so no ordering constraint remains. The
+picture download in Wave 1's list no longer waits on item 6.
 
 ## Not measured yet
 
-- The repository growth and transfer cost of daily history.
-- The size of the town reference file.
-- Reclamation's inflow items and what its inflow figure is.
-- Great Salt Lake's stations and datum.
+Daily history's transfer cost, the town reference file, Reclamation's inflow
+items and Great Salt Lake's stations and datum are measured in their records
+(ADR-160, ADR-164, ADR-161, ADR-159). One entry remains:
+
 - Map rendering and visual hierarchy below 500 CSS pixels in a visible
   browser. Automated layout checks passed at 390 and 360 pixels.
 

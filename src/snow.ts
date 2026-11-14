@@ -84,7 +84,10 @@ import {
   type SiteRow,
   type SiteStatus
 } from "./snow-model";
-import { openingAreaName, payloadForOpeningScope, snowScopeSummary } from "./snow-place";
+import {
+  openingAreaName, payloadForOpeningScope, snowFiguresPlace, snowScopeSummary
+} from "./snow-place";
+import { snowFigures } from "./state/figures-text";
 import { levelFromSearch, writeLevel } from "./state/level";
 import { searchForSeason, snowStateFromSearch, writeSnowUrl } from "./state/snow-url";
 import type { SnowpackPayload, SnowSite } from "./types";
@@ -97,6 +100,7 @@ import {
   upstreamSummary as upstreamSummaryText,
   type UpstreamView
 } from "./ui/upstream-filter-model";
+import { createCopyFigures } from "./ui/copy-figures";
 import { placeInSlot } from "./ui/dom";
 import { createLevelControl } from "./ui/level-control";
 import {
@@ -473,6 +477,10 @@ function renderSnow(
     const element = document.querySelector<HTMLElement>(`[data-snow-kpi="${name}"]`);
     if (element) element.textContent = value;
   };
+
+  /* The summary tiles as sentences, with their date, place and source. */
+  const copyFigures = createCopyFigures({ id: "snow-figures", level: 2 });
+  content.querySelector(".snow-summary")?.after(copyFigures.element);
 
   /* Map state. The map arrives after the numbers; every publish of the
    * readiness signal reads whatever it has so far, adding fields and never
@@ -915,12 +923,16 @@ function renderSnow(
    * the place sentence describes every site shown, and the framing sentence
    * only says where the map is centred (ADR-151). Named only while a map
    * exists to be centred. */
-  const writeScopeSummary = (): void => {
-    if (!scopeSummaryEl) return;
+  const shownAreaName = (): string | null => {
     const chosen = currentArea;
-    const area = chosen !== null
+    return chosen !== null
       ? choices.find((choice) => choice.code === chosen)?.label ?? null
       : openingAreaCleared ? null : openingAreaName(openingScope);
+  };
+
+  const writeScopeSummary = (): void => {
+    if (!scopeSummaryEl) return;
+    const area = shownAreaName();
     const framed = map && framedSite ? siteByStation(payload, framedSite)?.name ?? null : null;
     const summary = snowScopeSummary(openingScope.selection.state, area, widenedForSite, framed);
     scopeSummaryEl.textContent = summary ?? "";
@@ -979,8 +991,17 @@ function renderSnow(
       ? [`${formatDate(peak.date)} · ${peak.reportingSites} sites.`, percentAmounts(peak)]
         .filter(Boolean).join(" ")
       : "Too few sites have values yet this season");
+    const lateSites = rows.filter((row) => row.late).length;
     setKpi("sites", String(rows.length));
-    setKpi("late", String(rows.filter((row) => row.late).length));
+    setKpi("late", String(lateSites));
+    copyFigures.update(snowFigures({
+      where: snowFiguresPlace(openingScope.selection.state, shownAreaName(), widenedForSite,
+        upstreamView?.status === "applied"
+          ? upstreamView.reservoirName ?? "the requested reservoir" : null),
+      latest, reading, peak, sites: rows.length, late: lateSites,
+      normalPeriod: normalPeriodLabel(payload),
+      finishedSeason: season.shown === season.current ? null : seasonName(season.shown)
+    }));
 
     /* The drawing gets the denominator floor (`curveForDrawing`); the
      * headlines and the month table above stay on the raw curve. */

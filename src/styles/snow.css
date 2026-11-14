@@ -5,6 +5,8 @@
 /* Cards one after another. Without a gap each card's border sat on the
  * next one's. */
 :is(#snow-content, #precip-content) > .overview-card + .overview-card { margin-block-start: var(--space-3); }
+/* The copy block is a card between the summary tiles and the map card. */
+#snow-content > .copy-figures { margin-block: var(--space-3); }
 
 /* The season curves render with a viewBox measured from their host rather
    than a fixed 640-unit canvas scaled to the card, so one unit is one CSS
