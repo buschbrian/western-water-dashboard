@@ -9,6 +9,7 @@ import {
   LAKE_GROUPS,
   PRECIPITATION_GROUPS,
   PRECIPITATION_HISTORY_GROUPS,
+  SNOW_HISTORY_GROUPS,
   REFERENCE_GROUPS,
   RESERVOIR_GROUPS,
   RIVER_GROUPS,
@@ -58,6 +59,7 @@ root.innerHTML = `
         <li><a href="#snow-fields">Snow fields</a></li>
         <li><a href="#precipitation-fields">Precipitation fields</a></li>
         <li><a href="#precipitation-history-fields">Precipitation history fields</a></li>
+        <li><a href="#snow-history-fields">Snow water history fields</a></li>
         <li><a href="#soil-fields">Soil moisture fields</a></li>
         <li><a href="#soil-history-fields">Soil moisture history fields</a></li>
         <li><a href="#drought-fields">Drought fields</a></li>
@@ -215,6 +217,20 @@ root.innerHTML = `
           The snow comparison uses 1991 through 2020; this precipitation history includes every finished year since 1991.</p>
       </article>
       <article class="api-file">
+        <h3>Snow water history</h3>
+        <p><a href="./data/snow_history.json"><code>/data/snow_history.json</code></a></p>
+        <p>Snow water equivalent from 1991 through the last finished water year, on the same 53 calendar steps
+          as the precipitation history. It is the water in the snow on the ground on each date. It is not snowfall.
+          Rebuilt each October, with the date checked in the file. Structure version 1.
+          A station must cover every year and step to enter the snow page's fixed comparison set.</p>
+        <p>The stored values are integers in tenths of an inch, in the same encoding. The first is the reading,
+          and each later integer is the change from the preceding step. A change is negative when snow melts.
+          A reading below zero is not used, so no decoded value is below zero.</p>
+        <p>A historical step may use a reading up to three days earlier, within the same water year.
+          The <a href="./snow.html">snow page</a> compares this season with these years at the same stations.
+          Its percent of normal still uses 1991 through 2020.</p>
+      </article>
+      <article class="api-file">
         <h3>Soil moisture</h3>
         <p><a href="./data/soil_moisture.json"><code>/data/soil_moisture.json</code></a></p>
         <p>Soil moisture at the snow monitoring sites for the last fifteen days, in percent
@@ -322,6 +338,9 @@ root.innerHTML = `
     </section>
     <section class="methods-section api-fields" id="precipitation-history-fields" aria-labelledby="precipitation-history-fields-heading">
       <h2 id="precipitation-history-fields-heading">Precipitation history fields</h2>
+    </section>
+    <section class="methods-section api-fields" id="snow-history-fields" aria-labelledby="snow-history-fields-heading">
+      <h2 id="snow-history-fields-heading">Snow water history fields</h2>
     </section>
     <section class="methods-section api-fields" id="soil-fields"
       aria-labelledby="soil-fields-heading">
@@ -434,6 +453,7 @@ renderGroups("river-history-fields", RIVER_HISTORY_GROUPS);
 renderGroups("snow-fields", SNOW_GROUPS);
 renderGroups("precipitation-fields", PRECIPITATION_GROUPS);
 renderGroups("precipitation-history-fields", PRECIPITATION_HISTORY_GROUPS);
+renderGroups("snow-history-fields", SNOW_HISTORY_GROUPS);
 renderGroups("soil-fields", SOIL_GROUPS);
 renderGroups("soil-history-fields", SOIL_HISTORY_GROUPS);
 renderGroups("drought-fields", DROUGHT_GROUPS);
@@ -447,6 +467,6 @@ window.__dataDocsReady = {
   groups: RESERVOIR_GROUPS.length + ELEVATION_HISTORY_GROUPS.length
     + LAKE_GROUPS.length + RIVER_GROUPS.length + SNOW_GROUPS.length + SOIL_GROUPS.length
     + RIVER_HISTORY_GROUPS.length + SOIL_HISTORY_GROUPS.length
-    + PRECIPITATION_GROUPS.length + PRECIPITATION_HISTORY_GROUPS.length
+    + PRECIPITATION_GROUPS.length + PRECIPITATION_HISTORY_GROUPS.length + SNOW_HISTORY_GROUPS.length
     + DROUGHT_GROUPS.length + REFERENCE_GROUPS.length
 };

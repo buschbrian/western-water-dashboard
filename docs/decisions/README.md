@@ -150,7 +150,8 @@ ADR-041.**
   [ADR-135](ADR-135-publish-a-reservoir-level-only-above-a-reviewed-datum.md),
   [ADR-142](ADR-142-show-the-weeks-change-in-mountain-soil-moisture.md),
   [ADR-144](ADR-144-compare-natural-river-gauges-with-the-surveys-day-of-year-percentiles.md),
-  [ADR-145](ADR-145-compare-river-gauges-above-ten-years-shorten-two-names-and-round-the-page.md)
+  [ADR-145](ADR-145-compare-river-gauges-above-ten-years-shorten-two-names-and-round-the-page.md),
+  [ADR-165](ADR-165-compare-snow-water-with-earlier-seasons-at-a-fixed-set-of-sites.md)
 - Current architecture: [`docs/architecture/hydrology-methods.md`](../architecture/hydrology-methods.md)
 
 ### Visible language, accessibility and naming
@@ -381,6 +382,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-160](ADR-160-publish-storage-history-apart-from-the-summary.md) | Publish storage history apart from the summary | Proposed; revisable station archives, shared current water year, on-demand backfill, lazy water-year chart and full-record CSV; local implementation |
 | [ADR-161](ADR-161-publish-only-reviewed-reservoir-inflow-and-release.md) | Publish only reviewed reservoir inflow and release | Proposed; Powell computed inflow and Powell/Mead total release, reviewed definitions and live catalog checks; Mead inflow remains unavailable; local implementation |
 | [ADR-162](ADR-162-show-upstream-conditions-without-claiming-inflow.md) | Show upstream conditions without claiming inflow | Proposed; station means above a reservoir, page-local upstream precipitation link and aligned daily context without a causal claim; local implementation |
+| [ADR-165](ADR-165-compare-snow-water-with-earlier-seasons-at-a-fixed-set-of-sites.md) | Compare snow water with earlier seasons at a fixed set of sites | Proposed; ADR-125's builder and fixed-set rule over snow water (`snow_history.json`), a lazy snow-page card that follows the page's place; keeps ADR-081's summed ratio and ADR-121's floors; moves no published snow figure; implemented locally |
 
 ## Relationship to the historical journal
 

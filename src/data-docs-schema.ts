@@ -517,6 +517,33 @@ export const PRECIPITATION_HISTORY_GROUPS: readonly ApiFieldGroup[] = [
   ] }
 ];
 
+export const SNOW_HISTORY_GROUPS: readonly ApiFieldGroup[] = [
+  { id: "snow-history-header", title: "File header", path: "root", fields: [
+    f("schema_version", "version number", "Version of this JSON structure."),
+    f("generated_by", "path", "Builder that wrote this file."),
+    f("checked", "date", "Date the historical readings were fetched."),
+    f("source", "URL", "Provider service used for the readings."),
+    f("element", "code", "Quoted provider code for snow water equivalent: WTEQ."),
+    f("units", "text", "Tenths of an inch of water held in the snow."),
+    f("encoding", "text", "Each year's first integer is a reading; later integers are changes from the preceding step."),
+    f("first_water_year", "year", "First year in every available station's history."),
+    f("last_water_year", "year", "Last finished year in every available station's history."),
+    f("step_month_days", "array of month-day strings", "Calendar dates of the 53 historical steps, starting on 1 October."),
+    f("substitute_days", "days", "Largest gap a historical step may look back for a reading, within the same water year."),
+    f("site_count", "sites", "Stations reviewed, including those without a complete history."),
+    f("available_site_count", "sites", "Stations with every year and step in the comparison window."),
+    f("sites", "array", "Available histories and notices for stations without a complete history.")
+  ] },
+  { id: "snow-history-site", title: "One station", path: "sites[]", fields: [
+    f("station", "code", "Station code shared with the daily snow file."),
+    f("available", "boolean", "True only when the station covers the whole comparison window."),
+    f("substituted_steps", "steps", "Historical steps using a reading up to substitute_days earlier.", true),
+    f("years", "array of integer arrays", "Years in order from first_water_year. Sum each year's integers in order, then divide each sum by ten for inches.", true),
+    f("reason", "text", "Why this station has no usable history.", true),
+    f("first_gap_water_year", "year", "First year that lacks a required historical step.", true)
+  ] }
+];
+
 export const SNOW_GROUPS: readonly ApiFieldGroup[] = [
   { id: "snow-header", title: "File header", path: "root", fields: [
     f("schema_version", "version number", "Version of this JSON structure."),

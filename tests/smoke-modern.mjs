@@ -859,6 +859,14 @@ const browser = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
   ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH }
   : {});
 
+if (process.argv.includes("--snow-history")) {
+  await checkSnowHistory();
+  await browser.close();
+  server.close();
+  for (const failure of failures) console.error(failure);
+  process.exit(failures.length ? 1 : 0);
+}
+
 if (process.argv.includes("--data-docs")) {
   await checkPublicDataReference();
   await browser.close();
@@ -3324,6 +3332,8 @@ for (const viewport of VIEWPORTS) {
       "./data/snow/snowpack-wy2026.json",
       "./data/precipitation.json", "./precipitation.html",
       "./data/precipitation_history.json",
+      // Snow water on the same weekly steps (ADR-165).
+      "./data/snow_history.json", "./snow.html",
       // The week's change in soil moisture (ADR-142).
       "./data/soil_moisture.json", "./precipitation.html",
       "./api/soil_moisture_history.json",
@@ -6829,6 +6839,137 @@ async function checkStoryEmbeds() {
 }
 
 await checkStoryEmbeds();
+
+/*
+ * Snow water against earlier seasons (ADR-165). The history is fetched only
+ * when the card nears the screen; once in, the card is held to the file's
+ * own window and to the page's own site count, never to a number the
+ * morning decides. A refused file must say so and clear aria-busy.
+ */
+async function checkSnowHistory() {
+  const file = JSON.parse(await readFile(path.join(REPO_ROOT, "snow_history.json"), "utf8"));
+  for (const viewport of VIEWPORTS) {
+    const context = await newPageContext(browser, viewport);
+    const tab = await context.newPage();
+    const errors = [];
+    tab.on("pageerror", (err) => errors.push(`uncaught: ${err.message}`));
+    const hostedOutage = watchConsoleErrors(tab, errors);
+    const asked = [];
+    tab.on("request", (request) => { if (request.url().includes("snow_history.json")) asked.push(request.url()); });
+    const label = `Snow history (${viewport.name} ${viewport.width}px)`;
+    console.log(`\n=== ${label}`);
+    try {
+      await tab.goto(`${URL}snow.html?state=UT`, { waitUntil: "domcontentloaded", timeout: 60000 });
+      await tab.waitForFunction(() => window.__snowReady?.snowHistory !== undefined, { timeout: 60000 });
+      const before = await tab.evaluate(() => window.__snowReady.snowHistory.state);
+      check(before === "waiting" && asked.length === 0,
+        `${label}: the history was ${before} with ${asked.length} request(s) before the card neared the screen`);
+      await tab.locator("#snow-history-card").scrollIntoViewIfNeeded();
+      await tab.waitForFunction(() => ["ready", "failed"].includes(window.__snowReady?.snowHistory?.state),
+        { timeout: 60000 });
+      const state = await tab.evaluate(() => {
+        const card = document.querySelector("#snow-history-card");
+        return {
+          ready: window.__snowReady,
+          busy: card.querySelectorAll('[aria-busy="true"]').length,
+          kpis: card.querySelectorAll(".precip-kpis .overview-kpi").length,
+          regions: card.querySelectorAll("svg.precip-curve .precip-region").length,
+          key: card.querySelectorAll(".precip-history-key .precip-legend-item").length,
+          line: card.querySelectorAll("svg.precip-curve .precip-line").length,
+          rows: card.querySelectorAll("tbody tr").length,
+          sites: card.querySelector(".snow-history-sites summary")?.textContent ?? "",
+          text: card.innerText,
+          scroll: document.documentElement.scrollWidth,
+          width: document.documentElement.clientWidth
+        };
+      });
+      const history = state.ready.snowHistory;
+      console.log("  history:", JSON.stringify({ before, asked: asked.length, ...history }));
+      check(history.state === "ready" && asked.length === 1,
+        `${label}: the card is ${history.state} after ${asked.length} request(s)`);
+      check(state.busy === 0, `${label}: the card is still busy`);
+      check(history.firstWaterYear === file.first_water_year
+        && history.lastWaterYear === Math.min(file.last_water_year, state.ready.season - 1)
+        && history.years === history.lastWaterYear - history.firstWaterYear + 1,
+      `${label}: compares ${history.firstWaterYear}-${history.lastWaterYear} (${history.years} seasons)`);
+      check(history.placeSites === state.ready.tableRows && history.stations > 0
+        && history.stations <= Math.min(file.available_site_count, history.placeSites),
+      `${label}: ${history.stations} sites in the set of ${history.placeSites} in the place`);
+      check(state.sites.startsWith(`The ${history.stations} site`),
+        `${label}: the site list names "${state.sites}" for ${history.stations} sites`);
+      check(history.bandDays >= 365 && history.curveDays > 0 && history.date !== null,
+        `${label}: ${history.bandDays} band days, ${history.curveDays} days of this season`);
+      check(state.kpis === 4 && state.regions === 5 && state.key === 5 && state.line > 0,
+        `${label}: ${state.kpis} figures, ${state.regions} regions, ${state.key} key items, ${state.line} lines`);
+      check(state.rows === history.tableRows && state.rows === 13,
+        `${label}: the month table has ${state.rows} rows`);
+      check(/not snowfall/.test(state.text) && /snow water equivalent/i.test(state.text),
+        `${label}: the card does not say what it measures`);
+      /* The page-wide sentence check reads the page before this card loads,
+       * so the card's own sentences answer to the same 25-word limit here. */
+      const long = state.text.split("\n").flatMap((line) => line.trim()
+        .split(/(?<=[.!?])\s+(?=[A-Z"\u2014\d])/))
+        .filter((sentence) => sentence.trim().split(/\s+/).length > 25);
+      check(long.length === 0, `${label}: sentences over 25 words: ${long.join(" | ")}`);
+      check(state.scroll <= state.width + 1,
+        `${label}: page overflows horizontally (${state.scroll}px in ${state.width}px)`);
+      await tab.getByRole("button", { name: "Whole season", exact: true }).click();
+      check(await tab.evaluate(() => window.__snowReady.snowHistory.range) === "year",
+        `${label}: the whole season was not shown`);
+      await checkAccessibility(tab, check, label);
+      await tab.locator("#snow-history-card").screenshot({ path: `screenshots/snow-history-${viewport.name}.png` });
+
+      const finished = state.ready.season - 1;
+      await tab.goto(`${URL}snow.html?state=UT&season=${finished - 1}-${String(finished % 100).padStart(2, "0")}`,
+        { waitUntil: "domcontentloaded", timeout: 60000 });
+      await tab.waitForFunction(() => window.__snowReady?.snowHistory !== undefined, { timeout: 60000 });
+      await tab.locator("#snow-history-card").scrollIntoViewIfNeeded();
+      await tab.waitForFunction(() => window.__snowReady?.snowHistory?.state === "ready", { timeout: 60000 });
+      const archived = await tab.evaluate(() => ({
+        history: window.__snowReady.snowHistory,
+        label: document.querySelector("#snow-history-card .overview-kpi-primary span")?.textContent ?? ""
+      }));
+      check(archived.history.lastWaterYear === Math.min(file.last_water_year, finished - 1)
+        && archived.label.startsWith("The ") && archived.label.endsWith(" season"),
+      `${label}: a finished season compares to ${archived.history.lastWaterYear} as "${archived.label}"`);
+    } catch (err) {
+      failures.push(`${label}: ${err.message}`);
+    }
+    reportHostedOutage(label, hostedOutage);
+    for (const err of errors) failures.push(`${label}: ${err}`);
+    await context.close();
+  }
+
+  const context = await newPageContext(browser, VIEWPORTS[2]);
+  const tab = await context.newPage();
+  const errors = [];
+  tab.on("pageerror", (err) => errors.push(`uncaught: ${err.message}`));
+  watchConsoleErrors(tab, errors, /favicon|tile|sprite|font|snow water history|snow_history/i);
+  const label = "Snow history, refused file (small-phone)";
+  console.log(`\n=== ${label}`);
+  await context.route("**/snow_history.json", (route) => route.abort());
+  try {
+    await tab.goto(`${URL}snow.html?state=UT`, { waitUntil: "domcontentloaded", timeout: 60000 });
+    await tab.waitForFunction(() => window.__snowReady?.snowHistory !== undefined, { timeout: 60000 });
+    await tab.locator("#snow-history-card").scrollIntoViewIfNeeded();
+    await tab.waitForFunction(() => window.__snowReady?.snowHistory?.state === "failed", { timeout: 60000 });
+    const failed = await tab.evaluate(() => ({
+      busy: document.querySelectorAll('#snow-history-card [aria-busy="true"]').length,
+      message: document.querySelector("#snow-history-card .chart-empty")?.textContent ?? "",
+      kpis: document.querySelectorAll("#snow-history-card .overview-kpi").length,
+      season: window.__snowReady.curvePoints
+    }));
+    console.log("  refused:", JSON.stringify(failed));
+    check(failed.busy === 0 && /could not load/.test(failed.message) && failed.kpis === 0,
+      `${label}: busy ${failed.busy}, message "${failed.message}", ${failed.kpis} figures`);
+  } catch (err) {
+    failures.push(`${label}: ${err.message}`);
+  }
+  for (const err of errors) failures.push(`${label}: ${err}`);
+  await context.close();
+}
+
+await checkSnowHistory();
 
 /*
  * The story views (ADR-128): one figure, alone, filling the frame a story
