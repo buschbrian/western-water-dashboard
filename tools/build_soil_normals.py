@@ -157,7 +157,7 @@ def main() -> int:
         "description": (
             "Soil moisture percentiles for each calendar day at each snow station with the standard "
             "sensors (ADR-169): the station value of ADR-142 (mean of the 2 in or 4 in, 8 in and 20 in "
-            "sensors, frozen readings dropped), one value per year on that calendar day, the 10th to "
+            "sensors, frozen readings dropped), one value per year on that calendar day, the 10th, 33rd, 50th, 67th and "
             "90th percentile by the Weibull plotting position. A day with fewer than "
             f"{soil_normals.MIN_YEARS} years carries only its count. Position n of days is calendar day "
             "n of a 365-day year; February 29 reads February 28. Written by tools/build_soil_normals.py; "
@@ -165,7 +165,7 @@ def main() -> int:
         "source": soil.DATA_URL,
         "built": today.isoformat(),
         "years_before": before_year,
-        "percentiles": list(soil_normals.PERCENTILES),
+        "percentiles": list(soil_normals.BAND_KEYS),
         "min_years": soil_normals.MIN_YEARS,
         "row": ["years", *soil_normals.BAND_KEYS],
         "stations": stations,

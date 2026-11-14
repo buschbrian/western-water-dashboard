@@ -1006,9 +1006,9 @@ export type SoilNoHistoryReason = "no_history" | "other_depths" | "short_history
 export interface SoilHistoryBand {
   years: number;
   p10: number;
-  p25: number;
+  p33: number;
   p50: number;
-  p75: number;
+  p67: number;
   p90: number;
 }
 

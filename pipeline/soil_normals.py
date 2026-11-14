@@ -3,11 +3,13 @@
 A volumetric percent is not comparable between two soils (ADR-142), but a
 reading is comparable with the same sensors on the same calendar day in
 earlier years. `soil_normals.json` keeps, for each station with the standard
-sensors and each calendar day, the 10th, 25th, 50th, 75th and 90th percentile
+sensors and each calendar day, the 10th, 33rd, 50th, 67th and 90th percentile
 of the station value (ADR-142's R4 value, frozen readings dropped) over the
 years that have one, and the number of those years. The daily refresh reads
-it and puts the end day's value into one of five classes, the rule the river
-map uses for flow (ADR-144).
+it and puts the end day's value into one of five classes: the National
+Centers for Environmental Information's tenths and thirds (lowest tenth,
+lower third, middle third, upper third, highest tenth), which the
+precipitation map's past-years mode uses too, so both maps read alike.
 
 The method is the river normals' on purpose, so one rule reads on two maps:
 
@@ -40,14 +42,15 @@ SOIL_NORMALS_PATH = ROOT / "soil_normals.json"
 SOIL_NORMALS_SCHEMA_VERSION = 1
 #: The estimator behind the percentiles. A change to how a percentile is
 #: computed moves this; `load` refuses a file built by another version.
-SOIL_NORMALS_METHOD_VERSION = 1
-PERCENTILES = (10, 25, 50, 75, 90)
-BAND_KEYS = tuple(f"p{p}" for p in PERCENTILES)
+SOIL_NORMALS_METHOD_VERSION = 2
+#: The tenths and thirds (NCEI's breaks) and the median. The thirds are
+#: exact; their keys are rounded names.
+PERCENTILES = (10, 100 / 3, 50, 200 / 3, 90)
+BAND_KEYS = ("p10", "p33", "p50", "p67", "p90")
 #: Fewer years than this on a calendar day and the day is not compared.
 MIN_YEARS = 11
 CALENDAR_DAYS = 365
-#: The five classes, driest first. The river classes' rule (ADR-144) with
-#: words for soil.
+#: The five classes, driest first.
 CLASSES = ("much_drier", "drier", "normal", "wetter", "much_wetter")
 NORMAL_INDEX = CLASSES.index("normal")
 
@@ -82,7 +85,7 @@ def _tenth(value: float) -> float:
 
 
 def station_days(values_by_date: dict[str, float], before_year: int) -> list[list]:
-    """A station's 365 calendar days: `[years, p10, p25, p50, p75, p90]`, or `[years]`.
+    """A station's 365 calendar days: `[years, p10, p33, p50, p67, p90]`, or `[years]`.
 
     `values_by_date` holds the station value (R4, frozen dropped) by ISO date.
     Only years before `before_year` are used, so the year being compared is
@@ -115,15 +118,15 @@ def band_for(entry: dict, day: str) -> dict | None:
 def classify(percent: float, band: dict) -> str:
     """Where a value falls among the day's percentiles.
 
-    Under the 10th is much drier, under the 25th drier, the 25th to the 75th
+    Under the 10th is much drier, under the 33rd drier, the 33rd to the 67th
     normal, up to the 90th wetter, over it much wetter. A value on a boundary
     takes the class nearer normal, on both sides alike (the river rule).
     """
     if percent < band["p10"]:
         return "much_drier"
-    if percent < band["p25"]:
+    if percent < band["p33"]:
         return "drier"
-    if percent <= band["p75"]:
+    if percent <= band["p67"]:
         return "normal"
     if percent <= band["p90"]:
         return "wetter"
@@ -155,7 +158,7 @@ def validate(document: dict) -> None:
     if document.get("method_version") != SOIL_NORMALS_METHOD_VERSION:
         raise ValueError(f"soil normals were built by method {document.get('method_version')}, "
                          f"not {SOIL_NORMALS_METHOD_VERSION}; rebuild them")
-    if tuple(document.get("percentiles") or ()) != PERCENTILES or document.get("min_years") != MIN_YEARS:
+    if tuple(document.get("percentiles") or ()) != BAND_KEYS or document.get("min_years") != MIN_YEARS:
         raise ValueError("soil normals percentiles or year floor differ from this code")
     stations = document.get("stations")
     if not isinstance(stations, dict):

@@ -25,14 +25,15 @@ texture-free: a sand is compared with itself.
 
 **Soil mode gets two views: "Compared with past years" (the default once the
 file has comparisons) and "Change in 7 days" (ADR-142, unchanged). The new
-view puts each station's end-day value into one of the river map's five
-classes against the station's own percentiles for that calendar day.**
+view puts each station's end-day value into one of five classes, the
+National Centers for Environmental Information's tenths and thirds, against
+the station's own percentiles for that calendar day.**
 
 1. **Station history.** `tools/build_soil_normals.py` fetches each standard
    station's whole daily record of `SMS` and `STO` at its three depths and
    takes the station value exactly as the refresh does (R4 mean, frozen and
    readings with no temperature dropped, ADR-167's bound). For each calendar day it
-   keeps the count of years and the 10th, 25th, 50th, 75th and 90th
+   keeps the count of years and the 10th, 33rd, 50th, 67th and 90th
    percentile, by the Weibull plotting position, over the years before the
    build year. Written to `soil_normals.json` (derived on demand, never
    published, never copied to dist).
@@ -42,9 +43,13 @@ classes against the station's own percentiles for that calendar day.**
    rule the river map already uses (ADR-144).
 3. **More than 10 years** on the date, or not compared (ADR-145's floor).
    February 29 reads February 28's percentiles.
-4. **Classes.** Under p10 much drier, under p25 drier, p25 to p75 normal, up
+4. **Classes.** Under p10 much drier, under p33 drier, p33 to p67 normal, up
    to p90 wetter, over p90 much wetter; a boundary value takes the class
-   nearer normal. The river rule, with soil words.
+   nearer normal. These are NOAA NCEI's breaks (lowest tenth, lower third,
+   middle third, upper third, highest tenth), which the precipitation map's
+   past-years mode (ADR-168) also uses, so the two maps mean the same thing
+   by the same colour (Brian, 2026-11-14). The river map's WaterWatch breaks
+   (10/25/75/90) were the first draft and were not kept.
 5. **Area.** The median of the compared stations' classes, held to the snow
    reporting floor (`MIN_ROLLUP_SITES`). With an even count and two
    different middle classes, the one nearer normal. The page regroups the
@@ -69,6 +74,8 @@ classes against the station's own percentiles for that calendar day.**
 
 ## Rejected
 
+- **The river map's 25th/75th breaks.** Rejected for consistency with the
+  precipitation map, which shares these colours.
 - **Percent of median.** A ratio of volumetric percents reads as precise
   ("82 % of median") on a figure whose spread differs by soil and depth.
   Classes say what a reader needs and match the river map.

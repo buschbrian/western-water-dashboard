@@ -264,7 +264,7 @@ export function createPrecipMapSection(
   const historyCaption = paragraph("card-note",
     "Each station is compared with its own past years on the same date, so a sandy soil and a clay soil " +
     "are each compared with themselves. A station's value is the mean of its sensors at 2 in (or 4 in), 8 in " +
-    "and 20 in below the ground. Normal is the middle half of past years. A station needs more than 10 past " +
+    "and 20 in below the ground. Normal is the middle third of past years. A station needs more than 10 past " +
     "years with a reading on the date. Frozen readings are not used. Each drainage area takes the class of its " +
     "middle station, and needs as many stations as its snow figure does.");
   const historyCounts = paragraph("precip-note");
@@ -383,7 +383,7 @@ export function createPrecipMapSection(
         cell(reading.history_class === null ? `Not compared: ${soilNoHistoryText(reading).toLowerCase()}`
           : soilHistoryLabel(reading.history_class)),
         cell(reading.end_percent === null ? "No value" : reading.end_percent.toFixed(1)),
-        cell(band ? `${band.p25.toFixed(1)} to ${band.p75.toFixed(1)}` : "None"),
+        cell(band ? `${band.p33.toFixed(1)} to ${band.p67.toFixed(1)}` : "None"),
         cell(band ? String(band.years) : "None"));
       return row;
     }));

@@ -396,7 +396,7 @@ def build_payload(inventory: dict, depths_by_station: dict[str, list[int]],
         "start_date": start,
         "minimum_reporting_sites": MIN_ROLLUP_SITES,
         "history_rule": {
-            "percentiles": list(soil_normals.PERCENTILES),
+            "percentiles": list(soil_normals.BAND_KEYS),
             "min_years": soil_normals.MIN_YEARS,
             "years_before": normals["years_before"] if normals else None,
             "built": normals["built"] if normals else None,

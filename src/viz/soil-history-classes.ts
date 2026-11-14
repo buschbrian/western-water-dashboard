@@ -1,7 +1,8 @@
 /*
  * The soil-moisture map's classes when it compares each station with its own
- * past years (ADR-169): the river map's five classes (ADR-144) in words for
- * soil, in one table that the fills, the points and the key all read.
+ * past years (ADR-169): the National Centers for Environmental Information's
+ * tenths and thirds, the breaks the precipitation map's past-years mode uses,
+ * in one table that the fills, the points and the key all read.
  *
  * No new colour. The five are taken from the week's-change table
  * (`SOIL_CLASSES`): its two browns, its neutral, its palest blue and its
@@ -24,9 +25,9 @@ export interface SoilHistoryClassRow {
 
 export const SOIL_HISTORY_CLASSES: readonly SoilHistoryClassRow[] = [
   { id: "much_drier", label: "Much drier than normal", range: "drier than 9 in 10 past years", color: SOIL_CLASSES[0]!.color },
-  { id: "drier", label: "Drier than normal", range: "drier than 3 in 4 past years", color: SOIL_CLASSES[1]!.color },
-  { id: "normal", label: "Normal", range: "the middle half of past years", color: SOIL_CLASSES[2]!.color },
-  { id: "wetter", label: "Wetter than normal", range: "wetter than 3 in 4 past years", color: SOIL_CLASSES[3]!.color },
+  { id: "drier", label: "Drier than normal", range: "drier than 2 in 3 past years", color: SOIL_CLASSES[1]!.color },
+  { id: "normal", label: "Normal", range: "the middle third of past years", color: SOIL_CLASSES[2]!.color },
+  { id: "wetter", label: "Wetter than normal", range: "wetter than 2 in 3 past years", color: SOIL_CLASSES[3]!.color },
   { id: "much_wetter", label: "Much wetter than normal", range: "wetter than 9 in 10 past years", color: SOIL_CLASSES[SOIL_CLASSES.length - 1]!.color }
 ];
 

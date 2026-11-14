@@ -46,7 +46,7 @@ def test_leap_days_are_left_out_of_the_sample():
 
 
 def test_classes_follow_the_river_boundary_rule():
-    band = {"p10": 10.0, "p25": 20.0, "p50": 25.0, "p75": 30.0, "p90": 40.0}
+    band = {"p10": 10.0, "p33": 20.0, "p50": 25.0, "p67": 30.0, "p90": 40.0}
     assert sn.classify(9.9, band) == "much_drier"
     assert sn.classify(10.0, band) == "drier"
     assert sn.classify(20.0, band) == "normal"
@@ -65,7 +65,7 @@ def test_an_area_median_takes_the_class_nearer_normal_on_a_tie_and_holds_the_flo
 
 def test_validate_refuses_another_method_and_short_days_with_percentiles():
     good = {"schema_version": 1, "method_version": sn.SOIL_NORMALS_METHOD_VERSION,
-            "percentiles": list(sn.PERCENTILES), "min_years": sn.MIN_YEARS,
+            "percentiles": list(sn.BAND_KEYS), "min_years": sn.MIN_YEARS,
             "stations": {"1:UT:SNTL": {"days": [[12, 1.0, 2.0, 3.0, 4.0, 5.0]] * 365}}}
     sn.validate(good)
     with pytest.raises(ValueError, match="method"):

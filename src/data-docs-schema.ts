@@ -693,8 +693,8 @@ export const SOIL_GROUPS: readonly ApiFieldGroup[] = [
     f("start_percent", "percent", "The same on start_date, or null."),
     f("change_points", "percentage points", "end_percent minus start_percent, or null."),
     f("no_change_reason", "identifier", "Why change_points is null: missing_reading, frozen or no_temperature. Null when there is a change."),
-    f("history_band", "object", "Schema 2 (ADR-169). The station's own percentiles of its value for the calendar day of end_date: years, p10, p25, p50, p75 and p90, in percent of the soil's volume. One value per past year on that date, Weibull plotting position. Null when not compared.", true),
-    f("history_class", "identifier", "Schema 2. Where end_percent falls in history_band: much_drier (under p10), drier (under p25), normal (p25 to p75), wetter (up to p90) or much_wetter (over p90). A value on a boundary takes the class nearer normal. Null when not compared.", true),
+    f("history_band", "object", "Schema 2 (ADR-169). The station's own percentiles of its value for the calendar day of end_date: years, p10, p33, p50, p67 and p90, in percent of the soil's volume. One value per past year on that date, Weibull plotting position. Null when not compared.", true),
+    f("history_class", "identifier", "Schema 2. Where end_percent falls in history_band: much_drier (under p10), drier (under p33), normal (p33 to p67), wetter (up to p90) or much_wetter (over p90). The National Centers for Environmental Information's tenths and thirds. A value on a boundary takes the class nearer normal. Null when not compared.", true),
     f("no_history_reason", "identifier", "Schema 2. Why history_class is null: no_history (no station record built), other_depths (the record used other sensors), short_history (10 or fewer past years on this date) or no_reading (no value on end_date). Null when compared.", true)
   ]},
   { id: "soil-other-depth-site", title: "Station with other sensor depths", path: "other_depth_sites[]", fields: [

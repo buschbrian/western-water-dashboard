@@ -127,7 +127,7 @@ describe("the soil sentences", () => {
 });
 
 describe("the soil map against past years (ADR-169)", () => {
-  const band = { years: 15, p10: 10, p25: 15, p50: 20, p75: 25, p90: 30 };
+  const band = { years: 15, p10: 10, p33: 15, p50: 20, p67: 25, p90: 30 };
   const compared = (station: string, cls: SoilMoistureSite["history_class"]): SoilMoistureSite => ({
     station, depths_inches: [2, 8, 20], latest_date: "2026-10-26", late: false, end_percent: 20, start_percent: 20,
     change_points: 0, no_change_reason: null, history_band: band, history_class: cls,
@@ -152,7 +152,7 @@ describe("the soil map against past years (ADR-169)", () => {
       "Of the 3 stations compared with their own past years, 2 are drier than normal for the date (1 much drier), "
       + "0 are normal, and 1 is wetter than normal (0 much wetter).");
     expect(soilHistoryLeftOutText(values.historyCounts)).toContain("1 station with soil sensors is not compared");
-    expect(soilBandText(sites[0]!)).toBe("Normal for this date is 15.0 to 25.0 percent, the middle half of 15 past years.");
+    expect(soilBandText(sites[0]!)).toBe("Normal for this date is 15.0 to 25.0 percent, the middle third of 15 past years.");
     expect(soilNoHistoryText(sites[2])).toBe("10 or fewer past years with a reading on this date");
   });
 });

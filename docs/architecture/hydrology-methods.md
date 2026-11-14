@@ -413,13 +413,15 @@ basin percent-of-median maps, whose method is unpublished.
 - **History:** `soil_normals.json`, built by `tools/build_soil_normals.py`
   (`pipeline/soil_normals.py` holds the method). The station value above,
   one value per year on each calendar day, years before the build year, the
-  10th to 90th percentile by the Weibull plotting position. No window of
+  10th, 33rd, 50th, 67th and 90th percentile by the Weibull plotting
+  position. No window of
   neighbouring days. A date with 10 or fewer years carries only its count.
   February 29 reads February 28. Position n is calendar day n of a 365-day
   year, not a day-of-year count.
 - **Class:** the end day's station value against that day's percentiles,
-  by the river rule (ADR-144): under p10, under p25, p25–p75, up to p90, over
-  p90; a boundary goes to the class nearer normal.
+  by NOAA NCEI's tenths and thirds (as the precipitation past-years mode):
+  under p10, under p33, p33–p67, up to p90, over p90; a boundary goes to the
+  class nearer normal.
 - **Area:** the median class of the compared stations, held to the snow
   reporting floor; on an even split, the middle class nearer normal. The
   page regroups the place's stations by the same rule.

@@ -236,8 +236,8 @@ export function soilNoHistoryText(site: SoilMoistureSite | undefined): string {
 /** The normal range of a station's band, in words. */
 export function soilBandText(site: SoilMoistureSite): string {
   const band = site.history_band;
-  return band ? `Normal for this date is ${band.p25.toFixed(1)} to ${band.p75.toFixed(1)} percent, `
-    + `the middle half of ${band.years} past years.` : "";
+  return band ? `Normal for this date is ${band.p33.toFixed(1)} to ${band.p67.toFixed(1)} percent, `
+    + `the middle third of ${band.years} past years.` : "";
 }
 
 /** The place's stations by class, in one sentence. */

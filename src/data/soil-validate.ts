@@ -16,11 +16,11 @@ const REASONS: readonly SoilNoChangeReason[] = ["missing_reading", "frozen", "no
 const HISTORY_CLASSES: readonly SoilHistoryClass[] = ["much_drier", "drier", "normal", "wetter", "much_wetter"];
 const HISTORY_REASONS: readonly SoilNoHistoryReason[] = ["no_history", "other_depths", "short_history", "no_reading"];
 
-/** The class the river rule (ADR-144) gives a value in a band; the refresh's `classify`. */
+/** The class NCEI's tenths and thirds give a value in a band; the refresh's `classify`. */
 export function soilHistoryClassOf(percent: number, band: SoilHistoryBand): SoilHistoryClass {
   if (percent < band.p10) return "much_drier";
-  if (percent < band.p25) return "drier";
-  if (percent <= band.p75) return "normal";
+  if (percent < band.p33) return "drier";
+  if (percent <= band.p67) return "normal";
   if (percent <= band.p90) return "wetter";
   return "much_wetter";
 }
@@ -28,12 +28,12 @@ export function soilHistoryClassOf(percent: number, band: SoilHistoryBand): Soil
 function readBand(value: unknown): SoilHistoryBand | null | undefined {
   if (value === null) return null;
   if (!isObject(value) || !isCount(value.years)) return undefined;
-  const keys = ["p10", "p25", "p50", "p75", "p90"] as const;
+  const keys = ["p10", "p33", "p50", "p67", "p90"] as const;
   const numbers = keys.map((key) => value[key]);
   if (!numbers.every((n) => isFiniteNumber(n) && n >= 0 && n <= 100)) return undefined;
   if (!(numbers as number[]).every((n, i, all) => i === 0 || all[i - 1]! <= n)) return undefined;
-  const [p10, p25, p50, p75, p90] = numbers as number[];
-  return { years: value.years, p10: p10!, p25: p25!, p50: p50!, p75: p75!, p90: p90! };
+  const [p10, p33, p50, p67, p90] = numbers as number[];
+  return { years: value.years, p10: p10!, p33: p33!, p50: p50!, p67: p67!, p90: p90! };
 }
 
 /**

@@ -240,13 +240,13 @@ def build_with(stations, records, normals):
 
 
 def test_the_end_value_is_classed_among_the_stations_own_past_years():
-    # Station value 15.0 sits between p25 (15.0) and p75 (17.0): on a boundary it is normal.
+    # Station value 15.0 sits between p33 (15.0) and p67 (17.0): on a boundary it is normal.
     payload = build_with(["1:UT:SNTL"], [record("1:UT:SNTL",
                          {-2: steady(20.0), -8: steady(15.0), -20: steady(10.0)})], normals_for("1:UT:SNTL"))
     site = payload["sites"][0]
     assert site["end_percent"] == 15.0
     assert site["history_class"] == "normal" and site["no_history_reason"] is None
-    assert site["history_band"] == {"years": 12, "p10": 14.0, "p25": 15.0, "p50": 16.0, "p75": 17.0, "p90": 18.0}
+    assert site["history_band"] == {"years": 12, "p10": 14.0, "p33": 15.0, "p50": 16.0, "p67": 17.0, "p90": 18.0}
     assert payload["compared_site_count"] == 1
     assert payload["schema_version"] == 2
 
