@@ -183,6 +183,14 @@
       "note": "Daily mean river flow at the reviewed gauges in admitted_river_gauges.json (ADR-136): 30 days per gauge with approval status and qualifiers. A natural gauge's newest value carries its day-of-year percentile band and class from river_normals.json (ADR-144); a shaped gauge has no normal. No rank and no total across gauges."
     },
     {
+      "path": "soil_normals.json",
+      "class": "derived-on-demand",
+      "writer": "tools/build_soil_normals.py",
+      "staged_by_refresh": false,
+      "appears_when": "the first run of tools/build_soil_normals.py, by hand or by the soil-normals-build workflow, writes it",
+      "note": "Soil moisture percentiles (10th to 90th) for each calendar day at each snow station with the standard sensors, over the years before the build year (ADR-168). The daily soil refresh reads it and never fetches it; without it no station is compared with its past years. Rebuild once a year after January 1; network job; every run merges. Never copied to dist."
+    },
+    {
       "path": "river_normals.json",
       "class": "derived-on-demand",
       "writer": "tools/build_river_normals.py",

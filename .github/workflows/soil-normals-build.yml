@@ -1,0 +1,65 @@
+name: Build soil moisture normals
+
+# Manual only. soil_normals.json is committed and changes once a year, when
+# the year just ended joins each station's sample (ADR-168). The Natural
+# Resources Conservation Service is reachable from the runner; it runs the
+# same command a contributor would run locally, and commits the result.
+#
+# workflow_dispatch can only target a workflow that already exists on the
+# default branch. Until this lands on main, add a temporary `push:` trigger
+# on your branch to run it.
+on:
+  workflow_dispatch:
+    inputs:
+      only:
+        description: "Station triplets to rebuild, space-separated (empty rebuilds every station)"
+        required: false
+        default: ""
+  push:
+    branches: [claude/project-thread-8nfwiy]
+    paths: [.github/workflows/soil-normals-build.yml]
+
+permissions:
+  contents: write
+
+concurrency:
+  group: soil-normals-build-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.14"
+      - run: pip install -r requirements-pipeline.txt
+      - name: Build the soil moisture normals
+        env:
+          PYTHONUNBUFFERED: "1"
+          ONLY: ${{ inputs.only }}
+        # The triplets reach the tool through the environment, not ${{ }}
+        # interpolation into the command line.
+        run: |
+          python - <<'PYTHON'
+          import os
+          import subprocess
+          import sys
+
+          only = os.environ.get("ONLY", "").split()
+          arguments = ["--only", *only] if only else []
+          subprocess.run([sys.executable, "tools/build_soil_normals.py", *arguments], check=True)
+          PYTHON
+      - name: Commit if changed
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add soil_normals.json
+          if git diff --cached --quiet; then
+            echo "No soil normals changes."
+            exit 0
+          fi
+          git commit -m "Build soil moisture normals"
+          git push

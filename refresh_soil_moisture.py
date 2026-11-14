@@ -31,7 +31,7 @@ from zoneinfo import ZoneInfo
 
 import requests
 
-from pipeline import soil_history
+from pipeline import soil_history, soil_normals
 from refresh_snowpack import (
     DATA_URL,
     LATE_AFTER_DAYS,
@@ -48,7 +48,9 @@ ROOT = Path(__file__).resolve().parent
 INVENTORY_PATH = ROOT / "snow_sites.json"
 OUTPUT_PATH = ROOT / "soil_moisture.json"
 STATIONS_URL = "https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1/stations"
-SCHEMA_VERSION = 1
+#: Version 2 adds each station's class among its own past years and each
+#: area's median class (ADR-168).
+SCHEMA_VERSION = 2
 METADATA_BATCH = 100
 
 #: Days in the calendar the file carries, today included.
@@ -249,9 +251,32 @@ def area_mean(changes: list[float], floor: int) -> float | None:
     return round_tenth(total / len(changes))
 
 
+def compare_with_past_years(site: dict, end: str | None, normals: dict | None) -> None:
+    """The end day's value against the station's own past years (ADR-168), in place.
+
+    A station whose normals were built over other sensor depths is not
+    compared: its past values are a different mean.
+    """
+    entry = (normals or {}).get("stations", {}).get(site["station"])
+    band = None
+    if entry is None:
+        reason = "no_history"
+    elif entry["depths_inches"] != site["depths_inches"]:
+        reason = "other_depths"
+    elif end is None or (band := soil_normals.band_for(entry, end)) is None:
+        reason = "short_history"
+    elif site["end_percent"] is None:
+        reason = "no_reading"
+    else:
+        reason = None
+    site["history_band"] = band
+    site["history_class"] = soil_normals.classify(site["end_percent"], band) if reason is None else None
+    site["no_history_reason"] = reason
+
+
 def build_payload(inventory: dict, depths_by_station: dict[str, list[int]],
                   records: list[dict], as_of: date,
-                  generated_at: datetime | None = None) -> dict:
+                  generated_at: datetime | None = None, normals: dict | None = None) -> dict:
     roster_sites = inventory["sites"]
     roster = [site["station"] for site in roster_sites]
     if len(set(roster)) != len(roster):
@@ -327,6 +352,7 @@ def build_payload(inventory: dict, depths_by_station: dict[str, list[int]],
         site["start_percent"] = start_value
         site["change_points"] = change
         site["no_change_reason"] = reason
+        compare_with_past_years(site, end, normals)
         del site["_raw_full"], site["_frozen"]
 
     by_area: dict[str, dict] = {}
@@ -334,10 +360,13 @@ def build_payload(inventory: dict, depths_by_station: dict[str, list[int]],
     for site in sites:
         area = site_area[site["station"]]
         entry = by_area.setdefault(area["huc6"], {
-            "huc6": area["huc6"], "huc6_name": area["huc6_name"], "changes": [], "site_count": 0})
+            "huc6": area["huc6"], "huc6_name": area["huc6_name"], "changes": [], "classes": [],
+            "site_count": 0})
         entry["site_count"] += 1
         if site["change_points"] is not None:
             entry["changes"].append(site["change_points"])
+        if site["history_class"] is not None:
+            entry["classes"].append(site["history_class"])
     rollups = []
     for code in sorted(by_area):
         entry = by_area[code]
@@ -348,6 +377,8 @@ def build_payload(inventory: dict, depths_by_station: dict[str, list[int]],
             "measured_site_count": len(entry["changes"]),
             "minimum_reporting_sites": MIN_ROLLUP_SITES,
             "mean_change_points": area_mean(entry["changes"], MIN_ROLLUP_SITES),
+            "compared_site_count": len(entry["classes"]),
+            "history_class": soil_normals.area_class(entry["classes"], MIN_ROLLUP_SITES),
         })
 
     stamp = (generated_at or datetime.now(timezone.utc)).strftime("%Y-%m-%dT%H:%M:%SZ")
@@ -364,10 +395,17 @@ def build_payload(inventory: dict, depths_by_station: dict[str, list[int]],
         "end_date": end,
         "start_date": start,
         "minimum_reporting_sites": MIN_ROLLUP_SITES,
+        "history_rule": {
+            "percentiles": list(soil_normals.PERCENTILES),
+            "min_years": soil_normals.MIN_YEARS,
+            "years_before": normals["years_before"] if normals else None,
+            "built": normals["built"] if normals else None,
+        },
         "series_dates": dates,
         "site_count": len(sites),
         "measured_site_count": sum(1 for site in sites if site["change_points"] is not None),
         "frozen_site_count": sum(1 for site in sites if site["no_change_reason"] == "frozen"),
+        "compared_site_count": sum(1 for site in sites if site["history_class"] is not None),
         "late_site_count": sum(1 for site in sites if site["late"]),
         "missing_site_count": len(missing),
         "other_depth_sites": other_depths,
@@ -393,11 +431,19 @@ def main() -> int:
         raise RuntimeError("no inventory station lists the standard soil sensors")
     begin = today - timedelta(days=WINDOW_DAYS - 1)
     records = fetch_soil(session, measuring, begin, today)
-    payload = build_payload(inventory, depths, records, today)
+    try:
+        normals = soil_normals.load()
+    except (OSError, ValueError, KeyError) as exc:
+        print(f"ERROR: soil_normals.json is not usable ({exc}); no station is compared with its past years.")
+        normals = None
+    if normals is None:
+        print("  soil_normals.json is not built yet: no station is compared with its past years.")
+    payload = build_payload(inventory, depths, records, today, normals=normals)
     changed = write_atomic(args.output, payload)
     print(f"{payload['site_count']} stations' soil moisture refreshed; "
           f"{payload['measured_site_count']} with a {CHANGE_DAYS}-day change to {payload['end_date']}; "
-          f"{payload['frozen_site_count']} frozen; {payload['late_site_count']} reporting late; "
+          f"{payload['frozen_site_count']} frozen; {payload['compared_site_count']} compared with past years; "
+          f"{payload['late_site_count']} reporting late; "
           f"{args.output} {'written' if changed else 'unchanged'}.")
     try:
         kept = soil_history.update(payload, payload["generated_at"],
