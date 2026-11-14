@@ -129,9 +129,6 @@ figures reached the snow page after the wave, on the same control. Remaining
 work from this wave is explicit, and each line was checked against `main` on
 2026-11-14:
 
-- Offer a picture download on the reservoir and scope share pages. Items 5
-  and 6 now publish those pictures; only the weekly page links one for
-  download.
 - Raise a self-healing issue when a share capture uses a fallback. The Pages
   workflow still logs a warning and nothing else.
 - Inspect the map canvas and visual hierarchy in a visible browser below
@@ -250,8 +247,18 @@ Daily history's transfer cost, the town reference file, Reclamation's inflow
 items and Great Salt Lake's stations and datum are measured in their records
 (ADR-160, ADR-164, ADR-161, ADR-159). One entry remains:
 
-- Map rendering and visual hierarchy below 500 CSS pixels in a visible
-  browser. Automated layout checks passed at 390 and 360 pixels.
+- Visual hierarchy below 500 CSS pixels. On 2026-11-14 the live site was
+  loaded in a visible Chrome, in frames 390 and 360 pixels wide: the storage
+  map drew its basemap, drainage areas and every reservoir. Brian Busch's
+  markup of those captures is pending. Frames are not a phone, so touch
+  behaviour is not covered.
+
+Mead daily inflow, searched again on 2026-11-14: Reclamation's Lower
+Colorado daily report prints a computed `INFLOW` column in its "Glen Canyon
+to Hoover Dam losses" table, for the current month only and without a
+stated method; its daily JSON feed showed no inflow series in the part
+read. The 24-Month Study's monthly side inflow is modelled. No observed
+daily series was found, so ADR-161's unavailable-inflow statement stands.
 
 ## Left out, with reasons
 
