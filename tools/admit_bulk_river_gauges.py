@@ -60,6 +60,10 @@ WORKSHEETS = {
 WATERWORK_WORDS = ("wasteway", "canal", "ditch", "drain", "tunnel", "lateral",
                    "conduit", "flume", "outlet")
 TIER_FOR_SUGGESTION = {"reservoir": "shaped", "natural": "natural"}
+#: A person's ruling in the review page, imported into `reviewer_ruling`,
+#: admits a row from any queue (Brian, 2026-11-14).
+RULED_TIERS = {"reservoir": "shaped", "natural": "natural"}
+RULED_ON = re.compile(r"Ruled \w+ by Brian Busch in the review page on (\d{4}-\d\d-\d\d)")
 DIRECTED_BY = "Brian Busch"
 DIRECTED_ON = "2026-11-14"
 #: ADR-138: Brian agreed on 2026-10-27 that both ADR-137 outcomes may be
@@ -84,7 +88,7 @@ def read_bulk_rows(root: Path = ROOT) -> list[dict]:
     for worksheet, state in WORKSHEETS.items():
         with (root / worksheet).open(newline="", encoding="utf-8") as handle:
             for row in csv.DictReader(handle):
-                if row["review_queue"] == "bulk":
+                if row["review_queue"] == "bulk" or row["reviewer_ruling"] in RULED_TIERS:
                     rows.append({**row, "_worksheet": worksheet, "_state": state})
     return rows
 
@@ -93,16 +97,26 @@ def display_name(row: dict) -> str:
     return (row.get("accepted_display_name") or row["proposed_display_name"]).strip()
 
 
+def ruled(row: dict) -> bool:
+    return (row.get("reviewer_ruling") or "") in RULED_TIERS
+
+
+def tier_of(row: dict) -> str | None:
+    if ruled(row):
+        return RULED_TIERS[row["reviewer_ruling"]]
+    return TIER_FOR_SUGGESTION.get(row["suggested_ruling"])
+
+
 def held_reason(row: dict, names_in_use: set[str]) -> str | None:
-    """Why a bulk row is not admitted here, or None when it is."""
+    """Why a row is not admitted here, or None when it is."""
     suggestion = row["suggested_ruling"]
-    tier = TIER_FOR_SUGGESTION.get(suggestion)
+    ruling = row.get("reviewer_ruling") or ""
+    tier = tier_of(row)
+    if ruling and not ruled(row):
+        return f"reviewer ruled {ruling}: not a published tier"
     if tier is None:
         return f"suggested {suggestion}: not a published tier"
-    ruling = row.get("reviewer_ruling") or ""
-    if ruling and ruling != suggestion:
-        return f"reviewer ruled {ruling} against the suggested {suggestion}"
-    if row["covers_1991_2020"] != "yes":
+    if not ruled(row) and row["covers_1991_2020"] != "yes":
         return "record does not cover 1991-2020"
     if row["trace_screen"] != "traced":
         return f"basin trace is {row['trace_screen'] or 'missing'}"
@@ -119,7 +133,10 @@ def held_reason(row: dict, names_in_use: set[str]) -> str | None:
         if _reservoirs(row["upstream_reservoirs"]) or share is None \
                 or share >= RIVER_NATURAL_STORAGE_SHARE_PCT:
             return "natural suggestion does not meet ADR-137 on the evidence"
-        if row["gages2_class"] != "reference":
+        years = _number(row["flow_years"])
+        if years is None or years <= 10:
+            return f"natural, but only {years} years of flow: too few to compare (ADR-145)"
+        if not ruled(row) and row["gages2_class"] != "reference":
             return f"natural, but GAGES-II class is {row['gages2_class']}, not reference"
     return None
 
@@ -152,6 +169,11 @@ def _published_area(text: str) -> str:
     return f"{value:,.0f}" if value >= 100 else f"{value:g}"
 
 
+def ruled_on(row: dict) -> str | None:
+    found = RULED_ON.search(row.get("notes") or "")
+    return found.group(1) if found else None
+
+
 def basis(row: dict, tier: str) -> str:
     found = evidence(row)
     reservoirs = found["published_reservoirs_upstream"]
@@ -164,6 +186,10 @@ def basis(row: dict, tier: str) -> str:
     else:
         first = (f"ADR-137: no published reservoir in the traced basin; storage is {share}% "
                  "of a year's flow, under 10%; a GAGES-II reference gauge.")
+    if ruled(row):
+        when = ruled_on(row) or "an unrecorded date"
+        return (f"{first} Ruled {row['reviewer_ruling']} by Brian Busch in the review page on "
+                f"{when}; added at his direction of {DIRECTED_ON}.")
     return (f"{first} Worksheet bulk queue (ADR-138), added at Brian Busch's direction of "
             f"{DIRECTED_ON} to publish every gauge the worksheets can.")
 
@@ -193,7 +219,7 @@ def lookup_series(station: str, today: str, features=None) -> dict:
 
 
 def entry(row: dict, series: dict) -> dict:
-    tier = TIER_FOR_SUGGESTION[row["suggested_ruling"]]
+    tier = tier_of(row)
     station = row["usgs_site_no"]
     built = {
         "station": station,
@@ -213,12 +239,12 @@ def entry(row: dict, series: dict) -> dict:
             "basis": basis(row, tier),
             "directed_by": DIRECTED_BY,
             "directed_on": DIRECTED_ON,
-            "status": STATUS,
+            "status": f"ruled_{tier}" if ruled(row) else STATUS,
             "evidence": evidence(row),
         },
     }
     if tier == "natural":
-        built["tier"]["tier_ruled_on"] = BULK_RULED_ON
+        built["tier"]["tier_ruled_on"] = (ruled_on(row) if ruled(row) else None) or BULK_RULED_ON
     return built
 
 
@@ -261,7 +287,7 @@ def main(argv: list[str] | None = None, *, lookup=lookup_series,
     if args.plan:
         for row in chosen:
             print(f"ADD  {row['usgs_site_no']} {display_name(row)} ({row['_state']}): "
-                  f"{TIER_FOR_SUGGESTION[row['suggested_ruling']]}")
+                  f"{tier_of(row)}{' (ruled)' if ruled(row) else ''}")
         print(f"Plan: {len(chosen)} to add, {len(held)} held, {len(roster)} already published")
         return 0
 

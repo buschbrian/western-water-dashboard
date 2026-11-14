@@ -72,11 +72,15 @@ def test_the_rivers_are_admitted_with_display_and_survey_names():
             assert row["tier"]["directed_on"] == "2026-10-31"
             assert row["tier"]["tier_ruled_on"] == "2026-10-27"
         else:
-            # ADR-168: every later gauge came from a worksheet's bulk queue
-            # and waits on Brian's formal ruling.
-            assert row["tier"]["directed_on"] == "2026-11-14"
-            assert row["tier"]["status"] == "pending_formal_ruling"
-            assert row["tier"]["evidence"]["review_queue"] == "bulk"
+            # ADR-168: every later gauge is either a ruling Brian saved in the
+            # review page or a worksheet bulk-queue row awaiting his ruling.
+            tier = row["tier"]
+            assert tier["directed_on"] == "2026-11-14"
+            if tier["status"] == "pending_formal_ruling":
+                assert tier["evidence"]["review_queue"] == "bulk"
+            else:
+                assert tier["status"] == f"ruled_{tier['tier']}"
+                assert "Ruled" in tier["basis"] and "review page" in tier["basis"]
 
 
 def test_every_gauge_meets_its_adr_137_rule():

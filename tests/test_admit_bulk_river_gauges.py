@@ -25,8 +25,8 @@ def test_the_selection_is_only_bulk_rows_the_loader_would_take():
     chosen, held = admit.select(rows, roster.admitted_river_gauges())
     assert chosen, "the worksheets have bulk rows to add"
     for row in chosen:
-        assert row["review_queue"] == "bulk"
-        assert row["suggested_ruling"] in admit.TIER_FOR_SUGGESTION
+        assert row["review_queue"] == "bulk" or admit.ruled(row)
+        assert admit.tier_of(row) in {"shaped", "natural"}
         assert row["usgs_site_no"] not in roster.admitted_river_gauges()
     reasons = {row["usgs_site_no"]: reason for row, reason in held}
     assert all(r["suggested_ruling"] != "exclude" for r in chosen)
@@ -37,7 +37,8 @@ def test_a_waterwork_name_and_a_non_reference_natural_row_are_held():
     base = {"suggested_ruling": "reservoir", "reviewer_ruling": "", "covers_1991_2020": "yes",
             "trace_screen": "traced", "name_check": "", "accepted_display_name": "",
             "proposed_display_name": "Bruce Church Wasteway near Yuma",
-            "upstream_reservoirs": "", "storage_share_pct": "0", "gages2_class": "reference"}
+            "upstream_reservoirs": "", "storage_share_pct": "0", "gages2_class": "reference",
+            "flow_years": "35", "review_queue": "bulk", "notes": ""}
     assert "wasteway" in admit.held_reason(base, set())
     above = dict(base, proposed_display_name="Mammoth Creek above West Hatch Ditch, near Hatch")
     assert admit.held_reason(above, set()) is None
@@ -45,6 +46,10 @@ def test_a_waterwork_name_and_a_non_reference_natural_row_are_held():
                    gages2_class="not_listed")
     assert "reference" in admit.held_reason(natural, set())
     assert admit.held_reason(dict(natural, gages2_class="reference"), set()) is None
+    short = dict(natural, gages2_class="reference", flow_years="4")
+    assert "too few" in admit.held_reason(short, set())
+    ruled = dict(natural, reviewer_ruling="natural", review_queue="review")
+    assert admit.held_reason(ruled, set()) is None, "a ruling stands in for the reference class"
     assert "already used" in admit.held_reason(dict(base, proposed_display_name="A"), {"A"})
 
 
@@ -61,7 +66,7 @@ def test_a_run_merges_and_the_roster_still_loads(tmp_path):
     assert added
     for station in added:
         tier = after[station]["tier"]
-        assert tier["status"] == "pending_formal_ruling"
+        assert tier["status"] in {"pending_formal_ruling", f"ruled_{tier['tier']}"}
         assert tier["directed_on"] == "2026-11-14"
         assert "ADR-137" in tier["basis"]
     # A second run adds nothing and leaves the file byte for byte.
