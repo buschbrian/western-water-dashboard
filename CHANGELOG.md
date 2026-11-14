@@ -66,6 +66,8 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   the wire), loads only when the card nears the screen. No existing snow
   figure changes.
 
+- **Lakes navigation** (ADR-166). Terminal lakes joins the page menu and
+  wide navigation bar, using the lake data contract already merged in ADR-159.
 - **Town search** (ADR-164): Census place points join Find a place, opening
   the finest containing drainage area with a published reservoir. The search
   states that drainage areas do not show where a town gets water.

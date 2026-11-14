@@ -859,6 +859,14 @@ const browser = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
   ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH }
   : {});
 
+if (process.argv.includes("--great-salt-lake")) {
+  await checkGreatSaltLake();
+  await browser.close();
+  server.close();
+  for (const failure of failures) console.error(failure);
+  process.exit(failures.length ? 1 : 0);
+}
+
 if (process.argv.includes("--towns")) {
   await checkTownSearch();
   await browser.close();
@@ -8397,6 +8405,44 @@ async function checkWaveThree() {
 }
 
 await checkWaveThree();
+
+async function checkGreatSaltLake() {
+  for (const viewport of [...VIEWPORTS, { width: 1024, height: 800, name: "compact-desktop" }]) {
+    const context = await newPageContext(browser, viewport);
+    const tab = await context.newPage();
+    const label = `Lakes navigation (${viewport.name})`;
+    const errors = [];
+    tab.on("pageerror", (error) => errors.push(error.message));
+    watchConsoleErrors(tab, errors);
+    try {
+      await tab.goto(URL, { waitUntil: "domcontentloaded", timeout: 90000 });
+      await tab.waitForSelector("#menu-lakes-link", { state: "attached", timeout: 90000 });
+      const menu = tab.locator("#menu-lakes-link");
+      check(await menu.getAttribute("href") === "./lakes.html", `${label}: the menu lost its lakes link`);
+      const button = tab.locator("#lakes-link");
+      check(await button.isVisible() === (viewport.width >= 1024), `${label}: the bar link has the wrong visibility`);
+      for (const control of await tab.locator("calcite-navigation calcite-action").all()) {
+        if (!await control.isVisible()) continue;
+        const rect = await control.boundingBox();
+        check(rect !== null && rect.x >= 0 && rect.x + rect.width <= viewport.width + 1,
+          `${label}: a navigation action is clipped`);
+      }
+      await tab.goto(`${URL}lakes.html?state=all`, { waitUntil: "domcontentloaded", timeout: 90000 });
+      await tab.waitForFunction(() => window.__lakesReady !== undefined, null, { timeout: 90000 });
+      check(await tab.locator("#menu-lakes-link").getAttribute("aria-current") === "page",
+        `${label}: the menu does not identify the current page`);
+      check(await tab.locator("#lakes-link").count() === 0, `${label}: the bar links to its current page`);
+      check(await tab.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1),
+        `${label}: the page scrolls sideways`);
+      await checkAccessibility(tab, check, label);
+      await tab.screenshot({ path: `screenshots/lakes-navigation-${viewport.name}.png`, fullPage: true });
+    } catch (error) { failures.push(`${label}: ${error.message}`); }
+    for (const error of errors) failures.push(`${label}: ${error}`);
+    await context.close();
+  }
+}
+
+await checkGreatSaltLake();
 
 async function checkTownSearch() {
   const index = JSON.parse(await readFile(path.join(ROOT, "data/assistant/places.json"), "utf8"));

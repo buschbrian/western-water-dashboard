@@ -150,3 +150,8 @@ inspected there. This does not establish ArcGIS map-canvas rendering.
 three widths, the point and supply-area wording, keyboard semantics through
 axe, the resulting all-state area link, and the absence of a covering chooser.
 The normal browser target includes these checks.
+
+`npm run verify:browser -- --great-salt-lake` checks Lakes navigation and the
+current-page mark at desktop and phone widths, including the 1024-pixel bar.
+The normal target includes this check. Lake measurement checks continue to
+use the existing ADR-159 payload and validators.

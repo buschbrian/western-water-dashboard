@@ -42,6 +42,8 @@ than bundled. **Start with ADR-002.**
   [ADR-141](ADR-141-publish-a-share-page-and-a-daily-picture-for-a-reservoir-link.md),
   [ADR-117](ADR-117-close-the-scope-at-version-1-0-0.md) (pilot scope exception only)
 
+- Terminal-lakes navigation: [ADR-166](ADR-166-offer-terminal-lakes-in-the-page-navigation.md)
+
 ### Reservoir admission, identity and source authority
 Which reservoirs are published, how one is identified, and which figure is the
 denominator. **Start with ADR-070, then ADR-072, then ADR-003.**
@@ -384,6 +386,8 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-161](ADR-161-publish-only-reviewed-reservoir-inflow-and-release.md) | Publish only reviewed reservoir inflow and release | Proposed; Powell computed inflow and Powell/Mead total release, reviewed definitions and live catalog checks; Mead inflow remains unavailable; local implementation |
 | [ADR-162](ADR-162-show-upstream-conditions-without-claiming-inflow.md) | Show upstream conditions without claiming inflow | Proposed; station means above a reservoir, page-local upstream precipitation link and aligned daily context without a causal claim; local implementation |
 | [ADR-165](ADR-165-compare-snow-water-with-earlier-seasons-at-a-fixed-set-of-sites.md) | Compare snow water with earlier seasons at a fixed set of sites | Proposed; ADR-125's builder and fixed-set rule over snow water (`snow_history.json`), a lazy snow-page card that follows the page's place; keeps ADR-081's summed ratio and ADR-121's floors; moves no published snow figure; implemented locally |
+
+| [ADR-166](ADR-166-offer-terminal-lakes-in-the-page-navigation.md) | Offer terminal lakes in the page navigation | Proposed; keep ADR-159’s merged lake contract and add compact navigation after the second lake |
 
 ## Relationship to the historical journal
 
