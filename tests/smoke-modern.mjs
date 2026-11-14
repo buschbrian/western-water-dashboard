@@ -4303,7 +4303,7 @@ for (const viewport of VIEWPORTS) {
       key: Boolean(document.querySelector(".precip-years-key")?.getClientRects().length),
       rainKey: Boolean(document.querySelector(".precip-map-key")?.getClientRects().length),
       dayButtons: Boolean(document.querySelector("[aria-label='Days in the map and the station list']")?.getClientRects().length),
-      listRows: document.querySelectorAll(".precip-map-mode-years .precip-soil-list li").length,
+      listRows: document.querySelectorAll(".precip-map-mode-years .precip-years-list li").length,
       pressed: [...document.querySelectorAll(".precip-map-mode-head button")].map((b) => b.getAttribute("aria-pressed")).join(",")
     }));
     check(yearsView.key && !yearsView.rainKey && !yearsView.dayButtons && yearsView.pressed === "false,false,true"

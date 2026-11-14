@@ -289,9 +289,9 @@ export function createPrecipMapSection(
   yearsWait.setAttribute("role", "status");
   const yearsSide = (title: string, className: string) => {
     const block = document.createElement("div");
-    block.className = `precip-soil-side ${className}`;
+    block.className = `precip-years-side ${className}`;
     const list = document.createElement("ol");
-    list.className = "precip-soil-list";
+    list.className = "precip-years-list";
     block.append(paragraph("chart-axis-title", title), list);
     return { block, list };
   };
