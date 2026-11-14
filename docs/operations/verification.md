@@ -114,6 +114,7 @@ node tools/audit-transfer.mjs                    # needs a built dist/ and Playw
 .venv/bin/python tools/build_normal_baselines.py --missing   # network job
 .venv/bin/python tools/check_reference_freshness.py          # what is due to be re-checked
 .venv/bin/python tools/measure_drought_convergence.py        # what the sampling step is worth
+.venv/bin/python tools/measure_precipitation_outliers.py     # wettest places and unusual years
 ```
 
 `audit-transfer.mjs` reports what each page actually requests and from which
