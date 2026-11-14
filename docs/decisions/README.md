@@ -35,6 +35,7 @@ than bundled. **Start with ADR-002.**
   [ADR-144](ADR-144-compare-natural-river-gauges-with-the-surveys-day-of-year-percentiles.md),
   [ADR-145](ADR-145-compare-river-gauges-above-ten-years-shorten-two-names-and-round-the-page.md),
   [ADR-146](ADR-146-keep-river-flow-and-soil-moisture-change-day-by-day.md),
+  [ADR-168](ADR-168-publish-every-bulk-queue-river-gauge.md),
   [ADR-154](ADR-154-keep-a-permanent-share-address-for-every-reservoir.md),
   [ADR-160](ADR-160-publish-storage-history-apart-from-the-summary.md),
   [ADR-161](ADR-161-publish-only-reviewed-reservoir-inflow-and-release.md),
@@ -393,6 +394,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-165](ADR-165-compare-snow-water-with-earlier-seasons-at-a-fixed-set-of-sites.md) | Compare snow water with earlier seasons at a fixed set of sites | Proposed; ADR-125's builder and fixed-set rule over snow water (`snow_history.json`), a lazy snow-page card that follows the page's place; keeps ADR-081's summed ratio and ADR-121's floors; moves no published snow figure; implemented locally |
 | [ADR-166](ADR-166-offer-terminal-lakes-in-the-page-navigation.md) | Offer terminal lakes in the page navigation | Proposed; keep ADR-159’s merged lake contract and add compact navigation after the second lake |
 | [ADR-167](ADR-167-enforce-the-soil-percent-bound-before-averaging.md) | Enforce the soil percentage bound before averaging | Proposed; reject physically impossible SMS values at ingestion while keeping existing means and coverage rules |
+| [ADR-168](ADR-168-publish-every-bulk-queue-river-gauge.md) | Publish every bulk-queue river gauge | Proposed; extends ADR-136, ADR-137 and ADR-138; the four worksheets' bulk `reservoir` and `natural` rows join the roster pending formal ruling (133 measured 2026-11-14), written by `tools/admit_bulk_river_gauges.py`; exclusions, waterwork names, non-reference natural rows and open name checks held |
 
 ## Relationship to the historical journal
 
