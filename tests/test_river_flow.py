@@ -59,7 +59,7 @@ def feature(site=SITE, series="abc", day="2026-10-20", value="12.5", **extra) ->
 
 def test_the_rivers_are_admitted_with_display_and_survey_names():
     gauges = roster.admitted_river_gauges()
-    assert set(gauges) == SHAPED_SITES | NATURAL_SITES
+    assert SHAPED_SITES | NATURAL_SITES <= set(gauges)
     for station, row in gauges.items():
         assert row["display_name"] != row["display_name"].upper()
         assert row["usgs_name"]
@@ -67,10 +67,20 @@ def test_the_rivers_are_admitted_with_display_and_survey_names():
         if station in SHAPED_SITES:
             assert row["tier"]["tier"] == "shaped"
             assert row["tier"]["status"] == "pending_formal_ruling"
-        else:
+        elif station in NATURAL_SITES:
             assert row["tier"]["tier"] == "natural"
             assert row["tier"]["directed_on"] == "2026-10-31"
             assert row["tier"]["tier_ruled_on"] == "2026-10-27"
+        else:
+            # ADR-168: every later gauge is either a ruling Brian saved in the
+            # review page or a worksheet bulk-queue row awaiting his ruling.
+            tier = row["tier"]
+            assert tier["directed_on"] == "2026-11-14"
+            if tier["status"] == "pending_formal_ruling":
+                assert tier["evidence"]["review_queue"] == "bulk"
+            else:
+                assert tier["status"] == f"ruled_{tier['tier']}"
+                assert "Ruled" in tier["basis"] and "review page" in tier["basis"]
 
 
 def test_every_gauge_meets_its_adr_137_rule():
@@ -337,7 +347,9 @@ def normals_entry(station=NATURAL, series=None, **day_overrides) -> dict:
 
 
 def synthetic_normals(tmp_path, gauges=None) -> Path:
-    gauges = gauges if gauges is not None else {s: normals_entry(s) for s in NATURAL_SITES}
+    natural = [s for s, e in roster.admitted_river_gauges().items()
+               if e["tier"]["tier"] == "natural"]
+    gauges = gauges if gauges is not None else {s: normals_entry(s) for s in natural}
     path = tmp_path / "river_normals.json"
     path.write_text(json.dumps({"percentiles": list(RIVER_NORMAL_PERCENTILES),
                                 "min_years": RIVER_NORMAL_MIN_YEARS, "retrieved": "2026-10-31",
@@ -593,9 +605,11 @@ def test_a_full_run_writes_every_gauge(tmp_path):
     out = tmp_path / "rivers.json"
     assert refresh_rivers.main([], fetch=stub_fetch(), output=out, today=TODAY, pause=0, normals_path=synthetic_normals(tmp_path)) == 0
     payload = json.loads(out.read_text())
-    assert payload["gauge_count"] == 8 and payload["withdrawn"] == []
+    assert payload["gauge_count"] == len(roster.admitted_river_gauges())
+    assert payload["withdrawn"] == []
     natural = [g for g in payload["gauges"] if g["tier"] == "natural"]
-    assert {g["source_station_id"] for g in natural} == NATURAL_SITES
+    assert {g["source_station_id"] for g in natural} == {
+        s for s, e in roster.admitted_river_gauges().items() if e["tier"]["tier"] == "natural"}
     assert all(g["compared_with_normal"] and g["flow_class"] in rivers.FLOW_CLASSES
                for g in natural)
     assert all(not rivers.NORMAL_FIELDS & set(g) for g in payload["gauges"]
@@ -625,7 +639,8 @@ def test_a_withdrawn_gauge_stays_stated_when_its_fetch_fails(tmp_path):
     refresh_rivers.main([], fetch=stub_fetch(failing=everything), output=out,
                         today=gone, pause=0, normals_path=synthetic_normals(tmp_path))
     payload = json.loads(out.read_text())
-    assert payload["gauge_count"] == 0 and payload["withdrawn_count"] == 8
+    assert payload["gauge_count"] == 0
+    assert payload["withdrawn_count"] == len(everything)
     refresh_rivers.main([], fetch=stub_fetch(failing=everything), output=out,
                         today=gone + pd.Timedelta(days=1), pause=0, normals_path=synthetic_normals(tmp_path))
     again = json.loads(out.read_text())
