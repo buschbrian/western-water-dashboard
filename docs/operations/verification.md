@@ -155,3 +155,11 @@ The normal browser target includes these checks.
 current-page mark at desktop and phone widths, including the 1024-pixel bar.
 The normal target includes this check. Lake measurement checks continue to
 use the existing ADR-159 payload and validators.
+
+## Weekly pages and feeds
+
+`npm run verify:browser -- --weekly` rebuilds and checks Atom XML parsing,
+JSON Feed content, permanent links, caption selection, the 1200 by 630 picture
+frame and accessibility down to 320 pixels. It uses the standard system-Chrome
+setting. The full browser target includes the same cases. Screenshots are
+written to `screenshots/weekly-*.png`.

@@ -224,7 +224,22 @@ and missing station IDs must be reported, never described as complete.
 
 Download the national places ZIP linked from the Census 2026 gazetteer page,
 then run `.venv/bin/python tools/build_town_index.py --input <zip>`. This
-network-independent builder merges the reference, reports its gzip cost,
+network-independent builder rebuilds the reference from the complete source, reports its gzip cost,
 and refuses a different vintage. Run `npm run verify:pipeline` and the
 browser town-search checks before committing the reference. The daily
 assistant-index writer supplies the current reservoir subbasins separately.
+
+## Weekly figures
+
+The **Publish weekly figures** workflow captures the current week each Monday,
+using `node scripts/build-weekly-digest.mjs`. A manual dispatch or local run
+can capture the first entry in the current week. A rerun in the same Mountain
+Time week changes nothing. `--output /tmp/weekly-preview.json` writes a
+separate preview without changing the committed ledger. No older week is
+filled with today's data.
+
+The workflow commits only `data/weekly-digest.json` and Pages then builds its
+permanent pages, feeds and pictures. A failed capture keeps existing entries.
+A source correction does not authorize editing an older entry. Inspect the
+live data and the next capture instead; the original source dates remain in
+every caption. The ledger is generated evidence, never hand-edited.

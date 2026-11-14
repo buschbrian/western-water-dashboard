@@ -859,6 +859,14 @@ const browser = await chromium.launch(process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE
   ? { executablePath: process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH }
   : {});
 
+if (process.argv.includes("--weekly")) {
+  await checkWeeklyDigest();
+  await browser.close();
+  server.close();
+  for (const failure of failures) console.error(failure);
+  process.exit(failures.length ? 1 : 0);
+}
+
 if (process.argv.includes("--great-salt-lake")) {
   await checkGreatSaltLake();
   await browser.close();
@@ -3331,6 +3339,7 @@ for (const viewport of VIEWPORTS) {
       `${label}: rendered ${state.groups} field groups, readiness reported ${state.ready?.groups}`);
     check(JSON.stringify(state.links) === JSON.stringify([
       "./api/reservoirs.json", "./",
+      "./weekly.html", "./feed.xml", "./feed.json",
       // The reviewed reservoir levels, day by day (ADR-135).
       "./api/elevation_history.json", "./reservoir.html?name=Lake%20Powell",
       "./reservoir.html?name=Lake%20Mead",
@@ -8489,6 +8498,62 @@ async function checkTownSearch() {
 
 await checkTownSearch();
 
+
+async function checkWeeklyDigest() {
+  const ledger = JSON.parse(await readFile(path.join(REPO_ROOT, "data/weekly-digest.json"), "utf8"));
+  const entry = ledger.entries.at(-1);
+  if (!entry) { failures.push("Weekly digest: no saved entry to verify"); return; }
+  const check = (condition, message) => { if (!condition) failures.push(message); };
+  for (const viewport of [...VIEWPORTS, { name: "tiny-phone", width: 320, height: 640 }]) {
+    const context = await newPageContext(browser, viewport);
+    const tab = await context.newPage();
+    const errors = [];
+    tab.on("pageerror", (error) => errors.push(error.message));
+    tab.on("console", (message) => {
+      const diagnostic = `${message.text()} ${message.location().url}`;
+      if (message.type() === "error" && !/favicon/.test(diagnostic)) errors.push(diagnostic);
+    });
+    const label = `Weekly digest (${viewport.name})`;
+    console.log(`\n=== ${label}`);
+    try {
+      await tab.goto(`${URL}weekly.html`, { waitUntil: "load", timeout: 60000 });
+      const feeds = await tab.evaluate(async () => {
+        const [atom, json] = await Promise.all([fetch("./feed.xml").then((r) => r.text()), fetch("./feed.json").then((r) => r.json())]);
+        const xml = new DOMParser().parseFromString(atom, "application/xml");
+        return { namespace: xml.documentElement.namespaceURI, invalid: xml.querySelectorAll("parsererror").length,
+          entries: xml.getElementsByTagNameNS("http://www.w3.org/2005/Atom", "entry").length,
+          caption: xml.getElementsByTagNameNS("http://www.w3.org/2005/Atom", "content")[0]?.textContent,
+          json, wide: document.documentElement.scrollWidth > window.innerWidth + 1 };
+      });
+      check(!feeds.invalid && feeds.namespace === "http://www.w3.org/2005/Atom" && feeds.entries > 0,
+        `${label}: Atom is not a readable feed`);
+      check(feeds.json.version === "https://jsonfeed.org/version/1.1" && feeds.json.items[0].content_text === entry.caption
+        && feeds.caption === entry.caption && !feeds.wide, `${label}: the feeds differ from the frozen entry`);
+      await tab.getByRole("link", { name: entry.frame.name, exact: true }).click();
+      await tab.waitForURL(new RegExp(`weekly-${entry.week}\\.html$`));
+      check(await tab.locator("#weekly-caption").inputValue() === entry.caption, `${label}: the caption changed`);
+      await tab.locator("#weekly-caption").focus();
+      await tab.keyboard.press("Control+A");
+      const selected = await tab.locator("#weekly-caption").evaluate((element) => element.selectionEnd - element.selectionStart);
+      check(selected === entry.caption.length, `${label}: the caption cannot be selected to copy`);
+      check(await tab.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth + 1), `${label}: the page scrolls sideways`);
+      await checkAccessibility(tab, check, label);
+      await tab.screenshot({ path: path.join(REPO_ROOT, `screenshots/weekly-${viewport.name}.png`) });
+    } catch (error) { failures.push(`${label}: ${error.message}`); }
+    for (const error of errors) failures.push(`${label}: ${error}`);
+    await context.close();
+  }
+  const context = await newPageContext(browser, { width: 1200, height: 630 });
+  const tab = await context.newPage();
+  await tab.goto(`${URL}share/weekly-${entry.week}.frame.html`, { waitUntil: "load" });
+  check(await tab.locator(".figure").innerText() === entry.frame.figure, "Weekly picture: wrong figure");
+  check(await tab.evaluate(() => document.documentElement.scrollWidth <= 1200 && document.documentElement.scrollHeight <= 630),
+    "Weekly picture: the frame does not fit 1200 by 630");
+  await tab.screenshot({ path: path.join(REPO_ROOT, "screenshots/weekly-picture.png") });
+  await context.close();
+}
+
+await checkWeeklyDigest();
 await browser.close();
 server.close();
 

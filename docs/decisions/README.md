@@ -37,7 +37,8 @@ than bundled. **Start with ADR-002.**
   [ADR-146](ADR-146-keep-river-flow-and-soil-moisture-change-day-by-day.md),
   [ADR-154](ADR-154-keep-a-permanent-share-address-for-every-reservoir.md),
   [ADR-160](ADR-160-publish-storage-history-apart-from-the-summary.md),
-  [ADR-161](ADR-161-publish-only-reviewed-reservoir-inflow-and-release.md).
+  [ADR-161](ADR-161-publish-only-reviewed-reservoir-inflow-and-release.md),
+  [ADR-163](ADR-163-save-weekly-figures-once-and-publish-feeds.md) (frozen weekly entries and feeds).
 - Superseded, read only for history: ADR-012, ADR-019,
   [ADR-141](ADR-141-publish-a-share-page-and-a-daily-picture-for-a-reservoir-link.md),
   [ADR-117](ADR-117-close-the-scope-at-version-1-0-0.md) (pilot scope exception only)
@@ -385,9 +386,12 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-160](ADR-160-publish-storage-history-apart-from-the-summary.md) | Publish storage history apart from the summary | Proposed; revisable station archives, shared current water year, on-demand backfill, lazy water-year chart and full-record CSV; local implementation |
 | [ADR-161](ADR-161-publish-only-reviewed-reservoir-inflow-and-release.md) | Publish only reviewed reservoir inflow and release | Proposed; Powell computed inflow and Powell/Mead total release, reviewed definitions and live catalog checks; Mead inflow remains unavailable; local implementation |
 | [ADR-162](ADR-162-show-upstream-conditions-without-claiming-inflow.md) | Show upstream conditions without claiming inflow | Proposed; station means above a reservoir, page-local upstream precipitation link and aligned daily context without a causal claim; local implementation |
+| [ADR-163](ADR-163-save-weekly-figures-once-and-publish-feeds.md) | Save weekly figures once and publish feeds | Proposed; append-only Mountain Time weekly ledger, Atom and JSON feeds, permanent pages, picture and caption; local implementation |
+| [ADR-164](ADR-164-find-towns-by-their-census-place-points.md) | Find towns by their Census place points | Proposed; implementation local |
 | [ADR-165](ADR-165-compare-snow-water-with-earlier-seasons-at-a-fixed-set-of-sites.md) | Compare snow water with earlier seasons at a fixed set of sites | Proposed; ADR-125's builder and fixed-set rule over snow water (`snow_history.json`), a lazy snow-page card that follows the page's place; keeps ADR-081's summed ratio and ADR-121's floors; moves no published snow figure; implemented locally |
-
 | [ADR-166](ADR-166-offer-terminal-lakes-in-the-page-navigation.md) | Offer terminal lakes in the page navigation | Proposed; keep ADR-159’s merged lake contract and add compact navigation after the second lake |
+
+
 
 ## Relationship to the historical journal
 
@@ -397,5 +401,3 @@ things noticed while testing. These records are the opposite — each one is
 fixed at the moment of decision. Where the two overlap, the journal is the
 narrative and the record is the decision. Neither is current architecture;
 that is [`docs/architecture/`](../architecture/README.md).
-
-| [ADR-164](ADR-164-find-towns-by-their-census-place-points.md) | Find towns by their Census place points | Proposed; implementation local |

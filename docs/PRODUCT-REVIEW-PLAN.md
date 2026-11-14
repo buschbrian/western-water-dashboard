@@ -1,10 +1,10 @@
 # Product review plan, November 2026
 
-Status: The four Wave 1 implementation PRs (#115–#118) were published on
-2026-11-09. Wave 2, sharing and place: items 5–7 are merged through PR #120;
-items 8 and 9 remain. Wave 3 is implemented locally under ADR-160–157;
-final acceptance and the eight USGS storage backfills remain. Mead daily
-inflow is a source gap, explicitly shown as unavailable.
+Status: Waves 1–3 are merged through PR #129. The eight USGS storage
+backfills and Mead daily inflow remain source gaps. Items 8, 9 and 13 are
+integrated locally under proposed ADR-163–165, awaiting Brian's review.
+Great Salt Lake's arms already shipped through PR #138 (ADR-159); its
+remaining navigation entry is integrated locally under proposed ADR-166.
 Brian Busch chose the four scopes below
 on 2026-11-09. ADR-153 records the storage-map choice; each later wave writes
 its own record where required.

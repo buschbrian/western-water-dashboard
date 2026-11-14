@@ -15,6 +15,7 @@ import type { Region, Reservoir, ReservoirPayload } from "../types";
 import { formatAcreFeet, formatDate, formatPercent } from "../viz/format";
 import { escapeHtml as escape, shareFrameDocument } from "./share-frame";
 import { pageSnapshots } from "./page-previews";
+import { writeWeeklyPages } from "./weekly-pages";
 import { validateSnowpackPayload } from "../data/snow-validate";
 import { validatePrecipitationHistory, validatePrecipitationPayload } from "../data/precip-validate";
 import { validateDroughtCoverage } from "../data/drought-validate";
@@ -162,7 +163,9 @@ export async function writeSharePages(root: string, outDir: string): Promise<voi
       ...snapshot, source: `${snapshot.source} · ${SITE_ADDRESS}`
     }, policy, "page"));
   }
+  const weekly = await writeWeeklyPages(root, outDir, policy);
   const targets = [
+    ...weekly,
     ...pages.map(({ slug, name, frame, kind }) => ({ file: slug, name, frame, kind })),
     ...snapshots.map(({ file, name }) => ({ file, name, frame: `share/${file}.frame.html`, kind: "page" }))
   ];

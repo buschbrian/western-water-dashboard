@@ -19,6 +19,10 @@ fi
 
 npx vite build
 mkdir -p screenshots
+if [ "${1:-}" = "--weekly" ]; then
+  node tests/smoke-modern.mjs --weekly
+  exit 0
+fi
 if [ "${1:-}" = "--great-salt-lake" ]; then
   node tests/smoke-modern.mjs --great-salt-lake
   exit 0

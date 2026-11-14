@@ -87,6 +87,15 @@ root.innerHTML = `
           <code>null</code> in the GeoJSON. A past month's row has neither value.</p>
       </article>
       <article class="api-file">
+        <h3>Weekly figures and feeds</h3>
+        <p><a href="./weekly.html">Saved weekly summaries</a> keep the storage, mountain snow
+          and drought figures as they were when captured. Each summary states its dates,
+          reporting coverage and sources. A source revision does not rewrite an earlier summary.</p>
+        <p>Subscribe with the <a href="./feed.xml">Atom feed</a> or
+          <a href="./feed.json">JSON feed</a>. The feeds hold the latest 52 weekly entries;
+          older summaries keep their pages. Each page has a picture and a caption to copy.</p>
+      </article>
+      <article class="api-file">
         <h3>Reservoir level history</h3>
         <p><a href="./api/elevation_history.json"><code>/api/elevation_history.json</code></a></p>
         <p>The daily surface level, in feet, of each reservoir whose level datum has been
