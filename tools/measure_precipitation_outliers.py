@@ -9,8 +9,9 @@ Reads the committed `precipitation.json` (this water year, daily) and
 * each station with a full history placed against its own past years on the
   same date: rank, percentile, percent of median, difference from median and a
   robust z-score;
-* the outliers -- stations and areas outside the 10th to 90th percentile band
-  by at least `MIN_ANOMALY_INCHES`, with record highs and lows called out;
+* the outliers -- stations and areas in the lowest or highest tenth of years
+  (NCEI's ranking classes, the map's own, ADR-170), records included, once
+  the median for the date reaches `MEANINGFUL_NORMAL_INCHES`;
 * readings worth a second look before anyone believes them (far outside every
   past year, or an accumulation that falls).
 
@@ -24,8 +25,8 @@ where they apply (ADR-125): history curves are read on a straight line between
 weekly steps, quantiles are type 7, a rank is one plus the years strictly above
 to a tenth of an inch, an area is a mean over one fixed set of stations, and a
 percent of median is printed only once the median reaches
-`MEANINGFUL_NORMAL_INCHES`. The percentile, the robust z-score and the outlier
-thresholds are this tool's own and are not published on the site.
+`MEANINGFUL_NORMAL_INCHES`. The classes and the mid-rank percentile are the map's (ADR-170);
+the robust z-score is this tool's own.
 """
 from __future__ import annotations
 
@@ -49,13 +50,16 @@ MEANINGFUL_NORMAL_INCHES = 1.0
 #: Share of on-time stations that must report for a day to be the common date
 #: (SET_SHARE in src/precip-model.ts).
 SET_SHARE = 0.9
-#: Outside the 10th-90th band is unusual; this keeps a dry October from
-#: flagging every station that is 0.1 inch off a 0.2 inch median.
-MIN_ANOMALY_INCHES = 0.5
-#: Lower and upper percentiles of the "usual" band.
+#: Lower and upper percentiles of the "usual" band: NCEI's "much below" and
+#: "much above" deciles. Measured by holding out each past year at every
+#: station: about a quarter of ordinary years fall outside, and the old
+#: half-inch floor changed nothing after mid-October, so the floor is now the
+#: median's own (`MEANINGFUL_NORMAL_INCHES`).
 OUTLIER_LOW, OUTLIER_HIGH = 0.10, 0.90
 #: A robust z-score this far out, beyond every past year, asks for a check.
 SUSPECT_ROBUST_Z = 6.0
+#: The fewest past years a station needs to be placed (the map's, ADR-170).
+MIN_RECORD_YEARS = 10
 #: The fewest stations behind an area figure (the snow reporting floor's spirit).
 MIN_AREA_STATIONS = 3
 #: A day-to-day drop larger than this is a falling gauge, not rounding noise.
@@ -162,32 +166,37 @@ def standing(value: float, past: list[float]) -> Standing:
     median = quantile(ordered, 0.5)
     low10, high90 = quantile(ordered, OUTLIER_LOW), quantile(ordered, OUTLIER_HIGH)
     anomaly = value - median
+    pct = percentile(value, past)
+    comparable = median >= MEANINGFUL_NORMAL_INCHES
+    # NCEI's ranking classes (ADR-170), the map's own: deciles and terciles.
     if tenth(value) > tenth(ordered[-1]):
         category = "record high"
     elif tenth(value) < tenth(ordered[0]):
         category = "record low"
-    elif value > high90:
-        category = "above 90th"
-    elif value > quantile(ordered, 0.75):
-        category = "75th-90th"
-    elif value >= quantile(ordered, 0.25):
-        category = "middle half"
-    elif value >= low10:
-        category = "10th-25th"
+    elif pct < 10:
+        category = "much below"
+    elif pct < 100 / 3:
+        category = "below"
+    elif pct < 200 / 3:
+        category = "near"
+    elif pct < 90:
+        category = "above"
     else:
-        category = "below 10th"
-    outside = value > high90 or value < low10
+        category = "much above"
+    if not comparable:
+        category = f"{category} (median under {MEANINGFUL_NORMAL_INCHES:g} in)"
     return Standing(
         inches=round(value, 2), years=len(past), median=round(median, 2),
         low10=round(low10, 2), high90=round(high90, 2),
         lowest=ordered[0], highest=ordered[-1],
-        rank=rank(value, past), percentile=round(percentile(value, past), 1),
+        rank=rank(value, past), percentile=round(pct, 1),
         anomaly_inches=round(anomaly, 2),
         percent_of_median=(round(100 * value / median)
                            if median >= MEANINGFUL_NORMAL_INCHES else None),
         robust_z=(None if (z := robust_z(value, past)) is None else round(z, 2)),
         category=category,
-        outlier=outside and abs(anomaly) >= MIN_ANOMALY_INCHES,
+        outlier=comparable and (pct < OUTLIER_LOW * 100 or pct >= OUTLIER_HIGH * 100
+                                or category.startswith("record")),
     )
 
 
@@ -200,6 +209,7 @@ class StationRow:
     huc6_name: str = ""
     elevation_feet: float | None = None
     late: bool = False
+    record_years: int = 0
     since_oct1: float | None = None
     last7: float | None = None
     last30: float | None = None
@@ -243,8 +253,10 @@ def analyse(precipitation: dict, history: dict, metadata: dict[str, dict]
     month_days = history["step_month_days"]
     first = history["first_water_year"]
     last = min(history["last_water_year"], water_year - 1)
-    curves = {site["station"]: [decode(year) for year in site["years"]]
-              for site in history["sites"] if site.get("available")}
+    # Full records and, since ADR-170, shorter ones with null for a gap year.
+    curves = {site["station"]: [None if year is None else decode(year) for year in site["years"]]
+              for site in history["sites"] if site.get("years")}
+    full = {site["station"] for site in history["sites"] if site.get("available")}
 
     rows: list[StationRow] = []
     past_by_station: dict[str, list[float]] = {}
@@ -271,11 +283,15 @@ def analyse(precipitation: dict, history: dict, metadata: dict[str, dict]
                 year = first + offset
                 if year > last:
                     break
+                if curve is None:
+                    continue
                 value = value_on_day(curve, year, month_days, day)
                 if value is not None:
                     past.append(value)
-            if len(past) >= 10:
-                past_by_station[row.station] = past
+            row.record_years = len(past)
+            if len(past) >= MIN_RECORD_YEARS:
+                if row.station in full:
+                    past_by_station[row.station] = past
                 row.standing = standing(row.since_oct1, past)
                 z = row.standing.robust_z
                 if (row.standing.category in ("record high", "record low")
@@ -287,6 +303,7 @@ def analyse(precipitation: dict, history: dict, metadata: dict[str, dict]
     for level in LEVELS:
         groups: dict[str, list[StationRow]] = {}
         for row in rows:
+            # Areas are a fixed set: full records only, so every year is the same stations.
             if row.station in past_by_station and getattr(row, level):
                 groups.setdefault(getattr(row, level), []).append(row)
         out = []
@@ -313,10 +330,11 @@ def markdown(day: str, rows: list[StationRow], areas: dict[str, list[dict]],
              top: int, level: str) -> str:
     lines = [f"# Precipitation highs and outliers, water year to {day}", ""]
     ranked = [r for r in rows if r.standing]
-    lines.append(f"{len(rows)} stations; {len(ranked)} with a full history placed "
-                 f"against their own past years on the same date. Outlier: outside "
-                 f"the {int(OUTLIER_LOW*100)}th–{int(OUTLIER_HIGH*100)}th percentile "
-                 f"band and at least {MIN_ANOMALY_INCHES} in from the median.")
+    lines.append(f"{len(rows)} stations; {len(ranked)} with {MIN_RECORD_YEARS} or more past years placed "
+                 f"against their own record ('Years' is its length). Areas use only stations "
+                 f"with the full record. "
+                 f"on the same date. Outlier: lowest or highest tenth of years, once "
+                 f"the median reaches {MEANINGFUL_NORMAL_INCHES:g} in.")
     lines.append("")
 
     def station_table(title: str, subset: list[StationRow], cols: list[str]) -> None:
@@ -335,13 +353,15 @@ def markdown(day: str, rows: list[StationRow], areas: dict[str, list[dict]],
                 "Median (in)": fmt(s and s.median), "% of median": fmt(s and s.percent_of_median, "%"),
                 "Diff (in)": fmt(s and s.anomaly_inches), "Pctile": fmt(s and s.percentile),
                 "Rank": (f"{s.rank}/{s.years + 1}" if s else "—"),
+                "Years": str(r.record_years or "—"),
                 "Class": fmt(s and s.category), "Flags": "; ".join(r.flags) or "",
             }
             lines.append("| " + " | ".join([r.station, r.name, r.state, r.huc6_name]
                                            + [cells[c] for c in cols]) + " |")
         lines.append("")
 
-    std = ["Since 1 Oct (in)", "Median (in)", "% of median", "Diff (in)", "Pctile", "Rank", "Class"]
+    std = ["Since 1 Oct (in)", "Median (in)", "% of median", "Diff (in)", "Pctile", "Rank",
+           "Years", "Class"]
     with_total = [r for r in rows if r.since_oct1 is not None]
     station_table(f"Most precipitation since 1 October (top {top})",
                   sorted(with_total, key=lambda r: -r.since_oct1)[:top], std)

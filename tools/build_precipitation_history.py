@@ -26,7 +26,9 @@ that day is absent, the latest reading in the three days before it, and never
 from before 1 October of the same water year, stands in,
 and the record counts how many times that happened. Nothing is repaired: an
 accumulation that falls between steps is kept as published. A station with
-any step that has no reading inside the rule is not in the fixed set.
+any step that has no reading inside the rule is not in the fixed set; it
+keeps the years it does cover, with null for each year it does not, so the
+map can place it against its own shorter record (ADR-170).
 
 The steps are calendar days, not day counts, so a leap year compares 1 March
 with 1 March.
@@ -73,6 +75,9 @@ BATCH_SIZE = 10
 DEFAULT_WORKERS = 2
 TIMEOUT = 300
 RETRIES = 3
+
+#: Elements whose stations with a gap keep the years they do cover (ADR-170).
+PARTIAL_ELEMENTS = frozenset({"PREC"})
 
 RETRYABLE_REASONS = frozenset({"the provider did not answer"})
 
@@ -174,16 +179,32 @@ def build_site(station: str, record: dict | None, years: range,
         return {"station": station, "available": False,
                 "reason": ELEMENTS[element]["missing"]}
     encoded, substituted = [], 0
+    first_gap = None
     for water_year in years:
         values, borrowed = year_steps(readings, water_year, month_days)
         if values is None:
-            return {"station": station, "available": False,
-                    "reason": "the record does not cover every water year in the window",
-                    "first_gap_water_year": water_year}
+            if first_gap is None:
+                first_gap = water_year
+            if element not in PARTIAL_ELEMENTS:
+                break
+            encoded.append(None)
+            continue
         substituted += borrowed
         encoded.append(encode(values))
-    return {"station": station, "available": True,
-            "substituted_steps": substituted, "years": encoded}
+    if first_gap is None:
+        return {"station": station, "available": True,
+                "substituted_steps": substituted, "years": encoded}
+    site = {"station": station, "available": False,
+            "reason": "the record does not cover every water year in the window",
+            "first_gap_water_year": first_gap}
+    covered = sum(1 for year in encoded if year is not None)
+    if element in PARTIAL_ELEMENTS and covered:
+        # Not in the fixed set (ADR-125): the card never reads these. The
+        # map's comparison with past years places a station against the
+        # years it has, and says how many (ADR-170).
+        site.update({"record_years": covered, "substituted_steps": substituted,
+                     "years": encoded})
+    return site
 
 
 def fetch_batch(session: requests.Session, stations: list[str],

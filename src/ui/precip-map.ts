@@ -30,6 +30,8 @@ import type { SnowSite } from "../types";
 import { formatDate } from "../viz/format";
 import { PRECIP_CLASSES, PRECIP_NO_VALUE_COLOR, precipClassIndex } from "../viz/precip-classes";
 import { SOIL_CLASSES, soilChangeText, soilClassIndex } from "../viz/soil-classes";
+import type { Standing, StandingValues } from "../precip-standing-model";
+import { STANDING_RECORD_RING, standingClassRow, standingShortLabel } from "../viz/precip-standing-classes";
 import { hitLayerId, type GraphicHit } from "./hit";
 import { drainageLabelingInfo } from "./layers";
 import { wireMapHover, type HoverResolution } from "./map-hover";
@@ -41,8 +43,9 @@ const SITE_LAYER_ID = "precip-sites";
 const OUTLINE = { color: "#5b6b7a", width: 0.7 };
 
 export interface PrecipMapStatus {
-  /** What the areas and points show: recent precipitation, or the week's soil-moisture change. */
-  mode: "rain" | "soil";
+  /** What the areas and points show: recent precipitation, the week's
+   * soil-moisture change, or this water year against past years (ADR-170). */
+  mode: "rain" | "soil" | "years";
   basemap: boolean;
   basemapDegraded: boolean;
   viewReady: boolean;
@@ -57,6 +60,7 @@ export interface PrecipMapController {
   status: PrecipMapStatus;
   setValues(values: PrecipMapValues): void;
   setSoilValues(values: SoilMapValues): void;
+  setStandingValues(values: StandingValues): void;
 }
 
 /* Property objects, not constructed symbols: the convention `snow-map.ts`
@@ -93,6 +97,34 @@ function soilBasinSymbol(meanPoints: number | null): unknown {
     color: index < 0 ? [148, 155, 162, 0.12] : hexRgba(SOIL_CLASSES[index]!.color, 0.55),
     outline: OUTLINE
   };
+}
+
+/* Past years (ADR-170): the class's colour, a dark ring on a record. */
+function standingSiteSymbol(standing: Standing | undefined): unknown {
+  const row = standingClassRow(standing?.standingClass);
+  if (!row) return { type: "simple-marker", size: 4, color: hexRgba(PRECIP_NO_VALUE_COLOR, 0.9) as Rgba, outline: { color: "#ffffff", width: 0.5 } };
+  return standing?.record
+    ? { type: "simple-marker", size: 8, color: hexRgba(row.color, 0.95), outline: { color: STANDING_RECORD_RING, width: 2 } }
+    : { type: "simple-marker", size: 6, color: hexRgba(row.color, 0.95), outline: { color: OUTLINE.color, width: 0.8 } };
+}
+
+function standingBasinSymbol(standing: Standing | null | undefined): unknown {
+  const row = standingClassRow(standing?.standingClass);
+  return {
+    type: "simple-fill",
+    color: row ? hexRgba(row.color, 0.55) : [148, 155, 162, 0.12],
+    outline: OUTLINE
+  };
+}
+
+/** One line for a station or an area against past years, in words. */
+export function standingText(standing: Standing): string {
+  const record = standing.record === "wettest" ? ", the wettest of the years compared"
+    : standing.record === "driest" ? ", the driest of the years compared" : "";
+  const where = standing.standingClass === null ? "Too little usual precipitation by this date to compare"
+    : standingShortLabel(standing.standingClass);
+  return `${where}${record}. ${standing.inches.toFixed(1)} in since 1 October against a median of `
+    + `${standing.medianInches.toFixed(1)} in, rank ${standing.rank} of ${standing.years + 1} years`;
 }
 
 const percentText = (value: number | null): string => value === null ? "no value" : `${value.toFixed(1)}%`;
@@ -154,6 +186,16 @@ export async function createPrecipMap(
   };
   let current: PrecipMapValues | null = null;
   let soil: SoilMapValues | null = null;
+  let standing: StandingValues | null = null;
+  const standingRenderer = (values: StandingValues): unknown => ({
+    type: "unique-value",
+    field: codeField,
+    defaultSymbol: standingBasinSymbol(null),
+    uniqueValueInfos: areas.map((area) => ({
+      value: area.huc6,
+      symbol: standingBasinSymbol(values.areas.get(area.huc6)?.standing)
+    }))
+  });
 
   /* The fill is the background and the sites read on top of it. */
   const map = new ArcGISMap({ layers: [basinLayer, siteLayer] });
@@ -168,6 +210,7 @@ export async function createPrecipMap(
     setValues(values) {
       current = values;
       soil = null;
+      standing = null;
       status.mode = "rain";
       basinLayer.renderer = basinRenderer(values) as never;
       for (const [station, graphic] of graphics) {
@@ -180,6 +223,7 @@ export async function createPrecipMap(
     },
     setSoilValues(values) {
       soil = values;
+      standing = null;
       status.mode = "soil";
       basinLayer.renderer = soilRenderer(values) as never;
       for (const [station, graphic] of graphics) {
@@ -189,7 +233,62 @@ export async function createPrecipMap(
       status.basinsWithValue = areas.filter((area) => (values.areas.get(area.huc6)?.meanPoints ?? null) !== null).length;
       status.withValue = [...graphics.keys()].filter((station) => values.sites.get(station)?.change_points != null).length;
       status.notUsed = graphics.size - status.withValue;
+    },
+    setStandingValues(values) {
+      standing = values;
+      soil = null;
+      status.mode = "years";
+      basinLayer.renderer = standingRenderer(values) as never;
+      for (const [station, graphic] of graphics) {
+        graphic.visible = true;
+        graphic.symbol = standingSiteSymbol(values.sites.get(station)) as never;
+      }
+      status.basinsWithValue = areas.filter((area) => values.areas.get(area.huc6)?.standing).length;
+      status.withValue = [...graphics.keys()].filter((station) => values.sites.has(station)).length;
+      status.notUsed = graphics.size - status.withValue;
     }
+  };
+
+  const standingHover = (results: readonly GraphicHit[], values: StandingValues): HoverResolution | null => {
+    for (const result of results) {
+      const attributes = result.graphic?.attributes;
+      if (!attributes) continue;
+      const layerId = hitLayerId(result);
+      if (layerId === SITE_LAYER_ID) {
+        const site = siteByStation.get(String(attributes["station"]));
+        if (!site) continue;
+        const reading = values.sites.get(site.station);
+        return {
+          content: {
+            heading: site.name,
+            lines: [
+              reading ? standingText(reading)
+                : "Not compared: no value on the date, or fewer than 10 past years in its record",
+              ...(reading ? [`Record of ${reading.years} past years, ${values.firstWaterYear} to ${values.lastWaterYear}`
+                + (reading.fullRecord ? "" : ", with gaps")] : []),
+              `${Math.round(site.elevation_feet).toLocaleString("en-US")} feet, ${site.huc6_name}`
+            ]
+          },
+          graphic: result.graphic
+        };
+      }
+      if (layerId === BASIN_LAYER_ID) {
+        const area = values.areas.get(String(attributes[codeField]));
+        if (!area) continue;
+        return {
+          content: {
+            heading: String(attributes[WATERSHED_NAME_FIELD]),
+            lines: [
+              area.standing ? `Mean of its stations: ${standingText(area.standing)}`
+                : `Too few stations with the full record: ${area.stations} of the ${area.floor} needed`,
+              `${area.stations} station${area.stations === 1 ? "" : "s"} with every year from ${values.firstWaterYear}`
+            ]
+          },
+          graphic: result.graphic
+        };
+      }
+    }
+    return null;
   };
 
   const soilHover = (results: readonly GraphicHit[], values: SoilMapValues): HoverResolution | null => {
@@ -243,6 +342,7 @@ export async function createPrecipMap(
     include: () => [siteLayer, basinLayer],
     resolve: (results: readonly GraphicHit[]): HoverResolution | null => {
       if (soil) return soilHover(results, soil);
+      if (standing) return standingHover(results, standing);
       if (!current) return null;
       const end = current.endDate ? `, to ${formatDate(current.endDate)}` : "";
       for (const result of results) {

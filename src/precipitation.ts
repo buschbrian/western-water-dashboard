@@ -155,6 +155,8 @@ function renderPage(place: SnowPlace, rosters: OpeningRosters, level: number, up
   let mapSection: PrecipMapSection | null = null;
   const card = createPrecipitationCard(section, () => {
     mapSection?.update(card.recent.window, card.recent.totals);
+    const data = card.data;
+    if (data) mapSection?.setHistory(data.daily, data.history);
     publishReady();
   }, { siteHref, recentMap: true, copyFigures: { where: upstream?.applied
     ? `mountain sites upstream of ${upstream.name ?? "the requested reservoir"}, in ${placeName(place)}` : placeName(place) } });

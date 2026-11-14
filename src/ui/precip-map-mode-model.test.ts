@@ -7,8 +7,8 @@ import { precipMapLabel, precipMapModeView, SOIL_FAILED_TEXT, soilSwitchLabel } 
 describe("the precipitation map's mode switch", () => {
   it("opens on rain with the day buttons and the rain list", () => {
     expect(precipMapModeView("rain", "idle")).toEqual({
-      mode: "rain", rainPressed: true, soilPressed: false, rainShown: true, soilShown: false,
-      recentListShown: true, failure: null
+      mode: "rain", rainPressed: true, soilPressed: false, yearsPressed: false,
+      rainShown: true, soilShown: false, yearsShown: false, recentListShown: true, failure: null
     });
   });
 
@@ -29,7 +29,15 @@ describe("the precipitation map's mode switch", () => {
     expect(precipMapModeView("rain", "failed").failure).toBeNull();
   });
 
+  it("shows past years with the day buttons hidden (ADR-170)", () => {
+    const view = precipMapModeView("years", "failed");
+    expect(view.mode).toBe("years");
+    expect(view.yearsPressed && view.yearsShown && !view.rainShown && !view.recentListShown).toBe(true);
+    expect(view.failure).toBeNull();
+  });
+
   it("names the map for what it shows", () => {
+    expect(precipMapLabel("years")).toContain("against past years");
     expect(precipMapLabel("rain")).toContain("recent precipitation");
     expect(precipMapLabel("soil")).toContain("change in soil moisture");
   });

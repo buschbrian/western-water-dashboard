@@ -156,7 +156,8 @@ ADR-041.**
   [ADR-142](ADR-142-show-the-weeks-change-in-mountain-soil-moisture.md),
   [ADR-144](ADR-144-compare-natural-river-gauges-with-the-surveys-day-of-year-percentiles.md),
   [ADR-145](ADR-145-compare-river-gauges-above-ten-years-shorten-two-names-and-round-the-page.md),
-  [ADR-165](ADR-165-compare-snow-water-with-earlier-seasons-at-a-fixed-set-of-sites.md)
+  [ADR-165](ADR-165-compare-snow-water-with-earlier-seasons-at-a-fixed-set-of-sites.md),
+  [ADR-170](ADR-170-compare-each-stations-precipitation-with-its-own-past-years-on-the-map.md)
 - Current architecture: [`docs/architecture/hydrology-methods.md`](../architecture/hydrology-methods.md)
 
 - Soil input validity: [ADR-167](ADR-167-enforce-the-soil-percent-bound-before-averaging.md)
@@ -395,6 +396,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-166](ADR-166-offer-terminal-lakes-in-the-page-navigation.md) | Offer terminal lakes in the page navigation | Proposed; keep ADR-159’s merged lake contract and add compact navigation after the second lake |
 | [ADR-167](ADR-167-enforce-the-soil-percent-bound-before-averaging.md) | Enforce the soil percentage bound before averaging | Proposed; reject physically impossible SMS values at ingestion while keeping existing means and coverage rules |
 | [ADR-168](ADR-168-publish-every-bulk-queue-river-gauge.md) | Publish every bulk-queue river gauge | Proposed; extends ADR-136, ADR-137 and ADR-138; the four worksheets' bulk `reservoir` and `natural` rows join the roster pending formal ruling (133 measured 2026-11-14), written by `tools/admit_bulk_river_gauges.py`; exclusions, waterwork names, non-reference natural rows and open name checks held |
+| [ADR-170](ADR-170-compare-each-stations-precipitation-with-its-own-past-years-on-the-map.md) | Compare each station's precipitation with its own past years on the map | Proposed; NCEI ranking classes, partial records placed against their own years, areas over full records |
 
 ## Relationship to the historical journal
 

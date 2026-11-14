@@ -1,6 +1,7 @@
 /*
  * The precipitation map's mode in the address bar (ADR-142): `?layer=soil`
- * opens the map on the week's change in soil moisture. Rain is the default
+ * opens the map on the week's change in soil moisture, `?layer=years` on this
+ * water year against past years (ADR-170). Rain is the default
  * and is written as the absence of the parameter, so a link carries what the
  * reader changed and nothing else. An unknown value reads as rain. The
  * parameter is page-local and is not carried to the other pages. Same
@@ -10,12 +11,13 @@ import type { PrecipMapMode } from "../ui/precip-map-mode-model";
 
 export function precipLayerFromSearch(search: string | null | undefined): PrecipMapMode {
   const values = new URLSearchParams(String(search ?? "").replace(/^\?+/, "")).getAll("layer");
-  return values[values.length - 1] === "soil" ? "soil" : "rain";
+  const value = values[values.length - 1];
+  return value === "soil" || value === "years" ? value : "rain";
 }
 
 export function precipLayerSearch(mode: PrecipMapMode, search: string | null | undefined): string {
   const params = new URLSearchParams(String(search ?? "").replace(/^\?+/, ""));
-  if (mode === "soil") params.set("layer", "soil");
+  if (mode !== "rain") params.set("layer", mode);
   else params.delete("layer");
   const text = params.toString();
   return text ? `?${text}` : "";

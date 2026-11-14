@@ -459,6 +459,24 @@ totals are rounded to the gauge's tenth of an inch.
 precipitation with 1991 through the last finished year, rebuilt each
 October. A history is not a normal, and each card names its own years.
 
+## Precipitation against past years on the map
+
+**Each station against its own record** (ADR-170). The map's third mode
+places each station's precipitation since 1 October against the same
+calendar date in each of its past water years, read between weekly steps
+as the card reads them, on the newest day `SET_SHARE` of on-time stations
+report. A station needs `MIN_RECORD_YEARS` (10) past years; one with a gap
+is compared with the years it has, and the page counts them. The history
+builder keeps those years for precipitation only (`record_years`, null for a
+gap year) and leaves `available` false, so the card's fixed set is unchanged.
+
+**Classes are NCEI's ranking classes**: lowest tenth, lowest third, middle
+third, highest third, highest tenth of a mid-rank percentile compared to a
+tenth of an inch. Above or below every past year is a ring, not a class.
+No class while the median for the date is under `MEANINGFUL_NORMAL_INCHES`.
+An area is the mean of its full-record stations, at least
+`MIN_AREA_STATIONS` (3), against the same mean in every past year.
+
 ## Snow water against its own history
 
 **Precipitation's rules, over snow water** (ADR-165).

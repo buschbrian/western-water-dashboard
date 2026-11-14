@@ -1034,6 +1034,12 @@ export interface PrecipitationHistory {
   site_count: number;
   available_site_count: number;
   sites: ReadonlyMap<string, number[][]>;
+  /**
+   * Stations outside the fixed set that keep the years they cover, null for
+   * a year they do not (ADR-170). The card never reads these; the map's
+   * comparison with past years places a station against its own record.
+   */
+  partialSites: ReadonlyMap<string, (number[] | null)[]>;
 }
 
 /*

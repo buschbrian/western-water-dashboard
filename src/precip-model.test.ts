@@ -18,6 +18,7 @@ function history(stations: Record<string, (year: number) => number>, years = 5):
     step_month_days: STEPS,
     site_count: Object.keys(stations).length,
     available_site_count: Object.keys(stations).length,
+    partialSites: new Map(),
     sites: new Map(Object.entries(stations).map(([station, scale]) => [
       station,
       Array.from({ length: years }, (_, year) => shape.map((value) => value * scale(year)))

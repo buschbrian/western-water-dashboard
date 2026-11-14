@@ -29,15 +29,19 @@ def test_decode_and_straight_line_between_weekly_steps():
     assert value_on_day(curve, 2026, MONTH_DAYS, date(2025, 11, 1)) is None
 
 
-def test_standing_classes_and_the_outlier_needs_a_real_difference():
+def test_standing_uses_ncei_classes_and_waits_for_an_inch_of_median():
     past = [float(v) for v in range(1, 21)]
     assert standing(25.0, past).category == "record high"
     assert standing(25.0, past).outlier
     assert standing(0.0, past).category == "record low"
-    assert standing(10.5, past).category == "middle half"
-    small = [0.2 + 0.01 * k for k in range(20)]  # a dry October: tiny spreads
-    assert standing(0.6, small).category == "record high"
-    assert not standing(0.6, small).outlier  # under half an inch from the median
+    assert standing(10.5, past).category == "near"
+    assert standing(1.5, past).category == "much below"
+    assert standing(1.5, past).outlier
+    assert standing(5.5, past).category == "below"
+    assert not standing(5.5, past).outlier
+    small = [0.2 + 0.01 * k for k in range(20)]  # a dry October: median under an inch
+    assert standing(0.6, small).category.startswith("record high (median under")
+    assert not standing(0.6, small).outlier
 
 
 def test_percent_of_median_waits_for_an_inch():
@@ -72,8 +76,8 @@ def test_analysis_places_stations_and_areas_against_their_own_years():
     assert by["1:UT:SNTL"].standing.outlier
     assert by["2:UT:SNTL"].standing.category == "record low"
     assert by["2:UT:SNTL"].standing.outlier
-    assert by["3:UT:SNTL"].standing.category == "below 10th"
-    assert not by["3:UT:SNTL"].standing.outlier  # under half an inch from the median
+    assert by["3:UT:SNTL"].standing.category == "much below"
+    assert by["3:UT:SNTL"].standing.outlier
     assert by["1:UT:SNTL"].last7 == 6.0
     (jordan,) = areas["huc6"]
     assert jordan["stations"] == 3 and jordan["category"] == "record high"
@@ -87,3 +91,21 @@ def test_a_falling_accumulation_is_flagged_not_repaired():
                          history({}), {})
     assert rows[0].since_oct1 == 0.6
     assert rows[0].flags == ["accumulation falls on 1 day(s)"]
+
+
+def test_a_shorter_record_is_placed_but_kept_out_of_areas():
+    dates = ["2026-10-01", "2026-10-08"]
+    sites = [{"station": f"{n}:UT:SNTL", "late": False, "series_days": [0, 1],
+              "series_values": [0.0, 5.0]} for n in (1, 2, 3, 4)]
+    hist = history({f"{n}:UT:SNTL": [[0, 10 + k, 0, 0] for k in range(10)] for n in (1, 2, 3)})
+    hist["sites"].append({"station": "4:UT:SNTL", "available": False,
+                          "years": [None] + [[0, 10 + k, 0, 0] for k in range(9)]})
+    meta = {f"{n}:UT:SNTL": {"state": "UT", "huc6": "160202", "huc6_name": "Jordan"}
+            for n in (1, 2, 3, 4)}
+    _, rows, areas = analyse({"series_dates": dates, "sites": sites}, hist, meta)
+    by = {r.station: r for r in rows}
+    assert by["4:UT:SNTL"].record_years == 9
+    assert by["4:UT:SNTL"].standing is None  # under ten years
+    assert by["1:UT:SNTL"].record_years == 10
+    (jordan,) = areas["huc6"]
+    assert jordan["stations"] == 3

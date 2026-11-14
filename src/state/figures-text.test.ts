@@ -259,6 +259,7 @@ function history(stations: string[], years = 5): PrecipitationHistory {
     step_month_days: STEPS,
     site_count: stations.length,
     available_site_count: stations.length,
+    partialSites: new Map(),
     sites: new Map(stations.map((station) => [station,
       Array.from({ length: years }, (_, year) => shape.map((value) => value * (year + 1)))]))
   };

@@ -92,6 +92,9 @@ export interface PrecipitationCard {
   /** The recent totals as drawn, and the window the buttons choose; null
    * totals until the daily file is in. */
   readonly recent: { window: StormWindow; totals: StormTotals | null };
+  /** Both files once they are in, for the map's comparison with past years
+   * (ADR-170); null until then, so the history is fetched once. */
+  readonly data: { daily: PrecipitationPayload; history: PrecipitationHistory } | null;
   /** Show or hide the day buttons and the station list of recent totals,
    * for a map that is showing something else (ADR-142). */
   showRecentList(shown: boolean): void;
@@ -704,6 +707,7 @@ export function createPrecipitationCard(
     },
     get status() { return { ...status, storm: { ...status.storm } }; },
     get recent() { return { window: status.storm.window, totals: stormView }; },
+    get data() { return daily && history ? { daily, history } : null; },
     showRecentList(shown) {
       recentListShown = shown;
       drawStorm();
