@@ -1,19 +1,30 @@
-/* The composed CIM symbol has to carry exactly what the two simple markers
- * carried. These assertions are against `reservoirSymbol` -- which
- * symbols.test.ts holds against `shared/reservoir-viz.js` -- and never
- * against a literal radius, so a morning's data refresh cannot fail them. */
+/* The two CIM symbols the reservoir renderer is built from. Headless
+ * Chromium draws the ArcGIS canvas blank, so a symbol the SDK silently
+ * refuses -- which is how the template first shipped, as an empty map --
+ * can only be caught here. */
 import { describe, expect, it } from "vitest";
-import { readPayload } from "../data/payload-fixture";
+import { fillSizeExpression, ringSizeExpression } from "./arcade";
 import { CAPACITY_RING_COLOR, STALE_ACCENT } from "./classes";
-import { LATE_DASH, cimColor, circleRing, reservoirCIM } from "./cim";
-import { reservoirSymbol, sizeDomain } from "./symbols";
-import { cssPixelsToPoints } from "./units";
+import {
+  LATE_DASH, cimColor, circleRing, reservoirCIMTemplate, reservoirCIMTemplateSimple,
+  type CIMTemplateSymbol
+} from "./cim";
+import { RESERVOIR_DETAIL_SCALE } from "./label-scales";
 
-const reservoirs = readPayload().reservoirs;
-const domain = sizeDomain(reservoirs);
+const DOMAIN = 1_000_000;
+const GREEN = "#1a9850";
 
-function layersOf(symbol: ReturnType<typeof reservoirCIM>) {
+function layersOf(symbol: CIMTemplateSymbol) {
   return symbol.data.symbol.symbolLayers;
+}
+
+function layer(symbol: CIMTemplateSymbol, name: string) {
+  return layersOf(symbol).find((candidate) => candidate.primitiveName === name);
+}
+
+function partsOf(symbol: CIMTemplateSymbol) {
+  return layersOf(symbol).flatMap((candidate) =>
+    candidate.markerGraphics.flatMap((graphic) => graphic.symbol.symbolLayers));
 }
 
 describe("CIM colour", () => {
@@ -55,90 +66,71 @@ describe("circle geometry", () => {
   });
 });
 
-describe("the composed reservoir symbol", () => {
-  it("draws every published reservoir at its tested ring size", () => {
-    for (const reservoir of reservoirs) {
-      const symbol = reservoirSymbol(reservoir, domain);
-      const layers = layersOf(reservoirCIM(symbol));
-      const ring = layers.find((layer) => layer.markerGraphics[0]?.symbol
-        .symbolLayers.some((part) => part.type === "CIMSolidStroke" && part.width >= 1));
-      expect(ring?.size).toBe(cssPixelsToPoints(symbol.ringPx));
-    }
-  });
+describe("the reservoir template symbols", () => {
+  const builders = [
+    ["detailed", reservoirCIMTemplate],
+    ["simplified", reservoirCIMTemplateSimple]
+  ] as const;
 
-  it("gives every symbol layer a colour the SDK can read", () => {
-    for (const reservoir of reservoirs) {
-      const symbol = reservoirSymbol(reservoir, domain);
-      for (const layer of layersOf(reservoirCIM(symbol))) {
-        for (const part of layer.markerGraphics[0]?.symbol.symbolLayers ?? []) {
-          expect(Array.isArray(part.color), `${reservoir.name} ${part.type}`).toBe(true);
-          expect(part.color).toHaveLength(4);
-        }
+  it.each(builders)("%s: overrides only Size, and only on layers it names", (_, build) => {
+    /* A Color override, or one naming a layer that is not there, makes the
+     * SDK draw nothing at all rather than report a problem. */
+    for (const late of [false, true]) {
+      const symbol = build(DOMAIN, late, GREEN);
+      const names = layersOf(symbol).map((candidate) => candidate.primitiveName);
+      expect(symbol.data.primitiveOverrides.length).toBeGreaterThan(0);
+      for (const entry of symbol.data.primitiveOverrides) {
+        expect(entry.propertyName).toBe("Size");
+        expect(names).toContain(entry.primitiveName);
       }
     }
   });
 
-  it("draws the storage fill at its tested size and class colour", () => {
-    const withFill = reservoirs
-      .map((reservoir) => reservoirSymbol(reservoir, domain))
-      .filter((symbol) => symbol.fillPx > 0);
-    expect(withFill.length).toBeGreaterThan(0);
+  it.each(builders)("%s: sizes the ring and fill from the layer's own fields", (_, build) => {
+    const expressions = Object.fromEntries(build(DOMAIN, false, GREEN).data.primitiveOverrides
+      .map((entry) => [entry.primitiveName, entry.valueExpressionInfo.expression]));
+    expect(expressions["ring"]).toBe(ringSizeExpression(DOMAIN));
+    expect(expressions["fill"]).toBe(fillSizeExpression(DOMAIN));
+  });
 
-    for (const symbol of withFill) {
-      const [fill] = layersOf(reservoirCIM(symbol));
-      expect(fill?.size).toBe(cssPixelsToPoints(symbol.fillPx));
-      const solid = fill?.markerGraphics[0]?.symbol.symbolLayers[0];
-      expect(solid).toEqual({
-        type: "CIMSolidFill",
-        enable: true,
-        color: cimColor(symbol.color)
-      });
+  it.each(builders)("%s: gives every part a colour the SDK can read in a square frame", (_, build) => {
+    const symbol = build(DOMAIN, true, GREEN);
+    for (const part of partsOf(symbol)) {
+      expect(Array.isArray(part.color), part.type).toBe(true);
+      expect(part.color).toHaveLength(4);
+    }
+    for (const { frame } of layersOf(symbol)) {
+      expect(frame.xmax - frame.xmin).toBe(frame.ymax - frame.ymin);
     }
   });
 
-  it("omits the fill entirely when the percentage cannot be read", () => {
-    const symbol = { ringPx: 20, fillPx: 0, color: "#9e9e9e", accent: null };
-    const layers = layersOf(reservoirCIM(symbol));
-    expect(layers).toHaveLength(2);
-    expect(layers.some((layer) => layer.size < cssPixelsToPoints(20))).toBe(false);
-  });
-
-  it("dashes the ring in the late-data accent, and only then", () => {
-    const late = reservoirCIM({ ringPx: 20, fillPx: 10, color: "#1a9850", accent: STALE_ACCENT });
-    const lateStroke = layersOf(late)[1]?.markerGraphics[0]?.symbol.symbolLayers[0];
-    expect(lateStroke).toMatchObject({
-      color: cimColor(STALE_ACCENT),
-      effects: [{ type: "CIMGeometricEffectDashes", dashTemplate: [...LATE_DASH] }]
-    });
-
-    /* The ring is the capacity, so it carries the constant outline rather
-     * than the storage colour -- only the fill is coloured by the value. It
-     * used to take the storage colour, which broke once the ramp became
-     * sequential: a near-empty reservoir is a ring with almost no fill in it,
-     * so a pale low end made the whole symbol disappear. */
-    const current = reservoirCIM({ ringPx: 20, fillPx: 10, color: "#1a9850", accent: null });
-    const stroke = layersOf(current)[1]?.markerGraphics[0]?.symbol.symbolLayers[0];
+  it("colours the fill by class and the ring by capacity, amber and dashed when late", () => {
+    const current = reservoirCIMTemplate(DOMAIN, false, GREEN);
+    expect(layer(current, "fill")?.markerGraphics[0]?.symbol.symbolLayers[0])
+      .toMatchObject({ type: "CIMSolidFill", color: cimColor(GREEN) });
+    const stroke = layer(current, "ring")?.markerGraphics[0]?.symbol.symbolLayers[0];
     expect(stroke).toMatchObject({ color: cimColor(CAPACITY_RING_COLOR) });
     expect(stroke).not.toHaveProperty("effects");
 
-    const fill = layersOf(current)[0]?.markerGraphics[0]?.symbol.symbolLayers[0];
-    expect(fill, "the fill still carries the storage colour")
-      .toMatchObject({ color: cimColor("#1a9850") });
+    const late = layer(reservoirCIMTemplate(DOMAIN, true, GREEN), "ring")
+      ?.markerGraphics[0]?.symbol.symbolLayers[0];
+    expect(late).toMatchObject({
+      color: cimColor(STALE_ACCENT),
+      effects: [{ type: "CIMGeometricEffectDashes", dashTemplate: [...LATE_DASH] }]
+    });
   });
 
-  it("puts the shadow under the ring, never over the fill", () => {
-    const layers = layersOf(reservoirCIM(
-      { ringPx: 20, fillPx: 14, color: "#1a9850", accent: null }));
-    expect(layers).toHaveLength(3);
-    expect(layers[2]?.size).toBeGreaterThan(layers[1]?.size ?? 0);
-    expect(layers[2]?.offsetX).toBeDefined();
-  });
+  it("hands over between the two at one scale, the simplified one without shadow or dash", () => {
+    const detailed = reservoirCIMTemplate(DOMAIN, true, GREEN);
+    const simple = reservoirCIMTemplateSimple(DOMAIN, true, GREEN);
+    expect(detailed.data).toMatchObject({ minScale: RESERVOIR_DETAIL_SCALE, maxScale: 0 });
+    expect(simple.data).toMatchObject({ minScale: 0, maxScale: RESERVOIR_DETAIL_SCALE });
 
-  it("keeps the marker frame square so the circles are not ovals", () => {
-    for (const layer of layersOf(reservoirCIM(
-      { ringPx: 33, fillPx: 12, color: "#fdae61", accent: null }))) {
-      const { xmin, xmax, ymin, ymax } = layer.frame;
-      expect(xmax - xmin).toBe(ymax - ymin);
-    }
+    expect(layersOf(detailed).map((candidate) => candidate.primitiveName))
+      .toEqual(["fill", "ring", "shadow"]);
+    expect(layersOf(simple).map((candidate) => candidate.primitiveName)).toEqual(["fill", "ring"]);
+    const simpleRing = layer(simple, "ring")?.markerGraphics[0]?.symbol.symbolLayers[0];
+    expect(simpleRing).toMatchObject({ color: cimColor(STALE_ACCENT) });
+    expect(simpleRing).not.toHaveProperty("effects");
   });
 });

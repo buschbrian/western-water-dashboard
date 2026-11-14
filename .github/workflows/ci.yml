@@ -1,16 +1,18 @@
 name: CI
 
-# Runs on every push and PR. Each job runs the same entry point a contributor
-# runs locally -- `npm run verify:frontend`, `verify:pipeline`,
-# `verify:browser` -- split into named steps here because when this goes red on
-# a data-refresh morning, the step name is the whole diagnosis.
+# Runs once per commit: on pull requests, and on pushes to main (merges and
+# direct commits). A branch push with no pull request runs only by dispatch.
+# Each job runs the same entry point a contributor runs locally --
+# `npm run verify:frontend`, `verify:pipeline`, `verify:browser` -- split
+# into named steps here because when this goes red on a data-refresh morning,
+# the step name is the whole diagnosis.
 #
 # Neither of these jobs existed before, which is
 # why a page that rendered zero reservoirs could ship green: nothing checked
 # the data script's behavior, and nothing ever loaded the dashboards.
 on:
   push:
-    branches: ["**"]
+    branches: ["main"]
   pull_request:
   workflow_dispatch: {}
 
@@ -47,6 +49,8 @@ jobs:
         run: npm run budget:sdk
       - name: Production build
         run: npx vite build
+      - name: Every published path is in dist, and no payload was bundled
+        run: node scripts/check-dist.mjs
 
   python-tests:
     name: Data script tests

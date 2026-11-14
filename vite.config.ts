@@ -1,3 +1,4 @@
+import { readFileSync } from "node:fs";
 import { copyFile, cp, mkdir, readdir, rm } from "node:fs/promises";
 import { resolve } from "node:path";
 // From vitest/config rather than vite: it is the same defineConfig with the
@@ -8,6 +9,17 @@ import { writeSharePages } from "./src/build/share-pages";
 
 const root = process.cwd();
 const outDir = resolve(root, "dist");
+
+/* What the build publishes, in one list: the pages it builds, the runtime
+ * data it copies to dist/ and dist/data/, and the API aliases. The deploy
+ * checks dist/ against the same file (scripts/check-dist.mjs). The later
+ * additions each have a record: the story page ADR-128, reservoir levels
+ * ADR-135, precipitation ADR-125, snow history ADR-165, soil moisture
+ * ADR-142, river flow ADR-136, and the day-by-day histories ADR-146. */
+const published = JSON.parse(
+  readFileSync(resolve(root, "scripts", "published-files.json"), "utf8")) as {
+  pages: string[]; runtime_data: string[]; api_aliases: string[];
+};
 
 function preserveRuntimeDataAndRedirects(): Plugin {
   return {
@@ -61,30 +73,13 @@ function preserveRuntimeDataAndRedirects(): Plugin {
       // draws a mask from it any more, so the reviewed polygon stays
       // committed for Python's point-in-state classification and stops
       // being copied here.
-      for (const file of [
-        "reservoirs.json", "lakes.json", "snow_sites.json", "snowpack.json",
-        "reference.json", "capacities.json", "upstream_index.json",
-        // ADR-135: the reviewed reservoir levels, day by day, for the chart.
-        "elevation_history.json",
-        // ADR-125: the daily precipitation file and its committed history.
-        "precipitation.json", "precipitation_history.json",
-        // ADR-165: snow water on the same weekly steps, for the snow page.
-        "snow_history.json",
-        // ADR-142: the daily soil-moisture file.
-        "soil_moisture.json",
-        // ADR-136: daily river flow at the reviewed gauges.
-        "rivers.json",
-        // ADR-146: the daily river flow and soil-moisture change, kept day by day.
-        "river_history.json", "soil_moisture_history.json", "reservoir_flow_history.json"
-      ]) {
+      for (const file of published.runtime_data) {
         await copyFile(resolve(root, file), resolve(outDir, file));
         await copyFile(resolve(root, file), resolve(outDir, "data", file));
       }
       // Stable public API aliases. These are second copies of the same
       // runtime files, never imports and never a second source of truth.
-      for (const file of ["reservoirs.json", "lakes.json", "elevation_history.json", "rivers.json",
-        "river_history.json", "soil_moisture_history.json", "reservoir_flow_history.json",
-        "snowpack.json", "reference.json"]) {
+      for (const file of published.api_aliases) {
         await copyFile(resolve(root, file), resolve(outDir, "api", file));
       }
       await copyFile(resolve(root, "legacy", "index.html"),
@@ -123,25 +118,8 @@ export default defineConfig({
     outDir,
     emptyOutDir: true,
     rollupOptions: {
-      input: {
-        index: resolve(root, "index.html"),
-        modern: resolve(root, "modern.html"),
-        overview: resolve(root, "overview.html"),
-        precipitation: resolve(root, "precipitation.html"),
-        snow: resolve(root, "snow.html"),
-        drought: resolve(root, "drought.html"),
-        methods: resolve(root, "methods.html"),
-        data: resolve(root, "data.html"),
-        reservoir: resolve(root, "reservoir.html"),
-        lakes: resolve(root, "lakes.html"),
-        rivers: resolve(root, "rivers.html"),
-        // ADR-128: the story views, for embedding. Not in the navigation.
-        story: resolve(root, "story.html"),
-        explore: resolve(root, "explore.html"),
-        terms: resolve(root, "terms.html"),
-        reporters: resolve(root, "reporters.html"),
-        landscape: resolve(root, "landscape.html")
-      }
+      input: Object.fromEntries(published.pages
+        .map((page) => [page.replace(/\.html$/, ""), resolve(root, page)]))
     }
   },
   plugins: [preserveRuntimeDataAndRedirects()]

@@ -50,14 +50,6 @@ describe("the drainage-area roster", () => {
     }
   });
 
-  it("covers the areas the published reservoirs are assigned to", () => {
-    const drawn = new Set(areas.map((area) => area.huc6));
-    const assigned = new Set(readPayload().reservoirs
-      .map((reservoir) => reservoir.huc6)
-      .filter((huc6): huc6 is string => typeof huc6 === "string"));
-    expect([...assigned].filter((huc6) => !drawn.has(huc6))).toEqual([]);
-  });
-
   /* The reservoirs are the page; the areas are context. A roster that
    * arrives broken, half-written or replaced by an error document must cost
    * the reader context and nothing else. */

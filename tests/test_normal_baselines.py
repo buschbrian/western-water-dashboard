@@ -475,8 +475,6 @@ def test_a_missing_normals_file_costs_the_climate_baseline_and_nothing_else():
 # The committed file
 # --------------------------------------------------------------------------
 
-@pytest.mark.skipif(not (ROOT / "normals.json").exists(),
-                    reason="normals.json has not been built in this checkout")
 def test_the_committed_normals_file_matches_the_builder_that_writes_it():
     payload = json.loads((ROOT / "normals.json").read_text(encoding="utf-8"))
     assert payload["schema_version"] == B.SCHEMA_VERSION
@@ -488,8 +486,6 @@ def test_the_committed_normals_file_matches_the_builder_that_writes_it():
         <= payload["sources"].keys()
 
 
-@pytest.mark.skipif(not (ROOT / "normals.json").exists(),
-                    reason="normals.json has not been built in this checkout")
 def test_the_committed_normals_cover_every_reservoir_on_the_roster():
     """Covered means named, not necessarily available. A reservoir the builder
     could not reach must appear with its reason, so a silent omission and a
@@ -508,20 +504,28 @@ def test_the_committed_normals_cover_every_reservoir_on_the_roster():
             assert record["reason"], record["name"]
 
 
-@pytest.mark.skipif(not (ROOT / "normals.json").exists(),
-                    reason="normals.json has not been built in this checkout")
 def test_the_climate_normals_hold_the_water():
     """The measurement that justified building this at all: the climate
     baseline has to cover the reservoirs that actually store the water, not
     just a majority of the names."""
     normals = json.loads((ROOT / "normals.json").read_text(encoding="utf-8"))
-    published = json.loads((ROOT / "reservoirs.json").read_text(encoding="utf-8"))
-    # By station id (ADR-066): a name-keyed capacity dict would keep only
-    # the last of two reservoirs sharing a name.
+    # By station id (ADR-066), over the roster rather than `reservoirs.json`
+    # (ADR-056): a large reservoir withdrawn for a quiet feed must not leave
+    # the denominator. The committed capacity table first, then the
+    # capacity each provider's roster entry carries.
     available = {str(r["source_station_id"])
                  for r in normals["reservoirs"] if r["available"]}
-    capacity = {str(r["source_station_id"]): (r.get("capacity_af") or 0)
-                for r in published["reservoirs"]}
+    capacity = {}
+    for table in (R.AWDB_RESERVOIRS, R.CDEC_RESERVOIRS, R.CDSS_RESERVOIRS,
+                  R.USGS_RESERVOIRS, R.SRP_RESERVOIRS, R.DNRC_RESERVOIRS,
+                  R.CWMS_RESERVOIRS, R.CAP_RESERVOIRS):
+        capacity.update({str(station): entry[3] for station, entry in table.items()})
+    for station, entry in R.load_capacities().items():
+        if entry.get("capacity_af"):
+            capacity[str(station)] = entry["capacity_af"]
+    roster = {str(station) for station in R.ALL_RESERVOIR_IDS}
+    assert roster <= capacity.keys(), sorted(roster - capacity.keys())
+    capacity = {station: capacity[station] for station in roster}
     total = sum(capacity.values())
     covered = sum(size for station, size in capacity.items()
                   if station in available)

@@ -370,6 +370,19 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   since 2015, and no reading changed. A terminal lake's `source_url` in
   `lakes.json` names the new address from the next morning's refresh.
 
+### Removed
+
+- **Code nothing used, and tests that checked only text.** Removed: unused
+  TypeScript (the browser drainage assignment in `huc.ts`, the retired
+  `reservoirCIM` builder, `gradient.ts`, `storageColorExpression`) and the
+  tests that exercised only it or only the frozen oracle; tests that matched
+  text in documents and scripts; a byte-for-byte copy of the 2026 snow
+  season under `tests/fixtures/`; two unused tools; and the dormant SNOTEL
+  audit and Provo daily-flow prototype. The tests the shipped reservoir
+  symbols lacked were added, and the published-file list now lives once, in
+  `scripts/published-files.json`, which the build copies from and
+  `scripts/check-dist.mjs` checks `dist/` against.
+
 ### Fixed
 
 - **Two false record lows are excluded** (ADR-116): Barrett's July 2024

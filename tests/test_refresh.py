@@ -30,7 +30,10 @@ from pipeline.constants import LOW_WINDOW_DAYS  # noqa: E402
 PROVIDERS = R.providers
 
 
-TODAY = R.local_today()
+# A fixed day, not the clock. Seasonal windows reach seven days either side,
+# so a real date after 24 December reaches into next January, and a series
+# that starts on 1 June of this year is empty before June.
+TODAY = pd.Timestamp("2026-10-15")
 
 
 def test_committed_payload_uses_the_current_structure_version():

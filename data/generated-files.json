@@ -50,9 +50,9 @@
     },
     {
       "path": "snow_sites.json",
-      "class": "generated-daily",
-      "writer": "refresh_snowpack.py",
-      "staged_by_refresh": true
+      "class": "derived-on-demand",
+      "writer": "tools/build_snotel_inventory.py",
+      "staged_by_refresh": false
     },
     {
       "path": "precipitation.json",
@@ -414,13 +414,6 @@
       "writer": null,
       "staged_by_refresh": false,
       "note": "Retired as a published mask by ADR-067; retained for parity."
-    },
-    {
-      "path": "tests/fixtures/snowpack-wy2026.json",
-      "class": "frozen",
-      "writer": null,
-      "staged_by_refresh": false,
-      "note": "Test fixture: snowpack.json byte for byte as committed at 7791ce7 (as of 2026-09-30), the last full day of water year 2026. The season-shaped unit tests read it because the daily file restarts at one snowless day each 1 October. Never published."
     },
     {
       "path": "tests/fixtures/snowpack-wy2027-october.json",

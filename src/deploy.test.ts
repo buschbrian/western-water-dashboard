@@ -10,6 +10,7 @@
  * and bundles cleanly, a build step that stops copying the payload. None of
  * them fail a browser test; all of them freeze the published numbers.
  */
+import { readFileSync } from "node:fs";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import { describe, expect, it } from "vitest";
@@ -50,23 +51,14 @@ const SOURCE_ONLY_ROSTERS = [
   "admitted_reservoir_elevations.json", "admitted_reservoir_flows.json"
 ];
 
-const RUNTIME_DATA = [
-  "reservoirs.json", "lakes.json", "snow_sites.json", "snowpack.json",
-  "reference.json", "capacities.json", "precipitation.json", "precipitation_history.json",
-  "snow_history.json",
-  "soil_moisture.json", "elevation_history.json", "rivers.json",
-  "river_history.json", "soil_moisture_history.json", "reservoir_flow_history.json"
-];
+/* The one list the build publishes from and the deploy checks against. */
+const PUBLISHED = JSON.parse(
+  readFileSync(resolve(root, "scripts/published-files.json"), "utf8")) as {
+  pages: string[]; runtime_data: string[]; api_aliases: string[]; other_paths: string[];
+};
+const RUNTIME_DATA = PUBLISHED.runtime_data;
 
 describe("a data-only commit deploys on its own", () => {
-  it("lets both browser gates use an installed Chromium executable", async () => {
-    for (const file of ["tests/smoke.mjs", "tests/smoke-modern.mjs"]) {
-      const smoke = await read(file);
-      expect(smoke, `${file} ignores PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`)
-        .toContain("PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH");
-    }
-  });
-
   it("deploys every push to main, with no path filter to skip data commits", async () => {
     const workflow = await read(".github/workflows/deploy-pages.yml");
     const trigger = workflow.slice(workflow.indexOf("\non:"), workflow.indexOf("\npermissions:"));
@@ -180,29 +172,6 @@ describe("a data-only commit deploys on its own", () => {
       .toBeGreaterThan(download);
   });
 
-  it("stages every drought file together, or none of them", async () => {
-    /* One `git add`, every file. Staging them in separate commands would let
-     * a failure between two of them commit one week of polygons beside
-     * another week of coverage, which is the exact state the page refuses to
-     * draw. The list is the manifest's, so a level added to the site cannot
-     * be left out of the commit. */
-    const manifest = JSON.parse(await read("data/generated-files.json")) as {
-      files: { path: string; staged_by_refresh: boolean }[];
-    };
-    const staged = manifest.files
-      .filter((entry) => entry.staged_by_refresh).map((entry) => entry.path);
-
-    for (const file of ["data/drought/usdm-current.geojson",
-      "data/drought/usdm-huc6.json", "data/drought/usdm-huc4.json",
-      "data/drought/usdm-huc2.json"]) {
-      expect(staged, `${file} is computed every morning and must be committed`)
-        .toContain(file);
-    }
-
-    const refresh = await read("scripts/refresh-daily.sh");
-    expect(refresh.slice(refresh.indexOf("git add"))).toContain("published_files");
-  });
-
   it("checks the week before the commit and can put every file back", async () => {
     const refresh = await read("scripts/refresh-daily.sh");
     const check = refresh.indexOf("tools/check_drought_pair.py");
@@ -240,12 +209,11 @@ describe("a data-only commit deploys on its own", () => {
       "tools/compute_drought_coverage.py --scope west-huc2 --no-history");
   });
 
-  it("copies the runtime data into the published output instead of bundling it", async () => {
-    const config = await read("vite.config.ts");
-    for (const file of RUNTIME_DATA) {
-      expect(config, `${file} must be copied into dist/`).toContain(`"${file}"`);
-    }
-    expect(config).toContain('resolve(outDir, "data")');
+  it("builds from the published list, and the deploy checks dist/ against it", async () => {
+    expect(await read("vite.config.ts")).toContain('"scripts", "published-files.json"');
+    expect(await read("scripts/check-dist.mjs")).toContain('"published-files.json"');
+    expect(await read(".github/workflows/deploy-pages.yml"))
+      .toContain("run: node scripts/check-dist.mjs");
   });
 
   it("keeps the payload out of every application module", async () => {
@@ -289,63 +257,6 @@ describe("a data-only commit deploys on its own", () => {
     }
   });
 
-  it("still checks the published output for every current URL, the shell included", async () => {
-    const workflow = await read(".github/workflows/deploy-pages.yml");
-    for (const path of ["index.html", "modern.html", "legacy/index.html",
-      "overview.html", "precipitation.html", "snow.html", "drought.html", "methods.html", "explore.html",
-      "data/drought/usdm-huc6.json",
-      "data.html", "api/reservoirs.json", "api/snowpack.json", "api/reference.json",
-      "maplibre/index.html", "retired-route.js",
-      "data/reservoirs.json", "data/snow_sites.json",
-      "data/snowpack.json", "data/reference.json",
-      // The first finished snow season (ADR-121), copied as a directory in
-      // a closeBundle hook nothing else exercises.
-      "data/snow/snowpack-wy2026.json",
-      // The terminal lakes (ADR-119): their page and their payload, at the
-      // root, under data/ and as an API alias, like the reservoirs'.
-      "lakes.html", "lakes.json", "data/lakes.json", "api/lakes.json",
-      // The reviewed reservoir levels (ADR-135), like the lakes'.
-      "elevation_history.json", "data/elevation_history.json", "api/elevation_history.json",
-      // River flow (ADR-136), published the same way.
-      "rivers.html", "rivers.json", "data/rivers.json", "api/rivers.json",
-      // Their histories (ADR-146), under data/ and as API aliases.
-      "data/river_history.json", "api/river_history.json",
-      "data/soil_moisture_history.json", "api/soil_moisture_history.json",
-      // The story views (ADR-128): a public URL a published story embeds.
-      "story.html",
-      // The shared-link pages and their pictures (ADR-141): permanent URLs
-      // posted elsewhere, and an image each that must exist after the build.
-      "share/lake-powell.html", "share/lake-mead.html",
-      "share/lake-powell.png", "share/lake-mead.png"]) {
-      expect(workflow, `the deploy must verify dist/${path}`).toContain(path);
-    }
-    // The rule that makes a data-only deploy meaningful, checked in CI as
-    // well as here: the payload must not appear inside the built assets.
-    expect(workflow).toContain("dist/assets");
-  });
-
-  it("publishes stable API aliases as copies outside the module graph", async () => {
-    const config = await read("vite.config.ts");
-    expect(config).toContain('resolve(outDir, "api")');
-    expect(config).toContain('resolve(outDir, "api", file)');
-    for (const file of ["reservoirs.json", "lakes.json", "elevation_history.json", "rivers.json",
-      "river_history.json", "soil_moisture_history.json",
-      "snowpack.json", "reference.json"]) {
-      expect(config, `the API alias list must name ${file}`).toContain(`"${file}"`);
-    }
-    expect(config).toContain('data: resolve(root, "data.html")');
-  });
-
-  it("links readers to the public data reference", async () => {
-    /* The methods page's copy lives in its template module; the entry point
-     * next to it holds behaviour and links to nothing. */
-    for (const file of ["src/ui/methods-template.ts", "src/ui/shell-template.ts",
-      "README.md"]) {
-      expect(await read(file), `${file} does not link to the public data reference`)
-        .toContain("data.html");
-    }
-  });
-
   it("publishes ArcGIS 5.1 at the root and redirects the retired pages", async () => {
     const rootEntry = await read("index.html");
     const modernEntry = await read("modern.html");
@@ -369,7 +280,7 @@ describe("a data-only commit deploys on its own", () => {
     // that reaches only one of them is a drift no per-file check can see.
     expect(maplibreEntry, "legacy/ and maplibre/ redirect pages must stay identical")
       .toEqual(legacyEntry);
-    expect(config).toContain('index: resolve(root, "index.html")');
+    expect(PUBLISHED.pages).toContain("index.html");
     expect(config).toContain('resolve(root, "legacy", "index.html")');
   });
 
@@ -429,13 +340,13 @@ describe("a data-only commit deploys on its own", () => {
     const config = await read("vite.config.ts");
     expect(config).toContain('resolve(root, "legacy", "index.html")');
     expect(config).toContain('resolve(root, "maplibre", "index.html")');
-    expect(config).toContain('explore: resolve(root, "explore.html")');
+    expect(PUBLISHED.pages).toContain("explore.html");
     expect(config).not.toContain('resolve(root, "shared")');
     expect(await read("package.json")).not.toContain("@observablehq/plot");
   });
 
   it("keeps the analysis-only geometry out of the deploy", async () => {
-    const config = await read("vite.config.ts");
+    const config = await read("vite.config.ts") + await read("scripts/published-files.json");
     for (const file of COMMITTED_BUT_UNPUBLISHED) {
       /* The build copies a fixed list. This asserts the list does not grow to
        * include these, which is the plausible well-meant change: a new
@@ -446,7 +357,7 @@ describe("a data-only commit deploys on its own", () => {
   });
 
   it("keeps reviewed admission rosters source-only", async () => {
-    const config = await read("vite.config.ts");
+    const config = await read("vite.config.ts") + await read("scripts/published-files.json");
     for (const file of SOURCE_ONLY_ROSTERS) {
       expect(config, `${file} is copied into the deploy`).not.toContain(`"${file}"`);
     }
@@ -484,9 +395,8 @@ describe("every published address is the site's own", () => {
 
   it("lists every reader page in the sitemap, and nothing else", async () => {
     const base = await siteBase();
-    const config = await read("vite.config.ts");
-    const pages = [...config.matchAll(/resolve\(root, "([a-z-]+)\.html"\)/g)]
-      .map((match) => match[1]!)
+    const pages = PUBLISHED.pages
+      .map((page) => page.replace(/\.html$/, ""))
       .filter((name) => !NOT_LISTED.has(name))
       .map((name) => name === "index" ? `${base}/` : `${base}/${name}.html`);
     pages.push(`${base}/weekly.html`);
@@ -504,11 +414,6 @@ describe("every published address is the site's own", () => {
 });
 
 describe("a shared link shows a picture", () => {
-  it("holds the site's address the data reference holds", async () => {
-    expect(await siteBase()).toMatch(/^https:\/\/[a-z0-9.-]+\/[a-z-]+$/);
-    expect(await read("README.md")).toContain(`<${await siteBase()}/>`);
-  });
-
   it("commits a valid figure-free fallback and generates the capture list at build time", async () => {
     const bytes = await readFile(resolve(root, "public/share/fallback.png"));
     expect(pngSize(bytes)).toEqual({ width: 1200, height: 630 });
@@ -518,34 +423,5 @@ describe("a shared link shows a picture", () => {
     expect(generator).toContain('"targets.json"');
     expect(generator).toContain('"data/share-ledger.json"');
     expect(await read("scripts/capture-share-images.mjs")).toContain('"share/targets.json"');
-  });
-
-  it("captures after the build is checked and before it is uploaded, through one script", async () => {
-    const workflow = await read(".github/workflows/deploy-pages.yml");
-    const verify = workflow.indexOf("Verify the published output");
-    const capture = workflow.indexOf("bash scripts/share-images.sh");
-    const upload = workflow.indexOf("actions/upload-pages-artifact");
-    expect(verify).toBeGreaterThanOrEqual(0);
-    expect(capture).toBeGreaterThan(verify);
-    expect(upload).toBeGreaterThan(capture);
-
-    const script = await read("scripts/share-images.sh");
-    /* The repo's own Playwright package against a browser already on the
-     * runner: no browser is downloaded for the morning's capture. */
-    expect(script).toContain("scripts/install-playwright.sh");
-    expect(script).toContain("PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH");
-    expect(script).toContain("capture-share-images.mjs");
-    expect(script, "the capture must not download a browser").not.toMatch(/cli\.js install|playwright install/);
-    expect(workflow.slice(capture - 200, capture + 100)).not.toMatch(/install --with-deps/);
-  });
-
-  it("replaces a fallback only with a capture that drew, and fails only on a missing image", async () => {
-    const capture = await read("scripts/capture-share-images.mjs");
-    expect(capture).toContain('window.__reservoirReady?.share');
-    expect(await read("src/build/share-pages.ts")).toContain("view=share");
-    expect(capture).toContain("PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH");
-    /* Written beside the fallback and renamed over it, never written in place. */
-    expect(capture).toContain("rename(temporary");
-    expect(capture).toContain("return missing.length ? 1 : 0");
   });
 });

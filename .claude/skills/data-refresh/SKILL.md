@@ -34,7 +34,9 @@ scripts/refresh-daily.sh              # the whole job, exactly as CI runs it
 4. **Change issue wording in `tools/feed_issue_report.py`**, not in YAML. It is
    deterministic and tested.
 5. **Change the published file list in `data/generated-files.json`**, which the
-   commit step reads.
+   commit step reads. A file the pages fetch is also listed once in
+   `scripts/published-files.json`, which the build copies from and the deploy
+   checks `dist/` against.
 
 ## Do not
 
