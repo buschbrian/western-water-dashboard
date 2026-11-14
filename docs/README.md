@@ -49,8 +49,8 @@ the test is right and the prose is the bug.
 Utah pilot, measured API sample, implementation sequence and environment setup.
 
 [Product review plan, November 2026](PRODUCT-REVIEW-PLAN.md) tracks the
-2026-11-09 review work: Wave 1 release status, remaining follow-ups, the next
-three waves and what is not yet measured.
+2026-11-09 review work: where each item was published, the remaining
+follow-ups and what is not yet measured.
 
 | Document | Role |
 |---|---|
