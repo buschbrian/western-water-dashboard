@@ -8430,7 +8430,7 @@ async function checkGreatSaltLake() {
       check(await menu.getAttribute("href") === "./lakes.html", `${label}: the menu lost its lakes link`);
       const button = tab.locator("#lakes-link");
       check(await button.isVisible() === (viewport.width >= 1024), `${label}: the bar link has the wrong visibility`);
-      for (const control of await tab.locator("calcite-navigation calcite-action").all()) {
+      for (const control of await tab.locator('calcite-navigation #brand, calcite-navigation [slot="content-end"]').all()) {
         if (!await control.isVisible()) continue;
         const rect = await control.boundingBox();
         check(rect !== null && rect.x >= 0 && rect.x + rect.width <= viewport.width + 1,
