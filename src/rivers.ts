@@ -16,10 +16,17 @@ import { stateName } from "./data/state-vocabulary";
 import { downloadCsv } from "./data/download";
 import { loadRivers } from "./data/load";
 import {
-  FLOW_UNIT, NATURAL_GROUP_HEADING, SHAPED_GROUP_HEADING, describeGauge, gaugeAnchor, groupGauges,
-  riversCsv, riversCsvFilename, summaryDate, summaryFlowHeading, summaryRow, withdrawnSentence
+  EMPTY_OPENING_ROSTERS, loadOpeningRosters, openingSelectionFromSearch,
+  type OpeningRosters, type OpeningSelection
+} from "./data/opening-scope";
+import { offeredStates } from "./data/state-vocabulary";
+import {
+  FLOW_UNIT, NATURAL_GROUP_HEADING, SHAPED_GROUP_HEADING, describeGauge, drainageHasGauge,
+  gaugeAnchor, gaugeInPlace, groupGauges, orderGauges, placeCountSentence, riversCsv,
+  riversCsvFilename, summaryDate, summaryFlowHeading, summaryRow, withdrawnSentence
 } from "./rivers-model";
-import type { RiverRow } from "./rivers-model";
+import type { RiverPlace, RiverRow } from "./rivers-model";
+import { createDrainageMenu, createWhereMenu } from "./ui/where-control";
 import type { RiverGauge, RiverPayload } from "./types";
 import { setupPlaceChooser } from "./ui/opening-splash";
 import { setupPlaceSearch } from "./ui/place-search";
@@ -42,9 +49,9 @@ const list = root.querySelector<HTMLElement>("#rivers-list");
 if (!main || !list) throw new Error("Missing #rivers-main");
 
 function finish(gauges: number, rendered: number, charts: number, withdrawn: number,
-  compared: number, failed = false): void {
+  compared: number, failed = false, placeMenus = 0): void {
   main!.setAttribute("aria-busy", "false");
-  window.__riversReady = { gauges, rendered, charts, withdrawn, compared, failed };
+  window.__riversReady = { gauges, rendered, charts, withdrawn, compared, failed, placeMenus };
 }
 
 function note(text: string, className = "reservoir-note"): HTMLParagraphElement {
@@ -185,16 +192,25 @@ function summaryTable(gauges: readonly RiverGauge[]): HTMLElement {
   return section;
 }
 
-function render(payload: RiverPayload): void {
+function render(payload: RiverPayload, place: RiverPlace, placeMenus: number,
+  controls: HTMLElement | null): void {
+  main!.setAttribute("aria-busy", "true");
   const children: HTMLElement[] = [];
+  if (controls) children.push(controls);
   let charts = 0;
-  const compared = payload.gauges.filter((gauge) => gauge.compared_with_normal).length;
-  const groups = groupGauges(payload.gauges);
+  const shown = payload.gauges.filter((gauge) => gaugeInPlace(gauge, place));
+  const compared = shown.filter((gauge) => gauge.compared_with_normal).length;
+  const groups = groupGauges(orderGauges(shown));
   const ordered = [...groups.natural, ...groups.shaped];
-  if (ordered.length > 0) {
+  if (payload.gauges.length > 0) {
     const states = [...new Set(ordered.map((gauge) => stateName(gauge.state)))].sort();
-    children.push(note(`This page covers ${ordered.length} reviewed gauges in ${states.join(", ")}.`),
-      summaryTable(ordered));
+    children.push(note(placeCountSentence(ordered.length, payload.gauges.length, states)));
+  }
+  if (ordered.length > 0) {
+    children.push(summaryTable(ordered));
+  } else if (payload.gauges.length > 0) {
+    children.push(note("No published gauge is in this place. Choose another state or "
+      + "drainage area."));
   }
   for (const [title, gauges] of [[NATURAL_GROUP_HEADING, groups.natural],
     [SHAPED_GROUP_HEADING, groups.shaped]] as const) {
@@ -235,12 +251,73 @@ function render(payload: RiverPayload): void {
     children.push(exportButton);
   }
   list!.replaceChildren(...children);
-  finish(payload.gauge_count, payload.gauges.length, charts, payload.withdrawn.length, compared);
+  finish(payload.gauge_count, ordered.length, charts, payload.withdrawn.length, compared,
+    false, placeMenus);
+}
+
+/** Write the place into the address bar the way the other pages do, so a
+ * copied link opens the same gauges. `state=all` says "everywhere" out
+ * loud rather than leaving the first-visit question unanswered. */
+function writePlace(place: RiverPlace): void {
+  const params = new URLSearchParams(window.location.search);
+  params.set("state", place.state);
+  if (place.area === null) params.delete("area");
+  else params.set("area", place.area);
+  window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
+}
+
+/** The Where and Drainage area menus, from the published rosters, each
+ * offering only places that hold at least one gauge. */
+function placeControls(payload: RiverPayload, rosters: OpeningRosters, start: OpeningSelection,
+  onChange: (place: RiverPlace) => void): { element: HTMLElement | null; count: number } {
+  let place: RiverPlace = { state: start.state, area: start.area };
+  const states = offeredStates({ reservoirStates: payload.gauges.map((gauge) => gauge.state) });
+  const bar = document.createElement("div");
+  bar.className = "rivers-place";
+  let drainage: ReturnType<typeof createDrainageMenu> = null;
+  const where = createWhereMenu(rosters, start, (pick) => {
+    place = { state: pick.value, area: null };
+    drainage?.set(place);
+    onChange(place);
+  }, { states, scale: "m" });
+  drainage = createDrainageMenu(rosters, start, (selection) => {
+    place = { state: place.state, area: selection.area };
+    onChange(place);
+  }, {
+    scale: "m",
+    maxLevel: 8,
+    include: (code) => drainageHasGauge(code, payload.gauges, place.state)
+  });
+  if (where) bar.append(where.element);
+  if (drainage) bar.append(drainage.element);
+  const count = (where ? 1 : 0) + (drainage ? 1 : 0);
+  return { element: count ? bar : null, count };
 }
 
 async function run(): Promise<void> {
   try {
-    render(await loadRivers());
+    const [payload, rosters] = await Promise.all([
+      loadRivers(),
+      loadOpeningRosters().catch((error: unknown) => {
+        /* The menus are a convenience; the gauges still show without them. */
+        console.warn("The place menus could not be built:", error);
+        return EMPTY_OPENING_ROSTERS;
+      })
+    ]);
+    const start = openingSelectionFromSearch(window.location.search, 8);
+    let controls: { element: HTMLElement | null; count: number } = { element: null, count: 0 };
+    const draw = (place: RiverPlace): void => {
+      try {
+        render(payload, place, controls.count, controls.element);
+      } finally {
+        main!.setAttribute("aria-busy", "false");
+      }
+    };
+    controls = placeControls(payload, rosters, start, (place) => {
+      writePlace(place);
+      draw(place);
+    });
+    draw({ state: start.state, area: start.area });
   } catch (error) {
     console.error("The published river data could not be read:", error);
     list!.replaceChildren(note("The published river data could not be read just now, so "

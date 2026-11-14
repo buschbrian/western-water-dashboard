@@ -378,3 +378,44 @@ export function riversCsv(payload: RiverPayload): string {
 export function riversCsvFilename(runDate: string): string {
   return `river-flow-${runDate.slice(0, 10)}.csv`;
 }
+
+/**
+ * Where a reader is looking on the river page: the state and drainage-area
+ * axes the other pages use (ADR-084), read from the same `state` and `area`
+ * parameters. `"all"` and `null` narrow nothing.
+ */
+export interface RiverPlace {
+  state: string;
+  area: string | null;
+}
+
+/** Is this gauge inside the chosen state and drainage area? A drainage code
+ * nests, so a two-digit region holds every eight-digit subbasin under it. */
+export function gaugeInPlace(gauge: RiverGauge, place: RiverPlace): boolean {
+  if (place.state !== "all" && gauge.state !== place.state) return false;
+  return place.area === null || gauge.huc8.startsWith(place.area);
+}
+
+/** The gauges in reading order: by state, then by drainage code, so gauges
+ * on one river system sit together, then by name. */
+export function orderGauges(gauges: readonly RiverGauge[]): RiverGauge[] {
+  return [...gauges].sort((a, b) => a.state.localeCompare(b.state)
+    || a.huc8.localeCompare(b.huc8) || a.name.localeCompare(b.name));
+}
+
+/** Does any gauge in the chosen state sit inside this drainage code? Keeps a
+ * drainage menu from offering an area that would empty the page. */
+export function drainageHasGauge(code: string, gauges: readonly RiverGauge[],
+  state: string): boolean {
+  return gauges.some((gauge) => (state === "all" || gauge.state === state)
+    && gauge.huc8.startsWith(code));
+}
+
+/** The sentence above the list: how many gauges the reader is looking at. */
+export function placeCountSentence(shown: number, total: number,
+  states: readonly string[]): string {
+  const where = states.length ? ` in ${states.join(", ")}` : "";
+  return shown === total
+    ? `This page covers ${total} reviewed gauges${where}.`
+    : `This page shows ${shown} of ${total} reviewed gauges${where}.`;
+}
