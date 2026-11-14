@@ -1,8 +1,8 @@
 {
   "schema_version": 3,
   "measurement": "daily_mean_flow",
-  "fetched_at": "2026-11-13T19:37:31+00:00",
-  "run_date": "2026-11-13",
+  "fetched_at": "2026-11-14T18:04:23+00:00",
+  "run_date": "2026-11-14",
   "window_days": 30,
   "stale_after_days": 2,
   "withdraw_after_days": 60,
@@ -33,12 +33,12 @@
       "tier": "natural",
       "compared_with_normal": true,
       "normal_band": {
-        "day": "11-12",
-        "p10": 22.95,
+        "day": "11-13",
+        "p10": 22.6,
         "p25": 29.5,
-        "p50": 41.65,
-        "p75": 51.0,
-        "p90": 62.25,
+        "p50": 40.3,
+        "p75": 50.125,
+        "p90": 60.6,
         "years": 54,
         "retrieved": "2026-10-31",
         "source_url": "https://api.waterdata.usgs.gov/statistics/v0/observationNormals?monitoring_location_id=USGS-09217900&parameter_code=00060&computation_type=percentile&normal_type=DOY&page_size=1000"
@@ -48,17 +48,17 @@
       "short_record": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-12",
+      "as_of": "2026-11-13",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 72.6,
+      "current_cfs": 77.5,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -21.7,
-      "change_7d_reference_date": "2026-11-05",
-      "window_start": "2026-10-14",
-      "window_end": "2026-11-12",
+      "change_7d_cfs": -15.1,
+      "change_7d_reference_date": "2026-11-06",
+      "window_start": "2026-10-15",
+      "window_end": "2026-11-13",
       "window_high_cfs": 192.0,
       "window_high_date": "2026-10-23",
       "window_low_cfs": 72.6,
@@ -66,12 +66,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-14",
-          "cfs": 153.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-15",
           "cfs": 140.0,
@@ -245,6 +239,12 @@
           "cfs": 72.6,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-13",
+          "cfs": 77.5,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -272,17 +272,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-12",
+      "as_of": "2026-11-13",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 3450.0,
+      "current_cfs": 3330.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -3080.0,
-      "change_7d_reference_date": "2026-11-05",
-      "window_start": "2026-10-14",
-      "window_end": "2026-11-12",
+      "change_7d_cfs": -2260.0,
+      "change_7d_reference_date": "2026-11-06",
+      "window_start": "2026-10-15",
+      "window_end": "2026-11-13",
       "window_high_cfs": 15500.0,
       "window_high_date": "2026-11-03",
       "window_low_cfs": 2850.0,
@@ -290,12 +290,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-14",
-          "cfs": 3550.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-15",
           "cfs": 5270.0,
@@ -469,6 +463,12 @@
           "cfs": 3450.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-13",
+          "cfs": 3330.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -496,17 +496,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-12",
+      "as_of": "2026-11-13",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 134.0,
+      "current_cfs": 131.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -58.0,
-      "change_7d_reference_date": "2026-11-05",
-      "window_start": "2026-10-14",
-      "window_end": "2026-11-12",
+      "change_7d_cfs": -72.0,
+      "change_7d_reference_date": "2026-11-06",
+      "window_start": "2026-10-15",
+      "window_end": "2026-11-13",
       "window_high_cfs": 6330.0,
       "window_high_date": "2026-10-23",
       "window_low_cfs": 64.6,
@@ -514,12 +514,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-14",
-          "cfs": 220.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-15",
           "cfs": 158.0,
@@ -693,6 +687,12 @@
           "cfs": 134.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-13",
+          "cfs": 131.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -720,17 +720,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-12",
+      "as_of": "2026-11-13",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 4000.0,
+      "current_cfs": 3910.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -1720.0,
-      "change_7d_reference_date": "2026-11-05",
-      "window_start": "2026-10-14",
-      "window_end": "2026-11-12",
+      "change_7d_cfs": -1070.0,
+      "change_7d_reference_date": "2026-11-06",
+      "window_start": "2026-10-15",
+      "window_end": "2026-11-13",
       "window_high_cfs": 6070.0,
       "window_high_date": "2026-11-04",
       "window_low_cfs": 3590.0,
@@ -738,14 +738,6 @@
       "reported_days": 29,
       "provisional_days": 29,
       "daily": [
-        {
-          "date": "2026-10-14",
-          "cfs": 4030.0,
-          "approval": "Provisional",
-          "qualifiers": [
-            "ESTIMATED"
-          ]
-        },
         {
           "date": "2026-10-15",
           "cfs": 4730.0,
@@ -923,6 +915,12 @@
           "cfs": 4000.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-13",
+          "cfs": 3910.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -949,12 +947,12 @@
       "tier": "natural",
       "compared_with_normal": true,
       "normal_band": {
-        "day": "11-12",
-        "p10": 5.09,
+        "day": "11-13",
+        "p10": 5.15,
         "p25": 6.15,
-        "p50": 7.15,
-        "p75": 8.65,
-        "p90": 13.0,
+        "p50": 7.0,
+        "p75": 8.475,
+        "p90": 11.25,
         "years": 22,
         "retrieved": "2026-10-31",
         "source_url": "https://api.waterdata.usgs.gov/statistics/v0/observationNormals?monitoring_location_id=USGS-09226500&parameter_code=00060&computation_type=percentile&normal_type=DOY&page_size=1000"
@@ -964,30 +962,24 @@
       "short_record": true,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-12",
+      "as_of": "2026-11-13",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 18.4,
+      "current_cfs": 18.3,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -2.3,
-      "change_7d_reference_date": "2026-11-05",
-      "window_start": "2026-10-14",
-      "window_end": "2026-11-12",
-      "window_high_cfs": 42.9,
-      "window_high_date": "2026-10-14",
+      "change_7d_cfs": -1.8,
+      "change_7d_reference_date": "2026-11-06",
+      "window_start": "2026-10-15",
+      "window_end": "2026-11-13",
+      "window_high_cfs": 37.7,
+      "window_high_date": "2026-10-24",
       "window_low_cfs": 18.2,
       "window_low_date": "2026-11-11",
       "reported_days": 29,
       "provisional_days": 29,
       "daily": [
-        {
-          "date": "2026-10-14",
-          "cfs": 42.9,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-15",
           "cfs": 28.4,
@@ -1161,6 +1153,12 @@
           "cfs": 18.4,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-13",
+          "cfs": 18.3,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -1187,12 +1185,12 @@
       "tier": "natural",
       "compared_with_normal": true,
       "normal_band": {
-        "day": "11-12",
-        "p10": 4.365,
-        "p25": 5.098,
-        "p50": 6.125,
-        "p75": 8.28,
-        "p90": 9.905,
+        "day": "11-13",
+        "p10": 4.36,
+        "p25": 5.14,
+        "p50": 6.2,
+        "p75": 8.25,
+        "p90": 9.695,
         "years": 44,
         "retrieved": "2026-10-31",
         "source_url": "https://api.waterdata.usgs.gov/statistics/v0/observationNormals?monitoring_location_id=USGS-09183500&parameter_code=00060&computation_type=percentile&normal_type=DOY&page_size=1000"
@@ -1202,17 +1200,17 @@
       "short_record": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-12",
+      "as_of": "2026-11-13",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 11.8,
+      "current_cfs": 11.4,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -8.3,
-      "change_7d_reference_date": "2026-11-05",
-      "window_start": "2026-10-14",
-      "window_end": "2026-11-12",
+      "change_7d_cfs": -6.1,
+      "change_7d_reference_date": "2026-11-06",
+      "window_start": "2026-10-15",
+      "window_end": "2026-11-13",
       "window_high_cfs": 51.0,
       "window_high_date": "2026-10-22",
       "window_low_cfs": 7.4,
@@ -1220,12 +1218,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-14",
-          "cfs": 19.4,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-15",
           "cfs": 9.64,
@@ -1399,6 +1391,12 @@
           "cfs": 11.8,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-13",
+          "cfs": 11.4,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -1426,17 +1424,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-12",
+      "as_of": "2026-11-13",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 1950.0,
+      "current_cfs": 1630.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -27950.0,
-      "change_7d_reference_date": "2026-11-05",
-      "window_start": "2026-10-14",
-      "window_end": "2026-11-12",
+      "change_7d_cfs": -9570.0,
+      "change_7d_reference_date": "2026-11-06",
+      "window_start": "2026-10-15",
+      "window_end": "2026-11-13",
       "window_high_cfs": 37200.0,
       "window_high_date": "2026-10-26",
       "window_low_cfs": 1350.0,
@@ -1444,12 +1442,6 @@
       "reported_days": 28,
       "provisional_days": 28,
       "daily": [
-        {
-          "date": "2026-10-14",
-          "cfs": 4730.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-15",
           "cfs": 5730.0,
@@ -1623,6 +1615,12 @@
           "cfs": 1950.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-13",
+          "cfs": 1630.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -1665,7 +1663,7 @@
       "data_frequency": "daily",
       "stale_after_days": 2,
       "as_of": "2026-11-03",
-      "days_stale": 10,
+      "days_stale": 11,
       "is_stale": true,
       "fetch_ok": true,
       "current_cfs": 94.4,
