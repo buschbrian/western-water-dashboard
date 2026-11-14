@@ -410,6 +410,10 @@ reference from that Census vintage, keyed by Census identifier and enforces a 96
 The daily places index carries current reservoir subbasin codes so search
 can resolve a town against the currently published roster.
 
+The soil writer enforces the client’s existing 0–100 percent bound at each
+SMS reading before averaging (ADR-167). Out-of-range values are missing,
+not clipped. The existing temperature, reporting-day and coverage rules apply.
+
 ## Weekly digest ledger (ADR-163)
 
 `node scripts/build-weekly-digest.mjs` runs the existing TypeScript weekly

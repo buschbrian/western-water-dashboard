@@ -90,6 +90,30 @@ def test_a_depth_missing_on_either_day_leaves_the_station_without_a_change():
     assert site["no_change_reason"] == "missing_reading"
 
 
+@pytest.mark.parametrize("invalid", [-0.1, 100.1, 105340.1])
+def test_impossible_sensor_percent_is_missing_before_the_station_mean(invalid):
+    stations = [f"{index}:UT:SNTL" for index in range(1, 11)]
+    records = [record(station, {
+        -2: steady(20.0, **({END: invalid} if index == 0 else {})),
+        -8: steady(15.0), -20: steady(10.0)})
+        for index, station in enumerate(stations)]
+    payload = build(stations, records)
+    assert payload["end_date"] == END
+    site = payload["sites"][0]
+    assert site["readings"][0][DAYS.index(END)] is None
+    assert site["end_percent"] is None
+    assert site["change_points"] is None
+    assert site["no_change_reason"] == "missing_reading"
+
+
+@pytest.mark.parametrize("boundary", [0.0, 100.0])
+def test_physical_percent_boundaries_are_measurements(boundary):
+    payload = build(["1:UT:SNTL"], [record("1:UT:SNTL", {
+        depth: steady(boundary) for depth in (-2, -8, -20)})])
+    assert payload["sites"][0]["end_percent"] == boundary
+    assert payload["sites"][0]["change_points"] == 0.0
+
+
 def test_a_frozen_depth_is_not_used_and_the_reason_is_said():
     temps = {depth: {day: 50 for day in DAYS} for depth in (-2, -8, -20)}
     temps[-2][END] = 32

@@ -380,6 +380,9 @@ The map's breaks are amounts in inches, the same for 1, 3 and 7 days.
 soils, so `soil_moisture.json` carries each station's seven-day change in
 percentage points and no median.
 
+- **Input validity:** soil-water percentages outside 0–100 are missing before
+  rounding or averaging (ADR-167). Zero and 100 are retained. No value is
+  clipped or replaced.
 - **Station value:** the mean of the 2 in (or 4 in where there is no 2 in
   sensor), 8 in and 20 in readings for the day. All three or no value. A
   station without the three sensors is listed in `other_depth_sites` and

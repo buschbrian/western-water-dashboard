@@ -184,7 +184,8 @@ def _series(record: dict) -> dict[tuple[str, int], dict[str, float]]:
         if key in found:
             raise ValueError(f"{station} has two daily {code} series at {depth} in")
         found[key] = {str(raw.get("date"))[:10]: value for raw in series.get("values") or []
-                      if (value := _number(raw.get("value"))) is not None}
+                      if (value := _number(raw.get("value"))) is not None
+                      and (code != "SMS" or 0 <= value <= 100)}
     return found
 
 
