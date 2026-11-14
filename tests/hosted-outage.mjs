@@ -69,7 +69,7 @@ const uncaught = [];
 tab.on("pageerror", (e) => uncaught.push(e.message));
 
 await tab.goto(URL_BASE, { waitUntil: "domcontentloaded", timeout: 60000 });
-await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
 
 const result = await tab.evaluate(async () => {
   const map = document.querySelector("arcgis-map")?.map;

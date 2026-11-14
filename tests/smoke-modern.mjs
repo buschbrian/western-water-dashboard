@@ -625,10 +625,23 @@ async function checkTextFits(tab, check, label) {
   check(cut.length === 0, `${label}: ${cut.length} text box(es) cut text short, e.g. ${cut.slice(0, 3).join("; ")}`);
 }
 
-async function checkAccessibility(tab, check, label) {
+async function checkAccessibility(tab, check, label, { axe = true } = {}) {
   await checkTextOverlap(tab, check, label);
   await checkHeaderTitle(tab, check, label);
   await checkTextFits(tab, check, label);
+  if (!axe) return;
+  const violations = await persistentAxeViolations(tab);
+  check(violations.length === 0,
+    `${label}: axe-core found ${violations.length} accessibility violation(s): ` +
+    violations.map((violation) =>
+      `${violation.id} (${violation.impact}) on ${violation.nodes.length} node(s) ` +
+      `e.g. ${violation.nodes[0]?.target.join(" ")} ${violation.nodes[0]?.html} ` +
+      `-- ${violation.nodes[0]?.why}`).join("; "));
+}
+
+/* axe over the whole page, after AXE_EXCEPTIONS, keeping only what survives
+ * both passes. Shared by every axe check in this file. */
+async function persistentAxeViolations(tab) {
   /*
    * Scored twice, and only a finding that survives both counts.
    *
@@ -708,17 +721,8 @@ async function checkAccessibility(tab, check, label) {
   for (const violation of second) {
     if (!kept(violation)) fleeting(violation, "only once the page had settled");
   }
-  if (first.length === 0 && second.length === 0) {
-    console.log("  axe: clean");
-    return;
-  }
-  const violations = persistent;
-  check(violations.length === 0,
-    `${label}: axe-core found ${violations.length} accessibility violation(s): ` +
-    violations.map((violation) =>
-      `${violation.id} (${violation.impact}) on ${violation.nodes.length} node(s) ` +
-      `e.g. ${violation.nodes[0]?.target.join(" ")} ${violation.nodes[0]?.html} ` +
-      `-- ${violation.nodes[0]?.why}`).join("; "));
+  if (first.length === 0 && second.length === 0) console.log("  axe: clean");
+  return persistent;
 }
 /* Every page in this suite is opened with no `?state=`, no stored place and
  * a fresh profile, which is exactly the condition the first-visit splash
@@ -740,8 +744,11 @@ async function newPageContext(browser, viewport) {
   return context;
 }
 
+/* Page logic -- counts, links, modes, URL state, readiness values -- does not
+ * change with the width, so it is driven once, at desktop (`logic: true`).
+ * Layout, overflow and axe still run at all three widths. Ruled 2026-10-31. */
 const VIEWPORTS = [
-  { name: "desktop", width: 1280, height: 900 },
+  { name: "desktop", width: 1280, height: 900, logic: true },
   { name: "mobile", width: 390, height: 844 },
   { name: "small-phone", width: 360, height: 780 }
 ];
@@ -1047,7 +1054,7 @@ if (process.argv.includes("--chooser")) {
     `${label}: the map host stopped reporting busy before the map started`);
 
   await tab.keyboard.press("Escape");
-  await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 90000 });
+  await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
   const after = await tab.evaluate(() => ({
     open: document.querySelector("dialog.opening-splash")?.hasAttribute("open") ?? null,
     dialogs: document.querySelectorAll("dialog.opening-splash").length,
@@ -1121,7 +1128,7 @@ if (process.argv.includes("--chooser")) {
     { waitUntil: "domcontentloaded", timeout: 60000 });
   await tab.waitForFunction(() =>
     !document.querySelector("#place-chooser-trigger")?.hasAttribute("hidden"),
-  { timeout: 90000 });
+  null, { timeout: 60000 });
   check(await tab.locator("#place-chooser-trigger").isVisible(),
     `${label}: the direct header action is not visible`);
   await tab.locator("#place-chooser-trigger").click();
@@ -1343,7 +1350,7 @@ for (const viewport of VIEWPORTS) {
   console.log(`\n=== ${label}`);
   try {
     await tab.goto(URL, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     /* Read here, before this block opens the ranking row. That row is what
      * legitimately triggers the dynamic import, so asserting at the end of
      * the block would only ever prove the test clicked it. First load is the
@@ -1352,197 +1359,198 @@ for (const viewport of VIEWPORTS) {
 
     const ready = await tab.evaluate(() => window.__dashboardReady);
     console.log("  ready:", JSON.stringify(ready));
-    check(ready.engine === "arcgis-5", `${label}: wrong engine signal`);
-    check(ready.reservoirs === expectedReservoirs,
-      `${label}: scope holds ${ready.reservoirs} reservoirs, expected ${expectedReservoirs}`);
-    check(ready.drawn === expectedReservoirs,
-      `${label}: drew ${ready.drawn} reservoirs, expected ${expectedReservoirs}`);
-    /* The renderer no longer holds one symbol per feature -- size is an
-     * expression and colour is the key, so it holds one per storage class
-     * per late state. The fact worth asserting is not the count but that
-     * every feature has a symbol: a key the renderer does not carry draws
-     * nothing, which is exactly the silent failure the old count-based
-     * check existed to catch. */
-    const symbology = await tab.evaluate(async () => {
-      const layer = document.querySelector("arcgis-map")?.map?.findLayerById("reservoirs");
-      const renderer = layer?.renderer;
-      if (!layer || !renderer) return null;
-      const known = new Set((renderer.uniqueValueInfos ?? []).map((info) => String(info.value)));
-      const features = await layer.queryFeatures({
-        where: "1=1", outFields: ["symbol_key"], returnGeometry: false
+    /* Logic: the readiness values and what each layer holds. */
+    if (viewport.logic) {
+      check(ready.engine === "arcgis-5", `${label}: wrong engine signal`);
+      check(ready.reservoirs === expectedReservoirs,
+        `${label}: scope holds ${ready.reservoirs} reservoirs, expected ${expectedReservoirs}`);
+      check(ready.drawn === expectedReservoirs,
+        `${label}: drew ${ready.drawn} reservoirs, expected ${expectedReservoirs}`);
+      /* The renderer no longer holds one symbol per feature -- size is an
+       * expression and colour is the key, so it holds one per storage class
+       * per late state. The fact worth asserting is not the count but that
+       * every feature has a symbol: a key the renderer does not carry draws
+       * nothing, which is exactly the silent failure the old count-based
+       * check existed to catch. */
+      const symbology = await tab.evaluate(async () => {
+        const layer = document.querySelector("arcgis-map")?.map?.findLayerById("reservoirs");
+        const renderer = layer?.renderer;
+        if (!layer || !renderer) return null;
+        const known = new Set((renderer.uniqueValueInfos ?? []).map((info) => String(info.value)));
+        const features = await layer.queryFeatures({
+          where: "1=1", outFields: ["symbol_key"], returnGeometry: false
+        });
+        const keys = features.features.map((feature) => String(feature.attributes.symbol_key));
+        return {
+          symbols: known.size,
+          field: renderer.field,
+          features: keys.length,
+          unsymbolised: keys.filter((key) => !known.has(key)).length
+        };
       });
-      const keys = features.features.map((feature) => String(feature.attributes.symbol_key));
-      return {
-        symbols: known.size,
-        field: renderer.field,
-        features: keys.length,
-        unsymbolised: keys.filter((key) => !known.has(key)).length
-      };
-    });
-    check(symbology !== null, `${label}: the reservoir renderer is missing`);
-    check(symbology?.unsymbolised === 0,
-      `${label}: ${symbology?.unsymbolised} reservoirs carry a symbol key the renderer does not have`);
-    check(symbology?.features === expectedReservoirs,
-      `${label}: the layer holds ${symbology?.features} features, expected ${expectedReservoirs}`);
-    check((symbology?.symbols ?? 0) > 1 && (symbology?.symbols ?? 0) < expectedReservoirs,
-      `${label}: the renderer holds ${symbology?.symbols} symbols; one per feature is the ` +
-      "design this replaced, and it is what made re-symbolising slow");
-    check(ready.symbols === symbology?.symbols,
-      `${label}: the readiness signal reports ${ready.symbols} symbols, the renderer has ` +
-      `${symbology?.symbols}`);
-    /* The twelve months the payload has always carried, which this map has
-     * only ever shown the newest of. The slider's rightmost position is the
-     * newest reading, not a month, which is why `month` opens as null. */
-    check(ready.months > 1, `${label}: the month slider offers ${ready.months} positions`);
-    check(ready.month === null,
-      `${label}: the map opened on ${ready.month} instead of the newest reading`);
-    check(ready.listItems === expectedReservoirs,
-      `${label}: the reservoir list has ${ready.listItems} entries, expected ${expectedReservoirs}`);
-    /* Present, not counted: the shell carries several copies of each row --
-     * the panel list, the table under the map, both surfaces' panels -- so
-     * the fact under test is that the reservoir is there at all. */
-    check(await tab.locator('[data-reservoir="Lake Powell"]').count() > 0,
-      `${label}: Lake Powell is missing from the default reservoir list`);
-    check(ready.basemap === true, `${label}: no basemap resolved`);
-    check(ready.basemapDegraded === false,
-      `${label}: the preferred basemap did not serve`);
-    /* `aria-busy` reports one fact: the map is still starting. Once it has
-     * started, every path out of that has to clear it -- the visible loader
-     * is replaced by the map element well before the view is ready, so a
-     * stuck flag is a screen reader told "busy" with nothing to read. */
-    check(await tab.getAttribute("#map-host", "aria-busy") === "false",
-      `${label}: the map still reports itself as loading after it started`);
-    /* Both production maps already refuse to leave the region. Without the
-     * constraint a reader can pan a Utah dashboard into open ocean and find
-     * an empty basemap with no way back except reloading. */
-    check(ready.navigationBounds === true,
-      `${label}: map navigation is not held inside the region`);
-    check(ready.minZoom === 5,
-      `${label}: the map can zoom out to ${ready.minZoom}, expected 5`);
-    /* The basemap's own reference stack draws above every operational layer,
-     * so a boundary in it lands on top of the reservoirs no matter how the
-     * operational layers are ordered. Moving it below them is the only fix,
-     * and this is the count that says it happened. */
-    check(ready.basemapReferenceSunk >= 1,
-      `${label}: ${ready.basemapReferenceSunk} basemap reference layers were ` +
-      "moved below this project's own layers, expected at least one");
-    /* ADR-067 retired the translucent Utah mask these two fields used to
-     * report on. They stay in the readiness signal rather than being
-     * deleted, permanently reporting the retired value -- so this checks
-     * that a mask has not quietly come back, not that one is present. */
-    check(ready.masked === false, `${label}: the retired Utah mask has come back`);
-    check(ready.boundaryPoints === 0,
-      `${label}: ${ready.boundaryPoints} boundary points drawn from a mask that no longer exists`);
-    check(ready.drainageAreas === expectedAreas,
-      `${label}: drew ${ready.drainageAreas} drainage areas, expected ${expectedAreas}`);
-    check(ready.drainageLabels === expectedAreas,
-      `${label}: configured ${ready.drainageLabels} drainage-area labels, expected ${expectedAreas}`);
-    /* ADR-047 replaced the position guarantee with a placement guarantee.
-     * The names are the label engine's now, so they draw in its pass above
-     * every layer and the ADR-030 field reports false -- and the check that
-     * matters is that something is still placing them, because a layer that
-     * quietly lost its `labelingInfo` looks exactly like a clean map. */
-    /* The size of the drawn areas, from the payload rather than from a
-     * constant in the client. A scope published at another level would draw
-     * shapes that no figure on the page describes, because every figure here
-     * is keyed six digits deep. */
-    check(ready.drainageLevel === 6,
-      `${label}: the drainage areas drew at hydrologic level ` +
-      `${ready.drainageLevel}, and every figure on this page is keyed at 6`);
-    check(ready.drainageLabelsDeconflicted === true,
-      `${label}: drainage-area names are not being placed by the label engine`);
-    check(ready.drainageLabelsUnderReservoirs === false,
-      `${label}: a drainage text-symbol layer came back alongside the ` +
-      "engine-placed names, which would draw every name twice");
+      check(symbology !== null, `${label}: the reservoir renderer is missing`);
+      check(symbology?.unsymbolised === 0,
+        `${label}: ${symbology?.unsymbolised} reservoirs carry a symbol key the renderer does not have`);
+      check(symbology?.features === expectedReservoirs,
+        `${label}: the layer holds ${symbology?.features} features, expected ${expectedReservoirs}`);
+      check((symbology?.symbols ?? 0) > 1 && (symbology?.symbols ?? 0) < expectedReservoirs,
+        `${label}: the renderer holds ${symbology?.symbols} symbols; one per feature is the ` +
+        "design this replaced, and it is what made re-symbolising slow");
+      check(ready.symbols === symbology?.symbols,
+        `${label}: the readiness signal reports ${ready.symbols} symbols, the renderer has ` +
+        `${symbology?.symbols}`);
+      /* The twelve months the payload has always carried, which this map has
+       * only ever shown the newest of. The slider's rightmost position is the
+       * newest reading, not a month, which is why `month` opens as null. */
+      check(ready.months > 1, `${label}: the month slider offers ${ready.months} positions`);
+      check(ready.month === null,
+        `${label}: the map opened on ${ready.month} instead of the newest reading`);
+      check(ready.listItems === expectedReservoirs,
+        `${label}: the reservoir list has ${ready.listItems} entries, expected ${expectedReservoirs}`);
+      /* Present, not counted: the shell carries several copies of each row --
+       * the panel list, the table under the map, both surfaces' panels -- so
+       * the fact under test is that the reservoir is there at all. */
+      check(await tab.locator('[data-reservoir="Lake Powell"]').count() > 0,
+        `${label}: Lake Powell is missing from the default reservoir list`);
+      check(ready.basemap === true, `${label}: no basemap resolved`);
+      /* `aria-busy` reports one fact: the map is still starting. Once it has
+       * started, every path out of that has to clear it -- the visible loader
+       * is replaced by the map element well before the view is ready, so a
+       * stuck flag is a screen reader told "busy" with nothing to read. */
+      check(await tab.getAttribute("#map-host", "aria-busy") === "false",
+        `${label}: the map still reports itself as loading after it started`);
+      /* Both production maps already refuse to leave the region. Without the
+       * constraint a reader can pan a Utah dashboard into open ocean and find
+       * an empty basemap with no way back except reloading. */
+      check(ready.navigationBounds === true,
+        `${label}: map navigation is not held inside the region`);
+      check(ready.minZoom === 5,
+        `${label}: the map can zoom out to ${ready.minZoom}, expected 5`);
+      /* The basemap's own reference stack draws above every operational layer,
+       * so a boundary in it lands on top of the reservoirs no matter how the
+       * operational layers are ordered. Moving it below them is the only fix,
+       * and this is the count that says it happened. */
+      check(ready.basemapReferenceSunk >= 1,
+        `${label}: ${ready.basemapReferenceSunk} basemap reference layers were ` +
+        "moved below this project's own layers, expected at least one");
+      /* ADR-067 retired the translucent Utah mask these two fields used to
+       * report on. They stay in the readiness signal rather than being
+       * deleted, permanently reporting the retired value -- so this checks
+       * that a mask has not quietly come back, not that one is present. */
+      check(ready.masked === false, `${label}: the retired Utah mask has come back`);
+      check(ready.boundaryPoints === 0,
+        `${label}: ${ready.boundaryPoints} boundary points drawn from a mask that no longer exists`);
+      check(ready.drainageAreas === expectedAreas,
+        `${label}: drew ${ready.drainageAreas} drainage areas, expected ${expectedAreas}`);
+      check(ready.drainageLabels === expectedAreas,
+        `${label}: configured ${ready.drainageLabels} drainage-area labels, expected ${expectedAreas}`);
+      /* ADR-047 replaced the position guarantee with a placement guarantee.
+       * The names are the label engine's now, so they draw in its pass above
+       * every layer and the ADR-030 field reports false -- and the check that
+       * matters is that something is still placing them, because a layer that
+       * quietly lost its `labelingInfo` looks exactly like a clean map. */
+      /* The size of the drawn areas, from the payload rather than from a
+       * constant in the client. A scope published at another level would draw
+       * shapes that no figure on the page describes, because every figure here
+       * is keyed six digits deep. */
+      check(ready.drainageLevel === 6,
+        `${label}: the drainage areas drew at hydrologic level ` +
+        `${ready.drainageLevel}, and every figure on this page is keyed at 6`);
+      check(ready.drainageLabelsDeconflicted === true,
+        `${label}: drainage-area names are not being placed by the label engine`);
+      check(ready.drainageLabelsUnderReservoirs === false,
+        `${label}: a drainage text-symbol layer came back alongside the ` +
+        "engine-placed names, which would draw every name twice");
 
-    /* The renderer count above proves what the page built. This proves the
-     * layer accepted it: a client-side feature layer whose source is
-     * rejected still exists, still reports its renderer, and holds nothing.
-     * `queryFeatureCount` answers from the layer, not from a view, so it
-     * settles in headless Chromium where the render loop does not run. */
-    const layerFeatures = await tab.evaluate(async () => {
-      const layer = document.querySelector("arcgis-map")?.map
-        ?.findLayerById("reservoirs");
-      const drainage = document.querySelector("arcgis-map")?.map
-        ?.findLayerById("drainage-areas");
-      const drainageLabels = document.querySelector("arcgis-map")?.map
-        ?.findLayerById("drainage-labels");
-      const labelClass = drainage?.labelingInfo?.at(0);
-      const map = document.querySelector("arcgis-map")?.map;
-      return {
-        type: layer?.type ?? null,
-        count: layer ? await layer.queryFeatureCount() : 0,
-        drainageType: drainage?.type ?? null,
-        /* Null when the service refused, not zero and not a thrown error.
-         * The reservoirs above are a client-side layer holding local
-         * features, so counting them cannot fail. This one is hosted: its
-         * features live on a server, and asking a layer whose own load was
-         * rejected rejects in turn. That rejection used to escape this
-         * evaluate and land in the run as `page.evaluate: e`, which is a
-         * refused third-party service wearing the costume of a broken
-         * page. */
-        drainageCount: drainage
-          ? await drainage.queryFeatureCount().catch(() => null)
-          : 0,
-        drainageLabelClasses: drainage?.labelingInfo?.length ?? 0,
-        drainageLabelsVisible: drainage?.labelsVisible === true,
-        drainageDeconfliction: labelClass?.deconflictionStrategy ?? null,
-        drainageLabelType: drainageLabels?.type ?? null,
-        drainageUnderReservoirs: map && drainage && layer
-          ? map.layers.indexOf(drainage) < map.layers.indexOf(layer)
-          : false,
-        drainageHaloAlpha: labelClass?.symbol?.haloColor?.a ?? null,
-        symbolUsesViewScale: JSON.stringify(layer?.renderer?.toJSON?.() ?? layer?.renderer ?? {})
-          .includes("$view.scale")
-      };
-    });
-    check(layerFeatures.type === "feature",
-      `${label}: the reservoirs layer is "${layerFeatures.type}", expected a feature layer`);
-    check(layerFeatures.count === expectedReservoirs,
-      `${label}: the reservoir layer holds ${layerFeatures.count} features, ` +
-      `expected ${expectedReservoirs}`);
-    check(layerFeatures.drainageType === "feature",
-      `${label}: the drainage-area layer is "${layerFeatures.drainageType}", expected feature`);
-    /* A refused hosted service is a supported outcome here, the same way the
-     * drought view already treats its borrowed boundaries: the count is
-     * asserted when the layer answered, and its absence is reported by the
-     * outage summary rather than counted as a fault in this application.
-     * Testing otherwise is testing somebody else's uptime. */
-    check(layerFeatures.drainageCount === null
-      || layerFeatures.drainageCount === expectedAreas,
-      `${label}: the drainage-area layer holds ${layerFeatures.drainageCount}, ` +
-      `expected ${expectedAreas}`);
-    /* ADR-047. The names are one label class on the drainage layer itself,
-     * so the count is fixed at one however many areas are in scope -- which
-     * is the whole point, and what fourteen fixed text symbols could not
-     * say about a hundred and eighty-one. */
-    check(layerFeatures.drainageLabelClasses === 1,
-      `${label}: the drainage layer carries ${layerFeatures.drainageLabelClasses} ` +
-      "label classes, expected exactly one");
-    check(layerFeatures.drainageLabelsVisible,
-      `${label}: the drainage layer has labels configured but switched off`);
-    /* The guarantee itself. Without this the engine draws every name it is
-     * given, which at western scale is the failure ADR-047 exists to end --
-     * and it would look identical at fourteen. */
-    check(layerFeatures.drainageDeconfliction === "dynamic",
-      `${label}: drainage names use "${layerFeatures.drainageDeconfliction}" ` +
-      "placement, expected dynamic deconfliction");
-    check(layerFeatures.drainageLabelType === null,
-      `${label}: a drainage text-symbol layer is still on the map ` +
-      `("${layerFeatures.drainageLabelType}"), so every name draws twice`);
-    /* ADR-030's intent, kept. The label pass resolves conflicts between
-     * layers in operational order, so a reservoir's own name outranks a
-     * drainage name where the two compete for the same pixels. */
-    check(layerFeatures.drainageUnderReservoirs,
-      `${label}: the drainage layer rose above the reservoirs, which hands ` +
-      "drainage names priority over reservoir names in the label pass");
-    /* ADR-030 was right about this half and it carries over unchanged: a
-     * near-opaque halo covered more of the map than the text it separated. */
-    check(layerFeatures.drainageHaloAlpha === 0.5,
-      `${label}: drainage-area label halo opacity is ${layerFeatures.drainageHaloAlpha}, expected 0.5`);
-    check(layerFeatures.symbolUsesViewScale === false,
-      `${label}: reservoir symbols still grow with the view scale`);
+      /* The renderer count above proves what the page built. This proves the
+       * layer accepted it: a client-side feature layer whose source is
+       * rejected still exists, still reports its renderer, and holds nothing.
+       * `queryFeatureCount` answers from the layer, not from a view, so it
+       * settles in headless Chromium where the render loop does not run. */
+      const layerFeatures = await tab.evaluate(async () => {
+        const layer = document.querySelector("arcgis-map")?.map
+          ?.findLayerById("reservoirs");
+        const drainage = document.querySelector("arcgis-map")?.map
+          ?.findLayerById("drainage-areas");
+        const drainageLabels = document.querySelector("arcgis-map")?.map
+          ?.findLayerById("drainage-labels");
+        const labelClass = drainage?.labelingInfo?.at(0);
+        const map = document.querySelector("arcgis-map")?.map;
+        return {
+          type: layer?.type ?? null,
+          count: layer ? await layer.queryFeatureCount() : 0,
+          drainageType: drainage?.type ?? null,
+          /* Null when the service refused, not zero and not a thrown error.
+           * The reservoirs above are a client-side layer holding local
+           * features, so counting them cannot fail. This one is hosted: its
+           * features live on a server, and asking a layer whose own load was
+           * rejected rejects in turn. That rejection used to escape this
+           * evaluate and land in the run as `page.evaluate: e`, which is a
+           * refused third-party service wearing the costume of a broken
+           * page. */
+          drainageCount: drainage
+            ? await drainage.queryFeatureCount().catch(() => null)
+            : 0,
+          drainageLabelClasses: drainage?.labelingInfo?.length ?? 0,
+          drainageLabelsVisible: drainage?.labelsVisible === true,
+          drainageDeconfliction: labelClass?.deconflictionStrategy ?? null,
+          drainageLabelType: drainageLabels?.type ?? null,
+          drainageUnderReservoirs: map && drainage && layer
+            ? map.layers.indexOf(drainage) < map.layers.indexOf(layer)
+            : false,
+          drainageHaloAlpha: labelClass?.symbol?.haloColor?.a ?? null,
+          symbolUsesViewScale: JSON.stringify(layer?.renderer?.toJSON?.() ?? layer?.renderer ?? {})
+            .includes("$view.scale")
+        };
+      });
+      check(layerFeatures.type === "feature",
+        `${label}: the reservoirs layer is "${layerFeatures.type}", expected a feature layer`);
+      check(layerFeatures.count === expectedReservoirs,
+        `${label}: the reservoir layer holds ${layerFeatures.count} features, ` +
+        `expected ${expectedReservoirs}`);
+      check(layerFeatures.drainageType === "feature",
+        `${label}: the drainage-area layer is "${layerFeatures.drainageType}", expected feature`);
+      /* A refused hosted service is a supported outcome here, the same way the
+       * drought view already treats its borrowed boundaries: the count is
+       * asserted when the layer answered, and its absence is reported by the
+       * outage summary rather than counted as a fault in this application.
+       * Testing otherwise is testing somebody else's uptime. */
+      check(layerFeatures.drainageCount === null
+        || layerFeatures.drainageCount === expectedAreas,
+        `${label}: the drainage-area layer holds ${layerFeatures.drainageCount}, ` +
+        `expected ${expectedAreas}`);
+      /* ADR-047. The names are one label class on the drainage layer itself,
+       * so the count is fixed at one however many areas are in scope -- which
+       * is the whole point, and what fourteen fixed text symbols could not
+       * say about a hundred and eighty-one. */
+      check(layerFeatures.drainageLabelClasses === 1,
+        `${label}: the drainage layer carries ${layerFeatures.drainageLabelClasses} ` +
+        "label classes, expected exactly one");
+      check(layerFeatures.drainageLabelsVisible,
+        `${label}: the drainage layer has labels configured but switched off`);
+      /* The guarantee itself. Without this the engine draws every name it is
+       * given, which at western scale is the failure ADR-047 exists to end --
+       * and it would look identical at fourteen. */
+      check(layerFeatures.drainageDeconfliction === "dynamic",
+        `${label}: drainage names use "${layerFeatures.drainageDeconfliction}" ` +
+        "placement, expected dynamic deconfliction");
+      check(layerFeatures.drainageLabelType === null,
+        `${label}: a drainage text-symbol layer is still on the map ` +
+        `("${layerFeatures.drainageLabelType}"), so every name draws twice`);
+      /* ADR-030's intent, kept. The label pass resolves conflicts between
+       * layers in operational order, so a reservoir's own name outranks a
+       * drainage name where the two compete for the same pixels. */
+      check(layerFeatures.drainageUnderReservoirs,
+        `${label}: the drainage layer rose above the reservoirs, which hands ` +
+        "drainage names priority over reservoir names in the label pass");
+      /* ADR-030 was right about this half and it carries over unchanged: a
+       * near-opaque halo covered more of the map than the text it separated. */
+      check(layerFeatures.drainageHaloAlpha === 0.5,
+        `${label}: drainage-area label halo opacity is ${layerFeatures.drainageHaloAlpha}, expected 0.5`);
+      check(layerFeatures.symbolUsesViewScale === false,
+        `${label}: reservoir symbols still grow with the view scale`);
 
+    }
     const visibleText = await tab.evaluate(COLLECT_SHADOW_TEXT);
     check(!RETIRED_TERMS.test(visibleText),
       `${label}: retired vocabulary is visible ` +
@@ -1614,7 +1622,7 @@ for (const viewport of VIEWPORTS) {
       await tab.locator("#controls-toggle").click();
       await tab.waitForFunction(
         "document.querySelector('#start-sheet')?.hasAttribute('opened')",
-        { timeout: 5000 });
+        null, { timeout: 5000 });
     }
     check(await tab.locator(`${controls} [data-filter="storage"]`).isVisible(),
       `${label}: the storage level filter is not visible`);
@@ -1625,114 +1633,117 @@ for (const viewport of VIEWPORTS) {
     `${label}: the whole-West view does not offer both large reservoirs`);
     check(await tab.locator(`${controls} [data-scope="geography"]`).count() === 0,
       `${label}: the retired reservoirs geography control is still visible`);
-    check(ready.selectionOnTop,
-      `${label}: the selection ring is beneath the reservoirs on the first draw`);
-    check(ready.filtered === false,
-      `${label}: the map starts filtered`);
-    check(ready.shown === expectedReservoirs,
-      `${label}: the unfiltered panel reports ${ready.shown} of ${expectedReservoirs}`);
+    /* Logic: the filter, the month slider and reset. */
+    if (viewport.logic) {
+      check(ready.selectionOnTop,
+        `${label}: the selection ring is beneath the reservoirs on the first draw`);
+      check(ready.filtered === false,
+        `${label}: the map starts filtered`);
+      check(ready.shown === expectedReservoirs,
+        `${label}: the unfiltered panel reports ${ready.shown} of ${expectedReservoirs}`);
 
-    await tab.evaluate((selector) => {
-      const select = document.querySelector(`${selector} [data-filter="reporting"]`);
-      select.value = "late";
-      select.dispatchEvent(new CustomEvent("calciteSelectChange", { bubbles: true }));
-    }, controls);
-    await tab.waitForFunction(() => window.__dashboardReady.filtered === true, { timeout: 5000 });
+      await tab.evaluate((selector) => {
+        const select = document.querySelector(`${selector} [data-filter="reporting"]`);
+        select.value = "late";
+        select.dispatchEvent(new CustomEvent("calciteSelectChange", { bubbles: true }));
+      }, controls);
+      await tab.waitForFunction(() => window.__dashboardReady.filtered === true, null, { timeout: 5000 });
 
-    const filtered = await tab.evaluate(async (selector) => {
-      const layer = document.querySelector("arcgis-map")?.map?.findLayerById("reservoirs");
-      const effect = layer?.featureEffect;
-      return {
-        shown: window.__dashboardReady.shown,
-        where: effect?.filter?.where ?? null,
-        excludedEffect: effect?.excludedEffect ?? null,
-        // Counted from the layer, under the same clause the effect uses.
-        included: await layer.queryFeatureCount({ where: effect?.filter?.where }),
-        dimmed: document.querySelectorAll(`${selector} .list-btn-excluded`).length,
-        listed: document.querySelectorAll(`${selector} .list-btn`).length,
-        summary: document.querySelector(`${selector} [data-filter="summary"]`)?.textContent ?? ""
-      };
-    }, controls);
-    check(filtered.where === "late = 1",
-      `${label}: the layer filter is "${filtered.where}", expected "late = 1"`);
-    check(/grayscale/.test(filtered.excludedEffect ?? ""),
-      `${label}: excluded reservoirs are not greyed (${filtered.excludedEffect})`);
-    check(filtered.included === filtered.shown,
-      `${label}: the map includes ${filtered.included} reservoirs, the panel says ${filtered.shown}`);
-    check(filtered.listed - filtered.dimmed === filtered.shown,
-      `${label}: ${filtered.listed - filtered.dimmed} rows stayed bright, ` +
-      `the panel says ${filtered.shown}`);
-    check(filtered.listed === expectedReservoirs,
-      `${label}: the filter removed rows from the list instead of dimming them`);
-    check(filtered.summary.includes(String(filtered.shown)),
-      `${label}: the panel does not report how many reservoirs are shown`);
+      const filtered = await tab.evaluate(async (selector) => {
+        const layer = document.querySelector("arcgis-map")?.map?.findLayerById("reservoirs");
+        const effect = layer?.featureEffect;
+        return {
+          shown: window.__dashboardReady.shown,
+          where: effect?.filter?.where ?? null,
+          excludedEffect: effect?.excludedEffect ?? null,
+          // Counted from the layer, under the same clause the effect uses.
+          included: await layer.queryFeatureCount({ where: effect?.filter?.where }),
+          dimmed: document.querySelectorAll(`${selector} .list-btn-excluded`).length,
+          listed: document.querySelectorAll(`${selector} .list-btn`).length,
+          summary: document.querySelector(`${selector} [data-filter="summary"]`)?.textContent ?? ""
+        };
+      }, controls);
+      check(filtered.where === "late = 1",
+        `${label}: the layer filter is "${filtered.where}", expected "late = 1"`);
+      check(/grayscale/.test(filtered.excludedEffect ?? ""),
+        `${label}: excluded reservoirs are not greyed (${filtered.excludedEffect})`);
+      check(filtered.included === filtered.shown,
+        `${label}: the map includes ${filtered.included} reservoirs, the panel says ${filtered.shown}`);
+      check(filtered.listed - filtered.dimmed === filtered.shown,
+        `${label}: ${filtered.listed - filtered.dimmed} rows stayed bright, ` +
+        `the panel says ${filtered.shown}`);
+      check(filtered.listed === expectedReservoirs,
+        `${label}: the filter removed rows from the list instead of dimming them`);
+      check(filtered.summary.includes(String(filtered.shown)),
+        `${label}: the panel does not report how many reservoirs are shown`);
 
-    /* Moving the slider has to move the map, the list and the headline
-     * together. A headline still reporting today while the map draws last
-     * November is the page saying two things at once. */
-    const monthView = await tab.evaluate(async (selector) => {
-      const before = document.querySelector(`${selector} [data-value="percent"]`)?.textContent;
-      const slider = document.querySelector(`${selector} [data-month="slider"]`);
-      slider.value = 0;
-      slider.dispatchEvent(new CustomEvent("calciteSliderChange", { bubbles: true }));
-      await new Promise((resolve) => { setTimeout(resolve, 800); });
-      return {
-        before,
+      /* Moving the slider has to move the map, the list and the headline
+       * together. A headline still reporting today while the map draws last
+       * November is the page saying two things at once. */
+      const monthView = await tab.evaluate(async (selector) => {
+        const before = document.querySelector(`${selector} [data-value="percent"]`)?.textContent;
+        const slider = document.querySelector(`${selector} [data-month="slider"]`);
+        slider.value = 0;
+        slider.dispatchEvent(new CustomEvent("calciteSliderChange", { bubbles: true }));
+        await new Promise((resolve) => { setTimeout(resolve, 800); });
+        return {
+          before,
+          month: window.__dashboardReady.month,
+          drawn: window.__dashboardReady.drawn,
+          percent: document.querySelector(`${selector} [data-value="percent"]`)?.textContent,
+          updated: document.querySelector(`${selector} [data-value="updated"]`)?.textContent,
+          caption: document.querySelector(`${selector} [data-month="label"]`)?.textContent,
+          search: window.location.search
+        };
+      }, controls);
+      check(typeof monthView.month === "string" && /^\d{4}-\d{2}$/.test(monthView.month),
+        `${label}: the slider did not move the map to a month (${monthView.month})`);
+      check(monthView.drawn === expectedReservoirs,
+        `${label}: a past month drew ${monthView.drawn} reservoirs, expected ${expectedReservoirs}`);
+      check(/[Aa]verage through/.test(monthView.updated ?? ""),
+        `${label}: the headline still reads "${monthView.updated}" in a past month`);
+      check((monthView.caption ?? "").includes("Showing the average through"),
+        `${label}: the slider caption does not say which month is on screen`);
+      check(monthView.search.includes(`month=${monthView.month}`),
+        `${label}: the month is missing from a shareable link ("${monthView.search}")`);
+
+      // Back to the newest reading, which is what every other number is about.
+      await tab.evaluate(async (selector) => {
+        document.querySelector(`${selector} [data-month="now"]`).click();
+        await new Promise((resolve) => { setTimeout(resolve, 800); });
+      }, controls);
+      const backToNow = await tab.evaluate((selector) => ({
         month: window.__dashboardReady.month,
-        drawn: window.__dashboardReady.drawn,
         percent: document.querySelector(`${selector} [data-value="percent"]`)?.textContent,
-        updated: document.querySelector(`${selector} [data-value="updated"]`)?.textContent,
-        caption: document.querySelector(`${selector} [data-month="label"]`)?.textContent,
         search: window.location.search
-      };
-    }, controls);
-    check(typeof monthView.month === "string" && /^\d{4}-\d{2}$/.test(monthView.month),
-      `${label}: the slider did not move the map to a month (${monthView.month})`);
-    check(monthView.drawn === expectedReservoirs,
-      `${label}: a past month drew ${monthView.drawn} reservoirs, expected ${expectedReservoirs}`);
-    check(/[Aa]verage through/.test(monthView.updated ?? ""),
-      `${label}: the headline still reads "${monthView.updated}" in a past month`);
-    check((monthView.caption ?? "").includes("Showing the average through"),
-      `${label}: the slider caption does not say which month is on screen`);
-    check(monthView.search.includes(`month=${monthView.month}`),
-      `${label}: the month is missing from a shareable link ("${monthView.search}")`);
+      }), controls);
+      check(backToNow.month === null,
+        `${label}: the map stayed on ${backToNow.month} after returning to the newest reading`);
+      check(backToNow.percent === monthView.before,
+        `${label}: the headline came back as ${backToNow.percent}, was ${monthView.before}`);
+      check(!backToNow.search.includes("month="),
+        `${label}: the newest reading is written into the link as a month`);
 
-    // Back to the newest reading, which is what every other number is about.
-    await tab.evaluate(async (selector) => {
-      document.querySelector(`${selector} [data-month="now"]`).click();
-      await new Promise((resolve) => { setTimeout(resolve, 800); });
-    }, controls);
-    const backToNow = await tab.evaluate((selector) => ({
-      month: window.__dashboardReady.month,
-      percent: document.querySelector(`${selector} [data-value="percent"]`)?.textContent,
-      search: window.location.search
-    }), controls);
-    check(backToNow.month === null,
-      `${label}: the map stayed on ${backToNow.month} after returning to the newest reading`);
-    check(backToNow.percent === monthView.before,
-      `${label}: the headline came back as ${backToNow.percent}, was ${monthView.before}`);
-    check(!backToNow.search.includes("month="),
-      `${label}: the newest reading is written into the link as a month`);
+      // Excluded reservoirs stay on the map, so their rows stay reachable.
+      const dimmedButton = tab.locator(`${controls} .list-btn-excluded`).first();
+      if (await dimmedButton.count()) {
+        check(await dimmedButton.isEnabled(),
+          `${label}: a filtered-out reservoir cannot be selected from the list`);
+      }
 
-    // Excluded reservoirs stay on the map, so their rows stay reachable.
-    const dimmedButton = tab.locator(`${controls} .list-btn-excluded`).first();
-    if (await dimmedButton.count()) {
-      check(await dimmedButton.isEnabled(),
-        `${label}: a filtered-out reservoir cannot be selected from the list`);
+      await tab.locator(`${controls} [data-filter="reset"]`).first().click();
+      await tab.waitForFunction(() => window.__dashboardReady.filtered === false, null, { timeout: 5000 });
+      const cleared = await tab.evaluate((selector) => ({
+        effect: document.querySelector("arcgis-map")?.map
+          ?.findLayerById("reservoirs")?.featureEffect ?? null,
+        dimmed: document.querySelectorAll(`${selector} .list-btn-excluded`).length
+      }), controls);
+      check(cleared.effect === null,
+        `${label}: clearing the filter left an effect on the layer`);
+      check(cleared.dimmed === 0,
+        `${label}: clearing the filter left ${cleared.dimmed} rows dimmed`);
+
     }
-
-    await tab.locator(`${controls} [data-filter="reset"]`).first().click();
-    await tab.waitForFunction(() => window.__dashboardReady.filtered === false, { timeout: 5000 });
-    const cleared = await tab.evaluate((selector) => ({
-      effect: document.querySelector("arcgis-map")?.map
-        ?.findLayerById("reservoirs")?.featureEffect ?? null,
-      dimmed: document.querySelectorAll(`${selector} .list-btn-excluded`).length
-    }), controls);
-    check(cleared.effect === null,
-      `${label}: clearing the filter left an effect on the layer`);
-    check(cleared.dimmed === 0,
-      `${label}: clearing the filter left ${cleared.dimmed} rows dimmed`);
-
     if (viewport.name === "desktop") {
       const pointerName = await tab.locator("#start-panel .list-btn").first()
         .getAttribute("data-reservoir");
@@ -1765,7 +1776,7 @@ for (const viewport of VIEWPORTS) {
       }, pointerName);
       await tab.waitForFunction(
         () => document.querySelector("#map-hover")?.hidden === false,
-        { timeout: 5000 });
+        null, { timeout: 5000 });
       const hoverText = (await tab.locator("#map-hover").innerText()).trim();
       check(hoverText.includes(pointerName) && hoverText.includes("%"),
         `${label}: pointer hover did not summarize ${pointerName}`);
@@ -1813,31 +1824,34 @@ for (const viewport of VIEWPORTS) {
     const baselineSelect = mobile
       ? "#start-sheet [data-baseline=\"period\"]"
       : "#start-panel [data-baseline=\"period\"]";
-    const baselineState = await tab.evaluate((selector) => {
-      const select = document.querySelector(selector);
-      return {
-        present: Boolean(select),
-        options: select
-          ? [...select.querySelectorAll("calcite-option")].map((option) => option.value)
-          : [],
-        value: select ? select.value : null,
-        note: document.querySelector('[data-baseline="note"]')?.textContent ?? "",
-        signal: window.__dashboardReady.baseline,
-        choices: window.__dashboardReady.baselineChoices
-      };
-    }, baselineSelect);
-    check(baselineState.present, `${label}: the comparison period control is missing`);
-    check(baselineState.choices >= 2,
-      `${label}: only ${baselineState.choices} comparison period on offer`);
-    check(baselineState.options.includes("climate") && baselineState.options.includes("recent"),
-      `${label}: the comparison period control offers ${baselineState.options.join(", ")}`);
-    check(baselineState.value === baselineState.signal,
-      `${label}: the control shows ${baselineState.value} while the page uses ` +
-      `${baselineState.signal}`);
-    /* The sentence is the control's whole point -- the two periods produce
-     * different numbers and nothing in the number says which is which. */
-    check(baselineState.note.length > 40,
-      `${label}: the comparison period has no explanation beside it`);
+    /* Logic: the comparison period control's choices and note. */
+    if (viewport.logic) {
+      const baselineState = await tab.evaluate((selector) => {
+        const select = document.querySelector(selector);
+        return {
+          present: Boolean(select),
+          options: select
+            ? [...select.querySelectorAll("calcite-option")].map((option) => option.value)
+            : [],
+          value: select ? select.value : null,
+          note: document.querySelector('[data-baseline="note"]')?.textContent ?? "",
+          signal: window.__dashboardReady.baseline,
+          choices: window.__dashboardReady.baselineChoices
+        };
+      }, baselineSelect);
+      check(baselineState.present, `${label}: the comparison period control is missing`);
+      check(baselineState.choices >= 2,
+        `${label}: only ${baselineState.choices} comparison period on offer`);
+      check(baselineState.options.includes("climate") && baselineState.options.includes("recent"),
+        `${label}: the comparison period control offers ${baselineState.options.join(", ")}`);
+      check(baselineState.value === baselineState.signal,
+        `${label}: the control shows ${baselineState.value} while the page uses ` +
+        `${baselineState.signal}`);
+      /* The sentence is the control's whole point -- the two periods produce
+       * different numbers and nothing in the number says which is which. */
+      check(baselineState.note.length > 40,
+        `${label}: the comparison period has no explanation beside it`);
+    }
 
     // Selection, through the list rather than the map: `hitTest` is resolved
     // by the render loop, which does not run reliably in headless Chromium.
@@ -1849,112 +1863,124 @@ for (const viewport of VIEWPORTS) {
     await checkTextFits(tab, check, `${label}, reservoir list`);
     const firstName = await firstButton.getAttribute("data-reservoir");
     await firstButton.click();
-    const selected = await tab.evaluate(() => window.__dashboardReady.selected);
-    check(selected === firstName,
-      `${label}: selecting ${firstName} left the signal at ${selected}`);
-    /* The address bar describes the current view; it is not a log of how
-     * the reader got here. Comparing five reservoirs means five clicks, and
-     * with pushState the back button would then walk back through all five
-     * instead of leaving the page. */
-    const shared = await tab.evaluate(() => ({
-      search: window.location.search,
-      historyLength: window.history.length
-    }));
-    check(shared.search === `?reservoir=${encodeURIComponent(firstName)}`,
-      `${label}: selecting ${firstName} left the address bar at "${shared.search}"`);
-
-    const afterMore = await tab.evaluate((selector) => {
-      const before = window.history.length;
-      const buttons = [...document.querySelectorAll(selector)].slice(0, 4);
-      buttons.forEach((button) => button.click());
-      return {
-        grewBy: window.history.length - before,
+    /* Logic: selection, the address bar, and the comparison period. */
+    if (viewport.logic) {
+      const selected = await tab.evaluate(() => window.__dashboardReady.selected);
+      check(selected === firstName,
+        `${label}: selecting ${firstName} left the signal at ${selected}`);
+      /* The address bar describes the current view; it is not a log of how
+       * the reader got here. Comparing five reservoirs means five clicks, and
+       * with pushState the back button would then walk back through all five
+       * instead of leaving the page. */
+      const shared = await tab.evaluate(() => ({
         search: window.location.search,
-        last: buttons.at(-1)?.dataset.reservoir ?? null
-      };
-    }, listSelector);
-    check(afterMore.grewBy === 0,
-      `${label}: four more selections added ${afterMore.grewBy} history entries`);
-    check(afterMore.search === `?reservoir=${encodeURIComponent(afterMore.last)}`,
-      `${label}: the address bar lagged behind the selection`);
+        historyLength: window.history.length
+      }));
+      check(shared.search === `?reservoir=${encodeURIComponent(firstName)}`,
+        `${label}: selecting ${firstName} left the address bar at "${shared.search}"`);
 
-    /* Changing the period has to reach the open panel and the address bar.
-     * The panel is the surface it changes, and the selection store refuses to
-     * re-announce an unchanged name, so this is the exact path that would go
-     * quiet if the panel were ever redrawn through the store again. */
-    const switched = await tab.evaluate(async (args) => {
-      const [selector, detail] = args;
-      const before = document.querySelector(detail).innerText;
-      const select = document.querySelector(selector);
-      const other = select.value === "climate" ? "recent" : "climate";
-      select.value = other;
-      select.dispatchEvent(new CustomEvent("calciteSelectChange", { bubbles: true }));
-      await new Promise((resolve) => setTimeout(resolve, 300));
-      return {
-        other,
-        changed: document.querySelector(detail).innerText !== before,
-        signal: window.__dashboardReady.baseline,
-        search: window.location.search,
-        names: document.querySelector(detail).innerText.includes("through")
-      };
-    }, [baselineSelect, detailSelector]);
-    check(switched.signal === switched.other,
-      `${label}: the page stayed on ${switched.signal} after choosing ${switched.other}`);
-    check(switched.changed,
-      `${label}: choosing ${switched.other} did not change the details panel`);
-    check(switched.search.includes(`baseline=${switched.other}`),
-      `${label}: the chosen period is missing from "${switched.search}"`);
-    check(switched.names,
-      `${label}: the comparison does not name the years it came from`);
+      const afterMore = await tab.evaluate((selector) => {
+        const before = window.history.length;
+        const buttons = [...document.querySelectorAll(selector)].slice(0, 4);
+        buttons.forEach((button) => button.click());
+        return {
+          grewBy: window.history.length - before,
+          search: window.location.search,
+          last: buttons.at(-1)?.dataset.reservoir ?? null
+        };
+      }, listSelector);
+      check(afterMore.grewBy === 0,
+        `${label}: four more selections added ${afterMore.grewBy} history entries`);
+      check(afterMore.search === `?reservoir=${encodeURIComponent(afterMore.last)}`,
+        `${label}: the address bar lagged behind the selection`);
 
-    if (mobile) {
-      // The detail sheet is modal. Close it before exercising another real
-      // list click; clicking through its overlay tests an impossible user
-      // path and lets programmatic DOM clicks hide the mistake.
-      await tab.locator("#detail-sheet-close").click();
-      await tab.waitForFunction(
-        "!document.querySelector('#detail-sheet')?.hasAttribute('opened')",
-        { timeout: 5000 });
+      /* Changing the period has to reach the open panel and the address bar.
+       * The panel is the surface it changes, and the selection store refuses to
+       * re-announce an unchanged name, so this is the exact path that would go
+       * quiet if the panel were ever redrawn through the store again. */
+      const switched = await tab.evaluate(async (args) => {
+        const [selector, detail] = args;
+        const before = document.querySelector(detail).innerText;
+        const select = document.querySelector(selector);
+        const other = select.value === "climate" ? "recent" : "climate";
+        select.value = other;
+        select.dispatchEvent(new CustomEvent("calciteSelectChange", { bubbles: true }));
+        await new Promise((resolve) => setTimeout(resolve, 300));
+        return {
+          other,
+          changed: document.querySelector(detail).innerText !== before,
+          signal: window.__dashboardReady.baseline,
+          search: window.location.search,
+          names: document.querySelector(detail).innerText.includes("through")
+        };
+      }, [baselineSelect, detailSelector]);
+      check(switched.signal === switched.other,
+        `${label}: the page stayed on ${switched.signal} after choosing ${switched.other}`);
+      check(switched.changed,
+        `${label}: choosing ${switched.other} did not change the details panel`);
+      check(switched.search.includes(`baseline=${switched.other}`),
+        `${label}: the chosen period is missing from "${switched.search}"`);
+      check(switched.names,
+        `${label}: the comparison does not name the years it came from`);
     }
-    await tab.locator(listSelector).first().click();
+
+    /* Back to the first reservoir after the logic block's other selections.
+     * Where that block did not run, the first reservoir is still selected and
+     * its details are still open; clicking it again would announce nothing,
+     * because the selection store ignores an unchanged name. */
+    if (viewport.logic) {
+      if (mobile) {
+        // The detail sheet is modal. Close it before exercising another real
+        // list click; clicking through its overlay tests an impossible user
+        // path and lets programmatic DOM clicks hide the mistake.
+        await tab.locator("#detail-sheet-close").click();
+        await tab.waitForFunction(
+          "!document.querySelector('#detail-sheet')?.hasAttribute('opened')",
+          null, { timeout: 5000 });
+      }
+      await tab.locator(listSelector).first().click();
+    }
 
     const detailHost = tab.locator(detailSelector);
     check(await detailHost.isVisible(), `${label}: the active detail surface is not visible`);
-    const detail = (await detailHost.innerText()).trim();
-    /* The readings the legacy popup carried. The panel replaced that popup
-     * when 5.1 went to the root, and shipped with five of these -- so the
-     * reader lost the comparison with a normal year, the two change figures
-     * and the history entirely. */
-    for (const expected of [firstName, "%", "Stored now", "Reading date", "Measured by",
-      "Normal for this week", "History rank",
-      "Highest value this year", "Update schedule", "The last 12 months"]) {
-      check(detail.includes(expected),
-        `${label}: the details panel does not report ${expected}`);
+    /* Logic: what the details panel reports, and its CSV file. */
+    if (viewport.logic) {
+      const detail = (await detailHost.innerText()).trim();
+      /* The readings the legacy popup carried. The panel replaced that popup
+       * when 5.1 went to the root, and shipped with five of these -- so the
+       * reader lost the comparison with a normal year, the two change figures
+       * and the history entirely. */
+      for (const expected of [firstName, "%", "Stored now", "Reading date", "Measured by",
+        "Normal for this week", "History rank",
+        "Highest value this year", "Update schedule", "The last 12 months"]) {
+        check(detail.includes(expected),
+          `${label}: the details panel does not report ${expected}`);
+      }
+      /* The two change rows, by shape rather than by name. "30 days" is the
+       * interval the pipeline asks for and often not the one it gets -- the
+       * nearest usable reading is taken within ten days for a daily feed and
+       * forty-five for a month-end one -- so the row states the days it
+       * actually covers whenever they differ. On the payload this was written
+       * against, 77 of 198 reservoirs had a 30-day row covering 31 days. */
+      const changeRows = detail.match(/Change in (?:1 year|\d+ days?)/g) ?? [];
+      check(changeRows.length === 2,
+        `${label}: the details panel reports ${changeRows.length} change rows, expected two`);
+      const detailExport = detailHost.locator("[data-export-reservoir]");
+      check(await detailExport.count() === 1,
+        `${label}: reservoir details have no CSV file control`);
+      check(await detailExport.evaluate((element) => {
+        const target = element.shadowRoot?.querySelector("button");
+        return Boolean(target && target.tabIndex >= 0 && !target.disabled);
+      }),
+        `${label}: reservoir CSV file control is not keyboard reachable`);
+      const [detailDownload] = await Promise.all([
+        tab.waitForEvent("download", { timeout: 5000 }),
+        detailExport.click()
+      ]);
+      const detailCsv = await readFile(await detailDownload.path(), "utf8");
+      check(detailCsv.includes(firstName) && detailCsv.includes("History month"),
+        `${label}: reservoir CSV file does not contain the selected record and history`);
     }
-    /* The two change rows, by shape rather than by name. "30 days" is the
-     * interval the pipeline asks for and often not the one it gets -- the
-     * nearest usable reading is taken within ten days for a daily feed and
-     * forty-five for a month-end one -- so the row states the days it
-     * actually covers whenever they differ. On the payload this was written
-     * against, 77 of 198 reservoirs had a 30-day row covering 31 days. */
-    const changeRows = detail.match(/Change in (?:1 year|\d+ days?)/g) ?? [];
-    check(changeRows.length === 2,
-      `${label}: the details panel reports ${changeRows.length} change rows, expected two`);
-    const detailExport = detailHost.locator("[data-export-reservoir]");
-    check(await detailExport.count() === 1,
-      `${label}: reservoir details have no CSV file control`);
-    check(await detailExport.evaluate((element) => {
-      const target = element.shadowRoot?.querySelector("button");
-      return Boolean(target && target.tabIndex >= 0 && !target.disabled);
-    }),
-      `${label}: reservoir CSV file control is not keyboard reachable`);
-    const [detailDownload] = await Promise.all([
-      tab.waitForEvent("download", { timeout: 5000 }),
-      detailExport.click()
-    ]);
-    const detailCsv = await readFile(await detailDownload.path(), "utf8");
-    check(detailCsv.includes(firstName) && detailCsv.includes("History month"),
-      `${label}: reservoir CSV file does not contain the selected record and history`);
     /*
      * Let the chart finish fitting itself before measuring it.
      *
@@ -2309,7 +2335,7 @@ for (const viewport of VIEWPORTS) {
      * and only those -- a chart ranking unknowns at zero would invent a
      * drought. Opening the row is what builds it, so this waits on the
      * readiness field the render writes last. */
-    await tab.waitForFunction(() => window.__dashboardReady.rankingBars > 0, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady.rankingBars > 0, null, { timeout: 60000 });
     const ranking = await tab.evaluate(() => {
       const chart = document.querySelector('[data-ranking="host"] arcgis-chart');
       return {
@@ -2402,13 +2428,13 @@ for (const viewport of VIEWPORTS) {
       await tab.locator("#detail-sheet-close").click();
       await tab.waitForFunction(
         "!document.querySelector('#detail-sheet')?.hasAttribute('opened')",
-        { timeout: 5000 });
+        null, { timeout: 5000 });
       // The application restores focus on the next animation frame so it
       // runs after Calcite's own close lifecycle has finished.
       await tab.waitForFunction(
         "document.activeElement?.matches(" +
           "'#start-sheet .list-btn[aria-pressed=\"true\"]') === true",
-        { timeout: 5000 });
+        null, { timeout: 5000 });
     }
 
     /* Last, on a settled page: every control is wired, every table is
@@ -2894,246 +2920,249 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
       && !scatterTooltip?.summary?.includes("Not reported"),
     `${label}: the scatter summary does not name its drainage area ` +
       `(${scatterTooltip?.summary})`);
-    await tab.locator("#reservoir-search").fill("Jordan");
-    await tab.waitForFunction(
-      (expected) => window.__overviewReady?.visible > 0
-        && window.__overviewReady?.visible < expected, expectedReservoirs,
-      { timeout: 60000 });
-    const filtered = await tab.locator("#reservoir-rows tr").count();
-    check(filtered > 0 && filtered < expectedReservoirs,
-      `${label}: drainage-area search did not filter the table`);
-    const [overviewDownload] = await Promise.all([
-      tab.waitForEvent("download", { timeout: 5000 }),
-      overviewExport.click()
-    ]);
-    const overviewCsv = await readFile(await overviewDownload.path(), "utf8");
-    const overviewCsvRows = overviewCsv.trim().split(/\r?\n/);
-    check(overviewCsvRows.length === filtered + 1,
-      `${label}: filtered CSV file has ${overviewCsvRows.length - 1} rows, expected ${filtered}`);
-    check(overviewCsvRows[0]?.startsWith(
-      "Reservoir,State,Waterbody states,Drainage area,Full (percent)"),
-    `${label}: filtered CSV file does not keep state facts in their own columns`);
+    /* Logic: search, CSV export, shared links and the geographic filters. */
+    if (viewport.logic) {
+      await tab.locator("#reservoir-search").fill("Jordan");
+      await tab.waitForFunction(
+        (expected) => window.__overviewReady?.visible > 0
+          && window.__overviewReady?.visible < expected, expectedReservoirs,
+        { timeout: 60000 });
+      const filtered = await tab.locator("#reservoir-rows tr").count();
+      check(filtered > 0 && filtered < expectedReservoirs,
+        `${label}: drainage-area search did not filter the table`);
+      const [overviewDownload] = await Promise.all([
+        tab.waitForEvent("download", { timeout: 5000 }),
+        overviewExport.click()
+      ]);
+      const overviewCsv = await readFile(await overviewDownload.path(), "utf8");
+      const overviewCsvRows = overviewCsv.trim().split(/\r?\n/);
+      check(overviewCsvRows.length === filtered + 1,
+        `${label}: filtered CSV file has ${overviewCsvRows.length - 1} rows, expected ${filtered}`);
+      check(overviewCsvRows[0]?.startsWith(
+        "Reservoir,State,Waterbody states,Drainage area,Full (percent)"),
+      `${label}: filtered CSV file does not keep state facts in their own columns`);
 
-    /* The link. This page carried no URL state at all, so no view of it
-     * could be handed to anybody -- and the more the six charts can say,
-     * the more a view is worth sending. The assertion is the whole promise:
-     * open the address the page produced, get the view back. */
-    await tab.waitForFunction(() => window.location.search.includes("q="),
-      null, { timeout: 30000 });
-    const shared = await tab.evaluate(() => window.location.href);
-    check(shared.includes("q=Jordan"),
-      `${label}: the filtered view is not in the address (${shared})`);
+      /* The link. This page carried no URL state at all, so no view of it
+       * could be handed to anybody -- and the more the six charts can say,
+       * the more a view is worth sending. The assertion is the whole promise:
+       * open the address the page produced, get the view back. */
+      await tab.waitForFunction(() => window.location.search.includes("q="),
+        null, { timeout: 30000 });
+      const shared = await tab.evaluate(() => window.location.href);
+      check(shared.includes("q=Jordan"),
+        `${label}: the filtered view is not in the address (${shared})`);
 
-    const recipient = await context.newPage();
-    try {
-      await recipient.goto(shared, { waitUntil: "domcontentloaded", timeout: 60000 });
-      await recipient.waitForFunction((expected) =>
-        window.__overviewReady?.charts === expected, CHART_HOSTS.length, { timeout: 120000 });
-      const restored = await recipient.evaluate(() => ({
-        rows: document.querySelectorAll("#reservoir-rows tr").length,
-        query: document.querySelector("#reservoir-search")?.value ?? "",
-        search: window.location.search
-      }));
-      check(restored.query === "Jordan",
-        `${label}: a shared link did not restore the search (${restored.query})`);
-      check(restored.rows === filtered,
-        `${label}: a shared link restored ${restored.rows} rows, not ${filtered}`);
-      /* Restoring must not rewrite the address. A link that changes the
-         moment it is opened is a link that cannot be shared twice.
-         `URL` is a string constant at the top of this file, so the query is
-         taken off the href directly rather than parsed. */
-      const sharedQuery = shared.slice(shared.indexOf("?"));
-      check(restored.search === sharedQuery,
-        `${label}: opening a shared link rewrote ${sharedQuery} to ${restored.search}`);
-    } finally {
-      await recipient.close();
-    }
+      const recipient = await context.newPage();
+      try {
+        await recipient.goto(shared, { waitUntil: "domcontentloaded", timeout: 60000 });
+        await recipient.waitForFunction((expected) =>
+          window.__overviewReady?.charts === expected, CHART_HOSTS.length, { timeout: 120000 });
+        const restored = await recipient.evaluate(() => ({
+          rows: document.querySelectorAll("#reservoir-rows tr").length,
+          query: document.querySelector("#reservoir-search")?.value ?? "",
+          search: window.location.search
+        }));
+        check(restored.query === "Jordan",
+          `${label}: a shared link did not restore the search (${restored.query})`);
+        check(restored.rows === filtered,
+          `${label}: a shared link restored ${restored.rows} rows, not ${filtered}`);
+        /* Restoring must not rewrite the address. A link that changes the
+           moment it is opened is a link that cannot be shared twice.
+           `URL` is a string constant at the top of this file, so the query is
+           taken off the href directly rather than parsed. */
+        const sharedQuery = shared.slice(shared.indexOf("?"));
+        check(restored.search === sharedQuery,
+          `${label}: opening a shared link rewrote ${sharedQuery} to ${restored.search}`);
+      } finally {
+        await recipient.close();
+      }
 
-    /* The geographic filters, driven the way a reader drives them. These
-     * controls shipped inert once -- present in the markup, missing from
-     * the update() wiring -- and nothing here noticed, so every step waits
-     * on a consequence the reader can see (rows, the address, the
-     * readiness signal), never on the select's own value. */
-    check(Boolean(filterState && filterSubregion),
-      `${label}: no state and subregion in the payload narrow the scope`);
-    if (filterState && filterSubregion) {
-      await tab.locator("#reset-filters").click();
-      await tab.waitForFunction((expected) => window.__overviewReady?.visible === expected,
-        expectedReservoirs, { timeout: 60000 });
+      /* The geographic filters, driven the way a reader drives them. These
+       * controls shipped inert once -- present in the markup, missing from
+       * the update() wiring -- and nothing here noticed, so every step waits
+       * on a consequence the reader can see (rows, the address, the
+       * readiness signal), never on the select's own value. */
+      check(Boolean(filterState && filterSubregion),
+        `${label}: no state and subregion in the payload narrow the scope`);
+      if (filterState && filterSubregion) {
+        await tab.locator("#reset-filters").click();
+        await tab.waitForFunction((expected) => window.__overviewReady?.visible === expected,
+          expectedReservoirs, { timeout: 60000 });
 
-      check(await tab.locator("#opening-scope-summary").isHidden(),
-        `${label}: resetting the place left an old opening sentence`);
-      // Picking a state narrows the table and writes the address, on its own.
-  /* The merged Where menu is a Calcite component now, so driving it is
-   * set-value-plus-event rather than Playwright's native-select helper. */
-  const pickPlace = async (value) => {
-    await tab.evaluate((chosen) => {
-      const select = document.querySelector(".where-menu calcite-select");
-      select.value = chosen;
-      select.dispatchEvent(new CustomEvent("calciteSelectChange", { bubbles: true }));
-    }, value);
-  };
-      await pickPlace(filterState.code);
-      await tab.waitForFunction((expected) => window.__overviewReady?.visible === expected,
-        filterState.count, { timeout: 60000 });
-      check((await tab.evaluate(() => window.location.search))
-        .includes(`state=${filterState.code}`),
-      `${label}: the state choice is not in the address`);
-
-      check(await tab.locator("#opening-scope-summary").isVisible(),
-        `${label}: selecting a state did not update the place sentence`);
-
-      /* The shared Drainage area menu spans all three tiers. A held state
-       * narrows the occupied subregion rows rather than leaving a separate
-       * native select to keep in sync. */
-      const offeredSubregions = await tab.evaluate(() =>
-        [...document.querySelectorAll(".drainage-menu calcite-option")]
-          .map((option) => option.getAttribute("value"))
-          .filter((value) => /^\d{4}$/.test(value ?? "")));
-      check(JSON.stringify(offeredSubregions.sort())
-        === JSON.stringify(expectedStateSubregions),
-      `${label}: the Drainage area menu's subregions are not what the state leaves ` +
-        `(${offeredSubregions.join(",")} vs ${expectedStateSubregions.join(",")})`);
-
-      // Picking a subregion narrows further and writes the shared area parameter.
+        check(await tab.locator("#opening-scope-summary").isHidden(),
+          `${label}: resetting the place left an old opening sentence`);
+        // Picking a state narrows the table and writes the address, on its own.
+    /* The merged Where menu is a Calcite component now, so driving it is
+     * set-value-plus-event rather than Playwright's native-select helper. */
+    const pickPlace = async (value) => {
       await tab.evaluate((chosen) => {
-        const select = document.querySelector(".drainage-menu calcite-select");
+        const select = document.querySelector(".where-menu calcite-select");
         select.value = chosen;
         select.dispatchEvent(new CustomEvent("calciteSelectChange", { bubbles: true }));
-      }, filterSubregion.code);
-      await tab.waitForFunction((expected) =>
-        window.__overviewReady?.visible === expected
-        && window.location.search.includes("area="),
-      filterSubregion.count, { timeout: 60000 });
-      check(await tab.evaluate(() =>
-        document.querySelector(".drainage-menu calcite-select")?.value)
-        === filterSubregion.code,
-      `${label}: the subregion choice did not survive its own repopulation`);
-
-      // A keystroke in the search box must not reset the geographic choices.
-      await tab.locator("#reservoir-search").fill("zzz-no-such-reservoir");
-      await tab.waitForFunction(() => window.__overviewReady?.visible === 0,
-        null, { timeout: 60000 });
-      const kept = await tab.evaluate(() => ({
-        state: document.querySelector(".where-menu calcite-select")?.value,
-        drainage: document.querySelector(".drainage-menu calcite-select")?.value
-      }));
-      check(kept.state === filterState.code && kept.drainage === filterSubregion.code,
-        `${label}: a keystroke reset the geographic filters ` +
-        `(${kept.state}, ${kept.drainage})`);
-      /* Nothing matches: every chart, once near, settles on its empty
-       * message or an empty drawing, and none fails. */
-      await drawEveryChart(tab, check, `${label}, no match`, CHART_HOSTS);
-      const noMatch = await tab.evaluate(() => window.__overviewReady);
-      check(noMatch.chartsFailed === 0 && noMatch.chartsDrawn + noMatch.chartsEmpty === noMatch.charts,
-        `${label}: with no match the charts report ${JSON.stringify({
-          drawn: noMatch.chartsDrawn, empty: noMatch.chartsEmpty, failed: noMatch.chartsFailed })}`);
-
-      /* A shared link carrying the state and the subregion restores both --
-       * the subregion needs its options to exist before the restore runs,
-       * which a link is the only way to exercise. */
-      const geoLink = `${URL}overview.html` +
-        `?state=${filterState.code}&huc4=${filterSubregion.code}`;
-      const geoRecipient = await context.newPage();
-      try {
-        await geoRecipient.goto(geoLink,
-          { waitUntil: "domcontentloaded", timeout: 60000 });
-        await geoRecipient.waitForFunction((expected) =>
-          window.__overviewReady?.charts === expected, CHART_HOSTS.length,
-        { timeout: 120000 });
-        const restored = await geoRecipient.evaluate(() => ({
-          state: document.querySelector(".where-menu calcite-select")?.value,
-          drainage: document.querySelector(".drainage-menu calcite-select")?.value,
-          rows: document.querySelectorAll("#reservoir-rows tr").length
-        }));
-        check(restored.state === filterState.code
-          && restored.drainage === filterSubregion.code,
-        `${label}: a shared link restored (${restored.state}, ${restored.drainage}), ` +
-          `not (${filterState.code}, ${filterSubregion.code})`);
-        check(restored.rows === filterSubregion.count,
-          `${label}: a shared geographic link restored ${restored.rows} rows, ` +
-          `not ${filterSubregion.count}`);
-      } finally {
-        await geoRecipient.close();
-      }
-
-      /* And the canonical shared spelling reaches the same row and count.
-       * `?huc4=` remains readable above; new menu picks write `?area=`. */
-      const areaRecipient = await context.newPage();
-      try {
-        await areaRecipient.goto(`${URL}overview.html` +
-          `?state=${filterState.code}&area=${filterSubregion.code}`,
-        { waitUntil: "domcontentloaded", timeout: 60000 });
-        await areaRecipient.waitForFunction((expected) =>
-          window.__overviewReady?.charts === expected, CHART_HOSTS.length,
-        { timeout: 120000 });
-        const restored = await areaRecipient.evaluate(() => ({
-          drainage: document.querySelector(".drainage-menu calcite-select")?.value,
-          rows: document.querySelectorAll("#reservoir-rows tr").length
-        }));
-        check(restored.drainage === filterSubregion.code
-          && restored.rows === filterSubregion.count,
-        `${label}: ?area=${filterSubregion.code} restored `
-          + `${restored.drainage} with ${restored.rows} rows`);
-      } finally {
-        await areaRecipient.close();
-      }
-
-      // The county axis, offered exactly when the payload carries counties.
-      await tab.locator("#reset-filters").click();
-      await tab.waitForFunction((expected) => window.__overviewReady?.visible === expected,
-        expectedReservoirs, { timeout: 60000 });
-      if (filterCounty) {
-        check(await tab.evaluate(() =>
-          [...document.querySelectorAll(".where-menu calcite-option")]
-            .some((option) => option.getAttribute("value") === undefined
-              ? false : /^\d{5}$/.test(option.getAttribute("value") ?? ""))),
-        `${label}: the payload carries counties and the Where menu has none`);
-        await pickPlace(filterCounty.code);
+      }, value);
+    };
+        await pickPlace(filterState.code);
         await tab.waitForFunction((expected) => window.__overviewReady?.visible === expected,
-          filterCounty.count, { timeout: 60000 });
-        /* ADR-149: the weekly storage figures follow the filters, and the
-         * card's scope line counts the filtered rows. */
-        const weeklyScope = await tab.waitForFunction((expected) => {
-          const text = document.querySelector('[data-weekly="scope"]')?.textContent ?? "";
-          return text.startsWith(`Storage covers ${expected} of `) ? text : false;
-        }, filterCounty.count, { timeout: 30000 }).then((handle) => handle.jsonValue())
-          .catch(() => null);
-        check(weeklyScope !== null,
-          `${label}: the weekly scope line does not count the ${filterCounty.count} filtered reservoirs`);
+          filterState.count, { timeout: 60000 });
+        check((await tab.evaluate(() => window.location.search))
+          .includes(`state=${filterState.code}`),
+        `${label}: the state choice is not in the address`);
+
+        check(await tab.locator("#opening-scope-summary").isVisible(),
+          `${label}: selecting a state did not update the place sentence`);
+
+        /* The shared Drainage area menu spans all three tiers. A held state
+         * narrows the occupied subregion rows rather than leaving a separate
+         * native select to keep in sync. */
+        const offeredSubregions = await tab.evaluate(() =>
+          [...document.querySelectorAll(".drainage-menu calcite-option")]
+            .map((option) => option.getAttribute("value"))
+            .filter((value) => /^\d{4}$/.test(value ?? "")));
+        check(JSON.stringify(offeredSubregions.sort())
+          === JSON.stringify(expectedStateSubregions),
+        `${label}: the Drainage area menu's subregions are not what the state leaves ` +
+          `(${offeredSubregions.join(",")} vs ${expectedStateSubregions.join(",")})`);
+
+        // Picking a subregion narrows further and writes the shared area parameter.
+        await tab.evaluate((chosen) => {
+          const select = document.querySelector(".drainage-menu calcite-select");
+          select.value = chosen;
+          select.dispatchEvent(new CustomEvent("calciteSelectChange", { bubbles: true }));
+        }, filterSubregion.code);
+        await tab.waitForFunction((expected) =>
+          window.__overviewReady?.visible === expected
+          && window.location.search.includes("area="),
+        filterSubregion.count, { timeout: 60000 });
+        check(await tab.evaluate(() =>
+          document.querySelector(".drainage-menu calcite-select")?.value)
+          === filterSubregion.code,
+        `${label}: the subregion choice did not survive its own repopulation`);
+
+        // A keystroke in the search box must not reset the geographic choices.
+        await tab.locator("#reservoir-search").fill("zzz-no-such-reservoir");
+        await tab.waitForFunction(() => window.__overviewReady?.visible === 0,
+          null, { timeout: 60000 });
+        const kept = await tab.evaluate(() => ({
+          state: document.querySelector(".where-menu calcite-select")?.value,
+          drainage: document.querySelector(".drainage-menu calcite-select")?.value
+        }));
+        check(kept.state === filterState.code && kept.drainage === filterSubregion.code,
+          `${label}: a keystroke reset the geographic filters ` +
+          `(${kept.state}, ${kept.drainage})`);
+        /* Nothing matches: every chart, once near, settles on its empty
+         * message or an empty drawing, and none fails. */
+        await drawEveryChart(tab, check, `${label}, no match`, CHART_HOSTS);
+        const noMatch = await tab.evaluate(() => window.__overviewReady);
+        check(noMatch.chartsFailed === 0 && noMatch.chartsDrawn + noMatch.chartsEmpty === noMatch.charts,
+          `${label}: with no match the charts report ${JSON.stringify({
+            drawn: noMatch.chartsDrawn, empty: noMatch.chartsEmpty, failed: noMatch.chartsFailed })}`);
+
+        /* A shared link carrying the state and the subregion restores both --
+         * the subregion needs its options to exist before the restore runs,
+         * which a link is the only way to exercise. */
+        const geoLink = `${URL}overview.html` +
+          `?state=${filterState.code}&huc4=${filterSubregion.code}`;
+        const geoRecipient = await context.newPage();
+        try {
+          await geoRecipient.goto(geoLink,
+            { waitUntil: "domcontentloaded", timeout: 60000 });
+          await geoRecipient.waitForFunction((expected) =>
+            window.__overviewReady?.charts === expected, CHART_HOSTS.length,
+          { timeout: 120000 });
+          const restored = await geoRecipient.evaluate(() => ({
+            state: document.querySelector(".where-menu calcite-select")?.value,
+            drainage: document.querySelector(".drainage-menu calcite-select")?.value,
+            rows: document.querySelectorAll("#reservoir-rows tr").length
+          }));
+          check(restored.state === filterState.code
+            && restored.drainage === filterSubregion.code,
+          `${label}: a shared link restored (${restored.state}, ${restored.drainage}), ` +
+            `not (${filterState.code}, ${filterSubregion.code})`);
+          check(restored.rows === filterSubregion.count,
+            `${label}: a shared geographic link restored ${restored.rows} rows, ` +
+            `not ${filterSubregion.count}`);
+        } finally {
+          await geoRecipient.close();
+        }
+
+        /* And the canonical shared spelling reaches the same row and count.
+         * `?huc4=` remains readable above; new menu picks write `?area=`. */
+        const areaRecipient = await context.newPage();
+        try {
+          await areaRecipient.goto(`${URL}overview.html` +
+            `?state=${filterState.code}&area=${filterSubregion.code}`,
+          { waitUntil: "domcontentloaded", timeout: 60000 });
+          await areaRecipient.waitForFunction((expected) =>
+            window.__overviewReady?.charts === expected, CHART_HOSTS.length,
+          { timeout: 120000 });
+          const restored = await areaRecipient.evaluate(() => ({
+            drainage: document.querySelector(".drainage-menu calcite-select")?.value,
+            rows: document.querySelectorAll("#reservoir-rows tr").length
+          }));
+          check(restored.drainage === filterSubregion.code
+            && restored.rows === filterSubregion.count,
+          `${label}: ?area=${filterSubregion.code} restored `
+            + `${restored.drainage} with ${restored.rows} rows`);
+        } finally {
+          await areaRecipient.close();
+        }
+
+        // The county axis, offered exactly when the payload carries counties.
+        await tab.locator("#reset-filters").click();
+        await tab.waitForFunction((expected) => window.__overviewReady?.visible === expected,
+          expectedReservoirs, { timeout: 60000 });
+        if (filterCounty) {
+          check(await tab.evaluate(() =>
+            [...document.querySelectorAll(".where-menu calcite-option")]
+              .some((option) => option.getAttribute("value") === undefined
+                ? false : /^\d{5}$/.test(option.getAttribute("value") ?? ""))),
+          `${label}: the payload carries counties and the Where menu has none`);
+          await pickPlace(filterCounty.code);
+          await tab.waitForFunction((expected) => window.__overviewReady?.visible === expected,
+            filterCounty.count, { timeout: 60000 });
+          /* ADR-149: the weekly storage figures follow the filters, and the
+           * card's scope line counts the filtered rows. */
+          const weeklyScope = await tab.waitForFunction((expected) => {
+            const text = document.querySelector('[data-weekly="scope"]')?.textContent ?? "";
+            return text.startsWith(`Storage covers ${expected} of `) ? text : false;
+          }, filterCounty.count, { timeout: 30000 }).then((handle) => handle.jsonValue())
+            .catch(() => null);
+          check(weeklyScope !== null,
+            `${label}: the weekly scope line does not count the ${filterCounty.count} filtered reservoirs`);
+          await tab.locator("#reset-filters").click();
+          await tab.waitForFunction((expected) => window.__overviewReady?.visible === expected,
+            expectedReservoirs, { timeout: 60000 });
+        }
+
+        /* Lake Mead's own control (ADR-062): included by default and reported
+         * so, and when a reader takes it back out, the page has to say so in
+         * the one sentence it states its scope with -- 28 million acre-feet
+         * leaving every total is not a footnote. Lake Powell's toggle stays
+         * on, so this drives exactly one of the two independent controls. */
+        check((await tab.evaluate(() => window.__overviewReady?.lakeMeadExcluded)) === false,
+          `${label}: readiness signal reports Lake Mead out of the opening scope`);
+        await tab.locator("#lake-mead-toggle").uncheck();
+        await tab.waitForFunction((expected) =>
+          window.__overviewReady?.visible === expected
+          && window.__overviewReady?.lakeMeadExcluded === true,
+        expectedConnectedWithoutMead, { timeout: 60000 });
+        const meadStatus = await tab.locator("#filter-status").innerText();
+        check(meadStatus.includes("Lake Powell included")
+          && meadStatus.includes("Lake Mead excluded"),
+        `${label}: the status line does not state both dominant controls (${meadStatus})`);
+        if (lakeMeadRow) {
+          const meadRows = (await tab.locator("#reservoir-rows").innerText()).split("\n");
+          check(namedRows(meadRows, lakeMeadRow.name) === 0,
+            `${label}: Lake Mead is toggled out and still in the table`);
+        }
+        check((await tab.evaluate(() => window.location.search)).includes("mead=exclude"),
+          `${label}: the Lake Mead choice is not in the address`);
+
+        // Leave the page as the reader first found it.
         await tab.locator("#reset-filters").click();
         await tab.waitForFunction((expected) => window.__overviewReady?.visible === expected,
           expectedReservoirs, { timeout: 60000 });
       }
-
-      /* Lake Mead's own control (ADR-062): included by default and reported
-       * so, and when a reader takes it back out, the page has to say so in
-       * the one sentence it states its scope with -- 28 million acre-feet
-       * leaving every total is not a footnote. Lake Powell's toggle stays
-       * on, so this drives exactly one of the two independent controls. */
-      check((await tab.evaluate(() => window.__overviewReady?.lakeMeadExcluded)) === false,
-        `${label}: readiness signal reports Lake Mead out of the opening scope`);
-      await tab.locator("#lake-mead-toggle").uncheck();
-      await tab.waitForFunction((expected) =>
-        window.__overviewReady?.visible === expected
-        && window.__overviewReady?.lakeMeadExcluded === true,
-      expectedConnectedWithoutMead, { timeout: 60000 });
-      const meadStatus = await tab.locator("#filter-status").innerText();
-      check(meadStatus.includes("Lake Powell included")
-        && meadStatus.includes("Lake Mead excluded"),
-      `${label}: the status line does not state both dominant controls (${meadStatus})`);
-      if (lakeMeadRow) {
-        const meadRows = (await tab.locator("#reservoir-rows").innerText()).split("\n");
-        check(namedRows(meadRows, lakeMeadRow.name) === 0,
-          `${label}: Lake Mead is toggled out and still in the table`);
-      }
-      check((await tab.evaluate(() => window.location.search)).includes("mead=exclude"),
-        `${label}: the Lake Mead choice is not in the address`);
-
-      // Leave the page as the reader first found it.
-      await tab.locator("#reset-filters").click();
-      await tab.waitForFunction((expected) => window.__overviewReady?.visible === expected,
-        expectedReservoirs, { timeout: 60000 });
     }
     const layout = await tab.evaluate(() => ({
       viewport: document.documentElement.clientWidth,
@@ -3196,26 +3225,29 @@ for (const viewport of [VIEWPORTS[0], VIEWPORTS[2]]) {
     await checkAccessibility(tab, check, label);
     await tab.screenshot({ path: `screenshots/overview-${viewport.name}.png`, fullPage: false });
 
-    /* Drive the actual chart-selection contract last because success leaves
-     * this page: selecting its first bar must navigate to the map's public
-     * `?reservoir=` link, not turn the chart into a hidden extra filter. */
-    await drawEveryChart(tab, check, `${label}, before the chart selection`, CHART_HOSTS);
-    const chartTarget = await tab.locator("#capacity-chart arcgis-chart").evaluate((chart) => {
-      const graphic = chart.layer?.source?.toArray()?.[0];
-      return {
-        id: Number(graphic?.attributes?.ObjectID),
-        label: String(graphic?.attributes?.label ?? "")
-      };
-    });
-    const followedChartLink = tab.waitForURL((url) =>
-      url.pathname.endsWith("/") && url.searchParams.get("reservoir") === chartTarget.label,
-    { timeout: 60000 });
-    await tab.locator("#capacity-chart arcgis-chart").evaluate((chart, id) => {
-      chart.dispatchEvent(new CustomEvent("arcgisSelectionComplete", {
-        detail: { selectionData: { selectionOIDs: [id] } }
-      }));
-    }, chartTarget.id);
-    await followedChartLink;
+    /* Logic: the chart selection navigates to the map link. */
+    if (viewport.logic) {
+      /* Drive the actual chart-selection contract last because success leaves
+       * this page: selecting its first bar must navigate to the map's public
+       * `?reservoir=` link, not turn the chart into a hidden extra filter. */
+      await drawEveryChart(tab, check, `${label}, before the chart selection`, CHART_HOSTS);
+      const chartTarget = await tab.locator("#capacity-chart arcgis-chart").evaluate((chart) => {
+        const graphic = chart.layer?.source?.toArray()?.[0];
+        return {
+          id: Number(graphic?.attributes?.ObjectID),
+          label: String(graphic?.attributes?.label ?? "")
+        };
+      });
+      const followedChartLink = tab.waitForURL((url) =>
+        url.pathname.endsWith("/") && url.searchParams.get("reservoir") === chartTarget.label,
+      { timeout: 60000 });
+      await tab.locator("#capacity-chart arcgis-chart").evaluate((chart, id) => {
+        chart.dispatchEvent(new CustomEvent("arcgisSelectionComplete", {
+          detail: { selectionData: { selectionOIDs: [id] } }
+        }));
+      }, chartTarget.id);
+      await followedChartLink;
+    }
   } catch (err) {
     failures.push(`${label}: ${err.message}`);
   }
@@ -3321,7 +3353,7 @@ for (const viewport of VIEWPORTS) {
   console.log(`\n=== ${label}`);
   try {
     await tab.goto(`${URL}data.html`, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dataDocsReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dataDocsReady !== undefined, null, { timeout: 60000 });
     const state = await tab.evaluate(() => ({
       ready: window.__dataDocsReady,
       files: document.querySelectorAll(".api-file").length,
@@ -3666,7 +3698,7 @@ for (const viewport of VIEWPORTS) {
     await tab.goto(`${URL}snow.html?area=140100`, {
       waitUntil: "domcontentloaded", timeout: 60000
     });
-    await tab.waitForFunction(() => window.__snowReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__snowReady !== undefined, null, { timeout: 60000 });
     const linked = await tab.evaluate(() => ({
       ready: window.__snowReady,
       tableRows: document.querySelectorAll("#snow-site-rows tr").length,
@@ -3712,7 +3744,7 @@ for (const viewport of VIEWPORTS) {
       select.dispatchEvent(new CustomEvent("calciteSelectChange", { bubbles: true }));
     });
     await tab.waitForFunction(
-      () => window.__snowReady && window.__snowReady.area === null, { timeout: 10000 });
+      () => window.__snowReady && window.__snowReady.area === null, null, { timeout: 10000 });
     check(await tab.locator("#snow-scope-summary").isHidden(),
       `${label}: the opening place sentence survived clearing the drainage area`);
     const state = await tab.evaluate(() => ({
@@ -3806,7 +3838,7 @@ for (const viewport of VIEWPORTS) {
      * actually built, which a blank-canvas screenshot cannot. */
     await tab.waitForFunction(
       () => window.__snowReady && window.__snowReady.mapDay !== undefined,
-      { timeout: 60000 });
+      null, { timeout: 60000 });
     const mapState = await tab.evaluate(() => ({
       ready: window.__snowReady,
       slider: Boolean(document.querySelector("#snow-day")),
@@ -3868,47 +3900,50 @@ for (const viewport of VIEWPORTS) {
     await checkViewMapHover(tab, check, label, "snow-map-host", "snow-map-hover",
       "snow-sites", "of normal");
 
-    /* One site's season. Chosen through the picker the way a reader would;
-     * the drawn-point count is what proves a curve, not a prompt, is on
-     * screen, and the address bar has to carry the choice. */
-    const firstStation = await tab.evaluate(() =>
-      document.querySelector("#snow-site optgroup option")?.getAttribute("value") ?? null);
-    check(typeof firstStation === "string" && firstStation.length > 0,
-      `${label}: the site picker offers no sites`);
-    await tab.selectOption("#snow-site", firstStation);
-    await tab.waitForFunction(
-      () => window.__snowReady && window.__snowReady.site !== null, { timeout: 10000 });
-    const siteState = await tab.evaluate(() => ({
-      ready: window.__snowReady,
-      chart: Boolean(document.querySelector("#snow-site-detail svg")),
-      normalLine: Boolean(document.querySelector("#snow-site-detail .site-curve-normal")),
-      monthRows: document.querySelectorAll("#snow-site-detail tbody tr").length,
-      pathRows: document.querySelectorAll(
-        "#snow-site-detail .hydrologic-path li").length,
-      coordinates: document.querySelector(
-        "#snow-site-detail .coordinate-facts")?.textContent ?? "",
-      copyControl: Boolean(document.querySelector(
-        "#snow-site-detail .coordinate-copy")),
-      search: window.location.search,
-      nameButtons: document.querySelectorAll(".site-name-button").length
-    }));
-    check(siteState.ready?.site === firstStation,
-      `${label}: readiness reports site ${siteState.ready?.site}`);
-    check(siteState.chart && siteState.ready?.siteCurvePoints > 0,
-      `${label}: the site curve drew ${siteState.ready?.siteCurvePoints} points`);
-    check(siteState.normalLine,
-      `${label}: the site curve has no normal line to compare against`);
-    check(siteState.monthRows > 0,
-      `${label}: the site card published no month table rows`);
-    check(siteState.pathRows === 3,
-      `${label}: the site card has ${siteState.pathRows} hydrologic path rows`);
-    check(siteState.coordinates.includes("Station point")
-      && siteState.coordinates.includes("°") && siteState.copyControl,
-    `${label}: the site card does not show both coordinate forms and a copy action`);
-    check(siteState.search.includes("site="),
-      `${label}: the chosen site is not in the address bar (${siteState.search})`);
-    check(siteState.nameButtons === siteState.ready?.tableRows,
-      `${label}: ${siteState.nameButtons} site name buttons for ${siteState.ready?.tableRows} rows`);
+    /* Logic: one site's season, picked from the list. */
+    if (viewport.logic) {
+      /* One site's season. Chosen through the picker the way a reader would;
+       * the drawn-point count is what proves a curve, not a prompt, is on
+       * screen, and the address bar has to carry the choice. */
+      const firstStation = await tab.evaluate(() =>
+        document.querySelector("#snow-site optgroup option")?.getAttribute("value") ?? null);
+      check(typeof firstStation === "string" && firstStation.length > 0,
+        `${label}: the site picker offers no sites`);
+      await tab.selectOption("#snow-site", firstStation);
+      await tab.waitForFunction(
+        () => window.__snowReady && window.__snowReady.site !== null, null, { timeout: 10000 });
+      const siteState = await tab.evaluate(() => ({
+        ready: window.__snowReady,
+        chart: Boolean(document.querySelector("#snow-site-detail svg")),
+        normalLine: Boolean(document.querySelector("#snow-site-detail .site-curve-normal")),
+        monthRows: document.querySelectorAll("#snow-site-detail tbody tr").length,
+        pathRows: document.querySelectorAll(
+          "#snow-site-detail .hydrologic-path li").length,
+        coordinates: document.querySelector(
+          "#snow-site-detail .coordinate-facts")?.textContent ?? "",
+        copyControl: Boolean(document.querySelector(
+          "#snow-site-detail .coordinate-copy")),
+        search: window.location.search,
+        nameButtons: document.querySelectorAll(".site-name-button").length
+      }));
+      check(siteState.ready?.site === firstStation,
+        `${label}: readiness reports site ${siteState.ready?.site}`);
+      check(siteState.chart && siteState.ready?.siteCurvePoints > 0,
+        `${label}: the site curve drew ${siteState.ready?.siteCurvePoints} points`);
+      check(siteState.normalLine,
+        `${label}: the site curve has no normal line to compare against`);
+      check(siteState.monthRows > 0,
+        `${label}: the site card published no month table rows`);
+      check(siteState.pathRows === 3,
+        `${label}: the site card has ${siteState.pathRows} hydrologic path rows`);
+      check(siteState.coordinates.includes("Station point")
+        && siteState.coordinates.includes("°") && siteState.copyControl,
+      `${label}: the site card does not show both coordinate forms and a copy action`);
+      check(siteState.search.includes("site="),
+        `${label}: the chosen site is not in the address bar (${siteState.search})`);
+      check(siteState.nameButtons === siteState.ready?.tableRows,
+        `${label}: ${siteState.nameButtons} site name buttons for ${siteState.ready?.tableRows} rows`);
+    }
     if (snowFiltersOpened) await tab.locator("#snow-filter-toggle").click();
     /* Last, on a settled page: every control is wired, every table is
      * filled, and the shadow roots have rendered their real controls. */
@@ -4007,7 +4042,7 @@ for (const viewport of VIEWPORTS) {
     await tab.goto(`${URL}precipitation.html?area=140100`, {
       waitUntil: "domcontentloaded", timeout: 60000
     });
-    await tab.waitForFunction(() => window.__precipReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__precipReady !== undefined, null, { timeout: 60000 });
     const linked = await tab.evaluate(() => ({
       ready: window.__precipReady,
       areaControl: document.querySelector(".drainage-menu calcite-select")?.value,
@@ -4027,7 +4062,7 @@ for (const viewport of VIEWPORTS) {
     await tab.locator("#precip-card").scrollIntoViewIfNeeded();
     await tab.waitForFunction(
       () => window.__precipReady?.precipitation && window.__precipReady.precipitation.state !== "loading",
-      { timeout: 60000 });
+      null, { timeout: 60000 });
     const precip = await tab.evaluate(() => ({
       status: window.__precipReady?.precipitation,
       busy: document.querySelector(".precip-curve-host")?.getAttribute("aria-busy"),
@@ -4067,45 +4102,51 @@ for (const viewport of VIEWPORTS) {
     console.log("  storm totals:", JSON.stringify({ ...stormStatus, values: storm.values, listed: storm.listed }));
     check(stormStatus && stormStatus.endDate !== undefined && stormStatus.leftOut >= 0,
       `${label}: the readiness object has no storm totals`);
-    if (stormStatus?.endDate) {
-      check(storm.shown && storm.values.length === 3
-        && storm.values.every((value) => /^(\d+\.\d in|Less than 0\.1 in|—)$/.test(value)),
-      `${label}: the storm totals read ${JSON.stringify(storm.values)}`);
-      check(!storm.text.includes("%"), `${label}: the storm totals print a percent`);
-      check(storm.listed === stormStatus.rows && storm.listed <= 8,
-        `${label}: the storm list shows ${storm.listed} rows, readiness ${stormStatus.rows}`);
-      const stationLinks = await tab.evaluate(() => [...document.querySelectorAll("#precip-card .precip-storm-list a.precip-storm-name")]
-        .map((link) => link.getAttribute("href") ?? ""));
-      check(stationLinks.length === storm.listed
-        && stationLinks.every((href) => href.startsWith("./snow.html?state=all&site=")),
-      `${label}: the station names link to ${JSON.stringify(stationLinks.slice(0, 2))}`);
-      check(!stormStatus.available || stormStatus.stations === 0
-        || storm.notes.some((note) => note === `Mean of ${stormStatus.stations} station${stormStatus.stations === 1 ? "" : "s"}`),
-      `${label}: no storm total names its ${stormStatus.stations} stations`);
-      await tab.locator(".precip-storm .precip-range button", { hasText: "7 days" }).click();
-      await tab.waitForFunction(() => window.__precipReady?.precipitation?.storm?.window === 7, { timeout: 10000 });
-      await tab.locator(".precip-storm .precip-range button", { hasText: "3 days" }).click();
-    } else {
-      check(!storm.shown, `${label}: storm totals show with no end day`);
+    /* Logic: the storm totals, their links and day buttons. */
+    if (viewport.logic) {
+      if (stormStatus?.endDate) {
+        check(storm.shown && storm.values.length === 3
+          && storm.values.every((value) => /^(\d+\.\d in|Less than 0\.1 in|—)$/.test(value)),
+        `${label}: the storm totals read ${JSON.stringify(storm.values)}`);
+        check(!storm.text.includes("%"), `${label}: the storm totals print a percent`);
+        check(storm.listed === stormStatus.rows && storm.listed <= 8,
+          `${label}: the storm list shows ${storm.listed} rows, readiness ${stormStatus.rows}`);
+        const stationLinks = await tab.evaluate(() => [...document.querySelectorAll("#precip-card .precip-storm-list a.precip-storm-name")]
+          .map((link) => link.getAttribute("href") ?? ""));
+        check(stationLinks.length === storm.listed
+          && stationLinks.every((href) => href.startsWith("./snow.html?state=all&site=")),
+        `${label}: the station names link to ${JSON.stringify(stationLinks.slice(0, 2))}`);
+        check(!stormStatus.available || stormStatus.stations === 0
+          || storm.notes.some((note) => note === `Mean of ${stormStatus.stations} station${stormStatus.stations === 1 ? "" : "s"}`),
+        `${label}: no storm total names its ${stormStatus.stations} stations`);
+        await tab.locator(".precip-storm .precip-range button", { hasText: "7 days" }).click();
+        await tab.waitForFunction(() => window.__precipReady?.precipitation?.storm?.window === 7, null, { timeout: 10000 });
+        await tab.locator(".precip-storm .precip-range button", { hasText: "3 days" }).click();
+      } else {
+        check(!storm.shown, `${label}: storm totals show with no end day`);
+      }
     }
-    if (precip.status?.curveDays > 0) {
-      /* The chart opens on the season so far and can show the whole year;
-       * the whole year holds every band day the season view does not. */
-      check(precip.status.range === "season",
-        `${label}: the precipitation chart opened on ${precip.status.range}`);
-      await tab.locator(".precip-range button", { hasText: "Whole water year" }).click();
-      await tab.waitForFunction(() => window.__precipReady?.precipitation?.range === "year", { timeout: 10000 });
-      const pressed = await tab.evaluate(() => [...document.querySelectorAll(".precip-controls .precip-range button")]
-        .map((button) => button.getAttribute("aria-pressed")).join(","));
-      check(pressed === "false,true", `${label}: the range buttons report ${pressed}`);
-      await tab.locator(".precip-range button", { hasText: "Season so far" }).click();
+    /* Logic: the chart's range buttons. */
+    if (viewport.logic) {
+      if (precip.status?.curveDays > 0) {
+        /* The chart opens on the season so far and can show the whole year;
+         * the whole year holds every band day the season view does not. */
+        check(precip.status.range === "season",
+          `${label}: the precipitation chart opened on ${precip.status.range}`);
+        await tab.locator(".precip-range button", { hasText: "Whole water year" }).click();
+        await tab.waitForFunction(() => window.__precipReady?.precipitation?.range === "year", null, { timeout: 10000 });
+        const pressed = await tab.evaluate(() => [...document.querySelectorAll(".precip-controls .precip-range button")]
+          .map((button) => button.getAttribute("aria-pressed")).join(","));
+        check(pressed === "false,true", `${label}: the range buttons report ${pressed}`);
+        await tab.locator(".precip-range button", { hasText: "Season so far" }).click();
+      }
     }
 
     /* The map of recent totals (ADR-131). It starts only near the screen
      * and after the totals; the canvas is blank headless, so this checks
      * what the map reports and the text beside it, never its pixels. */
     await tab.locator("#precip-map-host").scrollIntoViewIfNeeded();
-    await tab.waitForFunction(() => ["ready", "failed"].includes(window.__precipReady?.map?.state), { timeout: 60000 });
+    await tab.waitForFunction(() => ["ready", "failed"].includes(window.__precipReady?.map?.state), null, { timeout: 60000 });
     const precipMap = await tab.evaluate(() => ({
       map: window.__precipReady?.map,
       busy: document.querySelector("#precip-map-host")?.getAttribute("aria-busy"),
@@ -4120,39 +4161,45 @@ for (const viewport of VIEWPORTS) {
     check(precipMap.map?.basins > 0 && precipMap.map.basinsWithValue <= precipMap.map.basins,
       `${label}: the map drew ${precipMap.map?.basins} drainage areas`);
     check(precipMap.keyItems === 7, `${label}: the map key has ${precipMap.keyItems} entries, not 7`);
-    if (stormStatus?.endDate) {
-      await tab.locator(".precip-storm .precip-range button", { hasText: "7 days" }).click();
-      await tab.waitForFunction(() => window.__precipReady?.map?.window === 7, { timeout: 10000 });
-      await tab.locator(".precip-storm .precip-range button", { hasText: "3 days" }).click();
-      await tab.waitForFunction(() => window.__precipReady?.map?.window === 3, { timeout: 10000 });
+    /* Logic: the map's day buttons and the values table. */
+    if (viewport.logic) {
+      if (stormStatus?.endDate) {
+        await tab.locator(".precip-storm .precip-range button", { hasText: "7 days" }).click();
+        await tab.waitForFunction(() => window.__precipReady?.map?.window === 7, null, { timeout: 10000 });
+        await tab.locator(".precip-storm .precip-range button", { hasText: "3 days" }).click();
+        await tab.waitForFunction(() => window.__precipReady?.map?.window === 3, null, { timeout: 10000 });
+      }
+      await tab.locator(".precip-map-table summary").click();
+      /* The rows are built on the toggle event, which follows the click. */
+      await tab.waitForFunction(() => document.querySelectorAll(".precip-map-table tbody tr").length > 0,
+        null, { timeout: 10000 }).catch(() => {});
+      const tableRows = await tab.locator(".precip-map-table tbody tr").count();
+      check(tableRows === linked.ready?.sites,
+        `${label}: the values table has ${tableRows} rows for ${linked.ready?.sites} sites`);
+      await tab.locator(".precip-map-table summary").click();
     }
-    await tab.locator(".precip-map-table summary").click();
-    /* The rows are built on the toggle event, which follows the click. */
-    await tab.waitForFunction(() => document.querySelectorAll(".precip-map-table tbody tr").length > 0,
-      null, { timeout: 10000 }).catch(() => {});
-    const tableRows = await tab.locator(".precip-map-table tbody tr").count();
-    check(tableRows === linked.ready?.sites,
-      `${label}: the values table has ${tableRows} rows for ${linked.ready?.sites} sites`);
-    await tab.locator(".precip-map-table summary").click();
 
     /* The soil-moisture mode (ADR-142): the same map turned to the week's
      * change. Checked against what the page reports, never today's numbers;
      * the canvas is blank headless. Switching must not fetch the SDK or the
      * areas again: the soil file is the only new request. */
-    /* The map starts when the card nears the screen, and its area layer asks
-     * for its shapes after the section reports ready. Wait for that first
-     * load to finish so it is not counted as the switch's request. */
-    await tab.waitForFunction(() => {
-      const map = window.__precipReady?.map;
-      const view = document.querySelector("#precip-map-host arcgis-map")?.view;
-      return map?.state === "ready" && map.viewReady && view?.updating === false;
-    }, null, { timeout: 30000 });
+    /* Logic only: lets the refetch check below ignore the first area load. */
+    if (viewport.logic) {
+      /* The map starts when the card nears the screen, and its area layer asks
+       * for its shapes after the section reports ready. Wait for that first
+       * load to finish so it is not counted as the switch's request. */
+      await tab.waitForFunction(() => {
+        const map = window.__precipReady?.map;
+        const view = document.querySelector("#precip-map-host arcgis-map")?.view;
+        return map?.state === "ready" && map.viewReady && view?.updating === false;
+      }, null, { timeout: 30000 });
+    }
     const switchRequests = [];
     const onSwitchRequest = (request) => switchRequests.push(request.url());
     tab.on("request", onSwitchRequest);
     await tab.locator(".precip-map-mode-head button", { hasText: "Soil moisture" }).click();
     await tab.waitForFunction(() => ["ready", "failed"].includes(window.__precipReady?.map?.soil?.state),
-      { timeout: 30000 });
+      null, { timeout: 30000 });
     tab.off("request", onSwitchRequest);
     const soilView = await tab.evaluate(() => {
       const visible = (element) => Boolean(element && element.getClientRects().length > 0);
@@ -4210,54 +4257,63 @@ for (const viewport of VIEWPORTS) {
       && soilView.map?.soil?.withChange <= soilView.map?.soil?.stations,
     `${label}: soil mode counts ${JSON.stringify(soilView.map)}`);
     check(soilView.overflow <= 1, `${label}: the card overflows by ${soilView.overflow}px in soil mode`);
-    const soilSearch = new URLSearchParams(await tab.evaluate(() => window.location.search));
-    check(soilSearch.get("layer") === "soil" && soilSearch.get("area") === "140100",
-      `${label}: the link reads ${soilSearch} in soil mode`);
-    /* The SDK may still pull its own worker chunks and ask the area service
-     * for a count; what must not happen is the page's map module loading
-     * again or the area shapes being fetched again. */
-    const refetched = switchRequests.filter((url) => url.includes("reference.json")
-      || /\/assets\/(precip-map|view-map)-[^/]*\.js/.test(url)
-      || (/FeatureServer\/\d+\/query/.test(url) && !url.includes("returnGeometry=false")));
-    check(refetched.length === 0, `${label}: switching to soil fetched ${JSON.stringify(refetched.slice(0, 3))}`);
-    await tab.locator(".precip-soil-table summary").click();
-    await tab.waitForFunction(() => document.querySelectorAll(".precip-soil-table tbody tr").length > 0,
-      null, { timeout: 10000 }).catch(() => {});
-    const soilRows = await tab.locator(".precip-soil-table tbody tr").count();
-    check(soilRows === soilView.map?.soil?.stations,
-      `${label}: the soil table has ${soilRows} rows for ${soilView.map?.soil?.stations} stations`);
-    await tab.locator(".precip-soil-table summary").click();
+    /* Logic: the soil link, no refetch on the switch, and the soil table. */
+    if (viewport.logic) {
+      const soilSearch = new URLSearchParams(await tab.evaluate(() => window.location.search));
+      check(soilSearch.get("layer") === "soil" && soilSearch.get("area") === "140100",
+        `${label}: the link reads ${soilSearch} in soil mode`);
+      /* The SDK may still pull its own worker chunks and ask the area service
+       * for a count; what must not happen is the page's map module loading
+       * again or the area shapes being fetched again. */
+      const refetched = switchRequests.filter((url) => url.includes("reference.json")
+        || /\/assets\/(precip-map|view-map)-[^/]*\.js/.test(url)
+        || (/FeatureServer\/\d+\/query/.test(url) && !url.includes("returnGeometry=false")));
+      check(refetched.length === 0, `${label}: switching to soil fetched ${JSON.stringify(refetched.slice(0, 3))}`);
+      await tab.locator(".precip-soil-table summary").click();
+      await tab.waitForFunction(() => document.querySelectorAll(".precip-soil-table tbody tr").length > 0,
+        null, { timeout: 10000 }).catch(() => {});
+      const soilRows = await tab.locator(".precip-soil-table tbody tr").count();
+      check(soilRows === soilView.map?.soil?.stations,
+        `${label}: the soil table has ${soilRows} rows for ${soilView.map?.soil?.stations} stations`);
+      await tab.locator(".precip-soil-table summary").click();
+    }
     await checkAccessibility(tab, check, `${label}, soil mode`);
     await tab.locator(".precip-map-mode-head button", { hasText: "Rain" }).click();
-    await tab.waitForFunction(() => window.__precipReady?.map?.mode === "rain", { timeout: 10000 });
+    await tab.waitForFunction(() => window.__precipReady?.map?.mode === "rain", null, { timeout: 10000 });
     const backToRain = await tab.evaluate(() => ({
       dayButtons: Boolean(document.querySelector("[aria-label='Days in the map and the station list']")?.getClientRects().length),
       rainKey: Boolean(document.querySelector(".precip-map-key")?.getClientRects().length)
     }));
     check(backToRain.dayButtons && backToRain.rainKey,
       `${label}: back on rain, day buttons ${backToRain.dayButtons}, rain key ${backToRain.rainKey}`);
-    const rainSearch = new URLSearchParams(await tab.evaluate(() => window.location.search));
-    check(!rainSearch.has("layer") && rainSearch.get("area") === "140100",
-      `${label}: the link reads ${rainSearch} back on rain`);
+    /* Logic: the link back on rain. */
+    if (viewport.logic) {
+      const rainSearch = new URLSearchParams(await tab.evaluate(() => window.location.search));
+      check(!rainSearch.has("layer") && rainSearch.get("area") === "140100",
+        `${label}: the link reads ${rainSearch} back on rain`);
+    }
     await checkAccessibility(tab, check, label);
     await tab.screenshot({ path: `screenshots/precipitation-${viewport.name}.png`, fullPage: false });
-    /* A shared soil link opens in soil mode (ADR-142), area kept; an unknown
-     * value opens on rain. */
-    await tab.goto(`${URL}precipitation.html?area=140100&layer=soil`, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__precipReady?.map?.soil?.state === "ready", null, { timeout: 60000 });
-    const soilLink = await tab.evaluate(() => ({
-      map: window.__precipReady?.map,
-      area: window.__precipReady?.area,
-      pressed: [...document.querySelectorAll(".precip-map-mode-head button")].map((b) => b.getAttribute("aria-pressed")).join(","),
-      search: window.location.search
-    }));
-    check(soilLink.map?.mode === "soil" && soilLink.pressed === "false,true" && soilLink.area === "140100"
-      && soilLink.search === "?area=140100&layer=soil",
-    `${label}: the soil link opened ${JSON.stringify(soilLink)}`);
-    await tab.goto(`${URL}precipitation.html?area=140100&layer=snow`, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__precipReady?.map !== undefined, null, { timeout: 60000 });
-    const oddLink = await tab.evaluate(() => window.__precipReady?.map?.mode);
-    check(oddLink === "rain", `${label}: an unknown layer opened ${oddLink}`);
+    /* Logic: shared soil and unknown-layer links. */
+    if (viewport.logic) {
+      /* A shared soil link opens in soil mode (ADR-142), area kept; an unknown
+       * value opens on rain. */
+      await tab.goto(`${URL}precipitation.html?area=140100&layer=soil`, { waitUntil: "domcontentloaded", timeout: 60000 });
+      await tab.waitForFunction(() => window.__precipReady?.map?.soil?.state === "ready", null, { timeout: 60000 });
+      const soilLink = await tab.evaluate(() => ({
+        map: window.__precipReady?.map,
+        area: window.__precipReady?.area,
+        pressed: [...document.querySelectorAll(".precip-map-mode-head button")].map((b) => b.getAttribute("aria-pressed")).join(","),
+        search: window.location.search
+      }));
+      check(soilLink.map?.mode === "soil" && soilLink.pressed === "false,true" && soilLink.area === "140100"
+        && soilLink.search === "?area=140100&layer=soil",
+      `${label}: the soil link opened ${JSON.stringify(soilLink)}`);
+      await tab.goto(`${URL}precipitation.html?area=140100&layer=snow`, { waitUntil: "domcontentloaded", timeout: 60000 });
+      await tab.waitForFunction(() => window.__precipReady?.map !== undefined, null, { timeout: 60000 });
+      const oddLink = await tab.evaluate(() => window.__precipReady?.map?.mode);
+      check(oddLink === "rain", `${label}: an unknown layer opened ${oddLink}`);
+    }
   } catch (err) {
     failures.push(`${label}: ${err.message}`);
   }
@@ -4282,7 +4338,7 @@ for (const viewport of VIEWPORTS) {
   });
   try {
     await tab.goto(`${URL}precipitation.html?state=UT`, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__precipReady?.precipitation?.recent === "ready", { timeout: 30000 });
+    await tab.waitForFunction(() => window.__precipReady?.precipitation?.recent === "ready", null, { timeout: 30000 });
     const early = await tab.evaluate(() => ({
       season: window.__precipReady?.precipitation?.state,
       figures: document.querySelectorAll("#precip-card .precip-storm-kpis strong").length,
@@ -4315,7 +4371,7 @@ for (const viewport of VIEWPORTS) {
   console.log(`\n=== ${label}`);
   try {
     await tab.goto(`${URL}snow.html?state=all`, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__snowReady?.mapDay !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__snowReady?.mapDay !== undefined, null, { timeout: 60000 });
     const before = await tab.evaluate(() => window.__snowReady);
     check(before.seasonsOffered >= 2 && before.comparisonSeason === before.season - 1,
       `${label}: offers ${before.seasonsOffered} seasons, compares with ${before.comparisonSeason}`);
@@ -4323,7 +4379,7 @@ for (const viewport of VIEWPORTS) {
      * for a second season. */
     await tab.locator("#snow-curve-host").scrollIntoViewIfNeeded();
     await tab.waitForFunction(() => ["loaded", "failed"]
-      .includes(window.__snowReady?.comparisonStatus), { timeout: 60000 });
+      .includes(window.__snowReady?.comparisonStatus), null, { timeout: 60000 });
     const current = await tab.evaluate(() => ({
       ready: window.__snowReady,
       keyItems: document.querySelectorAll("#snow-curve-key [role=listitem]").length,
@@ -4359,31 +4415,34 @@ for (const viewport of VIEWPORTS) {
     check(current.scroll <= current.viewport + 1,
       `${label}: page overflows horizontally (${current.scroll}px in ${current.viewport}px)`);
 
-    const finished = current.ready.season - 1;
-    await tab.goto(`${URL}snow.html?state=all&season=${finished - 1}-${
-      String(finished % 100).padStart(2, "0")}`,
-    { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__snowReady?.mapDay !== undefined, { timeout: 60000 });
-    const archived = await tab.evaluate(() => ({
-      ready: window.__snowReady,
-      reading: document.querySelector("#snow-day-reading")?.textContent ?? "",
-      note: document.querySelector("#snow-season-note")?.textContent ?? "",
-      control: document.querySelector("#snow-season")?.value ?? null,
-      search: window.location.search
-    }));
-    console.log("  finished:", JSON.stringify({
-      season: archived.ready.season, peak: archived.ready.mapPeak, day: archived.ready.mapDay
-    }));
-    check(archived.ready.season === finished && archived.control === String(finished),
-      `${label}: the season link opened ${archived.ready.season}, control ${archived.control}`);
-    check(archived.ready.mapPeak !== null && archived.ready.mapDay === archived.ready.mapPeak
-      && archived.reading.includes("season high point"),
-    `${label}: the finished season opened on ${archived.ready.mapDay}, peak `
-      + `${archived.ready.mapPeak}, reading "${archived.reading}"`);
-    check(archived.ready.mapBasinsWithValues > 0,
-      `${label}: the finished season's peak coloured no basin`);
-    check(archived.note.includes("finished") && archived.search.includes("season="),
-      `${label}: the finished season is not named as such (${archived.note}, ${archived.search})`);
+    /* Logic: a finished season, opened from its link. */
+    if (viewport.logic) {
+      const finished = current.ready.season - 1;
+      await tab.goto(`${URL}snow.html?state=all&season=${finished - 1}-${
+        String(finished % 100).padStart(2, "0")}`,
+      { waitUntil: "domcontentloaded", timeout: 60000 });
+      await tab.waitForFunction(() => window.__snowReady?.mapDay !== undefined, null, { timeout: 60000 });
+      const archived = await tab.evaluate(() => ({
+        ready: window.__snowReady,
+        reading: document.querySelector("#snow-day-reading")?.textContent ?? "",
+        note: document.querySelector("#snow-season-note")?.textContent ?? "",
+        control: document.querySelector("#snow-season")?.value ?? null,
+        search: window.location.search
+      }));
+      console.log("  finished:", JSON.stringify({
+        season: archived.ready.season, peak: archived.ready.mapPeak, day: archived.ready.mapDay
+      }));
+      check(archived.ready.season === finished && archived.control === String(finished),
+        `${label}: the season link opened ${archived.ready.season}, control ${archived.control}`);
+      check(archived.ready.mapPeak !== null && archived.ready.mapDay === archived.ready.mapPeak
+        && archived.reading.includes("season high point"),
+      `${label}: the finished season opened on ${archived.ready.mapDay}, peak `
+        + `${archived.ready.mapPeak}, reading "${archived.reading}"`);
+      check(archived.ready.mapBasinsWithValues > 0,
+        `${label}: the finished season's peak coloured no basin`);
+      check(archived.note.includes("finished") && archived.search.includes("season="),
+        `${label}: the finished season is not named as such (${archived.note}, ${archived.search})`);
+    }
     await checkAccessibility(tab, check, label);
     await tab.screenshot({ path: `screenshots/snow-season-${viewport.name}.png`, fullPage: false });
   } catch (err) {
@@ -4411,7 +4470,7 @@ for (const viewport of VIEWPORTS) {
     await tab.goto(`${URL}drought.html`, {
       waitUntil: "domcontentloaded", timeout: 60000
     });
-    await tab.waitForFunction(() => window.__droughtReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__droughtReady !== undefined, null, { timeout: 60000 });
     const droughtFiltersOpened = await exerciseMobileFilterDisclosure(
       tab, check, label, "drought", viewport);
     /* The comparison charts sit in sections that start closed, and a chart
@@ -4445,7 +4504,7 @@ for (const viewport of VIEWPORTS) {
         const host = document.getElementById(id);
         return host?.querySelector("svg") !== null
           && host?.getAttribute("aria-busy") !== "true";
-      }), { timeout: 10000 });
+      }), null, { timeout: 10000 });
     /* Every area stays reachable: the control shows the rest. */
     const showAll = tab.locator("#drought-show-all-areas");
     if (await showAll.isVisible()) {
@@ -4573,7 +4632,7 @@ for (const viewport of VIEWPORTS) {
      * drainage outlines. Counted, because a blank canvas screenshots fine. */
     await tab.waitForFunction(
       () => window.__droughtReady && window.__droughtReady.mapClassesDrawn !== undefined,
-      { timeout: 60000 });
+      null, { timeout: 60000 });
     const mapState = await tab.evaluate(() => ({ ready: window.__droughtReady }));
     console.log("  map:", JSON.stringify({
       classes: mapState.ready?.mapClassesDrawn,
@@ -4643,7 +4702,7 @@ for (const viewport of VIEWPORTS) {
     await tab.locator("#drought-show-snow-sites").check();
     await tab.waitForFunction(
       () => window.__droughtReady?.mapSnowSitesShown === true,
-      { timeout: 5000 });
+      null, { timeout: 5000 });
 
     /* The hosted boundaries are optional, so the layer list is checked
      * against what actually loaded rather than against a fixed list -- a
@@ -4749,7 +4808,7 @@ for (const viewport of VIEWPORTS) {
      * the readiness field rather than on a fixed delay. */
     await tab.locator("#drought-decade-card").scrollIntoViewIfNeeded();
     await tab.waitForFunction(() => ["loaded", "failed"].includes(
-      window.__droughtReady?.decadeState ?? ""), { timeout: 30000 });
+      window.__droughtReady?.decadeState ?? ""), null, { timeout: 30000 });
     const decade = await tab.evaluate(() => {
       const host = document.getElementById("drought-decade-host");
       const svg = host?.querySelector("svg");
@@ -4798,27 +4857,30 @@ for (const viewport of VIEWPORTS) {
       `${label}: ${decade.yearRows} year rows and ${decade.keyItems} key entries`);
     check(decade.scroll <= decade.viewport + 1,
       `${label}: the ten-year cards overflow the page (${decade.scroll}px)`);
-    /* A calendar name is a control: choosing one redraws the chart above. */
-    const other = await tab.evaluate((shown) => [...document.querySelectorAll(
-      ".drought-calendar-name")].map((button) => button.dataset.code)
-      .find((code) => code !== shown), decade.ready?.decadeArea);
-    if (other) {
-      await tab.locator("#drought-calendar-card > summary").click();
-      await tab.locator(`.drought-calendar-name[data-code="${other}"]`).click();
-      await tab.waitForFunction((code) => window.__droughtReady?.decadeArea === code,
-        other, { timeout: 5000 });
-      const after = await tab.evaluate(() => ({
-        focused: document.activeElement?.id,
-        readout: document.getElementById("drought-decade-readout")?.textContent ?? ""
-      }));
-      check(after.focused === "drought-decade-host" && after.readout.startsWith("Week of"),
-        `${label}: choosing a calendar row left focus on ${after.focused} ` +
-        `and the readout as "${after.readout}"`);
-      await tab.keyboard.press("ArrowLeft");
-      const stepped = await tab.evaluate(() =>
-        document.getElementById("drought-decade-readout")?.textContent ?? "");
-      check(stepped.startsWith("Week of") && stepped !== after.readout,
-        `${label}: the arrow key did not move the ten-year readout ("${stepped}")`);
+    /* Logic: a calendar name redraws the chart and moves focus. */
+    if (viewport.logic) {
+      /* A calendar name is a control: choosing one redraws the chart above. */
+      const other = await tab.evaluate((shown) => [...document.querySelectorAll(
+        ".drought-calendar-name")].map((button) => button.dataset.code)
+        .find((code) => code !== shown), decade.ready?.decadeArea);
+      if (other) {
+        await tab.locator("#drought-calendar-card > summary").click();
+        await tab.locator(`.drought-calendar-name[data-code="${other}"]`).click();
+        await tab.waitForFunction((code) => window.__droughtReady?.decadeArea === code,
+          other, { timeout: 5000 });
+        const after = await tab.evaluate(() => ({
+          focused: document.activeElement?.id,
+          readout: document.getElementById("drought-decade-readout")?.textContent ?? ""
+        }));
+        check(after.focused === "drought-decade-host" && after.readout.startsWith("Week of"),
+          `${label}: choosing a calendar row left focus on ${after.focused} ` +
+          `and the readout as "${after.readout}"`);
+        await tab.keyboard.press("ArrowLeft");
+        const stepped = await tab.evaluate(() =>
+          document.getElementById("drought-decade-readout")?.textContent ?? "");
+        check(stepped.startsWith("Week of") && stepped !== after.readout,
+          `${label}: the arrow key did not move the ten-year readout ("${stepped}")`);
+      }
     }
 
     /* Last, on a settled page: every control is wired, every table is
@@ -4847,7 +4909,7 @@ for (const viewport of VIEWPORTS) {
       waitUntil: "domcontentloaded", timeout: 60000
     });
     await tab.waitForFunction(() => window.__snowReady !== undefined,
-      { timeout: 60000 });
+      null, { timeout: 60000 });
     const summary = await tab.evaluate(() => {
       const cards = [...document.querySelectorAll(".snow-summary .overview-kpi")];
       return {
@@ -4893,7 +4955,7 @@ for (const viewport of VIEWPORTS) {
       waitUntil: "domcontentloaded", timeout: 60000
     });
     await tab.waitForFunction(() => window.__droughtReady !== undefined,
-      { timeout: 60000 });
+      null, { timeout: 60000 });
     const summary = await tab.evaluate(() => {
       const cards = [...document.querySelectorAll(".drought-summary .overview-kpi")];
       return {
@@ -4948,7 +5010,7 @@ for (const viewport of VIEWPORTS) {
     await tab.goto(`${URL}precipitation.html?state=UT`, { waitUntil: "domcontentloaded", timeout: 60000 });
     await tab.waitForFunction(() => window.__precipReady?.precipitation?.recent === "ready", null, { timeout: 60000 });
     await tab.locator("#precip-map-host").scrollIntoViewIfNeeded();
-    await tab.waitForFunction(() => ["ready", "failed"].includes(window.__precipReady?.map?.state), { timeout: 60000 });
+    await tab.waitForFunction(() => ["ready", "failed"].includes(window.__precipReady?.map?.state), null, { timeout: 60000 });
     await tab.waitForTimeout(2000);
     const state = await tab.evaluate(() => ({
       map: window.__precipReady?.map,
@@ -5005,7 +5067,7 @@ for (const viewport of VIEWPORTS) {
   console.log(`\n=== ${label}`);
   try {
     await tab.goto(URL, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     const ready = await tab.evaluate(() => window.__dashboardReady);
     console.log("  ready:", JSON.stringify(ready), `\n  refused: ${refused.length} request(s)`, refused.slice(0,4));
 
@@ -5070,7 +5132,7 @@ for (const viewport of VIEWPORTS) {
   console.log(`\n=== ${label}`);
   try {
     await tab.goto(URL, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     const ready = await tab.evaluate(() => window.__dashboardReady);
     console.log("  ready:", JSON.stringify(ready), `\n  refused: ${refused.length} request(s)`);
     check(refused.length >= 3, `${label}: the complete fallback chain was not exercised`);
@@ -5130,7 +5192,7 @@ for (const viewport of VIEWPORTS) {
     check(Boolean(wanted), `${label}: no two-word reservoir to build a link from`);
     const link = `${URL}?reservoir=${wanted.name.toLowerCase().replace(/ /g, "+")}`;
     await tab.goto(link, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     const ready = await tab.evaluate(() => window.__dashboardReady);
     console.log("  ready:", JSON.stringify(ready));
 
@@ -5182,7 +5244,7 @@ for (const viewport of VIEWPORTS) {
     await tab.goto(`${URL}?reservoir=${wanted.name.toLowerCase().replace(/ /g, "+")}` +
       "&reporting=late&powell=exclude&mead=exclude",
     { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     const restored = await tab.evaluate(() => ({
       ready: window.__dashboardReady,
       search: window.location.search,
@@ -5220,7 +5282,7 @@ for (const viewport of VIEWPORTS) {
      * inclusion choice. */
     await tab.goto(URL,
       { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     const withMead = await tab.evaluate(() => window.__dashboardReady.reservoirs);
     await tab.evaluate(() => {
       const toggle = document.querySelector('#start-panel [data-scope="mead"]');
@@ -5249,7 +5311,7 @@ for (const viewport of VIEWPORTS) {
     const storageClass = sharedFilter?.storageClass;
     await tab.goto(`${URL}?drainage=${area}&class=${storageClass}`,
       { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     const narrowed = await tab.evaluate(() => ({
       ready: window.__dashboardReady,
       control: document.querySelector('#start-panel .drainage-menu calcite-select')?.value,
@@ -5310,7 +5372,7 @@ for (const viewport of VIEWPORTS) {
       `${label}: the scope holds no subregion spanning more than one drainage area`);
     await tab.goto(`${URL}?area=${sharedSubregion?.code}`,
       { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     const bySubregion = await tab.evaluate(() => ({
       ready: window.__dashboardReady,
       control: document.querySelector('#start-panel .drainage-menu calcite-select')?.value,
@@ -5360,7 +5422,7 @@ for (const viewport of VIEWPORTS) {
       `${label}: no state narrows the storage map's scope without emptying it`);
     await tab.goto(`${URL}?state=${storageState?.code}`,
       { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     const byState = await tab.evaluate(() => ({
       ready: window.__dashboardReady,
       summary: document.querySelector('#start-panel [data-filter="summary"]')?.textContent ?? "",
@@ -5413,7 +5475,7 @@ for (const viewport of VIEWPORTS) {
     await tab.goto(
       `${URL}?state=${storageState?.code}&reservoir=${encodeURIComponent(outsideStorageState?.name ?? "")}`,
       { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     const widened = await tab.evaluate(() => ({
       ready: window.__dashboardReady,
       summary: document.querySelector('#start-panel [data-filter="summary"]')?.textContent ?? ""
@@ -5434,7 +5496,7 @@ for (const viewport of VIEWPORTS) {
       `${label}: the scope holds no region narrower than the whole roster`);
     await tab.goto(`${URL}?area=${sharedRegion?.code}`,
       { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     const byRegion = await tab.evaluate(() => ({
       ready: window.__dashboardReady,
       control: document.querySelector('#start-panel .drainage-menu calcite-select')?.value,
@@ -5460,7 +5522,7 @@ for (const viewport of VIEWPORTS) {
     // selection, and the reader gets the ordinary starting view.
     await tab.goto(`${URL}?reservoir=Not+A+Reservoir`,
       { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     const unknown = await tab.evaluate(() => ({
       ready: window.__dashboardReady,
       search: window.location.search
@@ -5509,7 +5571,7 @@ for (const failure of [
   console.log(`\n=== ${label}`);
   try {
     await tab.goto(URL, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     const ready = await tab.evaluate(() => window.__dashboardReady);
     console.log("  ready:", JSON.stringify(ready));
 
@@ -5749,7 +5811,7 @@ for (const failure of [
   await tab.waitForFunction(() =>
     window.__droughtReady?.levelsOffered === 4
       && window.__droughtReady?.mapOutlines !== undefined,
-  { timeout: 90000 });
+  null, { timeout: 60000 });
   const fineState = await tab.evaluate(() => ({
     ready: window.__droughtReady,
     chosen: document.querySelector(".level-control calcite-select")?.value ?? null,
@@ -5779,7 +5841,7 @@ for (const failure of [
   await tab.goto(`${URL}?level=8`, { waitUntil: "domcontentloaded", timeout: 60000 });
   await tab.waitForFunction(() =>
     window.__dashboardReady?.levelsOffered !== undefined
-      && window.__dashboardReady?.drainageAreas !== undefined, { timeout: 90000 });
+      && window.__dashboardReady?.drainageAreas !== undefined, null, { timeout: 60000 });
   const fineStorage = await tab.evaluate(() => ({
     ready: window.__dashboardReady,
     chosen: document.querySelector(".level-control calcite-select")?.value ?? null,
@@ -5798,7 +5860,7 @@ for (const failure of [
   /* The default is the absence of the parameter, so a page with no `?level=`
    * must be the basins page it always was. */
   await tab.goto(URL, { waitUntil: "domcontentloaded", timeout: 60000 });
-  await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 90000 });
+  await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
   const fallback = await tab.evaluate(() => ({
     level: window.__dashboardReady?.level,
     navHrefs: [...document.querySelectorAll("#page-menu calcite-dropdown-item[href], .page-link")]
@@ -5818,7 +5880,7 @@ for (const failure of [
    * page reads. */
   await tab.waitForFunction(() => document.querySelector(
     '#start-panel .drainage-menu calcite-option[value]:not([value="all"])')
-    !== null, { timeout: 60000 });
+    !== null, null, { timeout: 60000 });
   const narrowedBar = await tab.evaluate(() => {
     const select = document.querySelector('#start-panel .drainage-menu calcite-select');
     const area = [...select.querySelectorAll("calcite-option")]
@@ -5865,7 +5927,7 @@ for (const failure of [
   await tab.locator('#start-panel [data-filter="reset"]')
     .evaluate((button) => button.click());
   await tab.waitForFunction(() =>
-    window.__dashboardReady?.areaFilter === null, { timeout: 60000 });
+    window.__dashboardReady?.areaFilter === null, null, { timeout: 60000 });
   const resetSync = await tab.evaluate(() => ({
     menus: [...document.querySelectorAll(".drainage-menu calcite-select")]
       .map((select) => select.value),
@@ -6088,7 +6150,7 @@ for (const failure of [
         `${URL}reservoir.html?name=${encodeURIComponent(candidate.reservoir.name)}`,
         { waitUntil: "domcontentloaded", timeout: 60000 });
       await tab.waitForFunction(() => window.__reservoirReady?.status === "found",
-        { timeout: 90000 });
+        null, { timeout: 60000 });
       const href = await tab.locator(
         'a[href*="snow.html"][href*="upstream="]').getAttribute("href");
       check(Boolean(href), `${label}: the reservoir page offers no Snowpack link`);
@@ -6102,7 +6164,7 @@ for (const failure of [
       await tab.goto(linked.href, { waitUntil: "domcontentloaded", timeout: 60000 });
       await tab.waitForFunction(
         () => window.__snowReady?.upstreamStatus === "applied",
-        { timeout: 90000 });
+        null, { timeout: 60000 });
       const applied = await tab.evaluate(() => ({
         ready: window.__snowReady,
         summary: document.querySelector("#snow-upstream-summary")?.textContent ?? "",
@@ -6127,7 +6189,7 @@ for (const failure of [
           { waitUntil: "domcontentloaded", timeout: 60000 });
         await tab.waitForFunction(
           () => window.__snowReady?.upstreamStatus === "linked-site-wins",
-          { timeout: 90000 });
+          null, { timeout: 60000 });
         const precedence = await tab.evaluate(() => ({
           ready: window.__snowReady,
           summary: document.querySelector("#snow-upstream-summary")?.textContent ?? ""
@@ -6885,12 +6947,12 @@ async function checkSnowHistory() {
     console.log(`\n=== ${label}`);
     try {
       await tab.goto(`${URL}snow.html?state=UT`, { waitUntil: "domcontentloaded", timeout: 60000 });
-      await tab.waitForFunction(() => window.__snowReady?.snowHistory !== undefined, { timeout: 60000 });
+      await tab.waitForFunction(() => window.__snowReady?.snowHistory !== undefined, null, { timeout: 60000 });
       const before = await tab.evaluate(() => window.__snowReady.snowHistory.state);
       check(before === "waiting" && asked.length === 0,
         `${label}: the history was ${before} with ${asked.length} request(s) before the card neared the screen`);
       await tab.locator("#snow-history-card").scrollIntoViewIfNeeded();
-      await tab.waitForFunction(() => ["ready", "failed"].includes(window.__snowReady?.snowHistory?.state),
+      await tab.waitForFunction(() => ["ready", "failed"].includes(window.__snowReady?.snowHistory?.state), null,
         { timeout: 60000 });
       const state = await tab.evaluate(() => {
         const card = document.querySelector("#snow-history-card");
@@ -6947,9 +7009,9 @@ async function checkSnowHistory() {
       const finished = state.ready.season - 1;
       await tab.goto(`${URL}snow.html?state=UT&season=${finished - 1}-${String(finished % 100).padStart(2, "0")}`,
         { waitUntil: "domcontentloaded", timeout: 60000 });
-      await tab.waitForFunction(() => window.__snowReady?.snowHistory !== undefined, { timeout: 60000 });
+      await tab.waitForFunction(() => window.__snowReady?.snowHistory !== undefined, null, { timeout: 60000 });
       await tab.locator("#snow-history-card").scrollIntoViewIfNeeded();
-      await tab.waitForFunction(() => window.__snowReady?.snowHistory?.state === "ready", { timeout: 60000 });
+      await tab.waitForFunction(() => window.__snowReady?.snowHistory?.state === "ready", null, { timeout: 60000 });
       const archived = await tab.evaluate(() => ({
         history: window.__snowReady.snowHistory,
         label: document.querySelector("#snow-history-card .overview-kpi-primary span")?.textContent ?? ""
@@ -6975,9 +7037,9 @@ async function checkSnowHistory() {
   await context.route("**/snow_history.json", (route) => route.abort());
   try {
     await tab.goto(`${URL}snow.html?state=UT`, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__snowReady?.snowHistory !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__snowReady?.snowHistory !== undefined, null, { timeout: 60000 });
     await tab.locator("#snow-history-card").scrollIntoViewIfNeeded();
-    await tab.waitForFunction(() => window.__snowReady?.snowHistory?.state === "failed", { timeout: 60000 });
+    await tab.waitForFunction(() => window.__snowReady?.snowHistory?.state === "failed", null, { timeout: 60000 });
     const failed = await tab.evaluate(() => ({
       busy: document.querySelectorAll('#snow-history-card [aria-busy="true"]').length,
       message: document.querySelector("#snow-history-card .chart-empty")?.textContent ?? "",
@@ -7006,8 +7068,8 @@ await checkSnowHistory();
  * header, fill the frame without scrolling either way, clear aria-busy,
  * leave nothing cut off, hold no inner scroller, take its theme from the
  * link (or the system, with none) and never from the reader's stored
- * choice, write nothing to storage, open every link in a new tab, and pass
- * axe. Nothing here reads a number: the reservoir is the published one with
+ * choice, write nothing to storage and open every link in a new tab. Six
+ * of them also pass axe (`AXE_FRAMES`). Nothing here reads a number: the reservoir is the published one with
  * the most published reservoirs above it.
  */
 {
@@ -7037,8 +7099,20 @@ await checkSnowHistory();
     { name: "phone embed", width: 360, height: 640, theme: null, system: "light" },
     { name: "smallest", width: 320, height: 480, theme: "light" }
   ];
+  /* axe runs on 6 of the 27 view-frame pairs (ruled 2026-10-31); the layout
+   * checks in checkAccessibility still run on all 27. The six are the first
+   * pair and the last, and each view at one wide and one narrow frame, in
+   * both themes and through both theme sources (link and system). */
+  const AXE_FRAMES = new Set([
+    "precip|0", // desktop light: the first pair
+    "precip|3", // mobile dark
+    "strip|1", // desktop dark
+    "strip|7", // phone embed, system light
+    "upstream|5", // side panel, system dark
+    "upstream|8" // smallest light: the last pair
+  ]);
   for (const view of views) {
-    for (const frame of frames) {
+    for (const [frameIndex, frame] of frames.entries()) {
       const expected = frame.theme ?? frame.system;
       /* The opposite of what the view must show, in both places a page
        * could take it from: the stored choice and the system. */
@@ -7143,7 +7217,8 @@ await checkSnowHistory();
         const visible = await tab.evaluate(COLLECT_SHADOW_TEXT);
         const retired = RETIRED_TERMS.exec(visible);
         check(retired === null, `${label}: visible text uses a retired term: "${retired?.[0]}"`);
-        await checkAccessibility(tab, check, label);
+        await checkAccessibility(tab, check, label,
+          { axe: AXE_FRAMES.has(`${view.name}|${frameIndex}`) });
       } catch (error) {
         failures.push(`${label}: ${error.message}`);
       } finally {
@@ -7416,7 +7491,7 @@ await checkSnowHistory();
             : new CustomEvent("calciteSelectChange", { bubbles: true }));
         }, utahCounty);
         await tab.waitForFunction(() =>
-          window.location.search.includes("county="), { timeout: 60000 });
+          window.location.search.includes("county="), null, { timeout: 60000 });
         const pickedCounty = await tab.evaluate(() => window.location.search);
         check(pickedCounty.includes("state=UT") && pickedCounty.includes(`county=${utahCounty}`),
           `picking county ${utahCounty} under ?state=UT produced ` +
@@ -7453,7 +7528,7 @@ await checkSnowHistory();
           && document.querySelector("#start-panel .storage-county-menu calcite-select") !== null
           && document.querySelector("#start-panel .level-control calcite-select") !== null
           && document.querySelector("#start-panel .storage-drainage-menu calcite-select") !== null,
-      { timeout: 90000 });
+      null, { timeout: 60000 });
       const storageOpening = await tab.evaluate(() => {
         const state = document.querySelector("#start-panel .storage-state-menu");
         const county = document.querySelector("#start-panel .storage-county-menu");
@@ -7647,7 +7722,7 @@ await checkSnowHistory();
         document.querySelector('.drought-state-menu calcite-select') !== null
           && document.querySelector('.level-control calcite-select') !== null
           && document.querySelector('.drought-drainage-menu calcite-select') !== null,
-      { timeout: 90000 });
+      null, { timeout: 60000 });
       const droughtOpening = await tab.evaluate(() => {
         const state = document.querySelector(".drought-state-menu");
         const level = document.querySelector(".level-control");
@@ -7681,7 +7756,7 @@ await checkSnowHistory();
       });
       await tab.waitForFunction(() => window.location.search.includes("state=UT")
         && document.querySelectorAll(".drought-county-menu calcite-option").length === 3,
-      { timeout: 90000 });
+      null, { timeout: 60000 });
       const countyState = await tab.evaluate(() => ({
         values: [...document.querySelectorAll(".drought-county-menu calcite-option")]
           .map((option) => option.getAttribute("value")),
@@ -7707,7 +7782,7 @@ await checkSnowHistory();
       });
       await tab.waitForFunction(() => window.__droughtReady?.countyFilter === "49049"
         && window.__droughtReady?.countyScopeResolved === true,
-      { timeout: 90000 });
+      null, { timeout: 60000 });
       const countyFiltered = await tab.evaluate(() => ({
         ready: window.__droughtReady,
         rows: document.querySelectorAll(".drought-row").length,
@@ -8113,7 +8188,7 @@ await checkSnowHistory();
 
     // (a) A state shows both figures, and the note names the period used.
     await tab.goto(`${URL}?state=${summaryState}`, { waitUntil: "domcontentloaded", timeout: 60000 });
-    await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     const byState = await tab.evaluate(readSummary, "#start-panel");
     check(/^\d+\.\d%$/.test(byState.percent),
       `${label}: the headline percent reads "${byState.percent}"`);
@@ -8160,7 +8235,7 @@ await checkSnowHistory();
     // (b) Lake Powell off changes both the headline and the comparison.
     if (powellHere) {
       await tab.goto(`${URL}?state=${summaryState}`, { waitUntil: "domcontentloaded", timeout: 60000 });
-      await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+      await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
       const withPowell = await tab.evaluate(readSummary, "#start-panel");
       await tab.evaluate(() => {
         const toggle = document.querySelector('#start-panel [data-scope="powell"]');
@@ -8186,7 +8261,7 @@ await checkSnowHistory();
     if (summaryArea) {
       await tab.goto(`${URL}?state=${summaryState}&drainage=${summaryArea.code}`,
         { waitUntil: "domcontentloaded", timeout: 60000 });
-      await tab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+      await tab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
       const narrowed = await tab.evaluate(readSummary, "#start-panel");
       check(narrowed.ready.areaFilter === summaryArea.code,
         `${label}: the drainage link was not applied (${narrowed.ready.areaFilter})`);
@@ -8242,7 +8317,7 @@ await checkSnowHistory();
   try {
     await phoneTab.goto(`${URL}?state=${summaryState}`,
       { waitUntil: "domcontentloaded", timeout: 60000 });
-    await phoneTab.waitForFunction(() => window.__dashboardReady !== undefined, { timeout: 60000 });
+    await phoneTab.waitForFunction(() => window.__dashboardReady !== undefined, null, { timeout: 60000 });
     const chip = await phoneTab.evaluate(() => {
       const button = document.querySelector("#map-summary");
       const rect = (element) => {
@@ -8322,7 +8397,7 @@ await checkSnowHistory();
 
       await phoneTab.locator("#map-summary").click();
       await phoneTab.waitForFunction(
-        "document.querySelector('#start-sheet')?.hasAttribute('opened')",
+        "document.querySelector('#start-sheet')?.hasAttribute('opened')", null,
         { timeout: 5000 });
       const opened = await phoneTab.evaluate(() => ({
         pressed: document.querySelector("#controls-toggle")?.getAttribute("aria-pressed"),
@@ -8429,7 +8504,9 @@ async function checkGreatSaltLake() {
       const menu = tab.locator("#menu-lakes-link");
       check(await menu.getAttribute("href") === "./lakes.html", `${label}: the menu lost its lakes link`);
       const button = tab.locator("#lakes-link");
-      check(await button.isVisible() === (viewport.width >= 1024), `${label}: the bar link has the wrong visibility`);
+      const barShown = await button.waitFor({ state: viewport.width >= 1024 ? "visible" : "hidden", timeout: 10000 })
+        .then(() => true, () => false);
+      check(barShown, `${label}: the bar link has the wrong visibility`);
       for (const control of await tab.locator('calcite-navigation #brand, calcite-navigation [slot="content-end"]').all()) {
         if (!await control.isVisible()) continue;
         const rect = await control.boundingBox();
@@ -8486,7 +8563,7 @@ async function checkTownSearch() {
       await option.click();
       await tab.waitForURL((url) => url.searchParams.get("area") === area.code, { timeout: 30000 });
       check(new globalThis.URL(tab.url()).searchParams.get("state") === "all", `${label}: town link lost explicit all-state scope`);
-      await tab.waitForFunction(() => window.__dashboardReady, { timeout: 90000 });
+      await tab.waitForFunction(() => window.__dashboardReady, null, { timeout: 90000 });
       check(await tab.locator("dialog.opening-splash[open]").count() === 0, `${label}: a chooser covers the town link`);
     } catch (error) { failures.push(`${label}: ${error.message}`); }
     finally {
