@@ -1607,6 +1607,8 @@ arcgis-scale-bar {
 }
 .copy-figures-button:hover { background: color-mix(in srgb, var(--app-accent) 12%, var(--app-surface-raised)); }
 .copy-figures-button:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 2px; }
+a.copy-figures-picture { display: inline-flex; align-items: center; box-sizing: border-box; text-decoration: none; }
+a.copy-figures-picture[hidden] { display: none; }
 
 .embed-view > summary { box-sizing: border-box; min-block-size: 2.75rem; padding-block: var(--space-2); font-weight: 700; cursor: pointer; }
 .embed-view > summary:focus-visible { outline: 2px solid var(--app-accent); outline-offset: 2px; }

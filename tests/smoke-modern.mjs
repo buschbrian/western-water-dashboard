@@ -6582,6 +6582,16 @@ for (const failure of [
       const address = ledger.find((entry) => entry.source_station_id === row.source_station_id);
       check(await tab.evaluate(() => navigator.clipboard.readText()) === `${URL}share/${address.slug}.html`,
         `${label} (${name}): "Copy link" did not copy the permanent preview address`);
+      await tab.waitForFunction(() => window.__reservoirReady?.sharePicture !== undefined,
+        null, { timeout: 15000 });
+      const picture = await tab.evaluate(() => {
+        const link = document.querySelector('[data-copy-figures="picture"]');
+        const box = link?.getBoundingClientRect();
+        return link instanceof HTMLAnchorElement && !link.hidden
+          ? { href: link.href, download: link.hasAttribute("download"), height: box?.height ?? 0 } : null;
+      });
+      check(picture?.href === `${URL}share/${address.slug}.png` && picture.download && picture.height >= 43.5,
+        `${label} (${name}): "Download picture" is missing or wrong ${JSON.stringify(picture)}`);
       await tab.goto(`${URL}share/${address.slug}.html`, { waitUntil: "load", timeout: 90000 });
       await tab.waitForFunction(() => window.__reservoirReady?.status === "found",
         null, { timeout: 90000 });
