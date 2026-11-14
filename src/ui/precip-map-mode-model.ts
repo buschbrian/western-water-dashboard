@@ -8,6 +8,16 @@ import { formatShortDate } from "../viz/format";
 
 export type PrecipMapMode = "rain" | "soil";
 export type SoilLoadState = "idle" | "loading" | "ready" | "failed";
+/** What soil mode draws: each station against its own past years for the
+ * date (ADR-168), or the week's change (ADR-142). */
+export type SoilView = "history" | "change";
+
+/** The view soil mode opens on: past years, unless the reader or the link
+ * asked for the change, or no station in the file is compared yet. */
+export function soilViewShown(requested: SoilView | null, comparedStations: number): SoilView {
+  if (requested === "change") return "change";
+  return comparedStations > 0 ? "history" : "change";
+}
 
 export interface PrecipMapModeView {
   /** The mode the map is drawn in: soil falls back to rain when its file failed. */
@@ -38,9 +48,10 @@ export function precipMapModeView(requested: PrecipMapMode, soil: SoilLoadState)
   };
 }
 
-export function precipMapLabel(mode: PrecipMapMode): string {
-  return mode === "rain"
-    ? "Map of recent precipitation by drainage area and measurement site"
+export function precipMapLabel(mode: PrecipMapMode, view: SoilView = "change"): string {
+  if (mode === "rain") return "Map of recent precipitation by drainage area and measurement site";
+  return view === "history"
+    ? "Map of soil moisture compared with past years by drainage area and measurement site"
     : "Map of the change in soil moisture this week by drainage area and measurement site";
 }
 

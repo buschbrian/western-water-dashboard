@@ -34,7 +34,7 @@ import { setupPlaceChooser } from "./ui/opening-splash";
 import { brandMarkup, pageLinksMarkup } from "./ui/page-header";
 import { setupPlaceSearch } from "./ui/place-search";
 import { createPrecipitationCard } from "./ui/precipitation-card";
-import { precipLayerFromSearch, writePrecipLayerUrl } from "./state/precip-layer-url";
+import { precipLayerFromSearch, soilViewFromSearch, writeSoilViewUrl } from "./state/precip-layer-url";
 import { createPrecipMapSection, type PrecipMapSection } from "./ui/precip-map-section";
 import { createSnowDrainageControl, createSnowStateControl } from "./ui/snow-place-control";
 import { selectionForSnowArea, selectionForSnowState } from "./ui/snow-place-control-model";
@@ -177,7 +177,8 @@ function renderPage(place: SnowPlace, rosters: OpeningRosters, level: number, up
         chooser: card.parts.recentChooser,
         showRecentList: (shown) => card.showRecentList(shown),
         initialMode: precipLayerFromSearch(window.location.search),
-        onModeChange: writePrecipLayerUrl
+        initialSoilView: soilViewFromSearch(window.location.search),
+        onModeChange: writeSoilViewUrl
       });
   }
   card.update(place.stations, place.payload.sites);

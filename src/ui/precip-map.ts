@@ -25,11 +25,14 @@ import {
 } from "../arcgis/watershed-layers";
 import type { DrainageScope } from "../data/boundaries";
 import type { PrecipMapValues } from "../precip-map-model";
-import { soilNoChangeText, type SoilMapValues } from "../soil-map-model";
+import { soilBandText, soilNoChangeText, soilNoHistoryText, type SoilMapValues } from "../soil-map-model";
 import type { SnowSite } from "../types";
 import { formatDate } from "../viz/format";
 import { PRECIP_CLASSES, PRECIP_NO_VALUE_COLOR, precipClassIndex } from "../viz/precip-classes";
 import { SOIL_CLASSES, soilChangeText, soilClassIndex } from "../viz/soil-classes";
+import { SOIL_HISTORY_CLASSES, soilHistoryClassIndex, soilHistoryLabel } from "../viz/soil-history-classes";
+import type { SoilHistoryClass } from "../types";
+import type { SoilView } from "./precip-map-mode-model";
 import { hitLayerId, type GraphicHit } from "./hit";
 import { drainageLabelingInfo } from "./layers";
 import { wireMapHover, type HoverResolution } from "./map-hover";
@@ -56,7 +59,8 @@ export interface PrecipMapStatus {
 export interface PrecipMapController {
   status: PrecipMapStatus;
   setValues(values: PrecipMapValues): void;
-  setSoilValues(values: SoilMapValues): void;
+  /** The soil file, drawn as the week's change or against past years (ADR-168). */
+  setSoilValues(values: SoilMapValues, view?: SoilView): void;
 }
 
 /* Property objects, not constructed symbols: the convention `snow-map.ts`
@@ -95,6 +99,22 @@ function soilBasinSymbol(meanPoints: number | null): unknown {
   };
 }
 
+function soilHistorySiteSymbol(cls: SoilHistoryClass | null | undefined): unknown {
+  const index = soilHistoryClassIndex(cls);
+  return index < 0
+    ? { type: "simple-marker", size: 4, color: hexRgba(PRECIP_NO_VALUE_COLOR, 0.9) as Rgba, outline: { color: "#ffffff", width: 0.5 } }
+    : { type: "simple-marker", size: 6, color: hexRgba(SOIL_HISTORY_CLASSES[index]!.color, 0.95), outline: { color: OUTLINE.color, width: 0.8 } };
+}
+
+function soilHistoryBasinSymbol(cls: SoilHistoryClass | null): unknown {
+  const index = soilHistoryClassIndex(cls);
+  return {
+    type: "simple-fill",
+    color: index < 0 ? [148, 155, 162, 0.12] : hexRgba(SOIL_HISTORY_CLASSES[index]!.color, 0.55),
+    outline: OUTLINE
+  };
+}
+
 const percentText = (value: number | null): string => value === null ? "no value" : `${value.toFixed(1)}%`;
 
 const windowWords = (days: number): string => days === 1 ? "the last day" : `the last ${days} days`;
@@ -117,13 +137,15 @@ export async function createPrecipMap(
       symbol: basinSymbol(values?.areas.get(area.huc6)?.meanInches ?? null)
     }))
   });
-  const soilRenderer = (values: SoilMapValues): unknown => ({
+  const soilRenderer = (values: SoilMapValues, view: SoilView): unknown => ({
     type: "unique-value",
     field: codeField,
     defaultSymbol: soilBasinSymbol(null),
     uniqueValueInfos: areas.map((area) => ({
       value: area.huc6,
-      symbol: soilBasinSymbol(values.areas.get(area.huc6)?.meanPoints ?? null)
+      symbol: view === "history"
+        ? soilHistoryBasinSymbol(values.historyAreas.get(area.huc6)?.cls ?? null)
+        : soilBasinSymbol(values.areas.get(area.huc6)?.meanPoints ?? null)
     }))
   });
   const basinLayer = createWatershedLayer({
@@ -154,6 +176,7 @@ export async function createPrecipMap(
   };
   let current: PrecipMapValues | null = null;
   let soil: SoilMapValues | null = null;
+  let soilView: SoilView = "change";
 
   /* The fill is the background and the sites read on top of it. */
   const map = new ArcGISMap({ layers: [basinLayer, siteLayer] });
@@ -178,18 +201,69 @@ export async function createPrecipMap(
       status.withValue = [...graphics.keys()].filter((station) => values.sites.has(station)).length;
       status.notUsed = graphics.size - status.withValue;
     },
-    setSoilValues(values) {
+    setSoilValues(values, view = "change") {
       soil = values;
+      soilView = view;
       status.mode = "soil";
-      basinLayer.renderer = soilRenderer(values) as never;
+      basinLayer.renderer = soilRenderer(values, view) as never;
       for (const [station, graphic] of graphics) {
         graphic.visible = values.sites.has(station);
-        graphic.symbol = soilSiteSymbol(values.sites.get(station)?.change_points) as never;
+        const reading = values.sites.get(station);
+        graphic.symbol = (view === "history" ? soilHistorySiteSymbol(reading?.history_class)
+          : soilSiteSymbol(reading?.change_points)) as never;
       }
-      status.basinsWithValue = areas.filter((area) => (values.areas.get(area.huc6)?.meanPoints ?? null) !== null).length;
-      status.withValue = [...graphics.keys()].filter((station) => values.sites.get(station)?.change_points != null).length;
+      status.basinsWithValue = areas.filter((area) => view === "history"
+        ? (values.historyAreas.get(area.huc6)?.cls ?? null) !== null
+        : (values.areas.get(area.huc6)?.meanPoints ?? null) !== null).length;
+      status.withValue = [...graphics.keys()].filter((station) => view === "history"
+        ? values.sites.get(station)?.history_class != null
+        : values.sites.get(station)?.change_points != null).length;
       status.notUsed = graphics.size - status.withValue;
     }
+  };
+
+  const soilHistoryHover = (results: readonly GraphicHit[], values: SoilMapValues): HoverResolution | null => {
+    const day = values.endDate ? ` on ${formatDate(values.endDate)}` : "";
+    for (const result of results) {
+      const attributes = result.graphic?.attributes;
+      if (!attributes) continue;
+      const layerId = hitLayerId(result);
+      if (layerId === SITE_LAYER_ID) {
+        const site = siteByStation.get(String(attributes["station"]));
+        const reading = site ? values.sites.get(site.station) : undefined;
+        if (!site || !reading) continue;
+        return {
+          content: {
+            heading: site.name,
+            lines: [
+              reading.history_class === null
+                ? `Not compared: ${soilNoHistoryText(reading).toLowerCase()}`
+                : `${soilHistoryLabel(reading.history_class)} for the date: ${percentText(reading.end_percent)}${day}`,
+              soilBandText(reading) || `Mean of ${reading.depths_inches.join(", ")} in`,
+              `${Math.round(site.elevation_feet).toLocaleString("en-US")} feet, ${site.huc6_name}`
+            ].filter(Boolean)
+          },
+          graphic: result.graphic
+        };
+      }
+      if (layerId === BASIN_LAYER_ID) {
+        const area = values.historyAreas.get(String(attributes[codeField]));
+        if (!area) continue;
+        return {
+          content: {
+            heading: String(attributes[WATERSHED_NAME_FIELD]),
+            lines: [
+              area.cls === null
+                ? `Too few stations compared with past years: ${area.stations} of the ${area.floor} needed`
+                : `${soilHistoryLabel(area.cls)} for the date: the middle station${day}`,
+              `${area.stations} station${area.stations === 1 ? "" : "s"} compared with past years`
+            ]
+          },
+          graphic: result.graphic
+        };
+      }
+    }
+    return null;
   };
 
   const soilHover = (results: readonly GraphicHit[], values: SoilMapValues): HoverResolution | null => {
@@ -242,7 +316,7 @@ export async function createPrecipMap(
     card,
     include: () => [siteLayer, basinLayer],
     resolve: (results: readonly GraphicHit[]): HoverResolution | null => {
-      if (soil) return soilHover(results, soil);
+      if (soil) return soilView === "history" ? soilHistoryHover(results, soil) : soilHover(results, soil);
       if (!current) return null;
       const end = current.endDate ? `, to ${formatDate(current.endDate)}` : "";
       for (const result of results) {

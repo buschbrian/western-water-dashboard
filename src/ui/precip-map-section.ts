@@ -16,16 +16,20 @@
  */
 import { precipMapValues, type PrecipMapValues } from "../precip-map-model";
 import type { StormTotals, StormWindow } from "../precip-storm-model";
+import { formatDate } from "../viz/format";
 import {
   soilCountsText, soilLeftOutText, soilMapValues, soilMostChange, soilNoChangeText, soilNoSideText,
-  soilWeekText, type SoilMapValues
+  soilWeekText, soilHistoryCountsText, soilHistoryLeftOutText, soilNoHistoryText,
+  type SoilMapValues
 } from "../soil-map-model";
 import type { SnowpackPayload, SnowSite, SoilMoisturePayload } from "../types";
 import { PRECIP_CLASSES, PRECIP_NO_VALUE_COLOR } from "../viz/precip-classes";
 import { SOIL_CLASSES, SOIL_NO_VALUE_COLOR, soilChangeText } from "../viz/soil-classes";
+import { SOIL_HISTORY_CLASSES, soilHistoryLabel } from "../viz/soil-history-classes";
 import type { PrecipMapController } from "./precip-map";
 import {
-  precipMapLabel, precipMapModeView, soilSwitchLabel, type PrecipMapMode, type SoilLoadState
+  precipMapLabel, precipMapModeView, soilSwitchLabel, soilViewShown, type PrecipMapMode, type SoilLoadState,
+  type SoilView
 } from "./precip-map-mode-model";
 
 type Box = readonly [readonly [number, number], readonly [number, number]];
@@ -39,6 +43,9 @@ export interface SoilSectionStatus {
   withChange: number;
   /** Rows in the "most change" lists, wetter and drier together. */
   rows: number;
+  /** What soil mode draws (ADR-168), and the stations compared with their past years. */
+  view: SoilView;
+  compared: number;
 }
 
 export interface PrecipMapSectionStatus {
@@ -72,8 +79,10 @@ export interface PrecipMapSectionOptions {
   loadSoil?: () => Promise<SoilMoisturePayload>;
   /** The mode the link asked for (ADR-142); rain when absent. */
   initialMode?: PrecipMapMode;
-  /** The reader switched, or the soil file failed after they did: the mode now shown. */
-  onModeChange?: (mode: PrecipMapMode) => void;
+  /** The soil view the link asked for (ADR-168); null lets the file decide. */
+  initialSoilView?: SoilView | null;
+  /** The reader switched, or the soil file failed after they did: the mode and soil view now shown. */
+  onModeChange?: (mode: PrecipMapMode, soilView: SoilView) => void;
 }
 
 function note(text: string): HTMLParagraphElement {
@@ -236,8 +245,54 @@ export function createPrecipMapSection(
     ["Site", "Drainage area", "Change in 7 days", "Soil water at the end (%)", "Sensor depths (in)"]);
   const soilFailed = note("");
   soilFailed.hidden = true;
-  soil.append(soilWeek, soilKey, soilCaption, soilCounts, soilWetter.block, soilDrier.block, soilNote,
+  /* The week's change (ADR-142), one of soil mode's two views. */
+  const soilChange = document.createElement("div");
+  soilChange.className = "precip-soil-view-change";
+  soilChange.append(soilWeek, soilKey, soilCaption, soilCounts, soilWetter.block, soilDrier.block, soilNote,
     soilTable.details);
+
+  /* Against past years (ADR-168): the soil's state for the date, not its
+   * move this week. Each station against its own record, so soil texture
+   * cancels out. The default view once the file has comparisons. */
+  const soilHistory = document.createElement("div");
+  soilHistory.className = "precip-soil-view-history";
+  soilHistory.hidden = true;
+  const historyDay = paragraph("precip-coverage");
+  const historyKey = key("precip-soil-history-key", "Map colours and how soil moisture compares with past years", [
+    ...SOIL_HISTORY_CLASSES.map((entry) => keyItem(`${entry.label}: ${entry.range}`, entry.color)),
+    keyItem("No value: too few stations, or too few past years on this date", SOIL_NO_VALUE_COLOR)]);
+  const historyCaption = paragraph("card-note",
+    "Each station is compared with its own past years on the same date, so a sandy soil and a clay soil " +
+    "are each compared with themselves. A station's value is the mean of its sensors at 2 in (or 4 in), 8 in " +
+    "and 20 in below the ground. Normal is the middle half of past years. A station needs more than 10 past " +
+    "years with a reading on the date. Frozen readings are not used. Each drainage area takes the class of its " +
+    "middle station, and needs as many stations as its snow figure does.");
+  const historyCounts = paragraph("precip-note");
+  historyCounts.setAttribute("role", "status");
+  const historyNote = paragraph("precip-coverage");
+  const historyTable = valuesTable("precip-soil-history-table", "Soil moisture against past years at every station",
+    "Soil moisture against past years at every station, scrolls sideways",
+    ["Site", "Drainage area", "Compared with past years", "Soil water (%)", "Normal range (%)", "Past years"]);
+  soilHistory.append(historyDay, historyKey, historyCaption, historyCounts, historyNote, historyTable.details);
+
+  const viewHead = document.createElement("div");
+  viewHead.className = "precip-storm-head precip-soil-view-head";
+  const viewGroup = document.createElement("div");
+  viewGroup.className = "precip-range";
+  viewGroup.setAttribute("role", "group");
+  viewGroup.setAttribute("aria-label", "What the soil moisture map shows");
+  const viewButtons = new Map<SoilView, HTMLButtonElement>();
+  for (const [view, label] of [["history", "Compared with past years"], ["change", "Change in 7 days"]] as const) {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.textContent = label;
+    button.setAttribute("aria-pressed", "false");
+    button.addEventListener("click", () => setSoilView(view));
+    viewButtons.set(view, button);
+    viewGroup.append(button);
+  }
+  viewHead.append(paragraph("chart-axis-title", "Soil moisture"), viewGroup);
+  soil.append(viewHead, soilHistory, soilChange);
 
   /* The switch: two plain toggle buttons, the card's own idiom for one choice. */
   const switchHead = document.createElement("div");
@@ -269,7 +324,7 @@ export function createPrecipMapSection(
     state: "waiting", mode: "rain", stations: sites.length, withValue: 0, notUsed: sites.length,
     basins: 0, basinsWithValue: 0, window: null,
     basemap: false, basemapDegraded: false, viewReady: false,
-    soil: { state: "idle", endDate: null, stations: 0, withChange: 0, rows: 0 }
+    soil: { state: "idle", endDate: null, stations: 0, withChange: 0, rows: 0, view: "change", compared: 0 }
   };
   let values: PrecipMapValues | null = null;
   let soilValues: SoilMapValues | null = null;
@@ -311,6 +366,42 @@ export function createPrecipMapSection(
   };
   soilTable.details.addEventListener("toggle", drawSoilTable);
 
+  const drawHistoryTable = (): void => {
+    if (!historyTable.details.open || !soilValues) return;
+    const shown = soilValues.sites;
+    const order = (station: string): number => {
+      const cls = shown.get(station)!.history_class;
+      return cls === null ? -1 : SOIL_HISTORY_CLASSES.findIndex((row) => row.id === cls);
+    };
+    const rows = sites.filter((site) => shown.has(site.station))
+      .sort((a, b) => order(a.station) - order(b.station) || a.name.localeCompare(b.name));
+    historyTable.tbody.replaceChildren(...rows.map((site) => {
+      const reading = shown.get(site.station)!;
+      const band = reading.history_band;
+      const row = document.createElement("tr");
+      row.append(siteCell(site, siteHref), cell(site.huc6_name),
+        cell(reading.history_class === null ? `Not compared: ${soilNoHistoryText(reading).toLowerCase()}`
+          : soilHistoryLabel(reading.history_class)),
+        cell(reading.end_percent === null ? "No value" : reading.end_percent.toFixed(1)),
+        cell(band ? `${band.p25.toFixed(1)} to ${band.p75.toFixed(1)}` : "None"),
+        cell(band ? String(band.years) : "None"));
+      return row;
+    }));
+  };
+  historyTable.details.addEventListener("toggle", drawHistoryTable);
+
+  const drawHistory = (): void => {
+    const shown = soilValues;
+    if (!shown) return;
+    status.soil.compared = shown.historyCounts.compared;
+    historyDay.textContent = shown.endDate
+      ? `Soil moisture on ${formatDate(shown.endDate)} against the same date in past years.`
+      : "Too few stations sent soil moisture to compare a day.";
+    historyCounts.textContent = soilHistoryCountsText(shown.historyCounts);
+    historyNote.textContent = soilHistoryLeftOutText(shown.historyCounts);
+    drawHistoryTable();
+  };
+
   const drawSoil = (): void => {
     const shown = soilValues;
     if (!shown) return;
@@ -348,6 +439,7 @@ export function createPrecipMapSection(
     status.soil.rows = most.wetter.length + most.drier.length;
     soilNote.textContent = soilLeftOutText(counts);
     drawSoilTable();
+    drawHistory();
   };
 
   const publish = (): void => {
@@ -355,7 +447,8 @@ export function createPrecipMapSection(
     if (status.mode === "rain") {
       status.withValue = values?.sites.size ?? 0;
     } else {
-      status.withValue = soilValues ? [...soilValues.sites.values()].filter((site) => site.change_points !== null).length : 0;
+      status.withValue = soilValues ? [...soilValues.sites.values()].filter((site) => status.soil.view === "history"
+        ? site.history_class !== null : site.change_points !== null).length : 0;
     }
     status.notUsed = sites.length - status.withValue;
     if (map) {
@@ -370,12 +463,18 @@ export function createPrecipMapSection(
 
   const drawMap = (): void => {
     if (!map) return;
-    if (status.mode === "soil" && soilValues) map.setSoilValues(soilValues);
+    if (status.mode === "soil" && soilValues) map.setSoilValues(soilValues, status.soil.view);
     else if (values) map.setValues(values);
   };
 
   let requested: PrecipMapMode = options.initialMode ?? "rain";
+  let requestedView: SoilView | null = options.initialSoilView ?? null;
   const showMode = (): void => {
+    status.soil.view = soilViewShown(requestedView, soilValues?.historyCounts.compared ?? 0);
+    for (const [view, button] of viewButtons) button.setAttribute("aria-pressed", String(view === status.soil.view));
+    viewButtons.get("history")!.disabled = (soilValues?.historyCounts.compared ?? 0) === 0;
+    soilHistory.hidden = status.soil.view !== "history";
+    soilChange.hidden = status.soil.view !== "change";
     const view = precipMapModeView(requested, status.soil.state);
     status.mode = view.mode;
     modeButtons.get("rain")!.setAttribute("aria-pressed", String(view.rainPressed));
@@ -385,7 +484,7 @@ export function createPrecipMapSection(
     soilFailed.textContent = view.failure ?? "";
     soilFailed.hidden = view.failure === null;
     options.showRecentList?.(view.recentListShown);
-    host.setAttribute("aria-label", precipMapLabel(view.mode));
+    host.setAttribute("aria-label", precipMapLabel(view.mode, status.soil.view));
     drawMap();
     publish();
   };
@@ -416,13 +515,20 @@ export function createPrecipMapSection(
     requested = mode;
     if (mode === "soil" && status.soil.state === "failed") status.soil.state = "idle";
     showMode();
-    options.onModeChange?.(status.mode);
+    options.onModeChange?.(status.mode, status.soil.view);
     if (mode === "soil") {
       void loadSoil().then(() => {
         showMode();
-        options.onModeChange?.(status.mode);
+        options.onModeChange?.(status.mode, status.soil.view);
       });
     }
+  }
+
+  function setSoilView(view: SoilView): void {
+    if (status.soil.view === view) return;
+    requestedView = view;
+    showMode();
+    options.onModeChange?.(status.mode, status.soil.view);
   }
 
   if (requested === "soil") {

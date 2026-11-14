@@ -1,4 +1,7 @@
-import type { SoilMoisturePayload, SoilMoistureRollup, SoilMoistureSite, SoilNoChangeReason } from "../types";
+import type {
+  SoilHistoryBand, SoilHistoryClass, SoilMoisturePayload, SoilMoistureRollup, SoilMoistureSite, SoilNoChangeReason,
+  SoilNoHistoryReason
+} from "../types";
 
 function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
@@ -10,6 +13,56 @@ const nullableNumber = (value: unknown): value is number | null => value === nul
 const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/;
 const isDate = (value: unknown): value is string => typeof value === "string" && ISO_DATE.test(value);
 const REASONS: readonly SoilNoChangeReason[] = ["missing_reading", "frozen", "no_temperature"];
+const HISTORY_CLASSES: readonly SoilHistoryClass[] = ["much_drier", "drier", "normal", "wetter", "much_wetter"];
+const HISTORY_REASONS: readonly SoilNoHistoryReason[] = ["no_history", "other_depths", "short_history", "no_reading"];
+
+/** The class the river rule (ADR-144) gives a value in a band; the refresh's `classify`. */
+export function soilHistoryClassOf(percent: number, band: SoilHistoryBand): SoilHistoryClass {
+  if (percent < band.p10) return "much_drier";
+  if (percent < band.p25) return "drier";
+  if (percent <= band.p75) return "normal";
+  if (percent <= band.p90) return "wetter";
+  return "much_wetter";
+}
+
+function readBand(value: unknown): SoilHistoryBand | null | undefined {
+  if (value === null) return null;
+  if (!isObject(value) || !isCount(value.years)) return undefined;
+  const keys = ["p10", "p25", "p50", "p75", "p90"] as const;
+  const numbers = keys.map((key) => value[key]);
+  if (!numbers.every((n) => isFiniteNumber(n) && n >= 0 && n <= 100)) return undefined;
+  if (!(numbers as number[]).every((n, i, all) => i === 0 || all[i - 1]! <= n)) return undefined;
+  const [p10, p25, p50, p75, p90] = numbers as number[];
+  return { years: value.years, p10: p10!, p25: p25!, p50: p50!, p75: p75!, p90: p90! };
+}
+
+/**
+ * A station's comparison with its past years (ADR-168). A schema 1 file has
+ * none, and reads as never compared. A class without a band, a band and a
+ * class that the river rule does not join, or a reason beside a class is a
+ * file this cannot read.
+ */
+function readHistory(raw: Record<string, unknown>, schema: number):
+  Pick<SoilMoistureSite, "history_band" | "history_class" | "no_history_reason"> {
+  if (schema < 2) return { history_band: null, history_class: null, no_history_reason: "no_history" };
+  const band = readBand(raw.history_band);
+  const cls = raw.history_class;
+  const reason = raw.no_history_reason;
+  if (band === undefined || !(cls === null || HISTORY_CLASSES.includes(cls as SoilHistoryClass))
+    || !(reason === null || HISTORY_REASONS.includes(reason as SoilNoHistoryReason))
+    || (cls === null) === (reason === null)) {
+    throw new Error(`Soil moisture site ${String(raw.station)} has a comparison with past years that is not readable.`);
+  }
+  if (cls !== null && (band === null || raw.end_percent === null
+    || soilHistoryClassOf(raw.end_percent as number, band) !== cls)) {
+    throw new Error(`Soil moisture site ${String(raw.station)} has a class that does not follow from its band.`);
+  }
+  return {
+    history_band: band, history_class: cls as SoilHistoryClass | null,
+    no_history_reason: reason as SoilNoHistoryReason | null
+  };
+}
+
 /** Volumetric water content cannot leave 0 to 100 percent. */
 const isPercent = (value: unknown): boolean => value === null || (isFiniteNumber(value) && value >= 0 && value <= 100);
 
@@ -62,7 +115,8 @@ export function validateSoilMoisturePayload(value: unknown): SoilMoisturePayload
       end_percent: raw.end_percent as number | null,
       start_percent: raw.start_percent as number | null,
       change_points: change,
-      no_change_reason: (reason ?? null) as SoilNoChangeReason | null
+      no_change_reason: (reason ?? null) as SoilNoChangeReason | null,
+      ...readHistory(raw, value.schema_version as number)
     };
   });
   const rollups: SoilMoistureRollup[] = value.rollups.map((raw: unknown, index: number) => {
@@ -72,7 +126,16 @@ export function validateSoilMoisturePayload(value: unknown): SoilMoisturePayload
       || (raw.mean_change_points !== null) !== (raw.measured_site_count >= raw.minimum_reporting_sites)) {
       throw new Error(`Soil moisture area ${index} is not readable.`);
     }
+    const v2 = (value.schema_version as number) >= 2;
+    const compared = v2 ? raw.compared_site_count : 0;
+    const areaClass = v2 ? raw.history_class : null;
+    if (!isCount(compared) || compared > raw.site_count
+      || !(areaClass === null || HISTORY_CLASSES.includes(areaClass as SoilHistoryClass))
+      || (areaClass !== null) !== (compared >= raw.minimum_reporting_sites)) {
+      throw new Error(`Soil moisture area ${index} has a comparison with past years that is not readable.`);
+    }
     return {
+      compared_site_count: compared, history_class: areaClass as SoilHistoryClass | null,
       huc6: raw.huc6, huc6_name: raw.huc6_name, site_count: raw.site_count,
       measured_site_count: raw.measured_site_count, minimum_reporting_sites: raw.minimum_reporting_sites,
       mean_change_points: raw.mean_change_points
@@ -90,6 +153,7 @@ export function validateSoilMoisturePayload(value: unknown): SoilMoisturePayload
     site_count: sites.length,
     measured_site_count: measured,
     frozen_site_count: sites.filter((site) => site.no_change_reason === "frozen").length,
+    compared_site_count: sites.filter((site) => site.history_class !== null).length,
     late_site_count: sites.filter((site) => site.late).length,
     missing_site_count: isCount(value.missing_site_count) ? value.missing_site_count : 0,
     rollups,

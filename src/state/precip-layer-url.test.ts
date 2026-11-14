@@ -30,3 +30,19 @@ describe("the precipitation map's layer parameter (ADR-142)", () => {
     }
   });
 });
+
+describe("soil mode's view parameter (ADR-168)", () => {
+  it("reads change, and anything else as the default", async () => {
+    const { soilViewFromSearch } = await import("./precip-layer-url");
+    expect(soilViewFromSearch("?layer=soil&soil=change")).toBe("change");
+    expect(soilViewFromSearch("?layer=soil")).toBeNull();
+    expect(soilViewFromSearch("?soil=past")).toBeNull();
+  });
+
+  it("writes change only on soil, and drops it on rain", async () => {
+    const { soilViewSearch } = await import("./precip-layer-url");
+    expect(soilViewSearch("soil", "change", "?state=UT")).toBe("?state=UT&layer=soil&soil=change");
+    expect(soilViewSearch("soil", "history", "?state=UT&layer=soil&soil=change")).toBe("?state=UT&layer=soil");
+    expect(soilViewSearch("rain", "change", "?layer=soil&soil=change")).toBe("");
+  });
+});
