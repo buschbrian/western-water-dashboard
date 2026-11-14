@@ -135,7 +135,14 @@ def main() -> int:
 
     started = time.monotonic()
     records = fetch_records(session, list(measuring), date(before_year - 1, 12, 31))
-    previous = soil_normals.load(args.output) if args.output.exists() else None
+    try:
+        previous = soil_normals.load(args.output) if args.output.exists() else None
+    except ValueError as exc:
+        # Built by another method: nothing in it may be kept (no mixing).
+        print(f"  the committed file is not kept: {exc}")
+        previous = None
+    if previous is None and args.only:
+        raise SystemExit("no usable soil_normals.json to merge into; rebuild every station")
     stations = dict(previous["stations"]) if previous else {}
     empty = []
     for station, chosen in measuring.items():

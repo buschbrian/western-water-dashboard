@@ -1,6 +1,6 @@
 name: Build soil moisture normals
 
-# Manual only. soil_normals.json is committed and changes once a year, when
+# Manual only (a temporary push trigger rebuilds on this branch). soil_normals.json is committed and changes once a year, when
 # the year just ended joins each station's sample (ADR-169). The Natural
 # Resources Conservation Service is reachable from the runner; it runs the
 # same command a contributor would run locally, and commits the result.
