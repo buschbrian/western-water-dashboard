@@ -991,6 +991,25 @@ export interface SoilMoistureSite {
   /** Percentage points, end minus start; null with a reason. */
   change_points: number | null;
   no_change_reason: SoilNoChangeReason | null;
+  /** The end day's percentiles over the station's own past years (ADR-169); null when not compared. */
+  history_band: SoilHistoryBand | null;
+  /** Where the end-day value falls in that band; null with a reason. */
+  history_class: SoilHistoryClass | null;
+  no_history_reason: SoilNoHistoryReason | null;
+}
+
+/** The five classes among a station's past years, driest first (ADR-169). */
+export type SoilHistoryClass = "much_drier" | "drier" | "normal" | "wetter" | "much_wetter";
+/** Why a station's end day is not compared with its past years. */
+export type SoilNoHistoryReason = "no_history" | "other_depths" | "short_history" | "no_reading";
+
+export interface SoilHistoryBand {
+  years: number;
+  p10: number;
+  p33: number;
+  p50: number;
+  p67: number;
+  p90: number;
 }
 
 export interface SoilMoistureRollup {
@@ -1000,6 +1019,9 @@ export interface SoilMoistureRollup {
   measured_site_count: number;
   minimum_reporting_sites: number;
   mean_change_points: number | null;
+  /** Stations compared with their past years, and the median of their classes held to the floor (ADR-169). */
+  compared_site_count: number;
+  history_class: SoilHistoryClass | null;
 }
 
 export interface SoilMoisturePayload {
@@ -1014,6 +1036,8 @@ export interface SoilMoisturePayload {
   site_count: number;
   measured_site_count: number;
   frozen_site_count: number;
+  /** Stations whose end day is compared with their own past years (ADR-169); 0 in a schema 1 file. */
+  compared_site_count: number;
   late_site_count: number;
   missing_site_count: number;
   rollups: SoilMoistureRollup[];

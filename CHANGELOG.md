@@ -13,6 +13,13 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
+- **Soil moisture compared with past years** (ADR-169). The precipitation
+  map's soil mode opens on each station's soil moisture against its own past
+  years on the same date, in five classes from much drier to much wetter than
+  normal. The week's change is the second view. `soil_moisture.json` is
+  schema 2; a new on-demand `soil_normals.json` holds each station's
+  percentiles.
+
 - **Great Salt Lake on the terminal lakes page, by arm** (ADR-159). The South
   Arm (U.S. Geological Survey site 10010000, Saltair Boat Harbor) and the
   North Arm (10010100, near Saline) each show their own daily surface level

@@ -78,3 +78,31 @@ describe("the soil-moisture validator", () => {
     expect(read.measured_site_count).toBeLessThanOrEqual(read.site_count);
   });
 });
+
+describe("the soil-moisture validator, schema 2 (ADR-169)", () => {
+  const band = { years: 14, p10: 12, p33: 16, p50: 19, p67: 22, p90: 26 };
+  const v2 = (siteOverrides: Record<string, unknown>, rollup: Record<string, unknown> = {}) => payload({
+    schema_version: 2,
+    rollups: [{ huc6: "160202", huc6_name: "Jordan", site_count: 1, measured_site_count: 1,
+      minimum_reporting_sites: 2, mean_change_points: null, compared_site_count: 1, history_class: null, ...rollup }],
+    sites: [site({ history_band: band, history_class: "normal", no_history_reason: null, ...siteOverrides })]
+  });
+
+  it("reads a class that follows from its band", () => {
+    const read = validateSoilMoisturePayload(v2({}));
+    expect(read.sites[0]!.history_class).toBe("normal");
+    expect(read.compared_site_count).toBe(1);
+  });
+
+  it("refuses a class the band does not give, or a class beside a reason", () => {
+    expect(() => validateSoilMoisturePayload(v2({ history_class: "wetter" }))).toThrow(/does not follow/);
+    expect(() => validateSoilMoisturePayload(v2({ no_history_reason: "short_history" }))).toThrow();
+    expect(() => validateSoilMoisturePayload(v2({}, { history_class: "normal" }))).toThrow();
+  });
+
+  it("reads a schema 1 file as never compared", () => {
+    const read = validateSoilMoisturePayload(payload());
+    expect(read.sites[0]!.no_history_reason).toBe("no_history");
+    expect(read.rollups[0]!.history_class).toBeNull();
+  });
+});

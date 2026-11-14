@@ -10,10 +10,11 @@
  * are the same numbers; `soil-map-model.test.ts` holds that against the
  * committed file.
  */
-import type { SoilMoisturePayload, SoilMoistureSite } from "./types";
+import type { SoilHistoryClass, SoilMoisturePayload, SoilMoistureSite } from "./types";
 import { SET_SHARE } from "./precip-model";
 import { formatDate, formatShortDate } from "./viz/format";
 import { SOIL_STEADY_POINTS, soilClassIndex } from "./viz/soil-classes";
+import { SOIL_HISTORY_CLASSES } from "./viz/soil-history-classes";
 
 export interface SoilAreaChange {
   /** Mean change of the stations with one, to a tenth; null below the floor. */
@@ -34,6 +35,21 @@ export interface SoilCounts {
   frozen: number;
 }
 
+/** An area against its stations' past years (ADR-169). */
+export interface SoilAreaHistory {
+  /** The median class of its compared stations; null below the floor. */
+  cls: SoilHistoryClass | null;
+  stations: number;
+  floor: number;
+}
+
+export interface SoilHistoryCounts {
+  /** Stations in the place with soil sensors in the file. */
+  stations: number;
+  compared: number;
+  byClass: Record<SoilHistoryClass, number>;
+}
+
 export interface SoilMapValues {
   endDate: string | null;
   startDate: string | null;
@@ -43,6 +59,23 @@ export interface SoilMapValues {
   counts: SoilCounts;
   /** Stations with a change, the largest move first. */
   ranked: SoilMoistureSite[];
+  historyAreas: Map<string, SoilAreaHistory>;
+  historyCounts: SoilHistoryCounts;
+}
+
+const CLASS_ORDER: readonly SoilHistoryClass[] = SOIL_HISTORY_CLASSES.map((row) => row.id);
+const NORMAL_INDEX = CLASS_ORDER.indexOf("normal");
+
+/** The median of ordered classes, the one nearer normal on an even split;
+ * the refresh's `area_class`. Null below the floor. */
+export function soilAreaHistoryClass(classes: readonly SoilHistoryClass[], floor: number): SoilHistoryClass | null {
+  if (classes.length < floor || classes.length === 0) return null;
+  const ordered = classes.map((cls) => CLASS_ORDER.indexOf(cls)).sort((a, b) => a - b);
+  const middle = Math.floor(ordered.length / 2);
+  if (ordered.length % 2) return CLASS_ORDER[ordered[middle]!]!;
+  const low = ordered[middle - 1]!;
+  const high = ordered[middle]!;
+  return CLASS_ORDER[Math.abs(low - NORMAL_INDEX) <= Math.abs(high - NORMAL_INDEX) ? low : high]!;
 }
 
 const roundTenth = (value: number): number => Math.round(value * 10) / 10 + 0;
@@ -84,7 +117,26 @@ export function soilMapValues(
   }
   const ranked = inPlace.filter((site) => site.change_points !== null)
     .sort((a, b) => Math.abs(b.change_points!) - Math.abs(a.change_points!) || a.station.localeCompare(b.station));
-  return { endDate: payload.end_date, startDate: payload.start_date, sites, areas, counts, ranked };
+
+  const classesByArea = new Map<string, SoilHistoryClass[]>();
+  const byClass = Object.fromEntries(CLASS_ORDER.map((cls) => [cls, 0])) as Record<SoilHistoryClass, number>;
+  let compared = 0;
+  for (const site of inPlace) {
+    if (site.history_class === null) continue;
+    compared += 1;
+    byClass[site.history_class] += 1;
+    const area = siteAreas.get(site.station)!;
+    classesByArea.set(area, [...(classesByArea.get(area) ?? []), site.history_class]);
+  }
+  const historyAreas = new Map<string, SoilAreaHistory>();
+  for (const [area, floor] of areaFloors) {
+    const classes = classesByArea.get(area) ?? [];
+    historyAreas.set(area, { cls: soilAreaHistoryClass(classes, floor), stations: classes.length, floor });
+  }
+  return {
+    endDate: payload.end_date, startDate: payload.start_date, sites, areas, counts, ranked,
+    historyAreas, historyCounts: { stations: inPlace.length, compared, byClass }
+  };
 }
 
 /** Stations listed on each side of the "most change" list (ADR-142, as
@@ -164,4 +216,49 @@ export function soilLeftOutText(counts: SoilCounts): string {
       (counts.frozen > 0 ? `, ${counts.frozen} of them because the soil was frozen.` : ".") : "",
     "The sensors measure to 0.1 percentage point."
   ].filter(Boolean).join(" ");
+}
+
+/* --- Compared with past years (ADR-169) --------------------------------- */
+
+/** Why a station is not compared with its past years, in words. */
+export function soilNoHistoryText(site: SoilMoistureSite | undefined): string {
+  if (!site) return "No soil sensors";
+  switch (site.no_history_reason) {
+    case "no_history": return "No record of past years for this station yet";
+    case "other_depths": return "Its past years were measured at other depths";
+    case "short_history": return "10 or fewer past years with a reading on this date";
+    case "no_reading": return site.no_change_reason === "frozen"
+      ? "Frozen soil on the end day" : "No reading at all three depths on the end day";
+    default: return "";
+  }
+}
+
+/** The normal range of a station's band, in words. */
+export function soilBandText(site: SoilMoistureSite): string {
+  const band = site.history_band;
+  return band ? `Normal for this date is ${band.p33.toFixed(1)} to ${band.p67.toFixed(1)} percent, `
+    + `the middle third of ${band.years} past years.` : "";
+}
+
+/** The place's stations by class, in one sentence. */
+export function soilHistoryCountsText(counts: SoilHistoryCounts): string {
+  if (counts.stations === 0) return "No station in this place has soil sensors at the three depths.";
+  if (counts.compared === 0) {
+    return `None of the ${stationWord(counts.stations)} with soil sensors is compared with its past years for this date.`;
+  }
+  const drier = counts.byClass.much_drier + counts.byClass.drier;
+  const wetter = counts.byClass.much_wetter + counts.byClass.wetter;
+  return `Of the ${stationWord(counts.compared)} compared with their own past years, ${drier} ${drier === 1 ? "is" : "are"} `
+    + `drier than normal for the date (${counts.byClass.much_drier} much drier), ${counts.byClass.normal} `
+    + `${counts.byClass.normal === 1 ? "is" : "are"} normal, and ${wetter} ${wetter === 1 ? "is" : "are"} wetter than `
+    + `normal (${counts.byClass.much_wetter} much wetter).`;
+}
+
+/** The stations left out of the comparison. */
+export function soilHistoryLeftOutText(counts: SoilHistoryCounts): string {
+  const without = counts.stations - counts.compared;
+  return without > 0
+    ? `${stationWord(without)} with soil sensors ${without === 1 ? "is" : "are"} not compared: too few past years `
+      + "on this date, frozen soil, or no reading on the end day."
+    : "";
 }
