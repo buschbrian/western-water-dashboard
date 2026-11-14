@@ -371,7 +371,7 @@ export function createPrecipMapSection(
     const shown = soilValues.sites;
     const order = (station: string): number => {
       const cls = shown.get(station)!.history_class;
-      return cls === null ? -1 : SOIL_HISTORY_CLASSES.findIndex((row) => row.id === cls);
+      return cls === null ? SOIL_HISTORY_CLASSES.length : SOIL_HISTORY_CLASSES.findIndex((row) => row.id === cls);
     };
     const rows = sites.filter((site) => shown.has(site.station))
       .sort((a, b) => order(a.station) - order(b.station) || a.name.localeCompare(b.name));
