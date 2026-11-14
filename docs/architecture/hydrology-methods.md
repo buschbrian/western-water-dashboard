@@ -408,7 +408,7 @@ basin percent-of-median maps, whose method is unpublished.
 
 ### Soil moisture against each station's past years
 
-**A station is compared only with itself** (ADR-168), so soil texture cancels.
+**A station is compared only with itself** (ADR-169), so soil texture cancels.
 
 - **History:** `soil_normals.json`, built by `tools/build_soil_normals.py`
   (`pipeline/soil_normals.py` holds the method). The station value above,

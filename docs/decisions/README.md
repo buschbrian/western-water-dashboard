@@ -159,7 +159,7 @@ ADR-041.**
 - Current architecture: [`docs/architecture/hydrology-methods.md`](../architecture/hydrology-methods.md)
 
 - Soil input validity: [ADR-167](ADR-167-enforce-the-soil-percent-bound-before-averaging.md)
-- Soil against past years: [ADR-168](ADR-168-compare-soil-moisture-with-each-stations-past-years.md)
+- Soil against past years: [ADR-169](ADR-169-compare-soil-moisture-with-each-stations-past-years.md)
 
 ### Visible language, accessibility and naming
 **Start with ADR-006.**
@@ -394,7 +394,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-165](ADR-165-compare-snow-water-with-earlier-seasons-at-a-fixed-set-of-sites.md) | Compare snow water with earlier seasons at a fixed set of sites | Proposed; ADR-125's builder and fixed-set rule over snow water (`snow_history.json`), a lazy snow-page card that follows the page's place; keeps ADR-081's summed ratio and ADR-121's floors; moves no published snow figure; implemented locally |
 | [ADR-166](ADR-166-offer-terminal-lakes-in-the-page-navigation.md) | Offer terminal lakes in the page navigation | Proposed; keep ADR-159’s merged lake contract and add compact navigation after the second lake |
 | [ADR-167](ADR-167-enforce-the-soil-percent-bound-before-averaging.md) | Enforce the soil percentage bound before averaging | Proposed; reject physically impossible SMS values at ingestion while keeping existing means and coverage rules |
-| [ADR-168](ADR-168-compare-soil-moisture-with-each-stations-past-years.md) | Compare soil moisture with each station's past years | Proposed; per-station calendar-day percentiles (`soil_normals.json`), river classes, area median class, default view of soil mode; week's change unchanged |
+| [ADR-169](ADR-169-compare-soil-moisture-with-each-stations-past-years.md) | Compare soil moisture with each station's past years | Proposed; per-station calendar-day percentiles (`soil_normals.json`), river classes, area median class, default view of soil mode; week's change unchanged |
 
 ## Relationship to the historical journal
 

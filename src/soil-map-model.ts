@@ -35,7 +35,7 @@ export interface SoilCounts {
   frozen: number;
 }
 
-/** An area against its stations' past years (ADR-168). */
+/** An area against its stations' past years (ADR-169). */
 export interface SoilAreaHistory {
   /** The median class of its compared stations; null below the floor. */
   cls: SoilHistoryClass | null;
@@ -218,7 +218,7 @@ export function soilLeftOutText(counts: SoilCounts): string {
   ].filter(Boolean).join(" ");
 }
 
-/* --- Compared with past years (ADR-168) --------------------------------- */
+/* --- Compared with past years (ADR-169) --------------------------------- */
 
 /** Why a station is not compared with its past years, in words. */
 export function soilNoHistoryText(site: SoilMoistureSite | undefined): string {

@@ -660,7 +660,7 @@ export const SOIL_GROUPS: readonly ApiFieldGroup[] = [
     f("end_date", "date", "The day every station's change ends on, or null when too few stations sent readings."),
     f("start_date", "date", "The day every station's change starts on, or null."),
     f("minimum_reporting_sites", "sites", "Stations with a change an area needs for a figure. The same floor as the snow figure."),
-    f("history_rule", "object", "Schema 2 (ADR-168). How the end day is compared with past years: the percentiles kept, the fewest past years a date needs (min_years), the year the station records stop before (years_before) and the day they were built. years_before and built are null when no station record is built yet.", true),
+    f("history_rule", "object", "Schema 2 (ADR-169). How the end day is compared with past years: the percentiles kept, the fewest past years a date needs (min_years), the year the station records stop before (years_before) and the day they were built. years_before and built are null when no station record is built yet.", true),
     f("series_dates", "array", "The fifteen days the readings index into, ascending."),
     f("site_count", "sites", "Number of stations in the sites array."),
     f("measured_site_count", "sites", "Number of stations with a change."),
@@ -693,7 +693,7 @@ export const SOIL_GROUPS: readonly ApiFieldGroup[] = [
     f("start_percent", "percent", "The same on start_date, or null."),
     f("change_points", "percentage points", "end_percent minus start_percent, or null."),
     f("no_change_reason", "identifier", "Why change_points is null: missing_reading, frozen or no_temperature. Null when there is a change."),
-    f("history_band", "object", "Schema 2 (ADR-168). The station's own percentiles of its value for the calendar day of end_date: years, p10, p25, p50, p75 and p90, in percent of the soil's volume. One value per past year on that date, Weibull plotting position. Null when not compared.", true),
+    f("history_band", "object", "Schema 2 (ADR-169). The station's own percentiles of its value for the calendar day of end_date: years, p10, p25, p50, p75 and p90, in percent of the soil's volume. One value per past year on that date, Weibull plotting position. Null when not compared.", true),
     f("history_class", "identifier", "Schema 2. Where end_percent falls in history_band: much_drier (under p10), drier (under p25), normal (p25 to p75), wetter (up to p90) or much_wetter (over p90). A value on a boundary takes the class nearer normal. Null when not compared.", true),
     f("no_history_reason", "identifier", "Schema 2. Why history_class is null: no_history (no station record built), other_depths (the record used other sensors), short_history (10 or fewer past years on this date) or no_reading (no value on end_date). Null when compared.", true)
   ]},

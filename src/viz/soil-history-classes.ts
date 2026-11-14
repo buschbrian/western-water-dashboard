@@ -1,6 +1,6 @@
 /*
  * The soil-moisture map's classes when it compares each station with its own
- * past years (ADR-168): the river map's five classes (ADR-144) in words for
+ * past years (ADR-169): the river map's five classes (ADR-144) in words for
  * soil, in one table that the fills, the points and the key all read.
  *
  * No new colour. The five are taken from the week's-change table

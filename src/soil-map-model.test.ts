@@ -126,7 +126,7 @@ describe("the soil sentences", () => {
   });
 });
 
-describe("the soil map against past years (ADR-168)", () => {
+describe("the soil map against past years (ADR-169)", () => {
   const band = { years: 15, p10: 10, p25: 15, p50: 20, p75: 25, p90: 30 };
   const compared = (station: string, cls: SoilMoistureSite["history_class"]): SoilMoistureSite => ({
     station, depths_inches: [2, 8, 20], latest_date: "2026-10-26", late: false, end_percent: 20, start_percent: 20,

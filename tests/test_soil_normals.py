@@ -1,4 +1,4 @@
-"""The soil-moisture percentiles by calendar day (ADR-168)."""
+"""The soil-moisture percentiles by calendar day (ADR-169)."""
 
 import sys
 from datetime import date

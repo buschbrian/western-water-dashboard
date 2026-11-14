@@ -13,7 +13,7 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
-- **Soil moisture compared with past years** (ADR-168). The precipitation
+- **Soil moisture compared with past years** (ADR-169). The precipitation
   map's soil mode opens on each station's soil moisture against its own past
   years on the same date, in five classes from much drier to much wetter than
   normal. The week's change is the second view. `soil_moisture.json` is

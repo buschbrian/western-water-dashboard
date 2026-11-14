@@ -37,7 +37,7 @@ function readBand(value: unknown): SoilHistoryBand | null | undefined {
 }
 
 /**
- * A station's comparison with its past years (ADR-168). A schema 1 file has
+ * A station's comparison with its past years (ADR-169). A schema 1 file has
  * none, and reads as never compared. A class without a band, a band and a
  * class that the river rule does not join, or a reason beside a class is a
  * file this cannot read.

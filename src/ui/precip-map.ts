@@ -59,7 +59,7 @@ export interface PrecipMapStatus {
 export interface PrecipMapController {
   status: PrecipMapStatus;
   setValues(values: PrecipMapValues): void;
-  /** The soil file, drawn as the week's change or against past years (ADR-168). */
+  /** The soil file, drawn as the week's change or against past years (ADR-169). */
   setSoilValues(values: SoilMapValues, view?: SoilView): void;
 }
 

@@ -225,7 +225,7 @@ def test_the_daily_script_runs_soil_after_precipitation_and_keeps_the_last_file(
     assert "refresh_soil_moisture.py" in plan and "soil_moisture.json" in plan
 
 
-# --- Compared with the station's own past years (ADR-168) -----------------
+# --- Compared with the station's own past years (ADR-169) -----------------
 
 def normals_for(*stations, years=12, band=(14.0, 15.0, 16.0, 17.0, 18.0), depths=(2, 8, 20)):
     row = [years, *band]

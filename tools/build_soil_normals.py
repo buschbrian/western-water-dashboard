@@ -1,4 +1,4 @@
-"""Build `soil_normals.json`: each soil station's percentiles by calendar day (ADR-168).
+"""Build `soil_normals.json`: each soil station's percentiles by calendar day (ADR-169).
 
 For every snow station with the standard soil sensors (ADR-142's R4: 2 in or
 4 in, 8 in and 20 in), asks the Natural Resources Conservation Service for its
@@ -156,7 +156,7 @@ def main() -> int:
         "method_version": soil_normals.SOIL_NORMALS_METHOD_VERSION,
         "description": (
             "Soil moisture percentiles for each calendar day at each snow station with the standard "
-            "sensors (ADR-168): the station value of ADR-142 (mean of the 2 in or 4 in, 8 in and 20 in "
+            "sensors (ADR-169): the station value of ADR-142 (mean of the 2 in or 4 in, 8 in and 20 in "
             "sensors, frozen readings dropped), one value per year on that calendar day, the 10th to "
             "90th percentile by the Weibull plotting position. A day with fewer than "
             f"{soil_normals.MIN_YEARS} years carries only its count. Position n of days is calendar day "

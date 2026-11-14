@@ -43,7 +43,7 @@ export interface SoilSectionStatus {
   withChange: number;
   /** Rows in the "most change" lists, wetter and drier together. */
   rows: number;
-  /** What soil mode draws (ADR-168), and the stations compared with their past years. */
+  /** What soil mode draws (ADR-169), and the stations compared with their past years. */
   view: SoilView;
   compared: number;
 }
@@ -79,7 +79,7 @@ export interface PrecipMapSectionOptions {
   loadSoil?: () => Promise<SoilMoisturePayload>;
   /** The mode the link asked for (ADR-142); rain when absent. */
   initialMode?: PrecipMapMode;
-  /** The soil view the link asked for (ADR-168); null lets the file decide. */
+  /** The soil view the link asked for (ADR-169); null lets the file decide. */
   initialSoilView?: SoilView | null;
   /** The reader switched, or the soil file failed after they did: the mode and soil view now shown. */
   onModeChange?: (mode: PrecipMapMode, soilView: SoilView) => void;
@@ -251,7 +251,7 @@ export function createPrecipMapSection(
   soilChange.append(soilWeek, soilKey, soilCaption, soilCounts, soilWetter.block, soilDrier.block, soilNote,
     soilTable.details);
 
-  /* Against past years (ADR-168): the soil's state for the date, not its
+  /* Against past years (ADR-169): the soil's state for the date, not its
    * move this week. Each station against its own record, so soil texture
    * cancels out. The default view once the file has comparisons. */
   const soilHistory = document.createElement("div");

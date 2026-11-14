@@ -1,4 +1,4 @@
-# ADR-168: Compare soil moisture with each station's past years
+# ADR-169: Compare soil moisture with each station's past years
 
 - Status: Proposed
 - Date: 2026-11-14

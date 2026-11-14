@@ -31,7 +31,7 @@ describe("the precipitation map's layer parameter (ADR-142)", () => {
   });
 });
 
-describe("soil mode's view parameter (ADR-168)", () => {
+describe("soil mode's view parameter (ADR-169)", () => {
   it("reads change, and anything else as the default", async () => {
     const { soilViewFromSearch } = await import("./precip-layer-url");
     expect(soilViewFromSearch("?layer=soil&soil=change")).toBe("change");

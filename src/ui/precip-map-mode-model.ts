@@ -9,7 +9,7 @@ import { formatShortDate } from "../viz/format";
 export type PrecipMapMode = "rain" | "soil";
 export type SoilLoadState = "idle" | "loading" | "ready" | "failed";
 /** What soil mode draws: each station against its own past years for the
- * date (ADR-168), or the week's change (ADR-142). */
+ * date (ADR-169), or the week's change (ADR-142). */
 export type SoilView = "history" | "change";
 
 /** The view soil mode opens on: past years, unless the reader or the link

@@ -79,7 +79,7 @@ describe("the soil-moisture validator", () => {
   });
 });
 
-describe("the soil-moisture validator, schema 2 (ADR-168)", () => {
+describe("the soil-moisture validator, schema 2 (ADR-169)", () => {
   const band = { years: 14, p10: 12, p25: 16, p50: 19, p75: 22, p90: 26 };
   const v2 = (siteOverrides: Record<string, unknown>, rollup: Record<string, unknown> = {}) => payload({
     schema_version: 2,

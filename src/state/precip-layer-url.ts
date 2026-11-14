@@ -28,7 +28,7 @@ export function writePrecipLayerUrl(mode: PrecipMapMode): void {
 }
 
 /*
- * Soil mode's view (ADR-168): `?layer=soil&soil=change` opens it on the
+ * Soil mode's view (ADR-169): `?layer=soil&soil=change` opens it on the
  * week's change. Past years are the default and are written as no
  * parameter; an unknown value reads as the default. The parameter is
  * written only while the map is on soil, so a rain link stays bare.

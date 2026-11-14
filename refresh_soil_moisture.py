@@ -49,7 +49,7 @@ INVENTORY_PATH = ROOT / "snow_sites.json"
 OUTPUT_PATH = ROOT / "soil_moisture.json"
 STATIONS_URL = "https://wcc.sc.egov.usda.gov/awdbRestApi/services/v1/stations"
 #: Version 2 adds each station's class among its own past years and each
-#: area's median class (ADR-168).
+#: area's median class (ADR-169).
 SCHEMA_VERSION = 2
 METADATA_BATCH = 100
 
@@ -252,7 +252,7 @@ def area_mean(changes: list[float], floor: int) -> float | None:
 
 
 def compare_with_past_years(site: dict, end: str | None, normals: dict | None) -> None:
-    """The end day's value against the station's own past years (ADR-168), in place.
+    """The end day's value against the station's own past years (ADR-169), in place.
 
     A station whose normals were built over other sensor depths is not
     compared: its past values are a different mean.
