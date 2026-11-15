@@ -2,8 +2,8 @@
   "water_type": "natural_terminal_lake",
   "storage_source": "U.S. Geological Survey",
   "storage_source_url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/daily/items",
-  "reviewed": "2026-11-11",
-  "selection": "Natural terminal lakes that ADR-112 permits as a separate water type: a closed basin with no dam and no engineered full pool, an owner-operated daily series of surface elevation with its datum named, and a reviewed waterbody point that resolves to exactly one NHDPlus HR waterbody at the project's 100-metre tolerance. A volume is published where the survey publishes a daily series on a named elevation-volume relation; without one, the entry says why in volume_finding and publishes the elevation alone (ADR-159). A lake whose parts are measured apart is listed by arm, each arm with its own site, point and elevation, and no combined level (ADR-159). No capacity, percent full, dam point or reservoir-rollup membership is recorded for any lake here, and a restoration or regulatory level is only ever a named target with its authority, decision, date and datum. Walker Lake was the first admission and Great Salt Lake the second; the candidates still held are in the withheld block with their findings.",
+  "reviewed": "2026-11-15",
+  "selection": "Natural terminal lakes that ADR-112 permits as a separate water type: a closed basin with no dam and no engineered full pool, an owner-operated daily series of surface elevation with its datum named, and a reviewed waterbody point that resolves to exactly one NHDPlus HR waterbody at the project's 100-metre tolerance. A volume is published where the survey publishes a daily series on a named elevation-volume relation; without one, the entry says why in volume_finding and publishes the elevation alone (ADR-159). A lake whose parts are measured apart is listed by arm, each arm with its own site, point and elevation, and no combined level (ADR-159). No capacity, percent full, dam point or reservoir-rollup membership is recorded for any lake here, and a restoration or regulatory level is only ever a named target with its authority, decision, date and datum. Walker Lake was the first admission and Great Salt Lake the second; Pyramid Lake, admitted on 2026-11-15 at Brian Busch's direction, is read from the survey's monthly field readings with a 45-day late threshold (ADR-172); the candidates still held are in the withheld block with their findings.",
   "keyed_by": "usgs_site_no, or the lake's own key for a lake measured by arm (each arm names its site)",
   "lakes": {
     "10288500": {
@@ -144,10 +144,56 @@
       ],
       "volume_finding": "No combined volume: the survey publishes no daily volume series for the whole lake or for either arm. Its Utah Water Science Center publishes elevation-area-volume relationships for the lake and for each arm, but computing a volume from them is a method this project has not reviewed (ADR-159).",
       "targets": []
+    },
+    "10336500": {
+      "name": "Pyramid Lake",
+      "station": "10336500",
+      "state": "NV",
+      "lat": 39.9846293923162,
+      "lon": -119.501016049888,
+      "cadence": "monthly",
+      "por_start": "2016-11-01",
+      "point": {
+        "source": "USGS monitoring location USGS-10336500, PYRAMID LAKE NR NIXON, NV, in decimal degrees on NAD83 (the site record's coordinate datum is NAD27; the decimal coordinates are the survey's NAD83 conversion)",
+        "source_url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/monitoring-locations/items/USGS-10336500",
+        "checked": "2026-11-15"
+      },
+      "waterbody": {
+        "gnis_name": "Pyramid Lake",
+        "nhdplus_hr_permanent_identifier": "139684486",
+        "ftype": 390,
+        "ftype_name": "LakePond",
+        "tolerance_metres": 100,
+        "source_url": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/9",
+        "probed": "2026-11-15",
+        "note": "The site point resolves to exactly one NHDPlus HR waterbody within 100 metres, Pyramid Lake (441 square kilometres). Esri's water bodies were not asked: the reference layer answered exactly one. The point is a gauge on the shore and stands for the whole lake."
+      },
+      "closed_basin": {
+        "huc6": "160501",
+        "huc6_name": "Truckee",
+        "huc8": "16050103",
+        "huc8_name": "Pyramid-Winnemucca Lakes",
+        "usgs_hydrologic_unit": "160501030600",
+        "evidence": "The Truckee River ends in Pyramid Lake and water leaves the lake by evaporation; it has no surface outlet, inside the Great Basin (hydrologic region 16), which drains to no sea. The committed west-huc8 geometry places the site point in subbasin 16050103 Pyramid-Winnemucca Lakes inside basin 160501 Truckee, and the survey's own hydrologic unit for the site, 160501030600, agrees. The assignment is made from the published lake point (ADR-112).",
+        "reviewed": "2026-11-15"
+      },
+      "elevation": {
+        "collection": "field-measurements",
+        "parameter_code": "00062",
+        "statistic_id": "00011",
+        "unit": "ft",
+        "vertical_datum": "NGVD29",
+        "series_begins": "2016-11-01",
+        "source_url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/field-measurements/items?monitoring_location_id=USGS-10336500&parameter_code=00062",
+        "checked": "2026-11-15",
+        "note": "Lake elevation read at the gauge's reference point about once a month (field readings, ReferencePrimary), in feet above the site's vertical datum. The readings carry no datum of their own; NGVD29 is the site record's, with an altitude of 3,940.29 feet. 81 readings from 2016-11-01 to 2026-11-02; 22 in the 24 months to 2026-11-15, a median of 31 days apart and at most 89. The survey's continuous series for the site (statistic 00011, instantaneous) holds the same readings. The daily collection has no series (ADR-172)."
+      },
+      "volume": null,
+      "volume_finding": "No reviewed modern elevation-volume relation for Pyramid Lake, and the survey publishes no volume series for the site (ADR-159). The level is published alone.",
+      "targets": []
     }
   },
   "withheld": {
-    "Pyramid Lake": "Held for its update schedule, not its volume. The survey publishes the level at USGS-10336500, PYRAMID LAKE NR NIXON, NV, as parameter 00062 in feet above NGVD29 (the site record's vertical datum, altitude 3,940.29 feet), current to 2026-11-02 -- but only as discrete readings about once a month (statistic 00011; 23 readings from 2024-11-01 to 2026-11-02, none between 2025-09-03 and 2025-12-01), and the daily collection holds no series for the site (both checked 2026-11-11). ADR-159 makes the volume optional, so the missing volume relation no longer holds the lake. This roster and its freshness rule are daily (a reading is late after 2 days), and a monthly level needs its own update schedule, fetch path and late threshold, which is a decision of its own. The only other survey sites at the lake are two sediment-core sites with no series. This project's western source review (docs/WESTERN-SOURCE-CANDIDATES.md) recorded the Natural Resources Conservation Service's listing for the lake as monthly and semimonthly only.",
     "Mono Lake": "Held for its elevation series; its target is confirmed. The State Water Resources Control Board's Mono Lake page (https://www.waterboards.ca.gov/waterrights/water_issues/programs/mono_lake/, checked 2026-11-11) states that Decision 1631, adopted in 1994, set a long-term management level of 6,392 feet above sea level, with a transition level of 6,391 feet; the decision text is linked there as wrd1631.pdf. No current, citable daily elevation series was found: USGS-10287000, MONO LK NR MONO LAKE CA, lists no time series in the survey's catalog; the Los Angeles Department of Water and Power's daily Mono Basin operations report (https://wsoweb.ladwp.com/aqueduct/operations/monobasin.htm) showed the lake elevation as n/a with no read date on 2026-11-11, on its own datum ('add 0.4 ft for USGS datum'), with no data file; and the Mono Lake Committee's lake-level page could not be read on 2026-11-11 (it refused the request), so its record is unreviewed. Held until a current daily elevation series with a stated datum is reviewed, and until the target's 'above sea level' is tied to that series' datum so the gap can be published in feet."
   }
 }

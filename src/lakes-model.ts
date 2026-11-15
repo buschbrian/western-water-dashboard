@@ -207,9 +207,17 @@ function sourceRows(lake: TerminalLake, gauges: Gauge[]): LakeRow[] {
       : tables.map((relation) => relation.in_use_from
         ? `${relation.name}, in use from ${formatDate(relation.in_use_from)}`
         : relation.name).join("; ") },
+    ...(lake.data_frequency === "monthly"
+      ? [{ label: "Readings", value: monthlySentence(lake.stale_after_days) }] : []),
     { label: "Record starts", value: formatDate(lake.first_obs) },
     { label: "Readings held", value: held }
   ];
+}
+
+/** How often a monthly lake is read and when its reading is late (ADR-172). */
+export function monthlySentence(staleAfterDays: number): string {
+  return "The survey reads this lake's level about once a month, so there is no change "
+    + `over 7 days. A reading is late after ${staleAfterDays} days.`;
 }
 
 export function describeLake(lake: TerminalLake, chartColor: string): LakeView {

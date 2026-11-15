@@ -423,6 +423,8 @@ def test_the_refresh_writes_both_lakes_and_carries_a_quiet_arm(monkeypatch, tmp_
     def fetch(entry_row, *_args):
         if entry_row.get("arms"):
             return arm_series()
+        if entry_row.get("cadence") == "monthly":
+            return {entry_row["station"]: (monthly(3801), None)}
         return {"10288500": (daily("elevation_ft", 3915, 3),
                              daily("volume_af", 1_150_000, 40_000))}
 
@@ -434,8 +436,10 @@ def test_the_refresh_writes_both_lakes_and_carries_a_quiet_arm(monkeypatch, tmp_
     payload = json.loads(path.read_text())
     assert payload["schema_version"] == 2
     published = {r["name"]: r for r in payload["lakes"]}
-    assert set(published) == {"Walker Lake", "Great Salt Lake"}
+    assert set(published) == {"Walker Lake", "Great Salt Lake", "Pyramid Lake"}
     assert published["Walker Lake"]["volume"]["unit"] == "acre_feet"
+    assert published["Pyramid Lake"]["data_frequency"] == "monthly"
+    assert published["Pyramid Lake"]["volume"] is None
     assert [a["name"] for a in published["Great Salt Lake"]["arms"]] == ["South Arm",
                                                                          "North Arm"]
 
@@ -566,3 +570,95 @@ def test_the_daily_script_runs_the_lake_refresh_after_snow_and_before_the_commit
     plan = subprocess.run(["bash", str(ROOT / "scripts" / "refresh-daily.sh"), "--dry-run"],
                           cwd=ROOT, capture_output=True, text=True, check=True).stdout
     assert "refresh_lakes.py" in plan and "lakes.json" in plan
+
+
+# --- a monthly lake (ADR-172) ----------------------------------------------
+
+def pyramid(**overrides) -> dict:
+    row = json.loads(json.dumps(roster.admitted_terminal_lakes()["10336500"]))
+    row.update(overrides)
+    return row
+
+
+def monthly(base: float, *, years: int = 6, stale_days: int = 13) -> pd.DataFrame:
+    """One reading on the first of each month, the last `stale_days` old."""
+    end = TODAY - pd.Timedelta(days=stale_days)
+    idx = pd.date_range(end - pd.DateOffset(years=years), end, freq="MS")
+    idx = idx.append(pd.DatetimeIndex([end])).unique().sort_values()
+    values = base + np.sin(idx.month.to_numpy() / 12 * 2 * np.pi)
+    return pd.DataFrame({"date": idx, "elevation_ft": values})
+
+
+def test_pyramid_lake_is_admitted_as_a_monthly_level_from_field_readings():
+    row = roster.admitted_terminal_lakes()["10336500"]
+    assert row["cadence"] == "monthly" and row["volume"] is None
+    assert row["elevation"]["collection"] == "field-measurements"
+    assert row["elevation"]["vertical_datum"] == "NGVD29"
+    assert "Pyramid Lake" not in json.loads(
+        (ROOT / "admitted_terminal_lakes.json").read_text())["withheld"]
+
+
+@pytest.mark.parametrize("change", [
+    {"cadence": "weekly"},
+    {"volume": {"parameter_code": "00054", "statistic_id": "00011", "unit": "Acre-ft"}},
+])
+def test_the_loader_refuses_a_monthly_lake_with_a_volume_or_another_cadence(tmp_path, change):
+    with pytest.raises(ValueError, match="monthly|daily or monthly"):
+        roster.load_admitted_terminal_lakes(write_roster(tmp_path, pyramid(**change)))
+
+
+def test_the_loader_refuses_a_monthly_lake_read_from_the_daily_collection(tmp_path):
+    row = pyramid()
+    row["elevation"]["collection"] = "daily"
+    with pytest.raises(ValueError, match="field-measurements"):
+        roster.load_admitted_terminal_lakes(write_roster(tmp_path, row))
+    daily_row = entry()
+    daily_row["elevation"]["collection"] = "field-measurements"
+    with pytest.raises(ValueError, match="daily collection"):
+        roster.load_admitted_terminal_lakes(write_roster(tmp_path, daily_row))
+
+
+def test_a_monthly_lake_is_late_after_45_days_not_2():
+    fresh = lakes.summarize_lake(pyramid(), monthly(3801), None, TODAY)
+    assert fresh["data_frequency"] == "monthly"
+    assert fresh["stale_after_days"] == R.AWDB_MONTHLY_STALE_AFTER_DAYS
+    assert fresh["days_stale"] == 13 and fresh["is_stale"] is False
+    assert fresh["source_url"].endswith("/field-measurements/items")
+    late = lakes.summarize_lake(pyramid(), monthly(3801, stale_days=50), None, TODAY)
+    assert late["is_stale"] is True
+    daily_walker = lakes.summarize_lake(entry(), daily("elevation_ft", 3915, 3),
+                                        daily("volume_af", 1_150_000, 20_000), TODAY)
+    assert daily_walker["data_frequency"] == "daily" and daily_walker["stale_after_days"] == 2
+
+
+def test_a_monthly_level_has_no_seven_day_change_and_a_dated_month_change():
+    record = lakes.summarize_lake(pyramid(), monthly(3801), None, TODAY)
+    level = record["elevation"]
+    assert level["change_7d"] is None and level["change_7d_reference_date"] is None
+    assert level["change_30d"] is not None and 20 <= level["change_30d_elapsed_days"] <= 40
+    assert record["volume"] is None
+
+
+def test_field_readings_are_screened_like_the_daily_series():
+    from pipeline.providers import fetch_usgs_field_measurements
+
+    def row(time, value, **extra):
+        props = {"monitoring_location_id": "USGS-10336500", "parameter_code": "00062",
+                 "unit_of_measure": "ft", "time": time, "time_of_day": "17:00:00+00:00",
+                 "value": value}
+        props.update(extra)
+        return {"properties": props}
+    features = [
+        row("2026-09-01", "3802.04"),
+        row("2026-10-01", "3801.70", time_of_day="15:00:00+00:00"),
+        row("2026-10-01", "3801.60", time_of_day="19:00:00+00:00"),
+        row("2026-10-15", "3801.50", parameter_code="00065"),
+        row("2026-10-20", "3801.40", monitoring_location_id="USGS-10336501"),
+        row("2026-10-25", "3801.45", unit_of_measure="m"),
+        row("2026-10-28", "not a number"),
+        row("2016-10-01", "3792.00"),
+    ]
+    frame = fetch_usgs_field_measurements("10336500", "00062", "ft", "20161101", "20261115",
+                                          column="elevation_ft", features=features)
+    assert frame["date"].dt.strftime("%Y-%m-%d").tolist() == ["2026-09-01", "2026-10-01"]
+    assert frame["elevation_ft"].tolist() == [3802.04, 3801.60]

@@ -28,14 +28,14 @@ import pandas as pd
 import huc
 
 from .constants import (
-    LAKE_SCHEMA_VERSION, METHOD_VERSION, STALE_AFTER_DAYS, TARGET_SHARE_WORDS,
-    WITHDRAW_AFTER_DAYS,
+    AWDB_MONTHLY_STALE_AFTER_DAYS, LAKE_SCHEMA_VERSION, METHOD_VERSION, STALE_AFTER_DAYS,
+    TARGET_SHARE_WORDS, WITHDRAW_AFTER_DAYS,
 )
 from .freshness import partition_by_age, withdrawal_notice
 from .history import monthly_history
 from .measurement import summarize_measurement
 from .numbers import _round
-from .providers import USGS_DV_URL
+from .providers import USGS_DV_URL, USGS_FIELD_MEASUREMENTS_URL
 
 WATER_TYPE = "natural_terminal_lake"
 SOURCE_KEY = "usgs"
@@ -104,24 +104,28 @@ def _gauge_blocks(name: str, spec: dict, elevation: pd.DataFrame,
 
 
 def _lake_envelope(entry: dict, as_of: pd.Timestamp, today: pd.Timestamp) -> dict:
+    """The record's identity and freshness. A monthly lake (ADR-172) is late
+    after the month-end feeds' 45 days, not the daily lakes' two."""
     days_stale = int((today - as_of).days)
+    monthly = entry.get("cadence") == "monthly"
+    stale_after = AWDB_MONTHLY_STALE_AFTER_DAYS if monthly else STALE_AFTER_DAYS
     return {
         "name": entry["name"],
         "water_type": WATER_TYPE,
         "source_key": SOURCE_KEY,
         "source_label": SOURCE_LABEL,
-        "source_url": USGS_DV_URL,
+        "source_url": USGS_FIELD_MEASUREMENTS_URL if monthly else USGS_DV_URL,
         "source_station_id": entry.get("station"),
         "state": entry.get("state"),
         "lat": entry.get("lat"),
         "lon": entry.get("lon"),
-        "data_frequency": "daily",
-        "stale_after_days": STALE_AFTER_DAYS,
+        "data_frequency": "monthly" if monthly else "daily",
+        "stale_after_days": stale_after,
 
         # --- freshness ---
         "as_of": as_of.date().isoformat(),
         "days_stale": days_stale,
-        "is_stale": days_stale > STALE_AFTER_DAYS,
+        "is_stale": days_stale > stale_after,
         "fetch_ok": True,
     }
 

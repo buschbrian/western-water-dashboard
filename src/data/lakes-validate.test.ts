@@ -116,4 +116,14 @@ describe("the lake payload validator", () => {
     expect(() => validateLakePayload(payload({ schema_version: 2, lakes: [before] })))
       .toThrow(/arms/);
   });
+
+  it("accepts a monthly level from field readings and refuses one with a volume (ADR-172)", () => {
+    const monthly = lake({ name: "Pyramid Lake", data_frequency: "monthly", stale_after_days: 45,
+      volume: null });
+    expect(validateLakePayload(payload({ lakes: [monthly] })).lakes[0]!.data_frequency).toBe("monthly");
+    expect(() => validateLakePayload(payload({ lakes: [lake({ data_frequency: "monthly" })] })))
+      .toThrow(/monthly lake/);
+    expect(() => validateLakePayload(payload({ lakes: [lake({ data_frequency: "weekly" })] })))
+      .toThrow(/daily or monthly/);
+  });
 });

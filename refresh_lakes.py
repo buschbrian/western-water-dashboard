@@ -31,7 +31,7 @@ from pipeline import lakes
 from pipeline.constants import LAKES_OUTPUT_PATH, START_DATE, local_today
 from pipeline.freshness import carry_forward, carry_withdrawals
 from pipeline.providers import (
-    RETRY_ATTEMPTS, fetch_usgs_parameter_series,
+    RETRY_ATTEMPTS, fetch_usgs_field_measurements, fetch_usgs_parameter_series,
 )
 from pipeline.roster import admitted_terminal_lakes
 
@@ -76,10 +76,16 @@ def fetch_gauge(station: str, spec: dict, start: str, end: str
     The volume is None where the roster reviews none (ADR-159): nothing is
     requested that the record will not publish.
     """
-    elevation = fetch_usgs_parameter_series(
-        station, spec["elevation"]["parameter_code"],
-        spec["elevation"]["statistic_id"], spec["elevation"]["unit"],
-        start, end, column="elevation_ft")
+    if spec["elevation"].get("collection") == "field-measurements":
+        # Readings about once a month, not a daily series (ADR-172).
+        elevation = fetch_usgs_field_measurements(
+            station, spec["elevation"]["parameter_code"], spec["elevation"]["unit"],
+            start, end, column="elevation_ft")
+    else:
+        elevation = fetch_usgs_parameter_series(
+            station, spec["elevation"]["parameter_code"],
+            spec["elevation"]["statistic_id"], spec["elevation"]["unit"],
+            start, end, column="elevation_ft")
     if spec.get("volume") is None:
         return elevation, None
     volume = fetch_usgs_parameter_series(

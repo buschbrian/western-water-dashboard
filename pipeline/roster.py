@@ -722,8 +722,21 @@ def load_admitted_terminal_lakes(
         if name in names:
             raise ValueError(f"{name}: a lake is listed twice")
         names.add(name)
-        if row.get("cadence") != "daily":
-            raise ValueError(f"{name}: a terminal lake series must be daily")
+        cadence = row.get("cadence")
+        if cadence not in {"daily", "monthly"}:
+            raise ValueError(f"{name}: a terminal lake series is daily or monthly")
+        if cadence == "monthly":
+            # Monthly field readings (ADR-172): one site, its level alone, from
+            # the survey's field-measurements collection. No volume relation is
+            # reviewed against readings a month apart.
+            elevation = row.get("elevation") or {}
+            if row.get("arms") is not None or row.get("volume") is not None \
+                    or elevation.get("collection") != "field-measurements":
+                raise ValueError(
+                    f"{name}: a monthly lake is one site's level from the survey's "
+                    "field-measurements collection, with no volume")
+        elif (row.get("elevation") or {}).get("collection") not in (None, "daily"):
+            raise ValueError(f"{name}: a daily lake reads the survey's daily collection")
         spelled = forbidden & set(row)
         if spelled:
             raise ValueError(
