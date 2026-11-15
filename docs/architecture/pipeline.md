@@ -168,7 +168,15 @@ rank from the unchanged reservoir estimator; volume also carries a percentage
 change and the twelve-month history, elevation no percentage of anything. The
 record's `as_of` is the earliest of its series' last dates, across every arm,
 and one quiet arm carries the whole lake forward. Freshness is ADR-056's:
-carried forward marked late, then withdrawn to a notice with no measurement. `pipeline.lakes.validate_payload` refuses a lake record carrying a
+carried forward marked late, then withdrawn to a notice with no measurement.
+**A monthly lake** (ADR-172) is one site's level alone, `cadence: "monthly"`,
+read from the survey's v1 `field-measurements` collection through
+`fetch_usgs_field_measurements`, which screens site, parameter and unit as the
+daily adapter does and keeps the later of two readings on one day. Its record
+says `data_frequency: "monthly"` and is late after
+`AWDB_MONTHLY_STALE_AFTER_DAYS` (45), the month-end feeds' limit; its 7-day
+change is null because no reading falls inside the window. Pyramid Lake is the
+one such lake. `pipeline.lakes.validate_payload` refuses a lake record carrying a
 reservoir-only field, a notice carrying a measurement, and a roster lake absent
 from both lists. The file is generated and committed by the refresh.
 `lakes.html` fetches it (ADR-119); the build publishes it at the site root,

@@ -179,8 +179,14 @@ function validateLake(value: unknown, index: number, version: number): TerminalL
   if (value.state !== null && typeof value.state !== "string") {
     throw new Error(`${name}: state must be a code or null`);
   }
-  if (value.data_frequency !== "daily" || !hasNumber(value.stale_after_days)) {
-    throw new Error(`${name}: the series must be daily with a late threshold`);
+  if ((value.data_frequency !== "daily" && value.data_frequency !== "monthly")
+      || !hasNumber(value.stale_after_days)) {
+    throw new Error(`${name}: the series must be daily or monthly with a late threshold`);
+  }
+  if (value.data_frequency === "monthly"
+      && (value.arms !== undefined && Array.isArray(value.arms) && value.arms.length > 0
+        || value.volume !== null)) {
+    throw new Error(`${name}: a monthly lake is one site's level, with no volume`);
   }
   if (!isDate(value.as_of) || !hasNumber(value.days_stale)
       || typeof value.is_stale !== "boolean" || typeof value.fetch_ok !== "boolean") {

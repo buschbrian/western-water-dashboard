@@ -174,6 +174,7 @@ ADR-041.**
   [ADR-112](ADR-112-publish-terminal-lakes-as-a-separate-water-type.md),
   [ADR-118](ADR-118-publish-terminal-lakes-from-their-own-roster-and-payload.md),
   [ADR-159](ADR-159-publish-a-terminal-lake-by-arm-and-without-a-volume.md),
+  [ADR-172](ADR-172-publish-pyramid-lake-from-its-monthly-field-readings.md),
   [ADR-119](ADR-119-show-terminal-lakes-on-their-own-page.md),
   [ADR-128](ADR-128-publish-compact-story-views-for-embedding.md),
   [ADR-114](ADR-114-publish-a-water-type-and-an-operating-character.md),
@@ -401,6 +402,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-169](ADR-169-compare-soil-moisture-with-each-stations-past-years.md) | Compare soil moisture with each station's past years | Proposed; per-station calendar-day percentiles (`soil_normals.json`), NOAA NCEI tenths and thirds, area median class, default view of soil mode; week's change unchanged |
 | [ADR-170](ADR-170-compare-each-stations-precipitation-with-its-own-past-years-on-the-map.md) | Compare each station's precipitation with its own past years on the map | Proposed; NCEI ranking classes, partial records placed against their own years, areas over full records |
 | [ADR-171](ADR-171-rule-the-columbia-and-snake-operating-characters.md) | Rule the Columbia and Snake operating characters | Accepted; applies ADR-156: eight Columbia and Snake navigation and power pools are steady pools, Bennington Lake is a flood-control basin, Dworshak and Willow Creek stay ordinary; `METHOD_VERSION` unchanged |
+| [ADR-172](ADR-172-publish-pyramid-lake-from-its-monthly-field-readings.md) | Publish Pyramid Lake from its monthly field readings | Accepted; extends ADR-112, ADR-118 and ADR-159: a monthly lake is one site's level from the survey's field readings, late after 45 days |
 
 ## Relationship to the historical journal
 

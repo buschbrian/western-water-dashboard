@@ -907,7 +907,8 @@ export interface TerminalLake {
   state: string | null;
   lat: number | null;
   lon: number | null;
-  data_frequency: "daily";
+  /** Daily, or monthly field readings (ADR-172). */
+  data_frequency: DataFrequency;
   stale_after_days: number;
   as_of: string;
   days_stale: number;

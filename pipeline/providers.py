@@ -787,6 +787,58 @@ def _usgs_v1_features(url: str, params: dict | None = None) -> list[dict]:
     return features
 
 
+#: The survey's discrete readings: a person or an instrument visit, not a
+#: computed daily value. Pyramid Lake's level is published only here, about
+#: once a month (ADR-172).
+USGS_FIELD_MEASUREMENTS_URL = f"{USGS_OGC_V1_URL}/field-measurements/items"
+
+
+def fetch_usgs_field_measurements(site_no: str, parameter_code: str, unit: str,
+                                  start: str, end: str, *, column: str,
+                                  features: list[dict] | None = None) -> pd.DataFrame:
+    """One site's field readings of one parameter, normalized to [date, column].
+
+    The same screen as the daily adapter: a row that names another site,
+    parameter or unit contributes nothing, a value that is not a number or is
+    below zero is not used, and a date after today is dropped. Two readings
+    on one day keep the later one. `start` and `end` are `YYYYMMDD`, as the
+    lake refresh passes them.
+    """
+    first = dt.datetime.strptime(start, "%Y%m%d").date()
+    last = dt.datetime.strptime(end, "%Y%m%d").date()
+    if features is None:
+        features = _usgs_v1_features(USGS_FIELD_MEASUREMENTS_URL, {
+            "monitoring_location_id": f"USGS-{site_no}",
+            "parameter_code": parameter_code,
+            "limit": USGS_PAGE_LIMIT,
+            "f": "json",
+        })
+    cleaned = []
+    for feature in features:
+        reading = feature.get("properties") or {}
+        if reading.get("monitoring_location_id") != f"USGS-{site_no}" \
+                or reading.get("parameter_code") != parameter_code \
+                or reading.get("unit_of_measure") != unit:
+            continue
+        try:
+            number = float(reading.get("value"))
+            day = dt.date.fromisoformat(str(reading.get("time"))[:10])
+        except (TypeError, ValueError):
+            continue
+        if number < 0 or not first <= day <= last:
+            continue
+        cleaned.append({"date": day.isoformat(), "time": str(reading.get("time_of_day") or ""),
+                        column: number})
+    if not cleaned:
+        return pd.DataFrame({"date": pd.Series(dtype="datetime64[ns]"),
+                             column: pd.Series(dtype="float64")})
+    df = pd.DataFrame(cleaned).sort_values(["date", "time"])
+    df["date"] = pd.to_datetime(df["date"]).dt.normalize()
+    df = df[df["date"] <= local_today()]
+    return (df.drop_duplicates(subset="date", keep="last")[["date", column]]
+              .reset_index(drop=True))
+
+
 def confirm_usgs_flow_series(site_no: str, time_series_id: str, *,
                              features: list[dict] | None = None) -> None:
     """Refuse a reviewed series id that is no longer the primary daily mean.

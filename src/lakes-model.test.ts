@@ -138,4 +138,13 @@ describe("the terminal-lake page's words", () => {
     expect(sentence).toContain("not in the current published data");
     expect(sentence).toContain("Jun 1, 2026");
   });
+
+  it("says how often a monthly lake is read and when it is late, and a daily lake says nothing (ADR-172)", () => {
+    const monthly = one(lake({ name: "Pyramid Lake", data_frequency: "monthly", stale_after_days: 45,
+      volume: null }));
+    const row = describeLake(monthly, "#000000").source.find((entry) => entry.label === "Readings");
+    expect(row?.value).toBe("The survey reads this lake's level about once a month, so there is no "
+      + "change over 7 days. A reading is late after 45 days.");
+    expect(describeLake(walker, "#000000").source.some((entry) => entry.label === "Readings")).toBe(false);
+  });
 });
