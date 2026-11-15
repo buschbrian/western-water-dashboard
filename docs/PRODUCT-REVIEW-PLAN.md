@@ -1,11 +1,12 @@
 # Product review plan, November 2026
 
-Status, reconciled against `main` on 2026-11-14: every numbered item below
-is published. Waves 1–3 merged through PR #129; items 8, 9 and 13 and the
-Lakes navigation entry merged through PR #139. Brian Busch accepted
-ADR-160 to ADR-167 on 2026-11-14. Mead daily inflow remains a source
-gap. The open work is the follow-up list under Wave 1 and the one entry
-under "Not measured yet".
+Status, reconciled against `main` and the open pull requests on
+2026-11-15: every numbered item below is published. Waves 1–3 merged
+through PR #129; items 8, 9 and 13 and the Lakes navigation entry merged
+through PR #139. Brian Busch accepted ADR-160 to ADR-167 on 2026-11-14.
+Mead daily inflow remains a source gap. The open work is the follow-up list
+under Wave 1, the entries under "Not measured yet", and the November 15
+follow-ups below.
 Brian Busch chose the four scopes below
 on 2026-11-09. ADR-153 records the storage-map choice; each later wave writes
 its own record where required.
@@ -129,11 +130,17 @@ figures reached the snow page after the wave, on the same control. Remaining
 work from this wave is explicit, and each line was checked against `main` on
 2026-11-14:
 
-- Raise a self-healing issue when a share capture uses a fallback. The Pages
-  workflow still logs a warning and nothing else.
+- Raise a self-healing issue when a share capture uses a fallback. Open as
+  PR #152 (2026-11-15): one `share-capture` issue, edited while any picture
+  falls back and closed when all are captured.
 - Inspect the map canvas and visual hierarchy in a visible browser below
-  500 CSS pixels. The automated browser suite cannot establish map rendering,
-  and no inspection is recorded.
+  500 CSS pixels. Done on 2026-11-15 in Chrome through chrome-devtools,
+  emulating 360 and 390 pixels with touch, light and dark, against a local
+  build: the storage map and the precipitation map's three modes drew their
+  basemap, areas and points; Tab reaches the map mode buttons in order with a
+  visible outline and Enter switches them; no page scrolled sideways. A key
+  chip that shrank when its words wrapped is fixed in PR #151. What remains
+  is the checklist under "Not measured yet".
 
 ## Wave 2: sharing and place
 
@@ -253,12 +260,59 @@ items and Great Salt Lake's stations and datum are measured in their records
   markup of those captures is pending. Frames are not a phone, so touch
   behaviour is not covered.
 
-Mead daily inflow, searched again on 2026-11-14: Reclamation's Lower
+Mead daily inflow, searched again on 2026-11-15: Reclamation's catalog
+record 4370 holds exactly four daily, unmodelled items (release in
+acre-feet and in cubic feet per second, elevation, storage) and no inflow.
+The Lower Colorado daily report's `INFLOW CFS` column is still the only
+daily figure; on 1 November it equals release plus pumping, evaporation,
+storage change and bank storage, so it is a computed balance, and the page
+says its automatic reports are not checked for errors. Publishing it would
+be a decision of its own; Brian kept the stated gap on 2026-11-15. Searched on 2026-11-14: Reclamation's Lower
 Colorado daily report prints a computed `INFLOW` column in its "Glen Canyon
 to Hoover Dam losses" table, for the current month only and without a
 stated method; its daily JSON feed showed no inflow series in the part
 read. The 24-Month Study's monthly side inflow is modelled. No observed
 daily series was found, so ADR-161's unavailable-inflow statement stands.
+
+**Checklist for Brian: visual decisions and phone checks.** Browser
+emulation at 360 and 390 pixels is not a phone. Touch, scroll momentum,
+on-screen keyboards and real network speed need a physical phone.
+
+- Storage map legend at 360 pixels: decided 2026-11-15. The open key is
+  opaque and the scale bar steps aside below 38rem (PR #151).
+- Drainage-area labels sit on top of reservoir circles in the busy middle
+  of Utah (Lower Bear, Weber, Jordan, Lower Green). Kept as they are
+  (2026-11-15).
+- The basemap stayed light under the dark theme in the local build, which
+  used the "Oceans" fallback. Check it on the live site in dark mode.
+- At 360 pixels the precipitation map clips "Lower Colorado-Lake Mead" at
+  its left edge. Accepted: panning shows it (2026-11-15).
+- Rivers page with all 142 gauges was about 204,000 pixels tall at 390, some
+  241 screens; each card's figures and source now sit behind one closed
+  disclosure, about 107,000 pixels (PR #154). Whether to open on one state
+  is still open.
+- Not reviewed in the browser: the snow and drought maps.
+- Precipitation map, past-years mode: the "no value" grey while the history
+  loads reads as waiting, not as "no data".
+- On a physical phone: tap each map mode button and each place menu; open
+  and close the mobile filter bar; drag the map without scrolling the page;
+  long-press a figure to copy it; use the share picture download.
+- Keyboard: Tab reaches every map mode button and place menu in reading
+  order, and Escape closes an open menu.
+
+## November 15 follow-ups
+
+| Work | State | Next |
+|---|---|---|
+| River gauges (ADR-168) | 142 gauges in UT, CO, NM and AZ with their data, PR #154 | 16 rows held with reasons; 548 `review` and 75 `check` rows wait on rulings; the dam screen has not run for CO, NM and AZ |
+| Operating characters (ADR-156) | Census rerun; Columbia and Snake ruled 2026-11-15 (ADR-171, PR #153): eight steady pools and Bennington Lake as flood space | the next region's packet |
+| Precipitation past years | Failure and loading fixed, PR #151, which also carries the soil smoke check that a schema-2 file needs | merge before or soon after main's next daily refresh |
+| Soil past years | The refresh writes schema 2 from the committed normals (177 of 369 stations compared on the 2026-11-15 branch run); `main` still held schema 1 until its next daily refresh | confirm `main`'s next refresh and the deployed file |
+| Share-picture failures | PR #152 | none |
+| Storage map twelve-month chart | The local browser suite twice saw it drawn at its 300-unit fallback width in a wider phone host, at 360 and then 390 pixels; CI passed | find why the chart can draw before its host has a width |
+| Pyramid Lake | Published from its monthly field readings, late after 45 days (ADR-172) | none |
+| Mono Lake | Still held: no current series | a citable series and its datum against Decision 1631's gage |
+| Mead daily inflow | Still a gap: Brian kept ADR-161's statement on 2026-11-15 rather than publish the report's computed column | a reviewed observed series, if Reclamation publishes one |
 
 ## Left out, with reasons
 
