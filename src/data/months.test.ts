@@ -8,10 +8,14 @@ import { loadLegacyApi } from "./legacy-harness";
 import { readPayload } from "./payload-fixture";
 import { monthKeys, monthLabel, monthPercent, monthlyRollup } from "./months";
 import { sizeBasis } from "./rollup";
+import { isSeasonalStorage } from "./area-line";
 import type { Reservoir } from "../types";
 
 const legacy = loadLegacyApi();
 const reservoirs = readPayload().reservoirs;
+/* A month's combined figure is seasonal storage (ADR-156); steady pools and
+ * flood-control basins are not in its ratio or its scope. */
+const seasonal = reservoirs.filter(isSeasonalStorage);
 const months = monthKeys(reservoirs);
 
 describe("the months the payload carries", () => {
@@ -72,7 +76,7 @@ describe("the combined figure for one month", () => {
   it("counts a reservoir on both sides of the ratio or on neither", () => {
     for (const month of months) {
       const rollup = monthlyRollup(reservoirs, month);
-      const reported = reservoirs.filter((reservoir) =>
+      const reported = seasonal.filter((reservoir) =>
         monthPercent(reservoir, month) !== null);
       expect(rollup.reporting, month).toBe(reported.length);
       // Capacity is the sum of exactly those reservoirs' size bases, so a
@@ -132,14 +136,14 @@ describe("the population behind each month", () => {
   it("reports the scope it was drawn from, not only who answered", () => {
     for (const month of months) {
       const rollup = monthlyRollup(reservoirs, month);
-      expect(rollup.scopeCount, month).toBe(reservoirs.length);
+      expect(rollup.scopeCount, month).toBe(seasonal.length);
       expect(rollup.reporting, month).toBeLessThanOrEqual(rollup.scopeCount);
       expect(rollup.capacityAf, month).toBeLessThanOrEqual(rollup.scopeCapacityAf);
     }
   });
 
   it("reports coverage by combined full level, not only by count", () => {
-    const scopeCapacity = reservoirs.reduce((total, row) => total + sizeBasis(row), 0);
+    const scopeCapacity = seasonal.reduce((total, row) => total + sizeBasis(row), 0);
     for (const month of months) {
       const rollup = monthlyRollup(reservoirs, month);
       expect(rollup.scopeCapacityAf, month).toBeCloseTo(scopeCapacity, 6);
@@ -158,7 +162,7 @@ describe("the population behind each month", () => {
         expect(rollup.percentFull, month).toBeNull();
         continue;
       }
-      const reporting = reservoirs.filter((reservoir) => {
+      const reporting = seasonal.filter((reservoir) => {
         const mean = reservoir.monthly.find((row) => row.month === month)?.mean_af;
         return mean !== null && mean !== undefined && Number.isFinite(mean)
           && sizeBasis(reservoir) > 0;

@@ -1,8 +1,8 @@
 /*
  * ADR-156: an area total read as seasonal storage, steady pools and flood
- * space. The machinery lands before any reservoir's character is ruled, so the
- * first block proves every published area figure is unchanged on the committed
- * payload. The rest drives the split with fixture characters only.
+ * space. The first block holds the committed payload to it since the first
+ * region was ruled (ADR-171): an area with no ruled water is unchanged, and
+ * one with a ruled water adds up. The rest drives the split with fixtures.
  */
 import { describe, expect, it } from "vitest";
 import { readPayload } from "./payload-fixture";
@@ -11,6 +11,7 @@ import {
   type StatewideRollup
 } from "./rollup";
 import { monthKeys, monthlyRollup } from "./months";
+import { isSeasonalStorage } from "./area-line";
 import { drainageCodeAtLevel, rollupByHuc } from "./huc";
 import { storageByArea } from "../drought-model";
 import { weeklyStorage } from "../weekly-model";
@@ -241,6 +242,7 @@ describe("the surfaces that print an area total", () => {
     const lines = describeStorage(week);
     expect(lines.some((line) => line.startsWith("Their seasonal storage moved from"))).toBe(true);
     expect(describeStorage(weeklyStorage(rows))
-      .some((line) => line.includes("seasonal storage"))).toBe(false);
+      .some((line) => line.includes("seasonal storage")))
+      .toBe(rows.some((row) => !isSeasonalStorage(row)));
   });
 });
