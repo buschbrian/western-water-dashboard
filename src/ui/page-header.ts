@@ -200,6 +200,10 @@ export function pageTitle(current: PageId): string {
  * site name stays above it as ordinary text, because the site is the context
  * and the page is the subject.
  *
+ * The mark is the Dust & Starlight river mark, the same file as the tab
+ * icon, so the bar, the tab and a saved home-screen icon all show one
+ * drawing. It is decorative: the site name beside it says the same thing.
+ *
  * ADR-016 requires the official SDK name in the navigation, and this is it.
  */
 export function brandMarkup(headingLevel: 1 | 2, current: PageId): string {
@@ -207,7 +211,7 @@ export function brandMarkup(headingLevel: 1 | 2, current: PageId): string {
   const subject = PAGE_SUBJECTS[current];
   return `
     <div id="brand" slot="logo">
-      <calcite-icon icon="water-drop" scale="l" aria-hidden="true"></calcite-icon>
+      <img class="brand-mark" src="./favicon.svg" alt="" width="32" height="32" />
       <span class="brand-text">
         <span id="site-name">
           <span class="brand-title-wide" aria-hidden="true">${SITE_NAME}</span>
