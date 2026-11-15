@@ -54,8 +54,12 @@ The share pictures (ADR-154) are the third use of it: after a build,
 `npm run share:images` captures `dist/share/*.png` the way the deploy does,
 and leaves the figure-free fallback in place if it cannot. The build writes
 `dist/share/targets.json` from the permanent ledger; the capture command
-checks every final image and writes `dist/share/capture-report.json`. It uses
-four workers with a five-minute pool budget.
+checks every final image and writes `dist/share/capture-report.json`, which
+names each picture that kept its fallback. It uses four workers with a
+five-minute pool budget. On `main`, the deploy turns that report into one
+`share-capture` issue (`tools/feed_issue_report.py share`): opened or edited
+while any picture falls back, naming up to 25, and closed by the first deploy
+that captures them all.
 
 All three browser tools take `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH`. A machine
 with Google Chrome installed does not need a second Chromium:

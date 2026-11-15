@@ -8,6 +8,9 @@ import { formatShortDate } from "../viz/format";
 
 export type PrecipMapMode = "rain" | "soil" | "years";
 export type SoilLoadState = "idle" | "loading" | "ready" | "failed";
+/** The precipitation history the past-years mode needs (ADR-170): the card
+ * fetches it, so the map only waits for it, has it, or hears it failed. */
+export type YearsLoadState = "waiting" | "ready" | "failed";
 /** What soil mode draws: each station against its own past years for the
  * date (ADR-169), or the week's change (ADR-142). */
 export type SoilView = "history" | "change";
@@ -20,7 +23,7 @@ export function soilViewShown(requested: SoilView | null, comparedStations: numb
 }
 
 export interface PrecipMapModeView {
-  /** The mode the map is drawn in: soil falls back to rain when its file failed. */
+  /** The mode the map is drawn in: soil or past years falls back to rain when its file failed. */
   mode: PrecipMapMode;
   rainPressed: boolean;
   soilPressed: boolean;
@@ -32,14 +35,19 @@ export interface PrecipMapModeView {
   yearsShown: boolean;
   /** The card's day buttons and its list of recent totals. */
   recentListShown: boolean;
-  /** Said beside the map when the soil file could not load, else null. */
+  /** Said beside the map when the soil file or the history could not load, else null. */
   failure: string | null;
 }
 
 export const SOIL_FAILED_TEXT = "The soil moisture measurements could not load. The map shows rain. Try again later.";
 
-export function precipMapModeView(requested: PrecipMapMode, soil: SoilLoadState): PrecipMapModeView {
-  const mode: PrecipMapMode = requested === "soil" ? (soil !== "failed" ? "soil" : "rain") : requested;
+export const YEARS_FAILED_TEXT = "The past years could not load. The map shows rain. Try again later.";
+
+export function precipMapModeView(
+  requested: PrecipMapMode, soil: SoilLoadState, years: YearsLoadState = "waiting"
+): PrecipMapModeView {
+  const mode: PrecipMapMode = requested === "soil" ? (soil !== "failed" ? "soil" : "rain")
+    : requested === "years" ? (years !== "failed" ? "years" : "rain") : requested;
   return {
     mode,
     rainPressed: mode === "rain",
@@ -49,7 +57,8 @@ export function precipMapModeView(requested: PrecipMapMode, soil: SoilLoadState)
     soilShown: mode === "soil",
     yearsShown: mode === "years",
     recentListShown: mode === "rain",
-    failure: requested === "soil" && soil === "failed" ? SOIL_FAILED_TEXT : null
+    failure: requested === "soil" && soil === "failed" ? SOIL_FAILED_TEXT
+      : requested === "years" && years === "failed" ? YEARS_FAILED_TEXT : null
   };
 }
 

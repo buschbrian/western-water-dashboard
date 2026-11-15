@@ -98,6 +98,8 @@ export interface PrecipitationCard {
   /** Show or hide the day buttons and the station list of recent totals,
    * for a map that is showing something else (ADR-142). */
   showRecentList(shown: boolean): void;
+  /** Fetch the files again after the season figures failed; nothing otherwise. */
+  retryHistory(): void;
 }
 
 export interface PrecipitationCardParts {
@@ -708,6 +710,14 @@ export function createPrecipitationCard(
     get status() { return { ...status, storm: { ...status.storm } }; },
     get recent() { return { window: status.storm.window, totals: stormView }; },
     get data() { return daily && history ? { daily, history } : null; },
+    retryHistory() {
+      if (status.state !== "failed") return;
+      status.state = "loading";
+      host.replaceChildren();
+      host.setAttribute("aria-busy", "true");
+      onChange();
+      load();
+    },
     showRecentList(shown) {
       recentListShown = shown;
       drawStorm();

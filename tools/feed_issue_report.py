@@ -1,9 +1,11 @@
 """Build the title and body of a self-healing refresh issue.
 
-Three conditions open a GitHub issue, keep it updated while they last, and
+Four conditions open a GitHub issue, keep it updated while they last, and
 close themselves when they stop being true: reservoir feeds that have gone
-quiet, reservoirs withdrawn for out-of-season data, and a Drought Monitor
-release that has not arrived.
+quiet, reservoirs withdrawn for out-of-season data, a Drought Monitor
+release that has not arrived, and share pictures the Pages deploy could not
+capture (ADR-154), which otherwise publish their figure-free fallback with
+only a log warning.
 
 The wording used to live in `refresh-data.yml` as three `printf` blocks. That
 made a reader-facing explanation of ADR-056 unreviewable except by merging it,
@@ -17,6 +19,10 @@ test beside it.
     python tools/feed_issue_report.py withdrawn --count 1 --names "C" --table "|...|"
     python tools/feed_issue_report.py drought --days 11 --release 2026-08-14 \
         --map-week 2026-08-11
+    python tools/feed_issue_report.py share --report dist/share/capture-report.json
+
+`share` prints nothing when every picture was captured: the deploy closes the
+issue then.
 
 Writes the title to stdout's first line and the body to `--body-file`, because
 `gh issue create` takes them that way.
@@ -24,6 +30,7 @@ Writes the title to stdout's first line and the body to `--body-file`, because
 
 import argparse
 import datetime as dt
+import json
 import os
 import sys
 from pathlib import Path
@@ -41,7 +48,14 @@ LABELS = {
                   "A reservoir is too far out of date to publish beside the others"),
     "drought": ("late-drought", "730000",
                 "The U.S. Drought Monitor has missed its weekly release"),
+    "share": ("share-capture", "6d28d9",
+              "A share picture fell back to its figure-free image"),
 }
+
+#: Share pictures named in the issue body; the rest are counted. Several
+#: hundred can fail together when Chrome is missing, and the body has to stay
+#: readable and inside GitHub's size limit.
+SHARE_LISTED = 25
 
 
 #: GitHub refuses an issue title longer than this. The refresh run of
@@ -73,7 +87,7 @@ def _titled(prefix: str, names: str) -> str:
     return prefix[:TITLE_LIMIT]
 
 
-def _footer(checked: str) -> str:
+def _footer(checked: str, run: str = "refresh run") -> str:
     """The line every one of these issues ends with.
 
     A run link, because the next question after "is this still true?" is
@@ -85,7 +99,7 @@ def _footer(checked: str) -> str:
     run_id = os.environ.get("GITHUB_RUN_ID")
     if server and repository and run_id:
         return (f"Last checked {checked} · "
-                f"[refresh run]({server}/{repository}/actions/runs/{run_id})")
+                f"[{run}]({server}/{repository}/actions/runs/{run_id})")
     return f"Last checked {checked}"
 
 
@@ -153,6 +167,46 @@ def drought_report(days: str, release: str, map_week: str,
     return title, body + "\n"
 
 
+def share_report(report: dict, checked: str) -> tuple[str, str] | None:
+    """The issue for share pictures that kept their fallback, or None when
+    every picture with a frame was captured.
+
+    `report` is the deploy's `dist/share/capture-report.json`. One issue holds
+    every failure, named up to `SHARE_LISTED`, so a morning when every
+    capture fails edits one issue rather than opening hundreds.
+    """
+    failed = list(report.get("failedFiles") or [])
+    count = int(report.get("failed") or 0)
+    if count <= 0 and not failed:
+        return None
+    count = max(count, len(failed))
+    total = int(report.get("total") or 0) - int(report.get("notices") or 0)
+    title = f"Share pictures kept their figure-free fallback ({count} of {total})"
+    listed = "\n".join(f"- `share/{name}.png`" for name in failed[:SHARE_LISTED])
+    more = len(failed) - SHARE_LISTED
+    if more > 0:
+        listed += f"\n- and {more} more"
+    parts = [
+        f"The Pages deploy could not capture **{count}** of {total} share "
+        "pictures. Each one is published as its figure-free fallback, so a "
+        "link preview shows the name and no figure. No figure is wrong; one "
+        "is missing.",
+    ]
+    if listed:
+        parts.append(listed)
+    if report.get("runError"):
+        parts.append(f"The capture run stopped before any frame: `{report['runError']}`")
+    parts += [
+        "A picture lands here when its frame did not draw inside 30 seconds, "
+        "the run spent its 5-minute budget, or no Chrome was found "
+        "(ADR-154). The deploy log has a warning for each.",
+        "This issue is maintained automatically: it updates on every deploy "
+        "and closes itself once every picture is captured again.",
+        _footer(checked, "deploy run"),
+    ]
+    return title, "\n\n".join(parts) + "\n"
+
+
 def _now() -> str:
     return dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
 
@@ -166,6 +220,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--days", default="0")
     parser.add_argument("--release", default="")
     parser.add_argument("--map-week", dest="map_week", default="")
+    parser.add_argument("--report", default=None,
+                        help="the deploy's capture-report.json, for share")
     parser.add_argument("--checked", default=None,
                         help="override the timestamp, for tests")
     parser.add_argument("--body-file", default=None,
@@ -182,7 +238,15 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     checked = args.checked or _now()
-    if args.kind == "stale":
+    if args.kind == "share":
+        if not args.report:
+            parser.error("share needs --report")
+        report = json.loads(Path(args.report).read_text(encoding="utf-8"))
+        shared = share_report(report, checked)
+        if shared is None:
+            return 0
+        title, body = shared
+    elif args.kind == "stale":
         title, body = stale_report(args.count, args.names, args.table, checked)
     elif args.kind == "withdrawn":
         title, body = withdrawn_report(args.count, args.names, args.table, checked)
