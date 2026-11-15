@@ -70,6 +70,7 @@ denominator. **Start with ADR-070, then ADR-072, then ADR-003.**
   [ADR-113](ADR-113-withhold-a-reservoir-whose-full-levels-cannot-be-reconciled.md),
   [ADR-114](ADR-114-publish-a-water-type-and-an-operating-character.md),
   [ADR-156](ADR-156-read-seasonal-storage-apart-from-steady-pools-and-flood-space.md),
+  [ADR-171](ADR-171-rule-the-columbia-and-snake-operating-characters.md),
   [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md),
   [ADR-135](ADR-135-publish-a-reservoir-level-only-above-a-reviewed-datum.md),
   [ADR-139](ADR-139-review-each-reservoirs-vertical-datum-before-publishing-an-elevation.md),
@@ -399,6 +400,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-168](ADR-168-publish-every-bulk-queue-river-gauge.md) | Publish every bulk-queue river gauge | Proposed; extends ADR-136, ADR-137 and ADR-138; the four worksheets' bulk `reservoir` and `natural` rows join the roster pending formal ruling (133 measured 2026-11-14), written by `tools/admit_bulk_river_gauges.py`; exclusions, waterwork names, non-reference natural rows and open name checks held |
 | [ADR-169](ADR-169-compare-soil-moisture-with-each-stations-past-years.md) | Compare soil moisture with each station's past years | Proposed; per-station calendar-day percentiles (`soil_normals.json`), NOAA NCEI tenths and thirds, area median class, default view of soil mode; week's change unchanged |
 | [ADR-170](ADR-170-compare-each-stations-precipitation-with-its-own-past-years-on-the-map.md) | Compare each station's precipitation with its own past years on the map | Proposed; NCEI ranking classes, partial records placed against their own years, areas over full records |
+| [ADR-171](ADR-171-rule-the-columbia-and-snake-operating-characters.md) | Rule the Columbia and Snake operating characters | Accepted; applies ADR-156: eight Columbia and Snake navigation and power pools are steady pools, Bennington Lake is a flood-control basin, Dworshak and Willow Creek stay ordinary; `METHOD_VERSION` unchanged |
 
 ## Relationship to the historical journal
 
