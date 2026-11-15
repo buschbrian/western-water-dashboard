@@ -47,6 +47,10 @@ jobs:
       github.event_name != 'workflow_run' ||
       github.event.workflow_run.conclusion == 'success'
     runs-on: ubuntu-latest
+    # issues: the share-picture issue below, and nothing else.
+    permissions:
+      contents: read
+      issues: write
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-node@v5
@@ -79,6 +83,26 @@ jobs:
       # missing or is not a 1200 by 630 PNG.
       - name: Capture the share images (a failure keeps the figure-free fallbacks)
         run: bash scripts/share-images.sh
+
+      # A fallback used to be only a log warning, so a picture could go
+      # without its figure for weeks unseen. One labelled issue holds every
+      # failed capture, is edited on each deploy while any remain, and closes
+      # when all are captured again. Main only: a branch run says nothing
+      # about the published site. Never blocks the deploy.
+      - name: Open, update or close the share-picture issue
+        if: github.ref == 'refs/heads/main'
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TITLE=$(python3 tools/feed_issue_report.py share \
+            --report dist/share/capture-report.json --body-file share-issue.md)
+          if [ -n "$TITLE" ]; then
+            scripts/gh-selfhealing-issue.sh open share "$TITLE" share-issue.md
+          else
+            scripts/gh-selfhealing-issue.sh close share \
+              "Every share picture was captured on $(date -u '+%Y-%m-%d'). Closing automatically."
+          fi
 
       - uses: actions/configure-pages@v5
       - uses: actions/upload-pages-artifact@v3

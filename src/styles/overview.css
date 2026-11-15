@@ -621,6 +621,8 @@ body {
   font-size: .78rem;
 }
 .drought-swatch {
+  /* A key item whose words wrap must not squeeze its colour chip. */
+  flex: none;
   inline-size: .85rem;
   block-size: .85rem;
   border: 1px solid var(--app-border);

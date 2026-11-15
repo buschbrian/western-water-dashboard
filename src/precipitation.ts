@@ -157,6 +157,7 @@ function renderPage(place: SnowPlace, rosters: OpeningRosters, level: number, up
     mapSection?.update(card.recent.window, card.recent.totals);
     const data = card.data;
     if (data) mapSection?.setHistory(data.daily, data.history);
+    else if (card.status.state === "failed") mapSection?.setHistoryFailed();
     publishReady();
   }, { siteHref, recentMap: true, copyFigures: { where: upstream?.applied
     ? `mountain sites upstream of ${upstream.name ?? "the requested reservoir"}, in ${placeName(place)}` : placeName(place) } });
@@ -180,7 +181,8 @@ function renderPage(place: SnowPlace, rosters: OpeningRosters, level: number, up
         showRecentList: (shown) => card.showRecentList(shown),
         initialMode: precipLayerFromSearch(window.location.search),
         initialSoilView: soilViewFromSearch(window.location.search),
-        onModeChange: writeSoilViewUrl
+        onModeChange: writeSoilViewUrl,
+        retryHistory: () => card.retryHistory()
       });
   }
   card.update(place.stations, place.payload.sites);

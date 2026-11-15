@@ -108,7 +108,8 @@ async function capture(browser, origin, target, dist) {
 export async function run(dist, { deadlineMs = RUN_DEADLINE_MS, concurrency = CONCURRENCY } = {}) {
   const targets = validTargets(JSON.parse(await readFile(path.join(dist, "share/targets.json"), "utf8")));
   const started = Date.now();
-  let server, browser, deadline, stopped = false, captured = 0;
+  let server, browser, deadline, stopped = false, captured = 0, runError = null;
+  const capturedFiles = new Set();
   try {
     if (!process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH) throw new Error("No installed browser was selected");
     const { chromium } = await import("playwright");
@@ -122,11 +123,12 @@ export async function run(dist, { deadlineMs = RUN_DEADLINE_MS, concurrency = CO
     }, deadlineMs);
     const origin = `http://127.0.0.1:${server.address().port}`;
     await capturePool(targets.filter((target) => target.frame), concurrency, async (target) => {
-      try { await capture(browser, origin, target, dist); captured++; }
+      try { await capture(browser, origin, target, dist); captured++; capturedFiles.add(target.file); }
       catch (error) { warn(`share/${target.file}.png keeps its fallback: ${String(error).slice(0, 240)}`); }
     }, () => stopped);
   } catch (error) {
-    warn(`Fallbacks are published: ${String(error).slice(0, 300)}`);
+    runError = String(error).slice(0, 300);
+    warn(`Fallbacks are published: ${runError}`);
   } finally {
     clearTimeout(deadline);
     await browser?.close().catch(() => {});
@@ -139,6 +141,8 @@ export async function run(dist, { deadlineMs = RUN_DEADLINE_MS, concurrency = CO
   const notices = targets.filter((target) => !target.frame).length;
   const report = { total: targets.length, captured, notices, failed: targets.length - notices - captured,
     fallbacks: targets.length - captured,
+    failedFiles: targets.filter((target) => target.frame && !capturedFiles.has(target.file)).map((target) => target.file),
+    runError,
     elapsedSeconds: Math.round((Date.now() - started) / 100) / 10, concurrency, deadlineMs, missing };
   await writeFile(path.join(dist, "share/capture-report.json"), JSON.stringify(report, null, 2) + "\n");
   console.log(JSON.stringify(report));

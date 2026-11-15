@@ -73,8 +73,9 @@ export interface PrecipMapSectionStatus {
 
 /** This water year against past years (ADR-170). */
 export interface YearsSectionStatus {
-  /** Waiting until both precipitation files are in. */
-  state: "waiting" | "ready";
+  /** Waiting until both precipitation files are in; failed when the card
+   * could not load them, which returns the map to rain until a retry. */
+  state: "waiting" | "ready" | "failed";
   date: string | null;
   /** Stations placed against their own past years. */
   stations: number;
@@ -94,6 +95,8 @@ export interface PrecipMapSection {
   update(window: StormWindow, totals: StormTotals | null): void;
   /** Both precipitation files are in: the comparison with past years can draw. */
   setHistory(daily: PrecipitationPayload, history: PrecipitationHistory): void;
+  /** The card could not load them: past years falls back to rain and says so. */
+  setHistoryFailed(): void;
 }
 
 export interface PrecipMapSectionOptions {
@@ -109,6 +112,8 @@ export interface PrecipMapSectionOptions {
   initialSoilView?: SoilView | null;
   /** The reader switched, or the soil file failed after they did: the mode and soil view now shown. */
   onModeChange?: (mode: PrecipMapMode, soilView: SoilView) => void;
+  /** Asks the card to fetch the history again after it failed. */
+  retryHistory?: () => void;
 }
 
 function note(text: string): HTMLParagraphElement {
@@ -610,8 +615,10 @@ export function createPrecipMapSection(
   const drawMap = (): void => {
     if (!map) return;
     if (status.mode === "soil" && soilValues) map.setSoilValues(soilValues, status.soil.view);
-    else if (status.mode === "years" && standing) map.setStandingValues(standing);
-    else if (status.mode !== "years" && values) map.setValues(values);
+    else if (status.mode === "years") {
+      if (standing) map.setStandingValues(standing);
+      else map.clearStandingValues();
+    } else if (values) map.setValues(values);
   };
 
   let requested: PrecipMapMode = options.initialMode ?? "rain";
@@ -622,7 +629,7 @@ export function createPrecipMapSection(
     viewButtons.get("history")!.disabled = (soilValues?.historyCounts.compared ?? 0) === 0;
     soilHistory.hidden = status.soil.view !== "history";
     soilChange.hidden = status.soil.view !== "change";
-    const view = precipMapModeView(requested, status.soil.state);
+    const view = precipMapModeView(requested, status.soil.state, status.years.state);
     status.mode = view.mode;
     modeButtons.get("rain")!.setAttribute("aria-pressed", String(view.rainPressed));
     modeButtons.get("soil")!.setAttribute("aria-pressed", String(view.soilPressed));
@@ -663,6 +670,10 @@ export function createPrecipMapSection(
     if (requested === mode && status.mode === mode) return;
     requested = mode;
     if (mode === "soil" && status.soil.state === "failed") status.soil.state = "idle";
+    if (mode === "years" && status.years.state === "failed") {
+      status.years.state = "waiting";
+      options.retryHistory?.();
+    }
     showMode();
     options.onModeChange?.(status.mode, status.soil.view);
     if (mode === "soil") {
@@ -757,8 +768,16 @@ export function createPrecipMapSection(
       if (standing) return;
       standing = precipStandingValues(daily, history, siteAreas);
       drawYears();
-      if (status.mode === "years") drawMap();
-      publish();
+      if (requested === "years") {
+        showMode();
+        options.onModeChange?.(status.mode, status.soil.view);
+      } else publish();
+    },
+    setHistoryFailed() {
+      if (standing || status.years.state === "failed") return;
+      status.years.state = "failed";
+      showMode();
+      if (requested === "years") options.onModeChange?.(status.mode, status.soil.view);
     }
   };
 }
