@@ -128,6 +128,11 @@ def held_reason(row: dict, names_in_use: set[str]) -> str | None:
         return f"the name calls the gauge's own water a {channel[0]}: a person decides"
     if display_name(row) in names_in_use:
         return f"display name {display_name(row)!r} is already used"
+    if tier == "shaped" and not _reservoirs(row["upstream_reservoirs"]):
+        share = _number(row["storage_share_pct"])
+        if share is None or share < RIVER_NATURAL_STORAGE_SHARE_PCT:
+            return (f"shaped, but no published reservoir upstream and storage is {share}% "
+                    "of a year's flow, under ADR-137's 10%: a person decides")
     if tier == "natural":
         share = _number(row["storage_share_pct"])
         if _reservoirs(row["upstream_reservoirs"]) or share is None \
