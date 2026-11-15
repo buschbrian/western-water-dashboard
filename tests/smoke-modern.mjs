@@ -914,6 +914,14 @@ if (process.argv.includes("--wave-three")) {
   process.exit(failures.length ? 1 : 0);
 }
 
+if (process.argv.includes("--river-places")) {
+  await checkRiverPlaces();
+  await browser.close();
+  server.close();
+  for (const failure of failures) console.error(failure);
+  process.exit(failures.length ? 1 : 0);
+}
+
 if (process.argv.includes("--embeds")) {
   await checkStoryEmbeds();
   await browser.close();
@@ -8741,6 +8749,89 @@ async function checkGreatSaltLake() {
 }
 
 await checkGreatSaltLake();
+
+/* The river page's place filter over the whole roster (ADR-168). A shared
+ * state or drainage link opens only those gauges and keeps the link, a
+ * place with no gauge says so, and a file that cannot load says so and does
+ * not stay busy. Every expected count is read from the committed payload. */
+async function checkRiverPlaces() {
+  const rivers = JSON.parse(await readFile(path.join(REPO_ROOT, "rivers.json"), "utf8"));
+  const byState = new Map();
+  for (const gauge of rivers.gauges) {
+    if (!byState.has(gauge.state)) byState.set(gauge.state, new Set());
+    byState.get(gauge.state).add(gauge.huc8.slice(0, 4));
+  }
+  /* The state with the most drainage areas, so the area link narrows it. */
+  const [state] = [...byState.entries()].sort((a, b) => b[1].size - a[1].size)[0];
+  const inState = rivers.gauges.filter((gauge) => gauge.state === state);
+  const areaCounts = new Map();
+  for (const gauge of inState) areaCounts.set(gauge.huc8.slice(0, 4), (areaCounts.get(gauge.huc8.slice(0, 4)) ?? 0) + 1);
+  const [area] = [...areaCounts.entries()].sort((a, b) => b[1] - a[1])[0];
+  const inArea = inState.filter((gauge) => gauge.huc8.startsWith(area));
+  const empty = [...new Set(payload.reservoirs.map((row) => row.state))].find((code) => !byState.has(code));
+  const scenarios = [
+    { search: `state=${state}`, expect: inState },
+    { search: `state=${state}&area=${area}`, expect: inArea },
+    { search: `state=${empty}`, expect: [] }
+  ];
+  for (const viewport of [VIEWPORTS[1], VIEWPORTS[2]]) {
+    const context = await newPageContext(browser, viewport);
+    const tab = await context.newPage();
+    const errors = [];
+    tab.on("pageerror", (err) => errors.push(`uncaught: ${err.message}`));
+    const label = `Rivers page, places (${viewport.name})`;
+    console.log(`\n=== ${label}`);
+    try {
+      for (const scenario of scenarios) {
+        await tab.goto(`${URL}rivers.html?${scenario.search}`, { waitUntil: "load", timeout: 90000 });
+        await tab.waitForFunction(() => window.__riversReady !== undefined, null, { timeout: 60000 });
+        const shown = await tab.evaluate(() => ({
+          ready: window.__riversReady,
+          busy: document.querySelector("main")?.getAttribute("aria-busy"),
+          names: [...document.querySelectorAll(".rivers-group article.river")]
+            .filter((article) => !article.querySelector(".reservoir-withdrawn"))
+            .map((article) => article.querySelector("h3")?.textContent ?? ""),
+          emptyNote: [...document.querySelectorAll("p")].some((p) => /No published gauge is in this place/.test(p.textContent ?? "")),
+          search: window.location.search,
+          scroll: document.documentElement.scrollWidth <= window.innerWidth + 1,
+          /* Each card keeps its figures and source behind one closed
+           * disclosure, so 142 gauges stay a readable page on a phone. */
+          collapsed: [...document.querySelectorAll(".rivers-group article.river[data-station]")]
+            .every((article) => {
+              const more = article.querySelector("details.river-more");
+              return more !== null && !more.open && more.querySelector(".river-status") !== null
+                && more.querySelector("summary")?.textContent === "Details and source";
+            })
+        }));
+        const expected = scenario.expect.map((gauge) => gauge.name).sort();
+        console.log(`  ${scenario.search}: ${shown.ready?.rendered} of ${shown.ready?.gauges}, ${shown.ready?.placeMenus} menus`);
+        check(shown.ready?.failed === false && shown.busy === "false" && shown.ready?.rendered === expected.length
+          && JSON.stringify([...shown.names].sort()) === JSON.stringify(expected)
+          && shown.emptyNote === (expected.length === 0) && shown.scroll && shown.collapsed,
+          `${label}: ${scenario.search} shows ${JSON.stringify({ ...shown, names: shown.names.length })}, expected ${expected.length}`);
+        check(new URLSearchParams(shown.search).get("state") === new URLSearchParams(scenario.search).get("state")
+          && new URLSearchParams(shown.search).get("area") === new URLSearchParams(scenario.search).get("area"),
+          `${label}: the link ${scenario.search} became ${shown.search}`);
+      }
+      await checkAccessibility(tab, check, `${label}, one drainage area`);
+      await tab.route("**/rivers.json", (route) => route.abort());
+      await tab.goto(`${URL}rivers.html?state=${state}`, { waitUntil: "load", timeout: 90000 });
+      await tab.waitForFunction(() => window.__riversReady !== undefined, null, { timeout: 60000 });
+      const failed = await tab.evaluate(() => ({
+        ready: window.__riversReady,
+        busy: document.querySelector("main")?.getAttribute("aria-busy"),
+        error: document.querySelector(".reservoir-error")?.textContent ?? null
+      }));
+      console.log("  without the file:", JSON.stringify(failed));
+      check(failed.ready?.failed === true && failed.busy === "false" && failed.error !== null,
+        `${label}: a failed river file ${JSON.stringify(failed)}`);
+    } catch (error) { failures.push(`${label}: ${error.message}`); }
+    for (const error of errors) failures.push(`${label}: ${error}`);
+    await context.close();
+  }
+}
+
+await checkRiverPlaces();
 
 async function checkTownSearch() {
   const index = JSON.parse(await readFile(path.join(ROOT, "data/assistant/places.json"), "utf8"));

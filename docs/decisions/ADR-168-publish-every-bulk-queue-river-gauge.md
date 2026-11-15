@@ -48,6 +48,26 @@ imported.
 held: eight `exclude` rows, Bruce Church Wasteway near Yuma, and North Fork
 Weber River near Hooper (GAGES-II not listed, 4 years of flow).
 
+**Measured again on 2026-11-15, after the review page's rulings were
+imported:** the roster holds 142 gauges, 8 before and 134 added. Of the 134,
+120 are bulk-queue rows and 14 are rows Brian ruled in the review page (7
+shaped, 7 natural). By state and tier: Utah 60 shaped and 11 natural,
+Colorado 47 shaped, New Mexico 5 shaped, Arizona 19 shaped. Sixteen rows are
+held: six `exclude` rows by suggestion and two by ruling (Fairview Tunnel,
+Goggin Drain); Bruce Church Wasteway (the name); North Fork Weber River near
+Hooper (4 years of flow); Ashley Creek near Remember the Maine Park (ruled
+shaped, but no published reservoir upstream and 2.1% storage, under ADR-137's
+10%); and Cave Creek below Cottonwood Creek and Agua Fria River near Mayer and
+near Rock Springs, ruled natural but without the storage evidence ADR-137
+needs, because the dam screen (`--evidence`) has not run for Colorado, New
+Mexico or Arizona. McElmo Creek near Bluff and Clear Creek near Winslow
+were admitted and then held on 2026-11-15: every day of their series in the
+refresh's 90-day window carries no value (qualifier `RATINGDEV`, a rating
+under development), so the first refresh had no record for them and refused
+the whole river payload. The tool now holds a series with no reported value.
+The worksheets hold 773 rows, one per station: 150 `bulk`,
+75 `check` and 548 `review`.
+
 **Natural percentiles.** `tools/build_river_normals.py --only` adds the new
 natural gauges to `river_normals.json`, unchanged in method.
 

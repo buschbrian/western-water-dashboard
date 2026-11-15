@@ -116,7 +116,6 @@ function renderGauge(gauge: RiverGauge): { article: HTMLElement; chart: boolean 
   } else if (view.withheld) {
     reading.append(note(view.withheld, "reservoir-note river-withheld"));
   }
-  reading.append(note(view.status, "reservoir-note river-status"), definitionList(view.rows));
   article.append(reading);
 
   article.append(heading("h4", "Flow in the last 30 days", "reservoir-subhead"));
@@ -126,7 +125,16 @@ function renderGauge(gauge: RiverGauge): { article: HTMLElement; chart: boolean 
   if (chart) article.append(chartHost);
   article.append(renderFlowTable(view.days));
 
-  article.append(heading("h4", "Source", "reservoir-subhead"), definitionList(view.source));
+  /* With 142 gauges, every figure open made the page about 240 phone
+   * screens long (2026-11-15). The flow, its comparison and the chart stay
+   * in view; the review status, the figures and the source open on request. */
+  const more = document.createElement("details");
+  more.className = "trend-details river-more";
+  const moreSummary = document.createElement("summary");
+  moreSummary.textContent = "Details and source";
+  more.append(moreSummary, note(view.status, "reservoir-note river-status"), definitionList(view.rows),
+    heading("h4", "Source", "reservoir-subhead"), definitionList(view.source));
+  article.append(more);
   const links = document.createElement("p");
   links.className = "reservoir-links";
   const link = document.createElement("a");

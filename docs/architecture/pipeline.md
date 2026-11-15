@@ -222,6 +222,14 @@ band is for another date, out of order or on 10 years or fewer, or whose
 the roster's, a window that is not 30 consecutive days ending on the current
 value, a notice carrying a measurement, and a roster gauge in neither list.
 
+**The roster is written from the review worksheets** (ADR-168).
+`tools/admit_bulk_river_gauges.py` adds each `bulk`-queue row and each row
+Brian ruled in the review page, and prints every row it holds with the
+reason. It holds a series that reports no value in the last
+`RIVER_FETCH_DAYS` days: a new gauge has no earlier record to carry forward,
+so one with nothing to publish would leave a roster gauge in neither list
+and the whole river payload would be refused.
+
 **A natural gauge's percentiles are committed, not fetched daily** (ADR-144).
 `tools/build_river_normals.py` reads them from the Statistics API through
 `fetch_usgs_flow_normals` (the key in a header only when configured), refuses

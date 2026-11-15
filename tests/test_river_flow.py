@@ -538,19 +538,23 @@ def test_the_payload_refuses_a_tier_the_roster_does_not_give():
                                 {NATURAL: shaped_roster})
 
 
+def roster_natural() -> set[str]:
+    return {s for s, e in roster.admitted_river_gauges().items() if e["tier"]["tier"] == "natural"}
+
+
 def test_the_normals_loader_refuses_what_no_one_reviewed(tmp_path):
     gauges = roster.admitted_river_gauges()
-    assert set(rivers.load_river_normals(gauges, synthetic_normals(tmp_path))) == NATURAL_SITES
+    assert set(rivers.load_river_normals(gauges, synthetic_normals(tmp_path))) == roster_natural()
     cases = [
-        ({s: normals_entry(s) for s in NATURAL_SITES - {NATURAL}}, "no percentiles"),
-        ({**{s: normals_entry(s) for s in NATURAL_SITES},
+        ({s: normals_entry(s) for s in roster_natural() - {NATURAL}}, "no percentiles"),
+        ({**{s: normals_entry(s) for s in roster_natural()},
           NATURAL: normals_entry(series="other")}, "not the reviewed series"),
-        ({**{s: normals_entry(s) for s in NATURAL_SITES},
+        ({**{s: normals_entry(s) for s in roster_natural()},
           NATURAL: {**normals_entry(), "days": dict(list(normals_entry()["days"].items())[:365])}},
          "366 days"),
-        ({**{s: normals_entry(s) for s in NATURAL_SITES},
+        ({**{s: normals_entry(s) for s in roster_natural()},
           NATURAL: normals_entry(**{"05-01": band(p50=1.0)})}, "out of order"),
-        ({**{s: normals_entry(s) for s in NATURAL_SITES},
+        ({**{s: normals_entry(s) for s in roster_natural()},
           NATURAL: {**normals_entry(),
                     "days": {d: band(years=10) for d in providers.DAYS_OF_YEAR}}},
          "10 years of approved values or fewer"),
@@ -644,7 +648,7 @@ def test_a_withdrawn_gauge_stays_stated_when_its_fetch_fails(tmp_path):
     refresh_rivers.main([], fetch=stub_fetch(failing=everything), output=out,
                         today=gone + pd.Timedelta(days=1), pause=0, normals_path=synthetic_normals(tmp_path))
     again = json.loads(out.read_text())
-    assert again["withdrawn_count"] == 8
+    assert again["withdrawn_count"] == len(everything)
     assert all(n["days_stale"] == WITHDRAW_AFTER_DAYS + 7 for n in again["withdrawn"])
 
 
@@ -673,4 +677,5 @@ def test_the_browser_validator_holds_the_pipelines_record_rules():
 
 def test_the_committed_percentiles_load_for_every_natural_gauge():
     normals = rivers.load_river_normals(roster.admitted_river_gauges())
-    assert set(normals) == NATURAL_SITES
+    assert set(normals) == roster_natural()
+    assert NATURAL_SITES <= set(normals)
