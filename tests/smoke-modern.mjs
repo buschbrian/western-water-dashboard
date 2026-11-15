@@ -8700,13 +8700,21 @@ async function checkRiverPlaces() {
             .map((article) => article.querySelector("h3")?.textContent ?? ""),
           emptyNote: [...document.querySelectorAll("p")].some((p) => /No published gauge is in this place/.test(p.textContent ?? "")),
           search: window.location.search,
-          scroll: document.documentElement.scrollWidth <= window.innerWidth + 1
+          scroll: document.documentElement.scrollWidth <= window.innerWidth + 1,
+          /* Each card keeps its figures and source behind one closed
+           * disclosure, so 142 gauges stay a readable page on a phone. */
+          collapsed: [...document.querySelectorAll(".rivers-group article.river[data-station]")]
+            .every((article) => {
+              const more = article.querySelector("details.river-more");
+              return more !== null && !more.open && more.querySelector(".river-status") !== null
+                && more.querySelector("summary")?.textContent === "Details and source";
+            })
         }));
         const expected = scenario.expect.map((gauge) => gauge.name).sort();
         console.log(`  ${scenario.search}: ${shown.ready?.rendered} of ${shown.ready?.gauges}, ${shown.ready?.placeMenus} menus`);
         check(shown.ready?.failed === false && shown.busy === "false" && shown.ready?.rendered === expected.length
           && JSON.stringify([...shown.names].sort()) === JSON.stringify(expected)
-          && shown.emptyNote === (expected.length === 0) && shown.scroll,
+          && shown.emptyNote === (expected.length === 0) && shown.scroll && shown.collapsed,
           `${label}: ${scenario.search} shows ${JSON.stringify({ ...shown, names: shown.names.length })}, expected ${expected.length}`);
         check(new URLSearchParams(shown.search).get("state") === new URLSearchParams(scenario.search).get("state")
           && new URLSearchParams(shown.search).get("area") === new URLSearchParams(scenario.search).get("area"),
