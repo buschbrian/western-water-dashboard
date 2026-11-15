@@ -178,6 +178,10 @@ interface Window {
      * no sentences is the failure a section count cannot see. */
     weeklySections?: number;
     weeklyLines?: number;
+    /** The scope picture "Download picture" offers for the weekly card
+     * (`west`, `state-ut`, `region-14`), or null when the view is not one the
+     * deploy draws. Absent until the card first renders. */
+    sharePicture?: string | null;
   };
   /** The snowpack view finished drawing. `sites` and `basins` are what the
    * payload provided; `tableRows` and `curvePoints` are what the page
@@ -430,6 +434,10 @@ interface Window {
     storageHistory?: "waiting" | "loading" | "drawn" | "unavailable";
     upstreamConditions?: "waiting" | "loaded" | "unavailable";
     context?: "waiting" | "drawn" | "unavailable";
+    /** Whether "Download picture" is offered: true once the share ledger
+     * names this station, false when it has no permanent address or the
+     * ledger could not be read. Absent until that lookup settles. */
+    sharePicture?: boolean;
     status: "found" | "withdrawn" | "held" | "unknown" | "none";
     /** The surface level (ADR-135): "drawn" when the card and the water-year
      * chart are on the page, "card" when the history could not be read and
@@ -478,5 +486,7 @@ interface Window {
     /** Natural gauges whose newest flow is compared with normal (ADR-144). */
     compared: number;
     failed: boolean;
+    /** How many place menus (Where, Drainage area) the page offers (ADR-168). */
+    placeMenus: number;
   };
 }

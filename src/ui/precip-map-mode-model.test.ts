@@ -37,7 +37,7 @@ describe("the precipitation map's mode switch", () => {
   });
 
   it("names the map for what it shows", () => {
-    expect(precipMapLabel("years")).toContain("against past years");
+    expect(precipMapLabel("years")).toContain("compared with past years");
     expect(precipMapLabel("rain")).toContain("recent precipitation");
     expect(precipMapLabel("soil")).toContain("change in soil moisture");
   });

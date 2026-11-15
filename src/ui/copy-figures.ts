@@ -1,7 +1,8 @@
 /*
  * "Copy these figures": the sentences from `state/figures-text.ts` as text a
  * reader can select, with a button to copy them, a button to copy the link,
- * and, where the browser has one, a button for its share sheet.
+ * where the browser has one, a button for its share sheet, and, where the page
+ * has a daily share picture, a link to download it.
  *
  * One control, four pages. It owns no wording about the water: a page hands
  * it lines, or null when it has none it can stand behind, and the control
@@ -30,6 +31,8 @@ export interface CopyFigures {
   readonly element: HTMLElement;
   /** Show these lines, or hide the control for null. */
   update(lines: readonly string[] | null): void;
+  /** Offer the page's 1200 by 630 share picture, or remove the offer for null. */
+  setPicture(href: string | null): void;
 }
 
 export function createCopyFigures(options: CopyFiguresOptions): CopyFigures {
@@ -122,6 +125,16 @@ export function createCopyFigures(options: CopyFiguresOptions): CopyFigures {
     actions.append(share);
   }
 
+  /* A link, not a button: the picture is a published file, and `download`
+   * saves it under its own name. Hidden until the page has an address. */
+  const picture = document.createElement("a");
+  picture.className = "copy-figures-button copy-figures-picture";
+  picture.dataset["copyFigures"] = "picture";
+  picture.textContent = "Download picture";
+  picture.setAttribute("download", "");
+  picture.hidden = true;
+  actions.append(picture);
+
   section.append(heading, intro, actions, details, status);
 
   return {
@@ -140,6 +153,11 @@ export function createCopyFigures(options: CopyFiguresOptions): CopyFigures {
         return paragraph;
       }));
       section.hidden = false;
+    },
+    setPicture(href) {
+      if (href) picture.href = href;
+      else picture.removeAttribute("href");
+      picture.hidden = !href;
     }
   };
 }

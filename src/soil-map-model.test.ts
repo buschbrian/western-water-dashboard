@@ -4,7 +4,8 @@ import { validateSoilMoisturePayload } from "./data/soil-validate";
 import { SET_SHARE } from "./precip-model";
 import {
   soilCountsText, soilLeftOutText, soilMapValues, soilMostChange, soilNoChangeText, soilNoSideText,
-  setShareWords, soilWeekText
+  setShareWords, soilWeekText, soilAreaHistoryClass, soilBandText, soilHistoryCountsText, soilHistoryLeftOutText,
+  soilNoHistoryText
 } from "./soil-map-model";
 import type { SoilMoisturePayload, SoilMoistureSite } from "./types";
 
@@ -12,7 +13,8 @@ function site(station: string, change: number | null, reason: SoilMoistureSite["
   return {
     station, depths_inches: [2, 8, 20], latest_date: "2026-10-26", late: false,
     end_percent: change === null ? null : 20 + change, start_percent: 20, change_points: change,
-    no_change_reason: change === null ? reason ?? "missing_reading" : null
+    no_change_reason: change === null ? reason ?? "missing_reading" : null,
+    history_band: null, history_class: null, no_history_reason: "no_history"
   };
 }
 
@@ -20,7 +22,7 @@ function payload(sites: SoilMoistureSite[]): SoilMoisturePayload {
   return {
     schema_version: 1, generated_at: "", as_of: "2026-10-27", change_days: 7,
     end_date: "2026-10-26", start_date: "2026-10-19", minimum_reporting_sites: 2,
-    site_count: sites.length, measured_site_count: 0, frozen_site_count: 0, late_site_count: 0,
+    site_count: sites.length, measured_site_count: 0, frozen_site_count: 0, compared_site_count: 0, late_site_count: 0,
     missing_site_count: 0, rollups: [], sites
   };
 }
@@ -121,5 +123,36 @@ describe("the soil sentences", () => {
     const share = Number(/^END_DAY_SHARE = ([\d.]+)$/m.exec(source)?.[1]);
     expect(share).toBe(SET_SHARE);
     expect(setShareWords(share)).toBe(setShareWords());
+  });
+});
+
+describe("the soil map against past years (ADR-169)", () => {
+  const band = { years: 15, p10: 10, p33: 15, p50: 20, p67: 25, p90: 30 };
+  const compared = (station: string, cls: SoilMoistureSite["history_class"]): SoilMoistureSite => ({
+    station, depths_inches: [2, 8, 20], latest_date: "2026-10-26", late: false, end_percent: 20, start_percent: 20,
+    change_points: 0, no_change_reason: null, history_band: band, history_class: cls,
+    no_history_reason: cls === null ? "short_history" : null
+  });
+
+  it("takes an area's median class, nearer normal on an even split, held to the floor", () => {
+    expect(soilAreaHistoryClass(["drier"], 2)).toBeNull();
+    expect(soilAreaHistoryClass(["much_drier", "drier", "wetter"], 2)).toBe("drier");
+    expect(soilAreaHistoryClass(["much_drier", "normal"], 2)).toBe("normal");
+    expect(soilAreaHistoryClass(["much_wetter", "wetter"], 2)).toBe("wetter");
+  });
+
+  it("regroups the place's own stations and counts them by class", () => {
+    const sites = [compared("a", "much_drier"), compared("b", "drier"), compared("c", null), compared("d", "wetter")];
+    const values = soilMapValues(payload(sites), new Map([["a", "1"], ["b", "1"], ["c", "1"], ["d", "2"]]),
+      new Map([["1", 2], ["2", 2]]));
+    expect(values.historyAreas.get("1")).toEqual({ cls: "drier", stations: 2, floor: 2 });
+    expect(values.historyAreas.get("2")).toEqual({ cls: null, stations: 1, floor: 2 });
+    expect(values.historyCounts.compared).toBe(3);
+    expect(soilHistoryCountsText(values.historyCounts)).toBe(
+      "Of the 3 stations compared with their own past years, 2 are drier than normal for the date (1 much drier), "
+      + "0 are normal, and 1 is wetter than normal (0 much wetter).");
+    expect(soilHistoryLeftOutText(values.historyCounts)).toContain("1 station with soil sensors is not compared");
+    expect(soilBandText(sites[0]!)).toBe("Normal for this date is 15.0 to 25.0 percent, the middle third of 15 past years.");
+    expect(soilNoHistoryText(sites[2])).toBe("10 or fewer past years with a reading on this date");
   });
 });

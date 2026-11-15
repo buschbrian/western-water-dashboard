@@ -404,8 +404,31 @@ percentage points and no median.
   10, 10 or more (`src/viz/soil-classes.ts`).
 
 Not a claim to match the Natural Resources Conservation Service's own
-basin percent-of-median maps, whose method is unpublished. Percent of median
-over each station's own record is a later phase with its own record.
+basin percent-of-median maps, whose method is unpublished.
+
+### Soil moisture against each station's past years
+
+**A station is compared only with itself** (ADR-169), so soil texture cancels.
+
+- **History:** `soil_normals.json`, built by `tools/build_soil_normals.py`
+  (`pipeline/soil_normals.py` holds the method). The station value above,
+  one value per year on each calendar day, years before the build year, the
+  10th, 33rd, 50th, 67th and 90th percentile by the Weibull plotting
+  position. No window of
+  neighbouring days. A date with 10 or fewer years carries only its count.
+  February 29 reads February 28. Position n is calendar day n of a 365-day
+  year, not a day-of-year count.
+- **Class:** the end day's station value against that day's percentiles,
+  by NOAA NCEI's tenths and thirds (as the precipitation past-years mode):
+  under p10, under p33, p33–p67, up to p90, over p90; a boundary goes to the
+  class nearer normal.
+- **Area:** the median class of the compared stations, held to the snow
+  reporting floor; on an even split, the middle class nearer normal. The
+  page regroups the place's stations by the same rule.
+- **Not compared:** no history built, history over other depths, 10 or fewer
+  years on the date, or no end-day value (`no_history_reason`).
+- **Method version:** `SOIL_NORMALS_METHOD_VERSION`; `load` refuses a file
+  built by another, and the refresh then compares nothing.
 
 ## Precipitation against its own history
 

@@ -14,7 +14,7 @@ place at a time, over the fixed set of stations with every year since 1991
 
 ## Decision
 
-1. **A third map mode, "Compared with past years"** (`?layer=years`). Each station
+1. **A third map mode, "Season against past years"** (`?layer=years`). Each station
    is placed against the same calendar date in each of its own past water
    years, read on a straight line between weekly steps (ADR-125), on the
    newest day `SET_SHARE` of on-time stations report.

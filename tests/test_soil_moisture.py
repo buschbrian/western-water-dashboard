@@ -141,7 +141,8 @@ def test_an_area_needs_the_snow_floor_of_stations_with_a_change():
     assert one["minimum_reporting_sites"] == 2
     assert one["rollups"] == [{"huc6": "160202", "huc6_name": "Jordan", "site_count": 1,
                                "measured_site_count": 1, "minimum_reporting_sites": 2,
-                               "mean_change_points": None}]
+                               "mean_change_points": None, "compared_site_count": 0,
+                               "history_class": None}]
     two = build(["1:UT:SNTL", "2:UT:SNTL"], [
         record("1:UT:SNTL", {-2: steady(20.0, **{END: 26.0}), -8: steady(20.0), -20: steady(20.0)}),
         record("2:UT:SNTL", {-2: steady(20.0), -8: steady(20.0), -20: steady(20.0, **{END: 17.0})})])
@@ -222,3 +223,56 @@ def test_the_daily_script_runs_soil_after_precipitation_and_keeps_the_last_file(
     plan = subprocess.run(["bash", str(ROOT / "scripts" / "refresh-daily.sh"), "--dry-run"],
                           cwd=ROOT, capture_output=True, text=True, check=True).stdout
     assert "refresh_soil_moisture.py" in plan and "soil_moisture.json" in plan
+
+
+# --- Compared with the station's own past years (ADR-169) -----------------
+
+def normals_for(*stations, years=12, band=(14.0, 15.0, 16.0, 17.0, 18.0), depths=(2, 8, 20)):
+    row = [years, *band]
+    return {"years_before": 2026, "built": "2026-11-14",
+            "stations": {station: {"depths_inches": list(depths), "days": [row] * 365}
+                         for station in stations}}
+
+
+def build_with(stations, records, normals):
+    depths = {station: [-2, -8, -20] for station in stations}
+    return build_payload(inventory(*stations), depths, records, AS_OF, STAMP, normals=normals)
+
+
+def test_the_end_value_is_classed_among_the_stations_own_past_years():
+    # Station value 15.0 sits between p33 (15.0) and p67 (17.0): on a boundary it is normal.
+    payload = build_with(["1:UT:SNTL"], [record("1:UT:SNTL",
+                         {-2: steady(20.0), -8: steady(15.0), -20: steady(10.0)})], normals_for("1:UT:SNTL"))
+    site = payload["sites"][0]
+    assert site["end_percent"] == 15.0
+    assert site["history_class"] == "normal" and site["no_history_reason"] is None
+    assert site["history_band"] == {"years": 12, "p10": 14.0, "p33": 15.0, "p50": 16.0, "p67": 17.0, "p90": 18.0}
+    assert payload["compared_site_count"] == 1
+    assert payload["schema_version"] == 2
+
+
+def test_no_normals_file_means_no_comparison_and_says_why():
+    payload = build_with(["1:UT:SNTL"], [record("1:UT:SNTL",
+                         {-2: steady(20.0), -8: steady(15.0), -20: steady(10.0)})], None)
+    site = payload["sites"][0]
+    assert site["history_class"] is None and site["no_history_reason"] == "no_history"
+    assert payload["history_rule"]["years_before"] is None
+
+
+def test_too_few_years_or_other_depths_are_not_compared():
+    short = {"years_before": 2026, "built": "x", "stations": {"1:UT:SNTL": {"depths_inches": [2, 8, 20], "days": [[10]] * 365}}}
+    rec = [record("1:UT:SNTL", {-2: steady(20.0), -8: steady(15.0), -20: steady(10.0)})]
+    assert build_with(["1:UT:SNTL"], rec, short)["sites"][0]["no_history_reason"] == "short_history"
+    other = normals_for("1:UT:SNTL", depths=(4, 8, 20))
+    assert build_with(["1:UT:SNTL"], rec, other)["sites"][0]["no_history_reason"] == "other_depths"
+
+
+def test_an_area_takes_the_median_class_of_its_compared_stations():
+    stations = ["1:UT:SNTL", "2:UT:SNTL"]
+    records = [record("1:UT:SNTL", {-2: steady(10.0), -8: steady(10.0), -20: steady(10.0)}),
+               record("2:UT:SNTL", {-2: steady(12.0), -8: steady(12.0), -20: steady(12.0)})]
+    payload = build_with(stations, records, normals_for(*stations))
+    # 10.0 and 12.0 are both under p10 (14.0).
+    assert [site["history_class"] for site in payload["sites"]] == ["much_drier", "much_drier"]
+    assert payload["rollups"][0]["history_class"] == "much_drier"
+    assert payload["rollups"][0]["compared_site_count"] == 2

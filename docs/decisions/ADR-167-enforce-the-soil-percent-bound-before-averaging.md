@@ -1,6 +1,6 @@
 # ADR-167: Enforce the soil percentage bound before averaging
 
-- Status: Proposed
+- Status: Accepted (Brian Busch, 2026-11-14)
 - Date: 2026-11-14
 - Extends: ADR-142 (soil moisture change)
 

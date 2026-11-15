@@ -8,6 +8,16 @@ import { formatShortDate } from "../viz/format";
 
 export type PrecipMapMode = "rain" | "soil" | "years";
 export type SoilLoadState = "idle" | "loading" | "ready" | "failed";
+/** What soil mode draws: each station against its own past years for the
+ * date (ADR-169), or the week's change (ADR-142). */
+export type SoilView = "history" | "change";
+
+/** The view soil mode opens on: past years, unless the reader or the link
+ * asked for the change, or no station in the file is compared yet. */
+export function soilViewShown(requested: SoilView | null, comparedStations: number): SoilView {
+  if (requested === "change") return "change";
+  return comparedStations > 0 ? "history" : "change";
+}
 
 export interface PrecipMapModeView {
   /** The mode the map is drawn in: soil falls back to rain when its file failed. */
@@ -15,7 +25,8 @@ export interface PrecipMapModeView {
   rainPressed: boolean;
   soilPressed: boolean;
   yearsPressed: boolean;
-  /** The rain key, caption and table, against the soil ones and the past-years ones. */
+  /** The rain key, caption and table, against the soil ones and the
+   * precipitation-against-past-years ones (ADR-170). */
   rainShown: boolean;
   soilShown: boolean;
   yearsShown: boolean;
@@ -42,10 +53,11 @@ export function precipMapModeView(requested: PrecipMapMode, soil: SoilLoadState)
   };
 }
 
-export function precipMapLabel(mode: PrecipMapMode): string {
-  if (mode === "years") return "Map of precipitation since 1 October against past years by drainage area and measurement site";
-  return mode === "rain"
-    ? "Map of recent precipitation by drainage area and measurement site"
+export function precipMapLabel(mode: PrecipMapMode, view: SoilView = "change"): string {
+  if (mode === "rain") return "Map of recent precipitation by drainage area and measurement site";
+  if (mode === "years") return "Map of precipitation since 1 October compared with past years by drainage area and measurement site";
+  return view === "history"
+    ? "Map of soil moisture compared with past years by drainage area and measurement site"
     : "Map of the change in soil moisture this week by drainage area and measurement site";
 }
 

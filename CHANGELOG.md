@@ -13,6 +13,13 @@ carry their own `schema_version`, and the seasonal estimator carries its own
 
 ### Added
 
+- **Soil moisture compared with past years** (ADR-169). The precipitation
+  map's soil mode opens on each station's soil moisture against its own past
+  years on the same date, in five classes from much drier to much wetter than
+  normal. The week's change is the second view. `soil_moisture.json` is
+  schema 2; a new on-demand `soil_normals.json` holds each station's
+  percentiles.
+
 - **Great Salt Lake on the terminal lakes page, by arm** (ADR-159). The South
   Arm (U.S. Geological Survey site 10010000, Saltair Boat Harbor) and the
   North Arm (10010100, near Saline) each show their own daily surface level
@@ -371,6 +378,13 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   `lakes.json` names the new address from the next morning's refresh.
 
 ### Removed
+
+- **The unused question service.** `worker/` held a Cloudflare Worker that
+  answered questions from the `data/assistant/` indexes. No page called it, no
+  workflow deployed it, and no worker of that name existed in the account on
+  2026-11-14. The code, its `verify:worker` target and its deploy-address
+  test are removed. The `data/assistant/` files stay published: the page
+  search reads `places.json`, and the other three are public data.
 
 - **Code nothing used, and tests that checked only text.** Removed: unused
   TypeScript (the browser drainage assignment in `huc.ts`, the retired

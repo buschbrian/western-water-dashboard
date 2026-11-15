@@ -89,6 +89,16 @@ page's own formats; the last line is the credit line from `reporters.html`,
 with the provider first and `SITE_ADDRESS` once. A combined figure from more
 than two providers gets a neutral credit line.
 
+"Download picture" sits beside those buttons where the deploy draws a daily
+1200 by 630 share picture of exactly what the page shows. On a reservoir page
+it links `share/<slug>.png` once the share ledger names the station
+(`window.__reservoirReady.sharePicture`). On the storage charts page it links
+`share/west.png`, `share/state-<code>.png` or `share/region-<huc2>.png` only
+while the view is that scope with Powell and Mead included and no county,
+search, update-schedule or storage-class filter (`src/state/share-picture.ts`;
+`window.__overviewReady.sharePicture`). Any other view offers no picture,
+because the picture would show different figures from the page.
+
 #### Storage history and upstream conditions (ADR-160–157)
 
 `data/storage-history.ts` loads the index, current water year and only the

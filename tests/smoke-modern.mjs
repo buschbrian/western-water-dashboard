@@ -4295,7 +4295,7 @@ for (const viewport of VIEWPORTS) {
     /* Past years (ADR-170): the third mode, its key and its lists, and its
      * link. Data-independent: counts are compared with the readiness
      * object, never with today's numbers. */
-    await tab.locator(".precip-map-mode-head button", { hasText: "Compared with past years" }).click();
+    await tab.locator(".precip-map-mode-head button", { hasText: "Season against past years" }).click();
     await tab.waitForFunction(() => window.__precipReady?.map?.mode === "years"
       && window.__precipReady?.map?.years?.state === "ready", null, { timeout: 60000 });
     const yearsView = await tab.evaluate(() => ({
@@ -6606,6 +6606,16 @@ for (const failure of [
       const address = ledger.find((entry) => entry.source_station_id === row.source_station_id);
       check(await tab.evaluate(() => navigator.clipboard.readText()) === `${URL}share/${address.slug}.html`,
         `${label} (${name}): "Copy link" did not copy the permanent preview address`);
+      await tab.waitForFunction(() => window.__reservoirReady?.sharePicture !== undefined,
+        null, { timeout: 15000 });
+      const picture = await tab.evaluate(() => {
+        const link = document.querySelector('[data-copy-figures="picture"]');
+        const box = link?.getBoundingClientRect();
+        return link instanceof HTMLAnchorElement && !link.hidden
+          ? { href: link.href, download: link.hasAttribute("download"), height: box?.height ?? 0 } : null;
+      });
+      check(picture?.href === `${URL}share/${address.slug}.png` && picture.download && picture.height >= 43.5,
+        `${label} (${name}): "Download picture" is missing or wrong ${JSON.stringify(picture)}`);
       await tab.goto(`${URL}share/${address.slug}.html`, { waitUntil: "load", timeout: 90000 });
       await tab.waitForFunction(() => window.__reservoirReady?.status === "found",
         null, { timeout: 90000 });
@@ -6872,6 +6882,9 @@ for (const viewport of VIEWPORTS) {
     && state.ready?.rendered === state.ready?.gauges && state.articles === state.ready?.gauges,
   `Rivers page (${viewport.name}): published ${state.ready?.gauges} gauge(s), drew `
     + `${state.ready?.rendered}, found ${state.articles} articles`);
+  check(state.ready?.placeMenus === 2,
+    `Rivers page (${viewport.name}): ${state.ready?.placeMenus} place menus; Where and `
+    + "Drainage area are both offered (ADR-168)");
   check(state.charts === state.articles && state.ready?.charts === state.articles,
     `Rivers page (${viewport.name}): ${state.charts} charts for ${state.articles} gauges`);
   const shaped = state.tiers.filter((a) => a.tier === "shaped");

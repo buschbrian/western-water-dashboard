@@ -661,10 +661,12 @@ export const SOIL_GROUPS: readonly ApiFieldGroup[] = [
     f("end_date", "date", "The day every station's change ends on, or null when too few stations sent readings."),
     f("start_date", "date", "The day every station's change starts on, or null."),
     f("minimum_reporting_sites", "sites", "Stations with a change an area needs for a figure. The same floor as the snow figure."),
+    f("history_rule", "object", "Schema 2 (ADR-169). How the end day is compared with past years: the percentiles kept, the fewest past years a date needs (min_years), the year the station records stop before (years_before) and the day they were built. years_before and built are null when no station record is built yet.", true),
     f("series_dates", "array", "The fifteen days the readings index into, ascending."),
     f("site_count", "sites", "Number of stations in the sites array."),
     f("measured_site_count", "sites", "Number of stations with a change."),
     f("frozen_site_count", "sites", "Number of stations with no change because the soil was frozen."),
+    f("compared_site_count", "sites", "Schema 2. Number of stations whose end_percent is compared with their own past years.", true),
     f("late_site_count", "sites", "Number of stations with late readings."),
     f("missing_site_count", "sites", "Number of stations with the standard sensors that sent nothing and are absent from this file."),
     f("other_depth_sites", "array", "Stations with soil sensors that do not have the standard set, with their depths in inches. Not used."),
@@ -677,7 +679,9 @@ export const SOIL_GROUPS: readonly ApiFieldGroup[] = [
     f("site_count", "sites", "Stations in the area in this file."),
     f("measured_site_count", "sites", "Of those, stations with a change."),
     f("minimum_reporting_sites", "sites", "Stations with a change the area needs for a figure."),
-    f("mean_change_points", "percentage points", "Mean of the stations' changes, or null below the floor.")
+    f("mean_change_points", "percentage points", "Mean of the stations' changes, or null below the floor."),
+    f("compared_site_count", "sites", "Schema 2. Stations in the area compared with their past years.", true),
+    f("history_class", "identifier", "Schema 2. The median of those stations' classes (much_drier, drier, normal, wetter, much_wetter); with two middle classes, the one nearer normal. Null below minimum_reporting_sites.", true)
   ]},
   { id: "soil-site", title: "Station record", path: "sites[]", fields: [
     f("station", "identifier", "Provider station identifier."),
@@ -689,7 +693,10 @@ export const SOIL_GROUPS: readonly ApiFieldGroup[] = [
     f("end_percent", "percent", "The station's value on end_date: the mean of its three readings, or null."),
     f("start_percent", "percent", "The same on start_date, or null."),
     f("change_points", "percentage points", "end_percent minus start_percent, or null."),
-    f("no_change_reason", "identifier", "Why change_points is null: missing_reading, frozen or no_temperature. Null when there is a change.")
+    f("no_change_reason", "identifier", "Why change_points is null: missing_reading, frozen or no_temperature. Null when there is a change."),
+    f("history_band", "object", "Schema 2 (ADR-169). The station's own percentiles of its value for the calendar day of end_date: years, p10, p33, p50, p67 and p90, in percent of the soil's volume. One value per past year on that date, Weibull plotting position. Null when not compared.", true),
+    f("history_class", "identifier", "Schema 2. Where end_percent falls in history_band: much_drier (under p10), drier (under p33), normal (p33 to p67), wetter (up to p90) or much_wetter (over p90). The National Centers for Environmental Information's tenths and thirds. A value on a boundary takes the class nearer normal. Null when not compared.", true),
+    f("no_history_reason", "identifier", "Schema 2. Why history_class is null: no_history (no station record built), other_depths (the record used other sensors), short_history (10 or fewer past years on this date) or no_reading (no value on end_date). Null when compared.", true)
   ]},
   { id: "soil-other-depth-site", title: "Station with other sensor depths", path: "other_depth_sites[]", fields: [
     f("station", "identifier", "Provider station identifier."),
