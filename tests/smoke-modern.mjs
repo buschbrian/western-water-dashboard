@@ -4201,6 +4201,45 @@ for (const viewport of VIEWPORTS) {
     await tab.waitForFunction(() => ["ready", "failed"].includes(window.__precipReady?.map?.soil?.state),
       null, { timeout: 30000 });
     tab.off("request", onSwitchRequest);
+    /* ADR-169: with stations compared, soil opens on past years. Check that
+     * view, then choose the week's change, which the checks below read. A
+     * file with no station compared opens on the change itself. */
+    const firstSoil = await tab.evaluate(() => window.__precipReady?.map?.soil);
+    if ((firstSoil?.compared ?? 0) > 0) {
+      const pastYears = await tab.evaluate(() => {
+        const visible = (element) => Boolean(element && element.getClientRects().length > 0);
+        return {
+          view: window.__precipReady?.map?.soil?.view,
+          keyItems: [...document.querySelectorAll(".precip-soil-history-key [role='listitem']")].map((item) => item.textContent),
+          keyShown: visible(document.querySelector(".precip-soil-history-key")),
+          changeKeyShown: visible(document.querySelector(".precip-soil-key")),
+          pressed: [...document.querySelectorAll(".precip-soil-views button")]
+            .map((button) => button.getAttribute("aria-pressed")).join(","),
+          counts: document.querySelector(".precip-soil-view-history .precip-note")?.textContent ?? "",
+          search: window.location.search
+        };
+      });
+      console.log("  soil past years:", JSON.stringify({ ...pastYears, keyItems: pastYears.keyItems.length }));
+      const pastSearch = new URLSearchParams(pastYears.search);
+      check(pastYears.view === "history" && pastYears.keyShown && !pastYears.changeKeyShown
+        && pastYears.keyItems.length === 6 && pastYears.pressed === "true,false" && pastYears.counts !== ""
+        && pastSearch.get("layer") === "soil" && !pastSearch.has("soil"),
+      `${label}: soil opens on past years ${JSON.stringify(pastYears)}`);
+      if (viewport.logic) {
+        await tab.locator(".precip-soil-history-table summary").click();
+        await tab.waitForFunction(() => document.querySelectorAll(".precip-soil-history-table tbody tr").length > 0,
+          null, { timeout: 10000 }).catch(() => {});
+        const pastRows = await tab.locator(".precip-soil-history-table tbody tr").count();
+        check(pastRows === firstSoil.stations,
+          `${label}: the past-years soil table has ${pastRows} rows for ${firstSoil.stations} stations`);
+        await tab.locator(".precip-soil-history-table summary").click();
+      }
+      await checkAccessibility(tab, check, `${label}, soil past years`);
+      await tab.locator(".precip-soil-views button", { hasText: "Change in 7 days" }).click();
+      await tab.waitForFunction(() => window.__precipReady?.map?.soil?.view === "change", null, { timeout: 10000 });
+      check(new URLSearchParams(await tab.evaluate(() => window.location.search)).get("soil") === "change",
+        `${label}: the week's change is not in the link`);
+    }
     const soilView = await tab.evaluate(() => {
       const visible = (element) => Boolean(element && element.getClientRects().length > 0);
       const card = document.querySelector("#precip-card");
