@@ -163,9 +163,12 @@ figures), `weeklyStorage` and `rollupByHuc`:
 
 Counts of reservoirs by their own figure (the class spread, late readings,
 reservoirs below half) still count every reservoir. The split lines are shown
-only where a place holds such waters. While no reservoir carries a character,
-seasonal storage is every reservoir and every published figure is what it was;
-`src/data/area-split.test.ts` holds that on the committed payload.
+only where a place holds such waters. The first region ruled is the Columbia
+and Snake (ADR-171): eight navigation and power pools are steady pools and
+Bennington Lake is a flood-control basin. Elsewhere seasonal storage is every
+reservoir. An area's comparison with normal sums each reservoir's own normal
+over the seasonal line at run time, so ruling a character rebuilds no normal
+and leaves `METHOD_VERSION` where it is.
 
 ## Elevation datum
 

@@ -27,6 +27,7 @@ import {
   watershedRecords
 } from "./overview-model";
 import { isLakeMead, isLakePowell, WIDEST_SCOPE } from "./data/rollup";
+import { isSeasonalStorage } from "./data/area-line";
 
 const base = readPayload().reservoirs[0]!;
 const reservoir = (overrides: Partial<typeof base>): typeof base => ({ ...base, ...overrides });
@@ -583,7 +584,7 @@ describe("the population behind the twelve-month trend", () => {
 
   it("carries the population behind every point, not only the thin ones", () => {
     for (const point of points) {
-      expect(point.scopeCount, point.month).toBe(reservoirs.length);
+      expect(point.scopeCount, point.month).toBe(reservoirs.filter(isSeasonalStorage).length);
       expect(point.reporting, point.month).toBeLessThanOrEqual(point.scopeCount);
       expect(point.percentCapacityReporting, point.month).not.toBeUndefined();
     }

@@ -1,6 +1,6 @@
 # Operating-character census
 
-**Reviewed:** 2026-09-04
+**Reviewed:** 2026-09-04; rerun 2026-11-15
 **Tool:** `tools/build_operating_character_census.py`
 **Output:** [`data/reviews/operating-character-census.json`](../data/reviews/operating-character-census.json)
 **Purpose:** propose an `operating_character` (ADR-114) for every published
@@ -10,6 +10,77 @@ each one against evidence rather than against a name.
 **Nothing here is applied.** Every row carries `needs_review: true`, and no
 roster, payload, capacity or normal is touched by the tool that wrote it. A
 proposal is a candidate and a starting point for the reviewer, not a finding.
+
+## Rerun on 2026-11-15
+
+The committed file was rebuilt against the 424 published reservoirs, with
+every service answering. The tables below this section describe the
+2026-09-04 run; the counts are now 15 `restricted`, 34 `run_of_river`, 39
+`flood_space` and 336 none. No earlier proposal changed. Lake Hemet left the
+roster. Twenty reservoirs were added since September. Ten of them carry a
+proposal: `flood_space` for Mojave, Big Dry Creek, Mariposa and Chesbro
+(high), Twitchell, Farmington and Bennington Lake (medium), and Eastman
+Lake and Bear Reservoir (low); `run_of_river` for Kerckhoff (medium).
+
+**One gap the rules cannot see.** Vail Lake has been published since
+September on its operating-restriction full level (Division of Safety of
+Dams, seismic, from 2015-06-02), but the restriction table this tool reads
+lists it as off-roster, so it is proposed as ordinary storage. Its
+`restricted` ruling belongs with California's region.
+
+## Region review 1: Columbia and Snake (ruled 2026-11-15, ADR-171)
+
+ADR-156 reviews one drainage region at a time. This is the first packet:
+the Lower Snake, Clearwater and Middle Columbia basins (subregions 1706 and
+1707). Brian Busch accepted it as proposed on 2026-11-15 (ADR-171); the
+characters are on their roster entries with this evidence. No normal is
+rebuilt and `METHOD_VERSION` does not move: the area comparison sums each
+reservoir's own normal at run time.
+
+| Reservoir | Proposed | Evidence (inventory, river network, last 12 months) | Needs judgment |
+|---|---|---|---|
+| Lake Wallula (McNary) | `run_of_river` | primary purpose navigation, 1 lock; Columbia mainstem 487,575 km²; turns over in 3.8 days; 95–98% full | no |
+| Lake Celilo (The Dalles) | `run_of_river` | navigation, 1 lock; 540,460 km²; 0.9 days; 88–92% | no |
+| Lower Granite Lake | `run_of_river` | navigation, 1 lock; Snake mainstem 211,227 km²; 4.3 days; 95–97% | no |
+| Lake Bryan (Little Goose) | `run_of_river` | navigation, 1 lock; 4.9 days; 83–89% | no |
+| Lake Herbert G. West (Lower Monumental) | `run_of_river` | navigation, 1 lock; 3.2 days; 91–92% | no |
+| Lake Sacajawea (Ice Harbor) | `run_of_river` | navigation, 1 lock; 3.5 days; 97–99% | no |
+| Hells Canyon Reservoir | `run_of_river` | Idaho Power; hydroelectric and navigation, no lock; 3.5 days; 92–97%. The run-of-river plant below Brownlee and Oxbow | confirm the operator's wording |
+| Lake Umatilla (John Day) | `run_of_river` | navigation, 1 lock, flood risk reduction among its purposes; 1.5 days; **58–77%** | **yes**: the pool moves about 20 points a year inside its operating band. Steady pool, or ordinary storage with a flood band? |
+| Bennington Lake (Mill Creek) | `flood_space` | Corps; flood risk reduction and recreation only; off-channel; 5–18%, never a third full | no: ADR-156's detention case |
+| Willow Creek | none (census said `flood_space`) | Corps; flood risk reduction with irrigation; peaked at 47% | **yes**: ADR-156 keeps a reservoir that refills an irrigation pool as ordinary storage; the census rule predates that narrowing |
+| Dworshak Reservoir | none (census said `flood_space`, low) | flood risk reduction first, with water supply and power; 62–99.9% | no: ADR-156 names it as seasonal storage that refills |
+
+The Corps district pages (nww.usace.army.mil, nwp.usace.army.mil) refused
+automated requests on 2026-11-15. The operator descriptions are for Brian to
+open beside this table. The inventory and river-network figures come from
+the census evidence above, and the ranges from the published series.
+
+**Effect on published area figures**, measured on the 2026-11-15 payload
+with the proposed set (8 steady pools, Bennington as flood space, Dworshak
+and Willow Creek ordinary). Each reservoir's own figures do not change.
+
+| Area | % full today | Seasonal storage % full | Against normal today\* | Seasonal against normal\* | Steady pools, acre-feet | Flood space held, acre-feet |
+|---|---:|---:|---:|---:|---:|---:|
+| Lower Snake (170601) | 92% | 22% | 99% | 75% | 1,875,953 | 0 |
+| Clearwater (170603) | 63% | 63% | 99% | 99% | 0 | 0 |
+| Middle Columbia (170701) | 86% | 12% | 102% | 100% | 1,994,490 | 361 |
+| Oregon | 36% | 19% | 84% | 68% | 1,745,129 | 0 |
+| Washington | 73% | 71% | 97% | 96% | 2,125,314 | 361 |
+| Pacific Northwest (17) | 64% | 61% | 93% | 92% | 3,870,443 | 361 |
+| The West | 49% | 47% | 89% | 88% | 3,870,443 | 361 |
+
+\* Summed current storage over summed reservoir normals for the reservoirs
+that have one: an estimate of the area comparison, which the rebuilt area
+normals replace. Hells Canyon counts in Oregon, the state the payload gives
+it.
+
+What moves for a reader: the storage map's and charts' headline for these
+basins and both states, their comparison with normal, the drainage-area
+colours that follow the headline, the weekly figures, and the share
+pictures and captions for those places. Each place gains ADR-156's line,
+for example "1.9 million acre-feet in pools held at a steady level for
+barges and power."
 
 ## What it proposes
 

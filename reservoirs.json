@@ -1,7 +1,7 @@
 {
   "schema_version": 1,
   "method_version": "storage-normal-annual-3",
-  "generated_at": "2026-11-15T19:11:01+00:00",
+  "generated_at": "2026-11-15T19:11:28+00:00",
   "start_date": "2015-01-01",
   "normal_period": {
     "start_year": 2015,
@@ -5550,7 +5550,7 @@
       "days_stale": 0,
       "is_stale": false,
       "fetch_ok": true,
-      "current_storage_af": 1070224.0,
+      "current_storage_af": 1070408.0,
       "record_max_af": 1578052.0,
       "record_min_af": 573364.0,
       "pct_of_record_max": 67.8,
@@ -5574,22 +5574,22 @@
         "climate": null,
         "default": "recent"
       },
-      "change_7d_af": 17727.0,
+      "change_7d_af": 17911.0,
       "change_7d_pct": 1.7,
       "change_7d_reference_date": "2026-11-08",
       "change_7d_elapsed_days": 7,
-      "change_30d_af": 436310.0,
-      "change_30d_pct": 68.8,
+      "change_30d_af": 436494.0,
+      "change_30d_pct": 68.9,
       "change_30d_reference_date": "2026-10-16",
       "change_30d_elapsed_days": 30,
-      "change_365d_af": 337543.0,
+      "change_365d_af": 337727.0,
       "change_365d_pct": 46.1,
       "change_365d_reference_date": "2025-11-15",
       "change_365d_elapsed_days": 365,
       "low_120d_af": 573364.0,
       "low_120d_date": "2026-09-14",
-      "change_since_low_af": 496860.0,
-      "peak_this_year_af": 1070224.0,
+      "change_since_low_af": 497044.0,
+      "peak_this_year_af": 1070408.0,
       "peak_this_year_date": "2026-11-15",
       "pct_of_peak_this_year": 100.0,
       "monthly": [
@@ -5716,10 +5716,10 @@
         },
         {
           "month": "2026-11",
-          "mean_af": 1025724.33,
+          "mean_af": 1025736.6,
           "min_af": 782373.0,
-          "max_af": 1070224.0,
-          "end_af": 1070224.0,
+          "max_af": 1070408.0,
+          "end_af": 1070408.0,
           "days": 15,
           "normal_af": 1262615.95,
           "normal_years": 2,
@@ -6862,7 +6862,11 @@
       "state": "OR",
       "waterbody_states": [
         "OR"
-      ]
+      ],
+      "operating_character": {
+        "character": "run_of_river",
+        "source_url": "https://nid.sec.usace.army.mil/#/dams/system/OR00616/summary"
+      }
     },
     {
       "name": "Bear Lake",
@@ -11657,7 +11661,11 @@
       "state": "WA",
       "waterbody_states": [
         "WA"
-      ]
+      ],
+      "operating_character": {
+        "character": "run_of_river",
+        "source_url": "https://nid.sec.usace.army.mil/#/dams/system/WA00331/summary"
+      }
     },
     {
       "name": "Lake Granby",
@@ -12103,7 +12111,11 @@
       "state": "WA",
       "waterbody_states": [
         "WA"
-      ]
+      ],
+      "operating_character": {
+        "character": "run_of_river",
+        "source_url": "https://nid.sec.usace.army.mil/#/dams/system/OR00011/summary"
+      }
     },
     {
       "name": "Millerton Lake",
@@ -12772,7 +12784,11 @@
       "state": "WA",
       "waterbody_states": [
         "WA"
-      ]
+      ],
+      "operating_character": {
+        "character": "run_of_river",
+        "source_url": "https://nid.sec.usace.army.mil/#/dams/system/WA00349/summary"
+      }
     },
     {
       "name": "Lost Creek",
@@ -14553,7 +14569,11 @@
       "state": "WA",
       "waterbody_states": [
         "WA"
-      ]
+      ],
+      "operating_character": {
+        "character": "run_of_river",
+        "source_url": "https://nid.sec.usace.army.mil/#/dams/system/WA00347/summary"
+      }
     },
     {
       "name": "Noxon Rapids Reservoir",
@@ -15664,7 +15684,11 @@
       "state": "WA",
       "waterbody_states": [
         "WA"
-      ]
+      ],
+      "operating_character": {
+        "character": "run_of_river",
+        "source_url": "https://nid.sec.usace.army.mil/#/dams/system/WA00270/summary"
+      }
     },
     {
       "name": "Clear Lake",
@@ -17442,7 +17466,11 @@
       "state": "OR",
       "waterbody_states": [
         "OR"
-      ]
+      ],
+      "operating_character": {
+        "character": "run_of_river",
+        "source_url": "https://nid.sec.usace.army.mil/#/dams/system/OR00002/summary"
+      }
     },
     {
       "name": "Castaic",
@@ -25660,7 +25688,11 @@
       "state": "OR",
       "waterbody_states": [
         "OR"
-      ]
+      ],
+      "operating_character": {
+        "character": "run_of_river",
+        "source_url": "https://nid.sec.usace.army.mil/#/dams/system/ID00055/summary"
+      }
     },
     {
       "name": "Warm Springs",
@@ -46493,7 +46525,7 @@
       "days_stale": 0,
       "is_stale": false,
       "fetch_ok": true,
-      "current_storage_af": 17073.0,
+      "current_storage_af": 17075.0,
       "record_max_af": 57139.0,
       "record_min_af": 16705.0,
       "pct_of_record_max": 29.9,
@@ -46517,21 +46549,21 @@
         "climate": null,
         "default": "recent"
       },
-      "change_7d_af": -142.0,
+      "change_7d_af": -140.0,
       "change_7d_pct": -0.8,
       "change_7d_reference_date": "2026-11-08",
       "change_7d_elapsed_days": 7,
-      "change_30d_af": 351.0,
+      "change_30d_af": 353.0,
       "change_30d_pct": 2.1,
       "change_30d_reference_date": "2026-10-16",
       "change_30d_elapsed_days": 30,
-      "change_365d_af": -38498.0,
+      "change_365d_af": -38496.0,
       "change_365d_pct": -69.3,
       "change_365d_reference_date": "2025-11-15",
       "change_365d_elapsed_days": 365,
       "low_120d_af": 16705.0,
       "low_120d_date": "2026-10-14",
-      "change_since_low_af": 368.0,
+      "change_since_low_af": 370.0,
       "peak_this_year_af": 57139.0,
       "peak_this_year_date": "2026-04-03",
       "pct_of_peak_this_year": 29.9,
@@ -46659,10 +46691,10 @@
         },
         {
           "month": "2026-11",
-          "mean_af": 18062.6,
+          "mean_af": 18062.73,
           "min_af": 16817.0,
           "max_af": 23239.0,
-          "end_af": 17073.0,
+          "end_af": 17075.0,
           "days": 15,
           "normal_af": 54723.23,
           "normal_years": 2,
@@ -83736,7 +83768,11 @@
       "state": "WA",
       "waterbody_states": [
         "WA"
-      ]
+      ],
+      "operating_character": {
+        "character": "flood_space",
+        "source_url": "https://nid.sec.usace.army.mil/#/dams/system/WA00348/summary"
+      }
     },
     {
       "name": "Smith and Morehouse",

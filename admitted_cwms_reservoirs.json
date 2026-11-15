@@ -182,6 +182,48 @@
         "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
         "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
         "capacity_source_checked": "2026-08-30"
+      },
+      "operating_character": {
+        "character": "run_of_river",
+        "reviewed": "2026-11-15",
+        "source_url": "https://nid.sec.usace.army.mil/#/dams/system/ID00055/summary",
+        "evidence": [
+          {
+            "what": "inventory purposes",
+            "value": "Hydroelectric, Navigation, Recreation",
+            "source": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0"
+          },
+          {
+            "what": "mainstem",
+            "value": "Snake River",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/3"
+          },
+          {
+            "what": "upstream drainage area (sq km)",
+            "value": "137,936",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/3"
+          },
+          {
+            "what": "mean annual flow (cfs)",
+            "value": "24,400",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/3"
+          },
+          {
+            "what": "shape (long-to-short ratio)",
+            "value": "9.27",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/9"
+          },
+          {
+            "what": "percent full over the last 12 months (corroboration, never the source)",
+            "value": "92.3% to 97.2%",
+            "source": "https://cwms-data.usace.army.mil/cwms-data/"
+          },
+          {
+            "what": "ruling",
+            "value": "Brian Busch, 2026-11-15: ADR-156 region review 1, Columbia and Snake, accepted as proposed (ADR-171)",
+            "source": "https://github.com/buschbrian/western-water-dashboard/pull/153"
+          }
+        ]
       }
     },
     "IHR": {
@@ -211,6 +253,53 @@
         "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
         "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
         "capacity_source_checked": "2026-08-30"
+      },
+      "operating_character": {
+        "character": "run_of_river",
+        "reviewed": "2026-11-15",
+        "source_url": "https://nid.sec.usace.army.mil/#/dams/system/WA00347/summary",
+        "evidence": [
+          {
+            "what": "inventory purposes",
+            "value": "Fish and Wildlife Pond, Hydroelectric, Navigation, Recreation",
+            "source": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0"
+          },
+          {
+            "what": "navigation locks",
+            "value": "1",
+            "source": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0"
+          },
+          {
+            "what": "mainstem",
+            "value": "Snake River",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/3"
+          },
+          {
+            "what": "upstream drainage area (sq km)",
+            "value": "223,276",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/3"
+          },
+          {
+            "what": "mean annual flow (cfs)",
+            "value": "58,835",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/3"
+          },
+          {
+            "what": "shape (long-to-short ratio)",
+            "value": "8.5",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/9"
+          },
+          {
+            "what": "percent full over the last 12 months (corroboration, never the source)",
+            "value": "96.6% to 99.3%",
+            "source": "https://cwms-data.usace.army.mil/cwms-data/"
+          },
+          {
+            "what": "ruling",
+            "value": "Brian Busch, 2026-11-15: ADR-156 region review 1, Columbia and Snake, accepted as proposed (ADR-171)",
+            "source": "https://github.com/buschbrian/western-water-dashboard/pull/153"
+          }
+        ]
       }
     },
     "JDA": {
@@ -240,6 +329,53 @@
         "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
         "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
         "capacity_source_checked": "2026-08-30"
+      },
+      "operating_character": {
+        "character": "run_of_river",
+        "reviewed": "2026-11-15",
+        "source_url": "https://nid.sec.usace.army.mil/#/dams/system/OR00011/summary",
+        "evidence": [
+          {
+            "what": "inventory purposes",
+            "value": "Flood Risk Reduction, Hydroelectric, Irrigation, Navigation, Other, Recreation",
+            "source": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0"
+          },
+          {
+            "what": "navigation locks",
+            "value": "1",
+            "source": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0"
+          },
+          {
+            "what": "mainstem",
+            "value": "Columbia River",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/3"
+          },
+          {
+            "what": "upstream drainage area (sq km)",
+            "value": "516,197",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/3"
+          },
+          {
+            "what": "mean annual flow (cfs)",
+            "value": "184,426",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/3"
+          },
+          {
+            "what": "shape (long-to-short ratio)",
+            "value": "7.06",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/9"
+          },
+          {
+            "what": "percent full over the last 12 months (corroboration, never the source)",
+            "value": "57.9% to 77.4%",
+            "source": "https://cwms-data.usace.army.mil/cwms-data/"
+          },
+          {
+            "what": "ruling",
+            "value": "Brian Busch, 2026-11-15: ADR-156 region review 1, Columbia and Snake, accepted as proposed (ADR-171)",
+            "source": "https://github.com/buschbrian/western-water-dashboard/pull/153"
+          }
+        ]
       }
     },
     "LGS": {
@@ -269,6 +405,48 @@
         "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
         "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
         "capacity_source_checked": "2026-08-30"
+      },
+      "operating_character": {
+        "character": "run_of_river",
+        "reviewed": "2026-11-15",
+        "source_url": "https://nid.sec.usace.army.mil/#/dams/system/WA00331/summary",
+        "evidence": [
+          {
+            "what": "inventory purposes",
+            "value": "Fish and Wildlife Pond, Hydroelectric, Navigation, Recreation",
+            "source": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0"
+          },
+          {
+            "what": "navigation locks",
+            "value": "1",
+            "source": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0"
+          },
+          {
+            "what": "mainstem",
+            "value": "Snake River",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/3"
+          },
+          {
+            "what": "upstream drainage area (sq km)",
+            "value": "212,415",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/3"
+          },
+          {
+            "what": "mean annual flow (cfs)",
+            "value": "57,640",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/3"
+          },
+          {
+            "what": "percent full over the last 12 months (corroboration, never the source)",
+            "value": "83.3% to 88.7%",
+            "source": "https://cwms-data.usace.army.mil/cwms-data/"
+          },
+          {
+            "what": "ruling",
+            "value": "Brian Busch, 2026-11-15: ADR-156 region review 1, Columbia and Snake, accepted as proposed (ADR-171)",
+            "source": "https://github.com/buschbrian/western-water-dashboard/pull/153"
+          }
+        ]
       }
     },
     "LMN": {
@@ -298,6 +476,53 @@
         "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
         "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
         "capacity_source_checked": "2026-08-30"
+      },
+      "operating_character": {
+        "character": "run_of_river",
+        "reviewed": "2026-11-15",
+        "source_url": "https://nid.sec.usace.army.mil/#/dams/system/WA00270/summary",
+        "evidence": [
+          {
+            "what": "inventory purposes",
+            "value": "Fish and Wildlife Pond, Hydroelectric, Navigation, Recreation",
+            "source": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0"
+          },
+          {
+            "what": "navigation locks",
+            "value": "1",
+            "source": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0"
+          },
+          {
+            "what": "mainstem",
+            "value": "Snake River",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/3"
+          },
+          {
+            "what": "upstream drainage area (sq km)",
+            "value": "222,603",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/3"
+          },
+          {
+            "what": "mean annual flow (cfs)",
+            "value": "58,825",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/3"
+          },
+          {
+            "what": "shape (long-to-short ratio)",
+            "value": "6.05",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/9"
+          },
+          {
+            "what": "percent full over the last 12 months (corroboration, never the source)",
+            "value": "90.8% to 92.3%",
+            "source": "https://cwms-data.usace.army.mil/cwms-data/"
+          },
+          {
+            "what": "ruling",
+            "value": "Brian Busch, 2026-11-15: ADR-156 region review 1, Columbia and Snake, accepted as proposed (ADR-171)",
+            "source": "https://github.com/buschbrian/western-water-dashboard/pull/153"
+          }
+        ]
       }
     },
     "LWG": {
@@ -327,6 +552,48 @@
         "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
         "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
         "capacity_source_checked": "2026-08-30"
+      },
+      "operating_character": {
+        "character": "run_of_river",
+        "reviewed": "2026-11-15",
+        "source_url": "https://nid.sec.usace.army.mil/#/dams/system/WA00349/summary",
+        "evidence": [
+          {
+            "what": "inventory purposes",
+            "value": "Fish and Wildlife Pond, Hydroelectric, Navigation, Recreation",
+            "source": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0"
+          },
+          {
+            "what": "navigation locks",
+            "value": "1",
+            "source": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0"
+          },
+          {
+            "what": "mainstem",
+            "value": "Snake River",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/3"
+          },
+          {
+            "what": "upstream drainage area (sq km)",
+            "value": "211,227",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/3"
+          },
+          {
+            "what": "mean annual flow (cfs)",
+            "value": "57,591",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/3"
+          },
+          {
+            "what": "percent full over the last 12 months (corroboration, never the source)",
+            "value": "94.7% to 97.4%",
+            "source": "https://cwms-data.usace.army.mil/cwms-data/"
+          },
+          {
+            "what": "ruling",
+            "value": "Brian Busch, 2026-11-15: ADR-156 region review 1, Columbia and Snake, accepted as proposed (ADR-171)",
+            "source": "https://github.com/buschbrian/western-water-dashboard/pull/153"
+          }
+        ]
       }
     },
     "MCN": {
@@ -356,6 +623,53 @@
         "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
         "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
         "capacity_source_checked": "2026-08-30"
+      },
+      "operating_character": {
+        "character": "run_of_river",
+        "reviewed": "2026-11-15",
+        "source_url": "https://nid.sec.usace.army.mil/#/dams/system/OR00616/summary",
+        "evidence": [
+          {
+            "what": "inventory purposes",
+            "value": "Fish and Wildlife Pond, Hydroelectric, Irrigation, Navigation, Recreation",
+            "source": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0"
+          },
+          {
+            "what": "navigation locks",
+            "value": "1",
+            "source": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0"
+          },
+          {
+            "what": "mainstem",
+            "value": "Columbia River",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/3"
+          },
+          {
+            "what": "upstream drainage area (sq km)",
+            "value": "487,575",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/3"
+          },
+          {
+            "what": "mean annual flow (cfs)",
+            "value": "181,527",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/3"
+          },
+          {
+            "what": "shape (long-to-short ratio)",
+            "value": "2.16",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/9"
+          },
+          {
+            "what": "percent full over the last 12 months (corroboration, never the source)",
+            "value": "95.3% to 98.1%",
+            "source": "https://cwms-data.usace.army.mil/cwms-data/"
+          },
+          {
+            "what": "ruling",
+            "value": "Brian Busch, 2026-11-15: ADR-156 region review 1, Columbia and Snake, accepted as proposed (ADR-171)",
+            "source": "https://github.com/buschbrian/western-water-dashboard/pull/153"
+          }
+        ]
       }
     },
     "MLL": {
@@ -385,6 +699,53 @@
         "capacity_source": "U.S. Army Corps of Engineers National Inventory of Dams",
         "capacity_source_url": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0",
         "capacity_source_checked": "2026-10-31"
+      },
+      "operating_character": {
+        "character": "flood_space",
+        "reviewed": "2026-11-15",
+        "source_url": "https://nid.sec.usace.army.mil/#/dams/system/WA00348/summary",
+        "evidence": [
+          {
+            "what": "primary purpose",
+            "value": "Flood Risk Reduction",
+            "source": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0"
+          },
+          {
+            "what": "inventory purposes",
+            "value": "Flood Risk Reduction, Recreation",
+            "source": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0"
+          },
+          {
+            "what": "normal (conservation) pool, acre-feet",
+            "value": "3,300",
+            "source": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0"
+          },
+          {
+            "what": "maximum pool, acre-feet",
+            "value": "8,300",
+            "source": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0"
+          },
+          {
+            "what": "conservation pool as a share of maximum",
+            "value": "0.398",
+            "source": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0"
+          },
+          {
+            "what": "federal operator",
+            "value": "US Army Corps of Engineers",
+            "source": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0"
+          },
+          {
+            "what": "percent full over the last 9 months (corroboration, never the source)",
+            "value": "4.5% to 18.2%",
+            "source": "https://cwms-data.usace.army.mil/cwms-data/"
+          },
+          {
+            "what": "ruling",
+            "value": "Brian Busch, 2026-11-15: ADR-156 region review 1, Columbia and Snake, accepted as proposed (ADR-171)",
+            "source": "https://github.com/buschbrian/western-water-dashboard/pull/153"
+          }
+        ]
       }
     },
     "TDA": {
@@ -418,6 +779,53 @@
       "review": {
         "waived": "conservation pool below the observed record",
         "why": "The water has stood at 309,450 acre-feet, above the 277,000 conservation pool, so ADR-072 divides by the 330,000 maximum pool instead -- a figure the record fits inside. The conservation pool is not wrong about the pool; it is the wrong figure to divide a gross reading by."
+      },
+      "operating_character": {
+        "character": "run_of_river",
+        "reviewed": "2026-11-15",
+        "source_url": "https://nid.sec.usace.army.mil/#/dams/system/OR00002/summary",
+        "evidence": [
+          {
+            "what": "inventory purposes",
+            "value": "Hydroelectric, Irrigation, Navigation, Other, Recreation",
+            "source": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0"
+          },
+          {
+            "what": "navigation locks",
+            "value": "1",
+            "source": "https://geospatial.sec.usace.army.mil/dls/rest/services/NID/National_Inventory_of_Dams_Public_Service/FeatureServer/0"
+          },
+          {
+            "what": "mainstem",
+            "value": "Columbia River",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/3"
+          },
+          {
+            "what": "upstream drainage area (sq km)",
+            "value": "540,460",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/3"
+          },
+          {
+            "what": "mean annual flow (cfs)",
+            "value": "189,175",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/3"
+          },
+          {
+            "what": "shape (long-to-short ratio)",
+            "value": "5.2",
+            "source": "https://hydro.nationalmap.gov/arcgis/rest/services/NHDPlus_HR/MapServer/9"
+          },
+          {
+            "what": "percent full over the last 12 months (corroboration, never the source)",
+            "value": "88.4% to 91.5%",
+            "source": "https://cwms-data.usace.army.mil/cwms-data/"
+          },
+          {
+            "what": "ruling",
+            "value": "Brian Busch, 2026-11-15: ADR-156 region review 1, Columbia and Snake, accepted as proposed (ADR-171)",
+            "source": "https://github.com/buschbrian/western-water-dashboard/pull/153"
+          }
+        ]
       }
     },
     "Bear-Pool": {

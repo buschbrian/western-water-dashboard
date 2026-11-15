@@ -9,6 +9,7 @@ import {
 import type { Reservoir } from "../types";
 import { validateReservoirPayload } from "./validate";
 import { loadLegacyApi } from "./legacy-harness";
+import { isSeasonalStorage } from "./area-line";
 import { STORAGE_CLASSES, storageClass } from "../viz/classes";
 
 const payload = validateReservoirPayload(JSON.parse(
@@ -16,7 +17,12 @@ const payload = validateReservoirPayload(JSON.parse(
 ) as unknown);
 
 const legacy = loadLegacyApi();
-const legacyAll = legacy.statewideSummary(payload.reservoirs);
+/* The headline is seasonal storage (ADR-156): steady pools and flood-control
+ * basins are stated on their own lines. The frozen oracle sums whatever it is
+ * handed, so it is handed the seasonal rows -- the same rows the headline
+ * covers -- and the parity below is exact again. */
+const seasonalRows = payload.reservoirs.filter(isSeasonalStorage);
+const legacyAll = legacy.statewideSummary(seasonalRows);
 /* Every dominant-reservoir control open.
  *
  * `shared/reservoir-viz.js` is frozen and predates Lake Mead's admission
@@ -50,7 +56,7 @@ function nearBreak(percent: number | null): boolean {
 describe("statewide rollup parity with shared/reservoir-viz.js", () => {
   it("reproduces the legacy volume aggregates exactly", () => {
     const ported = statewideRollup(payload.reservoirs, CONNECTED_WITH_LAKE_POWELL);
-    expect(ported.count).toBe(legacyAll.count);
+    expect(ported.seasonalCount).toBe(legacyAll.count);
     expect(ported.storageAf).toBeCloseTo(legacyAll.storage_af, 6);
     expect(ported.capacityAf).toBeCloseTo(legacyAll.capacity_af, 6);
     expect(ported.percentFull).toBeCloseTo(legacyAll.pct_full ?? Number.NaN, 6);
@@ -70,7 +76,7 @@ describe("statewide rollup parity with shared/reservoir-viz.js", () => {
       lakePowell: "exclude",
       lakeMead: "include"
     });
-    expect(ported.count).toBe(legacyAll.without_lake_powell.count);
+    expect(ported.seasonalCount).toBe(legacyAll.without_lake_powell.count);
     expect(ported.storageAf).toBeCloseTo(legacyAll.without_lake_powell.storage_af, 6);
     expect(ported.capacityAf).toBeCloseTo(legacyAll.without_lake_powell.capacity_af, 6);
     expect(ported.percentFull)
@@ -316,7 +322,7 @@ describe("what a combined figure is made of", () => {
   });
 
   it("splits freshness by combined full level, not only by count", () => {
-    expect(all.coverage.currentCount + all.coverage.lateCount).toBe(all.count);
+    expect(all.coverage.currentCount + all.coverage.lateCount).toBe(all.seasonalCount);
     expect(all.coverage.currentCapacityAf + all.coverage.lateCapacityAf)
       .toBeCloseTo(all.capacityAf, 6);
     /* The reason this exists: ten small late reservoirs and one enormous
@@ -326,14 +332,14 @@ describe("what a combined figure is made of", () => {
   });
 
   it("reports how the reservoirs divide by reporting schedule", () => {
-    expect(all.coverage.dailyCount + all.coverage.monthlyCount).toBe(all.count);
+    expect(all.coverage.dailyCount + all.coverage.monthlyCount).toBe(all.seasonalCount);
   });
 
   it("names every kind of full level the denominator is made of", () => {
     const summed = all.basisShares.reduce((total, share) => total + share.capacityAf, 0);
     const counted = all.basisShares.reduce((total, share) => total + share.count, 0);
     expect(summed).toBeCloseTo(all.capacityAf, 6);
-    expect(counted).toBe(all.count);
+    expect(counted).toBe(all.seasonalCount);
     // Largest share first, so a caller naming only the first names the biggest.
     const shares = all.basisShares.map((share) => share.capacityAf);
     expect([...shares].sort((a, b) => b - a)).toEqual(shares);
@@ -385,7 +391,7 @@ describe("what a combined figure is made of", () => {
  */
 describe("which period the combined comparison uses", () => {
   const minimumYears = payload.climate_normals?.minimum_years ?? 0;
-  const withClimate = payload.reservoirs.filter((reservoir) =>
+  const withClimate = seasonalRows.filter((reservoir) =>
     (reservoir.baselines?.climate?.sample_years ?? -1) >= minimumYears);
 
   const optionsFor = (baseline: "recent" | "climate") => ({
