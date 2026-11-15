@@ -134,10 +134,13 @@ work from this wave is explicit, and each line was checked against `main` on
   PR #152 (2026-11-15): one `share-capture` issue, edited while any picture
   falls back and closed when all are captured.
 - Inspect the map canvas and visual hierarchy in a visible browser below
-  500 CSS pixels. The automated browser suite cannot establish map rendering.
-  On 2026-11-15 the chrome-devtools browser could not start: another
-  session's instance held its profile. The checklist under "Not measured
-  yet" is what remains.
+  500 CSS pixels. Done on 2026-11-15 in Chrome through chrome-devtools,
+  emulating 360 and 390 pixels with touch, light and dark, against a local
+  build: the storage map and the precipitation map's three modes drew their
+  basemap, areas and points; Tab reaches the map mode buttons in order with a
+  visible outline and Enter switches them; no page scrolled sideways. A key
+  chip that shrank when its words wrapped is fixed in PR #151. What remains
+  is the checklist under "Not measured yet".
 
 ## Wave 2: sharing and place
 
@@ -275,13 +278,20 @@ daily series was found, so ADR-161's unavailable-inflow statement stands.
 emulation at 360 and 390 pixels is not a phone. Touch, scroll momentum,
 on-screen keyboards and real network speed need a physical phone.
 
-- In a visible browser at 360 and 390 pixels, light and dark: the storage
-  map, precipitation map (all three modes), snow map and drought map draw
-  their areas and points; legends sit under the map and do not cover it; no
-  control label wraps into two lines that crowd the control beside it; no
-  page scrolls sideways.
-- Rivers page with 142 gauges: is one long page of gauge cards acceptable on
-  a phone, or should the cards collapse under the summary table?
+- Storage map legend at 360 pixels: opened, it covers the scale bar, and its
+  panel is 90% opaque, so map labels show through its words in dark mode.
+  Keep, make it opaque, or move the scale bar?
+- Drainage-area labels sit on top of reservoir circles in the busy middle
+  of Utah (Lower Bear, Weber, Jordan, Lower Green). Accept, or thin labels
+  at small scales?
+- The basemap stayed light under the dark theme in the local build, which
+  used the "Oceans" fallback. Check it on the live site in dark mode.
+- At 360 pixels the precipitation map clips "Lower Colorado-Lake Mead" at
+  its left edge.
+- Rivers page with all 142 gauges is about 204,000 pixels tall at 390, some
+  241 screens, with a 30-day table under every gauge. Collapse the gauge
+  cards under the summary table, or open on one state?
+- Not reviewed in the browser: the snow and drought maps.
 - Precipitation map, past-years mode: the "no value" grey while the history
   loads reads as waiting, not as "no data".
 - On a physical phone: tap each map mode button and each place menu; open
