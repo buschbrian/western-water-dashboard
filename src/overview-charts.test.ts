@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { readPayload } from "./data/payload-fixture";
 import { largestReservoirRecords, watershedRecords } from "./overview-model";
+import { isSeasonalStorage } from "./data/area-line";
 
 const reservoirs = readPayload().reservoirs.filter((reservoir) => reservoir.name !== "Lake Powell");
 
@@ -28,7 +29,8 @@ describe("overview chart records", () => {
     const records = watershedRecords(reservoirs);
     expect(records.length).toBeGreaterThan(1);
     expect(records.reduce((sum, record) => sum + record.storageAf, 0))
-      .toBeCloseTo(reservoirs.reduce((sum, reservoir) => sum + reservoir.current_storage_af, 0));
+      .toBeCloseTo(reservoirs.filter(isSeasonalStorage)
+        .reduce((sum, reservoir) => sum + reservoir.current_storage_af, 0));
   });
 
   /*
@@ -61,9 +63,10 @@ describe("overview chart records", () => {
 
   it("gives a drainage area a count and none of one reservoir's private facts", () => {
     const records = watershedRecords(reservoirs);
-    // Every reservoir answers in exactly one group, so the counts sum.
+    // Every seasonal-storage reservoir answers in exactly one group, so the
+    // counts sum; steady pools and flood basins are not under the chart figure.
     expect(records.reduce((sum, record) => sum + (record.detail?.reservoirCount ?? 0), 0))
-      .toBe(reservoirs.length);
+      .toBe(reservoirs.filter(isSeasonalStorage).length);
     for (const record of records) {
       expect(record.detail?.reservoirCount).toBeGreaterThan(0);
       expect(record.detail?.historyRank).toBeUndefined();
