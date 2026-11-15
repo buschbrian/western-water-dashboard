@@ -146,3 +146,54 @@ class TestCommandLine:
         monkeypatch.setenv("GITHUB_RUN_ID", "42")
         _, body = render("stale", **STALE)
         assert "https://github.com/o/r/actions/runs/42" in body
+
+
+class TestShare:
+    """Share pictures the deploy could not capture (ADR-154)."""
+
+    REPORT = {"total": 40, "captured": 35, "notices": 2, "failed": 3,
+              "failedFiles": ["lake-powell", "lake-mead", "west"], "runError": None}
+
+    def test_nothing_to_report_when_every_picture_was_captured(self):
+        assert R.share_report({"total": 40, "captured": 38, "notices": 2, "failed": 0,
+                               "failedFiles": []}, CHECKED) is None
+
+    def test_names_each_failed_picture_and_counts_them(self):
+        title, body = R.share_report(self.REPORT, CHECKED)
+        assert title == "Share pictures kept their figure-free fallback (3 of 38)"
+        for name in self.REPORT["failedFiles"]:
+            assert f"`share/{name}.png`" in body
+        assert CHECKED in body and body.endswith("\n")
+        assert not any(line.startswith("    ") for line in body.split("\n"))
+
+    def test_a_morning_when_every_capture_fails_stays_one_bounded_issue(self):
+        files = [f"reservoir-{i}" for i in range(600)]
+        title, body = R.share_report({"total": 602, "captured": 0, "notices": 2, "failed": 600,
+                                      "failedFiles": files, "runError": "No installed browser was selected"},
+                                     CHECKED)
+        assert len(title) <= R.TITLE_LIMIT
+        assert body.count("`share/") == R.SHARE_LISTED
+        assert f"and {600 - R.SHARE_LISTED} more" in body
+        assert "No installed browser was selected" in body
+        assert len(body) < 10_000
+
+    def test_the_cli_prints_no_title_when_all_were_captured(self, tmp_path, capsys):
+        report = tmp_path / "capture-report.json"
+        report.write_text('{"total": 3, "captured": 3, "notices": 0, "failed": 0, "failedFiles": []}')
+        assert R.main(["share", "--report", str(report), "--body-file", str(tmp_path / "b.md")]) == 0
+        assert capsys.readouterr().out == ""
+        assert not (tmp_path / "b.md").exists()
+
+    def test_the_cli_writes_the_title_and_body_for_a_failure(self, tmp_path, capsys):
+        import json
+        report = tmp_path / "capture-report.json"
+        report.write_text(json.dumps(self.REPORT))
+        body = tmp_path / "b.md"
+        assert R.main(["share", "--report", str(report), "--body-file", str(body),
+                       "--checked", CHECKED]) == 0
+        assert capsys.readouterr().out.startswith("Share pictures kept their figure-free fallback")
+        assert "`share/lake-mead.png`" in body.read_text()
+
+    def test_the_label_is_its_own(self):
+        assert R.LABELS["share"][0] == "share-capture"
+        assert len({label for label, _, _ in R.LABELS.values()}) == len(R.LABELS)
