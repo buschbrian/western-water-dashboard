@@ -28,14 +28,14 @@ Dams, seismic, from 2015-06-02), but the restriction table this tool reads
 lists it as off-roster, so it is proposed as ordinary storage. Its
 `restricted` ruling belongs with California's region.
 
-## Region review 1: Columbia and Snake (awaiting Brian's ruling)
+## Region review 1: Columbia and Snake (ruled 2026-11-15, ADR-171)
 
 ADR-156 reviews one drainage region at a time. This is the first packet:
 the Lower Snake, Clearwater and Middle Columbia basins (subregions 1706 and
-1707). **Nothing is applied.** Each row is a proposed ruling for Brian. Once
-he rules, the characters go on their roster entries with this evidence,
-`METHOD_VERSION` moves and the area normals are rebuilt over seasonal
-storage (`science-method-change`).
+1707). Brian Busch accepted it as proposed on 2026-11-15 (ADR-171); the
+characters are on their roster entries with this evidence. No normal is
+rebuilt and `METHOD_VERSION` does not move: the area comparison sums each
+reservoir's own normal at run time.
 
 | Reservoir | Proposed | Evidence (inventory, river network, last 12 months) | Needs judgment |
 |---|---|---|---|

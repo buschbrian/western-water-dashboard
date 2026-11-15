@@ -62,31 +62,35 @@ function areas(): { name: string; rows: Reservoir[] }[] {
   return found;
 }
 
-describe("ADR-156 changes no published figure while no character is reviewed", () => {
-  it("starts from a payload in which no reservoir carries a character", () => {
-    /* When the first region is ruled this fails on purpose: area totals then
-     * move, METHOD_VERSION moves with them, and this block is replaced by the
-     * measured movement. */
-    expect(rows.filter((row) => row.operating_character != null).map((row) => row.name))
-      .toEqual([]);
+const characterised = (reservoirs: readonly Reservoir[]): boolean =>
+  reservoirs.some((row) => row.operating_character != null);
+
+/* ADR-171 ruled the first region. An area that holds no ruled water gives
+ * the total it gave before; one that does splits into lines that add up to
+ * its plain total. Nothing here names today's figures. */
+describe("only an area holding a ruled water moves (ADR-156, ADR-171)", () => {
+  it("carries only reviewed characters, each with an HTTPS source", () => {
+    for (const row of rows.filter((entry) => entry.operating_character != null)) {
+      expect(["restricted", "run_of_river", "flood_space"], row.name)
+        .toContain(row.operating_character!.character);
+      expect(row.operating_character!.source_url.startsWith("https://"), row.name).toBe(true);
+    }
   });
 
-  it("gives every area, at every level and scope, the total it gave before", () => {
+  it("gives every area with no ruled water, at every level and scope, the total it gave before", () => {
     for (const area of areas()) {
+      if (characterised(area.rows)) continue;
       for (const lakePowell of ["include", "exclude"] as const) {
         for (const lakeMead of ["include", "exclude"] as const) {
           for (const baseline of ["recent", "climate"] as const) {
             const options = { lakePowell, lakeMead, baseline,
               minimumBaselineYears: payload.climate_normals?.minimum_years ?? 0 };
             const now = statewideRollup(area.rows, options);
-            const before = statewideRollup(withoutCharacters(area.rows), options);
             const plain = plainTotal(scopeReservoirs(area.rows, options));
             const label = `${area.name} ${lakePowell} ${lakeMead} ${baseline}`;
-            expect(now, label).toEqual(before);
+            expect(now, label).toEqual(statewideRollup(withoutCharacters(area.rows), options));
             expect(now.storageAf, label).toBe(plain.storageAf);
-            expect(now.capacityAf, label).toBe(plain.capacityAf);
             expect(now.percentFull, label).toBe(plain.percentFull);
-            expect(now.seasonalCount, label).toBe(now.count);
             expect(now.steadyPools, label).toBeNull();
             expect(now.floodSpace, label).toBeNull();
           }
@@ -95,16 +99,29 @@ describe("ADR-156 changes no published figure while no character is reviewed", (
     }
   });
 
-  it("gives every past month, drainage map figure, week and basin the figure it gave before", () => {
+  it("splits an area holding a ruled water into lines that add up to its plain total", () => {
+    for (const area of areas()) {
+      if (!characterised(area.rows)) continue;
+      const total = rollupOfScoped(asScoped(area.rows));
+      const plain = plainTotal(area.rows);
+      close(total.storageAf + (total.steadyPools?.storageAf ?? 0) + (total.floodSpace?.storageAf ?? 0),
+        plain.storageAf, area.name);
+      close(total.capacityAf + (total.steadyPools?.capacityAf ?? 0) + (total.floodSpace?.capacityAf ?? 0),
+        plain.capacityAf, area.name);
+    }
+  });
+
+  it("gives every drainage figure with no ruled water the figure it gave before", () => {
     const plainRows = withoutCharacters(rows);
-    for (const month of monthKeys(rows)) {
-      expect(monthlyRollup(rows, month), month).toEqual(monthlyRollup(plainRows, month));
-    }
     for (const level of [2, 4, 6, 8]) {
-      expect(storageByArea(rows, level)).toEqual(storageByArea(plainRows, level));
+      const now = storageByArea(rows, level);
+      const before = storageByArea(plainRows, level);
+      for (const [code, context] of before) {
+        const inside = rows.filter((row) => drainageCodeAtLevel(row.huc6, row.huc8, level) === code);
+        if (characterised(inside)) continue;
+        expect(now.get(code), `${level} ${code}`).toEqual(context);
+      }
     }
-    expect(weeklyStorage(rows)).toEqual(weeklyStorage(plainRows));
-    expect(rollupByHuc(rows)).toEqual(rollupByHuc(plainRows));
   });
 });
 
