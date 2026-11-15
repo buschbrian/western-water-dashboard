@@ -1,6 +1,6 @@
 # ADR-168: Publish every bulk-queue river gauge
 
-- Status: Proposed
+- Status: Accepted (Brian Busch, 2026-11-14)
 - Date: 2026-11-14
 - Extends: ADR-136 (the roster and the page), ADR-137 (the tier rule),
   ADR-138 (the bulk queue), ADR-144 and ADR-145 (the natural comparison)
