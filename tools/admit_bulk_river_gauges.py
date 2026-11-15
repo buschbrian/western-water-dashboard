@@ -15,7 +15,11 @@ with the reason it was held:
   no open `name_check` and is not already used by another gauge;
 - for `natural`: no published reservoir upstream, storage under 10% of a year's
   flow, and a GAGES-II `reference` class (the published natural gauges all are);
-- the survey lists exactly one primary daily mean flow series in ft^3/s.
+- the survey lists exactly one primary daily mean flow series in ft^3/s,
+  and that series reports a value in the daily refresh's fetch window
+  (`RIVER_FETCH_DAYS`). A series whose days all carry no value -- a rating
+  under development (`RATINGDEV`), say -- has nothing to publish, and a
+  roster entry with no record would refuse the whole river payload.
 
     python tools/admit_bulk_river_gauges.py --plan   # no network; print the selection
     python tools/admit_bulk_river_gauges.py          # look up each series and merge
@@ -40,8 +44,9 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
+from pipeline.constants import RIVER_FETCH_DAYS  # noqa: E402
 from pipeline.providers import (  # noqa: E402
-    USGS_FLOW_UNIT, _usgs_v1_features, usgs_flow_metadata_url,
+    USGS_FLOW_UNIT, _usgs_v1_features, fetch_usgs_flow_series, usgs_flow_metadata_url,
 )
 from pipeline.roster import (  # noqa: E402
     ADMITTED_RIVER_GAUGES_PATH, RIVER_NATURAL_STORAGE_SHARE_PCT, load_admitted_river_gauges,
@@ -199,8 +204,11 @@ def basis(row: dict, tier: str) -> str:
             f"{DIRECTED_ON} to publish every gauge the worksheets can.")
 
 
-def lookup_series(station: str, today: str, features=None) -> dict:
-    """The one primary daily mean flow series, or a refusal naming what was found."""
+def lookup_series(station: str, today: str, features=None, daily=None) -> dict:
+    """The one primary daily mean flow series, or a refusal naming what was found.
+
+    Refused too when no day in the refresh's fetch window carries a value.
+    """
     if features is None:
         features = _usgs_v1_features(usgs_flow_metadata_url(station))
     primary = [f for f in features
@@ -212,6 +220,16 @@ def lookup_series(station: str, today: str, features=None) -> dict:
     props = primary[0]["properties"]
     begin = str(props.get("begin") or "")[:10]
     dt.date.fromisoformat(begin)  # refuses a missing or malformed start
+    if daily is None:
+        end = dt.date.fromisoformat(today)
+        daily = fetch_usgs_flow_series(station, primary[0]["id"],
+                                       end - dt.timedelta(days=RIVER_FETCH_DAYS - 1), end)
+    if not any(row.get("cfs") is not None for row in daily):
+        qualifiers = sorted({q for row in daily for q in row.get("qualifiers") or []})
+        raise ValueError(
+            f"the survey reports no flow in the last {RIVER_FETCH_DAYS} days"
+            + (f" (qualifiers: {', '.join(qualifiers)})" if qualifiers else "")
+            + "; held until it does")
     return {
         "time_series_id": primary[0]["id"],
         "parameter_code": "00060",

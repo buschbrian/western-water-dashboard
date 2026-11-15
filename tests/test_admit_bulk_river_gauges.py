@@ -103,13 +103,28 @@ def test_a_gauge_the_survey_refuses_is_held_not_guessed(tmp_path):
 def test_the_series_lookup_needs_exactly_one_primary_daily_mean():
     one = [{"id": "abc", "properties": {"primary": "Primary", "unit_of_measure": "ft^3/s",
                                         "begin": "1950-10-01T00:00:00+00:00"}}]
-    assert admit.lookup_series("09999999", "2026-11-14", one)["time_series_id"] == "abc"
+    flowing = [{"date": "2026-11-13", "cfs": 4.2, "qualifiers": []}]
+    assert admit.lookup_series("09999999", "2026-11-14", one, flowing)["time_series_id"] == "abc"
     with pytest.raises(ValueError, match="one primary"):
-        admit.lookup_series("09999999", "2026-11-14", one * 2)
+        admit.lookup_series("09999999", "2026-11-14", one * 2, flowing)
     with pytest.raises(ValueError):
         admit.lookup_series("09999999", "2026-11-14",
                             [{"id": "abc", "properties": {"primary": "Primary",
-                                                          "unit_of_measure": "ft^3/s"}}])
+                                                          "unit_of_measure": "ft^3/s"}}], flowing)
+
+
+def test_a_series_with_no_reported_flow_is_held():
+    """McElmo Creek near Bluff and Clear Creek near Winslow, 2026-11-15: every
+    day in the window carried no value under RATINGDEV, and the first refresh
+    after their admission refused the whole river payload."""
+    one = [{"id": "abc", "properties": {"primary": "Primary", "unit_of_measure": "ft^3/s",
+                                        "begin": "1950-10-01T00:00:00+00:00"}}]
+    empty = [{"date": "2026-11-13", "cfs": None, "qualifiers": ["RATINGDEV"]},
+             {"date": "2026-11-14", "cfs": None, "qualifiers": ["RATINGDEV"]}]
+    with pytest.raises(ValueError, match=r"no flow in the last \d+ days \(qualifiers: RATINGDEV\)"):
+        admit.lookup_series("09999999", "2026-11-14", one, empty)
+    with pytest.raises(ValueError, match="no flow"):
+        admit.lookup_series("09999999", "2026-11-14", one, [])
 
 
 def test_the_roster_layout_is_kept():

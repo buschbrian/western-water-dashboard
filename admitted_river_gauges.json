@@ -3,7 +3,7 @@
   "source": "U.S. Geological Survey",
   "source_url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/daily/items",
   "reviewed": "2026-11-14",
-  "selection": "The first published river gauges (ADR-136): the four rivers that flow toward Lake Powell named in the recent-conditions plan, directed by Brian Busch on 2026-10-27 as the first set to publish. Each is a Utah gauge from gauge-review.csv with a 1991-2020 record and a traced basin within 25% of its published drainage area. Under the tier ruling recorded as ADR-137, each is shaped: three have a published reservoir inside the basin, and the Dirty Devil's inventoried dams hold at least 10% of a year's flow. Each gauge's daily mean flow is published without a comparison with normal and without a rank. The tier was taken from the worksheet's suggestion at Brian's direction and is pending his formal ruling in the review page; reviewer_ruling in gauge-review.csv is still blank for all four. No gauge here is a reservoir's inflow, and no two are ever added together. Three natural gauges were added on 2026-10-31 (ADR-144), directed by Brian Busch from his explicit natural rulings of 2026-10-27: Mill Creek near Moab, Blacks Fork near Robertson and South Creek near Monticello. Each is a GAGES-II reference gauge with no published reservoir in its traced basin and inventoried storage under 10% of a year's flow, and each newest flow is compared with the U.S. Geological Survey's day-of-year percentiles in river_normals.json. Middle Fork Beaver Creek near Lonetree (09226500), the fourth natural ruling, was added on 2026-10-31 (ADR-145) when Brian Busch lowered the floor for a comparison to more than 10 years: the survey has 22 years of approved values for most calendar days, so its records say short_record. On 2026-10-31 Brian also shortened two display names to Mill Creek near Moab and South Creek near Monticello; each survey station name stays in usgs_name. reviewer_ruling in gauge-review.csv is still blank for all four until the review export is imported. On 2026-11-14 Brian Busch directed that every gauge the worksheets can publish be added (ADR-168): 137 more from the Utah, Colorado, New Mexico and Arizona worksheets' bulk queue, written by tools/admit_bulk_river_gauges.py, each pending his formal ruling.",
+  "selection": "The first published river gauges (ADR-136): the four rivers that flow toward Lake Powell named in the recent-conditions plan, directed by Brian Busch on 2026-10-27 as the first set to publish. Each is a Utah gauge from gauge-review.csv with a 1991-2020 record and a traced basin within 25% of its published drainage area. Under the tier ruling recorded as ADR-137, each is shaped: three have a published reservoir inside the basin, and the Dirty Devil's inventoried dams hold at least 10% of a year's flow. Each gauge's daily mean flow is published without a comparison with normal and without a rank. The tier was taken from the worksheet's suggestion at Brian's direction and is pending his formal ruling in the review page; reviewer_ruling in gauge-review.csv is still blank for all four. No gauge here is a reservoir's inflow, and no two are ever added together. Three natural gauges were added on 2026-10-31 (ADR-144), directed by Brian Busch from his explicit natural rulings of 2026-10-27: Mill Creek near Moab, Blacks Fork near Robertson and South Creek near Monticello. Each is a GAGES-II reference gauge with no published reservoir in its traced basin and inventoried storage under 10% of a year's flow, and each newest flow is compared with the U.S. Geological Survey's day-of-year percentiles in river_normals.json. Middle Fork Beaver Creek near Lonetree (09226500), the fourth natural ruling, was added on 2026-10-31 (ADR-145) when Brian Busch lowered the floor for a comparison to more than 10 years: the survey has 22 years of approved values for most calendar days, so its records say short_record. On 2026-10-31 Brian also shortened two display names to Mill Creek near Moab and South Creek near Monticello; each survey station name stays in usgs_name. reviewer_ruling in gauge-review.csv is still blank for all four until the review export is imported. On 2026-11-14 Brian Busch directed that every gauge the worksheets can publish be added (ADR-168): 134 more from the Utah, Colorado, New Mexico and Arizona worksheets' bulk queue, written by tools/admit_bulk_river_gauges.py, each pending his formal ruling.",
   "keyed_by": "usgs_site_no",
   "gauges": {
     "09379500": {
@@ -1507,50 +1507,6 @@
           "trace": "traced; NLDI basin 4 sq mi against a published 3.77"
         },
         "tier_ruled_on": "2026-10-31"
-      }
-    },
-    "09372200": {
-      "station": "09372200",
-      "display_name": "McElmo Creek near Bluff",
-      "usgs_name": "MCELMO CREEK NEAR BLUFF, UTAH",
-      "state": "UT",
-      "lat": 37.218869,
-      "lon": -109.190589,
-      "drainage_area_sq_mi": 720.0,
-      "huc8": "14080202",
-      "huc8_name": "McElmo",
-      "usgs_page": "https://waterdata.usgs.gov/monitoring-location/USGS-09372200/",
-      "series": {
-        "time_series_id": "d41f6fa544274993bcf9e0eaecc4fddb",
-        "parameter_code": "00060",
-        "statistic_id": "00003",
-        "unit": "ft^3/s",
-        "record_begin": "1980-10-01",
-        "source_url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/time-series-metadata/items?f=json&monitoring_location_id=USGS-09372200&parameter_code=00060&statistic_id=00003",
-        "checked": "2026-11-14"
-      },
-      "tier": {
-        "tier": "shaped",
-        "basis": "ADR-137: 1 published reservoir(s) inside the traced basin. Worksheet bulk queue (ADR-138), added at Brian Busch's direction of 2026-11-14 to publish every gauge the worksheets can.",
-        "directed_by": "Brian Busch",
-        "directed_on": "2026-11-14",
-        "status": "pending_formal_ruling",
-        "evidence": {
-          "worksheet": "gauge-review.csv",
-          "screened_on": "2026-10-23",
-          "suggested_ruling": "reservoir",
-          "review_queue": "bulk",
-          "published_reservoirs_upstream": ["Narraguinnep Reservoir"],
-          "dams_upstream": 10,
-          "dam_storage_af": 30973,
-          "storage_share_pct": 111.3,
-          "largest_dams": "Narraguinnep - Dam 2 (22,700 AF); Totten (4,540 AF); A. M. Puett (3,209 AF)",
-          "irrigation_dams": 7,
-          "gages2_class": "not_listed",
-          "nrcs_adjustment_pct": "no_pair",
-          "flow_years": 3,
-          "trace": "traced; NLDI basin 717 sq mi against a published 720"
-        }
       }
     },
     "09405500": {
@@ -5910,50 +5866,6 @@
           "nrcs_adjustment_pct": "no_pair",
           "flow_years": null,
           "trace": "traced; NLDI basin 11,356 sq mi against a published 12,384"
-        }
-      }
-    },
-    "09399000": {
-      "station": "09399000",
-      "display_name": "Clear Creek near Winslow",
-      "usgs_name": "CLEAR CREEK NEAR WINSLOW, AZ",
-      "state": "AZ",
-      "lat": 34.969467,
-      "lon": -110.645133,
-      "drainage_area_sq_mi": 621.0,
-      "huc8": "15020008",
-      "huc8_name": "Middle Little Colorado",
-      "usgs_page": "https://waterdata.usgs.gov/monitoring-location/USGS-09399000/",
-      "series": {
-        "time_series_id": "8553bed3a35249209472fd78526d9f35",
-        "parameter_code": "00060",
-        "statistic_id": "00003",
-        "unit": "ft^3/s",
-        "record_begin": "1906-06-01",
-        "source_url": "https://api.waterdata.usgs.gov/ogcapi/v1/collections/time-series-metadata/items?f=json&monitoring_location_id=USGS-09399000&parameter_code=00060&statistic_id=00003",
-        "checked": "2026-11-14"
-      },
-      "tier": {
-        "tier": "shaped",
-        "basis": "ADR-137: 1 published reservoir(s) inside the traced basin. Worksheet bulk queue (ADR-138), added at Brian Busch's direction of 2026-11-14 to publish every gauge the worksheets can.",
-        "directed_by": "Brian Busch",
-        "directed_on": "2026-11-14",
-        "status": "pending_formal_ruling",
-        "evidence": {
-          "worksheet": "gauge-review-az.csv",
-          "screened_on": "2026-10-27",
-          "suggested_ruling": "reservoir",
-          "review_queue": "bulk",
-          "published_reservoirs_upstream": ["Cragin Dam Reservoir"],
-          "dams_upstream": null,
-          "dam_storage_af": null,
-          "storage_share_pct": null,
-          "largest_dams": "",
-          "irrigation_dams": null,
-          "gages2_class": "non_reference",
-          "nrcs_adjustment_pct": "no_pair",
-          "flow_years": null,
-          "trace": "traced; NLDI basin 563 sq mi against a published 621"
         }
       }
     },
