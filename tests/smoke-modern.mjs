@@ -914,6 +914,14 @@ if (process.argv.includes("--wave-three")) {
   process.exit(failures.length ? 1 : 0);
 }
 
+if (process.argv.includes("--river-places")) {
+  await checkRiverPlaces();
+  await browser.close();
+  server.close();
+  for (const failure of failures) console.error(failure);
+  process.exit(failures.length ? 1 : 0);
+}
+
 if (process.argv.includes("--embeds")) {
   await checkStoryEmbeds();
   await browser.close();
@@ -4201,6 +4209,45 @@ for (const viewport of VIEWPORTS) {
     await tab.waitForFunction(() => ["ready", "failed"].includes(window.__precipReady?.map?.soil?.state),
       null, { timeout: 30000 });
     tab.off("request", onSwitchRequest);
+    /* ADR-169: with stations compared, soil opens on past years. Check that
+     * view, then choose the week's change, which the checks below read. A
+     * file with no station compared opens on the change itself. */
+    const firstSoil = await tab.evaluate(() => window.__precipReady?.map?.soil);
+    if ((firstSoil?.compared ?? 0) > 0) {
+      const pastYears = await tab.evaluate(() => {
+        const visible = (element) => Boolean(element && element.getClientRects().length > 0);
+        return {
+          view: window.__precipReady?.map?.soil?.view,
+          keyItems: [...document.querySelectorAll(".precip-soil-history-key [role='listitem']")].map((item) => item.textContent),
+          keyShown: visible(document.querySelector(".precip-soil-history-key")),
+          changeKeyShown: visible(document.querySelector(".precip-soil-key")),
+          pressed: [...document.querySelectorAll(".precip-soil-views button")]
+            .map((button) => button.getAttribute("aria-pressed")).join(","),
+          counts: document.querySelector(".precip-soil-view-history .precip-note")?.textContent ?? "",
+          search: window.location.search
+        };
+      });
+      console.log("  soil past years:", JSON.stringify({ ...pastYears, keyItems: pastYears.keyItems.length }));
+      const pastSearch = new URLSearchParams(pastYears.search);
+      check(pastYears.view === "history" && pastYears.keyShown && !pastYears.changeKeyShown
+        && pastYears.keyItems.length === 6 && pastYears.pressed === "true,false" && pastYears.counts !== ""
+        && pastSearch.get("layer") === "soil" && !pastSearch.has("soil"),
+      `${label}: soil opens on past years ${JSON.stringify(pastYears)}`);
+      if (viewport.logic) {
+        await tab.locator(".precip-soil-history-table summary").click();
+        await tab.waitForFunction(() => document.querySelectorAll(".precip-soil-history-table tbody tr").length > 0,
+          null, { timeout: 10000 }).catch(() => {});
+        const pastRows = await tab.locator(".precip-soil-history-table tbody tr").count();
+        check(pastRows === firstSoil.stations,
+          `${label}: the past-years soil table has ${pastRows} rows for ${firstSoil.stations} stations`);
+        await tab.locator(".precip-soil-history-table summary").click();
+      }
+      await checkAccessibility(tab, check, `${label}, soil past years`);
+      await tab.locator(".precip-soil-views button", { hasText: "Change in 7 days" }).click();
+      await tab.waitForFunction(() => window.__precipReady?.map?.soil?.view === "change", null, { timeout: 10000 });
+      check(new URLSearchParams(await tab.evaluate(() => window.location.search)).get("soil") === "change",
+        `${label}: the week's change is not in the link`);
+    }
     const soilView = await tab.evaluate(() => {
       const visible = (element) => Boolean(element && element.getClientRects().length > 0);
       const card = document.querySelector("#precip-card");
@@ -8609,6 +8656,81 @@ async function checkGreatSaltLake() {
 }
 
 await checkGreatSaltLake();
+
+/* The river page's place filter over the whole roster (ADR-168). A shared
+ * state or drainage link opens only those gauges and keeps the link, a
+ * place with no gauge says so, and a file that cannot load says so and does
+ * not stay busy. Every expected count is read from the committed payload. */
+async function checkRiverPlaces() {
+  const rivers = JSON.parse(await readFile(path.join(REPO_ROOT, "rivers.json"), "utf8"));
+  const byState = new Map();
+  for (const gauge of rivers.gauges) {
+    if (!byState.has(gauge.state)) byState.set(gauge.state, new Set());
+    byState.get(gauge.state).add(gauge.huc8.slice(0, 4));
+  }
+  /* The state with the most drainage areas, so the area link narrows it. */
+  const [state] = [...byState.entries()].sort((a, b) => b[1].size - a[1].size)[0];
+  const inState = rivers.gauges.filter((gauge) => gauge.state === state);
+  const areaCounts = new Map();
+  for (const gauge of inState) areaCounts.set(gauge.huc8.slice(0, 4), (areaCounts.get(gauge.huc8.slice(0, 4)) ?? 0) + 1);
+  const [area] = [...areaCounts.entries()].sort((a, b) => b[1] - a[1])[0];
+  const inArea = inState.filter((gauge) => gauge.huc8.startsWith(area));
+  const empty = [...new Set(payload.reservoirs.map((row) => row.state))].find((code) => !byState.has(code));
+  const scenarios = [
+    { search: `state=${state}`, expect: inState },
+    { search: `state=${state}&area=${area}`, expect: inArea },
+    { search: `state=${empty}`, expect: [] }
+  ];
+  for (const viewport of [VIEWPORTS[1], VIEWPORTS[2]]) {
+    const context = await newPageContext(browser, viewport);
+    const tab = await context.newPage();
+    const errors = [];
+    tab.on("pageerror", (err) => errors.push(`uncaught: ${err.message}`));
+    const label = `Rivers page, places (${viewport.name})`;
+    console.log(`\n=== ${label}`);
+    try {
+      for (const scenario of scenarios) {
+        await tab.goto(`${URL}rivers.html?${scenario.search}`, { waitUntil: "load", timeout: 90000 });
+        await tab.waitForFunction(() => window.__riversReady !== undefined, null, { timeout: 60000 });
+        const shown = await tab.evaluate(() => ({
+          ready: window.__riversReady,
+          busy: document.querySelector("main")?.getAttribute("aria-busy"),
+          names: [...document.querySelectorAll(".rivers-group article.river")]
+            .filter((article) => !article.querySelector(".reservoir-withdrawn"))
+            .map((article) => article.querySelector("h3")?.textContent ?? ""),
+          emptyNote: [...document.querySelectorAll("p")].some((p) => /No published gauge is in this place/.test(p.textContent ?? "")),
+          search: window.location.search,
+          scroll: document.documentElement.scrollWidth <= window.innerWidth + 1
+        }));
+        const expected = scenario.expect.map((gauge) => gauge.name).sort();
+        console.log(`  ${scenario.search}: ${shown.ready?.rendered} of ${shown.ready?.gauges}, ${shown.ready?.placeMenus} menus`);
+        check(shown.ready?.failed === false && shown.busy === "false" && shown.ready?.rendered === expected.length
+          && JSON.stringify([...shown.names].sort()) === JSON.stringify(expected)
+          && shown.emptyNote === (expected.length === 0) && shown.scroll,
+          `${label}: ${scenario.search} shows ${JSON.stringify({ ...shown, names: shown.names.length })}, expected ${expected.length}`);
+        check(new URLSearchParams(shown.search).get("state") === new URLSearchParams(scenario.search).get("state")
+          && new URLSearchParams(shown.search).get("area") === new URLSearchParams(scenario.search).get("area"),
+          `${label}: the link ${scenario.search} became ${shown.search}`);
+      }
+      await checkAccessibility(tab, check, `${label}, one drainage area`);
+      await tab.route("**/rivers.json", (route) => route.abort());
+      await tab.goto(`${URL}rivers.html?state=${state}`, { waitUntil: "load", timeout: 90000 });
+      await tab.waitForFunction(() => window.__riversReady !== undefined, null, { timeout: 60000 });
+      const failed = await tab.evaluate(() => ({
+        ready: window.__riversReady,
+        busy: document.querySelector("main")?.getAttribute("aria-busy"),
+        error: document.querySelector(".reservoir-error")?.textContent ?? null
+      }));
+      console.log("  without the file:", JSON.stringify(failed));
+      check(failed.ready?.failed === true && failed.busy === "false" && failed.error !== null,
+        `${label}: a failed river file ${JSON.stringify(failed)}`);
+    } catch (error) { failures.push(`${label}: ${error.message}`); }
+    for (const error of errors) failures.push(`${label}: ${error}`);
+    await context.close();
+  }
+}
+
+await checkRiverPlaces();
 
 async function checkTownSearch() {
   const index = JSON.parse(await readFile(path.join(ROOT, "data/assistant/places.json"), "utf8"));
