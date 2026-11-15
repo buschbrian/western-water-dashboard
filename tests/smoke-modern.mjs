@@ -4381,6 +4381,80 @@ for (const viewport of VIEWPORTS) {
   await context.close();
 }
 
+/* Past years without the history (ADR-170). While the history loads, the
+ * past-years mode draws no value anywhere, so rain colours never stand
+ * under its key. When the history fails, the map returns to rain and says
+ * so. Choosing past years again fetches it again and draws the comparison. */
+{
+  const context = await newPageContext(browser, VIEWPORTS[2]);
+  const tab = await context.newPage();
+  const errors = [];
+  tab.on("pageerror", (err) => errors.push(`uncaught: ${err.message}`));
+  const label = "Precipitation view, past years without the history (small-phone)";
+  console.log(`\n=== ${label}`);
+  let release = () => {};
+  const gate = new Promise((resolve) => { release = resolve; });
+  let phase = "fail";
+  await context.route("**/precipitation_history.json", async (route) => {
+    await gate;
+    if (phase === "fail") await route.abort();
+    else await route.continue();
+  });
+  try {
+    await tab.goto(`${URL}precipitation.html?state=UT`, { waitUntil: "domcontentloaded", timeout: 60000 });
+    await tab.waitForFunction(() => window.__precipReady?.precipitation?.recent === "ready", null, { timeout: 30000 });
+    await tab.locator(".precip-map-mode-head").scrollIntoViewIfNeeded();
+    await tab.waitForFunction(() => ["ready", "failed"].includes(window.__precipReady?.map?.state), null, { timeout: 20000 })
+      .catch(() => {});
+    const yearsButton = tab.locator(".precip-map-mode-head button", { hasText: "Season against past years" });
+    await yearsButton.click();
+    await tab.waitForFunction(() => window.__precipReady?.map?.mode === "years", null, { timeout: 10000 });
+    const loading = await tab.evaluate(() => ({
+      map: window.__precipReady?.map,
+      yearsKey: Boolean(document.querySelector(".precip-years-key")?.getClientRects().length),
+      rainKey: Boolean(document.querySelector(".precip-map-mode-rain")?.getClientRects().length)
+    }));
+    console.log("  while the history loads:", JSON.stringify({ state: loading.map?.state, years: loading.map?.years?.state,
+      basinsWithValue: loading.map?.basinsWithValue, withValue: loading.map?.withValue }));
+    check(loading.map?.years?.state === "waiting" && loading.yearsKey && !loading.rainKey
+      && loading.map?.withValue === 0 && (loading.map?.state !== "ready" || loading.map?.basinsWithValue === 0),
+      `${label}: past years while the history loads ${JSON.stringify(loading)}`);
+    release();
+    await tab.waitForFunction(() => window.__precipReady?.map?.years?.state === "failed", null, { timeout: 30000 });
+    const failed = await tab.evaluate(() => ({
+      mode: window.__precipReady?.map?.mode,
+      pressed: [...document.querySelectorAll(".precip-map-mode-head button")].map((b) => b.getAttribute("aria-pressed")).join(","),
+      yearsKey: Boolean(document.querySelector(".precip-years-key")?.getClientRects().length),
+      rainKey: Boolean(document.querySelector(".precip-map-mode-rain")?.getClientRects().length),
+      failure: [...document.querySelectorAll("#precip-card p")].map((p) => p.textContent ?? "")
+        .find((text) => text.startsWith("The past years could not load")) ?? null,
+      layer: new URLSearchParams(window.location.search).get("layer")
+    }));
+    console.log("  after the history failed:", JSON.stringify(failed));
+    check(failed.mode === "rain" && failed.pressed === "true,false,false" && failed.rainKey && !failed.yearsKey
+      && failed.failure !== null && failed.layer !== "years",
+      `${label}: a failed history must return the map to rain and say so ${JSON.stringify(failed)}`);
+    phase = "pass";
+    await yearsButton.click();
+    await tab.waitForFunction(() => window.__precipReady?.map?.mode === "years"
+      && window.__precipReady?.map?.years?.state === "ready", null, { timeout: 60000 });
+    const recovered = await tab.evaluate(() => ({
+      years: window.__precipReady?.map?.years,
+      season: window.__precipReady?.precipitation?.state,
+      yearsKey: Boolean(document.querySelector(".precip-years-key")?.getClientRects().length),
+      layer: new URLSearchParams(window.location.search).get("layer")
+    }));
+    console.log("  after the retry:", JSON.stringify(recovered));
+    check(recovered.season === "ready" && recovered.yearsKey && (recovered.years?.stations ?? 0) > 0
+      && recovered.layer === "years",
+      `${label}: choosing past years again must fetch the history and draw it ${JSON.stringify(recovered)}`);
+  } catch (err) {
+    failures.push(`${label}: ${err.message}`);
+  }
+  for (const err of errors) failures.push(`${label}: ${err}`);
+  await context.close();
+}
+
 /* The season turn (ADR-121). The current season with the finished one drawn
  * behind it on the chart, then the finished season itself through its own
  * link. Neither check names a date the daily file decides: the current

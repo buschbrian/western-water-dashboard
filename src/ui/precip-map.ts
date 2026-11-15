@@ -65,6 +65,9 @@ export interface PrecipMapController {
   setSoilValues(values: SoilMapValues, view?: SoilView): void;
   /** This water year's precipitation against past years (ADR-170). */
   setStandingValues(values: StandingValues): void;
+  /** Past years is chosen but the history is not in: no area and no site
+   * carries a value, so no other mode's colours stand under its key. */
+  clearStandingValues(): void;
 }
 
 /* Property objects, not constructed symbols: the convention `snow-map.ts`
@@ -276,6 +279,17 @@ export async function createPrecipMap(
       status.basinsWithValue = areas.filter((area) => values.areas.get(area.huc6)?.standing).length;
       status.withValue = [...graphics.keys()].filter((station) => values.sites.has(station)).length;
       status.notUsed = graphics.size - status.withValue;
+    },
+    clearStandingValues() {
+      standing = null;
+      soil = null;
+      current = null;
+      status.mode = "years";
+      basinLayer.renderer = { type: "simple", symbol: standingBasinSymbol(null) } as never;
+      for (const graphic of graphics.values()) graphic.visible = false;
+      status.basinsWithValue = 0;
+      status.withValue = 0;
+      status.notUsed = graphics.size;
     }
   };
 

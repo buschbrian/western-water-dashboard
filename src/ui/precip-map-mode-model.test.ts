@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { precipMapLabel, precipMapModeView, SOIL_FAILED_TEXT, soilSwitchLabel } from "./precip-map-mode-model";
+import {
+  precipMapLabel, precipMapModeView, SOIL_FAILED_TEXT, soilSwitchLabel, YEARS_FAILED_TEXT
+} from "./precip-map-mode-model";
 
 /* ADR-142: one map, two modes. Soil mode hides the day buttons and the rain
  * list, and a soil file that could not load returns the map to rain rather
@@ -34,6 +36,24 @@ describe("the precipitation map's mode switch", () => {
     expect(view.mode).toBe("years");
     expect(view.yearsPressed && view.yearsShown && !view.rainShown && !view.recentListShown).toBe(true);
     expect(view.failure).toBeNull();
+  });
+
+  it("shows past years while the history loads and once it is in", () => {
+    for (const years of ["waiting", "ready"] as const) {
+      const view = precipMapModeView("years", "idle", years);
+      expect(view.mode).toBe("years");
+      expect(view.yearsShown && !view.rainShown && view.failure === null).toBe(true);
+    }
+  });
+
+  it("falls back to rain and says so when the history failed, never a past-years key over rain", () => {
+    const view = precipMapModeView("years", "idle", "failed");
+    expect(view.mode).toBe("rain");
+    expect(view.rainPressed && view.rainShown && view.recentListShown).toBe(true);
+    expect(view.yearsPressed || view.yearsShown).toBe(false);
+    expect(view.failure).toBe(YEARS_FAILED_TEXT);
+    expect(precipMapModeView("rain", "idle", "failed").failure).toBeNull();
+    expect(precipMapModeView("soil", "ready", "failed").mode).toBe("soil");
   });
 
   it("names the map for what it shows", () => {

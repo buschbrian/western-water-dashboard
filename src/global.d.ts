@@ -304,7 +304,7 @@ interface Window {
       /** This water year against past years (ADR-170): waiting until both
        * precipitation files are in. */
       years?: {
-        state: "waiting" | "ready";
+        state: "waiting" | "ready" | "failed";
         date: string | null;
         stations: number;
         partialRecord: number;
