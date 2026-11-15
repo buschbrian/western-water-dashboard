@@ -4232,7 +4232,7 @@ for (const viewport of VIEWPORTS) {
     });
     console.log("  soil mode:", JSON.stringify({ ...soilView.map?.soil, mode: soilView.map?.mode, listed: soilView.listed }));
     check(soilView.map?.soil?.state === "ready", `${label}: the soil file ended as ${soilView.map?.soil?.state}`);
-    check(soilView.map?.mode === "soil" && soilView.pressed === "false,true",
+    check(soilView.map?.mode === "soil" && soilView.pressed === "false,true,false",
       `${label}: the switch reports ${soilView.map?.mode}, pressed ${soilView.pressed}`);
     check(soilView.busy === "false", `${label}: the soil block left aria-busy ${soilView.busy}`);
     check(soilView.keyShown && !soilView.rainKeyShown && soilView.keyItems.length === 7
@@ -4292,6 +4292,30 @@ for (const viewport of VIEWPORTS) {
       check(!rainSearch.has("layer") && rainSearch.get("area") === "140100",
         `${label}: the link reads ${rainSearch} back on rain`);
     }
+    /* Past years (ADR-170): the third mode, its key and its lists, and its
+     * link. Data-independent: counts are compared with the readiness
+     * object, never with today's numbers. */
+    await tab.locator(".precip-map-mode-head button", { hasText: "Season against past years" }).click();
+    await tab.waitForFunction(() => window.__precipReady?.map?.mode === "years"
+      && window.__precipReady?.map?.years?.state === "ready", null, { timeout: 60000 });
+    const yearsView = await tab.evaluate(() => ({
+      map: window.__precipReady?.map,
+      key: Boolean(document.querySelector(".precip-years-key")?.getClientRects().length),
+      rainKey: Boolean(document.querySelector(".precip-map-key")?.getClientRects().length),
+      dayButtons: Boolean(document.querySelector("[aria-label='Days in the map and the station list']")?.getClientRects().length),
+      listRows: document.querySelectorAll(".precip-map-mode-years .precip-years-list li").length,
+      pressed: [...document.querySelectorAll(".precip-map-mode-head button")].map((b) => b.getAttribute("aria-pressed")).join(",")
+    }));
+    check(yearsView.key && !yearsView.rainKey && !yearsView.dayButtons && yearsView.pressed === "false,false,true"
+      && yearsView.listRows === yearsView.map?.years?.rows && (yearsView.map?.years?.stations ?? 0) > 0,
+      `${label}: past years mode ${JSON.stringify({ ...yearsView, map: yearsView.map?.years })}`);
+    if (viewport.logic) {
+      const yearsSearch = new URLSearchParams(await tab.evaluate(() => window.location.search));
+      check(yearsSearch.get("layer") === "years", `${label}: the past years link reads ${yearsSearch}`);
+    }
+    await checkAccessibility(tab, check, `${label}, past years mode`);
+    await tab.locator(".precip-map-mode-head button", { hasText: "Rain" }).click();
+    await tab.waitForFunction(() => window.__precipReady?.map?.mode === "rain", null, { timeout: 10000 });
     await checkAccessibility(tab, check, label);
     await tab.screenshot({ path: `screenshots/precipitation-${viewport.name}.png`, fullPage: false });
     /* Logic: shared soil and unknown-layer links. */
@@ -4306,7 +4330,7 @@ for (const viewport of VIEWPORTS) {
         pressed: [...document.querySelectorAll(".precip-map-mode-head button")].map((b) => b.getAttribute("aria-pressed")).join(","),
         search: window.location.search
       }));
-      check(soilLink.map?.mode === "soil" && soilLink.pressed === "false,true" && soilLink.area === "140100"
+      check(soilLink.map?.mode === "soil" && soilLink.pressed === "false,true,false" && soilLink.area === "140100"
         && soilLink.search === "?area=140100&layer=soil",
       `${label}: the soil link opened ${JSON.stringify(soilLink)}`);
       await tab.goto(`${URL}precipitation.html?area=140100&layer=snow`, { waitUntil: "domcontentloaded", timeout: 60000 });

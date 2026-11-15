@@ -9,6 +9,7 @@ describe("the precipitation map's layer parameter (ADR-142)", () => {
     expect(precipLayerFromSearch("?layer=snow")).toBe("rain");
     expect(precipLayerFromSearch("?layer=")).toBe("rain");
     expect(precipLayerFromSearch("?layer=SOIL")).toBe("rain");
+    expect(precipLayerFromSearch("?layer=years")).toBe("years");
   });
 
   it("takes the last value when the parameter repeats", () => {
@@ -25,7 +26,7 @@ describe("the precipitation map's layer parameter (ADR-142)", () => {
   });
 
   it("round-trips", () => {
-    for (const mode of ["rain", "soil"] as const) {
+    for (const mode of ["rain", "soil", "years"] as const) {
       expect(precipLayerFromSearch(precipLayerSearch(mode, "?state=UT&area=140100"))).toBe(mode);
     }
   });

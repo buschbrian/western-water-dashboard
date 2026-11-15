@@ -293,12 +293,22 @@ interface Window {
       viewReady: boolean;
       /** The "Rain | Soil moisture" switch (ADR-142), and the soil file it
        * loads on first use: idle until then. */
-      mode?: "rain" | "soil";
+      mode?: "rain" | "soil" | "years";
       soil?: {
         state: "idle" | "loading" | "ready" | "failed";
         endDate: string | null;
         stations: number;
         withChange: number;
+        rows: number;
+      };
+      /** This water year against past years (ADR-170): waiting until both
+       * precipitation files are in. */
+      years?: {
+        state: "waiting" | "ready";
+        date: string | null;
+        stations: number;
+        partialRecord: number;
+        areasWithValue: number;
         rows: number;
       };
     };

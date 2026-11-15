@@ -112,6 +112,17 @@ def test_a_station_enters_the_fixed_set_only_with_every_year_complete():
     partial = build_site("1:UT:SNTL", record("1:UT:SNTL", sorted(gap.items())),
                          range(1991, 1993), days)
     assert not partial["available"] and partial["first_gap_water_year"] == 1991
+    # ADR-170: the years it does cover are kept, outside the fixed set.
+    assert partial["years"][0] is None and partial["years"][1] == complete["years"][1]
+    assert partial["record_years"] == 1
+
+
+def test_snow_water_keeps_no_partial_years():
+    days = step_month_days()
+    gap = {**full_year(1992)}
+    site = build_site("1:UT:SNTL", record("1:UT:SNTL", sorted(gap.items()), element="WTEQ"),
+                      range(1991, 1993), days, element="WTEQ")
+    assert not site["available"] and "years" not in site
 
 
 def test_no_answer_is_retryable_and_named_as_such():

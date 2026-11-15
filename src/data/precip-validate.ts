@@ -85,26 +85,39 @@ export function validatePrecipitationHistory(value: unknown): PrecipitationHisto
   }
   const yearCount = (last as number) - (first as number) + 1;
   const sites = new Map<string, number[][]>();
+  const partialSites = new Map<string, (number[] | null)[]>();
+  const decodeYear = (station: string, encoded: unknown): number[] => {
+    if (!Array.isArray(encoded) || encoded.length !== steps.length
+      || !encoded.every((step) => Number.isInteger(step))) {
+      throw new Error(`Precipitation history for ${station} has a short year.`);
+    }
+    let tenths = 0;
+    return (encoded as number[]).map((change) => {
+      tenths += change;
+      return tenths / 10;
+    });
+  };
   for (const raw of value.sites as unknown[]) {
     if (!isObject(raw) || typeof raw.station !== "string") {
       throw new Error("Precipitation history has an unreadable station.");
     }
-    if (raw.available !== true) continue;
+    const station = raw.station;
     const years = raw.years;
-    if (!Array.isArray(years) || years.length !== yearCount) {
-      throw new Error(`Precipitation history for ${raw.station} does not cover the window.`);
-    }
-    sites.set(raw.station, years.map((encoded: unknown) => {
-      if (!Array.isArray(encoded) || encoded.length !== steps.length
-        || !encoded.every((step) => Number.isInteger(step))) {
-        throw new Error(`Precipitation history for ${raw.station as string} has a short year.`);
+    if (raw.available !== true) {
+      /* A shorter record (ADR-170): one entry per year, null where the year
+       * is not covered. Never in the fixed set. */
+      if (years === undefined) continue;
+      if (!Array.isArray(years) || years.length !== yearCount) {
+        throw new Error(`Precipitation history for ${station} has a partial record of the wrong length.`);
       }
-      let tenths = 0;
-      return (encoded as number[]).map((change) => {
-        tenths += change;
-        return tenths / 10;
-      });
-    }));
+      partialSites.set(station, years.map((encoded: unknown) =>
+        encoded === null ? null : decodeYear(station, encoded)));
+      continue;
+    }
+    if (!Array.isArray(years) || years.length !== yearCount) {
+      throw new Error(`Precipitation history for ${station} does not cover the window.`);
+    }
+    sites.set(station, years.map((encoded: unknown) => decodeYear(station, encoded)));
   }
   return {
     schema_version: value.schema_version as number,
@@ -114,6 +127,7 @@ export function validatePrecipitationHistory(value: unknown): PrecipitationHisto
     step_month_days: steps as string[],
     site_count: isFiniteNumber(value.site_count) ? value.site_count : sites.size,
     available_site_count: sites.size,
-    sites
+    sites,
+    partialSites
   };
 }

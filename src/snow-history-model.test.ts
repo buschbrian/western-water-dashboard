@@ -5,6 +5,7 @@ import type { PrecipitationHistory, SnowSite } from "./types";
 const history: PrecipitationHistory = {
   schema_version: 1, checked: "2026-10-01", first_water_year: 1991, last_water_year: 1992,
   step_month_days: ["10-01", "03-01", "09-30"], site_count: 2, available_site_count: 2,
+  partialSites: new Map(),
   sites: new Map([["A", [[0, 2, 0], [0, 6, 0]]], ["B", [[0, 20, 0], [0, 40, 0]]]])
 };
 const site = (station: string, value: number | null, normal: number, late = false): SnowSite => ({

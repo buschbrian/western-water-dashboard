@@ -511,7 +511,8 @@ export const PRECIPITATION_HISTORY_GROUPS: readonly ApiFieldGroup[] = [
     f("station", "code", "Station code shared with the daily precipitation and snow files."),
     f("available", "boolean", "True only when the station covers the whole comparison window."),
     f("substituted_steps", "steps", "Historical steps using a reading up to substitute_days earlier.", true),
-    f("years", "array of integer arrays", "Years in order from first_water_year. Sum each year's integers in order, then divide each sum by ten for inches.", true),
+    f("years", "array of integer arrays", "Years in order from first_water_year. Sum each year's integers in order, then divide each sum by ten for inches. When available is false, a year that is not covered is null.", true),
+    f("record_years", "years", "When available is false: how many years in the window the station covers.", true),
     f("reason", "text", "Why this station has no usable history.", true),
     f("first_gap_water_year", "year", "First year that lacks a required historical step.", true)
   ] }

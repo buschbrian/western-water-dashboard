@@ -22,11 +22,17 @@ import {
   soilWeekText, soilHistoryCountsText, soilHistoryLeftOutText, soilNoHistoryText,
   type SoilMapValues
 } from "../soil-map-model";
-import type { SnowpackPayload, SnowSite, SoilMoisturePayload } from "../types";
+import { precipStandingValues, type StandingValues } from "../precip-standing-model";
+import type {
+  PrecipitationHistory, PrecipitationPayload, SnowpackPayload, SnowSite, SoilMoisturePayload
+} from "../types";
+import {
+  STANDING_CLASSES, STANDING_RECORD_RING, STANDING_TOO_EARLY_LABEL, standingShortLabel
+} from "../viz/precip-standing-classes";
 import { PRECIP_CLASSES, PRECIP_NO_VALUE_COLOR } from "../viz/precip-classes";
 import { SOIL_CLASSES, SOIL_NO_VALUE_COLOR, soilChangeText } from "../viz/soil-classes";
 import { SOIL_HISTORY_CLASSES, soilHistoryLabel } from "../viz/soil-history-classes";
-import type { PrecipMapController } from "./precip-map";
+import { standingText, type PrecipMapController } from "./precip-map";
 import {
   precipMapLabel, precipMapModeView, soilSwitchLabel, soilViewShown, type PrecipMapMode, type SoilLoadState,
   type SoilView
@@ -62,12 +68,32 @@ export interface PrecipMapSectionStatus {
   basemapDegraded: boolean;
   viewReady: boolean;
   soil: SoilSectionStatus;
+  years: YearsSectionStatus;
 }
+
+/** This water year against past years (ADR-170). */
+export interface YearsSectionStatus {
+  /** Waiting until both precipitation files are in. */
+  state: "waiting" | "ready";
+  date: string | null;
+  /** Stations placed against their own past years. */
+  stations: number;
+  /** Of those, stations with gaps in their record. */
+  partialRecord: number;
+  areasWithValue: number;
+  /** Rows in the wettest and driest lists together. */
+  rows: number;
+}
+
+/** Stations in each of the wettest and driest lists. */
+const YEARS_LIST_LENGTH = 8;
 
 export interface PrecipMapSection {
   readonly status: PrecipMapSectionStatus;
   /** The totals or the window changed; start the map once there are totals. */
   update(window: StormWindow, totals: StormTotals | null): void;
+  /** Both precipitation files are in: the comparison with past years can draw. */
+  setHistory(daily: PrecipitationPayload, history: PrecipitationHistory): void;
 }
 
 export interface PrecipMapSectionOptions {
@@ -294,6 +320,46 @@ export function createPrecipMapSection(
   viewHead.append(paragraph("chart-axis-title", "Soil moisture"), viewGroup);
   soil.append(viewHead, soilHistory, soilChange);
 
+  /* Past years (ADR-170): where this water year stands at each station
+   * against its own record, and in each area against the mean of its
+   * stations with the full record. */
+  const years = document.createElement("div");
+  years.className = "precip-map-mode-years";
+  years.hidden = true;
+  const yearsKey = key("precip-years-key", "Map colours and how this year compares with past years", [
+    ...STANDING_CLASSES.map((entry) => keyItem(entry.label, entry.color)),
+    keyItem("Dark ring: the wettest or driest of the years compared", STANDING_RECORD_RING),
+    keyItem(`No value: ${STANDING_TOO_EARLY_LABEL.toLowerCase()}, too few stations, or too short a record`,
+      PRECIP_NO_VALUE_COLOR)]);
+  const yearsDate = paragraph("precip-coverage");
+  const yearsCaption = paragraph("card-note",
+    "Each station's precipitation since 1 October is compared with the same date in each of its past water years. " +
+    "A station needs at least 10 past years. A station with gaps in its record is compared with the years it has. " +
+    "Each drainage area takes its colour from the mean of its stations that have every past year, " +
+    "and it needs at least 3 of them. " +
+    "The classes are the ones the U.S. National Centers for Environmental Information use to rank a season: " +
+    "the lowest and highest tenth of years, and the lowest, middle and highest third. " +
+    "There is no class until the median for the date is 1 inch or more.");
+  const yearsWait = paragraph("precip-coverage", "The comparison with past years shows when the history is in.");
+  yearsWait.setAttribute("role", "status");
+  const yearsSide = (title: string, className: string) => {
+    const block = document.createElement("div");
+    block.className = `precip-years-side ${className}`;
+    const list = document.createElement("ol");
+    list.className = "precip-years-list";
+    block.append(paragraph("chart-axis-title", title), list);
+    return { block, list };
+  };
+  const yearsWettest = yearsSide("Wettest against their own past years", "precip-years-wetter");
+  const yearsDriest = yearsSide("Driest against their own past years", "precip-years-drier");
+  const yearsNote = paragraph("precip-coverage");
+  const yearsTable = valuesTable("precip-years-table", "Past-year comparison at every station on the map",
+    "Past-year comparison at every station, scrolls sideways",
+    ["Site", "Drainage area", "Inches since 1 October", "Median (in)", "Rank", "Class", "Past years compared"]);
+  years.append(yearsDate, yearsKey, yearsCaption, yearsWait, yearsWettest.block, yearsDriest.block, yearsNote,
+    yearsTable.details);
+
+
   /* The switch: two plain toggle buttons, the card's own idiom for one choice. */
   const switchHead = document.createElement("div");
   switchHead.className = "precip-storm-head precip-map-mode-head";
@@ -302,7 +368,7 @@ export function createPrecipMapSection(
   switchGroup.setAttribute("role", "group");
   switchGroup.setAttribute("aria-label", "What the map shows");
   const modeButtons = new Map<PrecipMapMode, HTMLButtonElement>();
-  for (const [mode, label] of [["rain", "Rain"], ["soil", soilSwitchLabel(null)]] as const) {
+  for (const [mode, label] of [["rain", "Rain"], ["soil", soilSwitchLabel(null)], ["years", "Season against past years"]] as const) {
     const button = document.createElement("button");
     button.type = "button";
     button.textContent = label;
@@ -315,7 +381,7 @@ export function createPrecipMapSection(
   if (options.chooser?.parentElement) options.chooser.before(switchHead);
   else slot.append(switchHead);
 
-  slot.append(host, soilFailed, rain, soil);
+  slot.append(host, soilFailed, rain, soil, years);
 
   const siteAreas = new Map(sites.map((site) => [site.station, site.huc6]));
   const siteByStation = new Map(sites.map((site) => [site.station, site]));
@@ -324,8 +390,10 @@ export function createPrecipMapSection(
     state: "waiting", mode: "rain", stations: sites.length, withValue: 0, notUsed: sites.length,
     basins: 0, basinsWithValue: 0, window: null,
     basemap: false, basemapDegraded: false, viewReady: false,
-    soil: { state: "idle", endDate: null, stations: 0, withChange: 0, rows: 0, view: "change", compared: 0 }
+    soil: { state: "idle", endDate: null, stations: 0, withChange: 0, rows: 0, view: "change", compared: 0 },
+    years: { state: "waiting", date: null, stations: 0, partialRecord: 0, areasWithValue: 0, rows: 0 }
   };
+  let standing: StandingValues | null = null;
   let values: PrecipMapValues | null = null;
   let soilValues: SoilMapValues | null = null;
   let soilLoad: Promise<void> | null = null;
@@ -442,10 +510,88 @@ export function createPrecipMapSection(
     drawHistory();
   };
 
+  const drawYearsTable = (): void => {
+    if (!yearsTable.details.open || !standing) return;
+    const shown = standing.sites;
+    const rows = [...sites].sort((a, b) =>
+      (shown.get(b.station)?.percentile ?? -1) - (shown.get(a.station)?.percentile ?? -1)
+      || a.name.localeCompare(b.name));
+    yearsTable.tbody.replaceChildren(...rows.map((site) => {
+      const value = shown.get(site.station);
+      const row = document.createElement("tr");
+      row.append(siteCell(site, siteHref), cell(site.huc6_name),
+        cell(value ? value.inches.toFixed(1) : "Not compared"),
+        cell(value ? value.medianInches.toFixed(1) : ""),
+        cell(value ? `${value.rank} of ${value.years + 1}` : ""),
+        cell(value ? (value.standingClass ? standingShortLabel(value.standingClass) : "Too early to compare")
+          + (value.record ? (value.record === "wettest" ? ", wettest" : ", driest") : "") : ""),
+        cell(value ? `${value.years}${value.fullRecord ? "" : ", with gaps"}` : ""));
+      return row;
+    }));
+  };
+  yearsTable.details.addEventListener("toggle", drawYearsTable);
+
+  const drawYears = (): void => {
+    const shown = standing;
+    if (!shown) return;
+    const placed = [...shown.sites.entries()];
+    status.years = {
+      state: "ready",
+      date: shown.date,
+      stations: placed.length,
+      partialRecord: placed.filter(([, value]) => !value.fullRecord).length,
+      areasWithValue: [...shown.areas.values()].filter((area) => area.standing?.standingClass).length,
+      rows: 0
+    };
+    yearsWait.hidden = true;
+    yearsDate.textContent = shown.date
+      ? `Precipitation since 1 October to ${shown.date}, against water years ${shown.firstWaterYear} to ${shown.lastWaterYear}.`
+      : "No day has enough stations with a reading to compare.";
+    const classed = placed.filter(([, value]) => value.standingClass !== null);
+    const fill = (list: HTMLOListElement, rows: typeof classed): void => {
+      list.replaceChildren(...rows.map(([station, value], index) => {
+        const site = siteByStation.get(station);
+        const item = document.createElement("li");
+        const rank = span("precip-storm-rank", `${index + 1}`);
+        rank.setAttribute("aria-hidden", "true");
+        const label = document.createElement("a");
+        label.className = "precip-storm-name";
+        label.textContent = site?.name ?? station;
+        label.href = siteHref(station);
+        const where = span("precip-storm-area", site?.huc6_name ?? "");
+        const figure = document.createElement("strong");
+        figure.className = "precip-storm-value";
+        figure.textContent = `${value.medianInches > 0 ? Math.round((100 * value.inches) / value.medianInches) : 0}% of median`;
+        item.title = standingText(value);
+        item.append(rank, label, where, figure);
+        return item;
+      }));
+    };
+    const ratio = ([, value]: (typeof classed)[number]): number => value.inches / value.medianInches;
+    const wettest = classed.filter(([, value]) => value.percentile >= 50)
+      .sort((a, b) => b[1].percentile - a[1].percentile || ratio(b) - ratio(a)).slice(0, YEARS_LIST_LENGTH);
+    const driest = classed.filter(([, value]) => value.percentile < 50)
+      .sort((a, b) => a[1].percentile - b[1].percentile || ratio(a) - ratio(b)).slice(0, YEARS_LIST_LENGTH);
+    fill(yearsWettest.list, wettest);
+    fill(yearsDriest.list, driest);
+    yearsWettest.block.hidden = wettest.length === 0;
+    yearsDriest.block.hidden = driest.length === 0;
+    status.years.rows = wettest.length + driest.length;
+    const partial = status.years.partialRecord;
+    yearsNote.textContent = `${placed.length} station${placed.length === 1 ? " is" : "s are"} compared. `
+      + (partial > 0 ? `${partial} of them ${partial === 1 ? "has" : "have"} gaps in the record. ` : "")
+      + (shown.shortRecord > 0
+        ? `${shown.shortRecord} station${shown.shortRecord === 1 ? " has" : "s have"} fewer than 10 past years and ${shown.shortRecord === 1 ? "is" : "are"} not compared.`
+        : "");
+    drawYearsTable();
+  };
+
   const publish = (): void => {
     status.window = values?.window ?? null;
     if (status.mode === "rain") {
       status.withValue = values?.sites.size ?? 0;
+    } else if (status.mode === "years") {
+      status.withValue = standing?.sites.size ?? 0;
     } else {
       status.withValue = soilValues ? [...soilValues.sites.values()].filter((site) => status.soil.view === "history"
         ? site.history_class !== null : site.change_points !== null).length : 0;
@@ -464,7 +610,8 @@ export function createPrecipMapSection(
   const drawMap = (): void => {
     if (!map) return;
     if (status.mode === "soil" && soilValues) map.setSoilValues(soilValues, status.soil.view);
-    else if (values) map.setValues(values);
+    else if (status.mode === "years" && standing) map.setStandingValues(standing);
+    else if (status.mode !== "years" && values) map.setValues(values);
   };
 
   let requested: PrecipMapMode = options.initialMode ?? "rain";
@@ -479,8 +626,10 @@ export function createPrecipMapSection(
     status.mode = view.mode;
     modeButtons.get("rain")!.setAttribute("aria-pressed", String(view.rainPressed));
     modeButtons.get("soil")!.setAttribute("aria-pressed", String(view.soilPressed));
+    modeButtons.get("years")!.setAttribute("aria-pressed", String(view.yearsPressed));
     rain.hidden = !view.rainShown;
     soil.hidden = !view.soilShown;
+    years.hidden = !view.yearsShown;
     soilFailed.textContent = view.failure ?? "";
     soilFailed.hidden = view.failure === null;
     options.showRecentList?.(view.recentListShown);
@@ -534,6 +683,8 @@ export function createPrecipMapSection(
   if (requested === "soil") {
     showMode();
     void loadSoil().then(showMode);
+  } else if (requested === "years") {
+    showMode();
   }
 
   const start = async (): Promise<void> => {
@@ -556,7 +707,7 @@ export function createPrecipMapSection(
       const placeAreas = new Set(sites.map((site) => site.huc6));
       const scope = { ...measured, areas: measured.areas.filter((area) => placeAreas.has(area.huc6)) };
       const { element, card } = createViewMap(host, {
-        label: "A map of the drainage areas and measurement sites, coloured by recent precipitation or by the change in soil moisture",
+        label: "A map of the drainage areas and measurement sites, coloured by recent precipitation, by soil moisture, or by this year's precipitation compared with past years",
         cardId: "precip-map-hover"
       });
       element.extent = mapExtentFromBox(box);
@@ -594,12 +745,19 @@ export function createPrecipMapSection(
   };
 
   return {
-    get status() { return { ...status, soil: { ...status.soil } }; },
+    get status() { return { ...status, soil: { ...status.soil }, years: { ...status.years } }; },
     update(window, totals) {
       values = precipMapValues(window, totals, siteAreas, areaFloors);
       if (totals?.endDate) startWhenNear();
       if (status.mode === "rain") map?.setValues(values);
       drawRainTable();
+      publish();
+    },
+    setHistory(daily, history) {
+      if (standing) return;
+      standing = precipStandingValues(daily, history, siteAreas);
+      drawYears();
+      if (status.mode === "years") drawMap();
       publish();
     }
   };
