@@ -58,6 +58,8 @@ describe("daily picture capture", () => {
     vi.stubEnv("PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH", "");
     expect(await run(folder)).toBe(0);
     expect(await readFile(path.join(folder, "share/one.png"))).toEqual(before);
+    const report = JSON.parse(await readFile(path.join(folder, "share/capture-report.json"), "utf8"));
+    expect(report).toMatchObject({ failed: 1, failedFiles: ["one"], runError: "Error: No installed browser was selected" });
     await rm(path.join(folder, "share/one.png"));
     expect(await run(folder)).toBe(1);
   });
