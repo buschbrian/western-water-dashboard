@@ -366,10 +366,18 @@ arcgis-scale-bar {
     calc(100% - var(--map-left-inset) - var(--map-right-inset) - 5rem));
   padding: .45rem .6rem;
   color: var(--app-text);
-  background: color-mix(in srgb, var(--app-surface-raised) 90%, transparent);
+  /* Opaque: at 90% the map's own labels read through the key's words in
+   * the dark theme (2026-11-15, 360 px). */
+  background: var(--app-surface-raised);
   border: 1px solid var(--app-border);
   border-radius: .3rem;
   box-shadow: 0 .15rem .5rem rgb(20 45 56 / 14%);
+}
+/* On a narrow phone the open key reaches the scale bar's corner and covered
+ * it. The key is what the reader opened; the scale bar steps aside until it
+ * is closed. */
+@media (max-width: 38rem) {
+  .map-stage:has(.storage-map-legend[open]) arcgis-scale-bar { visibility: hidden; }
 }
 .storage-map-legend summary {
   font-size: .875rem;

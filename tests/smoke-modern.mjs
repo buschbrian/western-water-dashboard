@@ -2091,6 +2091,25 @@ for (const viewport of VIEWPORTS) {
       `${label}: the map key does not explain size, late data and no data`);
     check(new Set(legend.colors).size === 5,
       `${label}: the map key repeats a colour across its classes`);
+    /* Opened on a phone, the key is opaque and the scale bar steps aside
+     * rather than sitting under it (2026-11-15 review at 360 px). */
+    const openKey = await tab.evaluate(async () => {
+      const details = document.querySelector("#storage-map-legend");
+      const was = details.open;
+      details.open = true;
+      await new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+      const scale = document.querySelector(".map-stage arcgis-scale-bar");
+      const result = {
+        background: getComputedStyle(details).backgroundColor,
+        scaleHidden: scale ? getComputedStyle(scale).visibility === "hidden" : null,
+        narrow: window.matchMedia("(max-width: 38rem)").matches
+      };
+      details.open = was;
+      return result;
+    });
+    check(!/\/ 0?\.\d|rgba\(.*, 0?\.\d+\)$/.test(openKey.background)
+      && (openKey.scaleHidden === null || openKey.scaleHidden === openKey.narrow),
+      `${label}: the open map key ${JSON.stringify(openKey)}`);
 
     const layout = await tab.evaluate(() => {
       const rect = (selector) => {
