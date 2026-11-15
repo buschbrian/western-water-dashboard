@@ -267,7 +267,7 @@ The Lower Colorado daily report's `INFLOW CFS` column is still the only
 daily figure; on 1 November it equals release plus pumping, evaporation,
 storage change and bank storage, so it is a computed balance, and the page
 says its automatic reports are not checked for errors. Publishing it would
-be a decision of its own (see the follow-ups below). Searched on 2026-11-14: Reclamation's Lower
+be a decision of its own; Brian kept the stated gap on 2026-11-15. Searched on 2026-11-14: Reclamation's Lower
 Colorado daily report prints a computed `INFLOW` column in its "Glen Canyon
 to Hoover Dam losses" table, for the current month only and without a
 stated method; its daily JSON feed showed no inflow series in the part
@@ -278,19 +278,19 @@ daily series was found, so ADR-161's unavailable-inflow statement stands.
 emulation at 360 and 390 pixels is not a phone. Touch, scroll momentum,
 on-screen keyboards and real network speed need a physical phone.
 
-- Storage map legend at 360 pixels: opened, it covers the scale bar, and its
-  panel is 90% opaque, so map labels show through its words in dark mode.
-  Keep, make it opaque, or move the scale bar?
+- Storage map legend at 360 pixels: decided 2026-11-15. The open key is
+  opaque and the scale bar steps aside below 38rem (PR #151).
 - Drainage-area labels sit on top of reservoir circles in the busy middle
-  of Utah (Lower Bear, Weber, Jordan, Lower Green). Accept, or thin labels
-  at small scales?
+  of Utah (Lower Bear, Weber, Jordan, Lower Green). Kept as they are
+  (2026-11-15).
 - The basemap stayed light under the dark theme in the local build, which
   used the "Oceans" fallback. Check it on the live site in dark mode.
 - At 360 pixels the precipitation map clips "Lower Colorado-Lake Mead" at
-  its left edge.
-- Rivers page with all 142 gauges is about 204,000 pixels tall at 390, some
-  241 screens, with a 30-day table under every gauge. Collapse the gauge
-  cards under the summary table, or open on one state?
+  its left edge. Accepted: panning shows it (2026-11-15).
+- Rivers page with all 142 gauges was about 204,000 pixels tall at 390, some
+  241 screens; each card's figures and source now sit behind one closed
+  disclosure, about 107,000 pixels (PR #154). Whether to open on one state
+  is still open.
 - Not reviewed in the browser: the snow and drought maps.
 - Precipitation map, past-years mode: the "no value" grey while the history
   loads reads as waiting, not as "no data".
@@ -305,14 +305,14 @@ on-screen keyboards and real network speed need a physical phone.
 | Work | State | Next |
 |---|---|---|
 | River gauges (ADR-168) | 142 gauges in UT, CO, NM and AZ with their data, PR #154 | 16 rows held with reasons; 548 `review` and 75 `check` rows wait on rulings; the dam screen has not run for CO, NM and AZ |
-| Operating characters (ADR-156) | Census rerun; Columbia and Snake packet in PR #153 | Brian's ruling, then roster entries, `METHOD_VERSION` and the area normals |
+| Operating characters (ADR-156) | Census rerun; Columbia and Snake ruled 2026-11-15 (ADR-171, PR #153): eight steady pools and Bennington Lake as flood space | the next region's packet |
 | Precipitation past years | Failure and loading fixed, PR #151, which also carries the soil smoke check that a schema-2 file needs | merge before or soon after main's next daily refresh |
 | Soil past years | The refresh writes schema 2 from the committed normals (177 of 369 stations compared on the 2026-11-15 branch run); `main` still held schema 1 until its next daily refresh | confirm `main`'s next refresh and the deployed file |
 | Share-picture failures | PR #152 | none |
 | Storage map twelve-month chart | The local browser suite twice saw it drawn at its 300-unit fallback width in a wider phone host, at 360 and then 390 pixels; CI passed | find why the chart can draw before its host has a width |
-| Pyramid Lake | Still held: monthly readings only | a decision on a monthly update schedule and late threshold |
+| Pyramid Lake | Published from its monthly field readings, late after 45 days (ADR-172) | none |
 | Mono Lake | Still held: no current series | a citable series and its datum against Decision 1631's gage |
-| Mead daily inflow | Still a gap | a decision on the daily report's computed column |
+| Mead daily inflow | Still a gap: Brian kept ADR-161's statement on 2026-11-15 rather than publish the report's computed column | a reviewed observed series, if Reclamation publishes one |
 
 ## Left out, with reasons
 
