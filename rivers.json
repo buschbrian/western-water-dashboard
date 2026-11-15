@@ -1,7 +1,7 @@
 {
   "schema_version": 3,
   "measurement": "daily_mean_flow",
-  "fetched_at": "2026-11-15T18:51:52+00:00",
+  "fetched_at": "2026-11-15T19:14:37+00:00",
   "run_date": "2026-11-15",
   "window_days": 30,
   "stale_after_days": 2,
