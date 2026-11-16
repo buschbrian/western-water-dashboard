@@ -66,6 +66,72 @@
         ],
         "source": "Source: Data from several providers, shown on the Western Water Dashboard (buschbrian.github.io/western-water-dashboard)."
       }
+    },
+    {
+      "week": "2026-11-16",
+      "published": "2026-11-16T23:41:04.922Z",
+      "through": "2026-11-16",
+      "scope": "Storage covers 424 reservoirs, Lake Powell included, Lake Mead included.",
+      "notes": [
+        "These are changes over the last seven days.",
+        "Readings are from Nov 1, 2026 to Nov 16, 2026.",
+        "118 reservoirs have late readings.",
+        "Reservoir data file: Nov 16, 2026. Latest reservoir reading: Nov 16, 2026.",
+        "Snow measurements to Nov 15, 2026.",
+        "Drought map for Nov 10, 2026."
+      ],
+      "sourceDates": {
+        "storage": "2026-11-16T22:10:25+00:00",
+        "snow": "2026-11-15",
+        "drought": "2026-11-10"
+      },
+      "sections": [
+        {
+          "heading": "Reservoir storage — 424 reservoirs",
+          "lines": [
+            "The measured reservoirs gained 4,092 acre-feet between them.",
+            "Their seasonal storage moved from 45.0% full to 45.0%, no change.",
+            "145 fell, 150 rose and 15 did not move.",
+            "This covers the 310 reservoirs that report every day. The other 114 report once a month and cannot show a weekly change."
+          ]
+        },
+        {
+          "heading": "The week's movers, same reservoirs",
+          "lines": [
+            "Largest fall by volume: Franklin D. Roosevelt Lake fell 258,290 acre-feet, which is 2.7% of its own full level.",
+            "Largest rise by volume: Lake Mead rose 102,070 acre-feet, which is 0.4% of its own full level.",
+            "Largest move for its own size: Scooteney Reservoir rose 4,109 acre-feet, which is 26.9% of its own full level. That is 83.1% of what it held a week earlier."
+          ]
+        },
+        {
+          "heading": "Mountain snow, whole region — 423 reporting sites",
+          "lines": [
+            "Snow gained ground against normal: 72.1% of normal on Nov 7, 2026, 74.9% on Nov 14, 2026.",
+            "Measured across 423 sites with a fair value that day."
+          ]
+        },
+        {
+          "heading": "Drought, whole region — 75 drainage areas",
+          "lines": [
+            "The drought map for the week of Nov 10, 2026 was published on Nov 12, 2026.",
+            "The most severe class with land in it is exceptional drought (D4). 33 of 75 drainage areas have land in severe drought or worse.",
+            "9 areas lost some since Nov 3, 2026.",
+            "The largest change is Great Salt Lake, down 30.1 points of its land at that class."
+          ]
+        }
+      ],
+      "caption": "Week ending Nov 16, 2026\n\nStorage covers 424 reservoirs, Lake Powell included, Lake Mead included.\n\nThese are changes over the last seven days.\n\nReadings are from Nov 1, 2026 to Nov 16, 2026.\n\n118 reservoirs have late readings.\n\nReservoir data file: Nov 16, 2026. Latest reservoir reading: Nov 16, 2026.\n\nSnow measurements to Nov 15, 2026.\n\nDrought map for Nov 10, 2026.\n\nReservoir storage — 424 reservoirs\n\nThe measured reservoirs gained 4,092 acre-feet between them.\n\nTheir seasonal storage moved from 45.0% full to 45.0%, no change.\n\n145 fell, 150 rose and 15 did not move.\n\nThis covers the 310 reservoirs that report every day. The other 114 report once a month and cannot show a weekly change.\n\nThe week's movers, same reservoirs\n\nLargest fall by volume: Franklin D. Roosevelt Lake fell 258,290 acre-feet, which is 2.7% of its own full level.\n\nLargest rise by volume: Lake Mead rose 102,070 acre-feet, which is 0.4% of its own full level.\n\nLargest move for its own size: Scooteney Reservoir rose 4,109 acre-feet, which is 26.9% of its own full level. That is 83.1% of what it held a week earlier.\n\nMountain snow, whole region — 423 reporting sites\n\nSnow gained ground against normal: 72.1% of normal on Nov 7, 2026, 74.9% on Nov 14, 2026.\n\nMeasured across 423 sites with a fair value that day.\n\nDrought, whole region — 75 drainage areas\n\nThe drought map for the week of Nov 10, 2026 was published on Nov 12, 2026.\n\nThe most severe class with land in it is exceptional drought (D4). 33 of 75 drainage areas have land in severe drought or worse.\n\n9 areas lost some since Nov 3, 2026.\n\nThe largest change is Great Salt Lake, down 30.1 points of its land at that class.\n\nSource: Data from several providers, shown on the Western Water Dashboard (buschbrian.github.io/western-water-dashboard).\n\nThis is a saved weekly summary. The live dashboard can show newer readings.",
+      "frame": {
+        "name": "Week ending Nov 16, 2026",
+        "figure": "+4,092 acre-feet",
+        "stored": "Net change over seven days",
+        "lines": [
+          "310 of 424 reservoirs reported a weekly change.",
+          "Snow: 74.9% of normal on Nov 14, 2026.",
+          "Drought map: Nov 10, 2026. All figures describe the whole region."
+        ],
+        "source": "Source: Data from several providers, shown on the Western Water Dashboard (buschbrian.github.io/western-water-dashboard)."
+      }
     }
   ]
 }
