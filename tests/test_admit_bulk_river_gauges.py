@@ -18,7 +18,8 @@ def first_roster(tmp_path) -> Path:
     """The roster as it stood before ADR-168: what the tool adds to."""
     document = json.loads((ROOT / "admitted_river_gauges.json").read_text())
     document["gauges"] = {s: e for s, e in document["gauges"].items()
-                          if e["tier"]["directed_on"] != admit.DIRECTED_ON}
+                          if e["tier"]["directed_on"] not in
+                          (admit.DIRECTED_ON, admit.DAMS_DIRECTED_ON)}
     path = tmp_path / "admitted_river_gauges.json"
     path.write_text(admit.render(document))
     return path
@@ -36,7 +37,7 @@ def test_the_selection_is_only_bulk_rows_the_loader_would_take(tmp_path):
     chosen, held = admit.select(rows, first)
     assert chosen, "the worksheets have bulk rows to add"
     for row in chosen:
-        assert row["review_queue"] == "bulk" or admit.ruled(row)
+        assert row["review_queue"] == "bulk" or admit.ruled(row) or admit.dams_path(row)
         assert admit.tier_of(row) in {"shaped", "natural"}
         assert row["usgs_site_no"] not in first
     reasons = {row["usgs_site_no"]: reason for row, reason in held}
@@ -56,8 +57,10 @@ def test_a_waterwork_name_and_a_non_reference_natural_row_are_held():
     natural = dict(base, suggested_ruling="natural", proposed_display_name="Big Creek",
                    gages2_class="not_listed", storage_share_pct="0")
     low = dict(base, proposed_display_name="Ashley Creek", storage_share_pct="2.1",
-               reviewer_ruling="reservoir")
+               reviewer_ruling="reservoir", dams_upstream="0")
     assert "a person decides" in admit.held_reason(low, set())
+    assert admit.held_reason(dict(low, dams_upstream="3"), set()) is None, \
+        "ADR-173: a dam upstream is enough to show a shaped gauge"
     assert "reference" in admit.held_reason(natural, set())
     assert admit.held_reason(dict(natural, gages2_class="reference"), set()) is None
     short = dict(natural, gages2_class="reference", flow_years="4")
@@ -65,6 +68,20 @@ def test_a_waterwork_name_and_a_non_reference_natural_row_are_held():
     ruled = dict(natural, reviewer_ruling="natural", review_queue="review")
     assert admit.held_reason(ruled, set()) is None, "a ruling stands in for the reference class"
     assert "already used" in admit.held_reason(dict(base, proposed_display_name="A"), {"A"})
+
+
+def test_a_review_row_with_a_dam_upstream_is_shown_as_shaped():
+    row = {"suggested_ruling": "natural", "reviewer_ruling": "", "covers_1991_2020": "no",
+           "trace_screen": "traced", "name_check": "", "accepted_display_name": "",
+           "proposed_display_name": "Big Creek near Town", "upstream_reservoirs": "",
+           "dams_upstream": "2", "storage_share_pct": "3", "gages2_class": "non_reference",
+           "flow_years": "6", "review_queue": "review", "notes": ""}
+    assert admit.dams_path(row) and admit.tier_of(row) == "shaped"
+    assert admit.held_reason(row, set()) is None, "no record span is needed to show flow alone"
+    assert not admit.dams_path(dict(row, dams_upstream="0")), "no dam: still a person's call"
+    for queue, suggestion in (("check", "check"), ("review", "diversion"), ("bulk", "natural")):
+        assert not admit.dams_path(dict(row, review_queue=queue, suggested_ruling=suggestion))
+    assert not admit.dams_path(dict(row, reviewer_ruling="exclude"))
 
 
 def test_a_run_merges_and_the_roster_still_loads(tmp_path):
@@ -80,7 +97,7 @@ def test_a_run_merges_and_the_roster_still_loads(tmp_path):
     for station in added:
         tier = after[station]["tier"]
         assert tier["status"] in {"pending_formal_ruling", f"ruled_{tier['tier']}"}
-        assert tier["directed_on"] == "2026-11-14"
+        assert tier["directed_on"] in {"2026-11-14", "2026-11-16"}
         assert "ADR-137" in tier["basis"]
     # A second run adds nothing and leaves the file byte for byte.
     text = path.read_text()

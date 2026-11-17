@@ -73,8 +73,14 @@ def test_the_rivers_are_admitted_with_display_and_survey_names():
             assert row["tier"]["tier_ruled_on"] == "2026-10-27"
         else:
             # ADR-168: every later gauge is either a ruling Brian saved in the
-            # review page or a worksheet bulk-queue row awaiting his ruling.
+            # review page or a worksheet bulk-queue row awaiting his ruling;
+            # ADR-173 adds review rows with a dam upstream, shown as shaped.
             tier = row["tier"]
+            if tier["directed_on"] == "2026-11-16":
+                assert tier["tier"] == "shaped" and tier["status"] == "pending_formal_ruling"
+                assert tier["evidence"]["review_queue"] == "review"
+                assert "ADR-173" in tier["basis"]
+                continue
             assert tier["directed_on"] == "2026-11-14"
             if tier["status"] == "pending_formal_ruling":
                 assert tier["evidence"]["review_queue"] == "bulk"
@@ -96,7 +102,12 @@ def test_every_gauge_meets_its_adr_137_rule():
             assert evidence["storage_share_pct"] < 10.0
             assert evidence["gages2_class"] == "reference"
         elif not evidence["published_reservoirs_upstream"]:
-            assert evidence["storage_share_pct"] >= 10.0
+            share = evidence["storage_share_pct"]
+            if share is None or share < 10.0:
+                # ADR-173: any dam upstream is shown as flow only.
+                assert "ADR-173" in row["tier"]["basis"] and evidence["dams_upstream"] > 0
+            else:
+                assert share >= 10.0
 
 
 def write_roster(tmp_path, row) -> Path:

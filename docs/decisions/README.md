@@ -36,6 +36,7 @@ than bundled. **Start with ADR-002.**
   [ADR-145](ADR-145-compare-river-gauges-above-ten-years-shorten-two-names-and-round-the-page.md),
   [ADR-146](ADR-146-keep-river-flow-and-soil-moisture-change-day-by-day.md),
   [ADR-168](ADR-168-publish-every-bulk-queue-river-gauge.md),
+  [ADR-173](ADR-173-show-river-gauges-with-dams-upstream-as-flow-only.md),
   [ADR-154](ADR-154-keep-a-permanent-share-address-for-every-reservoir.md),
   [ADR-160](ADR-160-publish-storage-history-apart-from-the-summary.md),
   [ADR-161](ADR-161-publish-only-reviewed-reservoir-inflow-and-release.md),
@@ -398,11 +399,12 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-165](ADR-165-compare-snow-water-with-earlier-seasons-at-a-fixed-set-of-sites.md) | Compare snow water with earlier seasons at a fixed set of sites | Accepted (2026-11-14); ADR-125's builder and fixed-set rule over snow water (`snow_history.json`), a lazy snow-page card that follows the page's place; keeps ADR-081's summed ratio and ADR-121's floors; moves no published snow figure |
 | [ADR-166](ADR-166-offer-terminal-lakes-in-the-page-navigation.md) | Offer terminal lakes in the page navigation | Accepted (2026-11-14); keep ADR-159’s merged lake contract and add compact navigation after the second lake |
 | [ADR-167](ADR-167-enforce-the-soil-percent-bound-before-averaging.md) | Enforce the soil percentage bound before averaging | Accepted (2026-11-14); reject physically impossible SMS values at ingestion while keeping existing means and coverage rules |
-| [ADR-168](ADR-168-publish-every-bulk-queue-river-gauge.md) | Publish every bulk-queue river gauge | Proposed; extends ADR-136, ADR-137 and ADR-138; the four worksheets' bulk `reservoir` and `natural` rows join the roster pending formal ruling (133 measured 2026-11-14), written by `tools/admit_bulk_river_gauges.py`; exclusions, waterwork names, non-reference natural rows and open name checks held |
+| [ADR-168](ADR-168-publish-every-bulk-queue-river-gauge.md) | Publish every bulk-queue river gauge | Accepted (2026-11-14); extends ADR-136, ADR-137 and ADR-138; the four worksheets' bulk `reservoir` and `natural` rows join the roster pending formal ruling (133 measured 2026-11-14), written by `tools/admit_bulk_river_gauges.py`; exclusions, waterwork names, non-reference natural rows and open name checks held |
 | [ADR-169](ADR-169-compare-soil-moisture-with-each-stations-past-years.md) | Compare soil moisture with each station's past years | Proposed; per-station calendar-day percentiles (`soil_normals.json`), NOAA NCEI tenths and thirds, area median class, default view of soil mode; week's change unchanged |
 | [ADR-170](ADR-170-compare-each-stations-precipitation-with-its-own-past-years-on-the-map.md) | Compare each station's precipitation with its own past years on the map | Proposed; NCEI ranking classes, partial records placed against their own years, areas over full records |
 | [ADR-171](ADR-171-rule-the-columbia-and-snake-operating-characters.md) | Rule the Columbia and Snake operating characters | Accepted; applies ADR-156: eight Columbia and Snake navigation and power pools are steady pools, Bennington Lake is a flood-control basin, Dworshak and Willow Creek stay ordinary; `METHOD_VERSION` unchanged |
 | [ADR-172](ADR-172-publish-pyramid-lake-from-its-monthly-field-readings.md) | Publish Pyramid Lake from its monthly field readings | Accepted; extends ADR-112, ADR-118 and ADR-159: a monthly lake is one site's level from the survey's field readings, late after 45 days |
+| [ADR-173](ADR-173-show-river-gauges-with-dams-upstream-as-flow-only.md) | Show river gauges with dams upstream as flow only | Accepted (2026-11-16); extends ADR-168 and ADR-137: an unruled review row with a dam upstream is published `shaped`, with no 1991-2020 record required; diversion and check rows stay held |
 
 ## Relationship to the historical journal
 

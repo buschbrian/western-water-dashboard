@@ -232,7 +232,8 @@ value, a notice carrying a measurement, and a roster gauge in neither list.
 
 **The roster is written from the review worksheets** (ADR-168).
 `tools/admit_bulk_river_gauges.py` adds each `bulk`-queue row and each row
-Brian ruled in the review page, and prints every row it holds with the
+Brian ruled in the review page, and each unruled `review` row with a dam
+upstream as `shaped` (ADR-173), and prints every row it holds with the
 reason. It holds a series that reports no value in the last
 `RIVER_FETCH_DAYS` days: a new gauge has no earlier record to carry forward,
 so one with nothing to publish would leave a roster gauge in neither list

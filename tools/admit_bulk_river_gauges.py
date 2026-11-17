@@ -10,7 +10,10 @@ with the reason it was held:
 
 - `review_queue` is `bulk` and `suggested_ruling` is `reservoir` (published as
   `shaped`) or `natural`, and `reviewer_ruling` is blank or the same tier;
-- the record covers 1991-2020 and the basin is traced;
+  or (ADR-173) `review_queue` is `review`, `reviewer_ruling` is blank, the
+  suggestion is `reservoir`, `natural` or `short`, and a dam is upstream:
+  published as `shaped`, flow only, with no record span required;
+- the record covers 1991-2020 (except ADR-173 rows) and the basin is traced;
 - the display name (`accepted_display_name`, else `proposed_display_name`) has
   no open `name_check` and is not already used by another gauge;
 - for `natural`: no published reservoir upstream, storage under 10% of a year's
@@ -75,6 +78,12 @@ DIRECTED_ON = "2026-11-14"
 #: agreed in bulk. That is the ruling a bulk natural row rests on.
 BULK_RULED_ON = "2026-10-27"
 STATUS = "pending_formal_ruling"
+#: ADR-173: Brian directed on 2026-11-16 that a gauge held back only because
+#: dams are upstream be shown, flow only, with the dams noted. A `review` row
+#: whose suggestion is one of these and whose traced basin holds a dam is
+#: published as `shaped`. `diversion` and `check` rows stay with a person.
+DAMS_DIRECTED_ON = "2026-11-16"
+DAMS_SUGGESTIONS = {"reservoir", "natural", "short"}
 
 
 def _number(text: str):
@@ -93,13 +102,24 @@ def read_bulk_rows(root: Path = ROOT) -> list[dict]:
     for worksheet, state in WORKSHEETS.items():
         with (root / worksheet).open(newline="", encoding="utf-8") as handle:
             for row in csv.DictReader(handle):
-                if row["review_queue"] == "bulk" or row["reviewer_ruling"] in RULED_TIERS:
+                if row["review_queue"] == "bulk" or row["reviewer_ruling"] in RULED_TIERS \
+                        or dams_path(row):
                     rows.append({**row, "_worksheet": worksheet, "_state": state})
     return rows
 
 
 def display_name(row: dict) -> str:
     return (row.get("accepted_display_name") or row["proposed_display_name"]).strip()
+
+
+def has_dams(row: dict) -> bool:
+    return bool(_reservoirs(row["upstream_reservoirs"])) or (_number(row.get("dams_upstream", "")) or 0) > 0
+
+
+def dams_path(row: dict) -> bool:
+    """ADR-173: an unruled `review` row shown only because dams are upstream."""
+    return (row["review_queue"] == "review" and not (row.get("reviewer_ruling") or "")
+            and row["suggested_ruling"] in DAMS_SUGGESTIONS and has_dams(row))
 
 
 def ruled(row: dict) -> bool:
@@ -109,6 +129,8 @@ def ruled(row: dict) -> bool:
 def tier_of(row: dict) -> str | None:
     if ruled(row):
         return RULED_TIERS[row["reviewer_ruling"]]
+    if dams_path(row):
+        return "shaped"
     return TIER_FOR_SUGGESTION.get(row["suggested_ruling"])
 
 
@@ -121,7 +143,7 @@ def held_reason(row: dict, names_in_use: set[str]) -> str | None:
         return f"reviewer ruled {ruling}: not a published tier"
     if tier is None:
         return f"suggested {suggestion}: not a published tier"
-    if not ruled(row) and row["covers_1991_2020"] != "yes":
+    if not ruled(row) and not dams_path(row) and row["covers_1991_2020"] != "yes":
         return "record does not cover 1991-2020"
     if row["trace_screen"] != "traced":
         return f"basin trace is {row['trace_screen'] or 'missing'}"
@@ -133,7 +155,7 @@ def held_reason(row: dict, names_in_use: set[str]) -> str | None:
         return f"the name calls the gauge's own water a {channel[0]}: a person decides"
     if display_name(row) in names_in_use:
         return f"display name {display_name(row)!r} is already used"
-    if tier == "shaped" and not _reservoirs(row["upstream_reservoirs"]):
+    if tier == "shaped" and not has_dams(row):
         share = _number(row["storage_share_pct"])
         if share is None or share < RIVER_NATURAL_STORAGE_SHARE_PCT:
             return (f"shaped, but no published reservoir upstream and storage is {share}% "
@@ -190,6 +212,12 @@ def basis(row: dict, tier: str) -> str:
     share = found["storage_share_pct"]
     if tier == "shaped" and reservoirs:
         first = f"ADR-137: {len(reservoirs)} published reservoir(s) inside the traced basin."
+    elif tier == "shaped" and (share is None or share < 10):
+        first = (f"ADR-137: no published reservoir in the traced basin; "
+                 f"{found['dams_upstream']} inventoried dam(s) hold "
+                 + (f"{share}% of a year's flow, under 10%." if share is not None
+                    else "an unmeasured share of a year's flow, not shown to reach 10%.")
+                 + " ADR-173: shown as flow only with the dams upstream noted.")
     elif tier == "shaped":
         first = (f"ADR-137: no published reservoir in the traced basin, but inventoried dams "
                  f"hold {share}% of a year's flow, at or above 10%.")
@@ -200,6 +228,9 @@ def basis(row: dict, tier: str) -> str:
         when = ruled_on(row) or "an unrecorded date"
         return (f"{first} Ruled {row['reviewer_ruling']} by Brian Busch in the review page on "
                 f"{when}; added at his direction of {DIRECTED_ON}.")
+    if dams_path(row):
+        return (f"{first} Worksheet review queue, added at Brian Busch's direction of "
+                f"{DAMS_DIRECTED_ON} to show gauges with dams upstream rather than hold them.")
     return (f"{first} Worksheet bulk queue (ADR-138), added at Brian Busch's direction of "
             f"{DIRECTED_ON} to publish every gauge the worksheets can.")
 
@@ -261,7 +292,7 @@ def entry(row: dict, series: dict) -> dict:
             "tier": tier,
             "basis": basis(row, tier),
             "directed_by": DIRECTED_BY,
-            "directed_on": DIRECTED_ON,
+            "directed_on": DAMS_DIRECTED_ON if dams_path(row) else DIRECTED_ON,
             "status": f"ruled_{tier}" if ruled(row) else STATUS,
             "evidence": evidence(row),
         },
