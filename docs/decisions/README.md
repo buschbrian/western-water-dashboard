@@ -83,7 +83,8 @@ denominator. **Start with ADR-070, then ADR-072, then ADR-003.**
 - Freshness and withdrawal:
   [ADR-056](ADR-056-withdraw-a-reading-that-belongs-to-another-season.md),
   [ADR-115](ADR-115-state-a-reviewed-hold-where-the-reservoir-used-to-be.md),
-  [ADR-126](ADR-126-key-a-withdrawal-notice-by-its-station.md)
+  [ADR-126](ADR-126-key-a-withdrawal-notice-by-its-station.md),
+  [ADR-173](ADR-173-keep-a-month-end-record-on-time-when-its-fetch-fails.md)
 - Superseded, read only for history: ADR-099
 - Procedure: [`docs/operations/source-admission.md`](../operations/source-admission.md)
 
@@ -403,6 +404,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-170](ADR-170-compare-each-stations-precipitation-with-its-own-past-years-on-the-map.md) | Compare each station's precipitation with its own past years on the map | Proposed; NCEI ranking classes, partial records placed against their own years, areas over full records |
 | [ADR-171](ADR-171-rule-the-columbia-and-snake-operating-characters.md) | Rule the Columbia and Snake operating characters | Accepted; applies ADR-156: eight Columbia and Snake navigation and power pools are steady pools, Bennington Lake is a flood-control basin, Dworshak and Willow Creek stay ordinary; `METHOD_VERSION` unchanged |
 | [ADR-172](ADR-172-publish-pyramid-lake-from-its-monthly-field-readings.md) | Publish Pyramid Lake from its monthly field readings | Accepted; extends ADR-112, ADR-118 and ADR-159: a monthly lake is one site's level from the survey's field readings, late after 45 days |
+| [ADR-173](ADR-173-keep-a-month-end-record-on-time-when-its-fetch-fails.md) | Keep a month-end record on time when its fetch fails | Proposed; extends ADR-056: a carried monthly record is late only past its own `stale_after_days`; a carried daily record is late at once |
 
 ## Relationship to the historical journal
 
