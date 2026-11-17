@@ -253,6 +253,10 @@ day or records why there is none.
 
 **`carry_forward`** keeps publishing a quiet feed's last value, because a point
 vanishing with no explanation is worse. True for days, false for months.
+A carried daily record is marked late at once. A carried month-end record is
+late only past its own `stale_after_days` (ADR-173): its feed has nothing new
+until the month ends, so a failed request loses no reading. `fetch_ok: false`
+records the failure either way.
 
 Past `WITHDRAW_AFTER_DAYS` (60) a record is **withdrawn** from the payload
 entirely (ADR-056), because `statewideRollup` sums `current_storage_af` with no

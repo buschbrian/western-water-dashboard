@@ -297,9 +297,10 @@ export function percentFull(reservoir: Reservoir): number | null {
  * calculation of it. `refresh_reservoirs.py` sets `is_stale` from
  * `days_stale > stale_after_days` using the threshold it publishes on the
  * same record -- two days for a daily feed, 45 for a month-end one -- and
- * forces it true whenever a fetch fails, which is also when `fetch_ok` goes
- * false. The validator requires all three fields, so there is nothing left
- * for a client-side rule to add.
+ * forces it true when a daily feed's fetch fails, which is also when
+ * `fetch_ok` goes false. A month-end record whose fetch fails keeps the same
+ * 45-day rule (ADR-173). The validator requires all three fields, so there is
+ * nothing left for a client-side rule to add.
  *
  * This used to be re-derived here, from a time when the pipeline compared
  * every reservoir against a single threshold. It no longer does. Deriving it
