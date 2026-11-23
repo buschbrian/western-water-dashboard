@@ -1,11 +1,13 @@
 import { isMeasured, worstClassCounts } from "../drought-model";
 import { formatInches, precipitationView } from "../precip-model";
-import { summaryRow } from "../rivers-model";
+import { FLOW_CLASS_WORDS, groupGauges, NATURAL_GROUP_HEADING, summaryDate } from "../rivers-model";
 import {
   headlineFloor, newestFloored, newestHeadline, normalPeriodLabel,
   percentAmounts, PERCENT_BASIS_SENTENCE, regionCurve
 } from "../snow-model";
-import type { DroughtCoveragePayload, PrecipitationHistory, PrecipitationPayload, RiverPayload, SnowpackPayload } from "../types";
+import type {
+  DroughtCoveragePayload, PrecipitationHistory, PrecipitationPayload, RiverFlowClass, RiverPayload, SnowpackPayload
+} from "../types";
 import { formatDate, formatPercent } from "../viz/format";
 import { NO_DROUGHT_LABEL } from "../viz/drought-classes";
 import type { FrameContent } from "./share-frame";
@@ -25,6 +27,8 @@ export interface SnapshotInputs {
 }
 
 export interface PageSnapshot extends FrameContent { file: string }
+
+const gauges = (count: number): string => `${count} ${count === 1 ? "gauge" : "gauges"}`;
 
 export function pageSnapshots(input: SnapshotInputs): PageSnapshot[] {
   const frames: PageSnapshot[] = [
@@ -75,9 +79,23 @@ export function pageSnapshots(input: SnapshotInputs): PageSnapshot[] {
     frame.source = drought.attribution;
   }
   if (input.rivers) {
+    // Counts, not one line per gauge: 142 lines cannot fit the frame (ADR-174).
     const rivers = input.rivers, frame = frames[3]!;
+    const { natural, shaped } = groupGauges(rivers.gauges);
+    const compared = natural.filter((gauge) => gauge.compared_with_normal);
+    const date = summaryDate(rivers.gauges);
+    const classes = (Object.keys(FLOW_CLASS_WORDS) as RiverFlowClass[])
+      .map((key) => [FLOW_CLASS_WORDS[key], compared.filter((gauge) => gauge.flow_class === key).length] as const)
+      .filter(([, count]) => count > 0);
     frame.figure = `${rivers.gauges.length} river gauges`;
-    frame.lines = rivers.gauges.map((gauge) => `${gauge.name}: ${summaryRow(gauge, null).flow} cubic feet per second (${formatDate(gauge.as_of)}).`);
+    frame.lines = [
+      date ? `Newest reading: ${formatDate(date)}.` : "",
+      `${NATURAL_GROUP_HEADING}: ${gauges(compared.length)}.`,
+      classes.map(([word, count]) => `${word}: ${count}.`).join(" "),
+      natural.length > compared.length
+        ? `Not compared, too little record: ${gauges(natural.length - compared.length)}.` : "",
+      `Flow only, with dams upstream: ${gauges(shaped.length)}.`
+    ].filter(Boolean);
     frame.source = `Readings: U.S. Geological Survey. Daily means; ${rivers.stale_count} ${rivers.stale_count === 1 ? "gauge" : "gauges"} with late data`;
   }
   return frames;

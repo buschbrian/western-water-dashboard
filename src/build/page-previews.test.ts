@@ -5,7 +5,7 @@ import { readDroughtCoverage, readSnowpack, readSnowpackEarlySeasonFixture, read
 import { validatePrecipitationHistory, validatePrecipitationPayload } from "../data/precip-validate";
 import { formatInches, precipitationView } from "../precip-model";
 import { validateRiverPayload } from "../data/rivers-validate";
-import { summaryRow } from "../rivers-model";
+import { FLOW_CLASS_WORDS, groupGauges } from "../rivers-model";
 import { headlineFloor, newestFloored, newestHeadline, regionCurve } from "../snow-model";
 import { formatPercent } from "../viz/format";
 
@@ -60,12 +60,37 @@ describe("main-page preview pictures", () => {
     expect(frame.figure).not.toMatch(/\bin inches\b/);
   });
 
-  it("keeps each gauge's reading separate and preserves the page's precision", () => {
+  it("counts river gauges by the page's groups and classes, in a few lines", () => {
     const rivers = validateRiverPayload(JSON.parse(readFileSync("rivers.json", "utf8")));
     const frame = pageSnapshots({ rivers }).find((entry) => entry.file === "page-rivers")!;
-    for (const gauge of rivers.gauges) {
-      expect(frame.lines.join(" ")).toContain(`${gauge.name}: ${summaryRow(gauge, null).flow} cubic feet per second`);
+    const { natural, shaped } = groupGauges(rivers.gauges);
+    const compared = natural.filter((gauge) => gauge.compared_with_normal);
+    const text = frame.lines.join(" ");
+    expect(frame.figure).toBe(`${rivers.gauges.length} river gauges`);
+    expect(frame.lines.length).toBeLessThanOrEqual(5);
+    expect(text).toContain(`Compared with normal: ${compared.length} gauge`);
+    expect(text).toContain(`Flow only, with dams upstream: ${shaped.length} gauge`);
+    for (const gauge of rivers.gauges) expect(text).not.toContain(gauge.name);
+    for (const [key, word] of Object.entries(FLOW_CLASS_WORDS)) {
+      const count = compared.filter((gauge) => gauge.flow_class === key).length;
+      if (count) expect(text).toContain(`${word}: ${count}.`);
+      else expect(text).not.toContain(`${word}:`);
     }
+  });
+
+  it("counts natural gauges with no comparison apart, and uses the singular", () => {
+    const rivers = validateRiverPayload(JSON.parse(readFileSync("rivers.json", "utf8")));
+    const natural = rivers.gauges.find((gauge) => gauge.tier === "natural" && gauge.compared_with_normal);
+    const shaped = rivers.gauges.find((gauge) => gauge.tier !== "natural");
+    if (!natural || !shaped) return;
+    const withheld = { ...natural, compared_with_normal: false, normal_band: null, flow_class: null,
+      normal_withheld: "ten_years_or_fewer", short_record: null } as unknown as typeof natural;
+    const frame = pageSnapshots({ rivers: { ...rivers, gauges: [natural, withheld, shaped] } })
+      .find((entry) => entry.file === "page-rivers")!;
+    const text = frame.lines.join(" ");
+    expect(text).toContain("Compared with normal: 1 gauge.");
+    expect(text).toContain("Not compared, too little record: 1 gauge.");
+    expect(text).toContain("Flow only, with dams upstream: 1 gauge.");
   });
 
   it("leaves missing domains with a notice instead of manufacturing measurements", () => {
