@@ -1,6 +1,6 @@
 # ADR-169: Compare soil moisture with each station's past years
 
-- Status: Proposed
+- Status: Accepted (Brian Busch, 2026-11-23)
 - Date: 2026-11-14
 - Extends: ADR-142 (the week's change; this is its "phase 2"), ADR-167 (the
   0–100 bound applies to the history as well)

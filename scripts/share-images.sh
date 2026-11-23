@@ -12,7 +12,7 @@
 # npm only, and no browser fetch) against a Chromium already on the
 # machine: PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH if set, else the first of
 # google-chrome, google-chrome-stable, chromium and chromium-browser on PATH.
-# GitHub's ubuntu-latest image carries Google Chrome. With none, the fallback
+# GitHub's ubuntu-26.04 image carries Google Chrome. With none, the fallback
 # images are published.
 set -uo pipefail
 
