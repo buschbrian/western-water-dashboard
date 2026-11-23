@@ -320,11 +320,13 @@ names, the committed scope boundaries and the committed land mask. The
 download's simplified polygons are drawn by the map and never measured; a week
 whose archive map is not posted is not measured at all (ADR-122). It is
 deterministic and carries no timestamps, so an unchanged week writes an
-unchanged file.
+unchanged file. Four coverage files (HUC-2, HUC-4, HUC-6 and HUC-8) are
+committed together, so a reader who changes the level never lands on another
+week.
 
-**The archives hold a decade at one method version.** Each level's
-`usdm-huc{level}-history.json` keeps 520 weeks, every one measured from its
-archive map. `tools/backfill_drought_history.py --rebuild` measures them all
+**The archives hold a decade at one method version.** Each of the HUC-2,
+HUC-4 and HUC-6 levels has a `usdm-huc{level}-history.json` that keeps 520
+weeks, every one measured from its archive map. HUC-8 has no archive. `tools/backfill_drought_history.py --rebuild` measures them all
 again when `METHOD_VERSION` moves; `--verify-overlap` recomputes held weeks
 and compares exactly, and the default fill mode refuses to add a week until
 that passes. A week the archive could not supply is named in `backfill.skipped`

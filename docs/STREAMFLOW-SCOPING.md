@@ -1,5 +1,14 @@
 # Scoping streamflow, and what it would make this site
 
+> **Historical scoping document, dated 2026-08-29.** It was written before
+> ADR-078 was superseded by
+> [ADR-112](decisions/ADR-112-publish-terminal-lakes-as-a-separate-water-type.md).
+> The river flow page it scoped has shipped
+> ([ADR-136](decisions/ADR-136-publish-daily-flow-at-four-rivers-toward-lake-powell.md),
+> [ADR-148](decisions/ADR-148-put-river-flow-in-the-page-menu-and-the-bar.md)).
+> Read the body as evidence about that date, not as the current position;
+> current architecture is [`docs/architecture/`](architecture/README.md).
+
 This site is called the Western Water Dashboard and its roster is reservoirs.
 That gap is not an accident of naming -- ADR-045 chose the name for the water
 and each page for its subject, and snow and drought already have their own

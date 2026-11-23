@@ -36,7 +36,7 @@ the module that owns the concern, not in the orchestrator.
   what a silently failed fetch looks like.
 - **Capacity precedence is a decision, not a tweak** (ADR-070). A preferred
   full level names its source or the roster refuses to load.
-- Keep `requirements-pipeline.txt` at numpy, pandas and requests. Test-only
+- Keep `requirements-pipeline.txt` at numpy, pandas, requests and tzdata. Test-only
   dependencies live in `requirements-test.txt`.
 
 Verify: `npm run verify:pipeline`.
