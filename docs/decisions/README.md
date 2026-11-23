@@ -36,7 +36,7 @@ than bundled. **Start with ADR-002.**
   [ADR-145](ADR-145-compare-river-gauges-above-ten-years-shorten-two-names-and-round-the-page.md),
   [ADR-146](ADR-146-keep-river-flow-and-soil-moisture-change-day-by-day.md),
   [ADR-168](ADR-168-publish-every-bulk-queue-river-gauge.md),
-  [ADR-173](ADR-173-show-river-gauges-with-dams-upstream-as-flow-only.md),
+  [ADR-175](ADR-175-show-river-gauges-with-dams-upstream-as-flow-only.md),
   [ADR-154](ADR-154-keep-a-permanent-share-address-for-every-reservoir.md),
   [ADR-160](ADR-160-publish-storage-history-apart-from-the-summary.md),
   [ADR-161](ADR-161-publish-only-reviewed-reservoir-inflow-and-release.md),
@@ -405,7 +405,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-171](ADR-171-rule-the-columbia-and-snake-operating-characters.md) | Rule the Columbia and Snake operating characters | Accepted; applies ADR-156: eight Columbia and Snake navigation and power pools are steady pools, Bennington Lake is a flood-control basin, Dworshak and Willow Creek stay ordinary; `METHOD_VERSION` unchanged |
 | [ADR-172](ADR-172-publish-pyramid-lake-from-its-monthly-field-readings.md) | Publish Pyramid Lake from its monthly field readings | Accepted; extends ADR-112, ADR-118 and ADR-159: a monthly lake is one site's level from the survey's field readings, late after 45 days |
 | [ADR-173](ADR-173-keep-a-month-end-record-on-time-when-its-fetch-fails.md) | Keep a month-end record on time when its fetch fails | Proposed; extends ADR-056: a carried monthly record is late only past its own `stale_after_days`; a carried daily record is late at once |
-| [ADR-173](ADR-173-show-river-gauges-with-dams-upstream-as-flow-only.md) | Show river gauges with dams upstream as flow only | Accepted (2026-11-16); extends ADR-168 and ADR-137: an unruled review row with a dam upstream is published `shaped`, with no 1991-2020 record required; diversion and check rows stay held |
+| [ADR-175](ADR-175-show-river-gauges-with-dams-upstream-as-flow-only.md) | Show river gauges with dams upstream as flow only | Proposed; extends ADR-168 and ADR-137: an unruled review row with water stored upstream (a published reservoir, or a dam with storage that is not only a dam near the gauge) is published `shaped`, with no 1991-2020 record required; reference-class natural, diversion and check rows stay in review |
 
 ## Relationship to the historical journal
 

@@ -232,9 +232,12 @@ value, a notice carrying a measurement, and a roster gauge in neither list.
 
 **The roster is written from the review worksheets** (ADR-168).
 `tools/admit_bulk_river_gauges.py` adds each `bulk`-queue row and each row
-Brian ruled in the review page, and each unruled `review` row with a dam
-upstream as `shaped` (ADR-173), and prints every row it holds with the
-reason. It holds a series that reports no value in the last
+Brian ruled in the review page. Under ADR-175 (Proposed) it also adds each
+unruled `review` row with water stored upstream as `shaped`: a published
+reservoir, or an inventoried dam with storage that is not only a dam near the
+gauge; reference-class `natural` rows stay in review. It prints every row it
+loads and holds, with the reason; `diversion` and `check` rows stay in the
+worksheets unprinted. It holds a series that reports no value in the last
 `RIVER_FETCH_DAYS` days: a new gauge has no earlier record to carry forward,
 so one with nothing to publish would leave a roster gauge in neither list
 and the whole river payload would be refused.

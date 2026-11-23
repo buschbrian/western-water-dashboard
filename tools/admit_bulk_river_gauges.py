@@ -10,10 +10,13 @@ with the reason it was held:
 
 - `review_queue` is `bulk` and `suggested_ruling` is `reservoir` (published as
   `shaped`) or `natural`, and `reviewer_ruling` is blank or the same tier;
-  or (ADR-173) `review_queue` is `review`, `reviewer_ruling` is blank, the
-  suggestion is `reservoir`, `natural` or `short`, and a dam is upstream:
-  published as `shaped`, flow only, with no record span required;
-- the record covers 1991-2020 (except ADR-173 rows) and the basin is traced;
+  or (ADR-175) `review_queue` is `review`, `reviewer_ruling` is blank, the
+  suggestion is `reservoir`, `natural` or `short` (not a GAGES-II reference
+  natural row), and water is stored upstream: a published reservoir, or an
+  inventoried dam with storage that is not only a dam near the gauge.
+  Published as `shaped`, flow only, with no record span required;
+- the record covers 1991-2020 (except ADR-175 rows), the basin is traced and
+  has a HUC8 name;
 - the display name (`accepted_display_name`, else `proposed_display_name`) has
   no open `name_check` and is not already used by another gauge;
 - for `natural`: no published reservoir upstream, storage under 10% of a year's
@@ -78,7 +81,7 @@ DIRECTED_ON = "2026-11-14"
 #: agreed in bulk. That is the ruling a bulk natural row rests on.
 BULK_RULED_ON = "2026-10-27"
 STATUS = "pending_formal_ruling"
-#: ADR-173: Brian directed on 2026-11-16 that a gauge held back only because
+#: ADR-175: Brian directed on 2026-11-16 that a gauge held back only because
 #: dams are upstream be shown, flow only, with the dams noted. A `review` row
 #: whose suggestion is one of these and whose traced basin holds a dam is
 #: published as `shaped`. `diversion` and `check` rows stay with a person.
@@ -112,14 +115,29 @@ def display_name(row: dict) -> str:
     return (row.get("accepted_display_name") or row["proposed_display_name"]).strip()
 
 
-def has_dams(row: dict) -> bool:
-    return bool(_reservoirs(row["upstream_reservoirs"])) or (_number(row.get("dams_upstream", "")) or 0) > 0
+def _near_gauge(row: dict) -> list[str]:
+    return [name.strip() for name in (row.get("dams_near_gauge") or "").split(";") if name.strip()]
+
+
+def stores_water_upstream(row: dict) -> bool:
+    """ADR-175: a published reservoir in the traced basin, or inventoried dams that
+    store water and are not only the dams within 1 km of the gauge, which may be
+    below it. A dam the inventory lists with no storage does not count."""
+    if _reservoirs(row["upstream_reservoirs"]):
+        return True
+    dams = _number(row.get("dams_upstream", "")) or 0
+    storage = _number(row.get("dam_storage_af", "")) or 0
+    return storage > 0 and dams > len(_near_gauge(row))
 
 
 def dams_path(row: dict) -> bool:
-    """ADR-173: an unruled `review` row shown only because dams are upstream."""
+    """ADR-175: an unruled `review` row shown only because stored water is upstream.
+    A GAGES-II reference row suggested natural stays in review for a person."""
+    reference_natural = (row["suggested_ruling"] == "natural"
+                         and row["gages2_class"] == "reference")
     return (row["review_queue"] == "review" and not (row.get("reviewer_ruling") or "")
-            and row["suggested_ruling"] in DAMS_SUGGESTIONS and has_dams(row))
+            and row["suggested_ruling"] in DAMS_SUGGESTIONS and not reference_natural
+            and stores_water_upstream(row))
 
 
 def ruled(row: dict) -> bool:
@@ -145,6 +163,8 @@ def held_reason(row: dict, names_in_use: set[str]) -> str | None:
         return f"suggested {suggestion}: not a published tier"
     if not ruled(row) and not dams_path(row) and row["covers_1991_2020"] != "yes":
         return "record does not cover 1991-2020"
+    if not row["huc8_name"]:
+        return "outside the drawn drainage areas (no HUC8 name)"
     if row["trace_screen"] != "traced":
         return f"basin trace is {row['trace_screen'] or 'missing'}"
     if row["name_check"]:
@@ -155,11 +175,11 @@ def held_reason(row: dict, names_in_use: set[str]) -> str | None:
         return f"the name calls the gauge's own water a {channel[0]}: a person decides"
     if display_name(row) in names_in_use:
         return f"display name {display_name(row)!r} is already used"
-    if tier == "shaped" and not has_dams(row):
+    if tier == "shaped" and not stores_water_upstream(row):
         share = _number(row["storage_share_pct"])
         if share is None or share < RIVER_NATURAL_STORAGE_SHARE_PCT:
-            return (f"shaped, but no published reservoir upstream and storage is {share}% "
-                    "of a year's flow, under ADR-137's 10%: a person decides")
+            return (f"shaped, but no published reservoir and no dam that stores water above "
+                    f"the gauge; storage is {share}% of a year's flow: a person decides")
     if tier == "natural":
         share = _number(row["storage_share_pct"])
         if _reservoirs(row["upstream_reservoirs"]) or share is None \
@@ -217,7 +237,7 @@ def basis(row: dict, tier: str) -> str:
                  f"{found['dams_upstream']} inventoried dam(s) hold "
                  + (f"{share}% of a year's flow, under 10%." if share is not None
                     else "an unmeasured share of a year's flow, not shown to reach 10%.")
-                 + " ADR-173: shown as flow only with the dams upstream noted.")
+                 + " ADR-175: shown as flow only with the dams upstream noted.")
     elif tier == "shaped":
         first = (f"ADR-137: no published reservoir in the traced basin, but inventoried dams "
                  f"hold {share}% of a year's flow, at or above 10%.")
@@ -230,7 +250,8 @@ def basis(row: dict, tier: str) -> str:
                 f"{when}; added at his direction of {DIRECTED_ON}.")
     if dams_path(row):
         return (f"{first} Worksheet review queue, added at Brian Busch's direction of "
-                f"{DAMS_DIRECTED_ON} to show gauges with dams upstream rather than hold them.")
+                f"{DAMS_DIRECTED_ON} to show gauges with dams upstream rather than hold them "
+                "(ADR-175).")
     return (f"{first} Worksheet bulk queue (ADR-138), added at Brian Busch's direction of "
             f"{DIRECTED_ON} to publish every gauge the worksheets can.")
 
@@ -317,6 +338,27 @@ def select(rows: list[dict], roster: dict) -> tuple[list[dict], list[tuple[dict,
     return chosen, held
 
 
+def selection_note(rows: list[dict]) -> str:
+    """One sentence for each kind of row a run added, so the roster says truly
+    where each gauge came from."""
+    bulk = sum(1 for row in rows if not ruled(row) and not dams_path(row))
+    ruled_rows = sum(1 for row in rows if ruled(row))
+    dams = sum(1 for row in rows if dams_path(row))
+    note = ""
+    if bulk:
+        note += (f" On {DIRECTED_ON} Brian Busch directed that every gauge the worksheets can "
+                 f"publish be added (ADR-168): {bulk} more from the worksheets' bulk queue, "
+                 "written by tools/admit_bulk_river_gauges.py, each pending his formal ruling.")
+    if ruled_rows:
+        note += (f" {ruled_rows} more {'is a ruling' if ruled_rows == 1 else 'are rulings'} "
+                 "Brian Busch saved in the review page, written by the same tool.")
+    if dams:
+        note += (f" On {DAMS_DIRECTED_ON} Brian Busch directed that gauges with stored water "
+                 f"upstream be shown as flow only (ADR-175): {dams} more from the worksheets' "
+                 "review queue, written by the same tool, each pending his formal ruling.")
+    return note
+
+
 def render(document: dict) -> str:
     """The roster's own layout: two-space indent, a list of names on one line."""
     text = json.dumps(document, indent=2, ensure_ascii=False)
@@ -347,6 +389,7 @@ def main(argv: list[str] | None = None, *, lookup=lookup_series,
 
     gauges = dict(document["gauges"])
     failed = 0
+    added_rows: list[dict] = []
     for index, row in enumerate(chosen):
         if index:
             time.sleep(pause)
@@ -358,6 +401,7 @@ def main(argv: list[str] | None = None, *, lookup=lookup_series,
             failed += 1
             continue
         gauges[station] = entry(row, series)
+        added_rows.append(row)
         print(f"ADD  {station} {display_name(row)}: {gauges[station]['tier']['tier']}")
     added = len(gauges) - len(document["gauges"])
     if not added:
@@ -365,11 +409,7 @@ def main(argv: list[str] | None = None, *, lookup=lookup_series,
         return 1 if failed else 0
     document["gauges"] = gauges
     document["reviewed"] = today_text
-    document["selection"] = document["selection"].rstrip() + (
-        f" On {DIRECTED_ON} Brian Busch directed that every gauge the worksheets can publish "
-        f"be added (ADR-168): {added} more from the Utah, Colorado, New Mexico and Arizona "
-        "worksheets' bulk queue, written by tools/admit_bulk_river_gauges.py, each pending "
-        "his formal ruling.")
+    document["selection"] = document["selection"].rstrip() + selection_note(added_rows)
     candidate = path.with_suffix(".candidate.json")
     candidate.write_text(render(document), encoding="utf-8")
     try:
