@@ -1,6 +1,6 @@
 # ADR-170: Compare each station's precipitation with its own past years on the map
 
-- Status: Proposed
+- Status: Accepted (Brian Busch, 2026-11-23)
 - Date: 2026-11-14
 - Extends: ADR-125 (precipitation against a fixed history), ADR-131 (precipitation map), ADR-142 (map modes)
 
