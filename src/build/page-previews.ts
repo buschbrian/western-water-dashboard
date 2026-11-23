@@ -6,7 +6,7 @@ import {
   percentAmounts, PERCENT_BASIS_SENTENCE, regionCurve
 } from "../snow-model";
 import type {
-  DroughtCoveragePayload, PrecipitationHistory, PrecipitationPayload, RiverFlowClass, RiverPayload, SnowpackPayload
+  DroughtCoveragePayload, PrecipitationHistory, PrecipitationPayload, RiverFlowClass, RiverNormalWithheld, RiverPayload, SnowpackPayload
 } from "../types";
 import { formatDate, formatPercent } from "../viz/format";
 import { NO_DROUGHT_LABEL } from "../viz/drought-classes";
@@ -29,6 +29,12 @@ export interface SnapshotInputs {
 export interface PageSnapshot extends FrameContent { file: string }
 
 const gauges = (count: number): string => `${count} ${count === 1 ? "gauge" : "gauges"}`;
+
+// The rivers page's own reasons (summaryComparison in rivers-model.ts).
+const WITHHELD_WORDS: readonly (readonly [RiverNormalWithheld, string])[] = [
+  ["ten_years_or_fewer", "Not compared, 10 years of record or fewer"],
+  ["percentile_missing", "Not compared, no normal for this date"]
+];
 
 export function pageSnapshots(input: SnapshotInputs): PageSnapshot[] {
   const frames: PageSnapshot[] = [
@@ -92,8 +98,10 @@ export function pageSnapshots(input: SnapshotInputs): PageSnapshot[] {
       date ? `Newest reading: ${formatDate(date)}.` : "",
       `${NATURAL_GROUP_HEADING}: ${gauges(compared.length)}.`,
       classes.map(([word, count]) => `${word}: ${count}.`).join(" "),
-      natural.length > compared.length
-        ? `Not compared, too little record: ${gauges(natural.length - compared.length)}.` : "",
+      ...WITHHELD_WORDS.map(([reason, words]) => {
+        const count = natural.filter((gauge) => gauge.tier === "natural" && gauge.normal_withheld === reason).length;
+        return count ? `${words}: ${gauges(count)}.` : "";
+      }),
       `Flow only, with dams upstream: ${gauges(shaped.length)}.`
     ].filter(Boolean);
     frame.source = `Readings: U.S. Geological Survey. Daily means; ${rivers.stale_count} ${rivers.stale_count === 1 ? "gauge" : "gauges"} with late data`;
