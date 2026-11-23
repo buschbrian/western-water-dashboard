@@ -29,8 +29,9 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   publishes no daily volume for either arm. `lakes.json` moves to structure
   version 2: a lake may carry `arms`, its `volume` may be null, and a target
   names its decision and datum. Walker Lake is unchanged apart from an empty
-  `arms` list. Pyramid Lake stays held for its monthly readings and Mono Lake
-  for a daily elevation series; the roster records exactly what each needs.
+  `arms` list. Pyramid Lake joined later with its monthly readings (ADR-172);
+  Mono Lake stays held for a daily elevation series. The roster records
+  exactly what each needs.
 - **Seasonal storage read apart from steady pools and flood-control basins**
   (ADR-156, carrying out ADR-114's deferred arithmetic). A roster entry can
   now carry a reviewed `operating_character` (`restricted`, `run_of_river` or
@@ -44,12 +45,11 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   share cards show the split only where a place holds such waters, and a
   reservoir's details give ADR-114's sentence. A reviewed `flood_space`
   candidate is no longer referred for never being seen a third full.
-  **No reservoir carries a character yet**, so no published figure changes;
-  characters are ruled one drainage region at a time. `METHOD_VERSION` is not
-  moved by this release: it names the seasonal estimator, and no normal is
-  invalidated while every area total is unchanged. It moves when the first
-  region's characters land and area figures change, as ADR-156's
-  consequences describe.
+  The first region is ruled in ADR-171: eight `run_of_river` pools and
+  Bennington Lake as `flood_space`, on the Columbia and Snake basins; further
+  regions are ruled one at a time. `METHOD_VERSION` does not move: it names
+  the seasonal estimator, and the comparison with normal is computed at run
+  time over the seasonal-storage reservoirs, so no normal is rebuilt.
 
 - **Fairmont Reservoir** from the California Department of Water Resources,
   on a reviewed match to Fairmont No. 2 (493 acre-feet). The automatic match
@@ -186,25 +186,13 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   its own daily series shows was wrong. With that reading excluded
   (ADR-116), it passes every admission screen. Its full level is the
   provider's 150,000 acre-feet. Its 1991-2020 normal is built.
-- **Three natural river gauges compared with normal** (ADR-144) on the river
-  flow page: Mill Creek near Moab, Blacks Fork near Robertson and South Creek
-  near Monticello. Each gauge's newest daily flow is placed in one of five
-  classes, from much below normal to much above normal, against the U.S.
-  Geological Survey's percentiles of approved daily values for the same date.
-  The page shows the normal range, the median and how many years they rest
-  on. A date with fewer than 30 years gets no comparison, and the page says
-  why. Middle Fork Beaver Creek is held out at 22 years. The four rivers
-  toward Lake Powell are unchanged and are still not compared with normal.
-  `rivers.json` moves to structure version 2 with `normal_band`, `flow_class`
-  and `normal_withheld` on natural gauges; the percentiles are a committed
-  reference file, `river_normals.json`, rebuilt by
-  `tools/build_river_normals.py`.
 - **A picture for a shared Lake Powell or Lake Mead link** (ADR-141). Two
   share pages, `share/lake-powell.html` and `share/lake-mead.html`, carry the
   card tags and send a person on to the reservoir page. The picture on the
   card is the reservoir's name, surface level with its datum, reading date and
   water-year chart, captured from the site in each morning's deploy; a
-  committed picture is published if the capture fails. The same frame opens
+  fallback picture with no reservoir name or figure is published if the
+  capture fails (ADR-154). The same frame opens
   at `reservoir.html?name=...&view=share`.
 - **Surface level for Lake Powell and Lake Mead** (ADR-135) on their
   reservoir pages: a "Surface level" card with dated changes and record
