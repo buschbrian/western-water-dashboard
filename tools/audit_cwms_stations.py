@@ -58,7 +58,8 @@ import admission  # noqa: E402
 from audit_candidate_capacity import fetch_dams, find_dam_layer  # noqa: E402
 from huc import assign_huc, load_units  # noqa: E402
 from pipeline.providers import (  # noqa: E402
-    CWMS_CATALOG_URL, CWMS_LOCATIONS_URL, _get_cwms_json, fetch_cwms_series,
+    CWMS_CATALOG_URL, CWMS_LOCATIONS_URL, MAX_PAGES, _get_cwms_json,
+    fetch_cwms_series,
 )
 from pipeline.roster import (  # noqa: E402
     ADMITTED_CWMS_RESERVOIRS, AWDB_RESERVOIRS, CDEC_RESERVOIRS, CDSS_RESERVOIRS,
@@ -100,13 +101,14 @@ def roster_points() -> list[tuple[str, str, float, float]]:
 
 def catalog(office: str) -> list[dict]:
     entries, params = [], {"office": office, "like": ".*Stor.*", "page-size": 500}
-    while True:
+    for _ in range(MAX_PAGES):
         page = _get_cwms_json(CWMS_CATALOG_URL, params)
         entries.extend(page.get("entries") or [])
         token = page.get("next-page")
         if not token:
             return entries
         params = {**params, "page": token}
+    raise RuntimeError(f"CWMS pagination exceeded {MAX_PAGES} pages")
 
 
 def locations(office: str) -> dict[str, dict]:
