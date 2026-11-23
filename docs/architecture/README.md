@@ -51,7 +51,7 @@ and the Python pipelines.
 | `methods.html`, `data.html`, `terms.html`, `reporters.html` | Methods, public data API, terms and publication guidance. |
 | `legacy/`, `maplibre/`, `explore.html` | Compatibility redirects only (ADR-031). |
 | `public/retired-route.js` | Allowlisted URL-state translation for those redirects. |
-| `public/share/` | Hand-kept share pages and fallback pictures for a shared reservoir link (ADR-141). |
+| `public/share/` | The one fallback picture (`fallback.png`) for a shared link. The share pages are generated at build time (ADR-154). |
 | `shared/reservoir-viz.js` | Frozen source-only colour-table owner and test oracle. Never published. |
 | `src/` | Strict TypeScript, including the complete runtime data validator. |
 | `pipeline/`, `refresh_reservoirs.py`, `refresh_snowpack.py` | Reservoir and snow refresh pipelines. |
@@ -91,10 +91,16 @@ Those surfaces are now published; this dated sequencing decision is no longer
 a pending release gate. It does not record completion of the human visual review.
 
 The scope closed at 1.0.0
-([ADR-117](../decisions/ADR-117-close-the-scope-at-version-1-0-0.md)). Work
-after it is maintenance and context — words, photographs, a provider that
-breaks, a reviewed source question. A new measured domain, a new rollup axis or
-a new computing page is out of scope and needs its own record first.
+([ADR-117](../decisions/ADR-117-close-the-scope-at-version-1-0-0.md)), which
+[ADR-124](../decisions/ADR-124-bound-recent-conditions-to-a-static-data-pilot.md)
+supersedes for the bounded pilot only; ADR-117's versioning, release approval
+and other scope limits stay. Drought history
+([ADR-123](../decisions/ADR-123-draw-ten-years-of-drought-on-the-drought-page.md))
+and precipitation
+([ADR-125](../decisions/ADR-125-measure-precipitation-at-the-snow-stations-against-a-fixed-history.md))
+came back into scope on their own records, and so did later pages such as
+river flow and terminal lakes. A new measured domain, a new rollup axis or a
+new computing page still needs its own record first.
 
 ## Generated and source-owned files
 
