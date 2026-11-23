@@ -41,17 +41,18 @@ from pipeline.providers import (  # noqa: E402
 )
 from pipeline.roster import load_admitted_river_gauges  # noqa: E402
 
-DESCRIPTION = (
-    "Day-of-year percentiles of daily mean flow for the natural river gauges (ADR-144), "
-    "as the U.S. Geological Survey's statistics service publishes them: computed from "
-    "approved daily means sharing a calendar day, over the whole approved record, with "
-    "the Weibull plotting position (measured against the daily record on 2026-10-31). "
-    "years is the number of approved values on that day. A day with fewer than "
-    f"{RIVER_NORMAL_MIN_YEARS} years, or a percentile the service gives as nan, is never "
-    f"compared with; a compared day with fewer than {RIVER_NORMAL_FULL_YEARS} years is "
-    "published as a short record (ADR-145). Written by tools/build_river_normals.py; "
-    "never hand-edited."
-)
+def describe(retrieved: str) -> str:
+    return (
+        "Day-of-year percentiles of daily mean flow for the natural river gauges (ADR-144), "
+        "as the U.S. Geological Survey's statistics service publishes them: computed from "
+        "approved daily means sharing a calendar day, over the whole approved record, with "
+        f"the Weibull plotting position (measured against the daily record on {retrieved}). "
+        "years is the number of approved values on that day. A day with fewer than "
+        f"{RIVER_NORMAL_MIN_YEARS} years, or a percentile the service gives as nan, is never "
+        f"compared with; a compared day with fewer than {RIVER_NORMAL_FULL_YEARS} years is "
+        "published as a short record (ADR-145). Written by tools/build_river_normals.py; "
+        "never hand-edited."
+    )
 
 
 def build_entry(station: str, series_id: str, retrieved: str, fetch=fetch_usgs_flow_normals) -> dict:
@@ -129,15 +130,16 @@ def main(argv: list[str] | None = None, *, fetch=fetch_usgs_flow_normals,
     if stray:
         print(f"kept {', '.join(stray)}: not natural on the roster; --prune drops them")
 
+    oldest = min((g["retrieved"] for g in gauges.values()), default=retrieved)
     document = {
-        "description": DESCRIPTION,
+        "description": describe(oldest),
         "source": "U.S. Geological Survey",
         "source_url": USGS_STATISTICS_NORMALS_URL,
         "percentiles": list(RIVER_NORMAL_PERCENTILES),
         "min_years": RIVER_NORMAL_MIN_YEARS,
         # The oldest gauge's date, so the freshness check reports the file due
         # when its stalest entry is.
-        "retrieved": min((g["retrieved"] for g in gauges.values()), default=retrieved),
+        "retrieved": oldest,
         "gauges": {station: gauges[station] for station in sorted(gauges)},
     }
     if args.dry_run:
