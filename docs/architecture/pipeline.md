@@ -232,7 +232,7 @@ value, a notice carrying a measurement, and a roster gauge in neither list.
 
 **The roster is written from the review worksheets** (ADR-168).
 `tools/admit_bulk_river_gauges.py` adds each `bulk`-queue row and each row
-Brian ruled in the review page. Under ADR-175 (Proposed) it also adds each
+Brian ruled in the review page. Under ADR-175 it also adds each
 unruled `review` row with water stored upstream as `shaped`: a published
 reservoir, or an inventoried dam with storage that is not only a dam near the
 gauge; reference-class `natural` rows stay in review. It prints every row it

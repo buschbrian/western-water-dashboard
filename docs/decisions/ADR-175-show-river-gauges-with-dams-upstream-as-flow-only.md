@@ -1,6 +1,6 @@
 # ADR-175: Show river gauges with dams upstream as flow only
 
-- Status: Proposed
+- Status: Accepted (Brian Busch, 2026-11-23)
 - Date: 2026-11-16; dam rule narrowed by Brian Busch on 2026-11-23
 - Extends: ADR-168 (publish every bulk-queue river gauge), ADR-137 (the tier rule)
 - Relates to: ADR-136 (the roster and the page), ADR-138 (the review queues)
