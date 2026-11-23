@@ -22,9 +22,9 @@ this on 2026-11-23.
 - The figure stays the number of published gauges.
 - The lines say the newest reading date; how many gauges are compared with
   normal, with a count for each of the five flow classes that has one; how
-  many natural gauges are not compared because their record is too short or
-  has no normal for the date; and how many show flow only because dams are
-  upstream.
+  many natural gauges are not compared, on one line for each reason the page
+  gives (10 years of record or fewer, or no normal for this date); and how
+  many show flow only because dams are upstream.
 - The footer keeps the source and the count of gauges with late data.
 - The counts come from the page's own model (`groupGauges`, `summaryDate`,
   `FLOW_CLASS_WORDS`), so the picture and the page cannot disagree about a
