@@ -18,7 +18,8 @@ def first_roster(tmp_path) -> Path:
     """The roster as it stood before ADR-168: what the tool adds to."""
     document = json.loads((ROOT / "admitted_river_gauges.json").read_text())
     document["gauges"] = {s: e for s, e in document["gauges"].items()
-                          if e["tier"]["directed_on"] != admit.DIRECTED_ON}
+                          if e["tier"]["directed_on"] not in
+                          (admit.DIRECTED_ON, admit.DAMS_DIRECTED_ON)}
     path = tmp_path / "admitted_river_gauges.json"
     path.write_text(admit.render(document))
     return path
@@ -36,7 +37,7 @@ def test_the_selection_is_only_bulk_rows_the_loader_would_take(tmp_path):
     chosen, held = admit.select(rows, first)
     assert chosen, "the worksheets have bulk rows to add"
     for row in chosen:
-        assert row["review_queue"] == "bulk" or admit.ruled(row)
+        assert row["review_queue"] == "bulk" or admit.ruled(row) or admit.dams_path(row)
         assert admit.tier_of(row) in {"shaped", "natural"}
         assert row["usgs_site_no"] not in first
     reasons = {row["usgs_site_no"]: reason for row, reason in held}
@@ -49,15 +50,18 @@ def test_a_waterwork_name_and_a_non_reference_natural_row_are_held():
             "trace_screen": "traced", "name_check": "", "accepted_display_name": "",
             "proposed_display_name": "Bruce Church Wasteway near Yuma",
             "upstream_reservoirs": "", "storage_share_pct": "50", "gages2_class": "reference",
-            "flow_years": "35", "review_queue": "bulk", "notes": ""}
+            "flow_years": "35", "review_queue": "bulk", "notes": "", "huc8_name": "Lower Gila"}
     assert "wasteway" in admit.held_reason(base, set())
     above = dict(base, proposed_display_name="Mammoth Creek above West Hatch Ditch, near Hatch")
     assert admit.held_reason(above, set()) is None
     natural = dict(base, suggested_ruling="natural", proposed_display_name="Big Creek",
                    gages2_class="not_listed", storage_share_pct="0")
     low = dict(base, proposed_display_name="Ashley Creek", storage_share_pct="2.1",
-               reviewer_ruling="reservoir")
+               reviewer_ruling="reservoir", dams_upstream="0", dam_storage_af="0")
     assert "a person decides" in admit.held_reason(low, set())
+    assert admit.held_reason(dict(low, dams_upstream="3", dam_storage_af="1809"), set()) is None, \
+        "ADR-175: a dam that stores water upstream is enough to show a shaped gauge"
+    assert "HUC8" in admit.held_reason(dict(base, huc8_name=""), set())
     assert "reference" in admit.held_reason(natural, set())
     assert admit.held_reason(dict(natural, gages2_class="reference"), set()) is None
     short = dict(natural, gages2_class="reference", flow_years="4")
@@ -65,6 +69,66 @@ def test_a_waterwork_name_and_a_non_reference_natural_row_are_held():
     ruled = dict(natural, reviewer_ruling="natural", review_queue="review")
     assert admit.held_reason(ruled, set()) is None, "a ruling stands in for the reference class"
     assert "already used" in admit.held_reason(dict(base, proposed_display_name="A"), {"A"})
+
+
+def test_a_review_row_with_a_dam_upstream_is_shown_as_shaped():
+    row = {"suggested_ruling": "natural", "reviewer_ruling": "", "covers_1991_2020": "no",
+           "trace_screen": "traced", "name_check": "", "accepted_display_name": "",
+           "proposed_display_name": "Big Creek near Town", "upstream_reservoirs": "",
+           "dams_upstream": "2", "dam_storage_af": "250", "dams_near_gauge": "",
+           "storage_share_pct": "3", "gages2_class": "non_reference",
+           "flow_years": "6", "review_queue": "review", "notes": "", "huc8_name": "Upper Green"}
+    assert admit.dams_path(row) and admit.tier_of(row) == "shaped"
+    assert admit.held_reason(row, set()) is None, "no record span is needed to show flow alone"
+    assert not admit.dams_path(dict(row, dams_upstream="0")), "no dam: still a person's call"
+    for queue, suggestion in (("check", "check"), ("review", "diversion"), ("bulk", "natural")):
+        assert not admit.dams_path(dict(row, review_queue=queue, suggested_ruling=suggestion))
+    assert not admit.dams_path(dict(row, reviewer_ruling="exclude"))
+
+
+def test_only_a_dam_that_stores_water_above_the_gauge_counts():
+    """ADR-175 as Brian ruled on 2026-11-23: no storage, or only a dam near the
+    gauge that may be below it, leaves the row for a person; so does a GAGES-II
+    reference row suggested natural."""
+    row = {"suggested_ruling": "short", "reviewer_ruling": "", "covers_1991_2020": "no",
+           "trace_screen": "traced", "name_check": "", "accepted_display_name": "",
+           "proposed_display_name": "Duchesne River near Hanna", "upstream_reservoirs": "",
+           "dams_upstream": "1", "dam_storage_af": "0", "dams_near_gauge": "",
+           "storage_share_pct": "", "gages2_class": "not_listed", "flow_years": "20",
+           "review_queue": "review", "notes": "", "huc8_name": "Upper Duchesne"}
+    assert not admit.dams_path(row), "a dam with no storage stores nothing"
+    near = dict(row, dam_storage_af="60", dams_near_gauge="Yellowstone Power Diversion")
+    assert not admit.dams_path(near), "the only dam may be below the gauge"
+    assert admit.dams_path(dict(near, dams_upstream="2")), "a second dam is above the gauge"
+    reference = dict(row, suggested_ruling="natural", gages2_class="reference",
+                     dam_storage_af="630")
+    assert not admit.dams_path(reference), "a reference natural row stays in review"
+    assert admit.dams_path(dict(reference, gages2_class="non_reference"))
+    published = dict(row, upstream_reservoirs="Strawberry Reservoir", dams_upstream="")
+    assert admit.dams_path(published), "a published reservoir is stored water"
+
+
+def test_every_review_row_basis_cites_adr_175_and_the_note_names_each_group():
+    row = {"suggested_ruling": "reservoir", "reviewer_ruling": "", "covers_1991_2020": "no",
+           "trace_screen": "traced", "name_check": "", "accepted_display_name": "",
+           "proposed_display_name": "Mill Creek below Pack Creek", "upstream_reservoirs": "Ken's Lake",
+           "dams_upstream": "4", "dam_storage_af": "3000", "dams_near_gauge": "",
+           "storage_share_pct": "12", "gages2_class": "non_reference", "flow_years": "20",
+           "review_queue": "review", "notes": "", "huc8_name": "Upper Colorado-Kane Springs",
+           "drainage_area_sq_mi": "", "nldi_basin_sq_mi": "60", "_worksheet": "gauge-review.csv",
+           "screened_on": "2026-11-01", "largest_dams": "", "irrigation_dams": "",
+           "nrcs_adjustment_pct": ""}
+    high = dict(row, upstream_reservoirs="", storage_share_pct="180")
+    low = dict(row, upstream_reservoirs="", storage_share_pct="2")
+    for case in (row, high, low):
+        assert admit.dams_path(case)
+        assert "ADR-175" in admit.basis(case, "shaped")
+    bulk = dict(row, review_queue="bulk")
+    ruled = dict(row, reviewer_ruling="reservoir")
+    note = admit.selection_note([row, high, bulk, ruled])
+    assert "(ADR-168): 1 more" in note and "(ADR-175): 2 more" in note
+    assert "1 more is a ruling" in note
+    assert "ADR-175" not in admit.selection_note([bulk])
 
 
 def test_a_run_merges_and_the_roster_still_loads(tmp_path):
@@ -80,8 +144,15 @@ def test_a_run_merges_and_the_roster_still_loads(tmp_path):
     for station in added:
         tier = after[station]["tier"]
         assert tier["status"] in {"pending_formal_ruling", f"ruled_{tier['tier']}"}
-        assert tier["directed_on"] == "2026-11-14"
+        assert tier["directed_on"] in {"2026-11-14", "2026-11-16"}
         assert "ADR-137" in tier["basis"]
+        if tier["directed_on"] == "2026-11-16":
+            # The same rule tests/test_river_flow.py holds the committed roster to.
+            assert tier["tier"] == "shaped" and tier["status"] == "pending_formal_ruling"
+            assert tier["evidence"]["review_queue"] == "review"
+            assert "ADR-175" in tier["basis"]
+    selection = json.loads(path.read_text())["selection"]
+    assert selection.count("(ADR-168)") <= 2 and "(ADR-175)" in selection
     # A second run adds nothing and leaves the file byte for byte.
     text = path.read_text()
     assert admit.main([], lookup=fake_lookup, path=path, pause=0,
