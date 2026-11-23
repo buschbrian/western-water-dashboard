@@ -166,6 +166,13 @@ class TestShare:
         assert CHECKED in body and body.endswith("\n")
         assert not any(line.startswith("    ") for line in body.split("\n"))
 
+    def test_quotes_why_a_picture_kept_its_fallback(self):
+        report = dict(self.REPORT, reasons={
+            "west": "Error: Frame did not draw (document 1200x677, frame 1200x630): `x`\n{}"})
+        _, body = R.share_report(report, CHECKED)
+        assert "- `share/west.png`: Error: Frame did not draw (document 1200x677, frame 1200x630): 'x' {}" in body
+        assert "- `share/lake-mead.png`\n" in body
+
     def test_a_morning_when_every_capture_fails_stays_one_bounded_issue(self):
         files = [f"reservoir-{i}" for i in range(600)]
         title, body = R.share_report({"total": 602, "captured": 0, "notices": 2, "failed": 600,

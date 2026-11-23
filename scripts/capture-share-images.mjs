@@ -88,13 +88,16 @@ async function capture(browser, origin, target, dist) {
       figure: document.querySelector(".share-figure, .figure")?.textContent ?? "",
       date: document.querySelector(".share-date")?.textContent ?? "",
       chart: Boolean(document.querySelector("#reservoir-trend-chart svg, #reservoir-elevation-chart svg")),
+      width: document.documentElement.scrollWidth,
+      height: document.documentElement.scrollHeight,
       fits: document.documentElement.scrollHeight <= window.innerHeight
         && document.documentElement.scrollWidth <= window.innerWidth
     }));
     if (frame.name !== target.name || !frame.figure || !frame.fits || errors.length
       || (target.kind !== "reservoir" && frame.kind !== target.kind)
       || (target.kind === "reservoir" && (!frame.chart || !/^Reading date: /.test(frame.date)))) {
-      throw new Error(`Frame did not draw: ${JSON.stringify({ ...frame, errors })}`);
+      const { figure, ...rest } = frame;
+      throw new Error(`Frame did not draw${frame.fits ? "" : ` (document ${frame.width}x${frame.height}, frame ${WIDTH}x${HEIGHT})`}: ${JSON.stringify({ ...rest, figure: Boolean(figure), errors })}`);
     }
     await page.screenshot({ path: temporary, type: "png", timeout: PAGE_DEADLINE_MS });
     if (!(await validPng(temporary))) throw new Error("Invalid screenshot");
@@ -109,7 +112,7 @@ export async function run(dist, { deadlineMs = RUN_DEADLINE_MS, concurrency = CO
   const targets = validTargets(JSON.parse(await readFile(path.join(dist, "share/targets.json"), "utf8")));
   const started = Date.now();
   let server, browser, deadline, stopped = false, captured = 0, runError = null;
-  const capturedFiles = new Set();
+  const capturedFiles = new Set(), reasons = {};
   try {
     if (!process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH) throw new Error("No installed browser was selected");
     const { chromium } = await import("playwright");
@@ -124,7 +127,11 @@ export async function run(dist, { deadlineMs = RUN_DEADLINE_MS, concurrency = CO
     const origin = `http://127.0.0.1:${server.address().port}`;
     await capturePool(targets.filter((target) => target.frame), concurrency, async (target) => {
       try { await capture(browser, origin, target, dist); captured++; capturedFiles.add(target.file); }
-      catch (error) { warn(`share/${target.file}.png keeps its fallback: ${String(error).slice(0, 240)}`); }
+      catch (error) {
+        const reason = String(error).slice(0, 240);
+        reasons[target.file] = reason;
+        warn(`share/${target.file}.png keeps its fallback: ${reason}`);
+      }
     }, () => stopped);
   } catch (error) {
     runError = String(error).slice(0, 300);
@@ -142,7 +149,7 @@ export async function run(dist, { deadlineMs = RUN_DEADLINE_MS, concurrency = CO
   const report = { total: targets.length, captured, notices, failed: targets.length - notices - captured,
     fallbacks: targets.length - captured,
     failedFiles: targets.filter((target) => target.frame && !capturedFiles.has(target.file)).map((target) => target.file),
-    runError,
+    reasons, runError,
     elapsedSeconds: Math.round((Date.now() - started) / 100) / 10, concurrency, deadlineMs, missing };
   await writeFile(path.join(dist, "share/capture-report.json"), JSON.stringify(report, null, 2) + "\n");
   console.log(JSON.stringify(report));
