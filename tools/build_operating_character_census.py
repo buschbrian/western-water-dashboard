@@ -82,6 +82,7 @@ sys.path.insert(0, str(ROOT))
 
 from admission import NEAR_RADIUS_KM, distance_km, normalize_name  # noqa: E402
 from huc import in_ring  # noqa: E402
+from pipeline.providers import MAX_PAGES  # noqa: E402
 
 OUTPUT_PATH = ROOT / "data" / "reviews" / "operating-character-census.json"
 RESERVOIRS_PATH = ROOT / "reservoirs.json"
@@ -833,7 +834,7 @@ def fetch_nid_rows(layer: str, states: list[str], cache_dir: Path,
         ",".join(f"'{STATE_NAMES[state]}'" for state in sorted(states)))
     rows: list[dict] = []
     offset = 0
-    while True:
+    for _ in range(MAX_PAGES):
         service.asked += 1
         payload = fetch_json(f"{layer}/query", {
             "where": where, "outFields": ",".join(NID_FIELDS),
@@ -852,6 +853,8 @@ def fetch_nid_rows(layer: str, states: list[str], cache_dir: Path,
         offset += len(features)
         if not features:
             break
+    else:
+        raise RuntimeError(f"NID pagination exceeded {MAX_PAGES} pages")
     return rows
 
 

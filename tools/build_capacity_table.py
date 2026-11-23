@@ -36,6 +36,7 @@ import requests
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 import admission  # noqa: E402
 from refresh_reservoirs import RESERVOIRS, load_previous, OUTPUT_PATH  # noqa: E402
+from pipeline.providers import MAX_PAGES  # noqa: E402
 from pipeline.roster import apply_dam_point_reviews  # noqa: E402
 
 CAPACITY_PATH = Path(__file__).resolve().parent.parent / "capacities.json"
@@ -164,7 +165,7 @@ def fetch_utah_dams(layer_url: str, where: str) -> list[dict]:
     them by storage.
     """
     rows, offset = [], 0
-    while True:
+    for _ in range(MAX_PAGES):
         page = get(f"{layer_url}/query", {
             "f": "json", "where": where, "outFields": "*",
             "returnGeometry": "true", "outSR": 4326,
@@ -180,6 +181,8 @@ def fetch_utah_dams(layer_url: str, where: str) -> list[dict]:
         if len(features) < 1000:
             break
         offset += 1000
+    else:
+        raise RuntimeError(f"NID pagination exceeded {MAX_PAGES} pages")
     located = sum(1 for row in rows if row.get("_lon") is not None)
     print()
     print(f"=== {len(rows)} dams in the inventory, {located} with a position")

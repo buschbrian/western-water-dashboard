@@ -38,6 +38,10 @@ NHD_REPORT = Path("/tmp/nhd-report2.txt")
 FTYPE_NAMES = {"390": "LakePond", "436": "Reservoir"}
 
 
+#: One full probe is about fifteen minutes; this is twice that.
+NHD_PROBE_TIMEOUT_SECONDS = 30 * 60
+
+
 def load_nhd_report(path: Path) -> dict:
     """The probe's --json output, re-running the probe when it is gone."""
     def extract(text: str) -> dict:
@@ -51,9 +55,15 @@ def load_nhd_report(path: Path) -> dict:
         return extract(path.read_text(encoding="utf-8"))
     print("(no saved NHD report found; re-running the resolution probe, "
           "about fifteen minutes)", file=sys.stderr)
-    result = subprocess.run(
-        [sys.executable, str(ROOT / "tools" / "probe_nhd_waterbody.py"),
-         "--json"], capture_output=True, text=True, check=True)
+    try:
+        result = subprocess.run(
+            [sys.executable, str(ROOT / "tools" / "probe_nhd_waterbody.py"),
+             "--json"], capture_output=True, text=True, check=True,
+            timeout=NHD_PROBE_TIMEOUT_SECONDS)
+    except subprocess.TimeoutExpired as exc:
+        raise RuntimeError(
+            f"the NHD resolution probe ran past {NHD_PROBE_TIMEOUT_SECONDS} "
+            "seconds") from exc
     return extract(result.stdout)
 
 
