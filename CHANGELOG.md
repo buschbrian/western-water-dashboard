@@ -30,8 +30,8 @@ carry their own `schema_version`, and the seasonal estimator carries its own
   version 2: a lake may carry `arms`, its `volume` may be null, and a target
   names its decision and datum. Walker Lake is unchanged apart from an empty
   `arms` list. Pyramid Lake joined later with its monthly readings (ADR-172);
-  Mono Lake stays held for a daily elevation series. The roster records
-  exactly what each needs.
+  Mono Lake stays held for a daily elevation series, and the roster's
+  withheld block records what it still needs.
 - **Seasonal storage read apart from steady pools and flood-control basins**
   (ADR-156, carrying out ADR-114's deferred arithmetic). A roster entry can
   now carry a reviewed `operating_character` (`restricted`, `run_of_river` or

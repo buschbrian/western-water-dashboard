@@ -381,9 +381,7 @@ The map's breaks are amounts in inches, the same for 1, 3 and 7 days.
 **The published figure is a change at the same sensors, never a level**
 (ADR-142). A percent of the soil's volume is not comparable between two
 soils, so `soil_moisture.json` carries each station's seven-day change in
-percentage points and no level. A comparison with a station's own past years
-is a separate view, described below and still proposed (ADR-169); it does not
-make the week's change a level.
+percentage points and no median.
 
 - **Input validity:** soil-water percentages outside 0–100 are missing before
   rounding or averaging (ADR-167). Zero and 100 are retained. No value is
@@ -413,7 +411,7 @@ basin percent-of-median maps, whose method is unpublished.
 
 ### Soil moisture against each station's past years
 
-**A station is compared only with itself** (ADR-169, still proposed), so soil texture cancels.
+**A station is compared only with itself** (ADR-169), so soil texture cancels.
 
 - **History:** `soil_normals.json`, built by `tools/build_soil_normals.py`
   (`pipeline/soil_normals.py` holds the method). The station value above,
@@ -489,7 +487,7 @@ October. A history is not a normal, and each card names its own years.
 
 ## Precipitation against past years on the map
 
-**Each station against its own record** (ADR-170, still proposed). The map's third mode
+**Each station against its own record** (ADR-170). The map's third mode
 places each station's precipitation since 1 October against the same
 calendar date in each of its past water years, read between weekly steps
 as the card reads them, on the newest day `SET_SHARE` of on-time stations

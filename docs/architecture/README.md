@@ -98,8 +98,11 @@ and other scope limits stay. Drought history
 ([ADR-123](../decisions/ADR-123-draw-ten-years-of-drought-on-the-drought-page.md))
 and precipitation
 ([ADR-125](../decisions/ADR-125-measure-precipitation-at-the-snow-stations-against-a-fixed-history.md))
-came back into scope on their own records, and so did later pages such as
-river flow and terminal lakes. A new measured domain, a new rollup axis or a
+came back into scope on their own records, and so did river flow
+([ADR-136](../decisions/ADR-136-publish-daily-flow-at-four-rivers-toward-lake-powell.md)). Terminal
+lakes were accepted before the closure
+([ADR-112](../decisions/ADR-112-publish-terminal-lakes-as-a-separate-water-type.md))
+and published after it. A new measured domain, a new rollup axis or a
 new computing page still needs its own record first.
 
 ## Generated and source-owned files
