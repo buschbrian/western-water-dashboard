@@ -39,7 +39,7 @@ env:
 jobs:
   pre-commit:
     name: pre-commit hooks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Get the repository
         uses: actions/checkout@v5
@@ -64,7 +64,7 @@ jobs:
 
   secret-scan:
     name: Secret scan (full history)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Get the repository
         uses: actions/checkout@v5
