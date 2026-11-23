@@ -188,7 +188,6 @@ Colour tables, label placement, layer order and basemaps. **Start with
 ADR-008, then ADR-032 and ADR-061.**
 
 - Colour: [ADR-008](ADR-008-one-class-break-table.md),
-  [ADR-028](ADR-028-use-equal-bands-and-a-colorblind-safe-ramp.md),
   [ADR-032](ADR-032-one-colour-language-per-map-across-pages.md),
   [ADR-038](ADR-038-split-the-snow-classes-and-move-to-a-scientific-colour-map.md),
   [ADR-039](ADR-039-draw-percent-full-with-a-sequential-ramp.md),
@@ -219,7 +218,7 @@ ADR-008, then ADR-032 and ADR-061.**
   [ADR-151](ADR-151-keep-reader-context-with-the-current-figures.md),
   [ADR-153](ADR-153-state-the-maps-storage-against-normal-and-subtotal-the-filtered-rows.md)
 - Superseded, read only for history: ADR-007, ADR-016, ADR-022, ADR-025,
-  ADR-027, ADR-030, ADR-043, ADR-054
+  ADR-027, ADR-028, ADR-030, ADR-043, ADR-054
 - Current architecture: [`docs/architecture/frontend.md`](../architecture/frontend.md)
 
 ### Credentials and third-party services
@@ -260,7 +259,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-025](ADR-025-keep-map-symbols-fixed-and-label-each-drainage-area-once.md) | Keep map symbols fixed and label each drainage area once | Superseded by ADR-027 |
 | [ADR-026](ADR-026-quote-machine-identifiers-in-api-documentation.md) | Quote machine identifiers in API documentation | Accepted |
 | [ADR-027](ADR-027-use-css-pixels-for-map-symbols-and-opening-labels.md) | Use CSS pixels for map symbols and opening labels | Superseded by ADR-030 |
-| [ADR-028](ADR-028-use-equal-bands-and-a-colorblind-safe-ramp.md) | Use equal storage bands and a colorblind-safe ramp | Accepted |
+| [ADR-028](ADR-028-use-equal-bands-and-a-colorblind-safe-ramp.md) | Use equal storage bands and a colorblind-safe ramp | Superseded by ADR-039 (the bands stand; the ramp does not) |
 | [ADR-029](ADR-029-the-table-narrows-where-the-map-dims.md) | The table narrows where the map dims | Accepted |
 | [ADR-030](ADR-030-draw-drainage-area-names-below-reservoirs.md) | Draw drainage-area names below reservoir symbols | Superseded by ADR-047 |
 | [ADR-031](ADR-031-retire-comparison-implementations-and-redirect-their-urls.md) | Retire comparison implementations and redirect their URLs | Accepted |
@@ -351,7 +350,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md) | Exclude a reviewed reading, and never repair one | Accepted; extends ADR-072's no-repair rule; five readings named across four withheld California stations, the issues stay open; issue closure amended by ADR-152 |
 | [ADR-117](ADR-117-close-the-scope-at-version-1-0-0.md) | Close the scope at version 1.0.0 | Superseded by ADR-124 for the bounded pilot; versioning, release approval and other scope limits retained; ADR-123 brings the drought time series and ADR-125 precipitation back into scope |
 | [ADR-118](ADR-118-publish-terminal-lakes-from-their-own-roster-and-payload.md) | Publish terminal lakes from their own roster and payload | Accepted; implements ADR-112 and extends ADR-056 and ADR-098; Walker Lake is the first lake, generated and not yet shown |
-| [ADR-119](ADR-119-show-terminal-lakes-on-their-own-page.md) | Show terminal lakes on their own page | Accepted; extends ADR-118 and ADR-045; reached from the methods and data pages, not the bar |
+| [ADR-119](ADR-119-show-terminal-lakes-on-their-own-page.md) | Show terminal lakes on their own page | Accepted; extends ADR-118 and ADR-045; reached from the methods and data pages (ADR-166 later added the page menu and the bar) |
 | [ADR-120](ADR-120-ask-where-to-start-before-loading-the-map.md) | Ask where to start before loading the map | Accepted; extends ADR-086; the storage map fetches the map SDK only after the first-visit question closes without a choice |
 | [ADR-121](ADR-121-keep-the-finished-snow-season-and-open-the-new-one-honestly.md) | Keep the finished snow season, and open the new one honestly | Accepted; amends ADR-040; one denominator floor for the map and the peak, a write-once archive per water year, and a season choice |
 | [ADR-122](ADR-122-measure-drought-from-the-monitors-full-resolution-archive.md) | Measure drought from the monitor's full-resolution archive, back ten years | Accepted; method `drought-coverage-3`; the weekly run never measures the simplified download; the archives hold a decade |
