@@ -819,6 +819,26 @@ def test_carry_forward_preserves_values_and_marks_the_failure():
     assert "boom" in carried["fetch_error"]
 
 
+def test_a_carried_month_end_record_stays_on_time_inside_its_own_limit():
+    """ADR-173: a failed request to a month-end feed loses no reading."""
+    previous = {"name": "Monthly", "as_of": "2026-10-31", "data_frequency": "monthly",
+                "stale_after_days": R.AWDB_MONTHLY_STALE_AFTER_DAYS,
+                "is_stale": False, "fetch_ok": True, "current_storage_af": 10.0}
+    inside = R.carry_forward(previous, pd.Timestamp("2026-11-16"), "502")
+    assert inside["fetch_ok"] is False and inside["is_stale"] is False
+    assert inside["days_stale"] == 16
+    past = R.carry_forward(previous, pd.Timestamp("2026-12-16"), "502")
+    assert past["days_stale"] == 46 and past["is_stale"] is True
+
+
+def test_a_carried_daily_record_is_late_at_once():
+    previous = {"name": "Daily", "as_of": "2026-11-15", "data_frequency": "daily",
+                "stale_after_days": R.STALE_AFTER_DAYS,
+                "is_stale": False, "fetch_ok": True, "current_storage_af": 10.0}
+    carried = R.carry_forward(previous, pd.Timestamp("2026-11-16"), "502")
+    assert carried["days_stale"] == 1 and carried["is_stale"] is True
+
+
 # --- withdrawal for age (ADR-056) ----------------------------------------
 
 def test_a_record_inside_the_window_is_published_and_one_past_it_is_not():

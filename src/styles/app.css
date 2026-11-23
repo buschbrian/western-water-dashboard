@@ -965,7 +965,7 @@ arcgis-scale-bar {
   padding-inline: 1rem .5rem;
   color: var(--app-text);
 }
-#brand calcite-icon { flex: 0 0 auto; color: var(--app-accent); }
+#brand .brand-mark { flex: 0 0 auto; display: block; inline-size: 2rem; block-size: 2rem; }
 .brand-text {
   display: flex;
   flex-direction: column;

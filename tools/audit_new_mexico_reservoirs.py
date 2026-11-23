@@ -474,16 +474,19 @@ def cwms_candidates(today: dt.date) -> list[dict]:
 
     from audit_cwms_stations import series_rank
     from pipeline.providers import (
-        CWMS_CATALOG_URL, CWMS_LOCATIONS_URL, _get_cwms_json, fetch_cwms_series)
+        CWMS_CATALOG_URL, CWMS_LOCATIONS_URL, MAX_PAGES, _get_cwms_json,
+        fetch_cwms_series)
 
     office = "SPA"
     entries, params = [], {"office": office, "like": ".*Stor.*", "page-size": 500}
-    while True:
+    for _ in range(MAX_PAGES):
         page = _get_cwms_json(CWMS_CATALOG_URL, params)
         entries.extend(page.get("entries") or [])
         if not page.get("next-page"):
             break
         params = {**params, "page": page["next-page"]}
+    else:
+        raise RuntimeError(f"CWMS pagination exceeded {MAX_PAGES} pages")
     places = {row["name"]: row for row in _get_cwms_json(
         CWMS_LOCATIONS_URL, {"office": office})
         if isinstance(row, dict) and row.get("name")}

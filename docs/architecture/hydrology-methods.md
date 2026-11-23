@@ -59,8 +59,8 @@ is true in every word and wrong as a whole.
 
 **Percent full divides by a figure the water has not been seen above**
 (ADR-072). The preference is ADR-003's, unchanged — the conservation pool,
-then the maximum pool, then the inventory's headline figure — and for 216 of
-the 365 published reservoirs the conservation pool is what a percentage
+then the maximum pool, then the inventory's headline figure — and for most
+published reservoirs the conservation pool is what a percentage
 divides by, because it is what an operator means by full and it describes the
 water: Strawberry's pool is 1,105,910 acre-feet against 1,106,560 ever
 observed. `denominator_for` in `admission.py` adds one condition on the first

@@ -44,6 +44,7 @@ function document(title: string, body: string, path: string, policy: string, pre
 <title>${escape(title)} — Western Water Dashboard</title>
 <link rel="canonical" href="${BASE}/${path}"/>
 <link rel="icon" type="image/svg+xml" href="${path.startsWith("share/") ? "../" : "./"}favicon.svg"/>
+<link rel="apple-touch-icon" href="${path.startsWith("share/") ? "../" : "./"}brand/mark-512.png"/>
 <link rel="alternate" type="application/atom+xml" title="Weekly figures" href="${BASE}/feed.xml"/>
 <link rel="alternate" type="application/feed+json" title="Weekly figures" href="${BASE}/feed.json"/>
 ${preview ? `<meta property="og:type" content="article"/><meta property="og:title" content="${escape(title)}"/>

@@ -23,11 +23,18 @@ def carry_forward(previous: dict, today: pd.Timestamp, reason: str) -> dict:
     Dropping the reservoir entirely (the old behavior) silently removed the
     point from the map with no explanation, which is strictly worse than
     showing the last known value clearly labeled as stale.
+
+    A month-end record is the exception (ADR-173). Its feed has nothing new
+    to give until the next month ends, so a failed request loses no reading:
+    it stays on time until its own `stale_after_days`, the same rule a
+    successful fetch applies. `fetch_ok` still records the failure. A daily
+    record is late at once, because today's reading is the one that failed.
     """
     record = dict(previous)
     as_of = pd.Timestamp(record.get("as_of"))
-    record["days_stale"] = int((today - as_of).days) if not pd.isna(as_of) else None
-    record["is_stale"] = True
+    days = int((today - as_of).days) if not pd.isna(as_of) else None
+    record["days_stale"] = days
+    record["is_stale"] = not _monthly_and_on_time(record, days)
     record["fetch_ok"] = False
     record["fetch_error"] = reason
     # A late record publishes no gain since the low (ADR-134): the window it
@@ -36,6 +43,12 @@ def carry_forward(previous: dict, today: pd.Timestamp, reason: str) -> dict:
         if key in record:
             record[key] = None
     return record
+
+
+def _monthly_and_on_time(record: dict, days: int | None) -> bool:
+    limit = record.get("stale_after_days")
+    return (record.get("data_frequency") == "monthly" and days is not None
+            and isinstance(limit, (int, float)) and days <= limit)
 
 
 def partition_by_age(records: list[dict]) -> tuple[list[dict], list[dict]]:

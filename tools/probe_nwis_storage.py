@@ -63,6 +63,7 @@ LOCATIONS_URL = f"{OGC_URL}/monitoring-locations/items"
 USER_AGENT = ("western-water-dashboard/nwis-storage-count "
               "(+https://github.com/buschbrian)")
 TIMEOUT = 120
+MAX_PAGES = 50  # same bound as build_gauge_review and pipeline.providers
 POLITENESS_SECONDS = 1.0
 
 #: A site this close to a published point is a duplicate candidate under
@@ -98,7 +99,11 @@ def _get_features(url: str, params: dict | None,
     features: list[dict] = []
     next_url: str | None = (
         f"{url}?{urllib.parse.urlencode(params)}" if params else url)
+    pages = 0
     while next_url:
+        pages += 1
+        if pages > MAX_PAGES:
+            raise RuntimeError(f"USGS OGC pagination exceeded {MAX_PAGES} pages")
         request = urllib.request.Request(next_url, headers=headers)
         with urllib.request.urlopen(request, timeout=TIMEOUT) as response:
             payload = json.loads(response.read())

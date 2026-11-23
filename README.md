@@ -27,7 +27,7 @@ application code.
 | [Western Precipitation](precipitation.html) | Recent and season precipitation at mountain stations, with the week's change in soil moisture. |
 | [Western Drought](drought.html) | How much land is in each U.S. Drought Monitor class and how that relates to stored water. |
 | [River Flow](rivers.html) | Daily mean flow at reviewed gauges, grouped by review tier, with comparisons for natural gauges. |
-| [Terminal Lakes](lakes.html) | Surface level and volume of natural terminal lakes, reached from Methods and Data. |
+| [Terminal Lakes](lakes.html) | Surface level, and volume where it is measured, of natural terminal lakes, reached from the page menu. |
 | [Story Views](story.html) | One figure sized for embedding: precipitation or water stored above a reservoir. |
 | [Drought on the Ground](landscape.html) | Photographs beside the measurements, with an explicit notice while the gallery is empty. |
 | [Methods and Sources](methods.html) | Where each number comes from, how it is worked out, and what it does not claim. |

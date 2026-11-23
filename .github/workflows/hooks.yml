@@ -39,7 +39,7 @@ env:
 jobs:
   pre-commit:
     name: pre-commit hooks
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Get the repository
         uses: actions/checkout@v5
@@ -50,7 +50,7 @@ jobs:
           python-version: "3.14"
 
       - name: Cache pre-commit environments
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: ~/.cache/pre-commit
           key: pre-commit-${{ runner.os }}-${{ hashFiles('.pre-commit-config.yaml') }}
@@ -64,7 +64,7 @@ jobs:
 
   secret-scan:
     name: Secret scan (full history)
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - name: Get the repository
         uses: actions/checkout@v5

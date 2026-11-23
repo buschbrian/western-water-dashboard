@@ -581,10 +581,14 @@ def pyramid(**overrides) -> dict:
 
 
 def monthly(base: float, *, years: int = 6, stale_days: int = 13) -> pd.DataFrame:
-    """One reading on the first of each month, the last `stale_days` old."""
+    """One reading every 30 days, the last `stale_days` old.
+
+    Counted back from the last reading, so the spacing does not depend on
+    today's date.
+    """
     end = TODAY - pd.Timedelta(days=stale_days)
-    idx = pd.date_range(end - pd.DateOffset(years=years), end, freq="MS")
-    idx = idx.append(pd.DatetimeIndex([end])).unique().sort_values()
+    idx = pd.DatetimeIndex([end - pd.Timedelta(days=30 * k)
+                            for k in range(years * 12, -1, -1)])
     values = base + np.sin(idx.month.to_numpy() / 12 * 2 * np.pi)
     return pd.DataFrame({"date": idx, "elevation_ft": values})
 

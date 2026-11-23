@@ -84,7 +84,8 @@ denominator. **Start with ADR-070, then ADR-072, then ADR-003.**
 - Freshness and withdrawal:
   [ADR-056](ADR-056-withdraw-a-reading-that-belongs-to-another-season.md),
   [ADR-115](ADR-115-state-a-reviewed-hold-where-the-reservoir-used-to-be.md),
-  [ADR-126](ADR-126-key-a-withdrawal-notice-by-its-station.md)
+  [ADR-126](ADR-126-key-a-withdrawal-notice-by-its-station.md),
+  [ADR-173](ADR-173-keep-a-month-end-record-on-time-when-its-fetch-fails.md)
 - Superseded, read only for history: ADR-099
 - Procedure: [`docs/operations/source-admission.md`](../operations/source-admission.md)
 
@@ -188,7 +189,6 @@ Colour tables, label placement, layer order and basemaps. **Start with
 ADR-008, then ADR-032 and ADR-061.**
 
 - Colour: [ADR-008](ADR-008-one-class-break-table.md),
-  [ADR-028](ADR-028-use-equal-bands-and-a-colorblind-safe-ramp.md),
   [ADR-032](ADR-032-one-colour-language-per-map-across-pages.md),
   [ADR-038](ADR-038-split-the-snow-classes-and-move-to-a-scientific-colour-map.md),
   [ADR-039](ADR-039-draw-percent-full-with-a-sequential-ramp.md),
@@ -219,7 +219,7 @@ ADR-008, then ADR-032 and ADR-061.**
   [ADR-151](ADR-151-keep-reader-context-with-the-current-figures.md),
   [ADR-153](ADR-153-state-the-maps-storage-against-normal-and-subtotal-the-filtered-rows.md)
 - Superseded, read only for history: ADR-007, ADR-016, ADR-022, ADR-025,
-  ADR-027, ADR-030, ADR-043, ADR-054
+  ADR-027, ADR-028, ADR-030, ADR-043, ADR-054
 - Current architecture: [`docs/architecture/frontend.md`](../architecture/frontend.md)
 
 ### Credentials and third-party services
@@ -260,7 +260,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-025](ADR-025-keep-map-symbols-fixed-and-label-each-drainage-area-once.md) | Keep map symbols fixed and label each drainage area once | Superseded by ADR-027 |
 | [ADR-026](ADR-026-quote-machine-identifiers-in-api-documentation.md) | Quote machine identifiers in API documentation | Accepted |
 | [ADR-027](ADR-027-use-css-pixels-for-map-symbols-and-opening-labels.md) | Use CSS pixels for map symbols and opening labels | Superseded by ADR-030 |
-| [ADR-028](ADR-028-use-equal-bands-and-a-colorblind-safe-ramp.md) | Use equal storage bands and a colorblind-safe ramp | Accepted |
+| [ADR-028](ADR-028-use-equal-bands-and-a-colorblind-safe-ramp.md) | Use equal storage bands and a colorblind-safe ramp | Superseded by ADR-039 (the bands stand; the ramp does not) |
 | [ADR-029](ADR-029-the-table-narrows-where-the-map-dims.md) | The table narrows where the map dims | Accepted |
 | [ADR-030](ADR-030-draw-drainage-area-names-below-reservoirs.md) | Draw drainage-area names below reservoir symbols | Superseded by ADR-047 |
 | [ADR-031](ADR-031-retire-comparison-implementations-and-redirect-their-urls.md) | Retire comparison implementations and redirect their URLs | Accepted |
@@ -351,7 +351,7 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-116](ADR-116-exclude-a-reviewed-reading-and-never-repair-one.md) | Exclude a reviewed reading, and never repair one | Accepted; extends ADR-072's no-repair rule; five readings named across four withheld California stations, the issues stay open; issue closure amended by ADR-152 |
 | [ADR-117](ADR-117-close-the-scope-at-version-1-0-0.md) | Close the scope at version 1.0.0 | Superseded by ADR-124 for the bounded pilot; versioning, release approval and other scope limits retained; ADR-123 brings the drought time series and ADR-125 precipitation back into scope |
 | [ADR-118](ADR-118-publish-terminal-lakes-from-their-own-roster-and-payload.md) | Publish terminal lakes from their own roster and payload | Accepted; implements ADR-112 and extends ADR-056 and ADR-098; Walker Lake is the first lake, generated and not yet shown |
-| [ADR-119](ADR-119-show-terminal-lakes-on-their-own-page.md) | Show terminal lakes on their own page | Accepted; extends ADR-118 and ADR-045; reached from the methods and data pages, not the bar |
+| [ADR-119](ADR-119-show-terminal-lakes-on-their-own-page.md) | Show terminal lakes on their own page | Accepted; extends ADR-118 and ADR-045; reached from the methods and data pages (ADR-166 later added the page menu and the bar) |
 | [ADR-120](ADR-120-ask-where-to-start-before-loading-the-map.md) | Ask where to start before loading the map | Accepted; extends ADR-086; the storage map fetches the map SDK only after the first-visit question closes without a choice |
 | [ADR-121](ADR-121-keep-the-finished-snow-season-and-open-the-new-one-honestly.md) | Keep the finished snow season, and open the new one honestly | Accepted; amends ADR-040; one denominator floor for the map and the peak, a write-once archive per water year, and a season choice |
 | [ADR-122](ADR-122-measure-drought-from-the-monitors-full-resolution-archive.md) | Measure drought from the monitor's full-resolution archive, back ten years | Accepted; method `drought-coverage-3`; the weekly run never measures the simplified download; the archives hold a decade |
@@ -400,10 +400,11 @@ ADR-008, then ADR-032 and ADR-061.**
 | [ADR-166](ADR-166-offer-terminal-lakes-in-the-page-navigation.md) | Offer terminal lakes in the page navigation | Accepted (2026-11-14); keep ADR-159’s merged lake contract and add compact navigation after the second lake |
 | [ADR-167](ADR-167-enforce-the-soil-percent-bound-before-averaging.md) | Enforce the soil percentage bound before averaging | Accepted (2026-11-14); reject physically impossible SMS values at ingestion while keeping existing means and coverage rules |
 | [ADR-168](ADR-168-publish-every-bulk-queue-river-gauge.md) | Publish every bulk-queue river gauge | Accepted (2026-11-14); extends ADR-136, ADR-137 and ADR-138; the four worksheets' bulk `reservoir` and `natural` rows join the roster pending formal ruling (133 measured 2026-11-14), written by `tools/admit_bulk_river_gauges.py`; exclusions, waterwork names, non-reference natural rows and open name checks held |
-| [ADR-169](ADR-169-compare-soil-moisture-with-each-stations-past-years.md) | Compare soil moisture with each station's past years | Proposed; per-station calendar-day percentiles (`soil_normals.json`), NOAA NCEI tenths and thirds, area median class, default view of soil mode; week's change unchanged |
-| [ADR-170](ADR-170-compare-each-stations-precipitation-with-its-own-past-years-on-the-map.md) | Compare each station's precipitation with its own past years on the map | Proposed; NCEI ranking classes, partial records placed against their own years, areas over full records |
+| [ADR-169](ADR-169-compare-soil-moisture-with-each-stations-past-years.md) | Compare soil moisture with each station's past years | Accepted (2026-11-23); per-station calendar-day percentiles (`soil_normals.json`), NOAA NCEI tenths and thirds, area median class, default view of soil mode; week's change unchanged |
+| [ADR-170](ADR-170-compare-each-stations-precipitation-with-its-own-past-years-on-the-map.md) | Compare each station's precipitation with its own past years on the map | Accepted (2026-11-23); NCEI ranking classes, partial records placed against their own years, areas over full records |
 | [ADR-171](ADR-171-rule-the-columbia-and-snake-operating-characters.md) | Rule the Columbia and Snake operating characters | Accepted; applies ADR-156: eight Columbia and Snake navigation and power pools are steady pools, Bennington Lake is a flood-control basin, Dworshak and Willow Creek stay ordinary; `METHOD_VERSION` unchanged |
 | [ADR-172](ADR-172-publish-pyramid-lake-from-its-monthly-field-readings.md) | Publish Pyramid Lake from its monthly field readings | Accepted; extends ADR-112, ADR-118 and ADR-159: a monthly lake is one site's level from the survey's field readings, late after 45 days |
+| [ADR-173](ADR-173-keep-a-month-end-record-on-time-when-its-fetch-fails.md) | Keep a month-end record on time when its fetch fails | Proposed; extends ADR-056: a carried monthly record is late only past its own `stale_after_days`; a carried daily record is late at once |
 | [ADR-173](ADR-173-show-river-gauges-with-dams-upstream-as-flow-only.md) | Show river gauges with dams upstream as flow only | Accepted (2026-11-16); extends ADR-168 and ADR-137: an unruled review row with a dam upstream is published `shaped`, with no 1991-2020 record required; diversion and check rows stay held |
 
 ## Relationship to the historical journal

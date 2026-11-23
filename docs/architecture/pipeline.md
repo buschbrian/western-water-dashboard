@@ -254,6 +254,10 @@ day or records why there is none.
 
 **`carry_forward`** keeps publishing a quiet feed's last value, because a point
 vanishing with no explanation is worse. True for days, false for months.
+A carried daily record is marked late at once. A carried month-end record is
+late only past its own `stale_after_days` (ADR-173): its feed has nothing new
+until the month ends, so a failed request loses no reading. `fetch_ok: false`
+records the failure either way.
 
 Past `WITHDRAW_AFTER_DAYS` (60) a record is **withdrawn** from the payload
 entirely (ADR-056), because `statewideRollup` sums `current_storage_af` with no
@@ -317,11 +321,13 @@ names, the committed scope boundaries and the committed land mask. The
 download's simplified polygons are drawn by the map and never measured; a week
 whose archive map is not posted is not measured at all (ADR-122). It is
 deterministic and carries no timestamps, so an unchanged week writes an
-unchanged file.
+unchanged file. Four coverage files (HUC-2, HUC-4, HUC-6 and HUC-8) are
+committed together, so a reader who changes the level never lands on another
+week.
 
-**The archives hold a decade at one method version.** Each level's
-`usdm-huc{level}-history.json` keeps 520 weeks, every one measured from its
-archive map. `tools/backfill_drought_history.py --rebuild` measures them all
+**The archives hold a decade at one method version.** Each of the HUC-2,
+HUC-4 and HUC-6 levels has a `usdm-huc{level}-history.json` that keeps 520
+weeks, every one measured from its archive map. HUC-8 has no archive. `tools/backfill_drought_history.py --rebuild` measures them all
 again when `METHOD_VERSION` moves; `--verify-overlap` recomputes held weeks
 and compares exactly, and the default fill mode refuses to add a week until
 that passes. A week the archive could not supply is named in `backfill.skipped`

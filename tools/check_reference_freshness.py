@@ -59,6 +59,8 @@ import watershed_scopes  # noqa: E402
 #:   which happens every season.
 #: - The river percentiles cover the whole approved record, so each year the
 #:   survey approves adds a year to them.
+#: - The station histories close with the water year on 1 October, so a file
+#:   built in mid-November is due about the next October, not a full year on.
 REFERENCES: tuple[dict, ...] = (
     {"path": "capacities.json", "field": "retrieved", "days": 365,
      "what": "Reservoir full levels, from the National Inventory of Dams"},
@@ -83,6 +85,15 @@ REFERENCES: tuple[dict, ...] = (
      "what": "The natural river gauges' day-of-year flow percentiles (ADR-144). "
              "They move when the survey approves another year of values, "
              "about once a year"},
+    {"path": "soil_normals.json", "field": "built", "days": 365,
+     "what": "The soil moisture percentiles for each calendar day (ADR-169). "
+             "Rebuilt once a year after 1 January"},
+    {"path": "precipitation_history.json", "field": "checked", "days": 335,
+     "what": "Every water year of precipitation at each snow station "
+             "(ADR-125). Rebuilt each October after the year closes"},
+    {"path": "snow_history.json", "field": "checked", "days": 335,
+     "what": "Every water year of snow water equivalent at each snow station "
+             "(ADR-165). Rebuilt each October after the year closes"},
 )
 
 

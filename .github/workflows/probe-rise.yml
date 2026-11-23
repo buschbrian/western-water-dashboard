@@ -29,7 +29,7 @@ permissions:
 jobs:
   probe:
     if: ${{ !inputs.backfill_usgs_storage }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     steps:
       - uses: actions/checkout@v5
       - uses: actions/setup-python@v6
@@ -45,7 +45,7 @@ jobs:
 
   backfill-usgs-storage:
     if: ${{ inputs.backfill_usgs_storage }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 45
     permissions:
       contents: read
@@ -65,7 +65,7 @@ jobs:
         run: python tools/build_storage_history.py --source usgs --workers 2 --output storage-history-backfill
       - name: Keep the data for local verification
         if: ${{ always() }}
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: usgs-storage-history
           path: storage-history-backfill/

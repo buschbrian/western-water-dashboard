@@ -182,7 +182,13 @@ def share_report(report: dict, checked: str) -> tuple[str, str] | None:
     count = max(count, len(failed))
     total = int(report.get("total") or 0) - int(report.get("notices") or 0)
     title = f"Share pictures kept their figure-free fallback ({count} of {total})"
-    listed = "\n".join(f"- `share/{name}.png`" for name in failed[:SHARE_LISTED])
+    reasons = report.get("reasons") or {}
+
+    def line(name: str) -> str:
+        reason = " ".join(str(reasons.get(name) or "").replace("`", "'").split())[:200]
+        return f"- `share/{name}.png`" + (f": {reason}" if reason else "")
+
+    listed = "\n".join(line(name) for name in failed[:SHARE_LISTED])
     more = len(failed) - SHARE_LISTED
     if more > 0:
         listed += f"\n- and {more} more"

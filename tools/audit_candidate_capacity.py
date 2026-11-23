@@ -33,6 +33,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT))
 from admission import admit_all, positive  # noqa: E402
+from pipeline.providers import MAX_PAGES  # noqa: E402
 from tools.audit_awdb_stations import find_candidates  # noqa: E402
 from watershed_scopes import (  # noqa: E402
     DEFAULT_SCOPE, SCOPES, load_scope_units,
@@ -179,7 +180,7 @@ def find_dam_layer(states: list[str]):
 
 def fetch_dams(layer_url: str, fields: dict, where: str) -> list[dict]:
     dams, offset = [], 0
-    while True:
+    for _ in range(MAX_PAGES):
         params = {"f": "json", "where": where, "outFields": "*",
                   "returnGeometry": "true", "outSR": 4326,
                   "resultOffset": offset, "resultRecordCount": 1000}
@@ -209,6 +210,8 @@ def fetch_dams(layer_url: str, fields: dict, where: str) -> list[dict]:
         if len(features) < 1000:
             break
         offset += 1000
+    else:
+        raise RuntimeError(f"NID pagination exceeded {MAX_PAGES} pages")
     return dams
 
 

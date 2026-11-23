@@ -2,6 +2,8 @@
 
 Checked 2026-11-02 against the release at `0b55f91`
 ([PR #112](https://github.com/buschbrian/western-water-dashboard/pull/112)).
+Entries for the streamflow, terminal-lake and census documents were corrected
+on 2026-11-22.
 
 ## Which file is the current truth?
 
@@ -59,9 +61,9 @@ follow-ups and what is not yet measured.
 | [Western source candidates](WESTERN-SOURCE-CANDIDATES.md) | Survey of non-federal and additional federal services, fetched live. |
 | [Colorado and California API review](CDSS-CDEC-API-REVIEW.md) | Measured source value, limits and integration cost. |
 | [Operating-restriction review](OPERATING-RESTRICTION-REVIEW.md) | Published reservoirs affected by current dam-safety operating limits and the evidence still needed. |
-| [Operating-character census](OPERATING-CHARACTER-CENSUS.md) | Proposed operating characters (ADR-114) for all 404 published reservoirs, from dam-inventory and hydrography evidence. Candidates for review; nothing applied. Written by `tools/build_operating_character_census.py`. |
+| [Operating-character census](OPERATING-CHARACTER-CENSUS.md) | Proposed operating characters (ADR-114) for all 424 published reservoirs (rerun 2026-11-15), from dam-inventory and hydrography evidence. Candidates for review; ADR-171 applied the Columbia and Snake rulings and nothing else. Written by `tools/build_operating_character_census.py`. |
 | [Upstream trace scoping](UPSTREAM-TRACE-SCOPING.md) | What it would take to say what drains to a reservoir. Measured against the U.S. Geological Survey network index. Built as ADR-077, except the ordering slice. |
-| [Streamflow scoping](STREAMFLOW-SCOPING.md) | What a river-flow page would take, and what it would make this site. The data is the same service, key and collection the reservoir provider already reads; the obstacle is ADR-078, which says every water this site measures is a reservoir. Recommends nothing be built yet. |
+| [Streamflow scoping](STREAMFLOW-SCOPING.md) | What a river-flow page would take, and what it would make this site. The data is the same service, key and collection the reservoir provider already reads; written before ADR-078 was superseded (ADR-112). The river flow page it scoped has shipped (ADR-136, ADR-148); read it as history. |
 | [Water-body and navigation scoping](WATER-BODY-AND-NAVIGATION-SCOPING.md) | Name normalization, lake-versus-reservoir type, nested navigation, reopening the chooser, and the states still unsourced. Four of its five items are closed; the state survey is the one that is open. |
 
 ## Historical material
@@ -105,13 +107,11 @@ should be worked:
    the unnamed Calcite slider handle that `src/ui/slider-label.ts` works
    around, and the `script-src` measurement behind ADR-036.
 5. **The next terminal lakes.** Walker Lake is published end to end: the
-   roster and payload (ADR-118) and its own page, reached from the methods and
-   data pages (ADR-119). ADR-159 made the volume optional and added arms, and
-   Great Salt Lake is admitted by arm. Pyramid Lake is held for its monthly
-   update schedule, and Mono Lake for a daily elevation series; the roster's
-   withheld block says exactly what each needs. Whether a lake earns a place
-   in the navigation bar is the next page decision, now that there is a second
-   lake. The current lake payload is
+   roster and payload (ADR-118) and its own page (ADR-119). ADR-159 made the volume optional and added arms, and
+   Great Salt Lake is admitted by arm. Pyramid Lake is published from its monthly
+   readings (ADR-172), and Terminal lakes is in the page menu and the bar
+   (ADR-166). Mono Lake is held for a daily elevation series; the roster's
+   withheld block says exactly what it needs. The current lake payload is
    included in [`data-transfer.md`](data-transfer.md).
 6. **The remaining reservoir coverage gaps, now much narrower.** The Corps of
    Engineers' Columbia Basin service (ADR-102) covers Idaho, Oregon and
