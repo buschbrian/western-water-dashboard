@@ -197,8 +197,8 @@ drought and river pages carry static Open Graph and Twitter picture tags.
 The two storage pages use the daily West picture. `build/page-previews.ts`
 builds four other snapshots from the pages' existing models: snow keeps the
 reporting and normal-snow floors, precipitation keeps the fixed site set,
-drought shows the worst-class counts and map date, and river flows stay
-separate with each gauge's reading date and precision. `build/share-frame.ts`
+drought shows the worst-class counts and map date, and rivers show the newest
+reading date with gauge counts by group and flow class (ADR-174). `build/share-frame.ts`
 draws the common frame. Missing domain files produce a notice rather than
 figures, and every picture uses the existing fallback and capture budget.
 These static previews describe the whole published coverage. Query filters
