@@ -104,8 +104,9 @@ def test_every_gauge_meets_its_adr_137_rule():
         elif not evidence["published_reservoirs_upstream"]:
             share = evidence["storage_share_pct"]
             if share is None or share < 10.0:
-                # ADR-175: any dam upstream is shown as flow only.
+                # ADR-175: water stored upstream is shown as flow only.
                 assert "ADR-175" in row["tier"]["basis"] and evidence["dams_upstream"] > 0
+                assert (evidence["dam_storage_af"] or 0) > 0
             else:
                 assert share >= 10.0
 

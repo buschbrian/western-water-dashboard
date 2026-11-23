@@ -83,8 +83,9 @@ BULK_RULED_ON = "2026-10-27"
 STATUS = "pending_formal_ruling"
 #: ADR-175: Brian directed on 2026-11-16 that a gauge held back only because
 #: dams are upstream be shown, flow only, with the dams noted. A `review` row
-#: whose suggestion is one of these and whose traced basin holds a dam is
-#: published as `shaped`. `diversion` and `check` rows stay with a person.
+#: whose suggestion is one of these and above whose gauge water is stored
+#: (`stores_water_upstream`, narrowed by Brian on 2026-11-23) is published as
+#: `shaped`. `diversion` and `check` rows stay with a person.
 DAMS_DIRECTED_ON = "2026-11-16"
 DAMS_SUGGESTIONS = {"reservoir", "natural", "short"}
 
