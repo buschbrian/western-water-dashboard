@@ -132,6 +132,72 @@
         ],
         "source": "Source: Data from several providers, shown on the Western Water Dashboard (buschbrian.github.io/western-water-dashboard)."
       }
+    },
+    {
+      "week": "2026-11-23",
+      "published": "2026-11-24T02:03:59.817Z",
+      "through": "2026-11-23",
+      "scope": "Storage covers 424 reservoirs, Lake Powell included, Lake Mead included.",
+      "notes": [
+        "These are changes over the last seven days.",
+        "Readings are from Nov 1, 2026 to Nov 23, 2026.",
+        "58 reservoirs have late readings.",
+        "Reservoir data file: Nov 23, 2026. Latest reservoir reading: Nov 23, 2026.",
+        "Snow measurements to Nov 23, 2026.",
+        "Drought map for Nov 17, 2026."
+      ],
+      "sourceDates": {
+        "storage": "2026-11-23T23:48:40+00:00",
+        "snow": "2026-11-23",
+        "drought": "2026-11-17"
+      },
+      "sections": [
+        {
+          "heading": "Reservoir storage — 424 reservoirs",
+          "lines": [
+            "The measured reservoirs lost 54,268 acre-feet between them.",
+            "Their seasonal storage moved from 45.1% full to 45.0%, down 0.1 points.",
+            "103 fell, 189 rose and 19 did not move.",
+            "This covers the 311 reservoirs that report every day. The other 113 report once a month and cannot show a weekly change."
+          ]
+        },
+        {
+          "heading": "The week's movers, same reservoirs",
+          "lines": [
+            "Largest fall by volume: Franklin D. Roosevelt Lake fell 406,960 acre-feet, which is 4.3% of its own full level.",
+            "Largest rise by volume: Lake Powell rose 61,800 acre-feet, which is 0.2% of its own full level.",
+            "Largest move for its own size: Black Canyon Reservoir rose 8,849 acre-feet, which is 29.7% of its own full level. That is 46.7% of what it held a week earlier."
+          ]
+        },
+        {
+          "heading": "Mountain snow, whole region — 496 reporting sites",
+          "lines": [
+            "Snow gained ground against normal: 63.7% of normal on Nov 15, 2026, 129.5% on Nov 22, 2026.",
+            "Measured across 496 sites with a fair value that day."
+          ]
+        },
+        {
+          "heading": "Drought, whole region — 75 drainage areas",
+          "lines": [
+            "The drought map for the week of Nov 17, 2026 was published on Nov 19, 2026.",
+            "The most severe class with land in it is exceptional drought (D4). 33 of 75 drainage areas have land in severe drought or worse.",
+            "5 areas lost some since Nov 10, 2026.",
+            "The largest change is Lower Green, down 21.6 points of its land at that class."
+          ]
+        }
+      ],
+      "caption": "Week ending Nov 23, 2026\n\nStorage covers 424 reservoirs, Lake Powell included, Lake Mead included.\n\nThese are changes over the last seven days.\n\nReadings are from Nov 1, 2026 to Nov 23, 2026.\n\n58 reservoirs have late readings.\n\nReservoir data file: Nov 23, 2026. Latest reservoir reading: Nov 23, 2026.\n\nSnow measurements to Nov 23, 2026.\n\nDrought map for Nov 17, 2026.\n\nReservoir storage — 424 reservoirs\n\nThe measured reservoirs lost 54,268 acre-feet between them.\n\nTheir seasonal storage moved from 45.1% full to 45.0%, down 0.1 points.\n\n103 fell, 189 rose and 19 did not move.\n\nThis covers the 311 reservoirs that report every day. The other 113 report once a month and cannot show a weekly change.\n\nThe week's movers, same reservoirs\n\nLargest fall by volume: Franklin D. Roosevelt Lake fell 406,960 acre-feet, which is 4.3% of its own full level.\n\nLargest rise by volume: Lake Powell rose 61,800 acre-feet, which is 0.2% of its own full level.\n\nLargest move for its own size: Black Canyon Reservoir rose 8,849 acre-feet, which is 29.7% of its own full level. That is 46.7% of what it held a week earlier.\n\nMountain snow, whole region — 496 reporting sites\n\nSnow gained ground against normal: 63.7% of normal on Nov 15, 2026, 129.5% on Nov 22, 2026.\n\nMeasured across 496 sites with a fair value that day.\n\nDrought, whole region — 75 drainage areas\n\nThe drought map for the week of Nov 17, 2026 was published on Nov 19, 2026.\n\nThe most severe class with land in it is exceptional drought (D4). 33 of 75 drainage areas have land in severe drought or worse.\n\n5 areas lost some since Nov 10, 2026.\n\nThe largest change is Lower Green, down 21.6 points of its land at that class.\n\nSource: Data from several providers, shown on the Western Water Dashboard (buschbrian.github.io/western-water-dashboard).\n\nThis is a saved weekly summary. The live dashboard can show newer readings.",
+      "frame": {
+        "name": "Week ending Nov 23, 2026",
+        "figure": "−54,268 acre-feet",
+        "stored": "Net change over seven days",
+        "lines": [
+          "311 of 424 reservoirs reported a weekly change.",
+          "Snow: 129.5% of normal on Nov 22, 2026.",
+          "Drought map: Nov 17, 2026. All figures describe the whole region."
+        ],
+        "source": "Source: Data from several providers, shown on the Western Water Dashboard (buschbrian.github.io/western-water-dashboard)."
+      }
     }
   ]
 }
