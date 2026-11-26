@@ -1,13 +1,13 @@
 {
   "schema_version": 3,
   "measurement": "daily_mean_flow",
-  "fetched_at": "2026-11-25T21:33:40+00:00",
-  "run_date": "2026-11-25",
+  "fetched_at": "2026-11-26T21:24:18+00:00",
+  "run_date": "2026-11-26",
   "window_days": 30,
   "stale_after_days": 2,
   "withdraw_after_days": 60,
   "gauge_count": 142,
-  "stale_count": 12,
+  "stale_count": 13,
   "withdrawn_count": 0,
   "gauges": [
     {
@@ -34,30 +34,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 738.0,
+      "current_cfs": 707.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -244.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -289.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 10800.0,
       "window_high_date": "2026-11-02",
-      "window_low_cfs": 738.0,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 707.0,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 3900.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 3000.0,
@@ -231,6 +225,12 @@
           "cfs": 738.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 707.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -258,30 +258,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 656.0,
+      "current_cfs": 587.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -384.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -513.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 13700.0,
       "window_high_date": "2026-11-02",
-      "window_low_cfs": 656.0,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 587.0,
+      "window_low_date": "2026-11-25",
       "reported_days": 29,
       "provisional_days": 29,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 4820.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": null,
@@ -455,6 +449,12 @@
           "cfs": 656.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 587.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -482,30 +482,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 945.0,
+      "current_cfs": 896.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -285.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -394.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 9660.0,
       "window_high_date": "2026-11-03",
-      "window_low_cfs": 945.0,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 896.0,
+      "window_low_date": "2026-11-25",
       "reported_days": 29,
       "provisional_days": 29,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 4810.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 3720.0,
@@ -679,6 +673,12 @@
           "cfs": 945.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 896.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -707,7 +707,7 @@
       "data_frequency": "daily",
       "stale_after_days": 2,
       "as_of": "2026-11-24",
-      "days_stale": 1,
+      "days_stale": 2,
       "is_stale": false,
       "fetch_ok": true,
       "current_cfs": 1090.0,
@@ -936,17 +936,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 542.0,
+      "current_cfs": 501.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": 85.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -9.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 593.0,
       "window_high_date": "2026-11-22",
       "window_low_cfs": 422.0,
@@ -954,12 +954,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 452.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 448.0,
@@ -1133,6 +1127,12 @@
           "cfs": 542.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 501.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -1160,19 +1160,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 21.7,
+      "current_cfs": 22.8,
       "current_approval": "Provisional",
-      "current_qualifiers": [
-        "ESTIMATED"
-      ],
-      "change_7d_cfs": -1.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "current_qualifiers": [],
+      "change_7d_cfs": 0.7,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 51.8,
       "window_high_date": "2026-11-01",
       "window_low_cfs": 20.7,
@@ -1180,12 +1178,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 26.4,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 26.6,
@@ -1370,11 +1362,17 @@
         },
         {
           "date": "2026-11-24",
-          "cfs": 21.7,
+          "cfs": 21.4,
           "approval": "Provisional",
           "qualifiers": [
             "ESTIMATED"
           ]
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 22.8,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -1402,17 +1400,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 36.2,
+      "current_cfs": 34.8,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -8.5,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -7.9,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 254.0,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 33.3,
@@ -1420,12 +1418,6 @@
       "reported_days": 28,
       "provisional_days": 28,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 49.2,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 45.9,
@@ -1599,6 +1591,12 @@
           "cfs": 36.2,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 34.8,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -1641,7 +1639,7 @@
       "data_frequency": "daily",
       "stale_after_days": 2,
       "as_of": "2026-11-22",
-      "days_stale": 3,
+      "days_stale": 4,
       "is_stale": true,
       "fetch_ok": true,
       "current_cfs": 2.93,
@@ -1883,8 +1881,8 @@
       "data_frequency": "daily",
       "stale_after_days": 2,
       "as_of": "2026-11-23",
-      "days_stale": 2,
-      "is_stale": false,
+      "days_stale": 3,
+      "is_stale": true,
       "fetch_ok": true,
       "current_cfs": 86.8,
       "current_approval": "Provisional",
@@ -2106,30 +2104,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 7.75,
+      "current_cfs": 9.26,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": 1.21,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
-      "window_high_cfs": 13.3,
-      "window_high_date": "2026-10-26",
+      "change_7d_cfs": 1.19,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
+      "window_high_cfs": 12.1,
+      "window_high_date": "2026-10-27",
       "window_low_cfs": 6.54,
       "window_low_date": "2026-11-17",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 13.3,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 12.1,
@@ -2303,6 +2295,12 @@
           "cfs": 7.75,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 9.26,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -2330,17 +2328,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 64.9,
+      "current_cfs": 63.8,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": 0.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -1.1,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 154.0,
       "window_high_date": "2026-10-30",
       "window_low_cfs": 55.7,
@@ -2348,12 +2346,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 66.6,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 89.0,
@@ -2527,6 +2519,12 @@
           "cfs": 64.9,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 63.8,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -2554,30 +2552,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 58.4,
+      "current_cfs": 57.9,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -0.3,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -0.8,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 159.0,
       "window_high_date": "2026-10-31",
-      "window_low_cfs": 58.4,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 57.9,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 154.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 144.0,
@@ -2751,6 +2743,12 @@
           "cfs": 58.4,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 57.9,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -2778,17 +2776,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
       "current_cfs": 25.1,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -2.4,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -1.2,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 35.7,
       "window_high_date": "2026-10-28",
       "window_low_cfs": 24.8,
@@ -2796,12 +2794,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 35.7,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 35.7,
@@ -2975,6 +2967,12 @@
           "cfs": 25.1,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 25.1,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -3002,17 +3000,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 3.78,
+      "current_cfs": 3.63,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -1.43,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -14.27,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 21.1,
       "window_high_date": "2026-11-20",
       "window_low_cfs": 2.3,
@@ -3020,12 +3018,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 2.52,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 2.45,
@@ -3199,6 +3191,12 @@
           "cfs": 3.78,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 3.63,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -3226,17 +3224,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 46.4,
+      "current_cfs": 45.6,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -7.3,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -12.2,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 122.0,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 45.4,
@@ -3244,12 +3242,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 71.1,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 58.5,
@@ -3423,6 +3415,12 @@
           "cfs": 46.4,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 45.6,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -3450,17 +3448,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 22.5,
+      "current_cfs": 26.9,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": null,
-      "change_7d_reference_date": null,
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -3.5,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 30.7,
       "window_high_date": "2026-11-14",
       "window_low_cfs": 20.3,
@@ -3468,12 +3466,6 @@
       "reported_days": 29,
       "provisional_days": 29,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 21.7,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 21.1,
@@ -3647,6 +3639,12 @@
           "cfs": 22.5,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 26.9,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -3689,7 +3687,7 @@
       "data_frequency": "daily",
       "stale_after_days": 2,
       "as_of": "2026-11-24",
-      "days_stale": 1,
+      "days_stale": 2,
       "is_stale": false,
       "fetch_ok": true,
       "current_cfs": 27.7,
@@ -3915,7 +3913,7 @@
       "data_frequency": "daily",
       "stale_after_days": 2,
       "as_of": "2026-11-24",
-      "days_stale": 1,
+      "days_stale": 2,
       "is_stale": false,
       "fetch_ok": true,
       "current_cfs": 8490.0,
@@ -4139,7 +4137,7 @@
       "data_frequency": "daily",
       "stale_after_days": 2,
       "as_of": "2026-11-24",
-      "days_stale": 1,
+      "days_stale": 2,
       "is_stale": false,
       "fetch_ok": true,
       "current_cfs": 6840.0,
@@ -4362,30 +4360,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 3030.0,
+      "current_cfs": 2960.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -410.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -1200.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 17600.0,
       "window_high_date": "2026-11-03",
-      "window_low_cfs": 3030.0,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 2960.0,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 9190.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 7800.0,
@@ -4559,6 +4551,12 @@
           "cfs": 3030.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 2960.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -4586,17 +4584,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 69.7,
+      "current_cfs": 72.5,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": 4.9,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": 4.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 81.8,
       "window_high_date": "2026-11-23",
       "window_low_cfs": 61.9,
@@ -4604,12 +4602,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 75.5,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 73.6,
@@ -4783,6 +4775,12 @@
           "cfs": 69.7,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 72.5,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -4810,17 +4808,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 913.0,
+      "current_cfs": 920.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -127.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -140.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 1800.0,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 913.0,
@@ -4828,12 +4826,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 1460.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 1450.0,
@@ -5007,6 +4999,12 @@
           "cfs": 913.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 920.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -5034,17 +5032,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 1090.0,
+      "current_cfs": 1100.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -180.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -190.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 3070.0,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 1090.0,
@@ -5052,12 +5050,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 1810.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 1710.0,
@@ -5231,6 +5223,12 @@
           "cfs": 1090.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 1100.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -5258,30 +5256,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 2780.0,
+      "current_cfs": 2750.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -510.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -1260.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 15500.0,
       "window_high_date": "2026-11-03",
-      "window_low_cfs": 2780.0,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 2750.0,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 8030.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 5650.0,
@@ -5455,6 +5447,12 @@
           "cfs": 2780.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 2750.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -5482,30 +5480,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 2390.0,
+      "current_cfs": 2350.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -380.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -470.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 10000.0,
       "window_high_date": "2026-11-02",
-      "window_low_cfs": 2390.0,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 2350.0,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 4990.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 4250.0,
@@ -5681,6 +5673,12 @@
           "cfs": 2390.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 2350.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -5708,17 +5706,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 424.0,
+      "current_cfs": 445.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -44.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -24.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 754.0,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 409.0,
@@ -5726,12 +5724,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 687.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 690.0,
@@ -5905,6 +5897,12 @@
           "cfs": 424.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 445.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -5932,17 +5930,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 8190.0,
+      "current_cfs": 7840.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": 480.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": 160.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 18700.0,
       "window_high_date": "2026-11-08",
       "window_low_cfs": 7450.0,
@@ -5950,12 +5948,6 @@
       "reported_days": 29,
       "provisional_days": 29,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 9740.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 10100.0,
@@ -6129,6 +6121,12 @@
           "cfs": 8190.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 7840.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -6156,17 +6154,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 223.0,
+      "current_cfs": 194.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": 26.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -3.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 468.0,
       "window_high_date": "2026-11-01",
       "window_low_cfs": 185.0,
@@ -6174,12 +6172,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 435.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 423.0,
@@ -6353,6 +6345,12 @@
           "cfs": 223.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 194.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -6380,30 +6378,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 26.4,
+      "current_cfs": 26.3,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -2.7,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -3.7,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 42.4,
       "window_high_date": "2026-11-01",
-      "window_low_cfs": 26.4,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 26.3,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 29.3,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 28.4,
@@ -6577,6 +6569,12 @@
           "cfs": 26.4,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 26.3,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -6604,17 +6602,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
       "current_cfs": 142.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -103.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -460.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 789.0,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 131.0,
@@ -6622,12 +6620,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 548.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 330.0,
@@ -6801,6 +6793,12 @@
           "cfs": 142.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 142.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -6828,30 +6826,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 97.0,
+      "current_cfs": 90.2,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -44.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -106.8,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 4610.0,
       "window_high_date": "2026-11-03",
-      "window_low_cfs": 91.8,
-      "window_low_date": "2026-10-30",
+      "window_low_cfs": 90.2,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 1020.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 248.0,
@@ -7025,6 +7017,12 @@
           "cfs": 97.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 90.2,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -7052,30 +7050,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 388.0,
+      "current_cfs": 377.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -176.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -213.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 5620.0,
       "window_high_date": "2026-11-02",
-      "window_low_cfs": 388.0,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 377.0,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 1280.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 977.0,
@@ -7249,6 +7241,12 @@
           "cfs": 388.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 377.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -7276,30 +7274,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 60.8,
+      "current_cfs": 54.5,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -36.9,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -113.5,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 4880.0,
       "window_high_date": "2026-11-03",
-      "window_low_cfs": 58.9,
-      "window_low_date": "2026-10-30",
+      "window_low_cfs": 54.5,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 1290.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 285.0,
@@ -7473,6 +7465,12 @@
           "cfs": 60.8,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 54.5,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -7500,30 +7498,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 351.0,
+      "current_cfs": 340.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -110.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -186.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 6050.0,
       "window_high_date": "2026-11-03",
-      "window_low_cfs": 349.0,
-      "window_low_date": "2026-11-23",
+      "window_low_cfs": 340.0,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 3100.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 1580.0,
@@ -7697,6 +7689,12 @@
           "cfs": 351.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 340.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -7724,17 +7722,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 238.0,
+      "current_cfs": 237.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -248.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -137.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 667.0,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 41.2,
@@ -7742,12 +7740,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 75.7,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 68.1,
@@ -7921,6 +7913,12 @@
           "cfs": 238.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 237.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -7948,17 +7946,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 126.0,
+      "current_cfs": 119.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": 0.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -11.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 151.0,
       "window_high_date": "2026-11-03",
       "window_low_cfs": 109.0,
@@ -7966,12 +7964,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 141.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 136.0,
@@ -8145,6 +8137,12 @@
           "cfs": 126.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 119.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -8173,7 +8171,7 @@
       "data_frequency": "daily",
       "stale_after_days": 2,
       "as_of": "2026-11-17",
-      "days_stale": 8,
+      "days_stale": 9,
       "is_stale": true,
       "fetch_ok": true,
       "current_cfs": 21.5,
@@ -8416,17 +8414,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-25",
+      "as_of": "2026-11-26",
       "days_stale": 0,
       "is_stale": false,
       "fetch_ok": true,
       "current_cfs": 16.7,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -2.4,
-      "change_7d_reference_date": "2026-11-18",
-      "window_start": "2026-10-27",
-      "window_end": "2026-11-25",
+      "change_7d_cfs": -1.4,
+      "change_7d_reference_date": "2026-11-19",
+      "window_start": "2026-10-28",
+      "window_end": "2026-11-26",
       "window_high_cfs": 53.1,
       "window_high_date": "2026-11-04",
       "window_low_cfs": 13.8,
@@ -8434,12 +8432,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-27",
-          "cfs": 15.3,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-28",
           "cfs": 14.5,
@@ -8610,6 +8602,12 @@
         },
         {
           "date": "2026-11-25",
+          "cfs": 16.8,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-11-26",
           "cfs": 16.7,
           "approval": "Provisional",
           "qualifiers": []
@@ -8640,17 +8638,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 103.0,
+      "current_cfs": 86.6,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": 12.3,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -10.1,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 190.0,
       "window_high_date": "2026-11-03",
       "window_low_cfs": 71.1,
@@ -8658,12 +8656,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 98.4,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 101.0,
@@ -8837,6 +8829,12 @@
           "cfs": 103.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 86.6,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -8864,17 +8862,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 5.71,
+      "current_cfs": 5.44,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -21.39,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -15.76,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 452.0,
       "window_high_date": "2026-11-01",
       "window_low_cfs": 1.22,
@@ -8882,14 +8880,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 23.9,
-          "approval": "Provisional",
-          "qualifiers": [
-            "ESTIMATED"
-          ]
-        },
         {
           "date": "2026-10-27",
           "cfs": 2.79,
@@ -9065,6 +9055,12 @@
           "cfs": 5.71,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 5.44,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -9092,36 +9088,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-23",
-      "days_stale": 2,
+      "as_of": "2026-11-25",
+      "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 1.24,
+      "current_cfs": 0.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": 0.53,
-      "change_7d_reference_date": "2026-11-16",
-      "window_start": "2026-10-25",
-      "window_end": "2026-11-23",
+      "change_7d_cfs": -35.6,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 234.0,
       "window_high_date": "2026-11-17",
       "window_low_cfs": 0.0,
-      "window_low_date": "2026-11-14",
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-25",
-          "cfs": 0.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
-        {
-          "date": "2026-10-26",
-          "cfs": 0.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 0.0,
@@ -9289,6 +9273,18 @@
           "cfs": 1.24,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-24",
+          "cfs": 0.0,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 0.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -9316,17 +9312,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 64.2,
+      "current_cfs": 63.5,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -2.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -0.8,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 69.7,
       "window_high_date": "2026-11-01",
       "window_low_cfs": 56.1,
@@ -9334,12 +9330,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 61.3,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 58.0,
@@ -9513,6 +9503,12 @@
           "cfs": 64.2,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 63.5,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -9540,30 +9536,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 39.3,
+      "current_cfs": 39.2,
       "current_approval": "Provisional",
       "current_qualifiers": [],
       "change_7d_cfs": -0.1,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 44.5,
       "window_high_date": "2026-11-11",
       "window_low_cfs": 39.2,
-      "window_low_date": "2026-11-19",
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 44.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 44.0,
@@ -9741,6 +9731,12 @@
           "cfs": 39.3,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 39.2,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -9768,17 +9764,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 55.3,
+      "current_cfs": 53.9,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -19.8,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -17.7,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 7370.0,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 17.6,
@@ -9786,12 +9782,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 44.8,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 28.5,
@@ -9965,6 +9955,12 @@
           "cfs": 55.3,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 53.9,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -9992,17 +9988,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
       "current_cfs": 6.66,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": 0.01,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": 0.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 37.5,
       "window_high_date": "2026-11-01",
       "window_low_cfs": 0.59,
@@ -10010,12 +10006,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 0.59,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 0.59,
@@ -10189,6 +10179,12 @@
           "cfs": 6.66,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 6.66,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -10216,17 +10212,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 2240.0,
+      "current_cfs": 1520.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -350.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -1010.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 3670.0,
       "window_high_date": "2026-11-13",
       "window_low_cfs": 0.0,
@@ -10234,12 +10230,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 0.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 0.0,
@@ -10413,6 +10403,12 @@
           "cfs": 2240.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 1520.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -10440,30 +10436,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 8.85,
+      "current_cfs": 12.7,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -3.95,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": 3.33,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 14.0,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 7.19,
       "window_low_date": "2026-10-30",
       "reported_days": 30,
-      "provisional_days": 15,
+      "provisional_days": 16,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 10.5,
-          "approval": "Approved",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 7.61,
@@ -10637,6 +10627,12 @@
           "cfs": 8.85,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 12.7,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -10665,7 +10661,7 @@
       "data_frequency": "daily",
       "stale_after_days": 2,
       "as_of": "2026-11-24",
-      "days_stale": 1,
+      "days_stale": 2,
       "is_stale": false,
       "fetch_ok": true,
       "current_cfs": 3900.0,
@@ -10894,17 +10890,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 4150.0,
+      "current_cfs": 3980.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": 120.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -1060.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 6570.0,
       "window_high_date": "2026-11-05",
       "window_low_cfs": 3890.0,
@@ -10912,12 +10908,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 5470.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 5210.0,
@@ -11091,6 +11081,12 @@
           "cfs": 4150.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 3980.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -11118,17 +11114,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 2790.0,
+      "current_cfs": 2800.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -20.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -70.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 3070.0,
       "window_high_date": "2026-11-07",
       "window_low_cfs": 2760.0,
@@ -11136,12 +11132,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 2790.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 2770.0,
@@ -11315,6 +11305,12 @@
           "cfs": 2790.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 2800.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -11342,17 +11338,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 426.0,
+      "current_cfs": 415.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -9.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": 15.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 2580.0,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 400.0,
@@ -11360,12 +11356,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 764.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 687.0,
@@ -11539,6 +11529,12 @@
           "cfs": 426.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 415.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -11566,30 +11562,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 1110.0,
+      "current_cfs": 1070.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -120.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -130.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 6450.0,
       "window_high_date": "2026-11-02",
-      "window_low_cfs": 1100.0,
-      "window_low_date": "2026-11-23",
+      "window_low_cfs": 1070.0,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 2490.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 2140.0,
@@ -11763,6 +11753,12 @@
           "cfs": 1110.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 1070.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -11790,17 +11786,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 280.0,
+      "current_cfs": 278.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -43.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -49.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 550.0,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 266.0,
@@ -11808,12 +11804,6 @@
       "reported_days": 29,
       "provisional_days": 29,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 447.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": null,
@@ -11991,6 +11981,12 @@
           "cfs": 280.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 278.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -12019,7 +12015,7 @@
       "data_frequency": "daily",
       "stale_after_days": 2,
       "as_of": "2026-11-03",
-      "days_stale": 22,
+      "days_stale": 23,
       "is_stale": true,
       "fetch_ok": true,
       "current_cfs": 11.7,
@@ -12244,17 +12240,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 122.0,
+      "current_cfs": 121.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": null,
-      "change_7d_reference_date": null,
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -21.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 148.0,
       "window_high_date": "2026-11-01",
       "window_low_cfs": 113.0,
@@ -12262,12 +12258,6 @@
       "reported_days": 29,
       "provisional_days": 29,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 135.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 136.0,
@@ -12449,6 +12439,12 @@
           "cfs": 122.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 121.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -12476,17 +12472,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 145.0,
+      "current_cfs": 144.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -46.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -87.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 270.0,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 138.0,
@@ -12494,12 +12490,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 150.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 158.0,
@@ -12673,6 +12663,12 @@
           "cfs": 145.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 144.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -12700,30 +12696,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 11.9,
+      "current_cfs": 11.6,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -0.7,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -0.4,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 273.0,
       "window_high_date": "2026-11-01",
-      "window_low_cfs": 11.9,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 11.6,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 97.5,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 46.0,
@@ -12897,6 +12887,12 @@
           "cfs": 11.9,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 11.6,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -12924,30 +12920,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 54.8,
+      "current_cfs": 53.1,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -19.9,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -17.2,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 767.0,
       "window_high_date": "2026-11-02",
-      "window_low_cfs": 54.8,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 53.1,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 211.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 146.0,
@@ -13121,6 +13111,12 @@
           "cfs": 54.8,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 53.1,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -13148,17 +13144,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 165.0,
+      "current_cfs": 166.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -19.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -39.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 242.0,
       "window_high_date": "2026-11-06",
       "window_low_cfs": 3.86,
@@ -13166,12 +13162,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 5.76,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 5.53,
@@ -13345,6 +13335,12 @@
           "cfs": 165.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 166.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -13372,17 +13368,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 73.1,
+      "current_cfs": 73.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": 17.4,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -39.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 145.0,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 54.6,
@@ -13390,12 +13386,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 55.6,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 67.6,
@@ -13569,6 +13559,12 @@
           "cfs": 73.1,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 73.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -13596,17 +13592,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 868.0,
+      "current_cfs": 601.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": 506.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": 264.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 7460.0,
       "window_high_date": "2026-11-08",
       "window_low_cfs": 271.0,
@@ -13614,12 +13610,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 2730.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 2750.0,
@@ -13793,6 +13783,12 @@
           "cfs": 868.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 601.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -13820,17 +13816,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 2.81,
+      "current_cfs": 2.56,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": 0.84,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -0.06,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 88.4,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 0.0,
@@ -13838,12 +13834,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 0.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 0.0,
@@ -14017,6 +14007,12 @@
           "cfs": 2.81,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 2.56,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -14045,7 +14041,7 @@
       "data_frequency": "daily",
       "stale_after_days": 2,
       "as_of": "2026-10-10",
-      "days_stale": 46,
+      "days_stale": 47,
       "is_stale": true,
       "fetch_ok": true,
       "current_cfs": 72.6,
@@ -14268,17 +14264,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 9.42,
+      "current_cfs": 9.34,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -15.48,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -6.96,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 5230.0,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 4.99,
@@ -14286,12 +14282,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 67.7,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 21.1,
@@ -14465,6 +14455,12 @@
           "cfs": 9.42,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 9.34,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -14492,7 +14488,7 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
@@ -14500,22 +14496,16 @@
       "current_approval": "Provisional",
       "current_qualifiers": [],
       "change_7d_cfs": 0.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 3.43,
       "window_high_date": "2026-11-01",
       "window_low_cfs": 0.0,
-      "window_low_date": "2026-11-24",
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 0.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 0.0,
@@ -14689,6 +14679,12 @@
           "cfs": 0.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 0.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -14716,17 +14712,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 411.0,
+      "current_cfs": 269.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": 274.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": 157.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 10200.0,
       "window_high_date": "2026-11-08",
       "window_low_cfs": 82.5,
@@ -14734,12 +14730,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 2890.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 2260.0,
@@ -14913,6 +14903,12 @@
           "cfs": 411.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 269.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -14941,7 +14937,7 @@
       "data_frequency": "daily",
       "stale_after_days": 2,
       "as_of": "2026-11-07",
-      "days_stale": 18,
+      "days_stale": 19,
       "is_stale": true,
       "fetch_ok": true,
       "current_cfs": 1780.0,
@@ -15164,17 +15160,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 138.0,
+      "current_cfs": 111.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": 31.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -7.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 225.0,
       "window_high_date": "2026-11-06",
       "window_low_cfs": 89.6,
@@ -15182,12 +15178,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 92.6,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 93.9,
@@ -15361,6 +15351,12 @@
           "cfs": 138.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 111.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -15388,30 +15384,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 797.0,
+      "current_cfs": 761.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -233.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -136.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 6110.0,
       "window_high_date": "2026-11-02",
-      "window_low_cfs": 797.0,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 761.0,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 1970.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 1980.0,
@@ -15589,6 +15579,12 @@
           "cfs": 797.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 761.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -15616,30 +15612,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 9.67,
+      "current_cfs": 8.92,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -1.53,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -1.78,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 15.8,
       "window_high_date": "2026-11-01",
-      "window_low_cfs": 9.67,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 8.92,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 14.4,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 13.6,
@@ -15813,6 +15803,12 @@
           "cfs": 9.67,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 8.92,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -15855,8 +15851,8 @@
       "data_frequency": "daily",
       "stale_after_days": 2,
       "as_of": "2026-11-23",
-      "days_stale": 2,
-      "is_stale": false,
+      "days_stale": 3,
+      "is_stale": true,
       "fetch_ok": true,
       "current_cfs": 35.5,
       "current_approval": "Provisional",
@@ -16086,30 +16082,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 67.1,
+      "current_cfs": 62.1,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -23.9,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -30.3,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 3400.0,
       "window_high_date": "2026-11-03",
-      "window_low_cfs": 67.1,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 62.1,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 127.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 131.0,
@@ -16283,6 +16273,12 @@
           "cfs": 67.1,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 62.1,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -16310,17 +16306,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 33.3,
+      "current_cfs": 34.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -14.4,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -15.3,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 2180.0,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 33.3,
@@ -16328,12 +16324,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 104.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 64.2,
@@ -16507,6 +16497,12 @@
           "cfs": 33.3,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 34.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -16549,7 +16545,7 @@
       "data_frequency": "daily",
       "stale_after_days": 2,
       "as_of": "2026-11-20",
-      "days_stale": 5,
+      "days_stale": 6,
       "is_stale": true,
       "fetch_ok": true,
       "current_cfs": 17.7,
@@ -16771,12 +16767,12 @@
       "tier": "natural",
       "compared_with_normal": true,
       "normal_band": {
-        "day": "11-24",
-        "p10": 4.215,
-        "p25": 5.125,
-        "p50": 5.935,
-        "p75": 7.213,
-        "p90": 8.83,
+        "day": "11-25",
+        "p10": 4.01,
+        "p25": 4.657,
+        "p50": 5.995,
+        "p75": 7.31,
+        "p90": 8.88,
         "years": 44,
         "retrieved": "2026-10-31",
         "source_url": "https://api.waterdata.usgs.gov/statistics/v0/observationNormals?monitoring_location_id=USGS-09183500&parameter_code=00060&computation_type=percentile&normal_type=DOY&page_size=1000"
@@ -16786,30 +16782,24 @@
       "short_record": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 9.42,
+      "current_cfs": 9.24,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -5.08,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -2.26,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 43.5,
       "window_high_date": "2026-11-02",
-      "window_low_cfs": 9.42,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 9.24,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 25.1,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 20.9,
@@ -16983,6 +16973,12 @@
           "cfs": 9.42,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 9.24,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -17010,17 +17006,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 7.91,
+      "current_cfs": 9.49,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -12.79,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -9.41,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 204.0,
       "window_high_date": "2026-11-01",
       "window_low_cfs": 4.76,
@@ -17028,12 +17024,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 10.5,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 7.01,
@@ -17207,6 +17197,12 @@
           "cfs": 7.91,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 9.49,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -17235,7 +17231,7 @@
       "data_frequency": "daily",
       "stale_after_days": 2,
       "as_of": "2026-11-24",
-      "days_stale": 1,
+      "days_stale": 2,
       "is_stale": false,
       "fetch_ok": true,
       "current_cfs": 85.1,
@@ -17463,17 +17459,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 93.1,
+      "current_cfs": 91.2,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -331.9,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -85.8,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 1570.0,
       "window_high_date": "2026-11-01",
       "window_low_cfs": 53.6,
@@ -17481,12 +17477,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 61.4,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 58.4,
@@ -17660,6 +17650,12 @@
           "cfs": 93.1,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 91.2,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -17687,30 +17683,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 35.4,
+      "current_cfs": 29.3,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": null,
-      "change_7d_reference_date": null,
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -37.5,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 81.7,
       "window_high_date": "2026-11-20",
-      "window_low_cfs": 35.4,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 29.3,
+      "window_low_date": "2026-11-25",
       "reported_days": 29,
       "provisional_days": 29,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 45.1,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 42.3,
@@ -17884,6 +17874,12 @@
           "cfs": 35.4,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 29.3,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -17911,17 +17907,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 4.84,
+      "current_cfs": 5.6,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -4.95,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -0.5,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 223.0,
       "window_high_date": "2026-11-01",
       "window_low_cfs": 4.03,
@@ -17929,14 +17925,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 8.09,
-          "approval": "Provisional",
-          "qualifiers": [
-            "ESTIMATED"
-          ]
-        },
         {
           "date": "2026-10-27",
           "cfs": 6.7,
@@ -18126,6 +18114,12 @@
           "cfs": 4.84,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 5.6,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -18153,17 +18147,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 52.3,
+      "current_cfs": 48.4,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": 0.1,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -3.5,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 733.0,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 44.2,
@@ -18171,14 +18165,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 92.3,
-          "approval": "Provisional",
-          "qualifiers": [
-            "ESTIMATED"
-          ]
-        },
         {
           "date": "2026-10-27",
           "cfs": 67.2,
@@ -18356,6 +18342,12 @@
           "cfs": 52.3,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 48.4,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -18383,17 +18375,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 50.2,
+      "current_cfs": 50.6,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -132.8,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -177.4,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 938.0,
       "window_high_date": "2026-11-03",
       "window_low_cfs": 50.2,
@@ -18401,12 +18393,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 255.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 157.0,
@@ -18580,6 +18566,12 @@
           "cfs": 50.2,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 50.6,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -18607,17 +18599,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 39.2,
+      "current_cfs": 33.7,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -18.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -412.3,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 814.0,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 18.1,
@@ -18625,12 +18617,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 130.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 44.9,
@@ -18804,6 +18790,12 @@
           "cfs": 39.2,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 33.7,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -18831,30 +18823,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 59.0,
+      "current_cfs": 56.8,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -65.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -40.3,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 149.0,
       "window_high_date": "2026-11-01",
-      "window_low_cfs": 59.0,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 56.8,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 67.6,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 68.4,
@@ -19028,6 +19014,12 @@
           "cfs": 59.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 56.8,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -19055,17 +19047,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 147.0,
+      "current_cfs": 149.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -11.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -2.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 195.0,
       "window_high_date": "2026-11-01",
       "window_low_cfs": 145.0,
@@ -19073,12 +19065,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 156.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 154.0,
@@ -19252,6 +19238,12 @@
           "cfs": 147.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 149.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -19294,7 +19286,7 @@
       "data_frequency": "daily",
       "stale_after_days": 2,
       "as_of": "2026-11-04",
-      "days_stale": 21,
+      "days_stale": 22,
       "is_stale": true,
       "fetch_ok": true,
       "current_cfs": 19.4,
@@ -19523,30 +19515,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 448.0,
+      "current_cfs": 425.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -52.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -90.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 924.0,
       "window_high_date": "2026-11-02",
-      "window_low_cfs": 441.0,
-      "window_low_date": "2026-11-23",
+      "window_low_cfs": 425.0,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 682.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 638.0,
@@ -19720,6 +19706,12 @@
           "cfs": 448.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 425.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -19747,30 +19739,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 57.8,
+      "current_cfs": 55.2,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -18.6,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -17.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 105.0,
       "window_high_date": "2026-11-01",
-      "window_low_cfs": 56.8,
-      "window_low_date": "2026-11-23",
+      "window_low_cfs": 55.2,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 67.2,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 64.5,
@@ -19944,6 +19930,12 @@
           "cfs": 57.8,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 55.2,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -19971,30 +19963,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 4.72,
+      "current_cfs": 4.59,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -0.76,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -0.54,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 3480.0,
       "window_high_date": "2026-11-01",
-      "window_low_cfs": 4.72,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 4.59,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 5.61,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 5.54,
@@ -20168,6 +20154,12 @@
           "cfs": 4.72,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 4.59,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -20196,7 +20188,7 @@
       "data_frequency": "daily",
       "stale_after_days": 2,
       "as_of": "2026-11-24",
-      "days_stale": 1,
+      "days_stale": 2,
       "is_stale": false,
       "fetch_ok": true,
       "current_cfs": 2350.0,
@@ -20419,17 +20411,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 2450.0,
+      "current_cfs": 2510.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -300.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -120.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 26100.0,
       "window_high_date": "2026-11-03",
       "window_low_cfs": 2450.0,
@@ -20437,12 +20429,6 @@
       "reported_days": 27,
       "provisional_days": 27,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 20900.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 11300.0,
@@ -20626,6 +20612,12 @@
           "cfs": 2450.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 2510.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -20654,7 +20646,7 @@
       "data_frequency": "daily",
       "stale_after_days": 2,
       "as_of": "2026-11-24",
-      "days_stale": 1,
+      "days_stale": 2,
       "is_stale": false,
       "fetch_ok": true,
       "current_cfs": 2230.0,
@@ -20877,17 +20869,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 466.0,
+      "current_cfs": 469.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": 126.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": 144.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 2460.0,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 230.0,
@@ -20895,12 +20887,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 558.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 356.0,
@@ -21082,6 +21068,12 @@
           "cfs": 466.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 469.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -21109,30 +21101,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 1850.0,
+      "current_cfs": 1730.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -430.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
-      "window_high_cfs": 30100.0,
-      "window_high_date": "2026-10-26",
-      "window_low_cfs": 1850.0,
-      "window_low_date": "2026-11-24",
+      "change_7d_cfs": -980.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
+      "window_high_cfs": 25200.0,
+      "window_high_date": "2026-11-05",
+      "window_low_cfs": 1730.0,
+      "window_low_date": "2026-11-25",
       "reported_days": 29,
       "provisional_days": 29,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 30100.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 21500.0,
@@ -21306,6 +21292,12 @@
           "cfs": 1850.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 1730.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -21333,30 +21325,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 2.87,
+      "current_cfs": 1.79,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": 0.33,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -2.87,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 892.0,
       "window_high_date": "2026-10-27",
-      "window_low_cfs": 2.03,
-      "window_low_date": "2026-11-15",
+      "window_low_cfs": 1.79,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 761.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 892.0,
@@ -21530,6 +21516,12 @@
           "cfs": 2.87,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 1.79,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -21557,30 +21549,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 8.55,
+      "current_cfs": 8.01,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -67.65,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -180.99,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 447.0,
       "window_high_date": "2026-11-02",
-      "window_low_cfs": 8.16,
-      "window_low_date": "2026-11-13",
+      "window_low_cfs": 8.01,
+      "window_low_date": "2026-11-25",
       "reported_days": 29,
       "provisional_days": 29,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 69.5,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 35.8,
@@ -21754,6 +21740,12 @@
           "cfs": 8.55,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 8.01,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -21781,30 +21773,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 36.6,
+      "current_cfs": 33.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -86.4,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -41.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 788.0,
       "window_high_date": "2026-11-03",
-      "window_low_cfs": 35.7,
-      "window_low_date": "2026-11-15",
+      "window_low_cfs": 33.0,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 393.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 187.0,
@@ -21978,6 +21964,12 @@
           "cfs": 36.6,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 33.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -22005,17 +21997,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 55.0,
+      "current_cfs": 52.8,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -150.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -37.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 675.0,
       "window_high_date": "2026-11-01",
       "window_low_cfs": 43.8,
@@ -22023,12 +22015,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 60.2,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 53.0,
@@ -22202,6 +22188,12 @@
           "cfs": 55.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 52.8,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -22229,30 +22221,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 69.8,
+      "current_cfs": 63.9,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -235.2,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -418.1,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 830.0,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 5.29,
       "window_low_date": "2026-10-29",
       "reported_days": 29,
-      "provisional_days": 27,
+      "provisional_days": 28,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 5.54,
-          "approval": "Approved",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 5.46,
@@ -22426,6 +22412,12 @@
           "cfs": 69.8,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 63.9,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -22453,30 +22445,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 53.1,
+      "current_cfs": 50.4,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -422.9,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -178.6,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 1060.0,
       "window_high_date": "2026-11-02",
-      "window_low_cfs": 4.86,
-      "window_low_date": "2026-10-26",
+      "window_low_cfs": 5.61,
+      "window_low_date": "2026-10-28",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 4.86,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 5.69,
@@ -22654,6 +22640,12 @@
           "cfs": 53.1,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 50.4,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -22680,83 +22672,39 @@
       "tier": "natural",
       "compared_with_normal": true,
       "normal_band": {
-        "day": "11-18",
-        "p10": 5.56,
-        "p25": 6.147,
-        "p50": 8.0,
-        "p75": 9.075,
-        "p90": 11.0,
+        "day": "11-25",
+        "p10": 5.03,
+        "p25": 6.05,
+        "p50": 7.75,
+        "p75": 9.2,
+        "p90": 9.967,
         "years": 52,
         "retrieved": "2026-11-14",
         "source_url": "https://api.waterdata.usgs.gov/statistics/v0/observationNormals?monitoring_location_id=USGS-09329050&parameter_code=00060&computation_type=percentile&normal_type=DOY&page_size=1000"
       },
-      "flow_class": "below_normal",
+      "flow_class": "normal",
       "normal_withheld": null,
       "short_record": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-18",
-      "days_stale": 7,
-      "is_stale": true,
+      "as_of": "2026-11-25",
+      "days_stale": 1,
+      "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 5.65,
+      "current_cfs": 6.58,
       "current_approval": "Provisional",
-      "current_qualifiers": [
-        "ESTIMATED"
-      ],
-      "change_7d_cfs": 0.4,
-      "change_7d_reference_date": "2026-11-11",
-      "window_start": "2026-10-20",
-      "window_end": "2026-11-18",
+      "current_qualifiers": [],
+      "change_7d_cfs": 0.93,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 17.4,
       "window_high_date": "2026-11-01",
       "window_low_cfs": 4.8,
       "window_low_date": "2026-11-15",
-      "reported_days": 30,
-      "provisional_days": 30,
+      "reported_days": 25,
+      "provisional_days": 25,
       "daily": [
-        {
-          "date": "2026-10-20",
-          "cfs": 5.17,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
-        {
-          "date": "2026-10-21",
-          "cfs": 6.45,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
-        {
-          "date": "2026-10-22",
-          "cfs": 12.5,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
-        {
-          "date": "2026-10-23",
-          "cfs": 11.4,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
-        {
-          "date": "2026-10-24",
-          "cfs": 6.99,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
-        {
-          "date": "2026-10-25",
-          "cfs": 8.42,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
-        {
-          "date": "2026-10-26",
-          "cfs": 7.14,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 5.93,
@@ -22914,6 +22862,59 @@
           "qualifiers": [
             "ESTIMATED"
           ]
+        },
+        {
+          "date": "2026-11-19",
+          "cfs": null,
+          "approval": "Provisional",
+          "qualifiers": [
+            "ESTIMATED",
+            "ICE"
+          ]
+        },
+        {
+          "date": "2026-11-20",
+          "cfs": null,
+          "approval": "Provisional",
+          "qualifiers": [
+            "ICE"
+          ]
+        },
+        {
+          "date": "2026-11-21",
+          "cfs": null,
+          "approval": "Provisional",
+          "qualifiers": [
+            "ICE"
+          ]
+        },
+        {
+          "date": "2026-11-22",
+          "cfs": null,
+          "approval": "Provisional",
+          "qualifiers": [
+            "ICE"
+          ]
+        },
+        {
+          "date": "2026-11-23",
+          "cfs": null,
+          "approval": "Provisional",
+          "qualifiers": [
+            "ICE"
+          ]
+        },
+        {
+          "date": "2026-11-24",
+          "cfs": 5.9,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 6.58,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -22941,17 +22942,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 111.0,
+      "current_cfs": 108.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": 8.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": 8.4,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 115.0,
       "window_high_date": "2026-11-22",
       "window_low_cfs": 54.6,
@@ -22959,12 +22960,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 75.1,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 65.4,
@@ -23138,6 +23133,12 @@
           "cfs": 111.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 108.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -23165,17 +23166,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
       "current_cfs": 177.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -1.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -23.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 244.0,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 87.3,
@@ -23183,12 +23184,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 119.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 104.0,
@@ -23362,6 +23357,12 @@
           "cfs": 177.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 177.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -23389,17 +23390,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 19.1,
+      "current_cfs": 19.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -6.9,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -7.4,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 33.0,
       "window_high_date": "2026-11-01",
       "window_low_cfs": 16.3,
@@ -23407,12 +23408,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 29.7,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 29.3,
@@ -23586,6 +23581,12 @@
           "cfs": 19.1,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 19.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -23628,7 +23629,7 @@
       "data_frequency": "daily",
       "stale_after_days": 2,
       "as_of": "2026-11-03",
-      "days_stale": 22,
+      "days_stale": 23,
       "is_stale": true,
       "fetch_ok": true,
       "current_cfs": 94.4,
@@ -23851,7 +23852,7 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
@@ -23860,8 +23861,8 @@
       "current_qualifiers": [],
       "change_7d_cfs": null,
       "change_7d_reference_date": null,
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 19.6,
       "window_high_date": "2026-11-01",
       "window_low_cfs": 14.8,
@@ -23869,12 +23870,6 @@
       "reported_days": 27,
       "provisional_days": 27,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 17.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 16.5,
@@ -24048,6 +24043,12 @@
           "cfs": 18.4,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 18.4,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -24075,30 +24076,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 0.47,
+      "current_cfs": 0.42,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -0.26,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -0.59,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 1.34,
       "window_high_date": "2026-11-02",
-      "window_low_cfs": 0.46,
-      "window_low_date": "2026-11-13",
+      "window_low_cfs": 0.42,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 1.22,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 1.08,
@@ -24272,6 +24267,12 @@
           "cfs": 0.47,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 0.42,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -24299,17 +24300,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 28.3,
+      "current_cfs": 28.6,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -1.7,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": 0.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 30.0,
       "window_high_date": "2026-11-17",
       "window_low_cfs": 25.5,
@@ -24317,12 +24318,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 26.5,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 26.7,
@@ -24496,6 +24491,12 @@
           "cfs": 28.3,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 28.6,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -24523,17 +24524,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 89.8,
+      "current_cfs": 89.9,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -9.3,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -22.1,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 190.0,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 81.9,
@@ -24541,12 +24542,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 85.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 84.2,
@@ -24720,6 +24715,12 @@
           "cfs": 89.8,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 89.9,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -24748,7 +24749,7 @@
       "data_frequency": "daily",
       "stale_after_days": 2,
       "as_of": "2026-11-21",
-      "days_stale": 4,
+      "days_stale": 5,
       "is_stale": true,
       "fetch_ok": true,
       "current_cfs": 121.0,
@@ -24973,30 +24974,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 58.7,
+      "current_cfs": 59.5,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -1.5,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": 1.1,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 60.2,
       "window_high_date": "2026-11-17",
-      "window_low_cfs": 55.2,
-      "window_low_date": "2026-10-26",
+      "window_low_cfs": 55.3,
+      "window_low_date": "2026-10-30",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 55.2,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 55.3,
@@ -25170,6 +25165,12 @@
           "cfs": 58.7,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 59.5,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -25197,17 +25198,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 123.0,
+      "current_cfs": 117.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": 2.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -9.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 237.0,
       "window_high_date": "2026-11-03",
       "window_low_cfs": 94.9,
@@ -25215,12 +25216,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 217.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 182.0,
@@ -25394,6 +25389,12 @@
           "cfs": 123.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 117.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -25421,30 +25422,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 311.0,
+      "current_cfs": 300.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -87.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -144.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 1260.0,
       "window_high_date": "2026-11-02",
-      "window_low_cfs": 311.0,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 300.0,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 627.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 569.0,
@@ -25618,6 +25613,12 @@
           "cfs": 311.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 300.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -25645,30 +25646,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 213.0,
+      "current_cfs": 209.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -51.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -52.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 369.0,
       "window_high_date": "2026-11-02",
-      "window_low_cfs": 213.0,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 209.0,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 313.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 293.0,
@@ -25842,6 +25837,12 @@
           "cfs": 213.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 209.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -25869,30 +25870,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 417.0,
+      "current_cfs": 387.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -77.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -120.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 950.0,
       "window_high_date": "2026-11-02",
-      "window_low_cfs": 417.0,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 387.0,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 906.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 828.0,
@@ -26066,6 +26061,12 @@
           "cfs": 417.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 387.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -26093,30 +26094,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 205.0,
+      "current_cfs": 204.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -49.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -53.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 257.0,
       "window_high_date": "2026-11-22",
-      "window_low_cfs": 205.0,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 204.0,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 252.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 252.0,
@@ -26290,6 +26285,12 @@
           "cfs": 205.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 204.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -26317,30 +26318,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 392.0,
+      "current_cfs": 368.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -572.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -420.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 59200.0,
       "window_high_date": "2026-11-02",
-      "window_low_cfs": 392.0,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 368.0,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 710.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 716.0,
@@ -26514,6 +26509,12 @@
           "cfs": 392.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 368.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -26541,30 +26542,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 567.0,
+      "current_cfs": 410.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -733.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -720.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 57100.0,
       "window_high_date": "2026-11-02",
-      "window_low_cfs": 567.0,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 410.0,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 743.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 803.0,
@@ -26738,6 +26733,12 @@
           "cfs": 567.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 410.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -26765,30 +26766,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 1.48,
+      "current_cfs": 1.46,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -0.56,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -0.23,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 2.86,
       "window_high_date": "2026-11-01",
       "window_low_cfs": 1.46,
-      "window_low_date": "2026-11-16",
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 1.46,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 1.46,
@@ -26962,6 +26957,12 @@
           "cfs": 1.48,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 1.46,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -26989,17 +26990,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 193.0,
+      "current_cfs": 173.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -1727.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -515.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 3560.0,
       "window_high_date": "2026-11-01",
       "window_low_cfs": 155.0,
@@ -27007,12 +27008,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 199.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 180.0,
@@ -27186,6 +27181,12 @@
           "cfs": 193.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 173.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -27213,30 +27214,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 413.0,
+      "current_cfs": 386.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -1137.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
-      "window_high_cfs": 5070.0,
+      "change_7d_cfs": -2074.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
+      "window_high_cfs": 5090.0,
       "window_high_date": "2026-11-02",
-      "window_low_cfs": 204.0,
+      "window_low_cfs": 205.0,
       "window_low_date": "2026-10-29",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 253.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 236.0,
@@ -27251,13 +27246,13 @@
         },
         {
           "date": "2026-10-29",
-          "cfs": 204.0,
+          "cfs": 205.0,
           "approval": "Provisional",
           "qualifiers": []
         },
         {
           "date": "2026-10-30",
-          "cfs": 415.0,
+          "cfs": 417.0,
           "approval": "Provisional",
           "qualifiers": []
         },
@@ -27275,139 +27270,145 @@
         },
         {
           "date": "2026-11-02",
-          "cfs": 5070.0,
+          "cfs": 5090.0,
           "approval": "Provisional",
           "qualifiers": []
         },
         {
           "date": "2026-11-03",
-          "cfs": 1600.0,
+          "cfs": 1610.0,
           "approval": "Provisional",
           "qualifiers": []
         },
         {
           "date": "2026-11-04",
-          "cfs": 922.0,
+          "cfs": 929.0,
           "approval": "Provisional",
           "qualifiers": []
         },
         {
           "date": "2026-11-05",
-          "cfs": 717.0,
+          "cfs": 724.0,
           "approval": "Provisional",
           "qualifiers": []
         },
         {
           "date": "2026-11-06",
-          "cfs": 647.0,
+          "cfs": 655.0,
           "approval": "Provisional",
           "qualifiers": []
         },
         {
           "date": "2026-11-07",
-          "cfs": 532.0,
+          "cfs": 539.0,
           "approval": "Provisional",
           "qualifiers": []
         },
         {
           "date": "2026-11-08",
-          "cfs": 453.0,
+          "cfs": 460.0,
           "approval": "Provisional",
           "qualifiers": []
         },
         {
           "date": "2026-11-09",
-          "cfs": 409.0,
+          "cfs": 417.0,
           "approval": "Provisional",
           "qualifiers": []
         },
         {
           "date": "2026-11-10",
-          "cfs": 398.0,
+          "cfs": 406.0,
           "approval": "Provisional",
           "qualifiers": []
         },
         {
           "date": "2026-11-11",
-          "cfs": 401.0,
+          "cfs": 410.0,
           "approval": "Provisional",
           "qualifiers": []
         },
         {
           "date": "2026-11-12",
-          "cfs": 377.0,
+          "cfs": 386.0,
           "approval": "Provisional",
           "qualifiers": []
         },
         {
           "date": "2026-11-13",
-          "cfs": 339.0,
+          "cfs": 349.0,
           "approval": "Provisional",
           "qualifiers": []
         },
         {
           "date": "2026-11-14",
-          "cfs": 1090.0,
+          "cfs": 1110.0,
           "approval": "Provisional",
           "qualifiers": []
         },
         {
           "date": "2026-11-15",
-          "cfs": 1250.0,
+          "cfs": 1270.0,
           "approval": "Provisional",
           "qualifiers": []
         },
         {
           "date": "2026-11-16",
-          "cfs": 493.0,
+          "cfs": 507.0,
           "approval": "Provisional",
           "qualifiers": []
         },
         {
           "date": "2026-11-17",
-          "cfs": 1550.0,
+          "cfs": 1570.0,
           "approval": "Provisional",
           "qualifiers": []
         },
         {
           "date": "2026-11-18",
-          "cfs": 2430.0,
+          "cfs": 2460.0,
           "approval": "Provisional",
           "qualifiers": []
         },
         {
           "date": "2026-11-19",
-          "cfs": 758.0,
+          "cfs": 777.0,
           "approval": "Provisional",
           "qualifiers": []
         },
         {
           "date": "2026-11-20",
-          "cfs": 816.0,
+          "cfs": 837.0,
           "approval": "Provisional",
           "qualifiers": []
         },
         {
           "date": "2026-11-21",
-          "cfs": 633.0,
+          "cfs": 652.0,
           "approval": "Provisional",
           "qualifiers": []
         },
         {
           "date": "2026-11-22",
-          "cfs": 485.0,
+          "cfs": 503.0,
           "approval": "Provisional",
           "qualifiers": []
         },
         {
           "date": "2026-11-23",
-          "cfs": 458.0,
+          "cfs": 476.0,
           "approval": "Provisional",
           "qualifiers": []
         },
         {
           "date": "2026-11-24",
-          "cfs": 413.0,
+          "cfs": 431.0,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 386.0,
           "approval": "Provisional",
           "qualifiers": []
         }
@@ -27437,17 +27438,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 194.0,
+      "current_cfs": 185.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -1046.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -218.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 2920.0,
       "window_high_date": "2026-11-01",
       "window_low_cfs": 115.0,
@@ -27455,12 +27456,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 126.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 121.0,
@@ -27634,6 +27629,12 @@
           "cfs": 194.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 185.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -27661,17 +27662,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 299.0,
+      "current_cfs": 274.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -2511.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -1076.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 4880.0,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 140.0,
@@ -27679,12 +27680,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 194.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 166.0,
@@ -27858,6 +27853,12 @@
           "cfs": 299.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 274.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -27885,17 +27886,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 202.0,
+      "current_cfs": 181.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -1648.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -394.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 3090.0,
       "window_high_date": "2026-11-01",
       "window_low_cfs": 119.0,
@@ -27903,12 +27904,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 158.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 142.0,
@@ -28082,6 +28077,12 @@
           "cfs": 202.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 181.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -28109,17 +28110,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 321.0,
+      "current_cfs": 302.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -1429.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -1558.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 5030.0,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 157.0,
@@ -28127,12 +28128,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 199.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 185.0,
@@ -28306,6 +28301,12 @@
           "cfs": 321.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 302.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -28333,17 +28334,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 35.3,
+      "current_cfs": 35.1,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -3.2,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -8.9,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 100.0,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 32.8,
@@ -28351,12 +28352,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 53.4,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 48.3,
@@ -28530,6 +28525,12 @@
           "cfs": 35.3,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 35.1,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -28557,17 +28558,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 83.5,
+      "current_cfs": 81.2,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -83.5,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -36.8,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 186.0,
       "window_high_date": "2026-11-01",
       "window_low_cfs": 60.9,
@@ -28575,12 +28576,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 83.9,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 81.5,
@@ -28754,6 +28749,12 @@
           "cfs": 83.5,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 81.2,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -28781,30 +28782,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
       "current_cfs": 31.4,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -1.4,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -3.5,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 53.9,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 31.4,
-      "window_low_date": "2026-11-24",
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 35.5,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 34.4,
@@ -28978,6 +28973,12 @@
           "cfs": 31.4,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 31.4,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -29005,17 +29006,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 81.0,
+      "current_cfs": 82.2,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -12.2,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -8.4,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 161.0,
       "window_high_date": "2026-11-02",
       "window_low_cfs": 81.0,
@@ -29023,12 +29024,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 137.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 131.0,
@@ -29202,6 +29197,12 @@
           "cfs": 81.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 82.2,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -29229,17 +29230,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 67.5,
+      "current_cfs": 66.7,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -3.7,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -12.4,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 137.0,
       "window_high_date": "2026-11-01",
       "window_low_cfs": 53.4,
@@ -29247,12 +29248,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 62.8,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 57.4,
@@ -29429,6 +29424,12 @@
           "cfs": 67.5,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 66.7,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -29456,30 +29457,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 53.7,
+      "current_cfs": 49.2,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -34.7,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -110.8,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 205.0,
       "window_high_date": "2026-11-02",
-      "window_low_cfs": 53.6,
-      "window_low_date": "2026-11-16",
+      "window_low_cfs": 49.2,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 105.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 106.0,
@@ -29653,6 +29648,12 @@
           "cfs": 53.7,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 49.2,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -29679,12 +29680,12 @@
       "tier": "natural",
       "compared_with_normal": true,
       "normal_band": {
-        "day": "11-24",
-        "p10": 0.082,
-        "p25": 0.19,
-        "p50": 0.505,
+        "day": "11-25",
+        "p10": 0.111,
+        "p25": 0.168,
+        "p50": 0.5,
         "p75": 1.11,
-        "p90": 1.963,
+        "p90": 1.961,
         "years": 50,
         "retrieved": "2026-11-14",
         "source_url": "https://api.waterdata.usgs.gov/statistics/v0/observationNormals?monitoring_location_id=USGS-10166430&parameter_code=00060&computation_type=percentile&normal_type=DOY&page_size=1000"
@@ -29694,17 +29695,17 @@
       "short_record": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
       "current_cfs": 0.02,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -0.02,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -0.01,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 0.34,
       "window_high_date": "2026-11-01",
       "window_low_cfs": 0.01,
@@ -29712,12 +29713,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 0.01,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 0.01,
@@ -29891,6 +29886,12 @@
           "cfs": 0.02,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 0.02,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -29933,7 +29934,7 @@
       "data_frequency": "daily",
       "stale_after_days": 2,
       "as_of": "2026-11-19",
-      "days_stale": 6,
+      "days_stale": 7,
       "is_stale": true,
       "fetch_ok": true,
       "current_cfs": 6.36,
@@ -30156,30 +30157,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 131.0,
+      "current_cfs": 129.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -36.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -28.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 455.0,
       "window_high_date": "2026-11-02",
-      "window_low_cfs": 131.0,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 129.0,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 294.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 266.0,
@@ -30353,6 +30348,12 @@
           "cfs": 131.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 129.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -30380,17 +30381,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 23.7,
+      "current_cfs": 22.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -3.1,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -4.8,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 126.0,
       "window_high_date": "2026-10-31",
       "window_low_cfs": 17.5,
@@ -30398,12 +30399,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 116.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 124.0,
@@ -30577,6 +30572,12 @@
           "cfs": 23.7,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 22.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -30604,17 +30605,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 7.12,
+      "current_cfs": 7.25,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -0.02,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": 0.1,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 7.62,
       "window_high_date": "2026-11-11",
       "window_low_cfs": 7.01,
@@ -30622,12 +30623,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 7.24,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 7.25,
@@ -30801,6 +30796,12 @@
           "cfs": 7.12,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 7.25,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -30829,7 +30830,7 @@
       "data_frequency": "daily",
       "stale_after_days": 2,
       "as_of": "2026-11-21",
-      "days_stale": 4,
+      "days_stale": 5,
       "is_stale": true,
       "fetch_ok": true,
       "current_cfs": 29.9,
@@ -31052,36 +31053,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-23",
-      "days_stale": 2,
+      "as_of": "2026-11-25",
+      "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 355.0,
+      "current_cfs": 370.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": 40.0,
-      "change_7d_reference_date": "2026-11-16",
-      "window_start": "2026-10-25",
-      "window_end": "2026-11-23",
+      "change_7d_cfs": null,
+      "change_7d_reference_date": null,
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 550.0,
       "window_high_date": "2026-11-06",
       "window_low_cfs": 271.0,
       "window_low_date": "2026-10-29",
-      "reported_days": 29,
-      "provisional_days": 29,
+      "reported_days": 28,
+      "provisional_days": 28,
       "daily": [
-        {
-          "date": "2026-10-25",
-          "cfs": 304.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
-        {
-          "date": "2026-10-26",
-          "cfs": 285.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 276.0,
@@ -31249,6 +31238,18 @@
           "cfs": 355.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-24",
+          "cfs": null,
+          "approval": null,
+          "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 370.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -31276,30 +31277,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 58.1,
+      "current_cfs": 55.5,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -47.9,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -46.5,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 132.0,
       "window_high_date": "2026-11-02",
-      "window_low_cfs": 58.1,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 55.5,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 96.3,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 100.0,
@@ -31473,6 +31468,12 @@
           "cfs": 58.1,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 55.5,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -31500,17 +31501,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 134.0,
+      "current_cfs": 151.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -74.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -47.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 289.0,
       "window_high_date": "2026-11-04",
       "window_low_cfs": 134.0,
@@ -31518,12 +31519,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 190.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 188.0,
@@ -31697,6 +31692,12 @@
           "cfs": 134.0,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 151.0,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -31724,17 +31725,17 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
       "current_cfs": 23.4,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -0.2,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -0.1,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 28.5,
       "window_high_date": "2026-10-28",
       "window_low_cfs": 22.9,
@@ -31742,12 +31743,6 @@
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 27.9,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 28.5,
@@ -31921,6 +31916,12 @@
           "cfs": 23.4,
           "approval": "Provisional",
           "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 23.4,
+          "approval": "Provisional",
+          "qualifiers": []
         }
       ]
     },
@@ -31948,30 +31949,24 @@
       "compared_with_normal": false,
       "data_frequency": "daily",
       "stale_after_days": 2,
-      "as_of": "2026-11-24",
+      "as_of": "2026-11-25",
       "days_stale": 1,
       "is_stale": false,
       "fetch_ok": true,
-      "current_cfs": 215.0,
+      "current_cfs": 185.0,
       "current_approval": "Provisional",
       "current_qualifiers": [],
-      "change_7d_cfs": -34.0,
-      "change_7d_reference_date": "2026-11-17",
-      "window_start": "2026-10-26",
-      "window_end": "2026-11-24",
+      "change_7d_cfs": -66.0,
+      "change_7d_reference_date": "2026-11-18",
+      "window_start": "2026-10-27",
+      "window_end": "2026-11-25",
       "window_high_cfs": 371.0,
       "window_high_date": "2026-11-05",
-      "window_low_cfs": 215.0,
-      "window_low_date": "2026-11-24",
+      "window_low_cfs": 185.0,
+      "window_low_date": "2026-11-25",
       "reported_days": 30,
       "provisional_days": 30,
       "daily": [
-        {
-          "date": "2026-10-26",
-          "cfs": 226.0,
-          "approval": "Provisional",
-          "qualifiers": []
-        },
         {
           "date": "2026-10-27",
           "cfs": 226.0,
@@ -32143,6 +32138,12 @@
         {
           "date": "2026-11-24",
           "cfs": 215.0,
+          "approval": "Provisional",
+          "qualifiers": []
+        },
+        {
+          "date": "2026-11-25",
+          "cfs": 185.0,
           "approval": "Provisional",
           "qualifiers": []
         }
